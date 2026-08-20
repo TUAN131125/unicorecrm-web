@@ -1,0 +1,33 @@
+{
+  "agreement": {
+    "kind": "FULL_PAYMENT",
+    "currency": "VND",
+    "lines": [
+      {
+        "sequence": 1,
+        "label": "Saved full payment draft",
+        "purpose": "FULL",
+        "amountRule": {
+          "type": "FIXED",
+          "amount": {
+            "amount": "1250000",
+            "currency": "VND"
+          }
+        },
+        "dueRule": {
+          "type": "FIXED_DATE",
+          "date": "2026-08-15"
+        },
+        "allowedMethodCodes": [
+          "BANK_TRANSFER"
+        ],
+        "fulfillmentGate": "BEFORE_COMPLETION"
+      }
+    ]
+  },
+  "orderAmount": {
+    "amount": "1250000",
+    "currency": "VND"
+  },
+  "requiresPhysicalShipping": false
+}

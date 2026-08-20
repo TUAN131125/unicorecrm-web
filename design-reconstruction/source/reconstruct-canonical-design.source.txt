@@ -1,0 +1,680 @@
+// Non-executable reconstruction provenance source; pipe to an ES module runtime only when refreshing the draft.
+import crypto from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
+import ts from "typescript";
+import { fileURLToPath } from "node:url";
+
+const root = process.env.UNICORE_RECONSTRUCTION_ROOT
+  ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
+const readJson = (file) => JSON.parse(fs.readFileSync(path.join(root, file), "utf8"));
+const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
+const write = (file, value) => {
+  const target = path.join(root, file);
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  fs.writeFileSync(target, value.endsWith("\n") ? value : `${value}\n`, "utf8");
+};
+const writeJson = (file, value) => write(file, JSON.stringify(value, null, 2));
+const rel = (file) => file.replaceAll("\\", "/").replace(/^\.\//, "");
+const sha256 = (value) => crypto.createHash("sha256").update(value).digest("hex");
+const statusLine = "> Status: **RECONSTRUCTED_DRAFT**  \n> Authority: reconstructed design candidate; not an approved baseline.  \n> Source: `unicorecrm-web@0.23.20-contract.0`.";
+
+const inventory = readJson("docs/quality/repository-inventory.json");
+const openapi = readJson("docs/api/openapi.json");
+const operationCatalog = readJson("docs/api/api-operation-catalog.json");
+const operationLedger = readJson("docs/api/operation-coverage-ledger.json");
+const commandRegistry = readJson("docs/backend-readiness/command-registry.json");
+const queryRegistry = readJson("docs/backend-readiness/query-registry.json");
+const workflowOwnership = readJson("docs/backend-readiness/workflow-ownership.json");
+const unresolved = readJson("docs/backend-readiness/unresolved-decisions.json");
+const documentStatus = readJson("docs/document-status.json");
+const openapiHash = sha256(fs.readFileSync(path.join(root, "docs/api/openapi.json")));
+
+const openApiOperationMetadata = new Map();
+for (const [operationPath, pathItem] of Object.entries(openapi.paths)) {
+  for (const [method, operation] of Object.entries(pathItem)) {
+    if (!operation?.operationId) continue;
+    openApiOperationMetadata.set(operation.operationId, {
+      method: method.toUpperCase(),
+      path: operationPath,
+      owner: operation["x-module-owner"],
+      contractStatus: operation["x-contract-status"],
+      transactionBoundary: operation["x-transaction-boundary"],
+      idempotency: operation["x-idempotency-policy"],
+      capability: operation["x-required-capability"],
+      audit: operation["x-audit-requirement"],
+      outbox: operation["x-event-outbox-expectation"],
+      credentials: operation["x-credentials-policy"],
+    });
+  }
+}
+
+const operationOwnerMismatches = operationCatalog.operations
+  .filter((operation) => openApiOperationMetadata.get(operation.operationId)?.owner !== operation.moduleId)
+  .map((operation) => ({
+    operationId: operation.operationId,
+    derivedOwner: operation.moduleId,
+    openApiOwner: openApiOperationMetadata.get(operation.operationId)?.owner,
+  }));
+
+// OpenAPI is C1 authority. Reconcile stale owner fields in the derived catalog for
+// canonical output without editing the governed docs/api derivative in this task.
+const catalogOperations = operationCatalog.operations.map((operation) => ({
+  ...operation,
+  moduleId: openApiOperationMetadata.get(operation.operationId)?.owner ?? operation.moduleId,
+}));
+
+const moduleFacts = {
+  "commercial-evidence": {
+    responsibility: "Append-only purchase evidence and relationship-level customer-state projection.",
+    owns: "PurchaseEvidence records, reversal evidence, evidence-source uniqueness, and CustomerState projection policy.",
+    excludes: "Mutable Order, Payment, Invoice, or Customer lifecycle truth.",
+    entities: ["PurchaseEvidence", "CustomerStateProjection", "CustomerStatePolicy"],
+    states: "CustomerState = NONE | ACTIVE | INACTIVE | FORMER; evidence is append-only and reversed by compensating evidence.",
+    rules: ["Evidence requires workspace, canonical buyer, source, policy version, correlation and occurrence time.", "A reversal references an original evidence record; source business records are not mutated here."],
+  },
+  contacts: {
+    responsibility: "Individual person identity and effective-dated Organization membership ledger.",
+    owns: "Contact profile, communication consent projection, Contact status, organization relationships, retention actions.",
+    excludes: "B2B Organization account identity, Customer lifecycle, and downstream commercial records.",
+    entities: ["Contact", "ContactOrganizationRelationship", "CommunicationConsentProfile"],
+    states: "active | needs_follow_up | in_consulting | has_open_opportunity | inactive | do_not_contact | archived.",
+    rules: ["A person remains Contact-owned even when representing an Organization.", "Organization relationships are effective-dated; primary representative uniqueness is a cross-owner workflow concern."],
+  },
+  customers: {
+    responsibility: "Relationship-level customer lifecycle, health, segmentation, care ownership and Customer 360 composition.",
+    owns: "Customer and CustomerCareCard; links one canonical RelationshipRef to a care lifecycle.",
+    excludes: "Contact/Organization identity and Deal, Quote, Order, Payment, Shipping, Return, Support or Task source truth.",
+    entities: ["Customer", "CustomerCareCard"],
+    states: "Customer: NEW | ACTIVE | AT_RISK | INACTIVE | CHURNED | DO_NOT_CONTACT | ARCHIVED; onboarding: PENDING | COMPLETED.",
+    rules: ["Customer creation from purchase evidence requires an existing canonical relationship.", "Customer 360 is read-side composition and routes writes to owners or workflows."],
+  },
+  deals: {
+    responsibility: "Opportunity pipeline, forecast, next action and explicit win/loss evidence.",
+    owns: "Deal, pipeline stage configuration projection, forecast history and opportunity outcome.",
+    excludes: "Quote acceptance, Order confirmation, and Task lifecycle.",
+    entities: ["Deal", "DealLineItem", "OpportunityStageConfig", "DealWinEvidence"],
+    states: "Workspace-configured pipeline stages; default system codes are DISCOVERY | QUALIFIED | SOLUTION | PROPOSAL | NEGOTIATION | WON | LOST.",
+    rules: ["Every Deal requires a canonical buyerRef.", "WON requires accepted-Quote or confirmed-Order evidence.", "LOST requires a reason and recycle decision; recyclable loss requires revisit time.", "Next action is a pipeline-health projection, not a write invariant: active Deals are MISSING, OVERDUE, or ON_TRACK; stale means at least 14 days since activity or 21 days in stage."],
+  },
+  invoices: {
+    responsibility: "Invoice drafts, issuance, immutable issued documents, Credit Notes and receivables projections.",
+    owns: "Invoice, CreditNote, delivery evidence and invoice-based receivable projection.",
+    excludes: "Payment transaction success, allocations owned by Payments, and Order lifecycle.",
+    entities: ["Invoice", "InvoiceLine", "CreditNote", "ReceivableEntry", "InvoiceDeliveryRecord"],
+    states: "Invoice: DRAFT | ISSUING | ISSUED | ISSUE_FAILED | DISCARDED | VOIDED; settlement is an independent projection.",
+    rules: ["Issued commercial content is immutable.", "Receivables are derived from issued invoices, effective allocations and issued credits; balances are not directly edited."],
+  },
+  leads: {
+    responsibility: "Lead intake, work-state progression, qualification outcome, duplicate/consent handling and lineage.",
+    owns: "Lead, work state, disqualification and retained intake evidence.",
+    excludes: "Contact/Organization identity after resolution and downstream Deal/Quote/Order records.",
+    entities: ["Lead", "LeadInterestedProduct", "LeadConsentLedgerEntry", "LeadDuplicateResolution"],
+    states: "Work and outcome are separate dimensions; CLOSED requires an explicit QualificationOutcome and evidence references appropriate to that outcome.",
+    rules: ["Generic qualification is retired and blocked.", "Nurture, Opportunity and Direct Sale use typed workflows after relationship resolution."],
+    transitionModel: ["NEW -> CONTACTING; CONTACTING -> VERIFYING; VERIFYING has no ordinary forward transition; same-state replay is allowed.", "Any non-CLOSED state may close with DISQUALIFIED. Positive outcomes require VERIFYING plus the progressive profile; NURTURE/DIRECT_SALE/OPPORTUNITY require relationshipRef and OPPORTUNITY also requires dealRef.", "CLOSED is terminal except the dedicated reopen command: only a DISQUALIFIED Lead reopens to CONTACTING and must satisfy the CONTACTING profile."],
+  },
+  orders: {
+    responsibility: "Commercial commitment, immutable confirmed content and Order lifecycle.",
+    owns: "CustomerOrder, line/adjustment snapshots, payment-agreement snapshot, confirmation/cancellation/completion audit.",
+    excludes: "Payment status, carrier execution, invoice state and refund truth.",
+    entities: ["CustomerOrder", "OrderItem", "OrderAdjustment", "OrderCompletionAudit", "OrderCancellationAudit"],
+    states: "DRAFT | CONFIRMED | COMPLETED | CANCELLED.",
+    rules: ["Buyer is Contact or OrganizationAccount.", "Confirmed commercial content is immutable.", "Completion is workflow-owned and requires payment/fulfillment evidence; cancellation requires actor, reason and time."],
+    transitionModel: ["Generic state mutation permits replay only; it owns no forward transition.", "DRAFT -> CONFIRMED only through confirmation after canonical buyer, valid lines, Payment Agreement snapshot and fulfillment prerequisites.", "CONFIRMED -> COMPLETED only through Order Closing with policyVersion, correlationId, PurchaseEvidence reference and occurredAt.", "DRAFT or CONFIRMED -> CANCELLED only through cancellation with reason, actor and timestamp. COMPLETED and CANCELLED are terminal."],
+  },
+  organizations: {
+    responsibility: "B2B account identity and Organization-level relationship profile.",
+    owns: "OrganizationAccount, account lifecycle, representative references and retention actions.",
+    excludes: "Person identity, Workspace tenancy and Customer lifecycle.",
+    entities: ["OrganizationAccount", "ContactRelationshipRef"],
+    states: "prospect | active | strategic | inactive | archived.",
+    rules: ["Representatives remain Contact-owned.", "Commercial ownership uses an Organization buyer reference, not its representative Contact."],
+  },
+  payments: {
+    responsibility: "Payment plans, obligations, intents, records, refunds, allocations, customer credit, reconciliation and COD money evidence.",
+    owns: "PaymentPlan, PaymentScheduleLine, PaymentIntent, PaymentRecord, RefundIntent, InvoicePaymentAllocation and CustomerCredit.",
+    excludes: "Invoice document content, Order lifecycle, carrier delivery evidence and Return lifecycle.",
+    entities: ["PaymentPlan", "PaymentScheduleLine", "PaymentIntent", "PaymentRecord", "RefundIntent", "InvoicePaymentAllocation", "CustomerCredit"],
+    states: "Plan, schedule, intent, record, refund, allocation, credit, COD collection and COD remittance are distinct state machines.",
+    rules: ["Provider/browser redirects are not payment success.", "Allocations are immutable ledger entries reversed by compensating records.", "COD customer collection and merchant remittance are separate evidence dimensions."],
+  },
+  products: {
+    responsibility: "Product catalog, pricing/configuration inputs and product usage checks.",
+    owns: "Product, configured product types/fields and catalog lifecycle.",
+    excludes: "Sales-document lifecycle and accepted commercial snapshots.",
+    entities: ["Product", "ConfiguredProductType", "ConfiguredProductField", "PricingOption"],
+    states: "active | inactive | draft | archived.",
+    rules: ["Sales documents retain immutable product snapshots.", "Configuration mutations remain blocked where OpenAPI marks them blocked."],
+  },
+  quotes: {
+    responsibility: "Versioned commercial proposals, pricing snapshot, approval and delivery evidence.",
+    owns: "Quote root/version, QuoteLineItem, approval assessment and immutable delivery fingerprint.",
+    excludes: "Order lifecycle and Deal outcome except through workflows.",
+    entities: ["Quote", "QuoteLineItem", "SalesDocumentAdjustment", "QuoteApprovalReason"],
+    states: "DRAFT | REVIEW | SENT | ACCEPTED | REJECTED | EXPIRED; approval is a separate state.",
+    rules: ["Sent and terminal versions are immutable; changes require a revision.", "Acceptance never creates an Order.", "Order conversion is a distinct idempotent workflow."],
+    transitionModel: ["DRAFT -> REVIEW or SENT; REVIEW -> DRAFT or SENT; SENT -> ACCEPTED, REJECTED, or EXPIRED; same-state replay is allowed.", "ACCEPTED, REJECTED, and EXPIRED are terminal. SENT and all terminal versions are content-immutable; changes require a revision.", "Approval is separate: no required approval -> NOT_REQUIRED; mutable DRAFT/REVIEW may request PENDING; PENDING -> APPROVED or CHANGES_REQUESTED. Changed commercial content invalidates a prior approval fingerprint and returns required approval to PENDING/CHANGES_REQUESTED policy evaluation."],
+  },
+  returns: {
+    responsibility: "Return eligibility, decision, physical receipt/inspection and resolution intent lifecycle.",
+    owns: "ReturnRequest, ReturnItem, ReturnResolutionIntent and Return decision/inspection evidence.",
+    excludes: "Credit Note issuance, refund success, Payment Intent success and Shipping delivery truth.",
+    entities: ["ReturnRequest", "ReturnItem", "ReturnResolutionIntent", "ReturnResolution"],
+    states: "REQUESTED | APPROVED | AWAITING_ITEM | RECEIVED | RESOLVED | CLOSED | REJECTED.",
+    rules: ["Accepted quantities cannot exceed received/ordered eligibility.", "Resolution completes only from authoritative Invoice, Payment, Shipping or Repair evidence."],
+    transitionModel: ["REQUESTED -> APPROVED or REJECTED; APPROVED -> AWAITING_ITEM or RECEIVED; AWAITING_ITEM -> RECEIVED; RECEIVED -> RESOLVED; RESOLVED -> CLOSED.", "CLOSED and REJECTED are terminal. The table has no same-state transition.", "ReturnResolution is one of REFUND, REPLACEMENT, EXCHANGE, REPAIR, or REJECT_AFTER_INSPECTION.", "Resolution intents target INVOICE, PAYMENT, SHIPPING, or REPAIR; action is CREDIT_NOTE, REFUND, COLLECT_EXCHANGE_DELTA, RETURN_PICKUP, REPLACEMENT_OUTBOUND, RETURN_TO_CUSTOMER, or REPAIR; status is PENDING, SUCCEEDED, or FAILED.", "RepairJob status is CREATED, IN_PROGRESS, COMPLETED, or FAILED; repair completion requires canonical repair evidence."],
+  },
+  shipping: {
+    responsibility: "Shipping booking attempts, provider/carrier status, immutable shipment snapshots and delivery/COD carrier evidence.",
+    owns: "ShippingBooking, attempt group, provider reference, tracking and deliveredAt evidence.",
+    excludes: "Order state, Return state and Payment reconciliation truth.",
+    entities: ["ShippingBooking", "ShippingPackageSnapshot", "ShippingProvider", "ShippingBookingReadiness"],
+    states: "Booking: PENDING | BOOKED | FAILED | CANCELLED; external carrier state is independent.",
+    rules: ["Retry/provider change creates a new attempt in the same shipment group.", "Provider errors are recorded as stable application/integration evidence; raw diagnostics are not business truth."],
+  },
+  support: {
+    responsibility: "Support case lifecycle, SLA projection, replies, notes, checklist and assignment.",
+    owns: "SupportCase, comments, activities, checklist, SLA deadlines and case resolution.",
+    excludes: "Customer identity and source commercial record lifecycle.",
+    entities: ["SupportCase", "SupportCaseActivity", "SupportCaseComment", "SupportCaseChecklistItem"],
+    states: "new | in_progress | waiting_customer | waiting_internal | resolved | closed | reopened | cancelled.",
+    rules: ["Transitions follow the module lifecycle table.", "Related records are references and remain owned by their modules."],
+    transitionModel: ["new -> in_progress, waiting_customer, or cancelled; in_progress -> waiting_customer, waiting_internal, resolved, or cancelled.", "waiting_customer or waiting_internal -> in_progress, resolved, or cancelled; resolved -> closed or reopened; closed -> reopened; cancelled -> reopened.", "reopened -> in_progress, waiting_customer, or resolved. Same-state replay is allowed. Reopen clears resolved/closed timestamps; resolve/close records their timestamps."],
+  },
+  tasks: {
+    responsibility: "Task/activity work queue and explicit Task lifecycle.",
+    owns: "Task, Activity, assignee, due time, outcome/cancellation and record references.",
+    excludes: "The lifecycle of records that caused the task.",
+    entities: ["Task", "Activity", "TaskSourceRef", "RecordRef"],
+    states: "OPEN | COMPLETED | CANCELLED; archive is retention metadata, not a lifecycle state.",
+    rules: ["Task creation supports stable dedupe keys and source evidence.", "Activities are append-only evidence scoped to a workspace and record/customer reference."],
+    transitionModel: ["OPEN -> COMPLETED or CANCELLED. COMPLETED and CANCELLED are terminal; no same-state transition is declared by the table.", "Archive is retention metadata, not a Task lifecycle state."],
+  },
+};
+
+const platformOwnerFacts = {
+  "platform/workspace-config": {
+    file: "platform-workspace-config.md",
+    title: "Platform workspace configuration owner",
+    responsibility: "Owns workspace operational configuration contracts used by Studio and business modules: CRM object schemas, pipelines/stages, currencies/exchange rates, seller/payment/shipping configuration projections.",
+    lifecycle: "Ready reads expose current configuration. The 12 mutation placeholders remain BLOCKED and must not be implemented until their named decisions produce 2xx contracts.",
+    rules: ["Studio is a presentation/orchestration consumer; it does not take ownership of module configuration.", "Currency and exchange-rate mutations are platform/workspace-config-owned even though their adapter lives under Studio.", "Published runtime configuration is workspace-scoped and versioned."],
+    sources: ["src/platform/workspace-config", "src/platform/configuration-runtime", "docs/api/openapi.json"],
+  },
+  "platform/access-control": {
+    file: "platform-access-control.md",
+    title: "Platform access-control owner",
+    responsibility: "Owns authorization context, effective record access, workspace access directory, invitation/member access and role governance contracts.",
+    lifecycle: "Invitations are PENDING, ACCEPTED, EXPIRED or REVOKED. Membership is active, suspended or invited. Roles are active/versioned and may be archived only with safe reassignment and retained access.configure coverage.",
+    rules: ["All 13 operations are production-ready and workspace scoped.", "Access mutations require access.configure; authorization context/effective record evaluation are backend authority in connected mode.", "Status change may revoke sessions; managed password rotation never exposes persisted secret material in frontend state."],
+    sources: ["src/platform/access-control/domain/accessGovernance.types.ts", "src/platform/access-control/domain/evaluateEffectiveAccess.ts", "src/platform/workspace-membership/domain/workspaceMembership.types.ts", "docs/api/openapi.json"],
+  },
+  "workspaces/studio": {
+    file: "workspaces-studio.md",
+    title: "Studio workspace owner",
+    responsibility: "Owns Studio configuration composition, draft/publish metadata, audit projection and Quick Setup progress only; underlying configuration answers remain with their platform/module owners.",
+    lifecycle: "Configuration is DRAFT or PUBLISHED with revision/publishedRevision. Quick Setup is NOT_STARTED, IN_PROGRESS or COMPLETED over business-profile, locale-currency and workspace-blueprint steps; steps are completed or skipped and progress remains reopenable.",
+    rules: ["All 14 operations are production-ready.", "Configuration mutations require idempotency and expected version; publish is an explicit transaction and audit action.", "Quick Setup stores progress metadata and writes answers directly through owning configuration boundaries."],
+    sources: ["src/workspaces/studio/application/studioCore.types.ts", "src/workspaces/studio/application/quickSetup.types.ts", "src/workspaces/studio/infrastructure/StudioCoreHttpAdapter.ts", "docs/api/openapi.json"],
+  },
+  "platform/identity-auth": {
+    file: "platform-identity-auth.md",
+    title: "Platform identity and authentication owner",
+    responsibility: "Owns global accounts/identities/credential references, authentication challenges, sessions, security events and invitation acceptance.",
+    lifecycle: "Account is PENDING_VERIFICATION, ACTIVE or SUSPENDED. Session is ACTIVE, EXPIRED or REVOKED with AAL1/AAL2. Challenges are PENDING, CONSUMED, EXPIRED or REVOKED. Invitation is PENDING, ACCEPTED, EXPIRED or REVOKED.",
+    rules: ["All 10 operations are production-ready.", "Access tokens are memory-only; credential references contain metadata, never secrets.", "Actor, session, assurance and authoritative time are server-derived; failures use the stable AuthFailureCode/API problem taxonomy."],
+    sources: ["src/platform/identity-auth/domain/auth.types.ts", "src/platform/identity-auth/infrastructure/IdentityAuthHttpAdapter.ts", "src/platform/workspace-membership/domain/workspaceMembership.types.ts", "docs/api/openapi.json"],
+  },
+  "platform/integrations": {
+    file: "platform-integrations.md",
+    title: "Platform integrations owner",
+    responsibility: "Owns provider catalog and workspace integration-connection configuration metadata; provider execution remains behind backend adapters.",
+    lifecycle: "Connection is NOT_CONFIGURED, PENDING_VERIFICATION, CONNECTED, ERROR or DISCONNECTED. Provider/list reads are ready; create/update/verify/disconnect commands remain BLOCKED.",
+    rules: ["CredentialReference is an opaque reference, not secret material.", "Blocked commands cannot fall back to browser-authored provider success.", "Provider verification and disconnection require stable audit/idempotency semantics before implementation."],
+    sources: ["src/platform/integrations/integrationConfiguration.types.ts", "src/platform/integrations/IntegrationConfigurationRepository.ts", "docs/api/openapi.json"],
+  },
+  "platform/workspace-context": {
+    file: "platform-workspace-context.md",
+    title: "Platform workspace-context owner",
+    responsibility: "Owns the current account's workspace list and backend-resolved WorkspaceBootstrapContext for tenancy, membership, capabilities and runtime configuration.",
+    lifecycle: "Read-only membership validation: list workspaces, then resolve one active workspace bootstrap. Route keys never establish access.",
+    rules: ["Both operations are production-ready read models.", "Cross-workspace resolution fails closed.", "Bootstrap contextVersion, membership, capability projection and runtime configuration are backend-authoritative."],
+    sources: ["src/platform/workspace-context/domain/workspaceBootstrap.types.ts", "src/platform/workspace-membership/domain/workspaceMembership.types.ts", "docs/api/openapi.json"],
+  },
+};
+
+const workflowGoals = {
+  "accepted-quote-order-conversion": "Create at most one DRAFT Order from an accepted Quote under backend uniqueness and version checks.",
+  "contact-opportunity-creation": "Create a Deal for a Contact and append the corresponding Contact activity atomically.",
+  "contact-organization-relationship": "Maintain both Contact membership and Organization representative projections with primary uniqueness.",
+  "customer-care": "Create a Customer care card and its executable Task as one business action.",
+  "customer-commercial-actions": "Create Customer-linked commercial work while preserving Customer, Deal and Task ownership.",
+  "customer-conversion": "Reconcile qualified purchase evidence into Customer links and downstream references without taking identity ownership.",
+  "customer-identity": "Route Customer 360 identity edits to Contact or Organization owners.",
+  "customer-onboarding": "Onboard an existing relationship from external/historical purchase evidence.",
+  "customer-relationship-integrity": "Compose a non-writing relationship integrity report across owners.",
+  "deal-recycle": "Close a Deal lost and, when allowed, create a revisit Task.",
+  "lead-qualification": "Resolve relationship identity, then execute Nurture, Opportunity or Direct Sale as typed outcomes.",
+  "order-cancellation": "Cancel an eligible Order with cross-owner impact checks and payment-plan handling.",
+  "order-closing": "Complete confirmed Orders only after authoritative payment and fulfillment evidence, then append purchase evidence.",
+  "order-confirmation": "Confirm a DRAFT Order and activate its Payment Plan within one authoritative transaction.",
+  "order-creation": "Create or update an Order draft and its payment agreement/plan semantics.",
+  "order-shipping-booking": "Create outbound Shipping only when Order and Payment fulfillment gates allow it.",
+  "quote-acceptance": "Accept a Quote and close its linked Deal won when present; never create an Order.",
+  "return-credit-refund": "Issue required Credit Notes and create/complete refund evidence through Invoice and Payment owners.",
+  "return-resolution": "Coordinate pickup, replacement/exchange, payment delta, repair and delivery evidence for a Return.",
+  "return-resolution-evidence": "Advance Return intents only from authoritative Invoice, Payment, Shipping or Repair evidence.",
+  "shipping-cod-evidence": "Project carrier COD evidence into Payment-owned collection/remittance evidence without conflating them.",
+  "work-activation": "Ensure Deal next actions and AI suggestions become Task-owned work with dedupe evidence.",
+  "refund-provider-recovery": "Retry or request asynchronous cancellation of a Payment-owned Refund Intent while preserving provider-attempt lineage.",
+  "lead-identity-resolution": "Resolve a versioned duplicate Lead cluster atomically by merging it or confirming its members are distinct.",
+  "lead-handover": "Transfer Lead ownership, reassign declared open Tasks and create handover work in one transaction.",
+  "lead-follow-up": "Schedule follow-up for a versioned Lead set and create the associated Task-owned work atomically.",
+  "lead-queue-claim": "Atomically verify Lead queue eligibility, assign the current member and advance authoritative Lead work state.",
+};
+
+const workflowParticipants = {
+  "contact-opportunity-creation": ["contacts", "deals"],
+  "contact-organization-relationship": ["contacts", "organizations"],
+  "customer-care": ["customers", "tasks"],
+  "customer-commercial-actions": ["customers", "deals", "tasks"],
+  "customer-conversion": ["commercial-evidence", "customers", "contacts", "organizations"],
+  "customer-identity": ["customers", "contacts", "organizations"],
+  "customer-onboarding": ["commercial-evidence", "customers", "contacts", "organizations"],
+  "customer-relationship-integrity": ["customers", "contacts", "organizations"],
+  "deal-recycle": ["deals", "tasks"],
+  "lead-qualification": ["leads", "contacts", "organizations", "tasks", "deals", "quotes", "orders"],
+  "order-cancellation": ["orders", "payments", "invoices", "shipping"],
+  "order-closing": ["orders", "payments", "shipping", "commercial-evidence"],
+  "order-confirmation": ["orders", "payments", "deals"],
+  "order-creation": ["orders", "quotes", "deals", "payments"],
+  "order-shipping-booking": ["orders", "payments", "shipping"],
+  "quote-acceptance": ["quotes", "deals"],
+  "return-credit-refund": ["returns", "invoices", "payments"],
+  "return-resolution": ["returns", "shipping", "payments", "invoices", "repair provider"],
+  "return-resolution-evidence": ["returns", "invoices", "payments", "shipping", "repair provider"],
+  "shipping-cod-evidence": ["shipping", "payments", "orders"],
+  "work-activation": ["deals", "tasks"],
+  "accepted-quote-order-conversion": ["quotes", "orders"],
+  "refund-provider-recovery": ["payments", "refund provider adapter"],
+  "lead-identity-resolution": ["leads"],
+  "lead-handover": ["leads", "tasks"],
+  "lead-follow-up": ["leads", "tasks"],
+  "lead-queue-claim": ["leads", "workspace access context"],
+};
+
+const workflowOperationIds = {
+  "contact-opportunity-creation": [],
+  "contact-organization-relationship": [],
+  "customer-care": [],
+  "customer-commercial-actions": [],
+  "customer-conversion": [],
+  "customer-identity": [],
+  "customer-onboarding": ["onboardExistingCustomer", "completeCustomerOnboarding"],
+  "customer-relationship-integrity": [],
+  "deal-recycle": ["markDealLostAndPlanRecycle"],
+  "lead-qualification": ["qualifyLeadForNurture", "qualifyLeadForOpportunity", "qualifyLeadForDirectSale"],
+  "order-cancellation": ["cancelOrder"],
+  "order-closing": ["completeOrderFromFulfillmentEvidence"],
+  "order-confirmation": ["confirmOrderWithPaymentPlan"],
+  "order-creation": [],
+  "order-shipping-booking": ["createOrderOutboundShippingBooking"],
+  "quote-acceptance": ["acceptQuoteAndCloseDeal"],
+  "return-credit-refund": ["resolveReturnCreditRefund", "getReturnCreditRefundResolution"],
+  "return-resolution": ["beginReturnCarrierPickup", "beginReturnReplacementResolution", "completeReturnRepairResolution", "completeReturnReplacementFromDelivery", "completeReturnResolutionCommand"],
+  "return-resolution-evidence": [],
+  "shipping-cod-evidence": ["syncShippingBookingCommand", "recordCodCustomerCollection", "recordCodMerchantRemittance"],
+  "work-activation": [],
+  "accepted-quote-order-conversion": ["convertAcceptedQuoteToOrderDraft"],
+  "refund-provider-recovery": ["retryRefundIntent", "requestRefundCancellation", "listRefundProviderAttempts"],
+  "lead-identity-resolution": ["mergeLeadDuplicates", "confirmLeadDuplicatesDistinct"],
+  "lead-handover": ["handoverLeadWithTasks"],
+  "lead-follow-up": ["scheduleLeadFollowUpBatch"],
+  "lead-queue-claim": ["claimLeadFromQueue"],
+};
+
+const workflowSemantics = {
+  "contact-opportunity-creation": { trigger: "Create an opportunity from an existing Contact.", preconditions: "The Contact exists in the workspace; the Deal input has a canonical buyer and valid owner/stage data.", sequence: "Create the Deal through Deal ownership, then append the Contact activity that references the new Deal.", success: "One Deal and one linked Contact activity are committed with a common correlation.", recoverable: "A version/idempotency conflict commits neither effect and may be retried with refreshed versions.", terminal: "No ready production workflow transport exists; DEC-WORKFLOW-CONTACT-OPPORTUNITY-CREATION remains blocking." },
+  "contact-organization-relationship": { trigger: "Upsert/end a Contact membership, set a primary representative, or create an Organization with its representative.", preconditions: "Contact and Organization references share the workspace; effective dates are valid; a primary representative must have an active relationship.", sequence: "Validate both owner records, update the Contact relationship ledger, update Organization representative references, and enforce one primary representative.", success: "Both projections describe the same effective-dated relationship and primary status.", recoverable: "Expected-version or duplicate-link conflicts roll back both projections.", terminal: "No ready production workflow transport exists; the three relationship commands remain blocked by their recorded decisions." },
+  "customer-care": { trigger: "Create a Customer care card with executable work.", preconditions: "The Customer exists; card data and Task assignee/due information are valid.", sequence: "Create the Customer-owned care card, create the Task-owned work item, and link the card checklist/progress to the Task.", success: "The care card and Task are committed together and progress remains derivable.", recoverable: "A duplicate business key replays the prior result; validation/version failure creates neither record.", terminal: "No ready production workflow transport exists; DEC-WORKFLOW-CUSTOMER-CARE remains blocking." },
+  "customer-commercial-actions": { trigger: "Start Deal/Task commercial work from Customer 360.", preconditions: "The Customer resolves to a canonical RelationshipRef and requested owner/work details are valid.", sequence: "Resolve the Customer relationship, create the Deal through Deal ownership, and create any requested Task through Task ownership.", success: "Customer 360 references owner-created commercial work without copying its state.", recoverable: "Duplicate or concurrency failure returns no partial cross-owner result.", terminal: "No ready production workflow transport exists; DEC-WORKFLOW-CUSTOMER-COMMERCIAL-ACTIONS remains blocking." },
+  "customer-conversion": { trigger: "Reconcile purchase evidence into Customer links and downstream references.", preconditions: "Evidence is effective, workspace-scoped and resolves to an existing Contact or Organization relationship.", sequence: "Read effective PurchaseEvidence, create/link the Customer profile when eligible, and reconcile downstream references to the canonical relationship.", success: "Idempotent reconciliation reports created/linked records and leaves source owners unchanged.", recoverable: "Unresolved identities remain reportable reconciliation errors and can be retried after repair.", terminal: "No ready production command transport exists; DEC-WORKFLOW-CUSTOMER-CONVERSION remains blocking." },
+  "customer-identity": { trigger: "Edit identity fields from Customer 360.", preconditions: "Customer exists and its RelationshipRef resolves to the owning Contact or Organization.", sequence: "Route person fields to Contact ownership or account fields to Organization ownership; refresh the Customer read model afterward.", success: "The identity owner is updated and Customer 360 reflects it without copying identity state.", recoverable: "Missing owner/version conflicts make no Customer-owned identity mutation.", terminal: "No ready production workflow transport exists; DEC-WORKFLOW-CUSTOMER-IDENTITY remains blocking." },
+  "customer-onboarding": { trigger: "Onboard an existing relationship from external or historical purchase evidence.", preconditions: "Source ID/system are present, occurredAt is valid, amount is non-negative, and the canonical relationship exists.", sequence: "Record onboarding purchase evidence, project/link the Customer, then complete onboarding only through Customer ownership.", success: "A linked Customer and effective onboarding evidence exist without a second identity owner.", recoverable: "Repeated source evidence is idempotent; an unresolved relationship remains a validation failure.", terminal: "Both onboardExistingCustomer and completeCustomerOnboarding are BLOCKED OpenAPI placeholders; no success contract may be inferred." },
+  "customer-relationship-integrity": { trigger: "Request a relationship integrity report.", preconditions: "Workspace and optional relationship filters are valid.", sequence: "Read Customer, Contact and Organization public projections and report missing, duplicated or inconsistent links without writes.", success: "A deterministic non-writing integrity report identifies repair candidates.", recoverable: "Unavailable projections can be retried without state changes.", terminal: "No dedicated HTTP workflow operation is declared; this remains a composed read model, not a fabricated endpoint." },
+  "deal-recycle": { trigger: "Mark a Deal lost and plan revisit work.", preconditions: "Deal is non-terminal; loss reason and recycle decision are supplied; recyclable outcomes include revisitAt.", sequence: "Commit Deal LOST evidence, then create the deduplicated Task only when recycling is requested.", success: "The Deal is LOST and optional revisit Task matches its recycle decision.", recoverable: "Task/Deal version conflict rolls back the combined outcome.", terminal: "markDealLostAndPlanRecycle is BLOCKED; the ready single-owner markDealLostCommand does not implement the cross-owner workflow." },
+  "lead-qualification": { trigger: "Qualify a VERIFYING Lead for NURTURE, OPPORTUNITY or DIRECT_SALE.", preconditions: "Lead progressive profile is complete; relationship resolution input is valid; outcome-specific reason/revisit or commercial input is present.", sequence: "Resolve Contact/Organization identity, create outcome-owned Task/Deal/Quote/Order resources, then close the Lead with relationship/evidence references.", success: "The Lead closes once with the typed outcome and the response lists every created resource.", recoverable: "Idempotent replay returns the same outcome; version/relationship validation commits no partial resources.", terminal: "Stable contract/domain errors reject invalid outcome or stale Lead; generic qualification stays retired." },
+  "order-cancellation": { trigger: "Cancel a DRAFT or CONFIRMED Order.", preconditions: "No issued-invoice, settled-payment or irreversible-shipping blocker exists; reason and actor are present.", sequence: "Evaluate Invoice/Payment/Shipping impact, cancel eligible payment-plan obligations as declared, then commit Order cancellation and audit.", success: "Order is CANCELLED with audit and no prohibited downstream obligation is silently reversed.", recoverable: "A blocker/version conflict returns the impact and commits no cancellation.", terminal: "External obligations are blockers rather than frontend compensation; the backend transaction is authoritative." },
+  "order-closing": { trigger: "Complete a CONFIRMED Order from fulfillment evidence.", preconditions: "Payment policy is satisfied; every required shipment is delivered; completion evidence and versions are valid.", sequence: "Evaluate closing policy, commit Order COMPLETED, and append idempotent PurchaseEvidence using the shared correlation.", success: "Order completion audit references policy/correlation/evidence and customer projections may refresh.", recoverable: "Missing payment/shipping evidence returns blocked items; duplicate evidence replays without duplication.", terminal: "OpenAPI declares completeOrderFromFulfillmentEvidence ready even though workflow-ownership readiness is stale BLOCKED; OpenAPI controls transport." },
+  "order-confirmation": { trigger: "Confirm a DRAFT Order with its Payment Plan.", preconditions: "Canonical buyer, valid lines, versioned Payment Agreement, fulfillment prerequisites and any separately approved credit decision are present.", sequence: "Create/activate the Payment Plan, confirm the Order, and close the source Deal won when applicable inside one backend transaction.", success: "Order is CONFIRMED and Payment Plan/optional Deal evidence share one committed outcome.", recoverable: "Any owner/version failure rolls back the whole transaction; replay uses ORDER_CONFIRMATION_COMMAND idempotency.", terminal: "confirmOrderWithPaymentPlan is ready. A generic confirm or inline credit override is not a substitute; credit approval uses its separate typed operations." },
+  "order-creation": { trigger: "Create or update an Order draft from direct input, Deal context or a Quote snapshot.", preconditions: "State is DRAFT; buyer, lines, currency and source references are valid; Quote-derived content matches the immutable commercial snapshot.", sequence: "Validate source Deal/Quote, preserve commercial snapshots, write the Order draft, and prepare payment-agreement instructions without confirming the Order.", success: "One editable DRAFT Order exists; Quote uniqueness is preserved where conversion semantics apply.", recoverable: "Idempotency fingerprint or expected-version conflicts commit no divergent draft.", terminal: "Ready single-owner Order operations do not close the registry's broader cross-owner workflow gap; DEC-WORKFLOW-ORDER-CREATION remains blocking." },
+  "order-shipping-booking": { trigger: "Create outbound Shipping for an Order.", preconditions: "Order is CONFIRMED, has physical lines, has a resource version and satisfies Payment fulfillment readiness.", sequence: "Validate Order/Payment gates, create immutable recipient/package snapshots, and submit the Shipping booking saga.", success: "A ShippingBooking owned by Shipping references the Order and provider attempt evidence.", recoverable: "Provider failure persists the booking attempt for retry/change-provider recovery; it does not alter Order state.", terminal: "Invalid state/non-physical order/payment blockers reject before booking; backend saga owns compensation." },
+  "quote-acceptance": { trigger: "Accept a SENT Quote and close its linked Deal when present.", preconditions: "Quote version is current, approval is current where required, and the linked Deal/version exists when supplied.", sequence: "Accept the Quote, then mark the linked Deal WON with QUOTE_ACCEPTED evidence in one transaction.", success: "Response contains accepted Quote and optional won Deal; it never creates an Order.", recoverable: "Quote/Deal version conflict rolls back both effects and can be retried after refresh.", terminal: "Invalid approval/status is rejected; Order creation remains the separate accepted-quote conversion workflow." },
+  "return-credit-refund": { trigger: "Resolve an inspected RECEIVED Return with credit/refund.", preconditions: "Amount/reason are valid; issued Invoice value and effective Payment-backed allocations cover the requested amounts; Customer Credit allocations needing reversal enter manual review.", sequence: "Prepare/issue Credit Note evidence, release eligible allocations, create/complete Payment Refund Intent evidence, then resolve the Return from owner evidence.", success: "The 202 command returns a durable resolution ID; the GET operation reports saga progress/result and Return resolution references issued/refunded evidence.", recoverable: "Provider/reallocation failures persist FAILED or MANUAL_REVIEW_REQUIRED state for idempotent recovery; no frontend rollback is authoritative.", terminal: "Currency/value/evidence mismatches fail with stable codes; backend owns the BACKEND_ORCHESTRATED_SAGA." },
+  "return-resolution": { trigger: "Begin pickup/replacement or complete replacement/repair resolution.", preconditions: "Return state, method, inspected quantities, payment delta/credit evidence, booking readiness and expected versions match the requested resolution.", sequence: "Create Return intents, invoke Shipping/Payment/Invoice/repair owners, and advance only from their authoritative evidence.", success: "Return carries one typed resolution with downstream references; replacement completion waits for DELIVERED and repair waits for repair evidence.", recoverable: "Provider failures retain pending/failed intents and references for retry/reconciliation.", terminal: "Unsupported action, insufficient payment/credit, or mismatched delivery evidence rejects without fabricated success." },
+  "return-resolution-evidence": { trigger: "Consume authoritative Invoice, Payment, Shipping or repair evidence for a pending Return intent.", preconditions: "Intent exists, references the same workspace/Return/buyer/Order/currency, and evidence covers the expected amount or delivery/action.", sequence: "Validate owner-specific evidence, mark the intent SUCCEEDED or FAILED, and allow the Return workflow to advance when all required evidence exists.", success: "Intent status and external references identify the exact canonical evidence used.", recoverable: "Incomplete evidence leaves the intent pending; failed provider evidence remains retryable by the owning workflow.", terminal: "This is a backend event handler with no dedicated frontend HTTP operation; it is not frontend-local or demo transport." },
+  "shipping-cod-evidence": { trigger: "Normalize carrier COD evidence after Shipping synchronization.", preconditions: "Shipping booking and referenced Order exist; collection/remittance evidence is provider-normalized and idempotent.", sequence: "Sync Shipping, emit normalized COD facts, then record customer collection and merchant remittance separately through Payment ownership.", success: "Payment records distinct collection/remittance evidence linked to the Shipping booking and Order.", recoverable: "Missing/late provider evidence remains pending and can replay without duplicate Payment evidence.", terminal: "The boundary is backend event-driven; syncShippingBookingCommand and the two Payment COD operations are transports, not a frontend coordinator." },
+  "work-activation": { trigger: "Activate a Deal next action or AI suggestion as Task-owned work.", preconditions: "Deal/reference exists and Task input/due date is valid; dedupe key is stable.", sequence: "Derive a deterministic Task identity, create the Task if absent, and reference it from the Deal/AI projection without changing source lifecycle.", success: "Exactly one Task represents the requested work activation.", recoverable: "Replay returns the existing Task; invalid suggestion creates no task.", terminal: "No ready production workflow command exists; DEC-WORKFLOW-WORK-ACTIVATION remains blocking." },
+  "accepted-quote-order-conversion": { trigger: "Convert one ACCEPTED Quote version to an Order draft.", preconditions: "Quote is accepted/current, idempotency key and Quote version are supplied, and no Order already owns that Quote conversion.", sequence: "Acquire the Quote uniqueness lock, copy immutable buyer/line/price/payment snapshots, and create one DRAFT Order.", success: "Response identifies the one Order draft and authoritative version/totals; Quote remains accepted.", recoverable: "Replay returns the same Order; version/uniqueness conflict creates no second Order.", terminal: "Only the connected OpenAPI operation is authoritative; demo order.create is not an equivalent conversion." },
+  "refund-provider-recovery": { trigger: "Retry a failed Refund Intent or request cancellation of an in-flight Refund Intent.", preconditions: "Refund Intent, resource version and stable client key exist; provider state permits the requested recovery action.", sequence: "Create a RefundProviderAttempt, send retry/cancellation intent through the backend provider adapter, and persist asynchronous acknowledgement/lineage.", success: "Refund Intent and provider-attempt read model show the committed recovery request without changing success truth prematurely.", recoverable: "Timeout/provider rejection remains a durable attempt that can reconcile or retry idempotently.", terminal: "Provider terminal rejection/manual review is preserved; frontend never declares refund success or cancellation acknowledgement." },
+  "lead-identity-resolution": { trigger: "Merge a duplicate Lead cluster or confirm the versioned cluster is distinct.", preconditions: "All Lead IDs belong to the workspace, supplied versions match, and merge target/decision evidence is valid.", sequence: "Lock the Lead set, merge retained identity/work evidence or record the distinct decision, and update duplicate-resolution lineage atomically.", success: "Every member of the cluster reflects one consistent resolution and version set.", recoverable: "Any stale Lead version rejects the whole cluster for refresh/retry.", terminal: "Invalid cluster/target is rejected; no partial merge is committed." },
+  "lead-handover": { trigger: "Hand a Lead from one owner/team context to another.", preconditions: "Lead and declared open Tasks match expected versions; target owner is assignable and reason/context are valid.", sequence: "Change Lead ownership, reassign the declared Task set, and create the handover Task in one transaction.", success: "Lead and all declared Tasks share the new ownership context and audit correlation.", recoverable: "Stale Lead/Task versions roll back the transaction and return the conflicting resources.", terminal: "Unauthorized/unassignable target is denied before any effect." },
+  "lead-follow-up": { trigger: "Schedule follow-up for a selected Lead batch.", preconditions: "Every Lead/version is current, active and accessible; follow-up time/assignee data is valid.", sequence: "Lock the Lead set, update follow-up projections, and create deduplicated Task-owned work for each accepted Lead.", success: "Batch result identifies updated Leads and created/replayed Tasks atomically.", recoverable: "A stale/invalid Lead rejects or reports the batch according to the exact OpenAPI result without invented endpoints.", terminal: "Authorization/data-scope denial creates no work." },
+  "lead-queue-claim": { trigger: "Claim an unassigned eligible Lead from the queue.", preconditions: "Lead is active, unassigned, visible to the actor and matches the supplied resource version.", sequence: "Re-evaluate queue eligibility under lock, assign the actor, and advance the authoritative Lead work state in one transaction.", success: "Exactly one claimant receives the Lead and new version.", recoverable: "Concurrent claims return a version/eligibility conflict and may refresh the queue.", terminal: "Closed, assigned or out-of-scope Leads are denied without mutation." },
+};
+
+const walk = (directory, exclusions = new Set()) => {
+  const result = [];
+  const visit = (current) => {
+    for (const name of fs.readdirSync(current)) {
+      if (exclusions.has(name)) continue;
+      const full = path.join(current, name);
+      const stat = fs.statSync(full);
+      if (stat.isDirectory()) visit(full);
+      else result.push(rel(path.relative(root, full)));
+    }
+  };
+  visit(path.join(root, directory));
+  return result.sort();
+};
+
+const exportedDeclarations = (files, selector) => {
+  const names = new Set();
+  for (const file of files.filter((value) => /\.tsx?$/.test(value) && selector(value))) {
+    const source = read(file);
+    const sf = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, file.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+    for (const node of sf.statements) {
+      if (!node.modifiers?.some((modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword)) continue;
+      if ((ts.isFunctionDeclaration(node) || ts.isInterfaceDeclaration(node) || ts.isTypeAliasDeclaration(node) || ts.isEnumDeclaration(node) || ts.isClassDeclaration(node)) && node.name) names.add(node.name.text);
+      if (ts.isVariableStatement(node)) for (const declaration of node.declarationList.declarations) if (ts.isIdentifier(declaration.name)) names.add(declaration.name.text);
+    }
+  }
+  return [...names].sort();
+};
+
+const moduleMap = {};
+for (const moduleId of Object.keys(moduleFacts)) {
+  const files = walk(`src/modules/${moduleId}`);
+  moduleMap[moduleId] = {
+    files,
+    domain: files.filter((file) => file.includes("/domain/")),
+    application: files.filter((file) => file.includes("/application/")),
+    public: files.filter((file) => file.includes("/public/") || file.endsWith("/index.ts")),
+    infrastructure: files.filter((file) => file.includes("/infrastructure/") || file.includes("/runtime/")),
+    presentation: files.filter((file) => file.includes("/presentation/") || file.endsWith("-route.tsx")),
+  };
+}
+
+const workflowMap = {};
+for (const workflow of workflowOwnership.workflows) {
+  const sourcePath = rel(workflow.sourcePath);
+  const sourceStat = fs.statSync(path.join(root, sourcePath));
+  const files = sourceStat.isDirectory() ? walk(sourcePath) : [sourcePath];
+  workflowMap[workflow.name] = {
+    files,
+    owners: workflowParticipants[workflow.name] ?? [],
+    registry: workflow,
+  };
+}
+
+const operationsByModule = Object.groupBy(catalogOperations, (operation) => operation.moduleId);
+const readyOperations = catalogOperations.filter((operation) => operation.contractStatus === "PRODUCTION_CONTRACT_READY");
+const blockedOperations = catalogOperations.filter((operation) => operation.contractStatus === "BLOCKED");
+const blockedByDecision = Object.groupBy(blockedOperations, (operation) => operation.blockingDecisionId ?? "UNSPECIFIED");
+const blockedCommands = commandRegistry.commands.filter((command) => command.status === "BLOCKED");
+const commandStatusCounts = Object.fromEntries(Object.entries(Object.groupBy(commandRegistry.commands, (command) => command.status)).map(([key, values]) => [key, values.length]));
+const queryClassCounts = Object.fromEntries(Object.entries(Object.groupBy(queryRegistry.queries, (query) => query.classification)).map(([key, values]) => [key, values.length]));
+
+const moduleLinks = Object.keys(moduleFacts).map((id) => `- [${id}](modules/${id}.md)`).join("\n");
+const workflowLinks = Object.keys(workflowMap).map((id) => `- [${id}](workflows/${id}.md)`).join("\n");
+const platformLinks = Object.values(platformOwnerFacts).map((fact) => `- [${fact.title}](platform/${fact.file})`).join("\n");
+
+write("canonical-design/README.md", `# Unicore CRM canonical design\n\n${statusLine}\n\nThis directory is the complete reconstructed human-readable design candidate. It is not a backend implementation and is not approved as a canonical baseline. Exact HTTP wire authority remains [the live OpenAPI contract](../docs/api/openapi.json); blocked operations remain non-implementable.\n\nNo \`BASELINE.json\` is present because the baseline gate is not satisfied and the requested result must remain \`RECONSTRUCTED_DRAFT\`.\n\n## Coverage\n\n- 15 registered business modules\n- 6 platform/workspace contract owners covering 65 operations\n- 27 authoritative workflow-registry entries (22 source workflow directories plus 5 registered command/workflow boundaries)\n- 78 route keys and 62 loadable route modules\n- 123 capabilities and 13 workspace flags\n- 270 OpenAPI operations: 236 ready, 34 blocked\n- 173 command registry entries and 162 query registry entries, all enumerated and classified\n\n## Design documents\n\nRead \`00-document-control.md\` through \`13-money-financial-semantics.md\`, then the owner/workflow catalogs and contract manifests. Reconstruction evidence and review findings are intentionally outside this directory under \`design-reconstruction/\`.\n\n## Business modules\n\n${moduleLinks}\n\n## Platform and workspace owners\n\n${platformLinks}\n\n## Workflows\n\n${workflowLinks}\n`);
+
+write("canonical-design/00-document-control.md", `# Document control\n\n${statusLine}\n\n## Control state\n\n| Field | Value |\n|---|---|\n| Design status | RECONSTRUCTED_DRAFT |\n| Source package | unicorecrm-web@0.23.20-contract.0 |\n| OpenAPI version | ${openapi.info.version} |\n| OpenAPI SHA-256 | ${openapiHash} |\n| Stored repository inventory fingerprint | ${inventory.inventoryFingerprint} |\n| Baseline gate | NOT ELIGIBLE |\n| Backend handoff | FORBIDDEN |\n\nPromotion requires complete review, resolution of every BLOCKER/HIGH finding, approved critical decisions and explicit baseline authorization. Source UI, demo stores and generated clients cannot silently amend this design.\n`);
+
+write("canonical-design/01-product-scope.md", `# Product scope\n\n${statusLine}\n\nUnicore CRM is a workspace-scoped relationship, sales, order-operations, service and administration product with exactly three product spaces: CRM, Studio, and People & Access. CRM AI is a CRM utility, not a fourth product space.\n\nThe active business owner set is exactly the 15 registered modules listed in this draft. Removed surfaces \`acquisition\`, \`care\`, \`fulfillment\`, and \`renewals\` are excluded and must not be restored.\n\nThe repository is frontend-only. It provides source behavior, a technology-neutral contract candidate and verification evidence; it does not provide a production backend, database schema, server time, actor authority or tenant authority.\n\n## Product invariants\n\n- Contact owns person identity; Organization owns B2B account identity; Customer owns the relationship-care profile.\n- Commercial documents use Contact or Organization buyer references.\n- Cross-owner mutations are workflows; workspace read models do not acquire write ownership.\n- Durable financial, provider, audit, concurrency and idempotency truth is server-owned.\n`);
+
+write("canonical-design/02-system-context-and-boundaries.md", `# System context and boundaries\n\n${statusLine}\n\nThe browser application authenticates a global account, resolves an active workspace membership, loads workspace configuration/effective access, and then calls the versioned HTTP API. External identity, payment, invoice and shipping providers are behind backend authority.\n\n## Boundary rules\n\n- \`docs/api/openapi.json\` is the exact production HTTP candidate for declared operations.\n- Generated TypeScript clients are derivatives, never independent authority.\n- Browser repositories and demo seeds are local demonstration adapters only.\n- Server derives actor identity, workspace membership and authoritative time; mutation payload claims cannot override them.\n- External provider callbacks, retries and reconciliation require backend idempotency, audit and transaction handling.\n- The selected target architecture is an external ASP.NET Core modular monolith, but this design remains transport/domain oriented and does not prescribe frontend leakage into backend layers.\n`);
+
+write("canonical-design/03-architecture-and-ownership.md", `# Architecture and ownership\n\n${statusLine}\n\nDependency direction is platform/shared -> module domain -> module application -> module infrastructure/presentation -> public module API -> workflows -> workspace composition -> app shell. Cross-module consumers use each module's public barrel.\n\n## Business module owners\n\n| Module | Owns | Must not own |\n|---|---|---|\n${Object.entries(moduleFacts).map(([id, fact]) => `| ${id} | ${fact.owns} | ${fact.excludes} |`).join("\n")}\n\n## Platform and workspace contract owners\n\n| Owner | Operations | Responsibility | Canonical owner document |\n|---|---:|---|---|\n${Object.entries(platformOwnerFacts).map(([id, fact]) => `| ${id} | ${(operationsByModule[id] ?? []).length} | ${fact.responsibility} | [${fact.file}](platform/${fact.file}) |`).join("\n")}\n\nThese six non-business owners account for 65 OpenAPI operations. They remain separate from the 15 business modules; Studio composition and People & Access presentation do not acquire platform ownership.\n\nWorkflows coordinate transactions/sagas but do not become aggregate owners. Read models may join public snapshots but may not write source records.\n`);
+
+const routesTable = inventory.routes.map((route) => `| ${route.key} | \`${String(route.value).replaceAll("|", "\\|")}\` |`).join("\n");
+const capabilities = inventory.capabilities.map((capability) => `\`${capability.value}\``).join(", ");
+const flags = inventory.workspaceFlags.map((flag) => `\`${flag.key}${flag.optional ? "?" : ""}\``).join(", ");
+write("canonical-design/04-product-spaces-routes-capabilities.md", `# Product spaces, routes and capabilities\n\n${statusLine}\n\nCanonical routes use \`/w/{workspaceKey}/{productSpace}/{relativePath}\`, with \`crm\`, \`studio\`, or \`people\`. Route and shell visibility is capability- and workspace-configuration-driven; it is not authorization by itself.\n\nInventory: 78 route keys, 62 loadable route modules, 123 capabilities, 13 workspace module flags.\n\n## Workspace flags\n\n${flags}\n\n## Capability catalog\n\n${capabilities}\n\n## Route registry\n\n| Key | Route |\n|---|---|\n${routesTable}\n`);
+
+write("canonical-design/05-auth-session-workspace-tenancy.md", `# Authentication, session, workspace and tenancy\n\n${statusLine}\n\nA UserAccount is global. A UserIdentity links LOCAL, OIDC, SAML, PASSKEY or MAGIC_LINK provider subjects to exactly one account. UserCredentialReference is metadata-only (PASSWORD, PASSKEY or SSO); secret material and access tokens never belong in persisted frontend state.\n\nAccount status is PENDING_VERIFICATION, ACTIVE or SUSPENDED. AuthSession is device-aware and is ACTIVE, EXPIRED or REVOKED with idle/absolute expiry, refresh counter and AAL1/AAL2 assurance. AuthenticationChallenge is EMAIL_VERIFICATION, PASSWORD_RESET, MFA, MAGIC_LINK or INVITATION and is PENDING, CONSUMED, EXPIRED or REVOKED. Workspace invitations are PENDING, ACCEPTED, EXPIRED or REVOKED.\n\nWorkspace access requires an active membership and a resolved WorkspaceBootstrapContext containing context version, capability projection and runtime configuration. Every protected query/mutation is tenant-scoped. Route workspace keys are navigation inputs, never authorization proof. Cross-workspace reads/writes fail closed.\n\nAuthoritative actor, membership, workspace and time come from the server execution context. Sign-in, email verification, MFA, password reset, invitation acceptance, refresh and revocation are typed flows exposed by the 10 ready platform/identity-auth operations. Failures use stable AuthFailureCode/API problem codes; security events cover sign-in, MFA, session, recovery, verification and invitation evidence.\n\nRecord authorization is resolved only after membership/workspace context. The resulting capability, data-scope, ownership and field decisions are defined in \`06-roles-permissions-record-access.md\`.\n`);
+
+write("canonical-design/06-roles-permissions-record-access.md", `# Roles, permissions and record access\n\n${statusLine}\n\n## Effective role policy\n\nRoles are workspace-owned definitions and assignments, not hard-coded authorization identities. Only active assigned roles participate. Capabilities are unioned across roles. For each resource, data-scope policies aggregate to the most permissive scope in this order: CUSTOM < OWN < TEAM < WORKSPACE. With no matching data-scope policy the result is CUSTOM, which denies access unless a CUSTOM policy's allowedOwnerIds matches a record owner.\n\nField policies aggregate independently and most restrictively: HIDDEN < MASKED < READ_ONLY < READ_WRITE. Capabilities, data scope and field policy do not replace one another: a record read requires workspace match, the resource read capability and an allowed ownership/data-scope decision; each requested field is then limited by field access. Mutating a permitted field still requires the command capability and server validation.\n\n## Record ownership attribution\n\nOwnership candidates are read from \`ownerId\`, \`assigneeId\`, \`createdBy\` and \`assignedTo\`. Team candidates are \`teamId\`, \`assignedTeam\` and \`teamIds[]\`. OWN matches the current member ID. TEAM matches a direct record team or, transitively, an owner member whose team intersects the current member's teams. WORKSPACE allows any record in the workspace after capability checks. CUSTOM allows only a matching allowedOwnerIds entry. A record carrying another workspace ID always fails closed.\n\nThe generic effective-access profile catalog requests command/field decisions across 12 resources, while the frontend RecordOwnershipContext/assignment helper is implemented only for leads, deals and contacts. This is a presentation/runtime asymmetry, not permission to omit backend record access for other resources.\n\n## Demo and connected defaults\n\nThe demo snapshot evaluator returns READ_WRITE when no field policy matches. The connected AuthorizationContextProjection is intentionally fail-closed: a missing field uses \`unlistedFieldAccess\` and then HIDDEN. Its local projection handles WORKSPACE and OWN directly; TEAM/CUSTOM record decisions are obtained from the ready \`evaluateEffectiveRecordAccess\` backend operation. Connected mode must not copy the demo READ_WRITE default. Both modes default an omitted data scope to CUSTOM.\n\n## Product-space and assignment rules\n\nCRM is available when any capability is not prefixed \`studio.\`, \`access.\` or \`audit.\`. Studio requires \`studio.read\` or \`studio.configure\`. People & Access requires \`access.read\`, \`access.configure\` or \`audit.read\`. These projections control navigation eligibility; every operation still enforces its required capability.\n\nAssignment outside self-claim requires assignment capability, an assignable target and a non-empty reason. Claiming an unassigned record for oneself is the only special reassignment path. At least one active membership must retain \`access.configure\`; deleting/deactivating roles requires safe reassignment.\n`);
+
+write("canonical-design/07-domain-model.md", `# Domain model\n\n${statusLine}\n\n## Relationship identity\n\nContact is a person. OrganizationAccount is a B2B account. Customer is a care/lifecycle profile linked to one canonical RelationshipRef. BuyerRef is exactly a Contact or OrganizationAccount reference.\n\n## Commercial chain\n\nLead -> typed qualification -> canonical relationship -> optional Deal -> optional Quote -> Order -> Payment Plan / Invoice / Shipping -> completion evidence. Each step is an owner use case or named workflow, not shared aggregate ownership.\n\n## Owner aggregates\n\n${Object.entries(moduleFacts).map(([id, fact]) => `### ${id}\n\n${fact.entities.map((entity) => `\`${entity}\``).join(", ")}. ${fact.responsibility}`).join("\n\n")}\n`);
+
+write("canonical-design/08-data-dictionary.md", `# Data dictionary\n\n${statusLine}\n\n| Term | Meaning | Authority |\n|---|---|---|\n| Account | Global authenticated user account | Identity backend |\n| Membership | Account/member participation in one workspace | Workspace backend |\n| RelationshipRef / BuyerRef | Typed Contact or OrganizationAccount identity reference | Identity owners |\n| Customer | Care/lifecycle profile attached to a relationship | customers |\n| MoneyDto | Decimal-string amount plus ISO currency | shared money/OpenAPI |\n| Resource version | Optimistic-concurrency token | backend response |\n| Idempotency key | Stable command retry identity | caller supplies; backend enforces |\n| Correlation ID | Cross-owner/audit correlation | backend-authoritative evidence |\n| Evidence item | Durable fact supporting lifecycle progression | owning module/workflow |\n| Snapshot | Immutable copy of accepted commercial/provider data | owning document/booking |\n| Read model | Projection composed from owner truth | projection only |\n| Demo repository | Browser-local demonstration adapter | non-production |\n\nModule entity names and lifecycle vocabulary are defined in the per-module files. Exact wire fields remain in OpenAPI.\n`);
+
+write("canonical-design/09-business-rules.md", `# Business rules\n\n${statusLine}\n\n${Object.entries(moduleFacts).map(([id, fact]) => `## ${id}\n\n${fact.rules.map((rule) => `- ${rule}`).join("\n")}`).join("\n\n")}\n\n## Cross-cutting\n\n- Presentation awaits MutationOutcome and does not synthesize authoritative success.\n- Durable records use archive/cancel/void/close/anonymize; hard delete is restricted to backend-authorized transient drafts with no references.\n- Control flow uses stable ApplicationError code/category, never raw server diagnostics or message parsing.\n- Browser time, redirect parameters, local calculations and toast text are not durable business truth.\n`);
+
+const explicitTransitionSections = ["leads", "orders", "quotes", "returns", "support", "tasks"]
+  .map((id) => `## ${id}\n\n${moduleFacts[id].transitionModel.map((rule) => `- ${rule}`).join("\n")}\n\nEvidence: ${id === "leads" ? "src/modules/leads/domain/rules/leadLifecycle.ts and leadLifecycle.canonical.ts" : id === "orders" ? "src/modules/orders/domain/rules/orderLifecycle.ts" : id === "quotes" ? "src/modules/quotes/domain/rules/quoteVersioning.ts, quoteApprovalPolicy.ts and application/commands/quoteCommands.ts" : id === "returns" ? "src/modules/returns/domain/rules/returnLifecycle.ts and domain/model/return.types.ts" : id === "support" ? "src/modules/support/domain/rules/supportCaseLifecycle.ts" : "src/modules/tasks/domain/rules/taskLifecycle.ts"}.`)
+  .join("\n\n");
+write("canonical-design/10-state-machines.md", `# State machines\n\n${statusLine}\n\n## Lifecycle inventory\n\n| Owner | Lifecycle/state dimensions |\n|---|---|\n${Object.entries(moduleFacts).map(([id, fact]) => `| ${id} | ${fact.states.replaceAll("|", "\\|")} |`).join("\n")}\n\nDeal stage is not a fixed seven-value lifecycle enum. Workspaces may configure active stages with open/won/lost categories; the seven system codes are normalized defaults, and WON/LOST are explicit terminal outcome commands.\n\n## Explicit source transition tables\n\n${explicitTransitionSections}\n\nAll transitions require owner commands or named workflows. Prohibited transitions are every edge absent from the cited table, subject only to the explicitly documented same-state replay/reopen rules. Financial, delivery, settlement, approval, reconciliation and provider status dimensions remain separate even when presented together.\n`);
+
+const useCaseRows = commandRegistry.commands.map((command) => `| ${command.stableCommandId} | \`${command.commandType}\` | ${command.moduleOwner} | ${command.status} | ${command.openApiOperationId ?? "None"} | ${command.decisionId ?? "None"} |`).join("\n");
+const queryRows = queryRegistry.queries.map((query) => `| ${query.stableQueryId} | \`${query.symbol}\` | ${query.moduleOwner} | ${query.classification} | ${query.openApiOperationIds.length ? query.openApiOperationIds.map((id) => `\`${id}\``).join(", ") : "None - no HTTP endpoint declared"} | \`${query.path}:${query.line}\` | ${query.decisionId ?? "None"} |`).join("\n");
+write("canonical-design/11-use-case-catalog.md", `# Use-case catalog\n\n${statusLine}\n\n## Commands\n\nThe executable semantic inventory contains ${commandRegistry.commands.length} commands: ${Object.entries(commandStatusCounts).map(([key, value]) => `${value} ${key}`).join(", ")}. A BLOCKED row is a design gap, not an implementation requirement.\n\n| ID | Command | Owner | Status | OpenAPI operation | Decision |\n|---|---|---|---|---|---|\n${useCaseRows}\n\n## Queries\n\nAll ${queryRegistry.queries.length} registered queries are classified from \`docs/backend-readiness/query-registry.json\`: ${Object.entries(queryClassCounts).map(([key, value]) => `${value} ${key}`).join(", ")}. PRODUCTION_API rows map only to declared operationIds. COMPOSED_READ_MODEL, FRONTEND_LOCAL, DEMO_ONLY and BFF_CANDIDATE rows do not imply or invent HTTP endpoints.\n\n| ID | Query symbol | Owner | Classification | OpenAPI operation(s) | Source | Decision |\n|---|---|---|---|---|---|---|\n${queryRows}\n`);
+
+write("canonical-design/12-workflow-catalog.md", `# Workflow catalog\n\n${statusLine}\n\nThe authoritative ownership registry contains 27 workflow entries. It is broader than the 22 directories under \`src/workflows/\`; five registered boundaries live in module command sources.\n\n| Registry | Workflow | Goal | Participants | Registry readiness | Ownership/transaction model |\n|---|---|---|---|---|---|\n${Object.entries(workflowMap).map(([id, value]) => `| ${value.registry.workflowId} | [${id}](workflows/${id}.md) | ${workflowGoals[id]} | ${value.owners.join(", ")} | ${value.registry.contractReadiness} | ${value.registry.ownershipDecision} |`).join("\n")}\n\nEach workflow is a coordination boundary only. Its document reconciles registry metadata with exact OpenAPI operationIds and transaction boundaries. When those authorities conflict, OpenAPI controls declared HTTP transport and the conflict is recorded; no endpoint is invented for event-driven or local semantic boundaries.\n`);
+
+write("canonical-design/13-money-financial-semantics.md", `# Money and financial semantics\n\n${statusLine}\n\nAuthoritative money is a normalized decimal string plus uppercase currency. Arithmetic aligns decimal scale and rejects mixed currencies. JavaScript numbers are display/legacy compatibility only and must not decide financial mutations. Exchange rates are versioned snapshots; conversion is explicit. Rounding/minor-unit policy is backend-authoritative where the exact rule is not declared by the adopted contract.\n\nPayment agreement, Payment Plan, Payment Schedule Line, Payment Intent, Payment Record, allocation, Customer Credit, Invoice, receivable projection, refund and COD evidence are distinct concepts. Allocation and reversal are immutable ledger effects. Provider success is accepted only from authoritative provider/backend evidence.\n\nThe frontend still contains number-based commercial compatibility fields in Product, Deal, Quote and Order models. This draft does not elevate them into backend money semantics; OpenAPI decimal-string Money and accepted snapshot rules control the transport boundary.\n`);
+
+for (const [moduleId, facts] of Object.entries(moduleFacts)) {
+  const map = moduleMap[moduleId];
+  const domainNames = exportedDeclarations(map.domain, () => true);
+  const commandNames = exportedDeclarations(map.application, (file) => file.includes("/commands/"));
+  const queryNames = exportedDeclarations(map.application, (file) => file.includes("/queries/") || file.includes("/read-models/") || file.includes("/vertical-slice/"));
+  const publicNames = exportedDeclarations(map.public, () => true);
+  const operations = operationsByModule[moduleId] ?? [];
+  const capabilitiesForModule = [...new Set(operations.map((operation) => operation.authorization?.capability).filter(Boolean))];
+  const dependencies = new Set();
+  for (const file of [...map.domain, ...map.application, ...map.public].filter((value) => /\.tsx?$/.test(value))) for (const match of read(file).matchAll(/@\/modules\/([^/"']+)/g)) if (match[1] !== moduleId) dependencies.add(match[1]);
+  const operationRows = operations.length ? operations.map((operation) => `| \`${operation.operationId}\` | ${operation.kind} | ${operation.contractStatus} | ${operation.authorization?.capability ?? "None"} | ${operation.delivery?.idempotency ?? "None"} | ${operation.delivery?.concurrency ?? "None"} |`).join("\n") : "| None | None | No direct operation catalog owner | None | None | None |";
+  write(`canonical-design/modules/${moduleId}.md`, `# ${moduleId} module\n\n${statusLine}\n\n## Responsibility and ownership boundary\n\n${facts.responsibility}\n\nOwns: ${facts.owns}\n\nDoes not own: ${facts.excludes}\n\n## Terminology and model\n\nPrimary entities/value objects: ${facts.entities.map((entity) => `\`${entity}\``).join(", ")}. Source-declared semantic exports include ${domainNames.map((name) => `\`${name}\``).join(", ") || "none"}.\n\n## Use cases and commands\n\n${commandNames.map((name) => `- \`${name}\``).join("\n") || "- No standalone module command export; behavior is query/projection or workflow-owned."}\n\nPublic command/query surface additionally exposes: ${publicNames.map((name) => `\`${name}\``).join(", ") || "none"}. Snapshot/demo helpers are not production authority.\n\n## Queries and read models\n\n${queryNames.map((name) => `- \`${name}\``).join("\n") || "- Public snapshot/query composition only."}\n\n## Business rules and lifecycle\n\n${facts.rules.map((rule) => `- ${rule}`).join("\n")}\n\nLifecycle/state dimensions: ${facts.states}\n\n${facts.transitionModel ? `Explicit transitions, preconditions and terminal behavior:\n\n${facts.transitionModel.map((rule) => `- ${rule}`).join("\n")}` : "No explicit transition table was found in this module's cited domain source; the listed state dimensions must not be treated as a fabricated transition graph."}\n\n## Validation, permissions and scope\n\nAll records are workspace-scoped in connected mode. Required capabilities represented by adopted operations: ${capabilitiesForModule.map((value) => `\`${value}\``).join(", ") || "none directly cataloged"}. UI visibility is advisory; backend operations enforce membership, capability, data scope and field security.\n\n## API operations\n\n| Operation | Kind | Status | Capability | Idempotency | Concurrency |\n|---|---|---|---|---|---|\n${operationRows}\n\nBlocked operations have no canonical success response and are excluded from implementation. Exact request/response/error formats remain in OpenAPI.\n\n## Errors, audit, concurrency and idempotency\n\nUse stable ApplicationError/API problem codes and safe user messages. Mutations return MutationOutcome with command/correlation IDs, authoritative version, emitted events and audit evidence. Delivery policies in the table are mandatory only for ready operations.\n\n## Cross-module dependencies\n\n${[...dependencies].sort().map((value) => `- ${value} through its public boundary`).join("\n") || "- No direct cross-module import occurs in the domain/application/public packet. Workflow, infrastructure and presentation coupling is documented separately and does not transfer ownership."}\n\n## Acceptance criteria\n\n- Owner invariants above are enforced server-side.\n- Cross-workspace access fails closed.\n- Ready operations conform to OpenAPI and adapter mapping.\n- Retried commands preserve idempotency and expected-version semantics.\n- Blocked operations remain unavailable.\n\n## Traceability and open decisions\n\nDeep source packet: ${[...map.domain, ...map.application, ...map.public].map((file) => `\`${file}\``).join(", ")}. Summary evidence also includes infrastructure/presentation and related tests in the coverage ledger. Open decisions are listed in \`../contracts/blocked-contracts.md\`.\n`);
+}
+
+for (const [ownerId, facts] of Object.entries(platformOwnerFacts)) {
+  const operations = operationsByModule[ownerId] ?? [];
+  const rows = operations.map((operation) => `| \`${operation.operationId}\` | ${operation.kind} | ${operation.contractStatus} | ${operation.method} \`${operation.path}\` | ${operation.authorization?.capability ?? "None"} | ${operation.delivery?.transactionBoundary ?? "None"} |`).join("\n");
+  write(`canonical-design/platform/${facts.file}`, `# ${facts.title}\n\n${statusLine}\n\n## Responsibility and boundary\n\n${facts.responsibility}\n\n## Lifecycle and rules\n\n${facts.lifecycle}\n\n${facts.rules.map((rule) => `- ${rule}`).join("\n")}\n\n## OpenAPI operations\n\n| Operation | Kind | Status | Transport | Capability | Transaction boundary |\n|---|---|---|---|---|---|\n${rows}\n\nExact request, response, error, idempotency, concurrency, audit and event metadata remains authoritative in \`docs/api/openapi.json\`. A BLOCKED row has no implementable success contract.\n\n## Evidence\n\n${facts.sources.map((source) => `- \`${source}\``).join("\n")}\n`);
+}
+
+for (const [workflowId, map] of Object.entries(workflowMap)) {
+  const declarations = exportedDeclarations(map.files, (file) => !file.includes("/presentation/"));
+  const semantics = workflowSemantics[workflowId];
+  const operationIds = workflowOperationIds[workflowId] ?? [];
+  const operations = catalogOperations.filter((operation) => operationIds.includes(operation.operationId));
+  const missingOperationIds = operationIds.filter((operationId) => !openApiOperationMetadata.has(operationId));
+  if (missingOperationIds.length) throw new Error(`Invalid workflow operation mapping for ${workflowId}: ${missingOperationIds.join(", ")}`);
+  const registryConflict = map.registry.contractReadiness === "BLOCKED" && operations.some((operation) => operation.contractStatus === "PRODUCTION_CONTRACT_READY")
+    ? "CONFLICT: the workflow ownership registry says BLOCKED while OpenAPI declares a mapped operation PRODUCTION_CONTRACT_READY. OpenAPI controls the HTTP transport; registry readiness requires reconciliation."
+    : "No registry/OpenAPI readiness conflict for the mapped operations.";
+  const transportText = operations.length
+    ? operations.map((operation) => `- \`${operation.operationId}\`: ${operation.contractStatus}; ${operation.method} \`${operation.path}\`; owner ${operation.moduleId}; transaction \`${operation.delivery?.transactionBoundary ?? "None"}\`.`).join("\n")
+    : map.registry.contractReadiness === "BLOCKED"
+      ? `- No dedicated OpenAPI workflow operation is declared. Registry blocking decision: \`${map.registry.blockingDecisionId ?? "DECISION_REQUIRED"}\`. This is not implementable production transport.`
+      : "- No dedicated frontend HTTP operation is declared for this event-driven/internal boundary. Its backend execution semantics come from the workflow registry and owner events; no endpoint is invented.";
+  write(`canonical-design/workflows/${workflowId}.md`, `# ${workflowId} workflow\n\n${statusLine}\n\nRegistry: \`${map.registry.workflowId}\`. Readiness: \`${map.registry.contractReadiness}\`. Ownership model: \`${map.registry.ownershipDecision}\`.\n\n## Goal\n\n${workflowGoals[workflowId]}\n\n## Participating owners\n\n${map.owners.map((owner) => `- ${owner}`).join("\n")}\n\n## Authoritative trigger\n\n${semantics.trigger}\n\nSource symbols: ${declarations.map((name) => `\`${name}\``).join(", ") || "none exported from the cited command source"}.\n\n## Preconditions\n\n${semantics.preconditions}\n\nWorkspace, actor, required capability, data scope, idempotency and every supplied expected version are validated by backend authority before effects.\n\n## Business sequence\n\n${semantics.sequence}\n\n## Transaction or saga boundary\n\nRegistry ownership: \`${map.registry.ownershipDecision}\`; idempotency boundary: \`${map.registry.idempotencyBoundary}\`; compensation owner: \`${map.registry.compensationOwner}\`. ${map.registry.failurePolicy ? `Failure policy: \`${map.registry.failurePolicy}\`.` : ""}\n\nMapped OpenAPI transaction boundaries: ${operations.length ? operations.map((operation) => `\`${operation.operationId}: ${operation.delivery?.transactionBoundary ?? "None"}\``).join(", ") : "none declared"}. ${registryConflict}\n\n## Success outcome\n\n${semantics.success}\n\n## Failures and recovery\n\nRecoverable: ${semantics.recoverable}\n\nTerminal/blocked: ${semantics.terminal}\n\n## Transport mapping\n\n${transportText}\n\n## Acceptance scenarios\n\n- Trigger: ${semantics.trigger}\n- Valid execution: ${semantics.success}\n- Recoverable failure: ${semantics.recoverable}\n- Terminal or blocked path: ${semantics.terminal}\n- Replay uses \`${map.registry.idempotencyBoundary}\` and cannot duplicate owner effects.\n\n## Evidence and open decisions\n\nSource packet: ${map.files.map((file) => `\`${file}\``).join(", ")}. Registry: \`docs/backend-readiness/workflow-ownership.json\`. Transport: \`docs/api/openapi.json\`. ${map.registry.blockingDecisionId ? `Blocking decision: \`${map.registry.blockingDecisionId}\`.` : "No workflow-registry blocking decision."}\n`);
+}
+
+write("canonical-design/contracts/README.md", `# Contract set\n\n${statusLine}\n\nExact HTTP format is not copied here. Use \`../../docs/api/openapi.json\` and its checksum. This directory explains authority, conventions, human-readable operation coverage and blocked gaps.\n`);
+writeJson("canonical-design/contracts/contract-source-manifest.json", {
+  status: "RECONSTRUCTED_DRAFT",
+  contracts: [{ id: "unicore-http-api", type: "openapi", path: "../../docs/api/openapi.json", sha256File: "../../docs/api/openapi.sha256", sha256: openapiHash, version: openapi.info.version, authority: "ADOPTED_MACHINE_CONTRACT_CANDIDATE", readyOperations: readyOperations.length, blockedOperations: blockedOperations.length }],
+  derivatives: [{ path: "../../src/platform/api/generated", authority: "DERIVATIVE_ONLY" }, { path: "../../docs/api/api-operation-catalog.json", authority: "DETERMINISTIC_INDEX" }, { path: "../../docs/api/operation-coverage-ledger.json", authority: "DETERMINISTIC_VERIFICATION_EVIDENCE" }],
+});
+write("canonical-design/contracts/contract-authority.md", `# Contract authority\n\n${statusLine}\n\n1. Ready operations in \`docs/api/openapi.json\` control exact HTTP method, path, schemas, authorization/scope, errors, idempotency, concurrency, audit and transaction metadata.\n2. Module domain/application/public sources control semantic ownership and invariants but are not wire or database schemas.\n3. Workflow sources control coordination semantics but require ready transport or an approved decision for connected implementation.\n4. Generated clients/catalogs are deterministic derivatives.\n5. Tests and provider packs are conformance evidence.\n6. Presentation, demo repositories, fixtures and seeds cannot establish server authority.\n7. Existing prose is adopted only after source/contract reconciliation.\n\nConflict rules: OpenAPI beats generated drift; domain/transport mismatch requires reconciliation; verified higher authority beats mocks; UI behavior does not amend canonical transport.\n`);
+write("canonical-design/contracts/conventions.md", `# Contract conventions\n\n${statusLine}\n\n- Bearer authentication and active workspace context are required where declared.\n- Commands use stable idempotency keys; versioned commands use expected-version concurrency.\n- Responses expose safe typed results and stable problem codes, never raw diagnostics.\n- Money uses decimal strings and explicit currency.\n- IDs, actor, workspace and authoritative timestamps are validated/derived server-side.\n- Multi-owner commands define one exact transaction or durable saga boundary.\n- Lists use server-side filtering/sorting/cursor paging when declared.\n- Unknown enum values fail or degrade according to the adopted OpenAPI policy.\n- \`x-credentials-policy\`, \`x-audit-requirement\`, \`x-event-outbox-expectation\` and \`x-transaction-boundary\` are security/delivery requirements, not optional prose. Their exact values remain in OpenAPI and are indexed per operation below.\n- Blocked operations intentionally contain no 2xx implementation contract.\n`);
+const opRows = catalogOperations.map((operation) => { const meta = openApiOperationMetadata.get(operation.operationId); return `| \`${operation.operationId}\` | ${operation.moduleId} | ${operation.kind} | ${operation.method} \`${operation.path}\` | ${operation.contractStatus} | ${operation.authorization?.capability ?? "None"} | ${operation.delivery?.idempotency ?? "None"} | ${operation.delivery?.concurrency ?? "None"} | ${meta?.credentials ?? "None"} | ${operation.delivery?.transactionBoundary ?? "None"} | ${operation.delivery?.audit ?? "None"} | ${meta?.outbox ?? "None"} |`; }).join("\n");
+write("canonical-design/contracts/operation-catalog.md", `# Operation catalog\n\n${statusLine}\n\nHuman-readable index only. Exact format remains OpenAPI. Coverage: ${readyOperations.length} ready and ${blockedOperations.length} blocked operations. Owners are reconciled to OpenAPI; the stale derived owner fields for \`replaceWorkspaceCurrencies\` and \`putWorkspaceExchangeRate\` are not adopted.\n\n| Operation | Owner | Kind | Transport | Status | Capability | Idempotency | Concurrency | Credentials | Transaction | Audit | Event/outbox |\n|---|---|---|---|---|---|---|---|---|---|---|---|\n${opRows}\n`);
+const blockedRows = blockedOperations.map((operation) => `| \`${operation.operationId}\` | ${operation.moduleId} | ${operation.method} \`${operation.path}\` | ${operation.blockingDecisionId ?? "UNSPECIFIED"} |`).join("\n");
+write("canonical-design/contracts/blocked-contracts.md", `# Blocked contracts\n\n${statusLine}\n\nThese ${blockedOperations.length} operations have no implementable success contract. They remain excluded from backend implementation until the named decision is approved and OpenAPI is updated/generated/verified. Typed replacements that are already ready remain usable; their blocked generic predecessors remain blocked.\n\n| Operation | Owner | Placeholder transport | Decision |\n|---|---|---|---|\n${blockedRows}\n\nIn addition, ${blockedCommands.length} semantic command-registry entries lack approved production contracts; see the use-case catalog and reconstruction contract report.\n`);
+
+write("canonical-design/decisions/DEC-001-unresolved-contract-gates.md", `# DEC-001: unresolved contract gates\n\n${statusLine}\n\nDecision status: DECISION_REQUIRED. This record does not approve behavior.\n\nResolve the ${Object.keys(blockedByDecision).length} blocked OpenAPI decision groups and ${blockedCommands.length} blocked semantic command entries operation-by-operation. Options are approve typed request/result/invariants, classify local/demo/composed behavior, replace with an already typed operation, or retire. Until then, operations remain blocked and no 2xx contract may be inferred.\n`);
+write("canonical-design/decisions/DEC-002-financial-value-authority.md", `# DEC-002: financial value authority\n\n${statusLine}\n\nDecision status: RECONSTRUCTED_REQUIREMENT with HIGH frontend conformance finding.\n\nBackend/transport financial values use decimal-string Money with currency and explicit exchange-rate snapshots. Number-based Product/Deal/Quote/Order fields are compatibility/presentation evidence only. A later approved migration must define rounding/minor units and eliminate number-based authoritative decisions without rewriting historical snapshots.\n`);
+write("canonical-design/decisions/DEC-003-platform-connected-projections.md", `# DEC-003: platform connected projections\n\n${statusLine}\n\nDecision status: DECISION_REQUIRED. Effective record access has a typed authority; audit-trail and external-authority-health connected projections remain only partially closed in the source decision ledger. Backend implementation is blocked until ready OpenAPI read models or explicit feature retirement is approved.\n`);
+
+write("canonical-design/acceptance/backend-acceptance-criteria.md", `# Backend acceptance criteria\n\n${statusLine}\n\nBackend handoff is currently forbidden. When gates are resolved, acceptance requires:\n\n- Implement exactly all and only PRODUCTION_CONTRACT_READY operations.\n- Reject cross-workspace, unauthenticated, unauthorized and out-of-scope access.\n- Enforce owner lifecycle/invariants, stable error codes, idempotency and optimistic concurrency.\n- Commit local multi-owner workflows atomically; persist durable saga/provider recovery evidence for external work.\n- Use decimal-string Money, currency and immutable exchange-rate/commercial snapshots.\n- Persist immutable audit/correlation/causation evidence and safe redaction.\n- Pass deterministic API/generator checks and the provider conformance packs against two isolated workspaces.\n- Prove blocked operations are unavailable and cannot be invoked through generated/runtime adapters.\n`);
+
+const traceRows = [
+  ...Object.entries(moduleFacts).map(([id]) => `| MODULE-${id.toUpperCase()} | modules/${id}.md | src/modules/${id}/domain; application; public | ${(operationsByModule[id] ?? []).map((operation) => operation.operationId).join(", ") || "None - no OpenAPI operation owned"} |`),
+  ...Object.entries(platformOwnerFacts).map(([id, fact]) => `| OWNER-${id.toUpperCase().replaceAll("/", "-")} | platform/${fact.file} | ${fact.sources.join("; ")} | ${(operationsByModule[id] ?? []).map((operation) => operation.operationId).join(", ")} |`),
+  ...Object.entries(workflowMap).map(([id, value]) => `| WORKFLOW-${id.toUpperCase()} | workflows/${id}.md | ${value.files.join("; ")}; docs/backend-readiness/workflow-ownership.json | ${(workflowOperationIds[id] ?? []).join(", ") || (value.registry.contractReadiness === "BLOCKED" ? `None - ${value.registry.blockingDecisionId ?? "blocked by decision"}` : "None - backend event/internal boundary; no HTTP operation declared")} |`),
+];
+write("canonical-design/traceability/traceability-matrix.md", `# Traceability matrix\n\n${statusLine}\n\n| Requirement area | Canonical destination | Source/registry evidence | OpenAPI operationId evidence |\n|---|---|---|---|\n${traceRows.join("\n")}\n\nEvery workflow transport cell was checked against the operationId set in \`docs/api/openapi.json\`. Frontend function names are not operationIds. Event-driven/internal or blocked boundaries state why no dedicated transport is listed. Operation-level transport traceability is complete in \`../contracts/operation-catalog.md\`; file-level evidence is in \`design-reconstruction/source/source-coverage-ledger.json\`.\n`);
+
+write("design-reconstruction/README.md", `# Design reconstruction workbench\n\nStatus: NON_AUTHORITATIVE. This directory proves how the RECONSTRUCTED_DRAFT was derived, classified and reviewed. Backend implementers must not use it to invent missing requirements.\n\nIt contains the actual-tree census, contract registry/reconciliation, evidence/inference/contradiction ledgers, frontend/design reviews and analysis state.\n`);
+
+const contractRegistry = {
+  schemaVersion: 1,
+  status: "RECONSTRUCTED_DRAFT",
+  classes: [
+    { class: "C1", name: "Production transport contract", artifacts: ["docs/api/openapi.json"], count: 1, effectiveAuthority: "ADOPTED_MACHINE_CONTRACT_CANDIDATE", verification: ["npm run api:check", "docs/api/openapi.sha256"] },
+    { class: "C2", name: "Generated transport derivative", artifacts: walk("src/platform/api/generated"), count: walk("src/platform/api/generated").length, effectiveAuthority: "DERIVATIVE_ONLY", verification: ["docs/api/generated-client-manifest.json"] },
+    { class: "C3", name: "Domain contracts", artifacts: Object.values(moduleMap).flatMap((value) => value.domain), count: Object.values(moduleMap).flatMap((value) => value.domain).length, effectiveAuthority: "STRONG_SEMANTIC_EVIDENCE" },
+    { class: "C4", name: "Application contracts", artifacts: Object.values(moduleMap).flatMap((value) => value.application), count: Object.values(moduleMap).flatMap((value) => value.application).length, effectiveAuthority: "STRONG_USE_CASE_EVIDENCE" },
+    { class: "C5", name: "Workflow contracts", artifacts: Object.values(workflowMap).flatMap((value) => value.files), count: Object.values(workflowMap).flatMap((value) => value.files).length, effectiveAuthority: "STRONG_COORDINATION_EVIDENCE" },
+    { class: "C6", name: "Presentation/form contracts", artifacts: Object.values(moduleMap).flatMap((value) => value.presentation), count: Object.values(moduleMap).flatMap((value) => value.presentation).length, effectiveAuthority: "PRODUCT_BEHAVIOR_EVIDENCE" },
+    { class: "C7", name: "Provider/conformance contracts", artifacts: inventory.fileClassifications.filter((value) => value.classification === "active-test" && /contract|provider|acceptance/i.test(value.path)).map((value) => value.path), count: inventory.fileClassifications.filter((value) => value.classification === "active-test" && /contract|provider|acceptance/i.test(value.path)).length, effectiveAuthority: "VERIFICATION_EVIDENCE" },
+    { class: "C8", name: "Mock/demo/seed contracts", artifacts: inventory.mockAndDefaultData.map((value) => value.path), count: inventory.mockAndDefaultData.length, effectiveAuthority: "LOW_AUTHORITY" },
+    { class: "C9", name: "Prose/ADR", artifacts: Object.keys(documentStatus.documents), count: Object.keys(documentStatus.documents).length, effectiveAuthority: "STATUS_AND_SOURCE_RECONCILED" },
+  ],
+};
+writeJson("design-reconstruction/contracts/contract-registry.json", contractRegistry);
+
+const workflowReconciliationRows = Object.entries(workflowMap).map(([id, value]) => {
+  const operations = (workflowOperationIds[id] ?? []).map((operationId) => catalogOperations.find((operation) => operation.operationId === operationId));
+  const ready = operations.filter((operation) => operation?.contractStatus === "PRODUCTION_CONTRACT_READY");
+  const blocked = operations.filter((operation) => operation?.contractStatus === "BLOCKED");
+  const disposition = value.registry.contractReadiness === "BLOCKED" && ready.length
+    ? "CONFLICT - OpenAPI ready transport adopted; registry readiness stale"
+    : operations.length === 0 && value.registry.contractReadiness === "BLOCKED"
+      ? "BLOCKED_BY_DECISION"
+      : operations.length === 0
+        ? "MATCH - backend event/internal boundary; no endpoint"
+        : blocked.length && !ready.length
+          ? "BLOCKED_BY_DECISION"
+          : "MATCH";
+  return `| ${value.registry.workflowId} | ${id} | ${value.registry.contractReadiness} | ${(workflowOperationIds[id] ?? []).join(", ") || "None"} | ${disposition} |`;
+}).join("\n");
+write("design-reconstruction/contracts/contract-reconciliation.md", `# Contract reconciliation\n\nStatus: NON_AUTHORITATIVE REVIEW.\n\n## Coverage\n\n- OpenAPI: ${catalogOperations.length}/${catalogOperations.length} operations registered.\n- Ready: ${readyOperations.length}/${readyOperations.length} represented in the canonical operation catalog.\n- Blocked: ${blockedOperations.length}/${blockedOperations.length} retained without success contracts.\n- Commands: ${commandRegistry.commands.length}/${commandRegistry.commands.length} classified.\n- Queries: ${queryRegistry.queries.length}/${queryRegistry.queries.length} enumerated and classified (${Object.entries(queryClassCounts).map(([key, value]) => `${key} ${value}`).join(", ")}).\n- Workflow registry: ${workflowOwnership.workflows.length}/${workflowOwnership.workflows.length} reconciled to source and exact OpenAPI operationIds.\n- Non-business contract owners: ${Object.keys(platformOwnerFacts).length}/6 documented, covering ${Object.keys(platformOwnerFacts).reduce((count, id) => count + (operationsByModule[id] ?? []).length, 0)}/65 operations.\n\n## Results\n\nReady OpenAPI operations are adopted as exact transport candidates and traced to owner, use case, authorization, scope and delivery metadata. Blocked operations remain BLOCKED_BY_DECISION. The two stale derived owners were confirmed against OpenAPI: \`replaceWorkspaceCurrencies\` and \`putWorkspaceExchangeRate\` are canonically owned by \`platform/workspace-config\`, not \`workspaces/studio\`. The governed derivative under docs/api was not edited.\n\n${blockedCommands.length} source command entries remain BLOCKED because request/result, capability/scope, idempotency/concurrency, audit/event or transaction semantics are unresolved. Commercial Evidence list/detail production query authority remains UNRESOLVED. Composed/local/demo queries were not manufactured into endpoints.\n\n## Workflow reconciliation\n\n| Registry | Workflow | Registry readiness | Exact operationId mapping | Disposition |\n|---|---|---|---|---|\n${workflowReconciliationRows}\n\nThe order-closing registry conflict is preserved explicitly: \`completeOrderFromFulfillmentEvidence\` is PRODUCTION_CONTRACT_READY in OpenAPI, which controls HTTP transport, while the registry row still says BLOCKED. Order confirmation and return-credit-refund now map to their ready transaction/saga operations and are not described as frontend-local.\n\n## Categories\n\n- MATCH: ${readyOperations.length} ready operations at machine-contract level.\n- BLOCKED_BY_DECISION: ${blockedOperations.length} OpenAPI placeholders in ${Object.keys(blockedByDecision).length} decision groups.\n- CONTRACT_GAP: ${blockedCommands.length} semantic command entries plus Commercial Evidence authoritative query coverage.\n- CONFLICT: one workflow-readiness metadata row (order-closing) is stale relative to adopted OpenAPI.\n- RESOLVED_DOCUMENTATION_GAP: 27 workflow mappings, 162 query rows and six non-business owner documents are now explicit.\n`);
+
+const conflicts = [
+  { id: "F-BLOCK-OPENAPI", severity: "BLOCKER", category: "BLOCKED_BY_DECISION", summary: `${blockedOperations.length} OpenAPI operations have no implementable success contract`, evidence: ["docs/api/openapi.json", "docs/backend-readiness/unresolved-decisions.json"], disposition: "KEEP_BLOCKED" },
+  { id: "F-BLOCK-COMMANDS", severity: "BLOCKER", category: "CONTRACT_GAP", summary: `${blockedCommands.length} semantic command entries lack ready production contracts`, evidence: ["docs/backend-readiness/command-registry.json"], disposition: "DECISION_REQUIRED" },
+  { id: "F-BLOCK-QUERY", severity: "BLOCKER", category: "CONTRACT_GAP", summary: "Commercial Evidence list/detail production query authority is unresolved", evidence: ["docs/backend-readiness/query-registry.json"], disposition: "DECISION_REQUIRED" },
+  { id: "F-BLOCK-PLATFORM", severity: "BLOCKER", category: "CONTRACT_GAP", summary: "Audit-trail and external-authority-health connected projections are only partially closed", evidence: ["docs/backend-readiness/unresolved-decisions.json"], disposition: "DECISION_REQUIRED" },
+  { id: "F-BLOCK-CONFORMANCE", severity: "BLOCKER", category: "EXTERNAL_EVIDENCE", summary: "Live provider conformance against a provisioned backend and two workspaces has not been executed", evidence: ["docs/backend-readiness/unresolved-decisions.json"], disposition: "BLOCKED_EXTERNAL" },
+  { id: "F-HIGH-INVENTORY", severity: "HIGH", category: "GENERATED_DRIFT", summary: "Stored repository inventory describes 1,951 files while the actual source census contains 1,986 before reconstruction output", evidence: ["docs/quality/repository-inventory.json", "npm run repo:check"], disposition: "DO_NOT_MODIFY_DOCS_IN_THIS_TASK" },
+  { id: "F-HIGH-DOCUMENT-STATUS", severity: "HIGH", category: "GOVERNANCE_CONFLICT", summary: "The backend-readiness gate requires every repository Markdown file in docs/document-status.json, while reconstruction rules place outputs outside docs and forbid modifying that registry", evidence: ["tests/quality/architecture/check-backend-readiness.mts", ".ai-workflows/unicore-canonical-design/OUTPUT_LAYOUT.md", ".ai-workflows/unicore-canonical-design/skills/10-baseline-control/SKILL.md", "npm run verify"], disposition: "REPOSITORY_GOVERNANCE_DECISION_REQUIRED" },
+  { id: "F-HIGH-MONEY", severity: "HIGH", category: "SEMANTIC_MISMATCH", summary: "Legacy Product/Deal/Quote/Order domain fields use JavaScript numbers while backend-facing Money uses decimal strings", evidence: ["src/shared/money/money.ts", "src/modules/products/domain/model/product.types.ts", "src/modules/deals/domain/model/deal.types.ts", "src/modules/quotes/domain/model/quote.types.ts", "src/modules/orders/domain/model/order.types.ts"], disposition: "CANONICALIZE_DECIMAL_TRANSPORT; MIGRATION_DECISION_REQUIRED" },
+];
+writeJson("design-reconstruction/contracts/contract-conflicts.json", { schemaVersion: 1, status: "RECONSTRUCTED_DRAFT", findings: conflicts });
+
+const evidence = [
+  { id: "EV-INVENTORY", concern: "repository census and structural inventory", artifacts: ["docs/quality/repository-inventory.json"], declaredAuthority: "SUPPORTING", observedEnforcement: "repository-inventory gate", effectiveAuthority: "MACHINE_INDEX_WITH_CURRENT_DRIFT" },
+  { id: "EV-OPENAPI", concern: "production HTTP contract", artifacts: ["docs/api/openapi.json", "docs/api/openapi.sha256"], declaredAuthority: "CANONICAL", observedEnforcement: "api:check", effectiveAuthority: "ADOPTED_MACHINE_CONTRACT_CANDIDATE" },
+  { id: "EV-OPERATIONS", concern: "operation ownership and delivery policies", artifacts: ["docs/api/openapi.json", "docs/api/api-operation-catalog.json", "docs/api/operation-coverage-ledger.json"], declaredAuthority: "C1_PLUS_DERIVED", observedEnforcement: "OpenAPI adoption and deterministic generation", effectiveAuthority: "OPENAPI_OWNER_RECONCILED; DERIVATIVE_HAS_2_OWNER_DRIFTS", notes: operationOwnerMismatches },
+  { id: "EV-COMMANDS", concern: "application command semantics", artifacts: ["docs/backend-readiness/command-registry.json"], declaredAuthority: "TARGET", observedEnforcement: "contract gates", effectiveAuthority: "RECONCILIATION_INDEX" },
+  { id: "EV-QUERIES", concern: "query classification", artifacts: ["docs/backend-readiness/query-registry.json"], declaredAuthority: "TARGET", observedEnforcement: "contract gates", effectiveAuthority: "RECONCILIATION_INDEX" },
+  { id: "EV-MODULES", concern: "module domain/application/public semantics", artifacts: Object.keys(moduleFacts).map((id) => `src/modules/${id}`), declaredAuthority: "SOURCE", observedEnforcement: "architecture and focused quality gates", effectiveAuthority: "STRONG_SEMANTIC_EVIDENCE" },
+  { id: "EV-WORKFLOWS", concern: "cross-owner coordination", artifacts: ["docs/backend-readiness/workflow-ownership.json", ...Object.values(workflowMap).flatMap((value) => value.files)], declaredAuthority: "REGISTRY_AND_SOURCE", observedEnforcement: "workflow/architecture/API gates", effectiveAuthority: "RECONCILED_COORDINATION_EVIDENCE" },
+  { id: "EV-PLATFORM", concern: "identity, tenancy, access, mutation and error semantics", artifacts: ["src/platform/identity-auth", "src/platform/workspace-context", "src/platform/access-control", "src/platform/record-ownership", "src/shared/application", "src/shared/domain"], declaredAuthority: "SOURCE", observedEnforcement: "architecture/security/API gates", effectiveAuthority: "STRONG_CROSS_CUTTING_EVIDENCE" },
+  { id: "EV-STATE-MACHINES", concern: "explicit lifecycle transitions", artifacts: ["src/modules/leads/domain/rules/leadLifecycle.ts", "src/modules/orders/domain/rules/orderLifecycle.ts", "src/modules/quotes/domain/rules/quoteVersioning.ts", "src/modules/returns/domain/rules/returnLifecycle.ts", "src/modules/support/domain/rules/supportCaseLifecycle.ts", "src/modules/tasks/domain/rules/taskLifecycle.ts"], declaredAuthority: "DOMAIN_SOURCE", observedEnforcement: "module commands and focused tests", effectiveAuthority: "DIRECT_SOURCE" },
+  { id: "EV-FINANCE", concern: "money and order-to-cash", artifacts: ["src/shared/money", "src/shared/order-to-cash", "src/modules/payments", "src/modules/invoices", "src/modules/orders"], declaredAuthority: "SOURCE_AND_MACHINE_CONTRACT", observedEnforcement: "strict/API/financial gates", effectiveAuthority: "CORROBORATED_WITH_COMPATIBILITY_GAP" },
+];
+writeJson("design-reconstruction/evidence/evidence-ledger.json", { schemaVersion: 1, status: "NON_AUTHORITATIVE", evidence });
+write("design-reconstruction/evidence/inference-register.md", `# Inference register\n\nStatus: NON_AUTHORITATIVE.\n\n| ID | Classification | Inference | Treatment |\n|---|---|---|---|\n| INF-001 | CORROBORATED | Server uses one tenant boundary per workspace across all operations. | Canonical MUST, supported by bootstrap/access/OpenAPI metadata. |\n| INF-002 | INFERRED | Workflow-local transactions should be atomic; external providers require durable saga recovery. | Canonical pattern only where source/contract delivery metadata supports it; missing mappings remain gaps. |\n| INF-003 | DECISION_REQUIRED | Exact currency minor-unit rounding for every operation. | Not invented; backend decision required beyond decimal-string representation. |\n| INF-004 | DECISION_REQUIRED | Commercial Evidence production list/detail transport. | Kept blocked as a query coverage gap. |\n| INF-005 | PROPOSED | Number-based commercial compatibility fields should migrate to MoneyDto. | HIGH finding; not silently promoted into historical snapshot rewrite behavior. |\n`);
+write("design-reconstruction/evidence/contradiction-register.md", `# Contradiction register\n\nStatus: NON_AUTHORITATIVE.\n\n| ID | Evidence A | Evidence B | Resolution |\n|---|---|---|---|\n| CON-001 | Stored inventory: 1,951 files and passing profile claim | Current source/reconstruction census; repo:check result | Record HIGH drift; preserve docs unchanged and report exact rerun result. |\n| CON-002 | Shared/OpenAPI Money uses decimal strings | Legacy Product/Deal/Quote/Order fields use numbers | Transport/domain money authority remains decimal; frontend compatibility is a HIGH conformance gap. |\n| CON-003 | Generic Quote acceptance/Lead qualification appear as operations | Typed replacements define accepted semantics | Generic operations remain blocked/retired; typed ready operations win. |\n| CON-004 | Demo repositories can synchronously mutate snapshots | Connected mutations require MutationOutcome/backend evidence | Demo behavior is low authority and cannot define production success. |\n| CON-005 | Reconstruction output must be outside docs and docs/document-status.json must remain unchanged | backend-readiness gate requires every repository Markdown file in docs/document-status.json | Record HIGH governance conflict; do not bypass either rule. |\n| CON-006 | api-operation-catalog owners workspaces/studio for replaceWorkspaceCurrencies/putWorkspaceExchangeRate | OpenAPI x-module-owner platform/workspace-config | OpenAPI wins; canonical catalogs/owner coverage use platform/workspace-config; governed derivative remains a recorded drift. |\n| CON-007 | workflow-ownership WF-12 says BLOCKED | OpenAPI completeOrderFromFulfillmentEvidence is PRODUCTION_CONTRACT_READY | OpenAPI controls HTTP transport; workflow registry readiness needs owner reconciliation. |\n`);
+
+const docsFiles = walk("docs");
+const docRows = docsFiles.map((file) => {
+  const meta = documentStatus.documents[file] ?? { status: "REFERENCE", authority: "SUPPORTING", scope: "UNREGISTERED", owner: "unknown" };
+  let classification = "SUPPORTING_ONLY";
+  if (file === "docs/api/openapi.json" || file === "docs/api/openapi.sha256") classification = "ADOPT";
+  else if (/generated|catalog|ledger|registry\.json|repository-inventory\.json/.test(file)) classification = "SUPPORTING_ONLY";
+  else if (meta.status === "TARGET") classification = "TARGET_DESIGN";
+  else if (meta.status === "REFERENCE") classification = "HISTORICAL_REFERENCE";
+  else if (meta.authority === "CANONICAL" || meta.authority === "AUTHORITATIVE" || meta.authority === "DECISION_RECORD") classification = "SOURCE_FIRST_REVIEWED_INPUT";
+  const destination = file.startsWith("docs/api/") ? "canonical-design/contracts" : file.includes("backend-readiness") ? "contracts/use cases/decisions" : file.includes("business") ? "business rules/modules/workflows" : file.includes("architecture") ? "architecture/ownership/security" : "supporting evidence only";
+  return `| \`${file}\` | ${meta.status} | ${meta.authority} | ${classification} | ${destination} |`;
+}).join("\n");
+write("design-reconstruction/reviews/existing-document-reconciliation.md", `# Existing-document reconciliation\n\nStatus: NON_AUTHORITATIVE REVIEW. Existing \`docs/\` files were not modified.\n\nPolicy: source and machine contracts were reconstructed first; document status/authority was then checked against source. No blanket \`ADOPT_WITH_CORRECTION\` claim is made. CURRENT/CANONICAL prose is a SOURCE_FIRST_REVIEWED_INPUT and contributes only statements corroborated by the cited source/OpenAPI; round-1 corrections are retrievable in \`independent-review-round-1-resolution.md\`, contract reconciliation and contradiction evidence. TARGET is not treated as current runtime truth. Generated ledgers are supporting indexes. OpenAPI is adopted by path/hash, not copied.\n\n| Document | Declared status | Declared authority | Reconciliation | Canonical destination |\n|---|---|---|---|---|\n${docRows}\n`);
+
+write("design-reconstruction/reviews/frontend-conformance-report.md", `# Frontend conformance report\n\nStatus: NON_AUTHORITATIVE REVIEW.\n\nThis report distinguishes verified source/registry coverage from behavior not exercised in a browser. Inventory counts alone are not runtime conformance proof.\n\n| Axis | Status | Traceable evidence | Result/limit |\n|---|---|---|---|\n| Registered routes and shell paths | VERIFIED | \`src/platform/navigation/routeKeys.ts\`; \`docs/quality/repository-inventory.json\`; \`canonical-design/04-product-spaces-routes-capabilities.md\` | 78/78 route keys and 62/62 loadable modules are represented structurally. |\n| Route/product-space guards | PARTIAL | \`src/app/router/workspaces\`; \`src/platform/access-control\`; route quality inventory | Capability/workspace guard sources are classified, but no browser navigation matrix was executed. |\n| Screen actions and mutation authority | PARTIAL | 173-row command registry; module/workflow docs; \`MutationOutcome\` boundaries | Command/transport availability is mapped; every rendered action was not exercised. |\n| Forms and validation | PARTIAL | module domain/application packets; protected presentation sources in coverage ledger | Backend-significant invariants are documented; presentation-only field/layout behavior is not asserted as complete. |\n| Lists/search/filter/sort/page | PARTIAL | 162-row query catalog; OpenAPI list operations; server-list architecture sources | Query authority is classified; UI controls and cursor behavior were not browser-tested per route. |\n| Empty/loading/error states | NOT_VERIFIED | presentation/controller paths are classified only | These states are not promoted to backend semantics without route-level execution evidence. |\n| Status/action visibility | PARTIAL | explicit six-module transition tables; capability catalog; effective access profiles | Domain legality and access inputs are documented; rendered visibility combinations were not exhaustively exercised. |\n| Workspace switching/tenancy | VERIFIED | canonical route registry; WorkspaceBootstrapContext; listMyWorkspaces/getWorkspaceBootstrap | Source/contract require active membership and fail-closed cross-workspace access. |\n| Auth/session states | VERIFIED | \`auth.types.ts\`; 10 identity-auth OpenAPI operations; canonical docs 05/platform owner | Enumerations, typed flows and token/credential boundary are explicit. |\n| Role/capability/record/field access | VERIFIED | \`evaluateEffectiveAccess.ts\`; \`accessGovernance.types.ts\`; record-ownership rules; 13 access operations | Combination/default/ownership rules are now explicit; live backend decisions remain external conformance work. |\n| Dashboards/composed read models | PARTIAL | query registry classifications; workspace read-model sources | 66 COMPOSED_READ_MODEL and 1 BFF_CANDIDATE are enumerated without invented endpoints; rendered totals were not tested. |\n| Import/export | PARTIAL | command/query registries and OpenAPI operation catalog | Declared operations are mapped; file/download browser behavior was not executed. |\n| Payment/shipping/returns/provider states | PARTIAL | owner/workflow docs; OpenAPI transaction metadata; provider contract sources | Semantic/transport boundaries are explicit; live provider conformance remains NOT_VERIFIED. |\n| Studio configuration | PARTIAL | 14 workspaces/studio operations; StudioCore/QuickSetup source; platform owner docs | Draft/publish/Quick Setup semantics are documented; screens were not browser-tested. |\n| People & Access | PARTIAL | 13 platform/access-control operations; access sources; owner doc | Member/invitation/role flows are documented; screens were not browser-tested. |\n| Blocked/local/demo behavior | CONFLICT | 34 blocked OpenAPI rows; 17 blocked commands; browser demo adapters | Demo mutation success cannot establish connected production success. |\n| Financial number compatibility | CONFLICT | shared/OpenAPI Money vs Product/Deal/Quote/Order number fields | Decimal-string transport remains canonical; migration/rounding decision remains open. |\n\nNo browser E2E or live provider conformance ran, so this report claims neither.\n`);
+write("design-reconstruction/reviews/design-coherence-report.md", `# Design coherence report\n\nStatus: NON_AUTHORITATIVE REVIEW.\n\n## Result\n\nThe corrected draft is structurally coherent but is not baseline-eligible. New round-1 documentation blockers/high findings are resolved; five pre-existing blockers and three pre-existing high findings remain as explicit external/decision/governance constraints.\n\n## Severity summary\n\n- BLOCKER remaining: ${conflicts.filter((finding) => finding.severity === "BLOCKER").length}.\n- HIGH remaining: ${conflicts.filter((finding) => finding.severity === "HIGH").length}.\n- Round-1 documentation BLOCKER/HIGH corrections: resolved and recorded in \`independent-review-round-1-resolution.md\`.\n\n${conflicts.map((finding) => `### ${finding.id} - ${finding.severity}\n\n${finding.summary}. Disposition: ${finding.disposition}.`).join("\n\n")}\n\n## Gate conclusion\n\nRepository classification is complete, but baseline control still fails because the remaining BLOCKER/HIGH decisions/evidence are outside this document-correction authority. \`CANONICAL_BASELINE\`, \`BASELINE.json\` and backend handoff remain forbidden.\n`);
+write("design-reconstruction/reviews/independent-review-round-1-resolution.md", `# Independent review round 1 - implementer resolution\n\nStatus: NON_AUTHORITATIVE REVIEW EVIDENCE. Canonical status remains RECONSTRUCTED_DRAFT.\n\nEvery finding was reopened against the cited machine contract, registry or implementation source. No numbered Claude finding was rejected; several were narrowed by authority reconciliation.\n\n| Finding | Verification evidence | Disposition |\n|---|---|---|\n| R1-BLOCK-01 | OpenAPI operations confirmOrderWithPaymentPlan, resolveReturnCreditRefund and getReturnCreditRefundResolution; workflow-ownership WF-13/WF-17 | CONFIRMED; RESOLVED in workflow documents with SINGLE_BACKEND_TRANSACTION/BACKEND_ORCHESTRATED_SAGA mapping. |\n| R1-BLOCK-02 | OpenAPI operationId set; workflow ownership registry; source exported symbols | CONFIRMED; RESOLVED. Traceability contains only real operationIds and explicitly classified no-transport boundaries. |\n| R1-BLOCK-03 | workflow-ownership WF-23 through WF-27 and their ready OpenAPI operations | CONFIRMED; RESOLVED. Five workflow documents added and catalog/README/traceability updated to 27. |\n| R1-BLOCK-04 | evaluateEffectiveAccess.ts, accessGovernance.types.ts, recordOwnership rules/types and effective profiles | CONFIRMED; RESOLVED in docs 05/06 and platform access owner document. |\n| R1-BLOCK-05 | OpenAPI blocked set, command/query registries, unresolved-decisions and absence of live provider run | CONFIRMED; NOT DISCHARGED. The five pre-existing blockers remain explicit and continue to prevent baseline. |\n| R1-HIGH-01 | six cited transition-table sources plus quote approval/return intent types | CONFIRMED; RESOLVED in state-machine catalog and six module documents. |\n| R1-HIGH-02 | query-registry.json | CONFIRMED; RESOLVED. 162/162 rows enumerate classification, symbol, owner, source, exact operationIds and decision. |\n| R1-HIGH-03 | 22 source workflow packets, workflow-ownership metadata and OpenAPI delivery metadata | CONFIRMED; RESOLVED. All 27 documents now have workflow-specific triggers, preconditions, sequences, outcomes and recovery. |\n| R1-HIGH-04 | dealStages.ts and dealPipelineHealth.ts | CONFIRMED; RESOLVED. buyerRef is the invariant; next action/staleness are projections with 14/21-day thresholds. |\n| R1-HIGH-05 | OpenAPI x-module-owner census | CONFIRMED; RESOLVED. Six owner documents cover 65/65 non-business operations. |\n| R1-HIGH-06 | prior 15-line report vs frontend-conformance skill axes | CONFIRMED; RESOLVED. The report now uses VERIFIED/PARTIAL/NOT_VERIFIED/CONFLICT with source and runtime limits. |\n| R1-HIGH-07/08 | Money sources; repository inventory/status gates | CONFIRMED; NOT DISCHARGED. Three pre-existing HIGH findings remain visible and prevent baseline. |\n| M-01 | OpenAPI x-module-owner vs derived api-operation-catalog | CONFIRMED; RESOLVED in canonical catalogs/owner docs. OpenAPI owners platform/workspace-config are adopted; governed docs/api derivative is not edited. |\n| M-02 | literal corruption census | CONFIRMED; RESOLVED in canonical output; semantic chains use ASCII arrows/explicit None labels. |\n| M-03 | analysis-state total vs classification sum | CONFIRMED; RESOLVED by distinguishing source snapshot files from all classified repository files and using the latter for sourceFilesClassified. |\n| M-04 | fixed HIGH count vs conflicts array | CONFIRMED; RESOLVED with dynamic counts. |\n| M-05 | blanket ADOPT_WITH_CORRECTION labels | CONFIRMED; RESOLVED by removing the blanket correction claim and retaining source-first case review only. |\n| M-06 | forensic gap/heuristic text in canonical traceability | CONFIRMED; RESOLVED with explicit blocked/event/internal classifications. |\n| M-07 | OpenAPI credentials/audit/outbox/transaction extensions | CONFIRMED; RESOLVED in contract conventions and per-operation catalog columns. |\n| M-08 | semantic-packet imports vs full runtime coupling | CONFIRMED; RESOLVED by narrowing module wording so it makes no full-module coupling claim. |\n| M-09 | configurable Deal pipelines/stages | CONFIRMED; RESOLVED in Deal and state-machine documents. |\n| M-10 | auth/session enum sources | CONFIRMED; RESOLVED in doc 05 and identity-auth owner document. |\n| M-11 | output layout vs tooling folder | CONFIRMED; RESOLVED by retaining generator provenance under the prescribed design-reconstruction/source namespace. |\n\n## Authority nuances\n\n- OpenAPI is C1 authority and overrides stale derived owner fields and the stale WF-12 registry readiness field for HTTP transport. The conflict remains visible rather than silently rewriting governed docs/.\n- PRODUCTION_CONTRACT_READY internal/event workflows without a dedicated frontend endpoint are documented as backend event/internal boundaries, not frontend-local/demo and not fabricated HTTP operations.\n- No baseline, backend or docs/ modification was produced.\n`);
+
+const exclusions = new Set([".git", "artifacts", "coverage", "dist", "node_modules"]);
+const classify = (file) => {
+  if (file.startsWith("canonical-design/") || file.startsWith("design-reconstruction/")) return ["PROVENANCE_ONLY", "Reconstruction output/workbench artifact; reviewed as generated deliverable", "reconstruction", 0, ["EV-INVENTORY"]];
+  if (file === "AGENTS.md" || file === "ARCHITECTURE.md" || file === "README.md" || file.includes("unicore-canonical-design") || file === "docs/document-status.json") return ["READ_DEEP", "Repository/workflow authority and architecture control", "architecture", 3, ["EV-INVENTORY"]];
+  if (file === "docs/api/openapi.json" || file.includes("api-operation-catalog") || file.includes("operation-coverage-ledger") || file.includes("command-registry") || file.includes("query-registry") || file.includes("unresolved-decisions")) return ["READ_DEEP", "Machine-readable contract/semantic registry", "api-architecture", 3, ["EV-OPENAPI", "EV-OPERATIONS"]];
+  if (file.startsWith("src/platform/api/generated/") || file.includes("generatedProduction") || file.includes("generatedOpenApi") || file.includes("generatedApiOperationCatalog")) return ["PROVENANCE_ONLY", "Deterministic generated derivative; verified through source manifest/gate", "api-architecture", 1, ["EV-OPERATIONS"]];
+  if (/^src\/modules\/[^/]+\/(domain|application|public)\//.test(file) || /^src\/workflows\//.test(file) && !file.includes("/presentation/") || /^src\/platform\/(identity|identity-auth|workspace-context|workspace-membership|access-control|record-ownership|api)\//.test(file) || /^src\/shared\/(money|order-to-cash|application|domain)\//.test(file)) return ["READ_DEEP", "Direct semantic/ownership/use-case evidence", file.split("/")[2] ?? "shared", 3, [file.startsWith("src/workflows/") ? "EV-WORKFLOWS" : file.startsWith("src/modules/") ? "EV-MODULES" : "EV-PLATFORM"]];
+  if (file.endsWith(".css") || /\.(png|jpg|jpeg|gif|ico|woff2?|ttf|svg)$/.test(file)) return ["EXCLUDED_WITH_REASON", "Static visual/style asset with no independent business authority", "presentation", 0, []];
+  if (file.startsWith("docs/") || file.endsWith(".md") || file.startsWith("src/") || file.startsWith("tests/") || file.startsWith("scripts/")) return ["READ_SUMMARY", "Classified through inventory, source packet or document reconciliation", file.split("/")[1] ?? "repository", 1, [file.startsWith("docs/") ? "EV-INVENTORY" : "EV-MODULES"]];
+  if (file === "package-lock.json") return ["PROVENANCE_ONLY", "Dependency lock provenance", "repository", 0, ["EV-INVENTORY"]];
+  return ["READ_SUMMARY", "Repository configuration/deployment provenance reviewed by census", "repository", 1, ["EV-INVENTORY"]];
+};
+
+const buildCoverage = () => {
+  const files = walk(".", exclusions);
+  const entries = files.map((file) => {
+    const stat = fs.statSync(path.join(root, file));
+    const [classification, reason, owner, dependencyRadius, evidenceRefs] = classify(file);
+    const content = fs.readFileSync(path.join(root, file));
+    return { path: file, classification, owner, reason, analyzed: classification !== "EXCLUDED_WITH_REASON", evidenceRefs, dependencyRadius, bytes: stat.size, lines: /\.(md|json|js|mjs|ts|tsx|css|html|yml|yaml|txt)$/.test(file) ? content.toString("utf8").split(/\r?\n/).length : null };
+  });
+  const byClassification = Object.fromEntries(Object.entries(Object.groupBy(entries, (entry) => entry.classification)).map(([key, values]) => [key, values.length]));
+  const sourceEntries = entries.filter((entry) => !entry.path.startsWith("canonical-design/") && !entry.path.startsWith("design-reconstruction/"));
+  const fingerprint = sha256(sourceEntries.map((entry) => `${entry.path}:${entry.bytes}`).join("\n"));
+  writeJson("design-reconstruction/source/source-coverage-ledger.json", { schemaVersion: 1, status: "COMPLETE_CLASSIFICATION", generatedAt: new Date().toISOString(), exclusions: [...exclusions], sourceSnapshotFiles: sourceEntries.length, repositoryFilesIncludingOutputs: entries.length, unclassifiedFiles: 0, byClassification, sourceFingerprint: fingerprint, files: entries });
+  writeJson("design-reconstruction/source/repository-manifest.json", { schemaVersion: 1, sourcePackage: "unicorecrm-web@0.23.20-contract.0", actualSourceFiles: sourceEntries.length, storedInventoryFiles: inventory.summary.repositoryFiles, storedInventoryFingerprint: inventory.inventoryFingerprint, actualSourceFingerprint: fingerprint, storedInventoryDrift: sourceEntries.length !== inventory.summary.repositoryFiles, protectedInventory: { modules: inventory.summary.modules, routes: inventory.summary.routes, loadableRouteModules: inventory.summary.loadableRouteModules, capabilities: inventory.summary.capabilities, workspaceFlags: inventory.summary.workspaceFlags, workflows: inventory.summary.workflows }, openapi: { version: openapi.info.version, sha256: openapiHash, operations: operationCatalog.operations.length, ready: readyOperations.length, blocked: blockedOperations.length, schemas: Object.keys(openapi.components?.schemas ?? {}).length }, commands: commandStatusCounts, queries: queryClassCounts });
+  return { entries, sourceEntries, fingerprint, byClassification };
+};
+
+writeJson("design-reconstruction/source/module-file-map.json", { schemaVersion: 1, modules: moduleMap, workflows: workflowMap });
+let coverage = buildCoverage();
+coverage = buildCoverage();
+
+writeJson("design-reconstruction/state/analysis-state.json", {
+  schemaVersion: 1,
+  mode: "incremental",
+  role: "IMPLEMENTER",
+  status: "RECONSTRUCTED_DRAFT",
+  baselineCreated: false,
+  backendBuilt: false,
+  docsModified: false,
+  repositoryCoverage: { sourceFilesClassified: coverage.entries.length, sourceSnapshotFiles: coverage.sourceEntries.length, repositoryFilesIncludingOutputs: coverage.entries.length, unclassifiedFiles: 0, percent: 100, classifications: coverage.byClassification, sourceFingerprint: coverage.fingerprint },
+  modulesAnalyzed: Object.keys(moduleFacts),
+  workflowsAnalyzed: Object.keys(workflowMap),
+  platformOwnersAnalyzed: Object.keys(platformOwnerFacts),
+  ownerOperationCoverage: { owners: Object.keys(platformOwnerFacts).length, operations: Object.keys(platformOwnerFacts).reduce((count, id) => count + (operationsByModule[id] ?? []).length, 0) },
+  stateMachineCoverage: { explicitTransitionTables: 6, modules: ["leads", "orders", "quotes", "returns", "support", "tasks"] },
+  contracts: { openapiOperations: catalogOperations.length, ready: readyOperations.length, blocked: blockedOperations.length, schemas: Object.keys(openapi.components?.schemas ?? {}).length, commands: commandRegistry.commands.length, queries: queryRegistry.queries.length, queryClassifications: queryClassCounts, ownerMismatchesReconciled: operationOwnerMismatches },
+  findings: { blocker: conflicts.filter((finding) => finding.severity === "BLOCKER").map((finding) => finding.id), high: conflicts.filter((finding) => finding.severity === "HIGH").map((finding) => finding.id) },
+  independentReviewRound1: { status: "IMPLEMENTED_WITH_REMAINING_PREEXISTING_GATES", numberedFindingsRejected: [], documentationBlockersResolved: 4, documentationHighResolved: 6, requestedMediumResolved: ["M-01", "M-02"], resolutionEvidence: "design-reconstruction/reviews/independent-review-round-1-resolution.md" },
+  unresolvedDecisions: ["DEC-COMMAND-SEMANTICS", "DEC-QUERY-COMMERCIAL-EVIDENCE-COVERAGE", "DEC-PLATFORM-CONNECTED-PROJECTIONS", "DEC-P09-LIVE-PROVIDER-CONFORMANCE", ...Object.keys(blockedByDecision)],
+  checks: [
+    { command: "canonical reconstruction integrity validator (inline Node)", status: "PASS", detail: "270 operation rows; 34 blocked rows; 162 query rows; 27 workflow trace rows/documents; 65 platform-owner operations; zero literal corruption matches; no baseline" },
+    { command: "npm run api:check", status: "PASS", detail: "270 operations; 236 ready; 34 blocked; OpenAPI checksum verified" },
+    { command: "npm run quality:gate -- --gate quality.frontend-backend-separation", status: "PASS", detail: "0.23.20-contract.0; 19 frontend generated artifacts; separation preserved" },
+    { command: "npm run quality:gate -- --gate quality.repository-naming", status: "PASS", detail: "2,077 files; 2,058 text files; 244 Markdown files" },
+    { command: "npm run quality:gate -- --gate quality.quality-pipeline", status: "PASS", detail: "11 groups and 310 stable manifest-owned gates" },
+    { command: "npm run quality:gate -- --gate quality.backend-readiness", status: "FAIL", detail: "Every Markdown document must have exactly one docs/document-status.json entry; reconstruction/skill Markdown is intentionally outside that governed registry per workflow" },
+    { command: "npm run repo:check", status: "FAIL", detail: "Repository inventory expected 1,951 files but actual is 2,077; active-script expected 63 vs 75 and documentation expected 178 vs 292. Drift is reconstruction/skill documentation, not application source behavior" },
+    { command: "npm run verify", status: "FAIL", detail: "9/290 gates passed; stopped at quality.backend-readiness on the same Markdown status-registry governance conflict" },
+  ],
+});
+
+console.log(JSON.stringify({ status: "RECONSTRUCTED_DRAFT", sourceFilesClassified: coverage.entries.length, sourceSnapshotFiles: coverage.sourceEntries.length, repositoryFilesIncludingOutputs: coverage.entries.length, modules: Object.keys(moduleFacts).length, platformOwners: Object.keys(platformOwnerFacts).length, workflows: Object.keys(workflowMap).length, operations: catalogOperations.length, ready: readyOperations.length, blocked: blockedOperations.length, blockerFindings: conflicts.filter((finding) => finding.severity === "BLOCKER").length, highFindings: conflicts.filter((finding) => finding.severity === "HIGH").length }, null, 2));

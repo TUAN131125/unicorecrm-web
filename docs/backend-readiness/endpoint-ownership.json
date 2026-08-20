@@ -1,0 +1,349 @@
+{
+  "schemaVersion": 1,
+  "httpEndpointLiterals": [
+    {
+      "path": "src/app/router/CrmRoutes.tsx",
+      "line": 45,
+      "literal": "path: \"/w/:workspaceKey/crm\",",
+      "owner": "FRONTEND_ROUTE"
+    },
+    {
+      "path": "src/app/router/CrmRoutes.tsx",
+      "line": 53,
+      "literal": "path: \"/w/:workspaceKey/studio\",",
+      "owner": "FRONTEND_ROUTE"
+    },
+    {
+      "path": "src/app/router/CrmRoutes.tsx",
+      "line": 61,
+      "literal": "path: \"/w/:workspaceKey/people\",",
+      "owner": "FRONTEND_ROUTE"
+    },
+    {
+      "path": "src/app/router/CrmRoutes.tsx",
+      "line": 68,
+      "literal": "{ path: \"/canonical-home\", element: <CanonicalRootRedirect /> },",
+      "owner": "FRONTEND_ROUTE"
+    },
+    {
+      "path": "src/platform/api/generated/commercialApi.ts",
+      "line": 556,
+      "literal": "path: `/quotes/${encodeURIComponent(quoteId)}/accept`,",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/commercialApi.ts",
+      "line": 665,
+      "literal": "path: \"/leads\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/commercialApi.ts",
+      "line": 706,
+      "literal": "path: `/contacts/${encodeURIComponent(contactId)}`,",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/commercialApi.ts",
+      "line": 715,
+      "literal": "path: `/customers/${encodeURIComponent(customerId)}`,",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/commercialApi.ts",
+      "line": 724,
+      "literal": "path: `/organizations/${encodeURIComponent(organizationId)}`,",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/commercialApi.ts",
+      "line": 737,
+      "literal": "path: \"/contacts\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/commercialApi.ts",
+      "line": 746,
+      "literal": "path: \"/customers\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/commercialApi.ts",
+      "line": 755,
+      "literal": "path: \"/deals\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/commercialApi.ts",
+      "line": 764,
+      "literal": "path: \"/leads\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/commercialApi.ts",
+      "line": 773,
+      "literal": "path: \"/orders\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/commercialApi.ts",
+      "line": 782,
+      "literal": "path: \"/organizations\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/commercialApi.ts",
+      "line": 791,
+      "literal": "path: \"/products\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/commercialApi.ts",
+      "line": 800,
+      "literal": "path: \"/quotes\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/receivablesApi.ts",
+      "line": 157,
+      "literal": "path: `/buyers/${encodeURIComponent(buyerType)}/${encodeURIComponent(buyerId)}/account-statement`,",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/receivablesApi.ts",
+      "line": 169,
+      "literal": "path: \"/receivables/aging\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/receivablesApi.ts",
+      "line": 181,
+      "literal": "path: \"/receivables/summary\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/receivablesApi.ts",
+      "line": 193,
+      "literal": "path: \"/receivables\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/studioQuickSetupApi.ts",
+      "line": 59,
+      "literal": "path: \"/studio/quick-setup\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/crmConfigurationApi.ts",
+      "line": 96,
+      "literal": "path: `/crm-configuration/object-schemas/${encodeURIComponent(objectKey)}`,",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/crmConfigurationApi.ts",
+      "line": 105,
+      "literal": "path: \"/crm-configuration/object-schemas\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/crmConfigurationApi.ts",
+      "line": 114,
+      "literal": "path: \"/crm-configuration/pipelines\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/integrationConfigurationApi.ts",
+      "line": 62,
+      "literal": "path: \"/integrations/connections\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/integrationConfigurationApi.ts",
+      "line": 71,
+      "literal": "path: \"/integrations/providers\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/workspaceConfigurationApi.ts",
+      "line": 60,
+      "literal": "path: \"/workspace-configuration\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/workspaceConfigurationApi.ts",
+      "line": 69,
+      "literal": "path: \"/workspace-configuration/currencies\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/workspaceConfigurationApi.ts",
+      "line": 78,
+      "literal": "path: \"/workspace-configuration/exchange-rates\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/financialConfigurationApi.ts",
+      "line": 54,
+      "literal": "path: \"/invoices/configuration/seller-information\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/financialConfigurationApi.ts",
+      "line": 63,
+      "literal": "path: \"/payments/configuration/receiving-accounts\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/financialConfigurationApi.ts",
+      "line": 72,
+      "literal": "path: \"/shipping/configuration/pickup-locations\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/financialConfigurationApi.ts",
+      "line": 81,
+      "literal": "path: \"/shipping/configuration/return-locations\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/productConfigurationApi.ts",
+      "line": 56,
+      "literal": "path: \"/products/configuration/types\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/financialApi.ts",
+      "line": 405,
+      "literal": "path: `/invoices/${encodeURIComponent(invoiceId)}`,",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/financialApi.ts",
+      "line": 414,
+      "literal": "path: `/invoices/${encodeURIComponent(invoiceId)}/issue-readiness`,",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/financialApi.ts",
+      "line": 423,
+      "literal": "path: `/payment-intents/${encodeURIComponent(intentId)}`,",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/financialApi.ts",
+      "line": 432,
+      "literal": "path: `/payment-intents/${encodeURIComponent(intentId)}/status`,",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/financialApi.ts",
+      "line": 441,
+      "literal": "path: \"/payment-methods\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/financialApi.ts",
+      "line": 450,
+      "literal": "path: `/payments/${encodeURIComponent(paymentRecordId)}/detail`,",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/financialApi.ts",
+      "line": 459,
+      "literal": "path: `/refunds/${encodeURIComponent(refundIntentId)}`,",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/financialApi.ts",
+      "line": 468,
+      "literal": "path: `/invoices/${encodeURIComponent(invoiceId)}/issue`,",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/financialApi.ts",
+      "line": 481,
+      "literal": "path: \"/credit-notes\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/financialApi.ts",
+      "line": 493,
+      "literal": "path: \"/customer-credits\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/financialApi.ts",
+      "line": 505,
+      "literal": "path: \"/invoice-deliveries\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/financialApi.ts",
+      "line": 517,
+      "literal": "path: \"/invoices\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/financialApi.ts",
+      "line": 526,
+      "literal": "path: \"/payment-allocations\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/financialApi.ts",
+      "line": 538,
+      "literal": "path: \"/payment-intents\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/financialApi.ts",
+      "line": 550,
+      "literal": "path: \"/payment-plans\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/financialApi.ts",
+      "line": 562,
+      "literal": "path: \"/payments\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/financialApi.ts",
+      "line": 574,
+      "literal": "path: \"/payment-schedule-lines\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/generated/financialApi.ts",
+      "line": 586,
+      "literal": "path: \"/refunds\",",
+      "owner": "GENERATED_OPENAPI_CLIENT"
+    },
+    {
+      "path": "src/platform/api/contracts/generatedProductionQueryRegistry.ts",
+      "line": 10,
+      "literal": "{ key: \"contacts\", list: { operationId: \"listContacts\", path: \"/contacts\", allowedQueryParameters: [] }, detail: { operationId: \"getContact\", pathTemplate: \"/contacts/{contactId}\", pathParameter: \"contactId\" } },",
+      "owner": "GENERATED_OPENAPI_REGISTRY"
+    },
+    {
+      "path": "src/platform/api/contracts/generatedProductionQueryRegistry.ts",
+      "line": 11,
+      "literal": "{ key: \"customers\", list: { operationId: \"listCustomers\", path: \"/customers\", allowedQueryParameters: [] }, detail: { operationId: \"getCustomer\", pathTemplate: \"/customers/{customerId}\", pathParameter: \"customerId\" } },",
+      "owner": "GENERATED_OPENAPI_REGISTRY"
+    },
+    {
+      "path": "src/platform/api/contracts/generatedProductionQueryRegistry.ts",
+      "line": 13,
+      "literal": "{ key: \"invoices\", list: { operationId: \"listInvoices\", path: \"/invoices\", allowedQueryParameters: [] }, detail: { operationId: \"getInvoice\", pathTemplate: \"/invoices/{invoiceId}\", pathParameter: \"invoiceId\" } },",
+      "owner": "GENERATED_OPENAPI_REGISTRY"
+    },
+    {
+      "path": "src/platform/api/contracts/generatedProductionQueryRegistry.ts",
+      "line": 16,
+      "literal": "{ key: \"organizations\", list: { operationId: \"listOrganizations\", path: \"/organizations\", allowedQueryParameters: [] }, detail: { operationId: \"getOrganization\", pathTemplate: \"/organizations/{organizationId}\", pathParameter: \"organizationId\" } },",
+      "owner": "GENERATED_OPENAPI_REGISTRY"
+    }
+  ],
+  "handwrittenCount": 0,
+  "policy": "Production HTTP paths may exist only in OpenAPI-generated clients or OpenAPI-generated registries."
+}

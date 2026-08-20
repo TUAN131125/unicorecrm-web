@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 1,
+  "phase": "SR-2-COMPLETE",
+  "inputCandidate": {
+    "archive": "unicorecrm-web.zip",
+    "sha256": "f7514da3309d4734dd685d50901c73d0d39a2bdb74409a78d1cbb967cd4c723e"
+  },
+  "gateOwnership": {
+    "pipelineGates": 182,
+    "migrated": 180,
+    "retainedTooling": 2,
+    "planned": 0,
+    "supportingExecutablesMigrated": 1
+  },
+  "migration": {
+    "checkNamedCompatibilityWrappers": 179,
+    "canonicalExecutableTargets": 179,
+    "targetCounts": {
+      "architecture": 40,
+      "contracts": 64,
+      "integration": 38,
+      "route-smoke": 8,
+      "unit": 29
+    },
+    "scriptAssertionOwners": [],
+    "scriptFiles": 196,
+    "packageCommands": 205,
+    "legacyPackageCommandsChanged": 0,
+    "srcFilesChanged": 0,
+    "astRelativeModuleSpecifierRewrites": 227,
+    "unresolvedRelativeModuleSpecifiers": 0,
+    "syntaxTranspileErrors": 0
+  },
+  "repository": {
+    "repositoryFiles": 1668,
+    "sourceFiles": 1172,
+    "sourceLines": 149228,
+    "modules": 15,
+    "routes": 78,
+    "loadableRouteModules": 62,
+    "capabilities": 111,
+    "workspaceFlags": 13,
+    "workflows": 21,
+    "publicBoundaryFiles": 88,
+    "publicExportStatements": 855,
+    "persistenceEntries": 172,
+    "repositoryImplementations": 114,
+    "browserEventEntries": 13,
+    "mockAndDefaultDataSources": 21,
+    "compatibilityCandidates": 50,
+    "deprecatedComponents": 8,
+    "duplicateGroups": 0,
+    "largeFiles": 38,
+    "circularDependencyGroups": 0,
+    "packageScripts": 205,
+    "verifyGates": 182,
+    "qualityGroups": 9,
+    "fileClassifications": {
+      "active-runtime": 1103,
+      "active-script": 216,
+      "active-test": 205,
+      "compatibility": 50,
+      "documentation": 89,
+      "fixture": 3,
+      "generated": 2
+    }
+  },
+  "compatibilityPolicy": "Legacy package commands remain stable through thin scripts/** wrappers until command consumers migrate to quality:gate.",
+  "removalCondition": "Remove wrappers only after package, CI and documentation consumers call the canonical manifest/target entries and parity remains green.",
+  "verification": [
+    {
+      "id": "migration-manifest",
+      "status": "PASS",
+      "evidence": "182 gates; 180 MIGRATED, 2 RETAINED_TOOLING, zero PLANNED/PARITY."
+    },
+    {
+      "id": "compatibility-wrapper-contract",
+      "status": "PASS",
+      "evidence": "179 thin wrappers; zero script assertion owners."
+    },
+    {
+      "id": "ast-import-resolution",
+      "status": "PASS",
+      "evidence": "227 rewritten relative module specifiers; zero unresolved."
+    },
+    {
+      "id": "canonical-syntax",
+      "status": "PASS",
+      "evidence": "179 canonical executable files transpiled; zero syntax diagnostics."
+    },
+    {
+      "id": "source-byte-preservation",
+      "status": "PASS",
+      "evidence": "Zero changed files under src/**."
+    },
+    {
+      "id": "package-command-preservation",
+      "status": "PASS",
+      "evidence": "Zero changed package script commands."
+    },
+    {
+      "id": "secret-policy",
+      "status": "PASS",
+      "evidence": "Current-tree scan and development identity boundary pass."
+    },
+    {
+      "id": "architecture-source-contracts",
+      "status": "PASS",
+      "evidence": "Architecture, naming, package-lock, cleanup, data/type boundaries, frontend/backend separation, quality pipeline, entry splitting and overflow checks pass."
+    },
+    {
+      "id": "openapi-drift",
+      "status": "PASS",
+      "evidence": "Generated fingerprint unchanged."
+    },
+    {
+      "id": "dependency-install",
+      "status": "BLOCKED",
+      "evidence": "npm ci did not complete in the available package environment; dependency-backed full verify cannot be claimed."
+    },
+    {
+      "id": "full-quality-pipeline",
+      "status": "NOT_RUN",
+      "evidence": "Requires a successful npm ci."
+    },
+    {
+      "id": "production-build",
+      "status": "NOT_RUN",
+      "evidence": "Requires installed Vite dependencies."
+    },
+    {
+      "id": "browser-e2e",
+      "status": "NOT_RUN",
+      "evidence": "Requires installed dependencies and browser binaries."
+    }
+  ],
+  "preExistingFindings": [
+    {
+      "gate": "test:action-button-taxonomy",
+      "status": "FAIL",
+      "classification": "PRE_EXISTING",
+      "evidence": "The same assertion fails at the same SupportCaseListPage marker in the input candidate and the migrated target."
+    }
+  ],
+  "selfReview": {
+    "critical": 0,
+    "high": 0,
+    "mediumResolved": 1,
+    "lowBacklog": 1,
+    "resolved": [
+      {
+        "id": "SR2-REVIEW-001",
+        "severity": "MEDIUM",
+        "rootCause": "Initial text-based import rewrite also touched import-like strings used by source assertions.",
+        "action": "Rebuilt all canonical targets from the input using TypeScript AST module-specifier nodes only; added import resolution and syntax evidence.",
+        "guard": "Structural migration contract plus AST resolution verification."
+      }
+    ],
+    "backlog": [
+      {
+        "id": "SR2-REVIEW-002",
+        "severity": "LOW",
+        "item": "Compatibility wrappers remain until package/CI command authority is consolidated in later phases."
+      }
+    ]
+  },
+  "exactDiff": {
+    "inputFiles": 1489,
+    "outputFiles": 1670,
+    "added": 181,
+    "modified": 190,
+    "deleted": 0,
+    "sameByte": 1299
+  },
+  "score": {
+    "securityAndSecretHygiene": 24,
+    "correctnessAndRegressionSafety": 18,
+    "architectureAndOwnership": 15,
+    "verificationAndEvidence": 13,
+    "backendReadiness": 12,
+    "maintainabilityAndDocumentation": 10,
+    "total": 92,
+    "rating": "GOOD",
+    "criticalBlockers": 0
+  }
+}

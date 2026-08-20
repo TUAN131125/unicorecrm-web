@@ -1,0 +1,8 @@
+{
+  "type": "https://errors.unicore.example/refund-recovery-manual-review",
+  "title": "Refund recovery requires manual review",
+  "status": 409,
+  "code": "REFUND_RECOVERY_MANUAL_REVIEW_REQUIRED",
+  "retryable": false,
+  "correlationId": "corr-refund-manual-review-01"
+}

@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "contractVersion": "0.23.20-contract.0",
+  "status": "CLOSED",
+  "decisionId": "DEC-P03-COMMERCIAL-READ-MODELS",
+  "authority": "docs/api/openapi.json",
+  "modules": [
+    {
+      "module": "deals",
+      "listOperationId": "listDeals",
+      "detailOperationId": "getDeal",
+      "schema": "DealReadModel",
+      "concurrencyField": "resourceVersion",
+      "businessVersionFields": []
+    },
+    {
+      "module": "quotes",
+      "listOperationId": "listQuotes",
+      "detailOperationId": "getQuote",
+      "schema": "QuoteReadModel",
+      "concurrencyField": "resourceVersion",
+      "businessVersionFields": [
+        "quoteRevision"
+      ]
+    },
+    {
+      "module": "orders",
+      "listOperationId": "listOrders",
+      "detailOperationId": "getOrder",
+      "schema": "OrderReadModel",
+      "concurrencyField": "resourceVersion",
+      "businessVersionFields": []
+    }
+  ],
+  "rules": [
+    "List and detail projections are closed schemas with decimal-string Money.",
+    "resourceVersion is server-authored and is the only If-Match source for connected commercial commands.",
+    "Frontend projection to numeric legacy view models is display compatibility only and cannot calculate authoritative totals.",
+    "Quote and Order action availability is a presentation hint; backend authorization and invariants remain mandatory.",
+    "Unknown lifecycle values are contract violations and connected mode fails closed."
+  ],
+  "providerFixtureDirectory": "tests/fixtures/backend-contract/commercial-read-models",
+  "providerRunner": "tests/contract/provider/run-commercial-read-model-provider-contract.mjs"
+}

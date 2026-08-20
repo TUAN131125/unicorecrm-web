@@ -1,0 +1,76 @@
+{
+  "schemaVersion": 1,
+  "contractVersion": "0.23.20-contract.0",
+  "phase": "P0.10",
+  "sourceSha256": "63fe5ce18d96c2718e3326629607157d9325e678aeba4c66f583c4eb8b86b147",
+  "decisions": [
+    {
+      "decisionId": "DEC-P10-APPLICATION-DTO-ADAPTERS",
+      "status": "CLOSED",
+      "owner": "frontend-architecture+api-contract-architecture",
+      "decision": "Lead, Product, Shipping Booking and Return list/detail operations are mapped through explicit infrastructure adapters into frontend application models. Raw generated OpenAPI DTOs are never exposed directly to presentation or generic application queries. Decimal-string Money and authoritative resourceVersion are preserved; any numeric conversion is display-only.",
+      "operations": [
+        "listLeads",
+        "getLead",
+        "listProducts",
+        "getProduct",
+        "listShippingBookings",
+        "getShippingBooking",
+        "listReturns",
+        "getReturn"
+      ],
+      "evidence": [
+        "src/app/composition/connectedModuleQueryResponseMappers.ts",
+        "src/platform/api/runtime/HttpModuleDataAuthority.ts",
+        "src/modules/leads/infrastructure/http/LeadApiMapper.ts",
+        "src/modules/products/infrastructure/openapi/productReadModelMapper.ts",
+        "src/modules/shipping/infrastructure/openapi/shippingReadModelMapper.ts",
+        "src/modules/returns/infrastructure/openapi/returnReadModelMapper.ts"
+      ]
+    },
+    {
+      "decisionId": "DEC-P10-QUERY-REGISTRY-CLOSURE",
+      "status": "CLOSED",
+      "owner": "module-domain-owners+read-model-architecture",
+      "decision": "All 141 query symbols have an explicit classification. Commercial-evidence and payment obligation queries are composed read models; lead duplicate helpers and selected calculations are frontend-local; five legacy number-based payment projections are demo-only. No query remains UNRESOLVED and no generic endpoint was invented.",
+      "operations": [],
+      "evidence": [
+        "docs/backend-readiness/query-registry.json",
+        "docs/backend-readiness/query-registry.md"
+      ]
+    },
+    {
+      "decisionId": "DEC-P10-PROCESS-ISOLATED-REFERENCE-CONFORMANCE",
+      "status": "CLOSED",
+      "owner": "api-contract-architecture+quality",
+      "decision": "The non-production reference provider host can run in a separate operating-system process and all provider scenarios target it over real HTTP using actual OpenAPI methods, paths and schemas. This proves process-boundary consumer/provider conformance only, not durable backend implementation.",
+      "operations": [],
+      "evidence": [
+        "tests/contract/provider/reference-host/serveReferenceProviderHost.mjs",
+        "tests/contract/provider/run-external-reference-provider-conformance.mjs",
+        "tests/contract/provider/run-reference-provider-conformance.mjs"
+      ]
+    },
+    {
+      "decisionId": "DEC-P10-LIVE-DURABLE-PROVIDER-CONFORMANCE",
+      "status": "BLOCKED_EXTERNAL",
+      "owner": "backend-provider-implementation+platform-security+ci-environment",
+      "decision": "No durable backend URL, authenticated test identities, two isolated persisted workspaces, database transaction implementation or real external provider acknowledgement transport was supplied. Process-isolated reference conformance must not be represented as live backend acceptance.",
+      "operations": [],
+      "blockingOperations": [],
+      "evidence": [
+        "External acceptance runners require backend URL, access tokens, workspace IDs and seeded aggregate identifiers."
+      ]
+    },
+    {
+      "decisionId": "DEC-P10-DEPENDENCY-BACKED-VERIFICATION",
+      "status": "BLOCKED_EXTERNAL",
+      "owner": "ci-environment+frontend-platform",
+      "decision": "Full TypeScript, Vite production build and browser E2E require a clean dependency installation. Static syntax, import-resolution and deterministic contract gates do not replace those checks.",
+      "operations": [],
+      "evidence": [
+        "npm dependency cache remains incomplete in the audit environment."
+      ]
+    }
+  ]
+}

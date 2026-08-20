@@ -1,0 +1,104 @@
+{
+  "contractVersion": "0.23.20-contract.0",
+  "scenarios": [
+    {
+      "id": "list-tasks",
+      "operationId": "listTasks",
+      "expectedStatus": 200
+    },
+    {
+      "id": "get-task",
+      "operationId": "getTask",
+      "expectedStatus": 200
+    },
+    {
+      "id": "list-activities",
+      "operationId": "listActivities",
+      "expectedStatus": 200
+    },
+    {
+      "id": "create-task",
+      "operationId": "createTask",
+      "expectedStatus": 201
+    },
+    {
+      "id": "create-replay",
+      "operationId": "createTask",
+      "expectedStatus": 201,
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "complete-task",
+      "operationId": "completeTask",
+      "expectedStatus": 200
+    },
+    {
+      "id": "complete-outcome-required",
+      "operationId": "completeTask",
+      "expectedStatus": 422,
+      "expectedCode": "TASK_OUTCOME_REQUIRED"
+    },
+    {
+      "id": "cancel-task",
+      "operationId": "cancelTask",
+      "expectedStatus": 200
+    },
+    {
+      "id": "cancel-reason-required",
+      "operationId": "cancelTask",
+      "expectedStatus": 422,
+      "expectedCode": "TASK_CANCELLATION_REASON_REQUIRED"
+    },
+    {
+      "id": "assign-task",
+      "operationId": "assignTask",
+      "expectedStatus": 200
+    },
+    {
+      "id": "reschedule-task",
+      "operationId": "rescheduleTask",
+      "expectedStatus": 200
+    },
+    {
+      "id": "archive-task",
+      "operationId": "archiveTask",
+      "expectedStatus": 200
+    },
+    {
+      "id": "log-activity",
+      "operationId": "logActivity",
+      "expectedStatus": 201
+    },
+    {
+      "id": "invalid-transition",
+      "operationId": "completeTask",
+      "expectedStatus": 409,
+      "expectedCode": "TASK_INVALID_TRANSITION"
+    },
+    {
+      "id": "stale-version",
+      "operationId": "assignTask",
+      "expectedStatus": 412,
+      "expectedCode": "VERSION_CONFLICT"
+    },
+    {
+      "id": "cross-workspace-denied",
+      "operationId": "getTask",
+      "expectedStatus": 403,
+      "expectedCode": "WORKSPACE_MISMATCH"
+    },
+    {
+      "id": "mass-assignment-rejected",
+      "operationId": "createTask",
+      "expectedStatus": 400,
+      "forbiddenFields": [
+        "id",
+        "status",
+        "completedAt",
+        "actorId",
+        "resourceVersion",
+        "createdAt"
+      ]
+    }
+  ]
+}

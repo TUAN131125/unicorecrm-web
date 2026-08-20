@@ -1,0 +1,8 @@
+{
+  "type": "https://errors.unicore.example/refund-cancellation-pending",
+  "title": "Refund cancellation is already pending",
+  "status": 409,
+  "code": "REFUND_CANCELLATION_PENDING",
+  "retryable": false,
+  "correlationId": "corr-refund-cancel-pending-01"
+}

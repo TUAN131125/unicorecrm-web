@@ -1,0 +1,9 @@
+{
+  "type": "urn:unicorecrm:problem:idempotency-key-reused",
+  "title": "Idempotency key was reused with a different payload",
+  "status": 409,
+  "code": "IDEMPOTENCY_KEY_REUSED",
+  "retryable": false,
+  "correlationId": "corr_idempotency_001",
+  "idempotencyKey": "idem_issue_inv_001_v3"
+}

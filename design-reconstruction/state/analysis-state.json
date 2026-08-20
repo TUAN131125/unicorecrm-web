@@ -1,0 +1,289 @@
+{
+  "schemaVersion": 1,
+  "mode": "incremental",
+  "role": "IMPLEMENTER",
+  "status": "CANONICAL_BASELINE",
+  "handoffStatus": "READY_FOR_BACKEND_IMPLEMENTATION",
+  "baselineCreated": true,
+  "backendBuilt": false,
+  "docsModified": false,
+  "repositoryCoverage": {
+    "sourceFilesClassified": 2079,
+    "sourceSnapshotFiles": 1986,
+    "repositoryFilesIncludingOutputs": 2095,
+    "unclassifiedFiles": 0,
+    "percent": 100,
+    "classifications": {
+      "READ_DEEP": 438,
+      "READ_SUMMARY": 1528,
+      "PROVENANCE_ONLY": 111,
+      "EXCLUDED_WITH_REASON": 2
+    },
+    "sourceFingerprint": "dfc18e12abd2cf06ec2b76fb85d869f091934cf6a26afd343e4904e716ac839f"
+  },
+  "modulesAnalyzed": [
+    "commercial-evidence",
+    "contacts",
+    "customers",
+    "deals",
+    "invoices",
+    "leads",
+    "orders",
+    "organizations",
+    "payments",
+    "products",
+    "quotes",
+    "returns",
+    "shipping",
+    "support",
+    "tasks"
+  ],
+  "workflowsAnalyzed": [
+    "contact-opportunity-creation",
+    "contact-organization-relationship",
+    "customer-care",
+    "customer-commercial-actions",
+    "customer-conversion",
+    "customer-identity",
+    "customer-onboarding",
+    "customer-relationship-integrity",
+    "deal-recycle",
+    "lead-qualification",
+    "order-cancellation",
+    "order-closing",
+    "order-confirmation",
+    "order-creation",
+    "order-shipping-booking",
+    "quote-acceptance",
+    "return-credit-refund",
+    "return-resolution",
+    "return-resolution-evidence",
+    "shipping-cod-evidence",
+    "work-activation",
+    "accepted-quote-order-conversion",
+    "refund-provider-recovery",
+    "lead-identity-resolution",
+    "lead-handover",
+    "lead-follow-up",
+    "lead-queue-claim"
+  ],
+  "platformOwnersAnalyzed": [
+    "platform/workspace-config",
+    "platform/access-control",
+    "workspaces/studio",
+    "platform/identity-auth",
+    "platform/integrations",
+    "platform/workspace-context"
+  ],
+  "ownerOperationCoverage": {
+    "owners": 6,
+    "operations": 65
+  },
+  "stateMachineCoverage": {
+    "explicitTransitionTables": 6,
+    "modules": [
+      "leads",
+      "orders",
+      "quotes",
+      "returns",
+      "support",
+      "tasks"
+    ]
+  },
+  "contracts": {
+    "openapiOperations": 270,
+    "ready": 236,
+    "blocked": 34,
+    "schemas": 603,
+    "commands": 173,
+    "queries": 162,
+    "queryClassifications": {
+      "COMPOSED_READ_MODEL": 66,
+      "FRONTEND_LOCAL": 27,
+      "PRODUCTION_API": 63,
+      "DEMO_ONLY": 5,
+      "BFF_CANDIDATE": 1
+    },
+    "ownerMismatchesReconciled": [
+      {
+        "operationId": "putWorkspaceExchangeRate",
+        "derivedOwner": "workspaces/studio",
+        "openApiOwner": "platform/workspace-config"
+      },
+      {
+        "operationId": "replaceWorkspaceCurrencies",
+        "derivedOwner": "workspaces/studio",
+        "openApiOwner": "platform/workspace-config"
+      }
+    ],
+    "moneySchemaSemantics": {
+      "authority": "docs/api/openapi.json",
+      "sha256": "8278547df0fd4be9a9af9b8a6d5f3e15ddad8d005d804c99a7c9248e0f402757",
+      "Money.x-rounding-mode": "HALF_UP",
+      "Money.x-currency-owner": "WORKSPACE_CONFIGURATION",
+      "Money.x-negative-policy": "OPERATION_SPECIFIC",
+      "DecimalAmount.x-maximum-scale": 6,
+      "ProductDocument.x-money-semantics": "unitPrice and costPrice are authoritative decimal-string Money. Numeric frontend fields are display-only projections.",
+      "perCurrencyMinorUnits": "UNDECLARED_NON_BLOCKING_DESIGN_DEBT",
+      "maximumScaleIsNotMinorUnits": true
+    }
+  },
+  "findings": {
+    "designBlocker": [],
+    "designHigh": [],
+    "resolved": [
+      "R2-01",
+      "H-01",
+      "H-02",
+      "H-03",
+      "H-04"
+    ],
+    "deferredCapabilities": [
+      "F-BLOCK-OPENAPI",
+      "F-BLOCK-COMMANDS",
+      "F-BLOCK-QUERY",
+      "F-BLOCK-PLATFORM"
+    ],
+    "implementationValidationPending": [
+      "F-BLOCK-CONFORMANCE"
+    ],
+    "repositoryGovernanceIssues": [
+      "F-HIGH-INVENTORY",
+      "F-HIGH-DOCUMENT-STATUS"
+    ],
+    "nonBlockingDesignDebt": [
+      "F-HIGH-MONEY: per-currency minor units remain undeclared",
+      "R2-02: WF-12 governed registry readiness remains stale relative to OpenAPI"
+    ]
+  },
+  "independentReviewRound1": {
+    "status": "IMPLEMENTED_WITH_REMAINING_PREEXISTING_GATES",
+    "numberedFindingsRejected": [],
+    "documentationBlockersResolved": 4,
+    "documentationHighResolved": 6,
+    "requestedMediumResolved": [
+      "M-01",
+      "M-02"
+    ],
+    "resolutionEvidence": "design-reconstruction/reviews/independent-review-round-1-resolution.md"
+  },
+  "independentReviewRound2": {
+    "status": "READY_FOR_FINAL_BASELINE_REVIEW",
+    "findingResolved": "R2-01",
+    "resolutionEvidence": "design-reconstruction/reviews/independent-review-round-2-resolution.md",
+    "designBlockerRemaining": 0,
+    "designHighRemaining": 0,
+    "canonicalStatus": "RECONSTRUCTED_DRAFT",
+    "baselineCreated": false
+  },
+  "independentBackendHandoffReview": {
+    "reviewStatus": "READY_FOR_BACKEND_IMPLEMENTATION",
+    "reviewEvidence": "design-reconstruction/reviews/independent-backend-handoff-review.md",
+    "resolutionStatus": "H_01_THROUGH_H_04_RESOLVED",
+    "resolutionEvidence": "design-reconstruction/reviews/independent-backend-handoff-review-resolution.md",
+    "designBlockerRemaining": 0,
+    "designHighRemaining": 0,
+    "mediumRemaining": 0,
+    "lowRemaining": 0,
+    "readyOperations": 236,
+    "blockedOperations": 34,
+    "blockedCommands": 17,
+    "platformWorkspaceConfigBlockedOperations": 13,
+    "canonicalDesignVersionChanged": false,
+    "openApiChanged": false
+  },
+  "unresolvedDecisions": [
+    "DEC-COMMAND-SEMANTICS",
+    "DEC-QUERY-COMMERCIAL-EVIDENCE-COVERAGE",
+    "DEC-PLATFORM-CONNECTED-PROJECTIONS",
+    "DEC-P09-LIVE-PROVIDER-CONFORMANCE",
+    "DEC-P15-TYPED-QUOTE-LIFECYCLE",
+    "DEC-ALLOCATECUSTOMERCREDIT",
+    "DEC-ALLOCATEPAYMENT",
+    "DEC-MUTATION-RESULT-PROJECTION",
+    "DEC-CREATECRMOBJECTFIELD",
+    "DEC-CREATECRMPIPELINE",
+    "DEC-CREATECRMPIPELINESTAGE",
+    "DEC-CREATEINTEGRATIONCONNECTION",
+    "DEC-CREATEPRODUCTCONFIGURATIONTYPE",
+    "DEC-DELETECRMOBJECTFIELD",
+    "DEC-DELETECRMPIPELINE",
+    "DEC-DELETECRMPIPELINESTAGE",
+    "DEC-DELETEPRODUCTCONFIGURATIONTYPE",
+    "DEC-DISCONNECTINTEGRATIONCONNECTION",
+    "DEC-MARKDEALLOSTANDPLANRECYCLE",
+    "DEC-PUTWORKSPACEEXCHANGERATE",
+    "DEC-PHASE5-GENERIC-LEAD-QUALIFICATION-RETIRED",
+    "DEC-REPLACEINVOICESELLERINFORMATIONCONFIGURATION",
+    "DEC-REPLACEPAYMENTRECEIVINGACCOUNTS",
+    "DEC-REPLACEWORKSPACECURRENCIES",
+    "DEC-UPDATECRMOBJECTFIELD",
+    "DEC-UPDATECRMPIPELINE",
+    "DEC-UPDATECRMPIPELINESTAGE",
+    "DEC-UPDATEINTEGRATIONCONNECTION",
+    "DEC-UPDATEPRODUCTCONFIGURATIONTYPE",
+    "DEC-VERIFYINTEGRATIONCONNECTION"
+  ],
+  "checks": [
+    {
+      "command": "canonical reconstruction integrity validator (inline Node)",
+      "status": "PASS",
+      "detail": "270 operation rows; 34 blocked rows; 162 query rows; 27 workflow trace rows/documents; 65 platform-owner operations; zero literal corruption matches; no baseline"
+    },
+    {
+      "command": "npm run api:check",
+      "status": "PASS",
+      "detail": "270 operations; 236 ready; 34 blocked; OpenAPI checksum verified"
+    },
+    {
+      "command": "R2-01 OpenAPI/canonical consistency validator (inline Node)",
+      "status": "PASS",
+      "detail": "Money HALF_UP/WORKSPACE_CONFIGURATION/OPERATION_SPECIFIC; DecimalAmount maximum scale 6; ProductDocument display-only numeric projections; zero minor-unit declarations; 0 DESIGN_BLOCKER; 0 DESIGN_HIGH; RECONSTRUCTED_DRAFT"
+    },
+    {
+      "command": "npm run quality:group -- --group backend-contract-hardening",
+      "status": "FAIL_AFTER_RELEVANT_PASS",
+      "detail": "Dedicated money-contract and preceding 26 gates passed; group stopped at gate 28 inventory-integrity because node_modules is present. Out-of-scope environment/inventory condition was not modified"
+    },
+    {
+      "command": "npm run quality:gate -- --gate quality.frontend-backend-separation",
+      "status": "PASS",
+      "detail": "0.23.20-contract.0; 19 frontend generated artifacts; separation preserved"
+    },
+    {
+      "command": "npm run quality:gate -- --gate quality.repository-naming",
+      "status": "PASS",
+      "detail": "2,095 files; 2,076 text files; 261 Markdown files"
+    },
+    {
+      "command": "npm run quality:gate -- --gate quality.quality-pipeline",
+      "status": "PASS",
+      "detail": "11 groups and 310 stable manifest-owned gates"
+    },
+    {
+      "command": "npm run quality:gate -- --gate quality.backend-readiness",
+      "status": "FAIL",
+      "detail": "131 reconstruction Markdown files are outside docs/document-status.json: canonical-design 86, .ai-workflows 30, design-reconstruction 13, .agents 1, .claude 1. This is the recorded repository-governance conflict; no docs/ or src/ entry is involved"
+    },
+    {
+      "command": "npm run repo:check",
+      "status": "FAIL",
+      "detail": "Repository inventory expected 1,951 files but actual is 2,095; active-script expected 63 vs 76 and documentation expected 178 vs 309. Delta matches 144 untracked reconstruction files (131 Markdown, 13 non-Markdown), not application source behavior"
+    },
+    {
+      "command": "npm run verify",
+      "status": "FAIL",
+      "detail": "9/290 gates passed; stopped at quality.backend-readiness on the same Markdown status-registry governance conflict"
+    },
+    {
+      "command": "backend handoff integrity validator (inline Node)",
+      "status": "PASS",
+      "detail": "270 operations; 236 ready matrix rows; 34 blocked operations excluded; 17 blocked commands deferred; 13 platform/workspace-config blocked operations; 0 dangling query labels; 13/13 handoff metadata headers; OpenAPI checksum and Canonical Design v1.0 unchanged"
+    }
+  ],
+  "baselineRecord": "canonical-design/BASELINE.json",
+  "backendHandoffPackage": "canonical-design/backend-handoff/",
+  "baselineDate": "2026-08-10",
+  "canonicalDesignVersion": "1.0",
+  "reviewRoundsCompleted": 4
+}

@@ -1,0 +1,12 @@
+{
+  "type": "urn:unicorecrm:problem:version-conflict",
+  "title": "Resource version conflict",
+  "status": 412,
+  "code": "VERSION_CONFLICT",
+  "detail": "The invoice changed after it was loaded.",
+  "retryable": false,
+  "correlationId": "corr_version_001",
+  "aggregateId": "inv_001",
+  "expectedVersion": 3,
+  "currentVersion": 4
+}

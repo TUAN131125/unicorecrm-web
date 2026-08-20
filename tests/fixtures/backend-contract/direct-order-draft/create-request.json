@@ -1,0 +1,56 @@
+{
+  "buyerRef": {
+    "type": "CONTACT",
+    "id": "contact_01"
+  },
+  "sourceDealId": "deal_01",
+  "currency": "VND",
+  "items": [
+    {
+      "productId": "product_01",
+      "productName": "Gói dịch vụ CRM",
+      "sku": "CRM-BASE",
+      "quantity": 1,
+      "unitPrice": {
+        "amount": "1200000",
+        "currency": "VND"
+      },
+      "discountPercent": "0",
+      "taxRate": "10",
+      "taxMode": "exclusive",
+      "fulfillmentKind": "SERVICE"
+    }
+  ],
+  "paymentAgreement": {
+    "kind": "FULL_PAYMENT",
+    "currency": "VND",
+    "lines": [
+      {
+        "sequence": 1,
+        "label": "Thanh toán toàn bộ",
+        "purpose": "FULL",
+        "amountRule": {
+          "type": "FIXED",
+          "amount": {
+            "amount": "1320000",
+            "currency": "VND"
+          }
+        },
+        "dueRule": {
+          "type": "EVENT_RELATIVE",
+          "event": "ORDER_CONFIRMED",
+          "offsetDays": 0,
+          "dayBasis": "CALENDAR"
+        },
+        "allowedMethodCodes": [
+          "BANK_TRANSFER"
+        ],
+        "preferredMethodCode": "BANK_TRANSFER",
+        "fulfillmentGate": "NONE",
+        "invoicePolicyCode": "STANDARD_ORDER_INVOICE"
+      }
+    ],
+    "policyVersion": "order-draft-payment-agreement/v2"
+  },
+  "notes": "Direct sale"
+}

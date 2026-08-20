@@ -1,0 +1,128 @@
+{
+  "contractVersion": "0.23.20-contract.0",
+  "scenarios": [
+    {
+      "id": "list-quotes",
+      "operationId": "listQuotes",
+      "expectedStatus": 200
+    },
+    {
+      "id": "get-quote",
+      "operationId": "getQuote",
+      "expectedStatus": 200
+    },
+    {
+      "id": "create-draft",
+      "operationId": "createQuoteCommand",
+      "expectedStatus": 201
+    },
+    {
+      "id": "create-draft-replay",
+      "operationId": "createQuoteCommand",
+      "expectedStatus": 201,
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "create-different-payload",
+      "operationId": "createQuoteCommand",
+      "expectedStatus": 409,
+      "expectedCode": "IDEMPOTENCY_KEY_REUSED"
+    },
+    {
+      "id": "create-for-deal",
+      "operationId": "createQuoteForDeal",
+      "expectedStatus": 201
+    },
+    {
+      "id": "replace-draft",
+      "operationId": "updateQuoteDraftCommand",
+      "expectedStatus": 200
+    },
+    {
+      "id": "reprice-draft",
+      "operationId": "repriceQuoteDraft",
+      "expectedStatus": 200
+    },
+    {
+      "id": "request-approval",
+      "operationId": "requestQuoteApprovalCommand",
+      "expectedStatus": 200
+    },
+    {
+      "id": "request-approval-batch",
+      "operationId": "requestQuoteApprovalBatch",
+      "expectedStatus": 200
+    },
+    {
+      "id": "approve",
+      "operationId": "approveQuoteCommand",
+      "expectedStatus": 200
+    },
+    {
+      "id": "request-approval-changes",
+      "operationId": "requestQuoteApprovalChangesCommand",
+      "expectedStatus": 200
+    },
+    {
+      "id": "record-send-evidence",
+      "operationId": "recordQuoteSendEvidenceCommand",
+      "expectedStatus": 200
+    },
+    {
+      "id": "reject",
+      "operationId": "rejectQuoteCommand",
+      "expectedStatus": 200
+    },
+    {
+      "id": "expire",
+      "operationId": "expireQuoteCommand",
+      "expectedStatus": 200
+    },
+    {
+      "id": "expire-batch",
+      "operationId": "expireQuotesBatch",
+      "expectedStatus": 200
+    },
+    {
+      "id": "revise",
+      "operationId": "reviseQuoteCommand",
+      "expectedStatus": 201
+    },
+    {
+      "id": "archive",
+      "operationId": "archiveQuoteCommand",
+      "expectedStatus": 200
+    },
+    {
+      "id": "archive-batch",
+      "operationId": "archiveQuotesBatch",
+      "expectedStatus": 200
+    },
+    {
+      "id": "stale-version",
+      "operationId": "approveQuoteCommand",
+      "expectedStatus": 412,
+      "expectedCode": "VERSION_CONFLICT"
+    },
+    {
+      "id": "cross-workspace-denied",
+      "operationId": "getQuote",
+      "expectedStatus": 403,
+      "expectedCode": "WORKSPACE_MISMATCH"
+    },
+    {
+      "id": "mass-assignment-rejected",
+      "operationId": "createQuoteCommand",
+      "expectedStatus": 400,
+      "forbiddenFields": [
+        "quoteId",
+        "quoteNumber",
+        "subtotal",
+        "taxTotal",
+        "grandTotal",
+        "resourceVersion",
+        "createdAt"
+      ]
+    }
+  ]
+}

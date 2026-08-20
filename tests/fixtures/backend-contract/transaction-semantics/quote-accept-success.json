@@ -1,0 +1,24 @@
+{
+  "commandId": "cmd_quote_accept_001",
+  "correlationId": "corr_quote_accept_001",
+  "aggregateId": "quote_001",
+  "aggregateType": "quote",
+  "version": 4,
+  "occurredAt": "2026-07-24T08:00:00.000Z",
+  "outcome": "COMMITTED",
+  "emittedEventIds": [
+    "evt_quote_accepted_001",
+    "evt_deal_won_001"
+  ],
+  "auditEvidenceIds": [
+    "audit_quote_accept_001"
+  ],
+  "result": {
+    "quoteId": "quote_001",
+    "quoteStatus": "ACCEPTED",
+    "acceptedAt": "2026-07-24T08:00:00.000Z",
+    "orderCreated": false,
+    "dealId": "deal_001",
+    "dealOutcome": "WON"
+  }
+}

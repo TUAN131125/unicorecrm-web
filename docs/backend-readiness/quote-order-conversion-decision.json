@@ -1,0 +1,33 @@
+{
+  "schemaVersion": 1,
+  "contractVersion": "0.23.20-contract.0",
+  "decisionId": "DEC-P06-ACCEPTED-QUOTE-ORDER-CONVERSION",
+  "status": "CLOSED",
+  "operationId": "convertAcceptedQuoteToOrderDraft",
+  "commandType": "order.convert-accepted-quote-to-draft",
+  "preconditions": [
+    "Quote status ACCEPTED",
+    "Quote not expired",
+    "canonical buyer exists",
+    "at least one line",
+    "positive consistent total",
+    "source Quote has no durable Order"
+  ],
+  "serverOwned": [
+    "Order ID",
+    "Order number",
+    "timestamps",
+    "totals",
+    "resourceVersion",
+    "commercialSnapshotFingerprint"
+  ],
+  "copiedSnapshots": [
+    "buyer",
+    "commercial lines",
+    "adjustments",
+    "payment agreement",
+    "source Deal references"
+  ],
+  "transactionBoundary": "SINGLE_ORDER_CREATION_TRANSACTION_WITH_QUOTE_UNIQUENESS_LOCK",
+  "directSaleStatus": "CLOSED by DEC-P07-DIRECT-ORDER-DRAFT; createOrderDraftCommand is the separate direct-sale contract."
+}

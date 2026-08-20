@@ -1,0 +1,119 @@
+{
+  "contractVersion": "0.23.20-contract.0",
+  "scenarios": [
+    {
+      "id": "list-deals",
+      "operationId": "listDeals",
+      "expectedStatus": 200
+    },
+    {
+      "id": "get-deal",
+      "operationId": "getDeal",
+      "expectedStatus": 200
+    },
+    {
+      "id": "forecast-summary",
+      "operationId": "getDealForecastSummary",
+      "expectedStatus": 200
+    },
+    {
+      "id": "create-deal",
+      "operationId": "createDealCommand",
+      "expectedStatus": 201
+    },
+    {
+      "id": "create-replay",
+      "operationId": "createDealCommand",
+      "expectedStatus": 201,
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "replace-profile",
+      "operationId": "updateDealCommand",
+      "expectedStatus": 200
+    },
+    {
+      "id": "change-stage",
+      "operationId": "changeDealStageCommand",
+      "expectedStatus": 200
+    },
+    {
+      "id": "terminal-stage-requires-outcome",
+      "operationId": "changeDealStageCommand",
+      "expectedStatus": 409,
+      "expectedCode": "DEAL_TERMINAL_TRANSITION_REQUIRES_OUTCOME"
+    },
+    {
+      "id": "assign-owner",
+      "operationId": "assignDealOwner",
+      "expectedStatus": 200
+    },
+    {
+      "id": "update-forecast",
+      "operationId": "updateDealForecast",
+      "expectedStatus": 200
+    },
+    {
+      "id": "update-next-action",
+      "operationId": "updateDealNextAction",
+      "expectedStatus": 200
+    },
+    {
+      "id": "mark-won",
+      "operationId": "markDealWonCommand",
+      "expectedStatus": 200
+    },
+    {
+      "id": "invalid-win-evidence",
+      "operationId": "markDealWonCommand",
+      "expectedStatus": 422,
+      "expectedCode": "DEAL_WIN_EVIDENCE_INVALID"
+    },
+    {
+      "id": "mark-lost",
+      "operationId": "markDealLostCommand",
+      "expectedStatus": 200
+    },
+    {
+      "id": "lost-reason-required",
+      "operationId": "markDealLostCommand",
+      "expectedStatus": 422,
+      "expectedCode": "DEAL_LOSS_REASON_REQUIRED"
+    },
+    {
+      "id": "archive-deal",
+      "operationId": "archiveDealCommand",
+      "expectedStatus": 200
+    },
+    {
+      "id": "archive-batch",
+      "operationId": "archiveDealsBatch",
+      "expectedStatus": 200
+    },
+    {
+      "id": "stale-version",
+      "operationId": "assignDealOwner",
+      "expectedStatus": 412,
+      "expectedCode": "VERSION_CONFLICT"
+    },
+    {
+      "id": "cross-workspace-denied",
+      "operationId": "getDeal",
+      "expectedStatus": 403,
+      "expectedCode": "WORKSPACE_MISMATCH"
+    },
+    {
+      "id": "mass-assignment-rejected",
+      "operationId": "createDealCommand",
+      "expectedStatus": 400,
+      "forbiddenFields": [
+        "dealId",
+        "stageCategory",
+        "wonAt",
+        "lostAt",
+        "resourceVersion",
+        "createdAt"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,307 @@
+{
+  "schemaVersion": 1,
+  "inputSha256": "6c9ccea9c8bef36022eb1d2a1a062f0f80fc183569826ac1de340d68c71ad782",
+  "entries": [
+    {
+      "id": "SR-0-01",
+      "title": "Baseline authority",
+      "status": "COMPLETED",
+      "allowedAreas": [
+        "docs/quality/script-modernization/"
+      ],
+      "behaviorChange": false,
+      "rollback": "Original input archive.",
+      "exactDiffContribution": {
+        "added": 5,
+        "modified": 0,
+        "deleted": 0
+      },
+      "acceptance": {
+        "scriptFilesClassified": "192/192",
+        "baselineGatesRecorded": "180/180",
+        "businessBehaviorChanged": false
+      }
+    },
+    {
+      "id": "SR-1-01",
+      "title": "Current-tree secret policy",
+      "status": "COMPLETED",
+      "allowedAreas": [
+        "src/platform/identity-auth/development/",
+        "src/platform/identity-auth/infrastructure/DevelopmentAuthAdapter.ts",
+        "scripts/security/",
+        "tests/fixtures/",
+        "tests/quality/security/",
+        "package.json",
+        "scripts/quality/quality-pipeline.json",
+        "docs/quality/repository-inventory.*"
+      ],
+      "behaviorChange": false,
+      "rollback": "SR-0-01 checkpoint plus original input archive.",
+      "verification": [
+        "security:scan",
+        "test:secret-policy",
+        "quality manifest listing",
+        "OpenAPI generated drift",
+        "repository inventory"
+      ],
+      "exactDiffContribution": {
+        "added": 6,
+        "modified": 3,
+        "deleted": 0,
+        "generatedInventoryFilesModified": 2
+      },
+      "acceptance": {
+        "currentTreeSecretScan": "PASS",
+        "providerShapedFixtureDetectorCoverage": "PASS",
+        "developmentIdentitySourceOwners": 1,
+        "connectedCompositionDirectDevelopmentIdentityImports": 0,
+        "qualityGateScheduled": true,
+        "businessBehaviorChanged": false
+      }
+    },
+    {
+      "id": "SR-2-01",
+      "title": "Quality test target ownership and migration harness",
+      "status": "COMPLETED",
+      "allowedAreas": [
+        "tests/quality/",
+        "tests/tooling/",
+        "scripts/quality/",
+        "scripts/check-quality-pipeline.mts",
+        "package.json",
+        "docs/quality/repository-inventory.*",
+        "docs/quality/script-modernization/change-ledger.json"
+      ],
+      "behaviorChange": false,
+      "rollback": "Candidate archive with SHA-256 f7514da3309d4734dd685d50901c73d0d39a2bdb74409a78d1cbb967cd4c723e.",
+      "verification": [
+        "gate migration manifest validation",
+        "compatibility dispatcher active and parity modes",
+        "quality pipeline contract and listing",
+        "secret scan and secret policy",
+        "repository naming, cleanup, inventory and frontend/backend separation",
+        "OpenAPI generated drift"
+      ],
+      "exactDiffContribution": {
+        "added": 11,
+        "modified": 4,
+        "deleted": 0,
+        "generatedInventoryFilesModified": 2
+      },
+      "acceptance": {
+        "inputQualityGates": 181,
+        "currentQualityGates": "182/182 ownership records",
+        "migrationStates": {
+          "planned": 177,
+          "migrated": 2,
+          "retainedTooling": 3
+        },
+        "sharedCompatibilityDispatchers": 1,
+        "legacyPackageCommandsChanged": 0,
+        "executableProductTestsMoved": 0,
+        "businessBehaviorChanged": false
+      }
+    },
+    {
+      "id": "SR-2-02",
+      "title": "Repository and architecture executable migration",
+      "status": "COMPLETED",
+      "behaviorChange": false,
+      "rollback": "Input candidate SHA-256 f7514da3309d4734dd685d50901c73d0d39a2bdb74409a78d1cbb967cd4c723e",
+      "scope": {
+        "architectureCanonicalExecutables": 40,
+        "compatibilityWrappers": 40
+      },
+      "verification": [
+        "AST import resolution",
+        "wrapper contract",
+        "architecture/source-only gates",
+        "repository inventory and cleanup"
+      ]
+    },
+    {
+      "id": "SR-2-03",
+      "title": "Unit and contract executable migration",
+      "status": "COMPLETED",
+      "behaviorChange": false,
+      "rollback": "Input candidate SHA-256 f7514da3309d4734dd685d50901c73d0d39a2bdb74409a78d1cbb967cd4c723e",
+      "scope": {
+        "unitCanonicalExecutables": 29,
+        "contractCanonicalExecutables": 64,
+        "compatibilityWrappers": 93
+      },
+      "verification": [
+        "AST import resolution",
+        "transpile syntax",
+        "wrapper contract",
+        "representative direct execution and pre-existing failure comparison"
+      ]
+    },
+    {
+      "id": "SR-2-04",
+      "title": "Integration and route-smoke executable migration",
+      "status": "COMPLETED",
+      "behaviorChange": false,
+      "rollback": "Input candidate SHA-256 f7514da3309d4734dd685d50901c73d0d39a2bdb74409a78d1cbb967cd4c723e",
+      "scope": {
+        "integrationCanonicalExecutables": 38,
+        "routeSmokeCanonicalExecutables": 8,
+        "compatibilityWrappers": 46
+      },
+      "verification": [
+        "AST import resolution",
+        "transpile syntax",
+        "wrapper contract",
+        "representative route-smoke execution",
+        "legacy-target parity status comparison"
+      ]
+    },
+    {
+      "id": "SR-3-01",
+      "title": "Canonical repository context and shared filesystem harness",
+      "status": "COMPLETED",
+      "behaviorChange": false,
+      "rollback": "Input candidate SHA-256 9602739ccb82c84a804018f26f1ecd562619b232fd2bd035f70b55ec656cd672.",
+      "scope": {
+        "directProcessCwdBefore": 121,
+        "directProcessCwdAfter": 0,
+        "sharedRepoContextOwners": [
+          "scripts/quality/core/repo-context.mjs",
+          "scripts/quality/core/repo-context.cjs"
+        ],
+        "sharedFilesystemOwners": [
+          "scripts/quality/core/filesystem.mjs",
+          "scripts/quality/core/filesystem.cjs"
+        ]
+      },
+      "verification": [
+        "quality pipeline contract",
+        "repository invocation from an external working directory",
+        "recursive walker guard",
+        "changed-file syntax validation"
+      ]
+    },
+    {
+      "id": "SR-3-02",
+      "title": "Shared source and path utilities",
+      "status": "COMPLETED",
+      "behaviorChange": false,
+      "rollback": "Input candidate SHA-256 9602739ccb82c84a804018f26f1ecd562619b232fd2bd035f70b55ec656cd672.",
+      "scope": {
+        "canonicalSourceReader": "scripts/quality/core/source-reader.mjs",
+        "canonicalPathNormalization": "scripts/quality/core/path-normalization.mjs",
+        "localRecursiveFilesystemWalkerOwners": 0
+      },
+      "verification": [
+        "quality pipeline contract",
+        "bilingual source collection migration",
+        "presentation composition repository-path resolution"
+      ]
+    },
+    {
+      "id": "SR-3-03",
+      "title": "Quality manifest schema v2",
+      "status": "COMPLETED",
+      "behaviorChange": false,
+      "rollback": "Input candidate SHA-256 9602739ccb82c84a804018f26f1ecd562619b232fd2bd035f70b55ec656cd672.",
+      "scope": {
+        "groups": 9,
+        "gates": 182,
+        "manifestAuthority": "scripts/quality/quality-pipeline.json",
+        "packageScriptDiscovery": false
+      },
+      "verification": [
+        "manifest schema validation",
+        "migration ledger alignment",
+        "entry existence",
+        "declared runtime dependency guard"
+      ]
+    },
+    {
+      "id": "SR-3-04",
+      "title": "Stable runner, timeout and open-handle enforcement",
+      "status": "COMPLETED",
+      "behaviorChange": false,
+      "rollback": "Input candidate SHA-256 9602739ccb82c84a804018f26f1ecd562619b232fd2bd035f70b55ec656cd672.",
+      "scope": {
+        "stableShardInput": "gate.shardKey",
+        "forcedSuccessfulProcessExit": false,
+        "statuses": [
+          "PASS",
+          "FAIL",
+          "TIMEOUT",
+          "OPEN_HANDLE",
+          "BLOCKED",
+          "NOT_RUN"
+        ]
+      },
+      "verification": [
+        "stable sharding contract",
+        "pass/fail fixture",
+        "open-handle fixture exit 86",
+        "timeout fixture and downstream NOT_RUN",
+        "blocked dependency result"
+      ]
+    },
+    {
+      "id": "SR-3-05",
+      "title": "Structured quality reports",
+      "status": "COMPLETED",
+      "behaviorChange": false,
+      "rollback": "Input candidate SHA-256 9602739ccb82c84a804018f26f1ecd562619b232fd2bd035f70b55ec656cd672.",
+      "scope": {
+        "jsonReportSchemaVersion": 1,
+        "junitOutput": true,
+        "sourceArchiveIncludesExecutionReports": false
+      },
+      "verification": [
+        "real gate JSON report",
+        "real gate JUnit report",
+        "timeout report schema",
+        "blocked report schema"
+      ]
+    }
+  ],
+  "candidateSummary": {
+    "added": 14,
+    "modified": 144,
+    "deleted": 0,
+    "sameByte": 1526,
+    "repositoryFiles": 1684,
+    "sourceFiles": 1172,
+    "sourceLines": 149228,
+    "packageCommands": 205,
+    "qualityGates": 182,
+    "qualityGroups": 9,
+    "scriptAssertionOwners": 0,
+    "directProcessCwd": 0,
+    "localRecursiveFilesystemWalkerOwners": 0
+  },
+  "phase2Completion": {
+    "status": "COMPLETED",
+    "pipelineGates": 182,
+    "migratedGates": 180,
+    "retainedToolingGates": 2,
+    "migratedSupportingExecutables": 1,
+    "checkNamedCompatibilityWrappers": 179,
+    "scriptAssertionOwners": 0,
+    "legacyPackageCommandsChanged": 0,
+    "srcFilesChanged": 0
+  },
+  "phase3Completion": {
+    "status": "COMPLETED",
+    "inputSha256": "9602739ccb82c84a804018f26f1ecd562619b232fd2bd035f70b55ec656cd672",
+    "manifestSchemaVersion": 2,
+    "pipelineGates": 182,
+    "qualityGroups": 9,
+    "stableHashSharding": true,
+    "structuredJsonReport": true,
+    "structuredJunitReport": true,
+    "openHandleDetection": true,
+    "forcedSuccessfulProcessExit": false,
+    "packageJsonGateDiscovery": false,
+    "srcFilesChanged": 0,
+    "dependencyInstall": "BLOCKED_HTTP_503"
+  }
+}

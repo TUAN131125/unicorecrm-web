@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "contractVersion": "0.23.20-contract.0",
+  "phase": "P0.5",
+  "decisions": [
+    {
+      "decisionId": "DEC-P05-PAYMENT-PLAN-MONEY-CONTRACT",
+      "status": "CLOSED",
+      "owner": "payments",
+      "decision": "Payment Plan and Schedule Line production DTOs use decimal-string Money and server-owned resourceVersion. Preview is read-only calculation; save, activate and cancel require If-Match. Client IDs, timestamps and calculated amounts are not accepted as command authority."
+    },
+    {
+      "decisionId": "DEC-P05-PAYMENT-INTENT-MONEY-CONTRACT",
+      "status": "CLOSED",
+      "owner": "payments",
+      "decision": "Payment Intent creation accepts business intent only. Backend assigns intent ID, checkout URL, expiry, lifecycle state, timestamps and version. Cancel and retry require authoritative If-Match; retry creates a new server-assigned intent."
+    },
+    {
+      "decisionId": "DEC-P05-RETURN-CREDIT-REFUND-SAGA",
+      "status": "CLOSED",
+      "owner": "returns/payments/invoices",
+      "decision": "Return credit/refund is a backend-owned asynchronous saga. The start command returns 202 with a persisted resolution projection. Frontend rollback, multi-repository coordination and fabricated refund completion evidence are forbidden in connected mode."
+    },
+    {
+      "decisionId": "DEC-P04-REFUND-CANCEL-RETRY",
+      "status": "BLOCKED",
+      "owner": "payments-domain-owner",
+      "question": "What retry/cancel transitions, provider idempotency retention and recovery guarantees apply to an existing Refund Intent?",
+      "blockingOperations": [
+        "cancelRefundIntent",
+        "retryRefundIntent"
+      ],
+      "contractVersion": "0.21.0-contract.0"
+    },
+    {
+      "decisionId": "DEC-P06-RETURN-CUSTOMER-CREDIT-POLICY",
+      "status": "CLOSED",
+      "owner": "finance-domain-owner",
+      "decision": "Customer-Credit-backed effective allocations are not automatically reversed or consumed by Return resolution. Saga persists MANUAL_REVIEW_REQUIRED; finance must resolve through an explicit future command."
+    }
+  ],
+  "readyOperations": [
+    "activatePaymentPlan",
+    "approveOrderCreditApproval",
+    "cancelPaymentIntent",
+    "cancelPaymentPlan",
+    "convertAcceptedQuoteToOrderDraft",
+    "createPaymentIntent",
+    "getOrderCreditApproval",
+    "getPaymentIntent",
+    "getPaymentIntentStatus",
+    "getReturnCreditRefundResolution",
+    "listPaymentIntents",
+    "listPaymentPlans",
+    "listPaymentScheduleLines",
+    "previewPaymentPlan",
+    "rejectOrderCreditApproval",
+    "requestOrderCreditApproval",
+    "resolveReturnCreditRefund",
+    "retryPaymentIntent",
+    "revokeOrderCreditApproval",
+    "savePaymentPlanDraft"
+  ]
+}

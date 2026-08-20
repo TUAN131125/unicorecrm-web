@@ -1,0 +1,35 @@
+{
+  "schemaVersion": 1,
+  "archiveName": "unicorecrm-web.zip",
+  "rootDirectory": "unicorecrm-web",
+  "outputDirectory": "artifacts/release",
+  "fixedDosDate": "1980-01-01T00:00:00Z",
+  "excludedDirectories": [
+    ".git",
+    ".vite",
+    "artifacts",
+    "coverage",
+    "dist",
+    "node_modules",
+    "playwright-report",
+    "test-results"
+  ],
+  "excludedFiles": [
+    ".DS_Store",
+    "Thumbs.db"
+  ],
+  "excludedSuffixes": [
+    ".bak",
+    ".log",
+    ".orig",
+    ".rej",
+    ".tmp"
+  ],
+  "excludedEnvironmentPatterns": [
+    "^\\.env$",
+    "^\\.env\\..+$"
+  ],
+  "allowedEnvironmentFiles": [
+    ".env.example"
+  ]
+}

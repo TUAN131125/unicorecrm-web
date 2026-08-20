@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "contractVersion": "0.23.20-contract.0",
+  "workflowId": "WF-17",
+  "ownership": "BACKEND_ORCHESTRATED_SAGA",
+  "startOperationId": "resolveReturnCreditRefund",
+  "readOperationId": "getReturnCreditRefundResolution",
+  "states": [
+    "ACCEPTED",
+    "RUNNING",
+    "WAITING_REFUND",
+    "COMPLETED",
+    "FAILED",
+    "MANUAL_REVIEW_REQUIRED"
+  ],
+  "frontendCoordinatorAllowed": false,
+  "frontendRollbackAllowed": false,
+  "demoSnapshotRollbackAllowed": true,
+  "blockedDecisions": [
+    "DEC-P04-REFUND-CANCEL-RETRY"
+  ],
+  "customerCreditPolicy": "NO_AUTOMATIC_ALLOCATION_REVERSAL; PERSIST_MANUAL_REVIEW_REQUIRED"
+}

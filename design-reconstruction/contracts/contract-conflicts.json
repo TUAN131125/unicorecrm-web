@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "status": "RECONSTRUCTED_DRAFT",
+  "currentDesignSeverity": {
+    "authority": "design-reconstruction/reviews/independent-review-round-2.md",
+    "designBlocker": 0,
+    "designHigh": 0,
+    "resolvedFinding": "R2-01",
+    "resolutionEvidence": "design-reconstruction/reviews/independent-review-round-2-resolution.md",
+    "note": "Legacy BLOCKER/HIGH labels below retain finding provenance; Round 2 reclassified deferred capabilities, implementation validation and repository-governance issues as non-design blockers."
+  },
+  "findings": [
+    {
+      "id": "F-BLOCK-OPENAPI",
+      "severity": "BLOCKER",
+      "category": "BLOCKED_BY_DECISION",
+      "summary": "34 OpenAPI operations have no implementable success contract",
+      "evidence": [
+        "docs/api/openapi.json",
+        "docs/backend-readiness/unresolved-decisions.json"
+      ],
+      "disposition": "KEEP_BLOCKED"
+    },
+    {
+      "id": "F-BLOCK-COMMANDS",
+      "severity": "BLOCKER",
+      "category": "CONTRACT_GAP",
+      "summary": "17 semantic command entries lack ready production contracts",
+      "evidence": [
+        "docs/backend-readiness/command-registry.json"
+      ],
+      "disposition": "DECISION_REQUIRED"
+    },
+    {
+      "id": "F-BLOCK-QUERY",
+      "severity": "BLOCKER",
+      "category": "CONTRACT_GAP",
+      "summary": "Commercial Evidence list/detail production query authority is unresolved",
+      "evidence": [
+        "docs/backend-readiness/query-registry.json"
+      ],
+      "disposition": "DECISION_REQUIRED"
+    },
+    {
+      "id": "F-BLOCK-PLATFORM",
+      "severity": "BLOCKER",
+      "category": "CONTRACT_GAP",
+      "summary": "Audit-trail and external-authority-health connected projections are only partially closed",
+      "evidence": [
+        "docs/backend-readiness/unresolved-decisions.json"
+      ],
+      "disposition": "DECISION_REQUIRED"
+    },
+    {
+      "id": "F-BLOCK-CONFORMANCE",
+      "severity": "BLOCKER",
+      "category": "EXTERNAL_EVIDENCE",
+      "summary": "Live provider conformance against a provisioned backend and two workspaces has not been executed",
+      "evidence": [
+        "docs/backend-readiness/unresolved-decisions.json"
+      ],
+      "disposition": "BLOCKED_EXTERNAL"
+    },
+    {
+      "id": "F-HIGH-INVENTORY",
+      "severity": "HIGH",
+      "category": "GENERATED_DRIFT",
+      "summary": "Stored repository inventory describes 1,951 files while the actual source census contains 1,986 before reconstruction output",
+      "evidence": [
+        "docs/quality/repository-inventory.json",
+        "npm run repo:check"
+      ],
+      "disposition": "DO_NOT_MODIFY_DOCS_IN_THIS_TASK"
+    },
+    {
+      "id": "F-HIGH-DOCUMENT-STATUS",
+      "severity": "HIGH",
+      "category": "GOVERNANCE_CONFLICT",
+      "summary": "The backend-readiness gate requires every repository Markdown file in docs/document-status.json, while reconstruction rules place outputs outside docs and forbid modifying that registry",
+      "evidence": [
+        "tests/quality/architecture/check-backend-readiness.mts",
+        ".ai-workflows/unicore-canonical-design/OUTPUT_LAYOUT.md",
+        ".ai-workflows/unicore-canonical-design/skills/10-baseline-control/SKILL.md",
+        "npm run verify"
+      ],
+      "disposition": "REPOSITORY_GOVERNANCE_DECISION_REQUIRED"
+    },
+    {
+      "id": "F-HIGH-MONEY",
+      "severity": "NON_BLOCKING",
+      "category": "NON_BLOCKING_DESIGN_DEBT",
+      "summary": "OpenAPI declares Money rounding/currency/negative policy, DecimalAmount maximum scale and ProductDocument display-only numeric projections; per-currency minor units remain undeclared",
+      "evidence": [
+        "docs/api/openapi.json",
+        "canonical-design/13-money-financial-semantics.md",
+        "canonical-design/contracts/conventions.md",
+        "src/shared/money/money.ts",
+        "src/modules/products/domain/model/product.types.ts",
+        "src/modules/deals/domain/model/deal.types.ts",
+        "src/modules/quotes/domain/model/quote.types.ts",
+        "src/modules/orders/domain/model/order.types.ts"
+      ],
+      "disposition": "R2-01_RESOLVED; PER_CURRENCY_MINOR_UNITS_UNDECLARED_NON_BLOCKING"
+    }
+  ]
+}

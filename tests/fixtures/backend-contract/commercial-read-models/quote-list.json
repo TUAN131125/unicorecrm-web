@@ -1,0 +1,86 @@
+{
+  "items": [
+    {
+      "id": "quote-001",
+      "quoteNumber": "Q-2026-0001",
+      "quoteRevision": 3,
+      "rootQuoteId": "quote-root-001",
+      "buyerRef": {
+        "type": "ORGANIZATION_ACCOUNT",
+        "id": "org-001"
+      },
+      "sourcePath": "DEAL",
+      "sourceDealId": "deal-001",
+      "contactId": "contact-001",
+      "status": "SENT",
+      "title": "Commercial proposal",
+      "currency": "VND",
+      "ownerId": "user-001",
+      "recipientEmail": "buyer@example.com",
+      "lineItems": [
+        {
+          "id": "line-001",
+          "skuSnapshot": "SKU-001",
+          "productNameSnapshot": "Commercial product snapshot",
+          "productTypeSnapshot": "PHYSICAL",
+          "quantity": "2",
+          "unitPrice": {
+            "amount": "500000",
+            "currency": "VND"
+          },
+          "discountRate": "5",
+          "taxRate": "10",
+          "taxMode": "EXCLUSIVE",
+          "lineSubtotal": {
+            "amount": "1000000",
+            "currency": "VND"
+          },
+          "lineDiscountAmount": {
+            "amount": "50000",
+            "currency": "VND"
+          },
+          "lineTaxAmount": {
+            "amount": "95000",
+            "currency": "VND"
+          },
+          "lineTotal": {
+            "amount": "1045000",
+            "currency": "VND"
+          },
+          "productId": "product-001"
+        }
+      ],
+      "subtotal": {
+        "amount": "1000000",
+        "currency": "VND"
+      },
+      "discountTotal": {
+        "amount": "50000",
+        "currency": "VND"
+      },
+      "taxTotal": {
+        "amount": "95000",
+        "currency": "VND"
+      },
+      "grandTotal": {
+        "amount": "1045000",
+        "currency": "VND"
+      },
+      "validUntil": "2026-08-15",
+      "sentAt": "2026-07-24T04:00:00Z",
+      "actions": {
+        "accept": {
+          "allowed": true,
+          "blockerCodes": []
+        }
+      },
+      "resourceVersion": 11,
+      "createdAt": "2026-07-20T01:00:00Z",
+      "updatedAt": "2026-07-24T04:00:00Z"
+    }
+  ],
+  "pageInfo": {
+    "hasNextPage": false,
+    "totalCount": 1
+  }
+}

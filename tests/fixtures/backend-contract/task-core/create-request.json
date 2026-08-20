@@ -1,0 +1,17 @@
+{
+  "title": "Gọi lại khách hàng",
+  "description": "Xác nhận yêu cầu",
+  "priority": "HIGH",
+  "assigneeId": "member_01",
+  "dueAt": "2026-07-26T00:00:00Z",
+  "relationshipRef": {
+    "type": "CONTACT",
+    "id": "contact_01"
+  },
+  "recordRef": {
+    "moduleKey": "support",
+    "recordId": "case_01",
+    "label": "CS-2026-0001"
+  },
+  "dedupeKey": "support-case_01-callback"
+}

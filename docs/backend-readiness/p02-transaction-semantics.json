@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "contractVersion": "0.23.20-contract.0",
+  "phase": "P0.2",
+  "inputSha256": "366d10d194371629de89cb9bf550b47c0d5b96a66ec27eaee0843b918002c1d0",
+  "closedTransactions": [
+    {
+      "operationId": "acceptQuoteAndCloseDeal",
+      "commandType": "quote.accept-and-close-deal",
+      "boundary": "SINGLE_BACKEND_TRANSACTION",
+      "authoritativeEffects": [
+        "QUOTE_ACCEPTED",
+        "LINKED_DEAL_WON_IF_PRESENT"
+      ],
+      "explicitNonEffects": [
+        "ORDER_NOT_CREATED"
+      ]
+    },
+    {
+      "operationId": "confirmOrderWithPaymentPlan",
+      "commandType": "order.confirm-with-payment-plan",
+      "boundary": "SINGLE_BACKEND_TRANSACTION",
+      "authoritativeEffects": [
+        "ORDER_CONFIRMED",
+        "PAYMENT_PLAN_ACTIVATED",
+        "PAYMENT_INSTRUCTION_CREATED",
+        "SOURCE_DEAL_WON_IF_NEEDED"
+      ],
+      "blockedVariant": "INLINE_CREDIT_APPROVAL"
+    },
+    {
+      "operationId": "cancelOrder",
+      "commandType": "order.cancel",
+      "boundary": "SINGLE_BACKEND_TRANSACTION",
+      "authoritativeEffects": [
+        "ORDER_CANCELLED",
+        "ACTIVE_PAYMENT_PLAN_CANCELLED_IF_PRESENT"
+      ],
+      "externalObligations": "BLOCKERS_NOT_COMPENSATIONS"
+    },
+    {
+      "operationId": "reconcilePaymentRecord",
+      "commandType": "payment.reconcile-record",
+      "boundary": "SINGLE_AGGREGATE_TRANSACTION",
+      "authoritativeEffects": [
+        "RECONCILIATION_STATE_RECORDED",
+        "AUDIT_RECORDED"
+      ]
+    }
+  ],
+  "remainingFinancialBlocks": [
+    "DEC-P02-PAYMENT-ALLOCATION",
+    "DEC-P02-REFUND-ASYNC-LIFECYCLE",
+    "DEC-P02-COD-SETTLEMENT",
+    "DEC-P02-ORDER-CREDIT-APPROVAL-COMMAND"
+  ],
+  "connectedConcurrencyProjection": {
+    "policy": "CALLER_SUPPLIED_AUTHORITATIVE_VERSION_ONLY",
+    "browserSnapshotFallbackAllowed": false,
+    "primaryAggregateVersionLocation": "MUTATION_OUTCOME_ENVELOPE",
+    "secondaryAggregateVersionPolicy": "OMIT_UNTIL_AUTHORITATIVE_READ_MODEL_OR_TYPED_RESULT_IS_APPROVED",
+    "frontendIntegrationStatus": "BLOCKED_UNTIL_AUTHORITATIVE_QUOTE_ORDER_READ_PROJECTIONS_SUPPLY_VERSION"
+  }
+}

@@ -1,0 +1,1424 @@
+{
+  "schemaVersion": 1,
+  "authority": "docs/api/openapi.json#/components/schemas/Money",
+  "amountRepresentation": "DECIMAL_STRING",
+  "maxScale": 6,
+  "precision": "UNRESOLVED_DATABASE_PRECISION",
+  "roundingMode": "HALF_UP",
+  "currencyPattern": "^[A-Z]{3}$",
+  "currencyOwner": "WORKSPACE_CONFIGURATION",
+  "negativePolicy": "SCHEMA/OPERATION_SPECIFIC",
+  "taxSemantics": "UNRESOLVED_PER_COMMERCIAL_DOCUMENT",
+  "allocationResidualPolicy": "UNRESOLVED; financial allocation operations BLOCKED",
+  "frontendNumericMoneyFields": 201,
+  "frontendNumericFieldsPolicy": "Demo/UI models only. They MUST NOT cross a connected production adapter.",
+  "numericFields": [
+    {
+      "path": "src/ai/aiMockEngine.shared.ts",
+      "line": 35,
+      "text": "export function formatAiMoney(value: number, locale: string): string {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/components/crm/list-archetype/useListPagination.ts",
+      "line": 14,
+      "text": "totalItems: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/components/crm/commercial-documents/documentPdfExport.ts",
+      "line": 22,
+      "text": "const clamp = (value: number, minimum = 0, maximum = 1) => Math.min(maximum, Math.max(minimum, value));",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/components/crm/commercial-documents/documentPdfExport.ts",
+      "line": 40,
+      "text": "function linearToSrgb(value: number): number {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workspaces/crm/forecast/advancedForecast.ts",
+      "line": 7,
+      "text": "amount: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workspaces/crm/forecast/advancedForecast.ts",
+      "line": 14,
+      "text": "amount: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workspaces/crm/forecast/advancedForecast.ts",
+      "line": 26,
+      "text": "totalAmount: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workspaces/crm/forecast/AdvancedForecastPanel.tsx",
+      "line": 8,
+      "text": "export const AdvancedForecastPanel: React.FC<{ workspaceId: string; locale: \"vi\" | \"en\"; deals: Deal[]; periodStart: string; periodEnd: string; formatMoney: (value: number) => string }> = ({ workspaceId, locale, deals, periodStart, periodEn",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workspaces/crm/order-to-cash/orderToCashMetrics.ts",
+      "line": 21,
+      "text": "codReconciliationRate: number | null;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workspaces/crm/order-to-cash/orderToCashMetrics.ts",
+      "line": 23,
+      "text": "refundCycleDays: number | null;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workspaces/crm/order-to-cash/orderToCashMetrics.ts",
+      "line": 30,
+      "text": "const average = (values: number[]) => values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : null;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workspaces/crm/order-to-cash/orderToCashMetrics.ts",
+      "line": 31,
+      "text": "const rounded = (value: number | null) => (value === null ? null : Math.round(value * 10) / 10);",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workspaces/crm/presentation/pages/DashboardPage.tsx",
+      "line": 99,
+      "text": "value: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workspaces/crm/presentation/pages/DashboardPage.tsx",
+      "line": 153,
+      "text": "const formatMoney = React.useCallback((value: number) => new Intl.NumberFormat(isVi ? \"vi-VN\" : \"en-US\", {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workspaces/crm/presentation/pages/ReportsPage.tsx",
+      "line": 124,
+      "text": "formatMoney(value: number): string;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workspaces/crm/presentation/pages/ReportsPage.tsx",
+      "line": 240,
+      "text": "const formatMoney = (amount: number) => new Intl.NumberFormat(isVi ? \"vi-VN\" : \"en-US\", {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workspaces/crm/presentation/pages/ReportsPage.tsx",
+      "line": 245,
+      "text": "const formatCompactMoney = (amount: number) => new Intl.NumberFormat(isVi ? \"vi-VN\" : \"en-US\", {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workspaces/crm/presentation/pages/ReportsPage.tsx",
+      "line": 403,
+      "text": "const grouped = new Map<string, { count: number; value: number }>();",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workspaces/crm/presentation/pages/ReportsPage.tsx",
+      "line": 412,
+      "text": "const grouped = new Map<string, { count: number; value: number }>();",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workspaces/crm/presentation/reports/ReportAnalysisTable.tsx",
+      "line": 10,
+      "text": "value?: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workspaces/crm/presentation/reports/ReportAnalysisTable.tsx",
+      "line": 29,
+      "text": "formatMoney(value: number): string;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workspaces/crm/metrics/domain/metric.types.ts",
+      "line": 42,
+      "text": "amount?: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workspaces/crm/metrics/domain/metric.types.ts",
+      "line": 56,
+      "text": "value: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workspaces/crm/metrics/application/metricEngine.ts",
+      "line": 43,
+      "text": "function result(input: BuildMetricInput, period: MetricPeriod, value: number, records: MetricSourceRecord[], extra: Partial<MetricResult> = {}): MetricResult {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workspaces/crm/metrics/presentation/MetricDrilldownDrawer.tsx",
+      "line": 15,
+      "text": "formatAmount: (amount: number) => string;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workspaces/crm/ai-context/application/aiContextBuilder.ts",
+      "line": 45,
+      "text": "totalPipelineValue: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workspaces/crm/ai-context/application/aiContextBuilder.ts",
+      "line": 46,
+      "text": "totalExpectedRevenue: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workspaces/crm/ai-context/application/aiContextBuilder.ts",
+      "line": 47,
+      "text": "totalOrdersValue: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workspaces/crm/read-models/analytics/reportReadModel.ts",
+      "line": 45,
+      "text": "value?: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workspaces/crm/read-models/analytics/reportReadModel.ts",
+      "line": 131,
+      "text": "totalSpent: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workspaces/crm/read-models/analytics/reportReadModel.ts",
+      "line": 167,
+      "text": "total: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workspaces/crm/read-models/analytics/reportReadModel.ts",
+      "line": 199,
+      "text": "totalValue: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workspaces/people-access/presentation/components/MemberDirectoryView.tsx",
+      "line": 209,
+      "text": "const Metric: React.FC<{ icon: React.ReactNode; label: string; value: number; helper: string }> = ({ icon, label, value, helper }) => (",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workspaces/people-access/pilot-acceptance/domain/pilotAcceptance.types.ts",
+      "line": 121,
+      "text": "discountTotal: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workspaces/people-access/pilot-acceptance/domain/pilotAcceptance.types.ts",
+      "line": 142,
+      "text": "amount: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workspaces/people-access/pilot-acceptance/domain/pilotAcceptance.types.ts",
+      "line": 209,
+      "text": "value: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/migrations/canonical-v1/dealQuoteNormalization.ts",
+      "line": 11,
+      "text": "amount?: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/migrations/canonical-v1/dealQuoteNormalization.ts",
+      "line": 44,
+      "text": "subtotal?: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/migrations/canonical-v1/dealQuoteNormalization.ts",
+      "line": 45,
+      "text": "discountTotal?: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/migrations/canonical-v1/dealQuoteNormalization.ts",
+      "line": 46,
+      "text": "taxTotal?: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/shared/operations/MutationConflictDialog.tsx",
+      "line": 107,
+      "text": "function VersionCard({ label, value }: { label: string; value: number | string | undefined }) {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/shared/operations/useServerPagedModuleCollection.ts",
+      "line": 38,
+      "text": "totalItems: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/shared/operations/useServerPagedModuleCollection.ts",
+      "line": 230,
+      "text": "function normalizePageSize(value: number): number {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/shared/lib/datetime/workspaceDateTime.ts",
+      "line": 4,
+      "text": "function pad(value: number): string {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/shared/lib/format/currency.ts",
+      "line": 1,
+      "text": "export const formatCurrency = (amount: number, currency: string, locale: string) =>",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/shared/lib/format/currency.ts",
+      "line": 8,
+      "text": "export const formatVnd = (amount: number, locale: string) => formatCurrency(amount, \"VND\", locale);",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/shared/lib/format/currency.ts",
+      "line": 12,
+      "text": "entries: readonly { amount: number; currency?: string }[],",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/shared/lib/qr/qrCode.ts",
+      "line": 5,
+      "text": "totalCodewords: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/shared/lib/qr/qrCode.ts",
+      "line": 75,
+      "text": "push(valueToPush: number, length: number): void {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/shared/lib/qr/qrCode.ts",
+      "line": 240,
+      "text": "function buildMatrix(definition: VersionDefinition, codewords: number[], mask: number): QrMatrix {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/shared/components/ui/TemporalInput.tsx",
+      "line": 50,
+      "text": "function pad(value: number) {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/shared/application/data-authority/moduleDataAuthority.ts",
+      "line": 38,
+      "text": "totalCount?: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/shared/application/data-authority/moduleAuthoritativeResource.ts",
+      "line": 37,
+      "text": "let totalCount: number | undefined;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/platform/api/contracts/openApiRuntimeValidation.ts",
+      "line": 161,
+      "text": "function validateNumber(schema: JsonSchema, value: number, path: string, issues: OpenApiValidationIssue[], integer: boolean): void {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/platform/api/client/FetchHttpClient.ts",
+      "line": 217,
+      "text": "function formatIfMatch(value: number | string): string {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/platform/api/runtime/HttpModuleDataAuthority.ts",
+      "line": 25,
+      "text": "totalCount?: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/platform/enterprise-security/runtime/stableHash.ts",
+      "line": 3,
+      "text": "const rightRotate = (value: number, amount: number) => (value >>> amount) | (value << (32 - amount));",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workflows/customer-care/index.ts",
+      "line": 74,
+      "text": "export function deriveCustomerCareCardProgress(card: CustomerCareCard): { completed: number; total: number; percent: number; derivedStatus: CustomerCareCard[\"status\"] } {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workflows/order-creation/index.ts",
+      "line": 50,
+      "text": "amountDue: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workflows/customer-commercial-actions/index.ts",
+      "line": 9,
+      "text": "amount: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workflows/customer-onboarding/index.ts",
+      "line": 17,
+      "text": "amount?: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workflows/order-confirmation/index.ts",
+      "line": 112,
+      "text": "return { method, amountDue: Number(line.previewAmount.amount) };",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/workflows/lead-qualification/domain/leadQualification.types.ts",
+      "line": 84,
+      "text": "taxRate?: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/organizations/presentation/list/OrganizationStatisticsDrawer.tsx",
+      "line": 9,
+      "text": "totalOrganizations: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/organizations/presentation/list/OrganizationStatisticsDrawer.tsx",
+      "line": 11,
+      "text": "totalRepresentatives: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/organizations/presentation/model/organizationAccountView.ts",
+      "line": 98,
+      "text": "export function formatOrganizationCurrency(value: number, locale = \"vi-VN\"): string {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/organizations/presentation/pages/OrganizationAccountDetailPage.tsx",
+      "line": 164,
+      "text": "const productMap = new Map<string, { id: string; title: string; quantity: number; amount: number; orderIds: Set<string> }>();",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/organizations/presentation/pages/OrganizationAccountDetailPage.tsx",
+      "line": 659,
+      "text": "products: [] as Array<{ id: string; title: string; quantity: number; amount: number; orderIds: Set<string>; orderCount: number }>,",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/quotes/presentation/hooks/useQuoteBuilderController.tsx",
+      "line": 99,
+      "text": "total: number,",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/quotes/presentation/services/quotePdfExport.ts",
+      "line": 23,
+      "text": "const clamp = (value: number, minimum = 0, maximum = 1) => Math.min(maximum, Math.max(minimum, value));",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/quotes/presentation/services/quotePdfExport.ts",
+      "line": 41,
+      "text": "function linearToSrgb(value: number): number {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/quotes/presentation/components/QuoteBuilderPreview.tsx",
+      "line": 62,
+      "text": "function formatMoney(value: number, currency: string, locale: \"vi\" | \"en\") {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/quotes/presentation/components/QuoteListPanels.tsx",
+      "line": 9,
+      "text": "totalCount: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/quotes/presentation/components/QuoteListPanels.tsx",
+      "line": 16,
+      "text": "totalValue: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/quotes/domain/rules/quoteDraftPricing.ts",
+      "line": 6,
+      "text": "subtotal: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/quotes/domain/rules/quoteDraftPricing.ts",
+      "line": 7,
+      "text": "discountTotal: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/quotes/domain/rules/quoteDraftPricing.ts",
+      "line": 8,
+      "text": "feeTotal: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/quotes/domain/rules/quoteDraftPricing.ts",
+      "line": 9,
+      "text": "taxTotal: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/quotes/domain/rules/quoteCalculations.ts",
+      "line": 6,
+      "text": "function roundMoney(value: number, precision = DEFAULT_MONEY_PRECISION): number {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/quotes/domain/rules/quoteCalculations.ts",
+      "line": 97,
+      "text": "subtotal: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/quotes/domain/rules/quoteCalculations.ts",
+      "line": 100,
+      "text": "discountTotal: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/quotes/domain/rules/quoteCalculations.ts",
+      "line": 101,
+      "text": "feeTotal: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/quotes/domain/rules/quoteCalculations.ts",
+      "line": 102,
+      "text": "taxTotal: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/quotes/domain/model/quote.types.ts",
+      "line": 24,
+      "text": "value: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/quotes/domain/model/quote.types.ts",
+      "line": 25,
+      "text": "amount: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/quotes/domain/model/quote.types.ts",
+      "line": 136,
+      "text": "subtotal: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/quotes/domain/model/quote.types.ts",
+      "line": 137,
+      "text": "discountTotal?: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/quotes/domain/model/quote.types.ts",
+      "line": 138,
+      "text": "taxTotal?: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/quotes/domain/model/quote.types.ts",
+      "line": 150,
+      "text": "taxPercent?: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/quotes/domain/model/quote.types.ts",
+      "line": 151,
+      "text": "discountAmountToTotal?: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/quotes/domain/model/quote.types.ts",
+      "line": 168,
+      "text": "discountPercent: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/quotes/domain/model/quote.types.ts",
+      "line": 169,
+      "text": "taxRateSnapshot?: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 319,
+      "text": "amount: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/contacts/presentation/list/ContactStatisticsPanel.tsx",
+      "line": 12,
+      "text": "total: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/contacts/presentation/list/ContactStatisticsPanel.tsx",
+      "line": 17,
+      "text": "totalOppValue: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/contacts/presentation/list/ContactStatisticsPanel.tsx",
+      "line": 94,
+      "text": "total: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/contacts/presentation/detail/ContactCreateOpportunityModal.tsx",
+      "line": 16,
+      "text": "amount: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/contacts/presentation/detail/tabs/ContactTransactionOperationsTabs.tsx",
+      "line": 26,
+      "text": "function formatAmount(amount: number, currency: string, locale: string): string {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/contacts/presentation/detail/tabs/ContactOpportunitiesTab.tsx",
+      "line": 14,
+      "text": "amount: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/contacts/presentation/detail/tabs/ContactOverviewTab.tsx",
+      "line": 19,
+      "text": "totalOrderValue: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/contacts/presentation/detail/tabs/ContactInfoTab.tsx",
+      "line": 15,
+      "text": "totalQuotedAmount: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/contacts/presentation/detail/tabs/ContactInfoTab.tsx",
+      "line": 16,
+      "text": "totalOrderValue: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/contacts/presentation/detail/tabs/ContactQuotationsTab.tsx",
+      "line": 13,
+      "text": "total: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/support/application/queries/supportCaseQueries.ts",
+      "line": 66,
+      "text": "total: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/deals/presentation/hooks/useDealDetailController.tsx",
+      "line": 248,
+      "text": "const handleUpdateLineItem = (itemId: string, field: \"quantity\" | \"discountPercent\", value: number) => {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/deals/presentation/hooks/useDealPipelineController.ts",
+      "line": 642,
+      "text": "const makeImportedDeal = (index: number, stage: DealStage, amount: number, daysToClose: number): Deal => {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/deals/presentation/hooks/useDealStageWindows.ts",
+      "line": 239,
+      "text": "function normalizeWindowSize(value: number): number {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/deals/presentation/components/DealFormModal.tsx",
+      "line": 31,
+      "text": "amount: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/deals/presentation/components/DealPipelineModals.tsx",
+      "line": 9,
+      "text": "discountPercent: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/deals/presentation/components/DealPipelineModals.tsx",
+      "line": 70,
+      "text": "amount: Number(newAmount) || 0,",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/deals/domain/rules/dealStages.ts",
+      "line": 196,
+      "text": "function clampPercentage(value: number): number {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/deals/domain/model/deal.types.ts",
+      "line": 116,
+      "text": "amount: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/deals/domain/model/deal.types.ts",
+      "line": 168,
+      "text": "discountPercent: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/deals/domain/model/deal.types.ts",
+      "line": 169,
+      "text": "taxRateSnapshot?: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/deals/domain/model/deal.types.ts",
+      "line": 181,
+      "text": "taxRate?: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/deals/domain/model/deal.types.ts",
+      "line": 183,
+      "text": "subtotal?: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/deals/domain/model/deal.types.ts",
+      "line": 184,
+      "text": "totalAmount?: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/payments/presentation/components/PaymentRequestComposer.tsx",
+      "line": 65,
+      "text": "const qrPayload = account ? buildLocalVietQrPayload({ bankBin: account.bankBin, accountNumber: account.accountNumber, amount: Number(intent.amount.amount), transferContent }) : link;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/payments/application/queries/paymentQueries.ts",
+      "line": 82,
+      "text": "export function getRefundablePaymentTransactionsForOrder(source: PaymentRepository | PaymentRepositorySnapshot, orderId: string): Array<PaymentTransaction & { refundableAmount: number }> {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/payments/application/commands/paymentCommands.ts",
+      "line": 22,
+      "text": "amountDue: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/payments/application/commands/paymentCommands.ts",
+      "line": 54,
+      "text": "amount: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/payments/application/commands/paymentCommands.ts",
+      "line": 88,
+      "text": "function deriveObligationStatus(amountPaid: number, amountDue: number, dueDate?: string, now = new Date().toISOString()): PaymentObligation[\"status\"] {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/payments/domain/rules/paymentInstructions.ts",
+      "line": 31,
+      "text": "export function buildLocalVietQrPayload(input: { bankBin: string; accountNumber: string; amount?: number; transferContent: string }): string {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/payments/domain/model/payment.types.ts",
+      "line": 38,
+      "text": "amountDue: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/payments/domain/model/payment.types.ts",
+      "line": 39,
+      "text": "amountPaid: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/payments/domain/model/payment.types.ts",
+      "line": 40,
+      "text": "amountOutstanding: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/payments/domain/model/payment.types.ts",
+      "line": 58,
+      "text": "amount: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/payments/domain/model/payment.types.ts",
+      "line": 68,
+      "text": "amount: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/payments/domain/model/payment.types.ts",
+      "line": 115,
+      "text": "refundedAmount: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/shipping/presentation/list/ShippingBookingTable.tsx",
+      "line": 27,
+      "text": "formatMoney(amount: number, currency?: string): string;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/shipping/presentation/pages/ShippingBookingListPage.tsx",
+      "line": 46,
+      "text": "const money = (value: number, currency = \"VND\") => `${new Intl.NumberFormat(\"vi-VN\").format(value)} ${currency}`;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/shipping/presentation/create/ShippingBookingCreatePresentation.tsx",
+      "line": 99,
+      "text": "codAmount: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/shipping/presentation/create/shippingBookingCreateModel.ts",
+      "line": 48,
+      "text": "export const formatShippingMoney = (value: number, currency = \"VND\", locale: \"vi\" | \"en\" = \"vi\") => new Intl.NumberFormat(locale === \"vi\" ? \"vi-VN\" : \"en-US\", {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/shipping/domain/model/shipping.types.ts",
+      "line": 26,
+      "text": "export interface Money { amount: number; currency: string; }",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/shipping/domain/model/shipping.types.ts",
+      "line": 53,
+      "text": "totalWeightGrams: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/products/presentation/pages/ProductListPage.tsx",
+      "line": 20,
+      "text": "const formatCount = (value: number) => value.toLocaleString();",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/products/presentation/pages/ProductDetailPage.tsx",
+      "line": 54,
+      "text": "totalAmount: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/products/presentation/components/ProductFormModal.tsx",
+      "line": 189,
+      "text": "costPrice: Number(costPrice),",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/products/presentation/components/ProductFormModal.tsx",
+      "line": 191,
+      "text": "taxRate: Number(taxRate),",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/products/application/queries/productCatalogQueries.ts",
+      "line": 14,
+      "text": "totalCount: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/products/application/import-export/productCsv.ts",
+      "line": 68,
+      "text": "taxRate: Number(getValue(\"taxrate\") || 10),",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/products/domain/rules/productPricing.ts",
+      "line": 2,
+      "text": "price: number,",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/products/domain/rules/product.helpers.ts",
+      "line": 4,
+      "text": "export function formatProductPrice(price: number, currency: string, locale: string = \"vi\"): string {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/products/domain/rules/product.helpers.ts",
+      "line": 37,
+      "text": "export function calculateProductTaxAmount(price: number, taxRate: number, taxMode: TaxMode): number {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/products/domain/rules/product.helpers.ts",
+      "line": 55,
+      "text": "export function calculateProductTotal(price: number, taxRate: number, taxMode: TaxMode): number {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/products/domain/rules/product.helpers.ts",
+      "line": 65,
+      "text": "export function calculateProductMarginPercent(listPrice: number, costPrice?: number): number {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/products/domain/model/product.types.ts",
+      "line": 34,
+      "text": "price: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/products/domain/model/product.types.ts",
+      "line": 51,
+      "text": "taxRate: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/products/domain/model/product.types.ts",
+      "line": 55,
+      "text": "costPrice?: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/products/domain/model/product.types.ts",
+      "line": 108,
+      "text": "discountPercent?: number; // Optional 0 to 100",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/leads/presentation/components/LeadStatisticsModal.tsx",
+      "line": 90,
+      "text": "const DistributionCard: React.FC<{ title: string; total: number; entries: Array<{ key: string; label: string; value: number }> }> = ({ title, total, entries }) => (",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/leads/presentation/components/LeadPaginationBar.tsx",
+      "line": 10,
+      "text": "totalItems: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/leads/presentation/components/LeadListResults.tsx",
+      "line": 29,
+      "text": "totalItems: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/leads/domain/model/lead.types.ts",
+      "line": 152,
+      "text": "budget?: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/orders/infrastructure/InMemoryOrderRepository.ts",
+      "line": 92,
+      "text": "type StoredCustomerOrder = CustomerOrder & { paymentMethod?: string; codAmount?: number } & Record<string, unknown>;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/orders/presentation/hooks/useOrderFormController.tsx",
+      "line": 742,
+      "text": "amountDue: Number(line.amountDue),",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/orders/presentation/list/orderList.types.ts",
+      "line": 34,
+      "text": "totalCount: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/orders/presentation/list/orderList.types.ts",
+      "line": 40,
+      "text": "totalValue: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/orders/presentation/list/OrderStatisticsDrawer.tsx",
+      "line": 71,
+      "text": "const MetricRow: FC<{ label: string; value: number; tone?: string }> = ({ label, value, tone = \"text-slate-700\" }) => (",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/orders/presentation/views/OrderFormView.tsx",
+      "line": 412,
+      "text": "onChange={(event) => updatePaymentLine(line.localId, { amountDue: Number(event.target.value) })}",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/orders/presentation/model/orderFormSupport.ts",
+      "line": 23,
+      "text": "amountDue: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/orders/presentation/pages/OrderDetailPage.tsx",
+      "line": 112,
+      "text": "function formatMoney(value: number | undefined, currency = \"VND\"): string {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/orders/presentation/components/OrderLineItemsEditor.tsx",
+      "line": 9,
+      "text": "calculations: { subtotal: number; discountTotal: number; taxTotal: number; grandTotal: number };",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/orders/presentation/components/OrderLineItemsEditor.tsx",
+      "line": 25,
+      "text": "const formatMoney = (value: number) => new Intl.NumberFormat(numberLocale, { style: \"currency\", currency }).format(value);",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/orders/presentation/components/OrderCustomerDocument.tsx",
+      "line": 54,
+      "text": "function formatMoney(value: number | undefined, currency = \"VND\", locale: \"vi\" | \"en\" = \"vi\") {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/orders/domain/rules/orderCalculations.ts",
+      "line": 6,
+      "text": "function roundMoney(value: number, precision = DEFAULT_MONEY_PRECISION): number {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/orders/domain/rules/orderCalculations.ts",
+      "line": 95,
+      "text": "subtotal: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/orders/domain/rules/orderCalculations.ts",
+      "line": 98,
+      "text": "discountTotal: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/orders/domain/rules/orderCalculations.ts",
+      "line": 99,
+      "text": "feeTotal: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/orders/domain/rules/orderCalculations.ts",
+      "line": 100,
+      "text": "taxTotal: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/orders/domain/model/order.types.ts",
+      "line": 19,
+      "text": "discountPercent: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/orders/domain/model/order.types.ts",
+      "line": 20,
+      "text": "taxRateSnapshot?: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/orders/domain/model/order.types.ts",
+      "line": 28,
+      "text": "price?: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/orders/domain/model/order.types.ts",
+      "line": 38,
+      "text": "value: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/orders/domain/model/order.types.ts",
+      "line": 39,
+      "text": "amount: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/orders/domain/model/order.types.ts",
+      "line": 81,
+      "text": "amount: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/orders/domain/model/order.types.ts",
+      "line": 122,
+      "text": "subtotal?: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/orders/domain/model/order.types.ts",
+      "line": 123,
+      "text": "discountTotal?: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/orders/domain/model/order.types.ts",
+      "line": 124,
+      "text": "taxTotal?: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/orders/domain/model/order.types.ts",
+      "line": 126,
+      "text": "totalAmount: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/commercial-evidence/application/commands/purchaseEvidenceCommands.ts",
+      "line": 17,
+      "text": "amount?: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/commercial-evidence/application/commands/purchaseEvidenceCommands.ts",
+      "line": 49,
+      "text": "amount?: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/commercial-evidence/domain/model/purchaseEvidence.types.ts",
+      "line": 23,
+      "text": "amount?: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/customers/presentation/list/CustomerStatisticsPanel.tsx",
+      "line": 8,
+      "text": "total: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/customers/presentation/list/CustomerStatisticsPanel.tsx",
+      "line": 14,
+      "text": "revenue: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/customers/presentation/list/CustomerStatisticsPanel.tsx",
+      "line": 31,
+      "text": "const rate = (value: number) => statsSummary.total > 0 ? (value / statsSummary.total) * 100 : 0;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/customers/presentation/list/CustomerStatisticsPanel.tsx",
+      "line": 79,
+      "text": "const DistributionCard: React.FC<{ title: string; total: number; entries: Array<[string, number]>; label(key: string): string }> = ({ title, total, entries, label }) => (",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/customers/presentation/list/CustomerDataQualityPanel.tsx",
+      "line": 30,
+      "text": "const Metric: React.FC<{ label: string; value: number; icon: React.ReactNode }> = ({ label, value, icon }) => <div className=\"rounded-2xl border border-slate-200 bg-slate-50 p-4\"><div className=\"flex items-center justify-between text-slate-",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/customers/presentation/list/customerList.helpers.ts",
+      "line": 38,
+      "text": "export function formatCustomerCurrency(value: number, isVi: boolean): string {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/customers/presentation/model/customerAssessmentHelpers.ts",
+      "line": 140,
+      "text": "export function clamp(value: number, min: number, max: number): number {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/customers/presentation/model/customerDisplay.types.ts",
+      "line": 32,
+      "text": "amount: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/customers/presentation/model/customerDisplay.types.ts",
+      "line": 72,
+      "text": "totalRevenue?: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/customers/presentation/model/customer360ReadModel.types.ts",
+      "line": 89,
+      "text": "revenue: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/customers/presentation/model/customer360ReadModel.types.ts",
+      "line": 115,
+      "text": "amount: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/customers/presentation/detail/CustomerDetailSectionPrimitives.tsx",
+      "line": 209,
+      "text": "export function formatCurrency(value: number, isVi: boolean): string {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/customers/presentation/detail/CustomerOverviewTab.tsx",
+      "line": 549,
+      "text": "function formatCurrency(value: number, isVi: boolean): string {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/customers/presentation/detail/CustomerOperationsSections.tsx",
+      "line": 121,
+      "text": "const ReturnMetric: React.FC<{ label: string; value: number }> = ({",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/customers/presentation/detail/CustomerDetailInfoTab.tsx",
+      "line": 36,
+      "text": "function money(value: number | undefined, isVi: boolean): string {",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/customers/application/queries/customerRelationshipDataQuality.ts",
+      "line": 42,
+      "text": "total: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/customers/application/ports/CustomerRuntimePort.ts",
+      "line": 13,
+      "text": "totalRevenue: number;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    },
+    {
+      "path": "src/modules/customers/application/ports/CustomerRuntimePort.ts",
+      "line": 21,
+      "text": "ownedProducts: Array<{ id: string; productId: string; productName: string; quantity: number; purchasedAt: string; amount: number; status: \"ACTIVE\" | \"EXPIRED\" | \"CANCELLED\" | \"RENEWAL_DUE\"; expiresAt?: string }>;",
+      "classification": "DEMO_OR_UI_ONLY",
+      "productionOperationPolicy": "BLOCK_UNTIL_MAPPED_TO_MONEY"
+    }
+  ]
+}

@@ -1,0 +1,4 @@
+{
+  "reasonCode": "CUSTOMER_REQUEST",
+  "reason": "Customer requested cancellation before provider settlement."
+}

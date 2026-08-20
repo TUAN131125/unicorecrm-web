@@ -1,0 +1,10 @@
+{
+  "type": "urn:unicorecrm:problem:validation-failed",
+  "title": "Request validation failed",
+  "status": 422,
+  "code": "VALIDATION_FAILED",
+  "detail": "One or more fields are invalid.",
+  "retryable": false,
+  "correlationId": "corr_validation_001",
+  "fieldErrors": {"dueDate": ["Due date must not precede issue date."]}
+}

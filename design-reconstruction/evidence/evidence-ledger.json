@@ -1,0 +1,225 @@
+{
+  "schemaVersion": 1,
+  "status": "NON_AUTHORITATIVE",
+  "evidence": [
+    {
+      "id": "EV-INVENTORY",
+      "concern": "repository census and structural inventory",
+      "artifacts": [
+        "docs/quality/repository-inventory.json"
+      ],
+      "declaredAuthority": "SUPPORTING",
+      "observedEnforcement": "repository-inventory gate",
+      "effectiveAuthority": "MACHINE_INDEX_WITH_CURRENT_DRIFT"
+    },
+    {
+      "id": "EV-OPENAPI",
+      "concern": "production HTTP contract",
+      "artifacts": [
+        "docs/api/openapi.json",
+        "docs/api/openapi.sha256"
+      ],
+      "declaredAuthority": "CANONICAL",
+      "observedEnforcement": "api:check",
+      "effectiveAuthority": "ADOPTED_MACHINE_CONTRACT_CANDIDATE"
+    },
+    {
+      "id": "EV-OPERATIONS",
+      "concern": "operation ownership and delivery policies",
+      "artifacts": [
+        "docs/api/openapi.json",
+        "docs/api/api-operation-catalog.json",
+        "docs/api/operation-coverage-ledger.json"
+      ],
+      "declaredAuthority": "C1_PLUS_DERIVED",
+      "observedEnforcement": "OpenAPI adoption and deterministic generation",
+      "effectiveAuthority": "OPENAPI_OWNER_RECONCILED; DERIVATIVE_HAS_2_OWNER_DRIFTS",
+      "notes": [
+        {
+          "operationId": "putWorkspaceExchangeRate",
+          "derivedOwner": "workspaces/studio",
+          "openApiOwner": "platform/workspace-config"
+        },
+        {
+          "operationId": "replaceWorkspaceCurrencies",
+          "derivedOwner": "workspaces/studio",
+          "openApiOwner": "platform/workspace-config"
+        }
+      ]
+    },
+    {
+      "id": "EV-COMMANDS",
+      "concern": "application command semantics",
+      "artifacts": [
+        "docs/backend-readiness/command-registry.json"
+      ],
+      "declaredAuthority": "TARGET",
+      "observedEnforcement": "contract gates",
+      "effectiveAuthority": "RECONCILIATION_INDEX"
+    },
+    {
+      "id": "EV-QUERIES",
+      "concern": "query classification",
+      "artifacts": [
+        "docs/backend-readiness/query-registry.json"
+      ],
+      "declaredAuthority": "TARGET",
+      "observedEnforcement": "contract gates",
+      "effectiveAuthority": "RECONCILIATION_INDEX"
+    },
+    {
+      "id": "EV-MODULES",
+      "concern": "module domain/application/public semantics",
+      "artifacts": [
+        "src/modules/commercial-evidence",
+        "src/modules/contacts",
+        "src/modules/customers",
+        "src/modules/deals",
+        "src/modules/invoices",
+        "src/modules/leads",
+        "src/modules/orders",
+        "src/modules/organizations",
+        "src/modules/payments",
+        "src/modules/products",
+        "src/modules/quotes",
+        "src/modules/returns",
+        "src/modules/shipping",
+        "src/modules/support",
+        "src/modules/tasks"
+      ],
+      "declaredAuthority": "SOURCE",
+      "observedEnforcement": "architecture and focused quality gates",
+      "effectiveAuthority": "STRONG_SEMANTIC_EVIDENCE"
+    },
+    {
+      "id": "EV-WORKFLOWS",
+      "concern": "cross-owner coordination",
+      "artifacts": [
+        "docs/backend-readiness/workflow-ownership.json",
+        "src/workflows/contact-opportunity-creation/application/composition/contactOpportunityApplicationServices.ts",
+        "src/workflows/contact-opportunity-creation/application/executeContactOpportunityCreation.ts",
+        "src/workflows/contact-opportunity-creation/application/ports/ContactOpportunityCreationPorts.ts",
+        "src/workflows/contact-opportunity-creation/index.ts",
+        "src/workflows/contact-opportunity-creation/runtime/createContactOpportunityCreationRuntime.ts",
+        "src/workflows/contact-organization-relationship/index.ts",
+        "src/workflows/customer-care/index.ts",
+        "src/workflows/customer-commercial-actions/index.ts",
+        "src/workflows/customer-conversion/application/composition/customerConversionApplicationServices.ts",
+        "src/workflows/customer-conversion/application/ports/CustomerConversionPort.ts",
+        "src/workflows/customer-conversion/index.ts",
+        "src/workflows/customer-conversion/runtime/customerConversionRuntime.ts",
+        "src/workflows/customer-identity/index.ts",
+        "src/workflows/customer-onboarding/index.ts",
+        "src/workflows/customer-relationship-integrity/index.ts",
+        "src/workflows/deal-recycle/application/composition/dealRecycleApplicationServices.ts",
+        "src/workflows/deal-recycle/application/executeDealRecycle.ts",
+        "src/workflows/deal-recycle/application/ports/DealRecyclePorts.ts",
+        "src/workflows/deal-recycle/index.ts",
+        "src/workflows/deal-recycle/runtime/createDealRecycleRuntime.ts",
+        "src/workflows/lead-qualification/application/composition/leadQualificationApiRuntimeBinding.ts",
+        "src/workflows/lead-qualification/application/composition/leadQualificationApplicationServices.ts",
+        "src/workflows/lead-qualification/application/executeLeadDirectSale.ts",
+        "src/workflows/lead-qualification/application/executeLeadNurture.ts",
+        "src/workflows/lead-qualification/application/executeLeadOpportunity.ts",
+        "src/workflows/lead-qualification/application/index.ts",
+        "src/workflows/lead-qualification/application/ports/LeadQualificationApiRuntime.ts",
+        "src/workflows/lead-qualification/application/ports/LeadQualificationPorts.ts",
+        "src/workflows/lead-qualification/domain/leadQualification.rules.ts",
+        "src/workflows/lead-qualification/domain/leadQualification.types.ts",
+        "src/workflows/lead-qualification/index.ts",
+        "src/workflows/lead-qualification/infrastructure/http/LeadQualificationHttpAdapter.ts",
+        "src/workflows/lead-qualification/infrastructure/http/createLeadQualificationConnectedApiRuntime.ts",
+        "src/workflows/lead-qualification/presentation/components/RelationshipResolutionFields.tsx",
+        "src/workflows/lead-qualification/presentation/pages/LeadQualificationPage.tsx",
+        "src/workflows/lead-qualification/presentation/pages/LeadSellNowPage.tsx",
+        "src/workflows/lead-qualification/public/index.ts",
+        "src/workflows/lead-qualification/public/leadQualification.ts",
+        "src/workflows/lead-qualification/qualification-route.tsx",
+        "src/workflows/lead-qualification/runtime/createLeadQualificationDemoApiRuntime.ts",
+        "src/workflows/lead-qualification/runtime/createLeadQualificationRuntime.ts",
+        "src/workflows/lead-qualification/runtime/createLeadQualificationTestApiRuntime.ts",
+        "src/workflows/lead-qualification/sell-now-route.tsx",
+        "src/workflows/order-cancellation/index.ts",
+        "src/workflows/order-closing/application/composition/orderClosingApplicationServices.ts",
+        "src/workflows/order-closing/application/executeOrderClosing.ts",
+        "src/workflows/order-closing/application/ports/OrderClosingPorts.ts",
+        "src/workflows/order-closing/domain/orderClosingPolicy.ts",
+        "src/workflows/order-closing/index.ts",
+        "src/workflows/order-closing/runtime/createOrderClosingRuntime.ts",
+        "src/workflows/order-confirmation/index.ts",
+        "src/workflows/order-creation/index.ts",
+        "src/workflows/order-shipping-booking/index.ts",
+        "src/workflows/quote-acceptance/index.ts",
+        "src/workflows/return-credit-refund/index.ts",
+        "src/workflows/return-resolution/index.ts",
+        "src/workflows/return-resolution-evidence/index.ts",
+        "src/workflows/shipping-cod-evidence/index.ts",
+        "src/workflows/work-activation/index.ts",
+        "src/workflows/accepted-quote-order-conversion/index.ts",
+        "src/modules/payments/application/commands/refundRecoveryCommands.ts",
+        "src/modules/leads/application/commands/leadApiCommands.ts",
+        "src/modules/leads/application/commands/leadApiCommands.ts",
+        "src/modules/leads/application/commands/leadApiCommands.ts",
+        "src/modules/leads/application/commands/leadApiCommands.ts"
+      ],
+      "declaredAuthority": "REGISTRY_AND_SOURCE",
+      "observedEnforcement": "workflow/architecture/API gates",
+      "effectiveAuthority": "RECONCILED_COORDINATION_EVIDENCE"
+    },
+    {
+      "id": "EV-PLATFORM",
+      "concern": "identity, tenancy, access, mutation and error semantics",
+      "artifacts": [
+        "src/platform/identity-auth",
+        "src/platform/workspace-context",
+        "src/platform/access-control",
+        "src/platform/record-ownership",
+        "src/shared/application",
+        "src/shared/domain"
+      ],
+      "declaredAuthority": "SOURCE",
+      "observedEnforcement": "architecture/security/API gates",
+      "effectiveAuthority": "STRONG_CROSS_CUTTING_EVIDENCE"
+    },
+    {
+      "id": "EV-STATE-MACHINES",
+      "concern": "explicit lifecycle transitions",
+      "artifacts": [
+        "src/modules/leads/domain/rules/leadLifecycle.ts",
+        "src/modules/orders/domain/rules/orderLifecycle.ts",
+        "src/modules/quotes/domain/rules/quoteVersioning.ts",
+        "src/modules/returns/domain/rules/returnLifecycle.ts",
+        "src/modules/support/domain/rules/supportCaseLifecycle.ts",
+        "src/modules/tasks/domain/rules/taskLifecycle.ts"
+      ],
+      "declaredAuthority": "DOMAIN_SOURCE",
+      "observedEnforcement": "module commands and focused tests",
+      "effectiveAuthority": "DIRECT_SOURCE"
+    },
+    {
+      "id": "EV-FINANCE",
+      "concern": "money and order-to-cash",
+      "artifacts": [
+        "docs/api/openapi.json",
+        "docs/api/openapi.sha256",
+        "src/shared/money",
+        "src/shared/order-to-cash",
+        "src/modules/payments",
+        "src/modules/invoices",
+        "src/modules/orders"
+      ],
+      "declaredAuthority": "SOURCE_AND_MACHINE_CONTRACT",
+      "observedEnforcement": "strict/API/financial gates",
+      "effectiveAuthority": "OPENAPI_SCHEMA_SEMANTICS_ADOPTED_WITH_NON_BLOCKING_MINOR_UNIT_DEBT",
+      "contractEvidence": {
+        "sha256": "8278547df0fd4be9a9af9b8a6d5f3e15ddad8d005d804c99a7c9248e0f402757",
+        "Money.x-rounding-mode": "HALF_UP",
+        "Money.x-currency-owner": "WORKSPACE_CONFIGURATION",
+        "Money.x-negative-policy": "OPERATION_SPECIFIC",
+        "DecimalAmount.x-maximum-scale": 6,
+        "ProductDocument.x-money-semantics": "unitPrice and costPrice are authoritative decimal-string Money. Numeric frontend fields are display-only projections.",
+        "perCurrencyMinorUnits": "UNDECLARED_NON_BLOCKING_DESIGN_DEBT"
+      }
+    }
+  ]
+}

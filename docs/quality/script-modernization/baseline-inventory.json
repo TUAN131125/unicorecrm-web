@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "capturedDate": "2026-07-23",
+  "input": {
+    "archive": "unicorecrm-web(21)(3).zip",
+    "sha256": "6c9ccea9c8bef36022eb1d2a1a062f0f80fc183569826ac1de340d68c71ad782",
+    "rootFolder": "unicorecrm-web/",
+    "rootCount": 1,
+    "gitHistoryAvailable": false
+  },
+  "package": {
+    "name": "unicorecrm-web",
+    "version": "0.8.0-frontend.0",
+    "commands": 201,
+    "commandsWithDemoCompositionBootstrap": 133
+  },
+  "repository": {
+    "files": 1467,
+    "sourceFiles": 1171,
+    "sourceLines": 149212,
+    "modules": 15,
+    "routes": 78,
+    "loadableRouteModules": 62,
+    "capabilities": 111,
+    "workspaceFlags": 13,
+    "workflows": 21,
+    "publicBoundaryFiles": 88,
+    "publicExportStatements": 855,
+    "persistenceEntries": 172,
+    "repositoryImplementations": 114,
+    "compatibilityCandidates": 50,
+    "deprecatedComponents": 8,
+    "duplicateGroups": 0,
+    "largeFiles": 38,
+    "circularDependencyGroups": 0
+  },
+  "scripts": {
+    "files": 192,
+    "lines": 22885,
+    "checkNamedFiles": 179,
+    "checkNamedFilesUsingAssertions": 170
+  },
+  "tests": {
+    "files": 3,
+    "existingAreas": [
+      "tests/e2e"
+    ]
+  },
+  "quality": {
+    "gates": 180,
+    "groups": 9,
+    "groupCounts": {
+      "lint": 1,
+      "typecheck": 3,
+      "architecture": 36,
+      "unit": 29,
+      "contract": 64,
+      "integration": 33,
+      "route-smoke": 8,
+      "critical-e2e": 5,
+      "build": 1
+    }
+  },
+  "openApi": {
+    "version": "3.1.0",
+    "paths": 110,
+    "operations": 130,
+    "generationCheckFingerprint": "ce5b31c5c6b584cc26d3c098e9f01da9f8e1f5df087c3e7e521d494639fb4d56"
+  },
+  "dependencyAvailability": {
+    "nodeModulesPresent": false,
+    "tsxResolvable": false,
+    "typescriptResolvable": false,
+    "nodeVersion": "22.16.0"
+  },
+  "artifactExclusionsConfirmed": [
+    ".git",
+    "node_modules",
+    "dist",
+    ".vite",
+    "coverage",
+    "artifacts",
+    "playwright-report",
+    "test-results"
+  ]
+}

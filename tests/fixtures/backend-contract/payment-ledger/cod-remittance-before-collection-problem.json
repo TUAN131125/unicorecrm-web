@@ -1,0 +1,9 @@
+{
+  "type": "https://unicore.example/problems/cod-collection-required",
+  "title": "Customer collection is required before remittance",
+  "status": 409,
+  "code": "COD_COLLECTION_REQUIRED_BEFORE_REMITTANCE",
+  "retryable": false,
+  "correlationId": "corr-01HZZZZZZZZZZZZZZZZZZZZZZ",
+  "aggregateId": "pay_01HZZZZZZZZZZZZZZZZZZZZZZZ"
+}

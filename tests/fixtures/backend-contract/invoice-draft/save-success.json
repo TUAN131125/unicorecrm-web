@@ -1,0 +1,65 @@
+{
+  "commandId": "cmd_invoice_save_001",
+  "correlationId": "corr_invoice_save_001",
+  "aggregateId": "inv_001",
+  "aggregateType": "INVOICE",
+  "version": 2,
+  "occurredAt": "2026-07-24T12:05:00.000Z",
+  "outcome": "COMMITTED",
+  "emittedEventIds": ["evt_invoice_draft_saved_001"],
+  "auditEvidenceIds": ["audit_invoice_draft_saved_001"],
+  "result": {
+    "id": "inv_001",
+    "workspaceId": "ws_001",
+    "buyerRef": { "type": "ORGANIZATION_ACCOUNT", "id": "org_001" },
+    "sellerSnapshot": {
+      "displayName": "Unicore",
+      "legalName": "Unicore Software Co., Ltd.",
+      "taxId": "0312345678",
+      "addressLines": ["Ho Chi Minh City"],
+      "countryCode": "VN"
+    },
+    "buyerSnapshot": {
+      "displayName": "Example Buyer Updated",
+      "legalName": "Example Buyer JSC",
+      "taxId": "0300000001",
+      "addressLines": ["District 1"],
+      "countryCode": "VN"
+    },
+    "lifecycleState": "DRAFT",
+    "deliveryState": "NOT_SENT",
+    "dueDate": "2026-08-20",
+    "currency": "VND",
+    "paymentTerms": "Net 20",
+    "creationIntentId": "invoice-create-intent-001",
+    "lines": [
+      {
+        "id": "invoice-line-001",
+        "sourceOrderLineId": "order-line-001",
+        "orderLineId": "order-line-001",
+        "productId": "product_001",
+        "description": "Annual CRM subscription",
+        "unitOfMeasure": "license",
+        "quantity": "3",
+        "unitPrice": { "amount": "500000", "currency": "VND" },
+        "discountRate": "0",
+        "discountAmount": { "amount": "0", "currency": "VND" },
+        "taxRate": "10",
+        "taxAmount": { "amount": "150000", "currency": "VND" },
+        "lineTotal": { "amount": "1650000", "currency": "VND" }
+      }
+    ],
+    "totals": {
+      "subtotal": { "amount": "1500000", "currency": "VND" },
+      "discountTotal": { "amount": "0", "currency": "VND" },
+      "taxTotal": { "amount": "150000", "currency": "VND" },
+      "roundingAdjustment": { "amount": "0", "currency": "VND" },
+      "grandTotal": { "amount": "1650000", "currency": "VND" }
+    },
+    "sourceLinks": { "orderId": "order_001" },
+    "version": 2,
+    "idempotencyKey": "idem_invoice_create_001",
+    "createdAt": "2026-07-24T12:00:00.000Z",
+    "updatedAt": "2026-07-24T12:05:00.000Z"
+  }
+}

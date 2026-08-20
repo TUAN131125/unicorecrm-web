@@ -1,0 +1,71 @@
+{
+  "contractVersion": "0.23.20-contract.0",
+  "scenarios": [
+    {
+      "id": "request-approval",
+      "operationId": "requestOrderCreditApproval",
+      "expectedStatus": 201
+    },
+    {
+      "id": "request-replay",
+      "operationId": "requestOrderCreditApproval",
+      "expectedStatus": 201,
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "request-stale-order-version",
+      "operationId": "requestOrderCreditApproval",
+      "expectedStatus": 412,
+      "expectedCode": "VERSION_CONFLICT"
+    },
+    {
+      "id": "approve",
+      "operationId": "approveOrderCreditApproval",
+      "expectedStatus": 200
+    },
+    {
+      "id": "reject",
+      "operationId": "rejectOrderCreditApproval",
+      "expectedStatus": 200
+    },
+    {
+      "id": "revoke",
+      "operationId": "revokeOrderCreditApproval",
+      "expectedStatus": 200
+    },
+    {
+      "id": "binding-mismatch",
+      "operationId": "approveOrderCreditApproval",
+      "expectedStatus": 409,
+      "expectedCode": "CREDIT_APPROVAL_BINDING_MISMATCH"
+    },
+    {
+      "id": "already-consumed",
+      "operationId": "approveOrderCreditApproval",
+      "expectedStatus": 409,
+      "expectedCode": "CREDIT_APPROVAL_ALREADY_CONSUMED"
+    },
+    {
+      "id": "cross-workspace-denied",
+      "operationId": "getOrderCreditApproval",
+      "expectedStatus": 403,
+      "expectedCode": "WORKSPACE_MISMATCH"
+    },
+    {
+      "id": "mass-assignment-rejected",
+      "operationId": "requestOrderCreditApproval",
+      "expectedStatus": 400,
+      "forbiddenFields": [
+        "id",
+        "amount",
+        "currency",
+        "policyVersion",
+        "evaluationFingerprint",
+        "state",
+        "requestedBy",
+        "requestedAt",
+        "resourceVersion"
+      ]
+    }
+  ]
+}

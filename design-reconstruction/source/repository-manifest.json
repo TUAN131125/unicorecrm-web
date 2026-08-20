@@ -1,0 +1,37 @@
+{
+  "schemaVersion": 1,
+  "sourcePackage": "unicorecrm-web@0.23.20-contract.0",
+  "actualSourceFiles": 1986,
+  "storedInventoryFiles": 1951,
+  "storedInventoryFingerprint": "039743a71c3315f4a7b69cf257b54f08712ce2f84d6b27d60b51a88c9c752e58",
+  "actualSourceFingerprint": "dfc18e12abd2cf06ec2b76fb85d869f091934cf6a26afd343e4904e716ac839f",
+  "storedInventoryDrift": true,
+  "protectedInventory": {
+    "modules": 15,
+    "routes": 78,
+    "loadableRouteModules": 62,
+    "capabilities": 123,
+    "workspaceFlags": 13,
+    "workflows": 22
+  },
+  "openapi": {
+    "version": "0.23.20-contract.0",
+    "sha256": "8278547df0fd4be9a9af9b8a6d5f3e15ddad8d005d804c99a7c9248e0f402757",
+    "operations": 270,
+    "ready": 236,
+    "blocked": 34,
+    "schemas": 603
+  },
+  "commands": {
+    "BLOCKED": 17,
+    "PRODUCTION_CONTRACT_READY": 152,
+    "DEPRECATED": 4
+  },
+  "queries": {
+    "COMPOSED_READ_MODEL": 66,
+    "FRONTEND_LOCAL": 27,
+    "PRODUCTION_API": 63,
+    "DEMO_ONLY": 5,
+    "BFF_CANDIDATE": 1
+  }
+}

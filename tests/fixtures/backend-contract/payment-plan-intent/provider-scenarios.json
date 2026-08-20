@@ -1,0 +1,67 @@
+{
+  "contractVersion": "0.23.20-contract.0",
+  "scenarios": [
+    {
+      "id": "plan-list-money",
+      "operationId": "listPaymentPlans",
+      "expectedStatus": 200
+    },
+    {
+      "id": "schedule-list-money",
+      "operationId": "listPaymentScheduleLines",
+      "expectedStatus": 200
+    },
+    {
+      "id": "plan-preview",
+      "operationId": "previewPaymentPlan",
+      "expectedStatus": 200
+    },
+    {
+      "id": "plan-save-stale-version",
+      "operationId": "savePaymentPlanDraft",
+      "expectedStatus": 412,
+      "expectedCode": "VERSION_CONFLICT"
+    },
+    {
+      "id": "intent-create",
+      "operationId": "createPaymentIntent",
+      "expectedStatus": 201
+    },
+    {
+      "id": "intent-create-replay",
+      "operationId": "createPaymentIntent",
+      "expectedStatus": 201,
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "intent-cancel-stale-version",
+      "operationId": "cancelPaymentIntent",
+      "expectedStatus": 412,
+      "expectedCode": "PAYMENT_INTENT_VERSION_CONFLICT"
+    },
+    {
+      "id": "intent-retry-new-id",
+      "operationId": "retryPaymentIntent",
+      "expectedStatus": 201
+    },
+    {
+      "id": "cross-workspace-denied",
+      "operationId": "getPaymentIntent",
+      "expectedStatus": 403,
+      "expectedCode": "WORKSPACE_MISMATCH"
+    },
+    {
+      "id": "mass-assignment-rejected",
+      "operationId": "createPaymentIntent",
+      "expectedStatus": 400,
+      "forbiddenFields": [
+        "id",
+        "checkoutUrl",
+        "expiresAt",
+        "state",
+        "resourceVersion",
+        "createdAt"
+      ]
+    }
+  ]
+}

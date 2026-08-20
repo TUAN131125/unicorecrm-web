@@ -1,0 +1,2665 @@
+{
+  "schemaVersion": 1,
+  "inputArchive": "unicorecrm-web(21)(3).zip",
+  "inputSha256": "6c9ccea9c8bef36022eb1d2a1a062f0f80fc183569826ac1de340d68c71ad782",
+  "generatedForDate": "2026-07-23",
+  "totalFiles": 192,
+  "categoryCounts": {
+    "architecture-test": 39,
+    "cli": 2,
+    "code-generation": 1,
+    "contract-test": 64,
+    "fixture-baseline": 3,
+    "integration-runtime-test": 38,
+    "quality-runner": 3,
+    "repository-tooling": 5,
+    "route-smoke-test": 8,
+    "unit-test": 29
+  },
+  "classificationRules": [
+    "Quality-manifest ownership takes precedence for executable gates.",
+    "Existing quality runners and API generators retain their current tooling owner.",
+    "Unmapped check executables are marked architecture-test with medium confidence for manual review.",
+    "This ledger records the input baseline and does not itself move files."
+  ],
+  "files": [
+    {
+      "path": "scripts/api/generate-openapi-client.mjs",
+      "category": "code-generation",
+      "owner": "api-contract-tooling",
+      "qualityGroups": [],
+      "packageCommands": [
+        "generate:api-client"
+      ],
+      "targetArea": "scripts/api/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/baselines/contact-visual-baseline.json",
+      "category": "fixture-baseline",
+      "owner": "quality-baselines",
+      "qualityGroups": [],
+      "packageCommands": [],
+      "targetArea": "tests/fixtures/ or scripts/baselines/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/bootstrap-application-composition.mjs",
+      "category": "cli",
+      "owner": "repository-tooling",
+      "qualityGroups": [],
+      "packageCommands": [],
+      "targetArea": "scripts/cli/",
+      "migrationState": "baseline-only",
+      "confidence": "medium"
+    },
+    {
+      "path": "scripts/check-access-control-contracts.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-integration",
+      "qualityGroups": [
+        "integration"
+      ],
+      "packageCommands": [
+        "test:access-control-contracts"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-action-button-taxonomy.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:action-button-taxonomy"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-ai-governance-contracts.mts",
+      "category": "unit-test",
+      "owner": "quality-unit",
+      "qualityGroups": [
+        "unit"
+      ],
+      "packageCommands": [
+        "test:ai-governance-contracts"
+      ],
+      "targetArea": "tests/quality/unit/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-api-contract.mts",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:api-contract"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-application-composition.mts",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:application-composition"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-application-foundation.mts",
+      "category": "unit-test",
+      "owner": "quality-unit",
+      "qualityGroups": [
+        "unit"
+      ],
+      "packageCommands": [
+        "test:application-foundation"
+      ],
+      "targetArea": "tests/quality/unit/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-architecture.mjs",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:architecture"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-auth-session-contracts.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-integration",
+      "qualityGroups": [
+        "integration"
+      ],
+      "packageCommands": [
+        "test:auth-session-contracts"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-auth-ux-contracts.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:auth-ux-contracts"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-authenticated-app-startup.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-critical-e2e",
+      "qualityGroups": [
+        "critical-e2e"
+      ],
+      "packageCommands": [
+        "test:authenticated-app-startup"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-authoritative-module-adapters.mts",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:authoritative-module-adapters"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-backend-audit-viewer.mts",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:backend-audit-viewer"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-backend-readiness.mts",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:backend-readiness"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-bilingual-ui.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "check:bilingual-ui"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-bundle-budget.mjs",
+      "category": "cli",
+      "owner": "quality-build",
+      "qualityGroups": [
+        "build"
+      ],
+      "packageCommands": [
+        "build"
+      ],
+      "targetArea": "scripts/cli/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-canonical-crm-form-contracts.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:canonical-crm-form-contracts"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-commercial-authoritative-queries.mts",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:commercial-authoritative-queries"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-commercial-concurrency-metadata.mts",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:commercial-concurrency-metadata"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-commercial-flow-regressions.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-critical-e2e",
+      "qualityGroups": [
+        "critical-e2e"
+      ],
+      "packageCommands": [
+        "test:commercial-flow-regressions"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-compatibility-retirement.mts",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:compatibility-retirement"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-contact-organization-relationships.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "check:contact-organization-relationships"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-contact-saved-views.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-integration",
+      "qualityGroups": [
+        "integration"
+      ],
+      "packageCommands": [
+        "test:contact-saved-views"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-contact-visual-baseline.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-integration",
+      "qualityGroups": [
+        "integration"
+      ],
+      "packageCommands": [
+        "test:contact-visual-baseline"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-contacts.mts",
+      "category": "unit-test",
+      "owner": "quality-unit",
+      "qualityGroups": [
+        "unit"
+      ],
+      "packageCommands": [
+        "test:contacts"
+      ],
+      "targetArea": "tests/quality/unit/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-contextual-prefill-contracts.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:contextual-prefill-contracts"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-contract-baseline.mts",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:contract-baseline"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-crm-presentation-contracts.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:crm-presentation-contracts"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-crm-read-models.mts",
+      "category": "unit-test",
+      "owner": "quality-unit",
+      "qualityGroups": [
+        "unit"
+      ],
+      "packageCommands": [
+        "test:read-models"
+      ],
+      "targetArea": "tests/quality/unit/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-crm-ui-interaction-contracts.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-integration",
+      "qualityGroups": [
+        "integration"
+      ],
+      "packageCommands": [
+        "test:crm-ui-interaction-contracts"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-customer-contact-ui-parity.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:customer-contact-ui-parity"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-customer-credit-contracts.mts",
+      "category": "unit-test",
+      "owner": "quality-unit",
+      "qualityGroups": [
+        "unit"
+      ],
+      "packageCommands": [
+        "test:customer-credit-contracts"
+      ],
+      "targetArea": "tests/quality/unit/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-customer-integration-contracts.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-integration",
+      "qualityGroups": [
+        "integration"
+      ],
+      "packageCommands": [
+        "test:customer-integration-contracts"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-customer-intelligence-contracts.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:customer-intelligence-contracts"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-customer-relationship-completeness.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:customer-relationship-completeness"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-customer-relationship-integrity.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:customer-relationship-integrity"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-customer-view-boundary.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:customer-view-boundary"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-customer360-reconciliation.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-integration",
+      "qualityGroups": [
+        "integration"
+      ],
+      "packageCommands": [
+        "test:customer360-reconciliation"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-customers.mts",
+      "category": "unit-test",
+      "owner": "quality-unit",
+      "qualityGroups": [
+        "unit"
+      ],
+      "packageCommands": [
+        "test:customers"
+      ],
+      "targetArea": "tests/quality/unit/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-dashboard-runtime.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-integration",
+      "qualityGroups": [
+        "integration"
+      ],
+      "packageCommands": [
+        "test:dashboard-runtime"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-data-typography-and-lead-kanban.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-integration",
+      "qualityGroups": [
+        "integration"
+      ],
+      "packageCommands": [
+        "test:data-typography-kanban"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-deal-lifecycle-contracts.mts",
+      "category": "unit-test",
+      "owner": "quality-unit",
+      "qualityGroups": [
+        "unit"
+      ],
+      "packageCommands": [
+        "test:deal-lifecycle-contracts"
+      ],
+      "targetArea": "tests/quality/unit/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-deal-quote-migration-contracts.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:deal-quote-migration-contracts"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-deal-stage-localization.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:deal-stage-localization"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-deal-stage-window-query.mts",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:deal-stage-window-query"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-deals.mts",
+      "category": "unit-test",
+      "owner": "quality-unit",
+      "qualityGroups": [
+        "unit"
+      ],
+      "packageCommands": [
+        "test:deals"
+      ],
+      "targetArea": "tests/quality/unit/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-design-system-consistency.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "check:design-system-consistency"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-detail-opportunity-attachments.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "check:detail-opportunity-attachments"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-detail-panel-product-actions.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "check:detail-panel-product-actions"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-display-format-contracts.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:display-format-contracts"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-effective-record-access-authority.mts",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:effective-record-access"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-enterprise-experience.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "check:enterprise-experience"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-enterprise-form-experience.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:enterprise-form-experience"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-enterprise-security-evidence.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-integration",
+      "qualityGroups": [
+        "integration"
+      ],
+      "packageCommands": [
+        "test:enterprise-security-evidence"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-entry-code-splitting.mts",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:entry-code-splitting"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-error-handling.mts",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:error-handling"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-external-authority-health.mts",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:external-authority-health"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-financial-vertical-slice.mts",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:financial-vertical-slice"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-forecast-analytics.mts",
+      "category": "unit-test",
+      "owner": "quality-unit",
+      "qualityGroups": [
+        "unit"
+      ],
+      "packageCommands": [
+        "test:forecast-analytics"
+      ],
+      "targetArea": "tests/quality/unit/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-form-dialog-structure.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "check:form-dialog-structure"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-form-runtime-sizing.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:form-runtime-sizing"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-frontend-backend-separation.mts",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:frontend-backend-separation"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-frontend-quality-contracts.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:frontend-quality-contracts"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-global-data-boundaries.mjs",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:global-data-boundaries"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-global-type-boundaries.mjs",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:global-type-boundaries"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-guidance-contracts.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "check:guidance-contracts"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-guidance-runtime.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-integration",
+      "qualityGroups": [
+        "integration"
+      ],
+      "packageCommands": [
+        "test:guidance-runtime"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-http-api-foundation.mts",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:http-api-foundation"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-integration-resilience.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-integration",
+      "qualityGroups": [
+        "integration"
+      ],
+      "packageCommands": [
+        "test:integration-resilience"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-invoice-domain-contracts.mts",
+      "category": "unit-test",
+      "owner": "quality-unit",
+      "qualityGroups": [
+        "unit"
+      ],
+      "packageCommands": [
+        "test:invoice-domain-contracts"
+      ],
+      "targetArea": "tests/quality/unit/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-large-file-responsibility.mts",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:large-file-responsibility"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-lead-business-rules-contracts.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:lead-business-rules-contracts"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-lead-data-safety-contracts.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:lead-data-safety-contracts"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-lead-form-recovery-contracts.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-integration",
+      "qualityGroups": [
+        "integration"
+      ],
+      "packageCommands": [
+        "test:lead-form-recovery-contracts"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-lead-identity-governance.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "check:lead-identity-governance"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-lead-lifecycle-contracts.mts",
+      "category": "unit-test",
+      "owner": "quality-unit",
+      "qualityGroups": [
+        "unit"
+      ],
+      "packageCommands": [
+        "test:lead-lifecycle-contracts"
+      ],
+      "targetArea": "tests/quality/unit/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-lead-scale-experience-contracts.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:lead-scale-experience-contracts"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-lead-webhook-connector.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-integration",
+      "qualityGroups": [
+        "integration"
+      ],
+      "packageCommands": [
+        "test:lead-webhook-connector"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-leads.mts",
+      "category": "unit-test",
+      "owner": "quality-unit",
+      "qualityGroups": [
+        "unit"
+      ],
+      "packageCommands": [
+        "test:leads"
+      ],
+      "targetArea": "tests/quality/unit/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-list-filter-popover-contracts.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:list-filter-popover-contracts"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-maintainability-contracts.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:maintainability-contracts"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-metric-catalog-contracts.mts",
+      "category": "unit-test",
+      "owner": "quality-unit",
+      "qualityGroups": [
+        "unit"
+      ],
+      "packageCommands": [
+        "check:metric-catalog-contracts"
+      ],
+      "targetArea": "tests/quality/unit/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-metric-drilldown-runtime.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-integration",
+      "qualityGroups": [
+        "integration"
+      ],
+      "packageCommands": [
+        "test:metric-drilldown-runtime"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-module-self-barrels.mts",
+      "category": "architecture-test",
+      "owner": "repository-quality-unmapped",
+      "qualityGroups": [],
+      "packageCommands": [
+        "check:module-self-barrels"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "medium"
+    },
+    {
+      "path": "scripts/check-mutation-command-authority.mts",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:mutation-command-authority"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-mutation-conflict-ux.mts",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:mutation-conflict-ux"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-native-browser-dialogs.cjs",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "check:native-browser-dialogs"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-navigation-runtime.mts",
+      "category": "route-smoke-test",
+      "owner": "quality-route-smoke",
+      "qualityGroups": [
+        "route-smoke"
+      ],
+      "packageCommands": [
+        "test:navigation-runtime"
+      ],
+      "targetArea": "tests/quality/route-smoke/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-operational-context-contracts.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-integration",
+      "qualityGroups": [
+        "integration"
+      ],
+      "packageCommands": [
+        "test:operational-context-contracts"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-opportunity-presentation-contracts.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:opportunity-presentation-contracts"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-order-creation-contracts.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-integration",
+      "qualityGroups": [
+        "integration"
+      ],
+      "packageCommands": [
+        "test:order-creation-contracts"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-order-customer-delivery-contracts.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-integration",
+      "qualityGroups": [
+        "integration"
+      ],
+      "packageCommands": [
+        "test:order-customer-delivery-contracts"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-order-operations-frontend-contracts.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:order-operations-frontend-contracts"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-order-operations-hardening-contracts.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:order-operations-hardening-contracts"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-order-operations-presentation-contracts.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:order-operations-presentation-contracts"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-order-operations-workspace-ux.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:order-operations-workspace-ux"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-order-payment-plan-ux.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-integration",
+      "qualityGroups": [
+        "integration"
+      ],
+      "packageCommands": [
+        "test:order-payment-plan-ux"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-order-to-cash-api-contracts.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-integration",
+      "qualityGroups": [
+        "integration"
+      ],
+      "packageCommands": [
+        "test:order-to-cash-api-contracts"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-order-to-cash-cleanup.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "check:order-to-cash-cleanup"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-order-to-cash-metrics.mts",
+      "category": "unit-test",
+      "owner": "quality-unit",
+      "qualityGroups": [
+        "unit"
+      ],
+      "packageCommands": [
+        "test:order-to-cash-metrics"
+      ],
+      "targetArea": "tests/quality/unit/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-order-to-cash-money-safety.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "check:order-to-cash-money-safety"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-order-to-cash-no-fake-success.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "check:order-to-cash-no-fake-success"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-order-to-cash-no-payment-hardcode.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "check:order-to-cash-no-payment-hardcode"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-order-to-cash-typography.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "check:order-to-cash-typography"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-orders.mts",
+      "category": "unit-test",
+      "owner": "quality-unit",
+      "qualityGroups": [
+        "unit"
+      ],
+      "packageCommands": [
+        "test:orders"
+      ],
+      "targetArea": "tests/quality/unit/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-organization-b2b-ui.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:organization-b2b-ui"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-overflow-resilience.mts",
+      "category": "route-smoke-test",
+      "owner": "quality-route-smoke",
+      "qualityGroups": [
+        "route-smoke"
+      ],
+      "packageCommands": [
+        "test:overflow-resilience"
+      ],
+      "targetArea": "tests/quality/route-smoke/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-package-lock-registry.mts",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:package-lock-registry"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-page-description-policy.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:page-description-policy"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-payment-allocation-contracts.mts",
+      "category": "unit-test",
+      "owner": "quality-unit",
+      "qualityGroups": [
+        "unit"
+      ],
+      "packageCommands": [
+        "test:payment-allocation-contracts"
+      ],
+      "targetArea": "tests/quality/unit/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-payment-intent-contracts.mts",
+      "category": "unit-test",
+      "owner": "quality-unit",
+      "qualityGroups": [
+        "unit"
+      ],
+      "packageCommands": [
+        "test:payment-intent-contracts"
+      ],
+      "targetArea": "tests/quality/unit/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-payment-method-catalog-contracts.mts",
+      "category": "unit-test",
+      "owner": "quality-unit",
+      "qualityGroups": [
+        "unit"
+      ],
+      "packageCommands": [
+        "test:payment-method-catalog-contracts"
+      ],
+      "targetArea": "tests/quality/unit/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-payment-plan-contracts.mts",
+      "category": "unit-test",
+      "owner": "quality-unit",
+      "qualityGroups": [
+        "unit"
+      ],
+      "packageCommands": [
+        "test:payment-plan-contracts"
+      ],
+      "targetArea": "tests/quality/unit/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-payment-workflow-contracts.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-integration",
+      "qualityGroups": [
+        "integration"
+      ],
+      "packageCommands": [
+        "test:payment-workflow-contracts"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-people-access-ux.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:people-access-ux"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-people-account-provisioning.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-integration",
+      "qualityGroups": [
+        "integration"
+      ],
+      "packageCommands": [
+        "test:people-account-provisioning"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-pilot-acceptance-ui.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-critical-e2e",
+      "qualityGroups": [
+        "critical-e2e"
+      ],
+      "packageCommands": [
+        "test:pilot-acceptance-boundary"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-pilot-end-to-end.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-critical-e2e",
+      "qualityGroups": [
+        "critical-e2e"
+      ],
+      "packageCommands": [
+        "test:pilot-end-to-end"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-pilot-journey-fixture.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-critical-e2e",
+      "qualityGroups": [
+        "critical-e2e"
+      ],
+      "packageCommands": [
+        "test:pilot-journey-fixture"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-presentation-responsibility.mts",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:presentation-responsibility"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-product-glossary.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "check:product-glossary"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-product-space-contracts.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:product-space-contracts"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-products.mts",
+      "category": "unit-test",
+      "owner": "quality-unit",
+      "qualityGroups": [
+        "unit"
+      ],
+      "packageCommands": [
+        "test:products"
+      ],
+      "targetArea": "tests/quality/unit/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-qc88-remediation-contracts.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:qc88-remediation-contracts"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-quality-pipeline.mts",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:quality-pipeline"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-quote-approval-delivery-contracts.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:quote-approval-delivery-contracts"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-quote-direct-sale-contracts.mts",
+      "category": "unit-test",
+      "owner": "quality-unit",
+      "qualityGroups": [
+        "unit"
+      ],
+      "packageCommands": [
+        "test:quote-direct-sale-contracts"
+      ],
+      "targetArea": "tests/quality/unit/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-quote-order-integrity-contracts.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:quote-order-integrity-contracts"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-quote-presentation-contracts.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:quote-presentation-contracts"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-quotes.mts",
+      "category": "unit-test",
+      "owner": "quality-unit",
+      "qualityGroups": [
+        "unit"
+      ],
+      "packageCommands": [
+        "test:quotes"
+      ],
+      "targetArea": "tests/quality/unit/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-read-only-cross-domain.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-integration",
+      "qualityGroups": [
+        "integration"
+      ],
+      "packageCommands": [
+        "test:read-only-cross-domain"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-receivables-contracts.mts",
+      "category": "unit-test",
+      "owner": "quality-unit",
+      "qualityGroups": [
+        "unit"
+      ],
+      "packageCommands": [
+        "test:receivables-contracts"
+      ],
+      "targetArea": "tests/quality/unit/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-record-detail-motion-contracts.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:record-detail-motion-contracts"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-record-ownership-contracts.mts",
+      "category": "unit-test",
+      "owner": "quality-unit",
+      "qualityGroups": [
+        "unit"
+      ],
+      "packageCommands": [
+        "test:record-ownership-contracts"
+      ],
+      "targetArea": "tests/quality/unit/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-record-retention-policy.mts",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:record-retention-policy"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-relationship-activity-form-contracts.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:relationship-activity-form-contracts"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-relationship-identity-contracts.mts",
+      "category": "unit-test",
+      "owner": "quality-unit",
+      "qualityGroups": [
+        "unit"
+      ],
+      "packageCommands": [
+        "test:relationship-identity-contracts"
+      ],
+      "targetArea": "tests/quality/unit/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-relationship-migration-contracts.mts",
+      "category": "unit-test",
+      "owner": "quality-unit",
+      "qualityGroups": [
+        "unit"
+      ],
+      "packageCommands": [
+        "test:relationship-migration-contracts"
+      ],
+      "targetArea": "tests/quality/unit/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-release-readiness.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "check:release-readiness"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-reports-runtime.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-integration",
+      "qualityGroups": [
+        "integration"
+      ],
+      "packageCommands": [
+        "test:reports-runtime"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-repository-cleanup.mjs",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:repository-cleanup"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-repository-inventory.mjs",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:repository-inventory"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-repository-naming.mts",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:repository-naming"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-return-credit-refund-contracts.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-integration",
+      "qualityGroups": [
+        "integration"
+      ],
+      "packageCommands": [
+        "test:return-credit-refund-contracts"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-role-based-navigation.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-integration",
+      "qualityGroups": [
+        "integration"
+      ],
+      "packageCommands": [
+        "test:role-based-navigation"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-route-module-loads.mts",
+      "category": "route-smoke-test",
+      "owner": "quality-route-smoke",
+      "qualityGroups": [
+        "route-smoke"
+      ],
+      "packageCommands": [
+        "test:route-module-loads"
+      ],
+      "targetArea": "tests/quality/route-smoke/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-route-query-stability-runtime.mts",
+      "category": "route-smoke-test",
+      "owner": "quality-route-smoke",
+      "qualityGroups": [
+        "route-smoke"
+      ],
+      "packageCommands": [
+        "test:route-query-stability-runtime"
+      ],
+      "targetArea": "tests/quality/route-smoke/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-routed-mutation-authority.mts",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:routed-mutation-authority"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-sales-order-p0-p1-contracts.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:sales-order-p0-p1-contracts"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-sales-order-p2-contracts.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:sales-order-p2-contracts"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-sales-quick-create-contracts.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:sales-quick-create-contracts"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-server-side-list-query.mts",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:server-side-list-query"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-shell-ai-experience.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:shell-ai-experience"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-shell-layout-contracts.mts",
+      "category": "route-smoke-test",
+      "owner": "quality-route-smoke",
+      "qualityGroups": [
+        "route-smoke"
+      ],
+      "packageCommands": [
+        "test:shell-layout-contracts"
+      ],
+      "targetArea": "tests/quality/route-smoke/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-shipping-create-page-contracts.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:shipping-create-page-contracts"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-shipping-returns-contracts.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-integration",
+      "qualityGroups": [
+        "integration"
+      ],
+      "packageCommands": [
+        "test:shipping-returns-contracts"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-sidebar-navigation-migration.mts",
+      "category": "route-smoke-test",
+      "owner": "quality-route-smoke",
+      "qualityGroups": [
+        "route-smoke"
+      ],
+      "packageCommands": [
+        "test:sidebar-navigation-migration"
+      ],
+      "targetArea": "tests/quality/route-smoke/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-strict-type-regions.mts",
+      "category": "architecture-test",
+      "owner": "quality-typecheck",
+      "qualityGroups": [
+        "typecheck"
+      ],
+      "packageCommands": [
+        "check:strict-type-regions"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-studio-api-contract.mts",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:studio-api-contract"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-studio-configuration-experience.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:studio-configuration-experience"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-studio-currency-exchange-rates.mts",
+      "category": "unit-test",
+      "owner": "quality-unit",
+      "qualityGroups": [
+        "unit"
+      ],
+      "packageCommands": [
+        "test:studio-currency-exchange-rates"
+      ],
+      "targetArea": "tests/quality/unit/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-studio-module-propagation.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-integration",
+      "qualityGroups": [
+        "integration"
+      ],
+      "packageCommands": [
+        "test:studio-module-propagation"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-studio-quick-setup.mts",
+      "category": "unit-test",
+      "owner": "quality-unit",
+      "qualityGroups": [
+        "unit"
+      ],
+      "packageCommands": [
+        "test:studio-quick-setup"
+      ],
+      "targetArea": "tests/quality/unit/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-studio-route-runtime.mts",
+      "category": "route-smoke-test",
+      "owner": "quality-route-smoke",
+      "qualityGroups": [
+        "route-smoke"
+      ],
+      "packageCommands": [
+        "test:studio-route-runtime"
+      ],
+      "targetArea": "tests/quality/route-smoke/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-studio-single-authority.mts",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:studio-single-authority"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-studio-v1-removal.mts",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:studio-v1-removal"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-support.mts",
+      "category": "unit-test",
+      "owner": "quality-unit",
+      "qualityGroups": [
+        "unit"
+      ],
+      "packageCommands": [
+        "test:support"
+      ],
+      "targetArea": "tests/quality/unit/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-tab-interaction-runtime.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-integration",
+      "qualityGroups": [
+        "integration"
+      ],
+      "packageCommands": [
+        "test:tab-interaction-runtime"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-task-create-form-contracts.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:task-create-form-contracts"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-temporal-input-contracts.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-integration",
+      "qualityGroups": [
+        "integration"
+      ],
+      "packageCommands": [
+        "test:temporal-input-contracts"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-type-safety-budget.mts",
+      "category": "architecture-test",
+      "owner": "quality-typecheck",
+      "qualityGroups": [
+        "typecheck"
+      ],
+      "packageCommands": [
+        "check:type-safety-budget"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-ui-overlay-surfaces.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:ui-overlay-surfaces"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-user-facing-copy-contracts.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "check:user-facing-copy"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-user-facing-identifiers.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "check:user-facing-identifiers"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-work-operations-ux.mts",
+      "category": "contract-test",
+      "owner": "quality-contract",
+      "qualityGroups": [
+        "contract"
+      ],
+      "packageCommands": [
+        "test:work-operations-ux"
+      ],
+      "targetArea": "tests/quality/contracts/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-workspace-capability-manifest.mts",
+      "category": "architecture-test",
+      "owner": "quality-architecture",
+      "qualityGroups": [
+        "architecture"
+      ],
+      "packageCommands": [
+        "check:workspace-capability-manifest"
+      ],
+      "targetArea": "tests/quality/architecture/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-workspace-governance-contracts.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-integration",
+      "qualityGroups": [
+        "integration"
+      ],
+      "packageCommands": [
+        "test:workspace-governance-contracts"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-workspace-isolation-contracts.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-integration",
+      "qualityGroups": [
+        "integration"
+      ],
+      "packageCommands": [
+        "test:workspace-isolation-contracts"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-workspace-navigation-language.mts",
+      "category": "route-smoke-test",
+      "owner": "quality-route-smoke",
+      "qualityGroups": [
+        "route-smoke"
+      ],
+      "packageCommands": [
+        "test:workspace-navigation-language"
+      ],
+      "targetArea": "tests/quality/route-smoke/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/check-write-boundary-authorization.mts",
+      "category": "integration-runtime-test",
+      "owner": "quality-integration",
+      "qualityGroups": [
+        "integration"
+      ],
+      "packageCommands": [
+        "check:write-boundary-authorization"
+      ],
+      "targetArea": "tests/quality/integration/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/generate-repository-inventory.mjs",
+      "category": "repository-tooling",
+      "owner": "repository-quality",
+      "qualityGroups": [],
+      "packageCommands": [
+        "generate:repository-inventory"
+      ],
+      "targetArea": "scripts/repository-tooling/",
+      "migrationState": "baseline-only",
+      "confidence": "medium"
+    },
+    {
+      "path": "scripts/lib/createConnectedApplicationServiceFixture.mts",
+      "category": "repository-tooling",
+      "owner": "repository-quality",
+      "qualityGroups": [],
+      "packageCommands": [],
+      "targetArea": "scripts/repository-tooling/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/lib/presentationCompositionSource.mts",
+      "category": "repository-tooling",
+      "owner": "repository-quality",
+      "qualityGroups": [],
+      "packageCommands": [],
+      "targetArea": "scripts/repository-tooling/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/quality/quality-pipeline.json",
+      "category": "quality-runner",
+      "owner": "repository-quality",
+      "qualityGroups": [],
+      "packageCommands": [],
+      "targetArea": "scripts/quality/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/quality/run-node-gate.mjs",
+      "category": "quality-runner",
+      "owner": "repository-quality",
+      "qualityGroups": [],
+      "packageCommands": [],
+      "targetArea": "scripts/quality/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/quality/run-quality-pipeline.mjs",
+      "category": "quality-runner",
+      "owner": "repository-quality",
+      "qualityGroups": [],
+      "packageCommands": [],
+      "targetArea": "scripts/quality/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/repository-cleanup/removed-paths.json",
+      "category": "repository-tooling",
+      "owner": "repository-quality",
+      "qualityGroups": [],
+      "packageCommands": [],
+      "targetArea": "scripts/repository-tooling/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/repository-inventory/repositoryInventory.mjs",
+      "category": "repository-tooling",
+      "owner": "repository-quality",
+      "qualityGroups": [],
+      "packageCommands": [],
+      "targetArea": "scripts/repository-tooling/",
+      "migrationState": "baseline-only",
+      "confidence": "high"
+    },
+    {
+      "path": "scripts/user-experience-baseline/pilotJourneyFixture.ts",
+      "category": "fixture-baseline",
+      "owner": "quality-baselines",
+      "qualityGroups": [],
+      "packageCommands": [],
+      "targetArea": "tests/fixtures/ or scripts/baselines/",
+      "migrationState": "baseline-only",
+      "confidence": "medium"
+    },
+    {
+      "path": "scripts/user-experience-baseline/userExperienceBaseline.types.ts",
+      "category": "fixture-baseline",
+      "owner": "quality-baselines",
+      "qualityGroups": [],
+      "packageCommands": [],
+      "targetArea": "tests/fixtures/ or scripts/baselines/",
+      "migrationState": "baseline-only",
+      "confidence": "medium"
+    }
+  ]
+}

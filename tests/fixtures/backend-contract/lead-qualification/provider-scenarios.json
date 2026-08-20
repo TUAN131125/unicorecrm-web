@@ -1,0 +1,137 @@
+{
+  "contractVersion": "0.23.20-contract.0",
+  "pack": "lead-qualification",
+  "scenarios": [
+    {
+      "id": "nurture-success",
+      "operationId": "qualifyLeadForNurture",
+      "expectedStatus": 200,
+      "expectedOutcome": "COMMITTED",
+      "expectedResult": {
+        "qualificationOutcome": "NURTURE"
+      }
+    },
+    {
+      "id": "nurture-replay",
+      "operationId": "qualifyLeadForNurture",
+      "expectedStatus": 200,
+      "expectedOutcome": "REPLAYED",
+      "expectedResult": {
+        "qualificationOutcome": "NURTURE"
+      }
+    },
+    {
+      "id": "nurture-stale-version",
+      "operationId": "qualifyLeadForNurture",
+      "expectedStatus": 412,
+      "expectedCode": "VERSION_CONFLICT"
+    },
+    {
+      "id": "nurture-cross-workspace",
+      "operationId": "qualifyLeadForNurture",
+      "expectedStatus": 403,
+      "expectedCode": "WORKSPACE_MISMATCH"
+    },
+    {
+      "id": "nurture-invalid-relationship",
+      "operationId": "qualifyLeadForNurture",
+      "expectedStatus": 422,
+      "expectedCode": "LEAD_QUALIFICATION_RELATIONSHIP_INVALID"
+    },
+    {
+      "id": "nurture-input-invalid",
+      "operationId": "qualifyLeadForNurture",
+      "expectedStatus": 422,
+      "expectedCode": "LEAD_NURTURE_INPUT_INVALID"
+    },
+    {
+      "id": "opportunity-success",
+      "operationId": "qualifyLeadForOpportunity",
+      "expectedStatus": 200,
+      "expectedOutcome": "COMMITTED",
+      "expectedResult": {
+        "qualificationOutcome": "OPPORTUNITY"
+      }
+    },
+    {
+      "id": "opportunity-replay",
+      "operationId": "qualifyLeadForOpportunity",
+      "expectedStatus": 200,
+      "expectedOutcome": "REPLAYED",
+      "expectedResult": {
+        "qualificationOutcome": "OPPORTUNITY"
+      }
+    },
+    {
+      "id": "opportunity-stale-version",
+      "operationId": "qualifyLeadForOpportunity",
+      "expectedStatus": 412,
+      "expectedCode": "VERSION_CONFLICT"
+    },
+    {
+      "id": "opportunity-cross-workspace",
+      "operationId": "qualifyLeadForOpportunity",
+      "expectedStatus": 403,
+      "expectedCode": "WORKSPACE_MISMATCH"
+    },
+    {
+      "id": "opportunity-input-invalid",
+      "operationId": "qualifyLeadForOpportunity",
+      "expectedStatus": 422,
+      "expectedCode": "LEAD_OPPORTUNITY_INPUT_INVALID"
+    },
+    {
+      "id": "opportunity-module-disabled",
+      "operationId": "qualifyLeadForOpportunity",
+      "expectedStatus": 409,
+      "expectedCode": "LEAD_QUALIFICATION_DOWNSTREAM_MODULE_DISABLED"
+    },
+    {
+      "id": "direct-sale-quote-success",
+      "operationId": "qualifyLeadForDirectSale",
+      "expectedStatus": 200,
+      "expectedOutcome": "COMMITTED",
+      "expectedResult": {
+        "qualificationOutcome": "DIRECT_SALE",
+        "quoteId": "fixture-quote"
+      }
+    },
+    {
+      "id": "direct-sale-order-success",
+      "operationId": "qualifyLeadForDirectSale",
+      "expectedStatus": 200,
+      "expectedOutcome": "COMMITTED",
+      "expectedResult": {
+        "qualificationOutcome": "DIRECT_SALE",
+        "orderId": "fixture-order"
+      }
+    },
+    {
+      "id": "direct-sale-replay",
+      "operationId": "qualifyLeadForDirectSale",
+      "expectedStatus": 200,
+      "expectedOutcome": "REPLAYED",
+      "expectedResult": {
+        "qualificationOutcome": "DIRECT_SALE"
+      }
+    },
+    {
+      "id": "direct-sale-stale-version",
+      "operationId": "qualifyLeadForDirectSale",
+      "expectedStatus": 412,
+      "expectedCode": "VERSION_CONFLICT"
+    },
+    {
+      "id": "direct-sale-cross-workspace",
+      "operationId": "qualifyLeadForDirectSale",
+      "expectedStatus": 403,
+      "expectedCode": "WORKSPACE_MISMATCH"
+    },
+    {
+      "id": "direct-sale-input-invalid",
+      "operationId": "qualifyLeadForDirectSale",
+      "expectedStatus": 422,
+      "expectedCode": "LEAD_DIRECT_SALE_INPUT_INVALID"
+    }
+  ]
+}

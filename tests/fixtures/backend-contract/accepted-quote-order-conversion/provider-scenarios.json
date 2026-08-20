@@ -1,0 +1,59 @@
+{
+  "contractVersion": "0.23.20-contract.0",
+  "scenarios": [
+    {
+      "id": "convert-accepted-quote",
+      "operationId": "convertAcceptedQuoteToOrderDraft",
+      "expectedStatus": 201
+    },
+    {
+      "id": "convert-replay",
+      "operationId": "convertAcceptedQuoteToOrderDraft",
+      "expectedStatus": 201,
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "same-quote-second-order",
+      "operationId": "convertAcceptedQuoteToOrderDraft",
+      "expectedStatus": 409,
+      "expectedCode": "QUOTE_ORDER_ALREADY_CONVERTED"
+    },
+    {
+      "id": "quote-not-accepted",
+      "operationId": "convertAcceptedQuoteToOrderDraft",
+      "expectedStatus": 422,
+      "expectedCode": "QUOTE_ORDER_CONVERSION_BLOCKED"
+    },
+    {
+      "id": "quote-expired",
+      "operationId": "convertAcceptedQuoteToOrderDraft",
+      "expectedStatus": 422,
+      "expectedCode": "QUOTE_ORDER_CONVERSION_BLOCKED"
+    },
+    {
+      "id": "stale-quote-version",
+      "operationId": "convertAcceptedQuoteToOrderDraft",
+      "expectedStatus": 412,
+      "expectedCode": "VERSION_CONFLICT"
+    },
+    {
+      "id": "cross-workspace-denied",
+      "operationId": "convertAcceptedQuoteToOrderDraft",
+      "expectedStatus": 403,
+      "expectedCode": "WORKSPACE_MISMATCH"
+    },
+    {
+      "id": "mass-assignment-rejected",
+      "operationId": "convertAcceptedQuoteToOrderDraft",
+      "expectedStatus": 400,
+      "forbiddenFields": [
+        "orderId",
+        "orderNumber",
+        "totals",
+        "resourceVersion",
+        "commercialSnapshotFingerprint",
+        "createdAt"
+      ]
+    }
+  ]
+}

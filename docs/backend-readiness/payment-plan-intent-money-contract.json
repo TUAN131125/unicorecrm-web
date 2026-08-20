@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "contractVersion": "0.23.20-contract.0",
+  "moneySchema": "Money",
+  "authoritativeNumericRepresentation": "DECIMAL_STRING",
+  "frontendFloatingPointAuthorityAllowed": false,
+  "operations": {
+    "previewPaymentPlan": {
+      "mutation": false,
+      "concurrency": "IF_MATCH_REQUIRED"
+    },
+    "savePaymentPlanDraft": {
+      "mutation": true,
+      "concurrency": "IF_MATCH_REQUIRED",
+      "idempotency": "REQUIRED"
+    },
+    "activatePaymentPlan": {
+      "mutation": true,
+      "concurrency": "IF_MATCH_REQUIRED",
+      "idempotency": "REQUIRED"
+    },
+    "cancelPaymentPlan": {
+      "mutation": true,
+      "concurrency": "IF_MATCH_REQUIRED",
+      "idempotency": "REQUIRED"
+    },
+    "createPaymentIntent": {
+      "mutation": true,
+      "concurrency": "NOT_APPLICABLE",
+      "idempotency": "REQUIRED",
+      "idAuthority": "SERVER_ASSIGNED"
+    },
+    "cancelPaymentIntent": {
+      "mutation": true,
+      "concurrency": "IF_MATCH_REQUIRED",
+      "idempotency": "REQUIRED"
+    },
+    "retryPaymentIntent": {
+      "mutation": true,
+      "concurrency": "IF_MATCH_REQUIRED",
+      "idempotency": "REQUIRED",
+      "idAuthority": "SERVER_ASSIGNED"
+    }
+  }
+}

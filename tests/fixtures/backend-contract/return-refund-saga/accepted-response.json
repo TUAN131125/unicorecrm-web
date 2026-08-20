@@ -1,0 +1,40 @@
+{
+  "commandId": "cmd_rr_001",
+  "correlationId": "corr_rr_001",
+  "aggregateId": "return_001",
+  "aggregateType": "return",
+  "version": 4,
+  "occurredAt": "2026-07-25T00:00:00Z",
+  "outcome": "COMMITTED",
+  "result": {
+    "resolution": {
+      "id": "rrs_001",
+      "returnId": "return_001",
+      "state": "ACCEPTED",
+      "requestedAmount": {
+        "amount": "1000000",
+        "currency": "VND"
+      },
+      "creditedAmount": {
+        "amount": "1000000",
+        "currency": "VND"
+      },
+      "cashRefundAmount": {
+        "amount": "500000",
+        "currency": "VND"
+      },
+      "creditNoteIds": [
+        "cn_001"
+      ],
+      "allocationReversalIds": [
+        "ar_001"
+      ],
+      "refundIntentIds": [
+        "ri_001"
+      ],
+      "resourceVersion": 1,
+      "createdAt": "2026-07-25T00:00:00Z",
+      "updatedAt": "2026-07-25T00:00:00Z"
+    }
+  }
+}

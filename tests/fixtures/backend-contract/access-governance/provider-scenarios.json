@@ -1,0 +1,257 @@
+{
+  "contractVersion": "0.23.20-contract.0",
+  "scenarios": [
+    {
+      "id": "authorization-context-success",
+      "operationId": "getCurrentAuthorizationContext",
+      "expectedStatus": 200
+    },
+    {
+      "id": "authorization-context-unauthenticated",
+      "operationId": "getCurrentAuthorizationContext",
+      "expectedStatus": 401,
+      "expectedCode": "AUTHENTICATION_REQUIRED"
+    },
+    {
+      "id": "authorization-context-workspace-mismatch",
+      "operationId": "getCurrentAuthorizationContext",
+      "expectedStatus": 403,
+      "expectedCode": "WORKSPACE_MISMATCH"
+    },
+    {
+      "id": "access-directory-success",
+      "operationId": "getWorkspaceAccessDirectory",
+      "expectedStatus": 200
+    },
+    {
+      "id": "access-directory-read-denied",
+      "operationId": "getWorkspaceAccessDirectory",
+      "expectedStatus": 403,
+      "expectedCode": "ACCESS_DENIED"
+    },
+    {
+      "id": "record-access-allow",
+      "operationId": "evaluateEffectiveRecordAccess",
+      "expectedStatus": 200
+    },
+    {
+      "id": "record-access-deny",
+      "operationId": "evaluateEffectiveRecordAccess",
+      "expectedStatus": 200
+    },
+    {
+      "id": "record-access-invalid-resource",
+      "operationId": "evaluateEffectiveRecordAccess",
+      "expectedStatus": 422,
+      "expectedCode": "VALIDATION_FAILED"
+    },
+    {
+      "id": "invite-member-success",
+      "operationId": "inviteWorkspaceMember",
+      "expectedStatus": 200
+    },
+    {
+      "id": "invite-member-replay",
+      "operationId": "inviteWorkspaceMember",
+      "expectedStatus": 200
+    },
+    {
+      "id": "invite-member-duplicate",
+      "operationId": "inviteWorkspaceMember",
+      "expectedStatus": 409,
+      "expectedCode": "INVITATION_ALREADY_PENDING"
+    },
+    {
+      "id": "invite-member-invalid-role",
+      "operationId": "inviteWorkspaceMember",
+      "expectedStatus": 422,
+      "expectedCode": "ROLE_INACTIVE"
+    },
+    {
+      "id": "resend-invitation-success",
+      "operationId": "resendWorkspaceInvitation",
+      "expectedStatus": 200
+    },
+    {
+      "id": "resend-invitation-replay",
+      "operationId": "resendWorkspaceInvitation",
+      "expectedStatus": 200
+    },
+    {
+      "id": "resend-invitation-not-pending",
+      "operationId": "resendWorkspaceInvitation",
+      "expectedStatus": 409,
+      "expectedCode": "INVITATION_NOT_PENDING"
+    },
+    {
+      "id": "revoke-invitation-success",
+      "operationId": "revokeWorkspaceInvitation",
+      "expectedStatus": 200
+    },
+    {
+      "id": "revoke-invitation-replay",
+      "operationId": "revokeWorkspaceInvitation",
+      "expectedStatus": 200
+    },
+    {
+      "id": "revoke-invitation-not-pending",
+      "operationId": "revokeWorkspaceInvitation",
+      "expectedStatus": 409,
+      "expectedCode": "INVITATION_NOT_PENDING"
+    },
+    {
+      "id": "provision-member-success",
+      "operationId": "provisionWorkspaceMember",
+      "expectedStatus": 200
+    },
+    {
+      "id": "provision-member-replay",
+      "operationId": "provisionWorkspaceMember",
+      "expectedStatus": 200
+    },
+    {
+      "id": "provision-member-duplicate",
+      "operationId": "provisionWorkspaceMember",
+      "expectedStatus": 409,
+      "expectedCode": "MEMBER_ALREADY_EXISTS"
+    },
+    {
+      "id": "replace-member-access-success",
+      "operationId": "replaceWorkspaceMemberAccess",
+      "expectedStatus": 200
+    },
+    {
+      "id": "replace-member-access-replay",
+      "operationId": "replaceWorkspaceMemberAccess",
+      "expectedStatus": 200
+    },
+    {
+      "id": "replace-member-access-stale-version",
+      "operationId": "replaceWorkspaceMemberAccess",
+      "expectedStatus": 412,
+      "expectedCode": "VERSION_CONFLICT"
+    },
+    {
+      "id": "replace-member-access-last-admin",
+      "operationId": "replaceWorkspaceMemberAccess",
+      "expectedStatus": 409,
+      "expectedCode": "LAST_WORKSPACE_ADMINISTRATOR"
+    },
+    {
+      "id": "member-status-suspend-success",
+      "operationId": "changeWorkspaceMemberStatus",
+      "expectedStatus": 200
+    },
+    {
+      "id": "member-status-reactivate-success",
+      "operationId": "changeWorkspaceMemberStatus",
+      "expectedStatus": 200
+    },
+    {
+      "id": "member-status-stale-version",
+      "operationId": "changeWorkspaceMemberStatus",
+      "expectedStatus": 412,
+      "expectedCode": "VERSION_CONFLICT"
+    },
+    {
+      "id": "member-status-last-admin",
+      "operationId": "changeWorkspaceMemberStatus",
+      "expectedStatus": 409,
+      "expectedCode": "LAST_WORKSPACE_ADMINISTRATOR"
+    },
+    {
+      "id": "rotate-password-success",
+      "operationId": "rotateManagedMemberPassword",
+      "expectedStatus": 200
+    },
+    {
+      "id": "rotate-password-replay",
+      "operationId": "rotateManagedMemberPassword",
+      "expectedStatus": 200
+    },
+    {
+      "id": "rotate-password-external-account",
+      "operationId": "rotateManagedMemberPassword",
+      "expectedStatus": 422,
+      "expectedCode": "VALIDATION_FAILED"
+    },
+    {
+      "id": "create-role-success",
+      "operationId": "createAccessRole",
+      "expectedStatus": 200
+    },
+    {
+      "id": "create-role-replay",
+      "operationId": "createAccessRole",
+      "expectedStatus": 200
+    },
+    {
+      "id": "create-role-name-conflict",
+      "operationId": "createAccessRole",
+      "expectedStatus": 409,
+      "expectedCode": "ROLE_NAME_CONFLICT"
+    },
+    {
+      "id": "replace-role-success",
+      "operationId": "replaceAccessRole",
+      "expectedStatus": 200
+    },
+    {
+      "id": "replace-role-replay",
+      "operationId": "replaceAccessRole",
+      "expectedStatus": 200
+    },
+    {
+      "id": "replace-role-stale-version",
+      "operationId": "replaceAccessRole",
+      "expectedStatus": 412,
+      "expectedCode": "VERSION_CONFLICT"
+    },
+    {
+      "id": "replace-role-last-admin",
+      "operationId": "replaceAccessRole",
+      "expectedStatus": 409,
+      "expectedCode": "LAST_WORKSPACE_ADMINISTRATOR"
+    },
+    {
+      "id": "archive-role-success",
+      "operationId": "archiveAccessRole",
+      "expectedStatus": 200
+    },
+    {
+      "id": "archive-role-replay",
+      "operationId": "archiveAccessRole",
+      "expectedStatus": 200
+    },
+    {
+      "id": "archive-role-in-use",
+      "operationId": "archiveAccessRole",
+      "expectedStatus": 409,
+      "expectedCode": "ROLE_IN_USE"
+    },
+    {
+      "id": "archive-role-stale-version",
+      "operationId": "archiveAccessRole",
+      "expectedStatus": 412,
+      "expectedCode": "VERSION_CONFLICT"
+    },
+    {
+      "id": "cross-workspace-member-denied",
+      "operationId": "replaceWorkspaceMemberAccess",
+      "expectedStatus": 403,
+      "expectedCode": "WORKSPACE_MISMATCH"
+    },
+    {
+      "id": "access-configure-denied",
+      "operationId": "createAccessRole",
+      "expectedStatus": 403,
+      "expectedCode": "ACCESS_DENIED"
+    },
+    {
+      "id": "access-provider-unavailable",
+      "operationId": "getWorkspaceAccessDirectory",
+      "expectedStatus": 503,
+      "expectedCode": "INTEGRATION_UNAVAILABLE"
+    }
+  ]
+}

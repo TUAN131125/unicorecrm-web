@@ -1,0 +1,27 @@
+{
+  "schemaVersion": 1,
+  "contractVersion": "0.23.20-contract.0",
+  "decisionId": "DEC-PHASE5-LEAD-QUALIFICATION-WORKFLOW-CONTRACTS",
+  "status": "CLOSED",
+  "title": "Dedicated Lead qualification workflow contracts",
+  "decisions": [
+    "NURTURE, OPPORTUNITY and DIRECT_SALE are separate backend-orchestrated commands with distinct closed request DTOs and transaction boundaries.",
+    "Every qualification command requires Idempotency-Key and If-Match and returns authoritative Lead/workflow evidence.",
+    "Relationship resolution, downstream aggregate IDs, document numbers, totals, tax, rounding, actor identity, timestamps and audit evidence remain backend authority.",
+    "The generic qualifyLead operation is retired and remains blocked without a 2xx response.",
+    "Connected mode never coordinates cross-module transactions or falls back to the browser workflow."
+  ],
+  "productionReadyOperations": [
+    "advanceLeadWorkState",
+    "disqualifyLead",
+    "reopenDisqualifiedLead",
+    "qualifyLeadForNurture",
+    "qualifyLeadForOpportunity",
+    "qualifyLeadForDirectSale"
+  ],
+  "blockedOperations": [
+    "qualifyLead"
+  ],
+  "blockedWorkflowCommands": [],
+  "canonicalAuthority": "docs/api/openapi.json"
+}

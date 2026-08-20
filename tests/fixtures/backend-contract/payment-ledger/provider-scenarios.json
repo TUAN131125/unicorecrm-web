@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "contractVersion": "0.23.20-contract.0",
+  "scenarios": [
+    {
+      "id": "allocation-create",
+      "operationId": "allocatePaymentSource",
+      "expectedStatus": 200,
+      "requestSchema": "AllocatePaymentSourceRequest",
+      "responseSchema": "AllocatePaymentSourceResponse"
+    },
+    {
+      "id": "allocation-replay",
+      "operationId": "allocatePaymentSource",
+      "expectedStatus": 200,
+      "requestSchema": "AllocatePaymentSourceRequest",
+      "responseSchema": "AllocatePaymentSourceResponse"
+    },
+    {
+      "id": "allocation-over-available",
+      "operationId": "allocatePaymentSource",
+      "expectedStatus": 422,
+      "requestSchema": "AllocatePaymentSourceRequest",
+      "responseSchema": "ProblemDetails"
+    },
+    {
+      "id": "allocation-reverse",
+      "operationId": "reversePaymentAllocation",
+      "expectedStatus": 200,
+      "requestSchema": "ReversePaymentAllocationRequest",
+      "responseSchema": "ReversePaymentAllocationResponse"
+    },
+    {
+      "id": "allocation-reverse-replay",
+      "operationId": "reversePaymentAllocation",
+      "expectedStatus": 200,
+      "requestSchema": "ReversePaymentAllocationRequest",
+      "responseSchema": "ReversePaymentAllocationResponse"
+    },
+    {
+      "id": "refund-create",
+      "operationId": "createRefundIntent",
+      "expectedStatus": 202,
+      "requestSchema": "CreateRefundIntentRequest",
+      "responseSchema": "CreateRefundIntentResponse"
+    },
+    {
+      "id": "refund-read-created",
+      "operationId": "getRefund",
+      "expectedStatus": 200,
+      "responseSchema": "RefundIntentDocument"
+    },
+    {
+      "id": "refund-read-succeeded",
+      "operationId": "getRefund",
+      "expectedStatus": 200,
+      "responseSchema": "RefundIntentDocument"
+    },
+    {
+      "id": "refund-read-failed",
+      "operationId": "getRefund",
+      "expectedStatus": 200,
+      "responseSchema": "RefundIntentDocument"
+    },
+    {
+      "id": "cod-collection",
+      "operationId": "recordCodCustomerCollection",
+      "expectedStatus": 200,
+      "requestSchema": "CodEvidenceRequest",
+      "responseSchema": "CodPaymentEvidenceResponse"
+    },
+    {
+      "id": "cod-collection-replay",
+      "operationId": "recordCodCustomerCollection",
+      "expectedStatus": 200,
+      "requestSchema": "CodEvidenceRequest",
+      "responseSchema": "CodPaymentEvidenceResponse"
+    },
+    {
+      "id": "cod-remittance",
+      "operationId": "recordCodMerchantRemittance",
+      "expectedStatus": 200,
+      "requestSchema": "CodEvidenceRequest",
+      "responseSchema": "CodPaymentEvidenceResponse"
+    },
+    {
+      "id": "cod-remittance-before-collection",
+      "operationId": "recordCodMerchantRemittance",
+      "expectedStatus": 409,
+      "requestSchema": "CodEvidenceRequest",
+      "responseSchema": "ProblemDetails"
+    },
+    {
+      "id": "cross-workspace-allocation-denied",
+      "operationId": "allocatePaymentSource",
+      "expectedStatus": 403,
+      "requestSchema": "AllocatePaymentSourceRequest",
+      "responseSchema": "ProblemDetails"
+    }
+  ]
+}

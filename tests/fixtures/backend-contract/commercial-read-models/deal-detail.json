@@ -1,0 +1,57 @@
+{
+  "id": "deal-001",
+  "name": "Authoritative commercial opportunity",
+  "buyerRef": {
+    "type": "ORGANIZATION_ACCOUNT",
+    "id": "org-001"
+  },
+  "stageCode": "NEGOTIATION",
+  "stageCategory": "OPEN",
+  "amount": {
+    "amount": "1045000",
+    "currency": "VND"
+  },
+  "opportunityScore": "70",
+  "ownerId": "user-001",
+  "expectedCloseDate": "2026-08-31",
+  "contactId": "contact-001",
+  "interestedProductIds": [
+    "product-001"
+  ],
+  "lineItems": [
+    {
+      "id": "line-001",
+      "productId": "product-001",
+      "skuSnapshot": "SKU-001",
+      "productNameSnapshot": "Commercial product snapshot",
+      "productTypeSnapshot": "PHYSICAL",
+      "quantity": "2",
+      "unitPrice": {
+        "amount": "500000",
+        "currency": "VND"
+      },
+      "discountRate": "5",
+      "taxRate": "10",
+      "taxMode": "EXCLUSIVE",
+      "lineSubtotal": {
+        "amount": "1000000",
+        "currency": "VND"
+      },
+      "lineDiscountAmount": {
+        "amount": "50000",
+        "currency": "VND"
+      },
+      "lineTaxAmount": {
+        "amount": "95000",
+        "currency": "VND"
+      },
+      "lineTotal": {
+        "amount": "1045000",
+        "currency": "VND"
+      }
+    }
+  ],
+  "resourceVersion": 7,
+  "createdAt": "2026-07-01T01:00:00Z",
+  "updatedAt": "2026-07-24T04:00:00Z"
+}

@@ -1,0 +1,13 @@
+{
+  "type": "urn:unicore:error:quote-order-conversion-blocked",
+  "title": "Quote cannot be converted",
+  "status": 422,
+  "code": "QUOTE_ORDER_CONVERSION_BLOCKED",
+  "detail": "Quote must be accepted, unexpired and commercially consistent.",
+  "retryable": false,
+  "correlationId": "corr-convert-blocked",
+  "aggregateId": "quote-001",
+  "businessBlockers": [
+    "QUOTE_NOT_ACCEPTED"
+  ]
+}

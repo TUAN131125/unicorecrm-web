@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "contractVersion": "0.23.20-contract.0",
+  "scenarios": [
+    {
+      "id": "deal-list",
+      "operationId": "listDeals",
+      "expectedStatus": 200,
+      "schema": "DealListResponse"
+    },
+    {
+      "id": "deal-detail",
+      "operationId": "getDeal",
+      "expectedStatus": 200,
+      "schema": "DealReadModel"
+    },
+    {
+      "id": "quote-list",
+      "operationId": "listQuotes",
+      "expectedStatus": 200,
+      "schema": "QuoteListResponse"
+    },
+    {
+      "id": "quote-detail",
+      "operationId": "getQuote",
+      "expectedStatus": 200,
+      "schema": "QuoteReadModel"
+    },
+    {
+      "id": "order-list",
+      "operationId": "listOrders",
+      "expectedStatus": 200,
+      "schema": "OrderListResponse"
+    },
+    {
+      "id": "order-detail",
+      "operationId": "getOrder",
+      "expectedStatus": 200,
+      "schema": "OrderReadModel"
+    }
+  ]
+}

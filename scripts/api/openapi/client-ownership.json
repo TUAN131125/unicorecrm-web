@@ -1,0 +1,301 @@
+{
+  "schemaVersion": 1,
+  "clients": [
+    {
+      "id": "identity",
+      "tags": [
+        "Identity"
+      ],
+      "output": "src/platform/api/generated/identityApi.ts",
+      "className": "IdentityApiClient",
+      "requestOptionsName": "IdentityRequestOptions",
+      "ownerByTag": {
+        "Identity": "platform/identity-auth"
+      },
+      "adapterByTag": {
+        "Identity": "src/platform/identity-auth/infrastructure/IdentityAuthHttpAdapter.ts"
+      },
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.auth-session-contracts",
+        "quality.auth-ux-contracts",
+        "quality.identity-auth-api-boundary"
+      ]
+    },
+    {
+      "id": "workspace-bootstrap",
+      "tags": [
+        "WorkspaceBootstrap"
+      ],
+      "output": "src/platform/api/generated/workspaceBootstrapApi.ts",
+      "className": "WorkspaceBootstrapApiClient",
+      "requestOptionsName": "WorkspaceBootstrapRequestOptions",
+      "ownerByTag": {
+        "WorkspaceBootstrap": "platform/workspace-context"
+      },
+      "adapterByTag": {
+        "WorkspaceBootstrap": "src/platform/workspace-context/infrastructure/WorkspaceBootstrapHttpAdapter.ts"
+      },
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.application-composition",
+        "quality.workspace-bootstrap-api-boundary"
+      ]
+    },
+    {
+      "id": "access-governance",
+      "tags": [
+        "AccessGovernance"
+      ],
+      "output": "src/platform/api/generated/accessGovernanceApi.ts",
+      "className": "AccessGovernanceApiClient",
+      "requestOptionsName": "AccessGovernanceRequestOptions",
+      "ownerByTag": {
+        "AccessGovernance": "platform/access-control"
+      },
+      "adapterByTag": {
+        "AccessGovernance": "src/platform/access-control/infrastructure/AccessGovernanceHttpAdapter.ts"
+      },
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.access-governance-api-boundary",
+        "quality.access-control-contracts",
+        "quality.write-boundary-authorization"
+      ]
+    },
+    {
+      "id": "receivables",
+      "tags": [
+        "Receivables"
+      ],
+      "output": "src/platform/api/generated/receivablesApi.ts",
+      "className": "ReceivablesApiClient",
+      "requestOptionsName": null,
+      "ownerByTag": {
+        "Receivables": "invoices"
+      },
+      "adapterByTag": {
+        "Receivables": "src/modules/invoices/infrastructure/http/ReceivablesHttpAdapter.ts"
+      },
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.receivables-contracts"
+      ]
+    },
+    {
+      "id": "financial",
+      "tags": [
+        "Invoices",
+        "Payments"
+      ],
+      "output": "src/platform/api/generated/financialApi.ts",
+      "className": "FinancialApiClient",
+      "requestOptionsName": "FinancialRequestOptions",
+      "ownerByTag": {
+        "Invoices": "invoices",
+        "Payments": "payments"
+      },
+      "adapterByTag": {
+        "Invoices": "src/modules/invoices/infrastructure/http/InvoiceHttpAdapter.ts",
+        "Payments": "src/modules/payments/infrastructure/http/PaymentHttpAdapter.ts"
+      },
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.order-to-cash-api-contracts",
+        "quality.financial-vertical-slice",
+        "quality.financial-operations-api-boundary"
+      ]
+    },
+    {
+      "id": "commercial",
+      "tags": [
+        "Organizations",
+        "Contacts",
+        "Customers",
+        "Products",
+        "Leads",
+        "Deals",
+        "Quotes",
+        "Orders",
+        "Shipping",
+        "Returns",
+        "Support",
+        "Tasks",
+        "LeadQualification"
+      ],
+      "output": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "requestOptionsName": "CommercialRequestOptions",
+      "ownerByTag": {
+        "Organizations": "organizations",
+        "Contacts": "contacts",
+        "Customers": "customers",
+        "Products": "products",
+        "Leads": "leads",
+        "Deals": "deals",
+        "Quotes": "quotes",
+        "Orders": "orders",
+        "Shipping": "shipping",
+        "Returns": "returns",
+        "Support": "support",
+        "Tasks": "tasks",
+        "LeadQualification": "leads"
+      },
+      "adapterByTag": {
+        "Organizations": "src/modules/organizations/infrastructure/http/OrganizationHttpApiAdapter.ts",
+        "Contacts": "src/modules/contacts/infrastructure/http/ContactHttpApiAdapter.ts",
+        "Customers": "src/modules/customers/infrastructure/http/CustomerHttpApiAdapter.ts",
+        "Products": "src/modules/products/infrastructure/http/ProductHttpApiAdapter.ts",
+        "Leads": "src/modules/leads/infrastructure/http/LeadHttpApiAdapter.ts",
+        "Deals": "src/modules/deals/infrastructure/http/DealHttpApiAdapter.ts",
+        "Quotes": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+        "Orders": "src/modules/orders/infrastructure/http/OrderHttpApiAdapter.ts",
+        "Shipping": "src/modules/shipping/infrastructure/http/ShippingHttpApiAdapter.ts",
+        "Returns": "src/modules/returns/infrastructure/http/ReturnHttpApiAdapter.ts",
+        "Support": "src/modules/support/infrastructure/http/SupportHttpApiAdapter.ts",
+        "Tasks": "src/modules/tasks/infrastructure/http/TaskHttpApiAdapter.ts",
+        "LeadQualification": "src/workflows/lead-qualification/infrastructure/http/LeadQualificationHttpAdapter.ts"
+      },
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.order-to-cash-api-contracts",
+        "quality.commercial-authoritative-queries",
+        "quality.application-composition",
+        "quality.lead-qualification-api-boundary",
+        "quality.task-activity-api-boundary",
+        "quality.support-api-boundary",
+        "quality.relationship-domain-api-boundary",
+        "quality.deal-api-boundary",
+        "quality.quote-api-boundary",
+        "quality.product-order-api-boundary",
+        "quality.shipping-returns-api-boundary"
+      ]
+    },
+    {
+      "id": "workspace-configuration",
+      "tags": [
+        "WorkspaceConfiguration"
+      ],
+      "output": "src/platform/api/generated/workspaceConfigurationApi.ts",
+      "className": "WorkspaceConfigurationApiClient",
+      "requestOptionsName": "WorkspaceConfigurationRequestOptions",
+      "ownerByTag": {
+        "WorkspaceConfiguration": "workspaces/studio"
+      },
+      "adapterByTag": {
+        "WorkspaceConfiguration": "src/workspaces/studio/infrastructure/StudioCoreHttpAdapter.ts"
+      },
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.studio-api-contract",
+        "quality.studio-core-api-boundary"
+      ]
+    },
+    {
+      "id": "studio-quick-setup",
+      "tags": [
+        "StudioQuickSetup"
+      ],
+      "output": "src/platform/api/generated/studioQuickSetupApi.ts",
+      "className": "StudioQuickSetupApiClient",
+      "requestOptionsName": "StudioQuickSetupRequestOptions",
+      "ownerByTag": {
+        "StudioQuickSetup": "workspaces/studio"
+      },
+      "adapterByTag": {
+        "StudioQuickSetup": "src/workspaces/studio/infrastructure/StudioCoreHttpAdapter.ts"
+      },
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.studio-api-contract",
+        "quality.studio-core-api-boundary"
+      ]
+    },
+    {
+      "id": "crm-configuration",
+      "tags": [
+        "CrmConfiguration"
+      ],
+      "output": "src/platform/api/generated/crmConfigurationApi.ts",
+      "className": "CrmConfigurationApiClient",
+      "requestOptionsName": "CrmConfigurationRequestOptions",
+      "ownerByTag": {
+        "CrmConfiguration": "platform/workspace-config"
+      },
+      "adapterByTag": {
+        "CrmConfiguration": "src/platform/api/runtime/configurationApiClients.ts"
+      },
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.studio-api-contract"
+      ]
+    },
+    {
+      "id": "product-configuration",
+      "tags": [
+        "ProductConfiguration"
+      ],
+      "output": "src/platform/api/generated/productConfigurationApi.ts",
+      "className": "ProductConfigurationApiClient",
+      "requestOptionsName": "ProductConfigurationRequestOptions",
+      "ownerByTag": {
+        "ProductConfiguration": "products"
+      },
+      "adapterByTag": {
+        "ProductConfiguration": "src/platform/api/runtime/configurationApiClients.ts"
+      },
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.studio-api-contract"
+      ]
+    },
+    {
+      "id": "financial-configuration",
+      "tags": [
+        "FinancialConfiguration"
+      ],
+      "output": "src/platform/api/generated/financialConfigurationApi.ts",
+      "className": "FinancialConfigurationApiClient",
+      "requestOptionsName": "FinancialConfigurationRequestOptions",
+      "ownerByTag": {
+        "FinancialConfiguration": "platform/workspace-config"
+      },
+      "adapterByTag": {
+        "FinancialConfiguration": "src/platform/api/runtime/configurationApiClients.ts"
+      },
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.studio-api-contract"
+      ]
+    },
+    {
+      "id": "integration-configuration",
+      "tags": [
+        "IntegrationConfiguration"
+      ],
+      "output": "src/platform/api/generated/integrationConfigurationApi.ts",
+      "className": "IntegrationConfigurationApiClient",
+      "requestOptionsName": "IntegrationConfigurationRequestOptions",
+      "ownerByTag": {
+        "IntegrationConfiguration": "platform/integrations"
+      },
+      "adapterByTag": {
+        "IntegrationConfiguration": "src/platform/api/runtime/configurationApiClients.ts"
+      },
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.studio-api-contract"
+      ]
+    }
+  ],
+  "approvedExternalTransports": [
+    {
+      "path": "src/modules/shipping/infrastructure/providers/HttpShippingProvider.ts",
+      "ownerModule": "shipping",
+      "purpose": "Carrier provider API boundary; these paths are not Unicore backend endpoints.",
+      "routePrefixes": [
+        "/shipping/providers/"
+      ]
+    }
+  ]
+}

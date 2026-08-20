@@ -1,0 +1,518 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-form: "Hanken Grotesk", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --animate-fade-in: fadeIn 0.25s ease-out;
+  --animate-slide-in: slideIn 0.25s ease-out;
+  --animate-spin-slow: spin 3s linear infinite;
+
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(10px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: #f8fafc;
+  color: #0f172a;
+}
+
+.crm-scroll-x {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+  -webkit-overflow-scrolling: touch;
+}
+
+.crm-scroll-x::-webkit-scrollbar {
+  height: 6px;
+}
+
+.crm-scroll-x::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.crm-scroll-x::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+.crm-scroll-x::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.crm-scroll-y {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+  -webkit-overflow-scrolling: touch;
+}
+
+.crm-scroll-y::-webkit-scrollbar {
+  width: 6px;
+}
+
+.crm-scroll-y::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.crm-scroll-y::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 999px;
+}
+
+.crm-scroll-y::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Approved enterprise form language. A single scoped layer owns control
+   dimensions so utility classes do not accumulate conflicting padding/heights. */
+.crm-form-surface,
+.crm-form-page {
+  --crm-form-control-height: 2.75rem;
+  font-family: var(--font-form);
+}
+
+.crm-form-surface .font-sans,
+.crm-form-page .font-sans {
+  font-family: inherit;
+}
+
+.crm-form-surface :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]), select, textarea),
+.crm-form-page :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]), select, textarea) {
+  box-sizing: border-box;
+  border-radius: 0.5rem;
+  border-color: #d8d1e1;
+  background-color: #ffffff;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.crm-form-surface :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]), select),
+.crm-form-page :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]), select) {
+  min-height: var(--crm-form-control-height);
+  font-weight: 600;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
+}
+
+.crm-form-surface :where(textarea),
+.crm-form-page :where(textarea) {
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.crm-form-surface :where(input, select, textarea):focus,
+.crm-form-page :where(input, select, textarea):focus {
+  outline: none;
+  border-color: #7c3aed;
+  box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.16);
+}
+
+.crm-form-surface :where(label),
+.crm-form-page :where(label) {
+  color: #475569;
+}
+
+.crm-form-surface :where(button),
+.crm-form-page :where(button) {
+  border-radius: 0.5rem;
+}
+
+.crm-form-page {
+  width: 100%;
+  max-width: 64rem;
+  margin-inline: auto;
+  padding-bottom: 3rem;
+}
+
+.crm-form-action-bar > button,
+.crm-form-action-bar > form > button {
+  min-width: 7rem;
+  min-height: 2.75rem;
+  padding-inline: 1.25rem;
+  font-size: 0.75rem;
+}
+
+/* Form dialogs use a stable header / scrollable body / persistent action area.
+   Existing modal forms that still own their action row receive the same footer behavior
+   without changing their submit handlers or business flow. */
+[data-dialog-variant="form"] .crm-form-surface > .crm-form-action-bar:last-child {
+  position: sticky;
+  bottom: -2rem;
+  z-index: 20;
+  margin: 1.25rem -2rem -2rem;
+  padding: 1rem 2rem;
+  border-top: 1px solid rgb(226 232 240);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 -12px 24px -24px rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(10px);
+}
+
+/* Contained forms already own a fixed body/footer layout. Reset the legacy
+   negative sticky offsets so their action row remains fully visible. */
+[data-dialog-variant="form"] .crm-form-surface[data-contained-form-layout="true"] > .crm-form-action-bar:last-child {
+  position: relative;
+  bottom: auto;
+  margin: 0;
+  padding: 1rem;
+  backdrop-filter: none;
+}
+
+@media (max-width: 639px) {
+  [data-dialog-variant="form"] .crm-form-surface > .crm-form-action-bar:last-child {
+    bottom: -1.25rem;
+    margin: 1rem -1.25rem -1.25rem;
+    padding: 0.875rem 1.25rem;
+  }
+
+  [data-dialog-variant="form"] .crm-form-surface[data-contained-form-layout="true"] > .crm-form-action-bar:last-child {
+    bottom: auto;
+    margin: 0;
+    padding: 1rem;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .crm-form-surface [data-form-section],
+  .crm-form-surface section {
+    animation: crm-form-section-in 220ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+  .crm-form-surface [data-form-section]:nth-child(2),
+  .crm-form-surface section:nth-child(2) { animation-delay: 35ms; }
+  .crm-form-surface [data-form-section]:nth-child(3),
+  .crm-form-surface section:nth-child(3) { animation-delay: 70ms; }
+  .crm-form-surface [data-form-section]:nth-child(4),
+  .crm-form-surface section:nth-child(4) { animation-delay: 105ms; }
+}
+
+@keyframes crm-form-section-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.crm-form-surface button[type="submit"],
+.crm-form-page button[type="submit"],
+.crm-form-surface .border-t > button,
+.crm-form-page .border-t > button {
+  min-height: 2.75rem;
+  min-width: 7rem;
+  padding-inline: 1.25rem;
+  font-size: 0.75rem;
+}
+
+/* Application chrome motion and refined scroll surfaces. */
+.crm-sidebar-scroll,
+.crm-app-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+}
+
+.crm-sidebar-scroll:hover,
+.crm-app-scroll:hover {
+  scrollbar-color: rgba(148, 163, 184, 0.72) transparent;
+}
+
+.crm-sidebar-scroll::-webkit-scrollbar,
+.crm-app-scroll::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+.crm-sidebar-scroll::-webkit-scrollbar-track,
+.crm-app-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.crm-sidebar-scroll::-webkit-scrollbar-thumb,
+.crm-app-scroll::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  background-clip: padding-box;
+  transition: background-color 180ms ease;
+}
+
+.crm-sidebar-scroll:hover::-webkit-scrollbar-thumb,
+.crm-app-scroll:hover::-webkit-scrollbar-thumb {
+  background-color: rgba(148, 163, 184, 0.72);
+}
+
+.crm-sidebar-scroll::-webkit-scrollbar-thumb:hover,
+.crm-app-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(100, 116, 139, 0.88);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [data-sidebar-item="v2"] {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* Overflow resilience for record/list surfaces with user-entered content. */
+[data-list-page-archetype="v1"],
+[data-record-detail-archetype="v1"],
+[data-ai-workspace="v3"],
+[data-ai-chat-panel="v3"] {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+[data-list-page-archetype="v1"] :where(h1, h2, h3, h4, [data-user-content]),
+[data-record-detail-archetype="v1"] :where(h1, h2, h3, h4, [data-user-content]),
+[data-ai-workspace="v3"] :where(h1, h2, h3, h4, [data-user-content]) {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.crm-overflow-safe {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Shared production UI density and accessibility baseline. */
+:root {
+  --crm-focus-ring: 0 0 0 3px rgba(124, 58, 237, 0.2);
+  --crm-mobile-action-height: 0px;
+  --crm-floating-utility-right: max(1rem, env(safe-area-inset-right));
+  --crm-floating-utility-bottom: max(1rem, env(safe-area-inset-bottom));
+  --crm-floating-utility-gap: 0.75rem;
+  --crm-mobile-action-safe-right: 5.75rem;
+}
+
+@media (max-width: 639px) {
+  [data-mobile-action-bar="true"] {
+    padding-right: max(var(--crm-mobile-action-safe-right), env(safe-area-inset-right));
+  }
+}
+
+:where(button, [role="button"], a, input, select, textarea):focus-visible {
+  outline: none;
+}
+
+::selection {
+  background: rgba(124, 58, 237, 0.16);
+  color: #0f172a;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* CRM typography hierarchy -------------------------------------------------
+   Titles and primary actions may remain prominent. Dense data surfaces use a
+   quieter hierarchy: medium headers, regular body copy, one neutral text tone.
+   Status badges and explicit action controls keep their semantic colors. */
+:root {
+  --crm-data-text: #0f172a;
+  --crm-data-heading: #334155;
+  --crm-data-muted: #475569;
+}
+
+:where(table:not([data-typography-opt-out])) {
+  color: var(--crm-data-text);
+}
+
+:where(table:not([data-typography-opt-out])) thead th {
+  color: var(--crm-data-heading);
+  font-weight: 500;
+}
+
+:where(table:not([data-typography-opt-out])) tbody td {
+  color: var(--crm-data-text);
+  font-weight: 400;
+}
+
+:where(table:not([data-typography-opt-out])) tbody td
+  :where(.font-black, .font-extrabold, .font-bold, .font-semibold)
+  :not([data-ui-badge="true"])
+  :not([data-ui-button="true"])
+  :not([class*="bg-"]) {
+  font-weight: 500;
+}
+
+:where(table:not([data-typography-opt-out])) tbody td
+  :where(
+    [class*="text-indigo-"],
+    [class*="text-violet-"],
+    [class*="text-purple-"],
+    [class*="text-blue-"],
+    [class*="text-sky-"],
+    [class*="text-cyan-"],
+    [class*="text-teal-"],
+    [class*="text-emerald-"],
+    [class*="text-green-"],
+    [class*="text-lime-"],
+    [class*="text-amber-"],
+    [class*="text-orange-"],
+    [class*="text-red-"],
+    [class*="text-rose-"]
+  )
+  :not([data-ui-badge="true"])
+  :not([data-ui-button="true"])
+  :not([class*="bg-"]) {
+  color: var(--crm-data-text);
+}
+
+:where(table:not([data-typography-opt-out])) [data-ui-badge="true"] *,
+:where(table:not([data-typography-opt-out])) [data-ui-button="true"] * {
+  color: inherit;
+}
+
+[data-data-surface="list"] {
+  color: var(--crm-data-text);
+}
+
+[data-data-surface="list"]
+  :where(.font-black, .font-extrabold, .font-bold)
+  :not([data-ui-badge="true"])
+  :not([data-ui-button="true"])
+  :not([class*="bg-"]) {
+  font-weight: 500;
+}
+
+[data-data-surface="list"]
+  :where(
+    [class*="text-indigo-"],
+    [class*="text-violet-"],
+    [class*="text-purple-"],
+    [class*="text-blue-"],
+    [class*="text-sky-"],
+    [class*="text-cyan-"],
+    [class*="text-teal-"],
+    [class*="text-emerald-"],
+    [class*="text-green-"],
+    [class*="text-lime-"],
+    [class*="text-amber-"],
+    [class*="text-orange-"],
+    [class*="text-red-"],
+    [class*="text-rose-"]
+  )
+  :not([data-ui-badge="true"])
+  :not([data-ui-button="true"])
+  :not([class*="bg-"]) {
+  color: var(--crm-data-text);
+}
+
+[data-data-surface="list"] [data-ui-badge="true"] *,
+[data-data-surface="list"] [data-ui-button="true"] * {
+  color: inherit;
+}
+
+/* Semantic action controls own their foreground color. Dense-data typography
+   may neutralize surrounding copy, but it must never turn white action labels
+   or Lucide strokes black on success/danger buttons. */
+[data-ui-button="true"] svg {
+  color: inherit;
+  stroke: currentColor;
+}
+
+/* People & Access visual hierarchy ------------------------------------------- */
+[data-people-access-surface="canonical"] {
+  --crm-config-text-strong: #0f172a;
+  --crm-config-text: #334155;
+  --crm-config-text-muted: #475569;
+  color: var(--crm-config-text);
+  text-rendering: optimizeLegibility;
+}
+
+[data-people-access-surface="canonical"]
+  [class~="text-slate-400"] {
+  color: #64748b;
+}
+
+[data-people-access-surface="canonical"]
+  [class~="text-slate-500"] {
+  color: var(--crm-config-text-muted);
+}
+
+[data-people-access-surface="canonical"]
+  [class~="text-slate-600"] {
+  color: var(--crm-config-text);
+}
+
+[data-people-access-surface="canonical"]
+  :where(input, select, textarea)::placeholder {
+  color: #64748b;
+  opacity: 1;
+}
+
+[data-people-access-surface="canonical"]
+  :where([class~="border-slate-100"], [class*="border-slate-100/"]) {
+  border-color: #e2e8f0;
+}
+
+[data-people-access-surface="canonical"]
+  :where([class~="border-slate-200"], [class*="border-slate-200/"]) {
+  border-color: #cbd5e1;
+}
+
+[data-people-access-surface="canonical"]
+  :where(h1, h2, h3, legend) {
+  color: var(--crm-config-text-strong);
+  letter-spacing: -0.01em;
+}
+
+[data-ui-control="switch"] > button > span {
+  transform-origin: center;
+}
+
+/* Source-wide text clipping resilience.
+   User-visible copy must wrap instead of being hidden behind ellipsis or line clamps.
+   Compact numeric/status cells can still opt into nowrap, while text-bearing controls
+   and record/list identities remain readable in Vietnamese, English and at browser zoom. */
+.crm-text-wrap,
+#root :where(.truncate, [class*="line-clamp-"]) {
+  min-width: 0;
+  max-width: 100%;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  -webkit-line-clamp: unset !important;
+  -webkit-box-orient: initial !important;
+}
+
+/* Action controls retain their component-owned height and natural width.
+   Long content wraps at the action-group level instead of collapsing each button. */
+#root [data-ui-button="true"] {
+  max-width: none;
+}
+
+#root [data-ui-button="true"] > span {
+  max-width: none;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+#root :where([data-list-page-archetype="v1"], [data-record-detail-archetype="v1"], [data-people-access-surface="canonical"])
+  :where(h1, h2, h3, h4, p, label, button, a, td, th, [data-user-content]) {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}

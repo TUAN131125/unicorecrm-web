@@ -1,0 +1,20 @@
+{
+  "buyerRef": {
+    "type": "ORGANIZATION_ACCOUNT",
+    "id": "buyer_001"
+  },
+  "orderId": "order_001",
+  "invoiceIds": [
+    "inv_001"
+  ],
+  "scheduleLineIds": [
+    "psl_001"
+  ],
+  "amount": {
+    "amount": "1000000",
+    "currency": "VND"
+  },
+  "methodCode": "BANK_TRANSFER",
+  "providerCode": "BANK_A",
+  "returnRouteKey": "payments"
+}

@@ -1,0 +1,2922 @@
+{
+  "schemaVersion": 1,
+  "occurrences": [
+    {
+      "path": "src/ai/aiStorage.ts",
+      "line": 70,
+      "text": "createdAt: new Date().toISOString()",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/ai/aiStorage.ts",
+      "line": 73,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/ai/aiStorage.ts",
+      "line": 74,
+      "text": "updatedAt: new Date().toISOString()",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/ai/aiStorage.ts",
+      "line": 87,
+      "text": "threads[index].updatedAt = new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/ai/aiInsights.ts",
+      "line": 57,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/ai/aiInsights.ts",
+      "line": 94,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/ai/aiInsights.ts",
+      "line": 135,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/ai/aiInsights.ts",
+      "line": 161,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/ai/aiInsights.ts",
+      "line": 245,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/ai/aiInsights.ts",
+      "line": 263,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/ai/aiInsights.ts",
+      "line": 297,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/ai/aiInsights.ts",
+      "line": 316,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/ai/aiInsights.ts",
+      "line": 350,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/ai/aiInsights.ts",
+      "line": 362,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/ai/aiInsights.ts",
+      "line": 397,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/ai/aiInsights.ts",
+      "line": 423,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/ai/aiInsights.ts",
+      "line": 443,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/ai/askCrmAi.ts",
+      "line": 43,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/ai/askCrmAi.ts",
+      "line": 180,
+      "text": "(Date.now() - new Date(r.expectedCloseDate).getTime()) / 86400000,",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/ai/aiMessageDrafts.ts",
+      "line": 26,
+      "text": "return `K\u00ednh g\u1eedi Anh/Ch\u1ecb,\\n\\nUnicore CRM xin ph\u00e9p nh\u1eafc l\u1ecbch hi\u1ec7u l\u1ef1c c\u1ee7a b\u00e1o gi\u00e1 ${code} tr\u1ecb gi\u00e1 ${total} \u20ab d\u1ef1 ki\u1ebfn h\u1ebft h\u1ea1n v\u00e0o ng\u00e0y ${new Date(quote.validUntil || Date.now() + 86400000 * 7).toLocaleDateString(\"vi-VN\")}.\\n\\nHy v\u1ecdng ch\u00fang t\u00f4i s\u1edbm nh\u1eadn \u0111\u01b0\u1ee3c ph\u1ea3n",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/guidance/presentation/GuidanceProvider.tsx",
+      "line": 111,
+      "text": "[guidance.id]: { version: guidance.version, stepIndex, updatedAt: new Date().toISOString() },",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/guidance/presentation/GuidanceProvider.tsx",
+      "line": 135,
+      "text": "[guidance.id]: { version: guidance.version, completedAt: new Date().toISOString() },",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/guidance/presentation/GuidanceProvider.tsx",
+      "line": 153,
+      "text": "[walkthrough.guidance.id]: { version: walkthrough.guidance.version, stepIndex, updatedAt: new Date().toISOString() },",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/guidance/presentation/GuidanceProvider.tsx",
+      "line": 166,
+      "text": "[walkthrough.guidance.id]: { version: walkthrough.guidance.version, stepIndex, updatedAt: new Date().toISOString() },",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/components/ai/AiChatPanel.tsx",
+      "line": 49,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/components/ai/AiChatPanel.tsx",
+      "line": 135,
+      "text": "const govern = (action: AiActionKind, dataClasses: AiDataClass[], evidenceRefs: string[], approved = false, fieldKeys?: string[]) => recordAiGovernanceDecision(workspace.workspaceId, governancePolicy, { requestId: `ai_request_${Date.now()}`, actorId, action, d",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/components/ai/AiChatPanel.tsx",
+      "line": 263,
+      "text": "id: `task_ai_${Date.now()}`,",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/components/ai/AiChatPanel.tsx",
+      "line": 271,
+      "text": "sourceRef: { type: \"AI_ASSISTANT\", id: `ai_${Date.now()}`, evidence: \"Created after explicit user confirmation in AI chat.\" },",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/components/ai/AiChatPanel.tsx",
+      "line": 315,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/components/crm/commercial-documents/documentPdfExport.ts",
+      "line": 139,
+      "text": "const exportId = `document-pdf-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/workspaces/crm/forecast/advancedForecast.ts",
+      "line": 51,
+      "text": "return { snapshotId: `forecast_${Date.now()}`, workspaceId: input.workspaceId, capturedAt: input.capturedAt ?? new Date().toISOString(), periodStart: input.periodStart, periodEnd: input.periodEnd, categories, owners, totalAmount: categories.reduce((sum, item) ",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/workspaces/crm/order-to-cash/orderToCashMetrics.ts",
+      "line": 58,
+      "text": "const generatedAtMs = dateMs(input.now ?? new Date().toISOString());",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/workspaces/crm/presentation/pages/ReportsPage.tsx",
+      "line": 192,
+      "text": "const todayKey = new Date().toISOString().slice(0, 10);",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/workspaces/crm/presentation/pages/ReportsPage.tsx",
+      "line": 341,
+      "text": "link.download = `UnicoreCRM_Report_${new Date().toISOString().slice(0, 10)}.csv`;",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/workspaces/crm/ai-context/application/aiContextBuilder.ts",
+      "line": 79,
+      "text": "const overdueTasks = openTasks.filter((task) => new Date(task.dueAt).getTime() < Date.now());",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/workspaces/people-access/presentation/components/PeopleActivityLog.tsx",
+      "line": 259,
+      "text": "anchor.download = `unicorecrm-people-activity-${new Date().toISOString().slice(0, 10)}.csv`;",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/workspaces/studio/infrastructure/BrowserQuickSetupRepository.ts",
+      "line": 50,
+      "text": "completedAt: completed ? value.completedAt ?? new Date().toISOString() : null,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/workspaces/studio/infrastructure/BrowserQuickSetupRepository.ts",
+      "line": 74,
+      "text": "lastOpenedAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/workspaces/studio/infrastructure/BrowserQuickSetupRepository.ts",
+      "line": 79,
+      "text": "return this.commit({ ...this.current, autoOpenDismissedAt: new Date().toISOString() });",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/workspaces/studio/infrastructure/BrowserQuickSetupRepository.ts",
+      "line": 110,
+      "text": "completedAt: completed ? new Date().toISOString() : null,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/workspaces/studio/presentation/views/PipelinesStatusesView.tsx",
+      "line": 63,
+      "text": "const now = new Date().toISOString();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/workspaces/studio/presentation/views/PipelinesStatusesView.tsx",
+      "line": 65,
+      "text": "id: `stage-${crypto.randomUUID()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/workspaces/studio/presentation/views/PipelinesStatusesView.tsx",
+      "line": 126,
+      "text": "stages: selected.stages.map((stage) => stage.id === stageId ? { ...stage, ...patch, updatedAt: new Date().toISOString() } : stage),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/workspaces/studio/presentation/views/PipelinesStatusesView.tsx",
+      "line": 136,
+      "text": "const id = `deal-pipeline-${crypto.randomUUID()}`;",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/workspaces/studio/presentation/views/BusinessInformationView.tsx",
+      "line": 155,
+      "text": "const id = `address-${crypto.randomUUID()}`;",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/workspaces/studio/presentation/views/IntegrationsView.tsx",
+      "line": 99,
+      "text": "id: `connection_${crypto.randomUUID()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/workspaces/studio/presentation/views/LocaleRegionView.tsx",
+      "line": 68,
+      "text": "id: `rate-${crypto.randomUUID()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/workspaces/studio/presentation/views/LocaleRegionView.tsx",
+      "line": 72,
+      "text": "effectiveAt: new Date().toISOString().slice(0, 10),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/workspaces/studio/presentation/views/InformationFieldsView.tsx",
+      "line": 57,
+      "text": "key: `custom_${crypto.randomUUID().replaceAll(\"-\", \"_\")}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/workspaces/studio/presentation/views/InformationFieldsView.tsx",
+      "line": 71,
+      "text": "value: `option_${crypto.randomUUID().slice(0, 8)}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/workspaces/studio/presentation/views/PaymentInformationView.tsx",
+      "line": 22,
+      "text": "return { id: `account_${crypto.randomUUID()}`, nickname: \"\", bankCode: \"\", bankBin: \"\", bankName: \"\", accountNumber: \"\", accountHolder: \"\", branch: \"\", swiftCode: \"\", currency, active: true, isDefaultForCurrency: false, showOnQuote: true, showOnInvoice: true }",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/workspaces/studio/presentation/views/ProductTypesView.tsx",
+      "line": 39,
+      "text": "const now = new Date().toISOString();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/workspaces/studio/presentation/views/ProductTypesView.tsx",
+      "line": 40,
+      "text": "const id = `product_type_${crypto.randomUUID()}`;",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/workspaces/studio/presentation/views/ProductTypesView.tsx",
+      "line": 92,
+      "text": "const update = (id: string, patch: Partial<ConfiguredProductType>) => setDraft((items) => items.map((item) => item.id === id ? { ...item, ...patch, updatedAt: new Date().toISOString() } : item));",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/workspaces/studio/presentation/views/WebhooksApiView.tsx",
+      "line": 64,
+      "text": "id: `webhook_${crypto.randomUUID()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/workspaces/studio/presentation/views/WebhooksApiView.tsx",
+      "line": 70,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/shared/application/authoritativeResource.ts",
+      "line": 46,
+      "text": "const requestedAt = new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/shared/application/authoritativeResource.ts",
+      "line": 60,
+      "text": "loadedAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/shared/application/authoritativeResource.ts",
+      "line": 111,
+      "text": "setSnapshot({ state: \"READY\", data, loadedAt: new Date().toISOString() });",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/shared/evidence/EvidencePanel.tsx",
+      "line": 34,
+      "text": "const now = new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/shared/evidence/EvidencePanel.tsx",
+      "line": 36,
+      "text": "id: `evidence_${crypto.randomUUID()}`,",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/shared/operations/useMutationTask.ts",
+      "line": 18,
+      "text": "const submittedAt = new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/shared/operations/useMutationTask.ts",
+      "line": 28,
+      "text": "completedAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/shared/operations/useMutationTask.ts",
+      "line": 33,
+      "text": "setSnapshot({ state: failure.state, failure, submittedAt, completedAt: new Date().toISOString() });",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/shared/operations/useMutationTask.ts",
+      "line": 51,
+      "text": "setSnapshot({ state: failure.state, failure, completedAt: new Date().toISOString() });",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/shared/operations/useServerPagedModuleCollection.ts",
+      "line": 114,
+      "text": "const requestedAt = new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/shared/operations/useServerPagedModuleCollection.ts",
+      "line": 147,
+      "text": "loadedAt: result.loadedAt || new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/shared/application/mutation/LocalMutationAuthority.ts",
+      "line": 61,
+      "text": "const commandId = `cmd_${crypto.randomUUID()}`;",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/shared/application/mutation/LocalMutationAuthority.ts",
+      "line": 62,
+      "text": "const correlationId = metadata.correlationId ?? `corr_${crypto.randomUUID()}`;",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/shared/application/mutation/LocalMutationAuthority.ts",
+      "line": 69,
+      "text": "const occurredAt = new Date().toISOString();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/shared/application/mutation/mutationAuthority.ts",
+      "line": 95,
+      "text": "const random = crypto.randomUUID();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/shared/application/mutation/mutationAuthority.ts",
+      "line": 100,
+      "text": "requestedAt: input.requestedAt ?? new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/shared/application/mutation/globalMutationConflict.ts",
+      "line": 26,
+      "text": "occurredAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/shared/application/data-authority/moduleAuthoritativeResource.ts",
+      "line": 57,
+      "text": "loadedAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/api/client/FetchHttpClient.ts",
+      "line": 239,
+      "text": "if (typeof crypto !== \"undefined\" && typeof crypto.randomUUID === \"function\") return crypto.randomUUID();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/platform/api/client/FetchHttpClient.ts",
+      "line": 240,
+      "text": "return `req_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 12)}`;",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/platform/api/client/FetchHttpClient.ts",
+      "line": 382,
+      "text": "return Number.isNaN(timestamp) ? 0 : Math.max(0, timestamp - Date.now());",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/platform/api/runtime/HttpModuleDataAuthority.ts",
+      "line": 52,
+      "text": "loadedAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/notifications/index.ts",
+      "line": 57,
+      "text": "createdAt: input.createdAt ?? new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/notifications/index.ts",
+      "line": 65,
+      "text": "const now = new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/notifications/index.ts",
+      "line": 71,
+      "text": "const now = new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/notifications/index.ts",
+      "line": 159,
+      "text": "const now = input.createdAt ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/notifications/index.ts",
+      "line": 179,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/operational-audit/index.ts",
+      "line": 70,
+      "text": "const occurredAt = entry.occurredAt ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/operational-audit/index.ts",
+      "line": 75,
+      "text": "id: entry.id ?? `audit_${entry.moduleKey}_${entry.recordId}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/identity/relationshipProfile.ts",
+      "line": 36,
+      "text": "now = new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/workspace-config/BrowserWorkspaceOperationalConfigurationRepository.ts",
+      "line": 78,
+      "text": "updatedAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/platform/integrations/BrowserIntegrationConfigurationRepository.ts",
+      "line": 36,
+      "text": "? { ...item, status: \"CONNECTED\", lastVerifiedAt: new Date().toISOString(), version: item.version + 1 }",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/platform/external-authority/react/useExternalAuthorityHealth.ts",
+      "line": 70,
+      "text": "evaluatedAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/enterprise-security/runtime/tamperEvidentAuditLedger.ts",
+      "line": 64,
+      "text": "eventId: input.eventId ?? `audit_${Date.now()}_${records.length + 1}`,",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/enterprise-security/runtime/tamperEvidentAuditLedger.ts",
+      "line": 71,
+      "text": "occurredAt: input.occurredAt ?? new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/enterprise-security/runtime/workspaceBackupRuntime.ts",
+      "line": 38,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/identity-auth/runtime/authRuntime.ts",
+      "line": 177,
+      "text": "eventId: `security_${Date.now()}_${this.securityEvents.length + 1}`,",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/identity-auth/runtime/authRuntime.ts",
+      "line": 178,
+      "text": "occurredAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/identity-auth/infrastructure/DevelopmentAuthAdapter.ts",
+      "line": 93,
+      "text": "const now = new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/identity-auth/infrastructure/DevelopmentAuthAdapter.ts",
+      "line": 94,
+      "text": "const unique = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/identity-auth/infrastructure/DevelopmentAuthAdapter.ts",
+      "line": 139,
+      "text": "const nowIso = () => new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/identity-auth/infrastructure/DevelopmentAuthAdapter.ts",
+      "line": 214,
+      "text": "if (!challenge || challenge.consumedAt || Date.now() >= new Date(challenge.expiresAt).getTime()) return undefined;",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/identity-auth/infrastructure/DevelopmentAuthAdapter.ts",
+      "line": 250,
+      "text": "if (Date.now() >= new Date(challenge.expiresAt).getTime()) return fail(\"MFA_EXPIRED\", \"MFA challenge has expired.\");",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/identity-auth/infrastructure/DevelopmentAuthAdapter.ts",
+      "line": 259,
+      "text": "challenge.consumedAt = new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/identity-auth/infrastructure/DevelopmentAuthAdapter.ts",
+      "line": 274,
+      "text": "const now = Date.now();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/identity-auth/infrastructure/DevelopmentAuthAdapter.ts",
+      "line": 304,
+      "text": "writeRevokedSessions({ ...readRevokedSessions(), [sessionId]: `${new Date().toISOString()}:${reason}` });",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/identity-auth/infrastructure/DevelopmentAuthAdapter.ts",
+      "line": 308,
+      "text": "writeAccountRevocations({ ...readAccountRevocations(), [accountId]: `${new Date().toISOString()}` });",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/record-ownership/runtime/recordOwnershipRuntime.ts",
+      "line": 137,
+      "text": "auditId: `ownership_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/record-ownership/runtime/recordOwnershipRuntime.ts",
+      "line": 141,
+      "text": "occurredAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/access-control/runtime/accessControlRuntime.ts",
+      "line": 162,
+      "text": "roleId: `role_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/access-control/runtime/accessControlRuntime.ts",
+      "line": 208,
+      "text": "roleId: `role_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/access-control/runtime/accessControlRuntime.ts",
+      "line": 216,
+      "text": "policyId: `scope_${role.roleId}_${policy.resourceKey}_${Date.now()}`,",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/access-control/runtime/accessControlRuntime.ts",
+      "line": 222,
+      "text": "policyId: `field_${role.roleId}_${policy.resourceKey}_${policy.fieldKey}_${Date.now()}`,",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/access-control/runtime/accessControlRuntime.ts",
+      "line": 316,
+      "text": "policyId: `scope_${roleId}_${resourceKey}_${Date.now()}`,",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/access-control/runtime/accessControlRuntime.ts",
+      "line": 341,
+      "text": "else snapshot.fieldSecurity.push({ policyId: `field_${roleId}_${resourceKey}_${fieldKey}_${Date.now()}`, workspaceId, roleId, resourceKey, fieldKey, access });",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/access-control/runtime/accessControlRuntime.ts",
+      "line": 359,
+      "text": "snapshot.assignments.push({ assignmentId: `ra_${membershipId}_${roleId}_${Date.now()}`, workspaceId, membershipId, roleId });",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/access-control/runtime/accessControlRuntime.ts",
+      "line": 405,
+      "text": "assignmentId: `ra_${membershipId}_${roleId}_${Date.now()}_${index}`,",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/access-control/runtime/accessControlMigration.ts",
+      "line": 95,
+      "text": "assignmentId: `ra_admin_${workspaceId}_${Date.now()}`,",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/access-control/react/useEffectiveRecordAccess.ts",
+      "line": 116,
+      "text": "evaluatedAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/audit/react/AuditTrailViewer.tsx",
+      "line": 145,
+      "text": "anchor.download = `unicorecrm-audit-${new Date().toISOString().slice(0, 10)}-${locale}.csv`;",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/workspace-membership/runtime/workspaceMembershipRuntime.ts",
+      "line": 133,
+      "text": "const now = new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/workspace-membership/runtime/workspaceMembershipRuntime.ts",
+      "line": 135,
+      "text": "membershipId: `membership_${command.workspaceId}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/platform/workspace-membership/runtime/workspaceMembershipRuntime.ts",
+      "line": 180,
+      "text": "const now = new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/ai/governance/aiGovernance.ts",
+      "line": 91,
+      "text": "const occurredAt = request.occurredAt ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/ai/governance/aiGovernance.ts",
+      "line": 92,
+      "text": "const entry = { logId: `ai_governance_${Date.now()}`, request: { ...request, occurredAt }, decision, occurredAt };",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/workflows/contact-organization-relationship/index.ts",
+      "line": 79,
+      "text": "const clearedOrganization = { ...linkedOrganization, primaryContactId: undefined, updatedAt: command.now ?? new Date().toISOString() };",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/workflows/contact-organization-relationship/index.ts",
+      "line": 116,
+      "text": "updatedAt: command.effectiveTo ?? new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/workflows/contact-organization-relationship/index.ts",
+      "line": 134,
+      "text": "const now = command.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/workflows/contact-organization-relationship/index.ts",
+      "line": 183,
+      "text": "const now = command.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/workflows/contact-organization-relationship/index.ts",
+      "line": 229,
+      "text": "const now = command.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/workflows/contact-organization-relationship/index.ts",
+      "line": 328,
+      "text": "updatedAt: now ?? new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/workflows/customer-care/index.ts",
+      "line": 23,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/workflows/return-resolution/index.ts",
+      "line": 123,
+      "text": "const now = command.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/workflows/return-resolution/index.ts",
+      "line": 235,
+      "text": "const now = command.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/workflows/return-resolution/index.ts",
+      "line": 288,
+      "text": "const now = command.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/workflows/order-creation/index.ts",
+      "line": 125,
+      "text": "generatedAt: input.generatedAt ?? new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/workflows/order-creation/index.ts",
+      "line": 283,
+      "text": "const now = command.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/workflows/work-activation/index.ts",
+      "line": 6,
+      "text": "return new Date(Date.now() + fallbackHours * 60 * 60 * 1000).toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/workflows/customer-commercial-actions/index.ts",
+      "line": 33,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/workflows/quote-acceptance/index.ts",
+      "line": 38,
+      "text": "const now = command.occurredAt ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/workflows/customer-onboarding/index.ts",
+      "line": 42,
+      "text": "const evidenceId = `purchase_evidence_${crypto.randomUUID()}`;",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/workflows/order-confirmation/index.ts",
+      "line": 55,
+      "text": "const now = command.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/workflows/return-credit-refund/index.ts",
+      "line": 220,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/workflows/return-credit-refund/index.ts",
+      "line": 332,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/workflows/order-cancellation/index.ts",
+      "line": 83,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/workflows/customer-identity/index.ts",
+      "line": 93,
+      "text": "id: `consent_${crypto.randomUUID()}`,",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/workflows/customer-identity/index.ts",
+      "line": 111,
+      "text": "const now = new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/workflows/shipping-cod-evidence/index.ts",
+      "line": 32,
+      "text": "const occurredAt = booking.codCollectedAt ?? booking.providerUpdatedAt ?? input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/workflows/customer-conversion/runtime/customerConversionRuntime.ts",
+      "line": 14,
+      "text": "export function reconcileCustomerConversionRuntime(now = new Date().toISOString()): CustomerConversionReconciliationResult {",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/workflows/lead-qualification/presentation/pages/LeadQualificationPage.tsx",
+      "line": 216,
+      "text": "activity: { id: `act_disqualify_${Date.now()}`, type: \"system\", title: \"Lead closed: Disqualified\", description: `${reason}. ${evidence}`, createdAt: new Date().toISOString(), author: \"Qualification Workflow\" },",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/workflows/contact-opportunity-creation/application/executeContactOpportunityCreation.ts",
+      "line": 38,
+      "text": "id: `act_opportunity_${Date.parse(command.now) || Date.now()}`,",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/organizations/presentation/list/OrganizationCreateModal.tsx",
+      "line": 37,
+      "text": "const suffix = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/organizations/presentation/list/OrganizationCreateModal.tsx",
+      "line": 40,
+      "text": "const now = new Date().toISOString();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/organizations/presentation/list/OrganizationCreateModal.tsx",
+      "line": 73,
+      "text": "contactCode: `CN-${String(Date.now()).slice(-6)}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/organizations/presentation/pages/OrganizationAccountDetailPage.tsx",
+      "line": 263,
+      "text": "id: crypto.randomUUID(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/organizations/presentation/pages/OrganizationAccountDetailPage.tsx",
+      "line": 281,
+      "text": "id: `organization_attachment_${crypto.randomUUID()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/organizations/presentation/pages/OrganizationAccountListPage.tsx",
+      "line": 145,
+      "text": "anchor.download = `unicore-b2b-organizations-${new Date().toISOString().slice(0, 10)}.json`;",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/organizations/presentation/detail/OrganizationCreateOpportunityModal.tsx",
+      "line": 52,
+      "text": "const now = new Date().toISOString();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/organizations/presentation/detail/OrganizationRepresentativeModal.tsx",
+      "line": 41,
+      "text": "const now = new Date().toISOString();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/organizations/presentation/detail/OrganizationRepresentativeModal.tsx",
+      "line": 42,
+      "text": "const contactId = `contact_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/organizations/presentation/detail/OrganizationRepresentativeModal.tsx",
+      "line": 47,
+      "text": "contactCode: `CN-${String(Date.now()).slice(-6)}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/organizations/presentation/detail/OrganizationRepresentativeModal.tsx",
+      "line": 58,
+      "text": "id: `contact-org-${crypto.randomUUID()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/organizations/presentation/detail/OrganizationEditModal.tsx",
+      "line": 57,
+      "text": "updatedAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/organizations/application/commands/organizationAccountRepositoryCommands.ts",
+      "line": 46,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/organizations/application/commands/organizationAccountRepositoryCommands.ts",
+      "line": 57,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/organizations/application/commands/organizationAccountRepositoryCommands.ts",
+      "line": 68,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/quotes/presentation/hooks/useQuoteBuilderController.tsx",
+      "line": 586,
+      "text": "updatedAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/quotes/presentation/hooks/useQuoteBuilderController.tsx",
+      "line": 662,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/quotes/presentation/hooks/useQuoteBuilderController.tsx",
+      "line": 688,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/quotes/presentation/pages/QuoteListPage.tsx",
+      "line": 306,
+      "text": "const days = Math.ceil((new Date(q.validUntil).getTime() - Date.now()) / (1000 * 60 * 60 * 24));",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/quotes/presentation/pages/QuoteListPage.tsx",
+      "line": 350,
+      "text": "const now = new Date().toISOString();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/quotes/presentation/pages/QuoteListPage.tsx",
+      "line": 367,
+      "text": "await transitionQuoteStatusCommand(quoteId, status, new Date().toISOString());",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/quotes/presentation/pages/QuoteDetailPage.tsx",
+      "line": 291,
+      "text": "const now = new Date().toISOString();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/quotes/presentation/components/QuoteBuilderPreview.tsx",
+      "line": 105,
+      "text": "const issueDate = editingQuote?.createdAt ?? new Date().toISOString();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/quotes/application/commands/quoteCommands.ts",
+      "line": 229,
+      "text": "return new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/quotes/application/commands/quoteRepositoryCommands.ts",
+      "line": 124,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/quotes/application/commands/quoteRepositoryCommands.ts",
+      "line": 134,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/returns/presentation/pages/ReturnDetailPage.tsx",
+      "line": 149,
+      "text": "const now = new Date().toISOString();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/returns/presentation/pages/ReturnDetailPage.tsx",
+      "line": 249,
+      "text": "const now = new Date().toISOString();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/returns/application/commands/returnCommands.ts",
+      "line": 62,
+      "text": "const now = command.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/returns/application/commands/returnCommands.ts",
+      "line": 82,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/returns/application/commands/returnCommands.ts",
+      "line": 99,
+      "text": "return transition(repository, returnId, \"APPROVED\", input, CAPABILITIES.RETURNS_APPROVE, { items, decision: { outcome: \"APPROVED\", reason: input.reason.trim(), decidedAt: input.now ?? new Date().toISOString(), decidedBy: input.actorId, override: !current.eligi",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/returns/application/commands/returnCommands.ts",
+      "line": 104,
+      "text": "return transition(repository, returnId, \"REJECTED\", input, CAPABILITIES.RETURNS_APPROVE, { decision: { outcome: \"REJECTED\", reason: input.reason.trim(), decidedAt: input.now ?? new Date().toISOString(), decidedBy: input.actorId } });",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/returns/application/commands/returnCommands.ts",
+      "line": 114,
+      "text": "const patch = { returnMethod: { method: input.method, configuredAt: input.now ?? new Date().toISOString(), configuredBy: input.actorId, carrier: input.carrier?.trim(), trackingCode: input.trackingCode?.trim(), dropOffLocation: input.dropOffLocation?.trim(), re",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/returns/application/commands/returnCommands.ts",
+      "line": 115,
+      "text": "if (input.method === \"NO_PHYSICAL_RETURN\") return transition(repository, returnId, \"RECEIVED\", input, CAPABILITIES.RETURNS_UPDATE, { ...patch, receivedAt: input.now ?? new Date().toISOString(), receivedBy: input.actorId, receiveConditionNote: \"Physical return ",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/returns/application/commands/returnCommands.ts",
+      "line": 145,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/returns/application/commands/returnCommands.ts",
+      "line": 165,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/returns/application/commands/returnCommands.ts",
+      "line": 187,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/returns/application/commands/returnCommands.ts",
+      "line": 197,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/returns/application/commands/returnCommands.ts",
+      "line": 208,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/returns/application/commands/returnCommands.ts",
+      "line": 220,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/returns/application/commands/returnCommands.ts",
+      "line": 232,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/returns/application/commands/returnCommands.ts",
+      "line": 264,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/returns/application/commands/returnCommands.ts",
+      "line": 310,
+      "text": "return transition(repository, returnId, \"RESOLVED\", input, CAPABILITIES.RETURNS_RESOLVE, { resolution: input.resolution, resolvedAt: input.now ?? new Date().toISOString() });",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 73,
+      "text": "if (!date) return new Date().toISOString();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 195,
+      "text": "const noteDate = (contact.updatedAt || contact.createdAt || new Date().toISOString()).split(\"T\")[0];",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 298,
+      "text": "id: `act_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 302,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 343,
+      "text": "id: `li_${Date.now()}_${idx}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 355,
+      "text": "id: `li_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 373,
+      "text": "const now = new Date().toISOString();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 374,
+      "text": "const dealId = `deal_${Date.now()}`;",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 430,
+      "text": "const timestampStr = new Date().toISOString().split(\"T\")[0];",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 444,
+      "text": "id: `note-${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 543,
+      "text": "const occurredAt = noteData.occurredAt || new Date().toISOString();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 546,
+      "text": "id: `note-${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 561,
+      "text": "id: `act_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 570,
+      "text": "lastInteractionAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 587,
+      "text": "id: `act_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 617,
+      "text": "id: `task_contact_meeting_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 636,
+      "text": "id: `act_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 640,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 645,
+      "text": "lastInteractionAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 669,
+      "text": "id: `act_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 673,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 678,
+      "text": "lastInteractionAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 689,
+      "text": "id: `task_contact_call_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 719,
+      "text": "id: `act_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 723,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 728,
+      "text": "lastInteractionAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 736,
+      "text": "const timestampStr = new Date().toISOString().split(\"T\")[0];",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 738,
+      "text": "id: `att-${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 759,
+      "text": "id: `act_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 763,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 768,
+      "text": "lastInteractionAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 786,
+      "text": "id: `note-${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 800,
+      "text": "id: `act_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 823,
+      "text": "id: `act_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 827,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 846,
+      "text": "id: `act_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 850,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 876,
+      "text": "const timestampStr = new Date().toISOString().split(\"T\")[0];",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 878,
+      "text": "id: `att-${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 892,
+      "text": "id: `act_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 896,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 917,
+      "text": "id: `act_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 921,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 974,
+      "text": "const now = new Date().toISOString();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "line": 976,
+      "text": "id: `act_opportunity_progress_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactListController.tsx",
+      "line": 232,
+      "text": "id: `act_bulk_handover_${Date.now()}_${c.id}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactListController.tsx",
+      "line": 238,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactListController.tsx",
+      "line": 259,
+      "text": "id: `act_bulk_status_${Date.now()}_${c.id}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactListController.tsx",
+      "line": 263,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactListController.tsx",
+      "line": 427,
+      "text": "const createdAt = new Date().toISOString();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactListController.tsx",
+      "line": 436,
+      "text": "id: `contact_${crypto.randomUUID()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactListController.tsx",
+      "line": 489,
+      "text": "id: `act_init_${crypto.randomUUID()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactListController.tsx",
+      "line": 532,
+      "text": "id: `act_call_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactListController.tsx",
+      "line": 536,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactListController.tsx",
+      "line": 544,
+      "text": "lastContactedAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactListController.tsx",
+      "line": 561,
+      "text": "id: `act_email_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactListController.tsx",
+      "line": 565,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactListController.tsx",
+      "line": 573,
+      "text": "lastContactedAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactListController.tsx",
+      "line": 599,
+      "text": "const newDealId = `deal_${Date.now()}`;",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactListController.tsx",
+      "line": 658,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactListController.tsx",
+      "line": 659,
+      "text": "updatedAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactListController.tsx",
+      "line": 670,
+      "text": "id: `act_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactListController.tsx",
+      "line": 674,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactListController.tsx",
+      "line": 698,
+      "text": "id: `act_opp_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactListController.tsx",
+      "line": 702,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/hooks/useContactListController.tsx",
+      "line": 769,
+      "text": "downloadAnchor.setAttribute(\"download\", `UnicoreCRM-Contacts-Export-${new Date().toISOString().substring(0, 10)}.json`);",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/views/ContactDetailView.tsx",
+      "line": 70,
+      "text": "if (!date) return new Date().toISOString();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/views/ContactListView.tsx",
+      "line": 199,
+      "text": "downloadAnchor.setAttribute(\"download\", `UnicoreCRM-All-Contacts-Export-${new Date().toISOString().substring(0, 10)}.json`);",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/detail/ContactOrganizationRelationshipsPanel.tsx",
+      "line": 40,
+      "text": "effectiveFrom: new Date().toISOString().slice(0, 10),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/detail/ContactOrganizationRelationshipsPanel.tsx",
+      "line": 63,
+      "text": "setDraft({ ...EMPTY_DRAFT, effectiveFrom: new Date().toISOString().slice(0, 10) });",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/detail/ContactEditModal.tsx",
+      "line": 26,
+      "text": "id: `consent_${crypto.randomUUID()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/detail/ContactEditModal.tsx",
+      "line": 54,
+      "text": "const now = new Date().toISOString();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/components/ContactFormModal.tsx",
+      "line": 93,
+      "text": "nextFollowUpAt: normalizeDateTime(undefined, new Date(Date.now() + 24 * 60 * 60 * 1000)),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/presentation/detail/tabs/ContactActiveTasksTab.tsx",
+      "line": 66,
+      "text": "date: currentDueDate || new Date().toISOString().split(\"T\")[0]",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/contacts/application/commands/contactRepositoryCommands.ts",
+      "line": 76,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/contacts/application/commands/contactRepositoryCommands.ts",
+      "line": 80,
+      "text": "id: `contact-retention-${crypto.randomUUID()}`,",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/contacts/application/commands/contactRepositoryCommands.ts",
+      "line": 98,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/contacts/application/commands/contactRepositoryCommands.ts",
+      "line": 121,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/contacts/application/commands/contactCommands.ts",
+      "line": 16,
+      "text": "updatedAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/contacts/application/commands/contactCommands.ts",
+      "line": 30,
+      "text": "updatedAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/contacts/application/commands/contactCommands.ts",
+      "line": 45,
+      "text": "updatedAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/contacts/domain/model/contactCanonicalProfile.ts",
+      "line": 23,
+      "text": "const now = context.now ?? contact.updatedAt ?? contact.createdAt ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/contacts/domain/model/contactOrganizationRelationships.ts",
+      "line": 45,
+      "text": "at = new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/contacts/domain/model/contactOrganizationRelationships.ts",
+      "line": 54,
+      "text": "at = new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/contacts/domain/model/contactOrganizationRelationships.ts",
+      "line": 93,
+      "text": "const now = context.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/contacts/domain/model/contactOrganizationRelationships.ts",
+      "line": 113,
+      "text": "id: `contact-org-${crypto.randomUUID()}`,",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/contacts/domain/model/contactOrganizationRelationships.ts",
+      "line": 135,
+      "text": "const now = input.effectiveTo ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/contacts/domain/model/contactOrganizationRelationships.ts",
+      "line": 161,
+      "text": "const now = context.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/contacts/domain/model/contactOrganizationRelationships.ts",
+      "line": 180,
+      "text": "now = new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/support/presentation/pages/SupportCaseListPage.tsx",
+      "line": 52,
+      "text": "return ![\"resolved\", \"closed\", \"cancelled\"].includes(item.status) && new Date(nextFollowUpAt).getTime() <= Date.now() + 24 * 60 * 60 * 1000;",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/support/presentation/pages/SupportCaseDetailPage.tsx",
+      "line": 92,
+      "text": "const followUpOverdue = Boolean(nextDue && nextDue.getTime() < Date.now() && ![\"resolved\", \"closed\", \"cancelled\"].includes(supportCase.status));",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/support/application/commands/supportCaseCommands.ts",
+      "line": 102,
+      "text": "now = new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/support/application/commands/supportCaseCommands.ts",
+      "line": 116,
+      "text": "updated.resolvedAt = new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/support/application/commands/supportCaseCommands.ts",
+      "line": 127,
+      "text": "updated.closedAt = new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/support/application/commands/supportCaseCommands.ts",
+      "line": 135,
+      "text": "updated.reopenedAt = new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/support/domain/rules/supportCaseLifecycle.ts",
+      "line": 87,
+      "text": "id: `act_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/support/domain/rules/supportCaseLifecycle.ts",
+      "line": 91,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/support/domain/rules/supportCaseLifecycle.ts",
+      "line": 110,
+      "text": "updatedCase.updatedAt = new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/support/domain/rules/supportCaseLifecycle.ts",
+      "line": 114,
+      "text": "updatedCase.resolvedAt = new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/support/domain/rules/supportCaseLifecycle.ts",
+      "line": 118,
+      "text": "updatedCase.closedAt = new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/support/domain/rules/supportCaseLifecycle.ts",
+      "line": 121,
+      "text": "updatedCase.reopenedAt = new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/deals/public/deals.ts",
+      "line": 109,
+      "text": "updatedAt: patch.updatedAt ?? new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/deals/presentation/hooks/useDealDetailController.tsx",
+      "line": 127,
+      "text": "const now = new Date().toISOString();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/deals/presentation/hooks/useDealDetailController.tsx",
+      "line": 232,
+      "text": "const now = new Date().toISOString();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/deals/presentation/hooks/useDealDetailController.tsx",
+      "line": 267,
+      "text": "updatedAt: new Date().toISOString()",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/deals/presentation/hooks/useDealDetailController.tsx",
+      "line": 291,
+      "text": "updatedAt: new Date().toISOString()",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/deals/presentation/hooks/useDealDetailController.tsx",
+      "line": 327,
+      "text": "const now = new Date().toISOString();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/deals/presentation/hooks/useDealDetailController.tsx",
+      "line": 372,
+      "text": "const now = new Date().toISOString();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/deals/presentation/hooks/useDealDetailController.tsx",
+      "line": 419,
+      "text": "updatedAt: new Date().toISOString()",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/deals/presentation/hooks/useDealPipelineController.ts",
+      "line": 242,
+      "text": "const now = new Date().toISOString();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/deals/presentation/hooks/useDealPipelineController.ts",
+      "line": 320,
+      "text": "const now = new Date().toISOString();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/deals/presentation/hooks/useDealPipelineController.ts",
+      "line": 468,
+      "text": "updatedAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/deals/presentation/hooks/useDealPipelineController.ts",
+      "line": 495,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/deals/presentation/hooks/useDealPipelineController.ts",
+      "line": 502,
+      "text": "const now = new Date().toISOString();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/deals/presentation/hooks/useDealPipelineController.ts",
+      "line": 526,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/deals/presentation/hooks/useDealPipelineController.ts",
+      "line": 527,
+      "text": "updatedAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/deals/presentation/hooks/useDealPipelineController.ts",
+      "line": 528,
+      "text": "stageEnteredAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/deals/presentation/hooks/useDealPipelineController.ts",
+      "line": 536,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/deals/presentation/hooks/useDealPipelineController.ts",
+      "line": 593,
+      "text": "? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/deals/presentation/hooks/useDealPipelineController.ts",
+      "line": 595,
+      "text": "const occurredAt = new Date().toISOString();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/deals/presentation/hooks/useDealPipelineController.ts",
+      "line": 641,
+      "text": "const now = new Date().toISOString();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/deals/presentation/hooks/useDealPipelineController.ts",
+      "line": 656,
+      "text": "expectedCloseDate: new Date(Date.now() + daysToClose * 24 * 60 * 60 * 1000).toISOString().split(\"T\")[0],",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/deals/presentation/hooks/useDealPipelineController.ts",
+      "line": 657,
+      "text": "nextActionAt: new Date(Date.now() + (index + 1) * 24 * 60 * 60 * 1000).toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/deals/presentation/hooks/useDealStageWindows.ts",
+      "line": 167,
+      "text": "loadedAt: result.loadedAt || new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/deals/presentation/views/DealDetailDialogs.tsx",
+      "line": 321,
+      "text": "updatedAt: new Date().toISOString()",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/deals/application/commands/dealRepositoryCommands.ts",
+      "line": 116,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/deals/application/commands/dealRepositoryCommands.ts",
+      "line": 123,
+      "text": "id: `deal-retention-${crypto.randomUUID()}`,",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/deals/application/commands/dealRepositoryCommands.ts",
+      "line": 139,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/deals/application/commands/dealCommands.ts",
+      "line": 35,
+      "text": "const occurredAt = new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/deals/application/commands/dealCommands.ts",
+      "line": 69,
+      "text": "updatedAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/deals/application/commands/dealCommands.ts",
+      "line": 84,
+      "text": "const occurredAt = new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/deals/application/commands/dealCommands.ts",
+      "line": 164,
+      "text": "updatedAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/deals/application/commands/dealCommands.ts",
+      "line": 184,
+      "text": "const occurredAt = new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/deals/domain/rules/dealPipelineHealth.ts",
+      "line": 92,
+      "text": "const occurredAt = input.occurredAt || new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/tasks/presentation/pages/TaskListPage.tsx",
+      "line": 41,
+      "text": "return task.status === \"OPEN\" && new Date(task.dueAt).getTime() < Date.now() && !isToday(task.dueAt);",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/tasks/presentation/pages/TaskDetailPage.tsx",
+      "line": 80,
+      "text": "const overdue = task.status === \"OPEN\" && new Date(task.dueAt).getTime() < Date.now();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/tasks/presentation/components/ActivityCreateModals.tsx",
+      "line": 221,
+      "text": "const startAt = normalizeLocalDateTime(defaults?.startAt, new Date(Date.now() + 60 * 60 * 1000));",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/tasks/presentation/components/TaskCreateModal.tsx",
+      "line": 78,
+      "text": "? crypto.randomUUID()",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/tasks/presentation/components/TaskCreateModal.tsx",
+      "line": 79,
+      "text": ": `task_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/tasks/presentation/components/RelationshipActivityCreateModal.tsx",
+      "line": 37,
+      "text": "return new Date().toISOString();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/tasks/application/commands/taskCommands.ts",
+      "line": 39,
+      "text": "const now = command.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/tasks/application/commands/taskCommands.ts",
+      "line": 82,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/tasks/application/commands/taskCommands.ts",
+      "line": 94,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/tasks/application/commands/taskCommands.ts",
+      "line": 105,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/tasks/application/commands/taskCommands.ts",
+      "line": 117,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/tasks/application/commands/taskCommands.ts",
+      "line": 146,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/tasks/application/commands/taskCommands.ts",
+      "line": 179,
+      "text": "occurredAt: command.occurredAt ?? new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/payments/infrastructure/InMemoryPaymentApiAdapter.ts",
+      "line": 30,
+      "text": "async activatePlan(planId: string, expectedVersion: number) { return activatePaymentPlan(this.repository, planId, { expectedVersion, now: new Date().toISOString() }); }",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/payments/infrastructure/InMemoryPaymentApiAdapter.ts",
+      "line": 31,
+      "text": "async cancelPlan(planId: string, input: Parameters<PaymentApiPort[\"cancelPlan\"]>[1]) { return cancelPaymentPlan(this.repository, planId, { ...input, now: new Date().toISOString() }); }",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/payments/infrastructure/InMemoryPaymentApiAdapter.ts",
+      "line": 39,
+      "text": "async cancelIntent(intentId: string, expectedVersion: number) { return cancelPaymentIntent(this.repository, intentId, { expectedVersion, now: new Date().toISOString() }); }",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/payments/infrastructure/InMemoryPaymentApiAdapter.ts",
+      "line": 48,
+      "text": "async reverseAllocation(allocationId: string, input: Parameters<PaymentApiPort[\"reverseAllocation\"]>[1]) { return reverseInvoiceAllocation(this.repository, allocationId, { ...input, now: new Date().toISOString(), reasonCode: input.reasonCode ?? \"API_REVERSAL\",",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/payments/infrastructure/InMemoryPaymentApiAdapter.ts",
+      "line": 56,
+      "text": "const now = new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/payments/presentation/pages/PaymentDetailPage.tsx",
+      "line": 94,
+      "text": "now: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/payments/presentation/pages/PaymentDetailPage.tsx",
+      "line": 110,
+      "text": "now: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/payments/presentation/pages/PaymentOperationsPage.tsx",
+      "line": 68,
+      "text": "const durableId = (prefix: string) => `${prefix}_${crypto.randomUUID()}`;",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/payments/presentation/pages/PaymentOperationsPage.tsx",
+      "line": 360,
+      "text": "const now = new Date().toISOString();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/payments/presentation/pages/PaymentOperationsPage.tsx",
+      "line": 460,
+      "text": "await recordCodCustomerCollectionCanonical(record.id, { expectedVersion: record.version, state: \"COLLECTED\", evidenceMetadata: { confirmedBy: access.memberId }, now: new Date().toISOString() });",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/payments/presentation/pages/PaymentOperationsPage.tsx",
+      "line": 468,
+      "text": "await recordCodMerchantRemittanceCanonical(record.id, { expectedVersion: record.version, state: \"REMITTED\", evidenceMetadata: { reconciledBy: access.memberId }, now: new Date().toISOString() });",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/payments/presentation/components/PaymentRequestComposer.tsx",
+      "line": 84,
+      "text": "sentAt: state === \"SENT\" ? new Date().toISOString() : undefined,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/payments/presentation/components/PaymentRequestComposer.tsx",
+      "line": 86,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/payments/application/commands/paymentCommands.ts",
+      "line": 88,
+      "text": "function deriveObligationStatus(amountPaid: number, amountDue: number, dueDate?: string, now = new Date().toISOString()): PaymentObligation[\"status\"] {",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/payments/application/commands/paymentCommands.ts",
+      "line": 121,
+      "text": "const now = command.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/payments/application/commands/paymentCommands.ts",
+      "line": 342,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/payments/application/commands/paymentCommands.ts",
+      "line": 352,
+      "text": "const saved = repository.saveTransaction({ ...current, reconciliationState: input.state, reconciliationNote: input.note?.trim() || undefined, reconciledAt: input.now ?? new Date().toISOString(), reconciledBy: input.actorId });",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/shipping/presentation/create/useShippingBookingCreateController.ts",
+      "line": 361,
+      "text": "id: `goods_${crypto.randomUUID()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/shipping/presentation/create/useShippingBookingCreateController.ts",
+      "line": 388,
+      "text": "const now = new Date().toISOString();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/shipping/infrastructure/providers/ConfiguredShippingProvider.ts",
+      "line": 78,
+      "text": "providerUpdatedAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/shipping/infrastructure/providers/ConfiguredShippingProvider.ts",
+      "line": 86,
+      "text": "const now = new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/shipping/infrastructure/providers/manual/ManualShippingProvider.ts",
+      "line": 17,
+      "text": "providerUpdatedAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/shipping/application/queries/shippingQueries.ts",
+      "line": 36,
+      "text": "const today = new Date().toISOString().slice(0, 10);",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/shipping/application/commands/shippingCommands.ts",
+      "line": 51,
+      "text": "const now = command.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/shipping/application/commands/shippingCommands.ts",
+      "line": 131,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/shipping/application/commands/shippingCommands.ts",
+      "line": 143,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/shipping/domain/rules/shippingRules.ts",
+      "line": 8,
+      "text": "now = new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/products/infrastructure/BrowserProductCatalogExporter.ts",
+      "line": 10,
+      "text": "`product-catalog-${Date.now()}.json`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/products/infrastructure/BrowserProductCatalogExporter.ts",
+      "line": 18,
+      "text": "`product-catalog-${Date.now()}.csv`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/products/infrastructure/productConfiguration.store.ts",
+      "line": 413,
+      "text": "const now = new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/products/infrastructure/productConfiguration.store.ts",
+      "line": 451,
+      "text": "const now = new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/products/presentation/pages/ProductDetailPage.tsx",
+      "line": 239,
+      "text": "? { ...item, status: nextStatus, updatedAt: new Date().toISOString() }",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/products/presentation/pages/ProductDetailPage.tsx",
+      "line": 260,
+      "text": "? ({ ...item, ...data, updatedAt: new Date().toISOString() } as Product)",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/products/presentation/pages/ProductDetailPage.tsx",
+      "line": 268,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/products/presentation/pages/ProductDetailPage.tsx",
+      "line": 269,
+      "text": "updatedAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/products/application/usage/productUsage.ts",
+      "line": 51,
+      "text": "const daysToRenewal = Math.ceil((new Date(owned.renewalAt).getTime() - Date.now()) / 86_400_000);",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/products/application/import-export/productCsv.ts",
+      "line": 29,
+      "text": "export function parseProductsCsv(csvText: string, defaultCurrency: string, now = new Date().toISOString()): Product[] {",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/products/application/import-export/productCsv.ts",
+      "line": 57,
+      "text": "id: `prod_csv_${Date.now()}_${index}`,",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/products/application/commands/productCatalogCommands.ts",
+      "line": 15,
+      "text": "now = new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/products/application/commands/productCatalogCommands.ts",
+      "line": 70,
+      "text": "now = new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/products/application/commands/productCatalogCommands.ts",
+      "line": 88,
+      "text": "now = new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/products/application/commands/productCatalogCommands.ts",
+      "line": 117,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/products/application/commands/productCatalogCommands.ts",
+      "line": 130,
+      "text": "now = new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/leads/presentation/hooks/useLeadFormController.tsx",
+      "line": 456,
+      "text": "id: `lip_${productId}_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/hooks/useLeadFormController.tsx",
+      "line": 464,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/hooks/useLeadTable.ts",
+      "line": 248,
+      "text": "customizedAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/hooks/useLeadFilters.ts",
+      "line": 99,
+      "text": "const now = Date.now();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/hooks/useLeadImportExport.ts",
+      "line": 23,
+      "text": "const exportedCount = exportLeadsSnapshot(leadIds, `unicore_leads_export_${Date.now()}.csv`);",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/hooks/useLeadDetailController.tsx",
+      "line": 151,
+      "text": "id: `act_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/hooks/useLeadDetailController.tsx",
+      "line": 165,
+      "text": "id: `act_work_state_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/hooks/useLeadDetailController.tsx",
+      "line": 177,
+      "text": "id: `act_work_state_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/hooks/useLeadDetailController.tsx",
+      "line": 180,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/hooks/useLeadDetailController.tsx",
+      "line": 248,
+      "text": "updatedAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/hooks/useLeadDetailController.tsx",
+      "line": 269,
+      "text": "id: `act_outcome_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/hooks/useLeadDetailController.tsx",
+      "line": 290,
+      "text": "id: `act_reopen_${Date.now()}_${lead.id}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/hooks/useLeadDetailController.tsx",
+      "line": 296,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/hooks/useLeadDetailController.tsx",
+      "line": 330,
+      "text": "id: `task_lead_call_${lead.id}_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/hooks/useLeadDetailController.tsx",
+      "line": 430,
+      "text": "const now = new Date().toISOString();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/hooks/useLeadDetailController.tsx",
+      "line": 435,
+      "text": "id: `act_owner_${Date.now()}_${lead.id}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/hooks/useLeadDetailController.tsx",
+      "line": 450,
+      "text": "id: `task_lead_handover_${lead.id}_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/hooks/useLeadDetailController.tsx",
+      "line": 455,
+      "text": "dueAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/views/LeadDetailView.tsx",
+      "line": 590,
+      "text": "id: `lead_attachment_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/views/LeadDetailView.tsx",
+      "line": 644,
+      "text": "id: `lip_fallback_${index}_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/views/LeadDetailView.tsx",
+      "line": 652,
+      "text": "createdAt: new Date().toISOString()",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/views/LeadDetailView.tsx",
+      "line": 798,
+      "text": "id: `lip_${s.product.id}_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/views/LeadDetailView.tsx",
+      "line": 806,
+      "text": "createdAt: new Date().toISOString()",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/model/leadSavedViewPreferences.ts",
+      "line": 101,
+      "text": "seed = Date.now(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/pages/LeadListPage.tsx",
+      "line": 262,
+      "text": "id: `act_reopen_${Date.now()}_${leadId}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/pages/LeadListPage.tsx",
+      "line": 375,
+      "text": "id: `act_disqualified_${Date.now()}_${leadId}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/pages/LeadListPage.tsx",
+      "line": 403,
+      "text": "id: `act_followup_${Date.now()}_${lead.id}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/pages/LeadListPage.tsx",
+      "line": 415,
+      "text": "lastInteractionAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/pages/LeadListPage.tsx",
+      "line": 452,
+      "text": "id: `act_owner_${Date.now()}_${leadId}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/pages/LeadListPage.tsx",
+      "line": 471,
+      "text": "id: `l_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/pages/LeadListPage.tsx",
+      "line": 483,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/pages/LeadListPage.tsx",
+      "line": 485,
+      "text": "id: `act_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/pages/LeadListPage.tsx",
+      "line": 1049,
+      "text": "updatedAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/pages/LeadQueuePage.tsx",
+      "line": 74,
+      "text": "id: `act_claim_${Date.now()}_${leadId}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/pages/LeadQueuePage.tsx",
+      "line": 92,
+      "text": "id: `act_contact_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/pages/LeadQueuePage.tsx",
+      "line": 115,
+      "text": "id: `act_qcall_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/pages/LeadQueuePage.tsx",
+      "line": 128,
+      "text": "id: `act_qnote_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/pages/LeadQueuePage.tsx",
+      "line": 156,
+      "text": "id: `act_qualify_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/components/LeadStatisticsModal.tsx",
+      "line": 18,
+      "text": "const now = Date.now();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/components/LeadDetailModals.tsx",
+      "line": 250,
+      "text": "updatedAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/presentation/components/LeadDetailModals.tsx",
+      "line": 276,
+      "text": "updatedAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/leads/application/queries/leadQueueQueries.ts",
+      "line": 16,
+      "text": "now = Date.now(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/leads/application/commands/leadRepositoryCommands.ts",
+      "line": 134,
+      "text": "id: `lead-retention-${crypto.randomUUID()}`,",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/leads/application/commands/leadRepositoryCommands.ts",
+      "line": 138,
+      "text": "createdAt: input.now ?? new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/leads/application/commands/leadRepositoryCommands.ts",
+      "line": 149,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/leads/application/commands/leadRepositoryCommands.ts",
+      "line": 163,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/leads/application/commands/leadRepositoryCommands.ts",
+      "line": 177,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/leads/application/commands/leadCommands.ts",
+      "line": 49,
+      "text": "updatedAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/leads/application/commands/leadCommands.ts",
+      "line": 187,
+      "text": "disqualifiedAt: new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/leads/application/commands/leadImportCommands.ts",
+      "line": 43,
+      "text": "const now = new Date(options.now || new Date().toISOString());",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/leads/application/commands/leadIdentityCommands.ts",
+      "line": 48,
+      "text": "id: `lead-identity-${crypto.randomUUID()}`,",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/leads/application/commands/leadIdentityCommands.ts",
+      "line": 52,
+      "text": "createdAt: input.occurredAt ?? new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/leads/application/commands/leadIdentityCommands.ts",
+      "line": 83,
+      "text": "const occurredAt = input.occurredAt ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/leads/application/commands/leadIdentityCommands.ts",
+      "line": 85,
+      "text": "id: `lead-consent-${crypto.randomUUID()}`,",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/leads/application/commands/leadIdentityCommands.ts",
+      "line": 150,
+      "text": "signalId: `merge-${crypto.randomUUID()}`,",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/leads/application/commands/leadIdentityCommands.ts",
+      "line": 212,
+      "text": "const occurredAt = input.occurredAt ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/leads/application/commands/leadIdentityCommands.ts",
+      "line": 252,
+      "text": "const occurredAt = input.occurredAt ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/leads/runtime/ingress/leadWebhookIngress.ts",
+      "line": 29,
+      "text": "const now = new Date(command.now ?? new Date().toISOString());",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/leads/runtime/ingress/leadWebhookIngress.ts",
+      "line": 86,
+      "text": "const id = `lead_webhook_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/orders/presentation/hooks/useOrderFormController.tsx",
+      "line": 109,
+      "text": "const [orderDate, setOrderDate] = useState(new Date().toISOString().slice(0, 10));",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/orders/presentation/hooks/useOrderFormController.tsx",
+      "line": 304,
+      "text": "setOrderDate(new Date().toISOString().slice(0, 10));",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/orders/presentation/hooks/useOrderFormController.tsx",
+      "line": 638,
+      "text": "const now = new Date().toISOString();",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/orders/presentation/hooks/useOrderListController.tsx",
+      "line": 363,
+      "text": "orderDate: new Date().toISOString().split(\"T\")[0],",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/orders/presentation/hooks/useOrderListController.tsx",
+      "line": 364,
+      "text": "createdAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/orders/presentation/hooks/useOrderListController.tsx",
+      "line": 365,
+      "text": "updatedAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/orders/application/commands/orderRepositoryCommands.ts",
+      "line": 132,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/orders/application/commands/orderRepositoryCommands.ts",
+      "line": 150,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/orders/domain/rules/orderLifecycle.ts",
+      "line": 74,
+      "text": "export function applyOrderStateTransition(order: CustomerOrder, nextState: OrderState, now = new Date().toISOString()): CustomerOrder {",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/orders/domain/rules/orderLifecycle.ts",
+      "line": 82,
+      "text": "export function applyOrderConfirmation(order: CustomerOrder, now = new Date().toISOString()): CustomerOrder {",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/orders/domain/rules/orderLifecycle.ts",
+      "line": 108,
+      "text": "now = new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/commercial-evidence/application/queries/purchaseEvidenceQueries.ts",
+      "line": 45,
+      "text": "const now = options.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/invoices/public/api.ts",
+      "line": 102,
+      "text": "id: `allocation_${crypto.randomUUID()}`,",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/invoices/runtime/receivableOperationsStore.ts",
+      "line": 51,
+      "text": "const createdAt = input.createdAt ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/invoices/runtime/receivableOperationsStore.ts",
+      "line": 54,
+      "text": "id: input.id ?? `receivable_activity_${crypto.randomUUID()}`,",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/invoices/infrastructure/InMemoryInvoiceApiAdapter.ts",
+      "line": 18,
+      "text": "const now = new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/invoices/infrastructure/InMemoryInvoiceApiAdapter.ts",
+      "line": 46,
+      "text": "async issue(invoiceId: string, input: { expectedVersion: number }) { const now = new Date().toISOString(); return issueInvoice(this.repository, invoiceId, { ...input, invoiceNumber: `DEV-${invoiceId}`, issueDate: now.slice(0, 10), issuedAt: now }); }",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/invoices/infrastructure/InMemoryInvoiceApiAdapter.ts",
+      "line": 47,
+      "text": "async retryIssue(invoiceId: string, input: { expectedVersion: number }) { const now = new Date().toISOString(); return retryInvoiceIssue(this.repository, invoiceId, { ...input, invoiceNumber: `DEV-${invoiceId}`, issueDate: now.slice(0, 10), issuedAt: now }); }",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/invoices/infrastructure/InMemoryInvoiceApiAdapter.ts",
+      "line": 51,
+      "text": "const now = new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/invoices/infrastructure/InMemoryInvoiceApiAdapter.ts",
+      "line": 85,
+      "text": "const now = new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/invoices/infrastructure/InMemoryInvoiceApiAdapter.ts",
+      "line": 104,
+      "text": "async discardDraft(invoiceId: string, input: Parameters<InvoiceApiPort[\"discardDraft\"]>[1]) { return discardInvoiceDraft(this.repository, invoiceId, { ...input, now: new Date().toISOString() }); }",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/invoices/infrastructure/InMemoryInvoiceApiAdapter.ts",
+      "line": 105,
+      "text": "async voidInvoice(invoiceId: string, input: Parameters<InvoiceApiPort[\"voidInvoice\"]>[1]) { return voidIssuedInvoice(this.repository, invoiceId, { ...input, now: new Date().toISOString() }); }",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/invoices/presentation/pages/AccountStatementPage.tsx",
+      "line": 52,
+      "text": "const today = new Date().toISOString().slice(0, 10);",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/invoices/presentation/pages/AccountStatementPage.tsx",
+      "line": 53,
+      "text": "const oneYearAgo = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/invoices/presentation/pages/ReceivablesPage.tsx",
+      "line": 73,
+      "text": "anchor.download = `receivables-${new Date().toISOString().slice(0, 10)}.csv`;",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/invoices/presentation/pages/InvoiceDetailPage.tsx",
+      "line": 33,
+      "text": "const durableId = (prefix: string) => `${prefix}_${crypto.randomUUID()}`;",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/invoices/presentation/pages/InvoiceFormPage.tsx",
+      "line": 296,
+      "text": "updatedAt: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/invoices/presentation/pages/ReceivableDetailPage.tsx",
+      "line": 158,
+      "text": "idempotencyKey: `receivable_${invoice.id}_${crypto.randomUUID()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/invoices/presentation/pages/ReceivableDetailPage.tsx",
+      "line": 159,
+      "text": "now: new Date().toISOString(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/invoices/application/vertical-slice/invoiceVerticalSlice.ts",
+      "line": 219,
+      "text": "id: `allocation_${crypto.randomUUID()}`,",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/customers/runtime/customerModuleRuntime.ts",
+      "line": 57,
+      "text": "export function reconcileCustomerRepositoryFromPurchaseEvidence(now = new Date().toISOString()): CustomerRepositorySnapshot {",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/customers/presentation/list/ExistingCustomerOnboardingModal.tsx",
+      "line": 25,
+      "text": "const [occurredAt, setOccurredAt] = React.useState(() => new Date().toISOString().slice(0, 10));",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/customers/presentation/model/customer360ReadModel.ts",
+      "line": 451,
+      "text": "task.status === \"OPEN\" && new Date(task.dueAt).getTime() < Date.now(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/customers/presentation/pages/Customer360Page.tsx",
+      "line": 195,
+      "text": "id: crypto.randomUUID(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/customers/presentation/pages/Customer360Page.tsx",
+      "line": 228,
+      "text": "id: crypto.randomUUID(),",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/customers/presentation/pages/Customer360Page.tsx",
+      "line": 372,
+      "text": "id: `customer_attachment_${Date.now()}`,",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/customers/presentation/pages/CustomerListPage.tsx",
+      "line": 105,
+      "text": "const today = new Date().toISOString().slice(0, 10);",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/customers/presentation/pages/CustomerListPage.tsx",
+      "line": 281,
+      "text": "anchor.download = `unicorecrm-customers-${new Date().toISOString().slice(0, 10)}.json`;",
+      "classification": "DEMO_OR_CLIENT_TRANSPORT"
+    },
+    {
+      "path": "src/modules/customers/application/queries/customerRelationshipDataQuality.ts",
+      "line": 127,
+      "text": "checkedAt: input.now ?? new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/customers/application/commands/customerCommands.ts",
+      "line": 38,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/customers/application/commands/customerCommands.ts",
+      "line": 105,
+      "text": "now = new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/customers/application/commands/customerCommands.ts",
+      "line": 136,
+      "text": "const completedAt = input.completedAt ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/customers/application/commands/customerCommands.ts",
+      "line": 153,
+      "text": "now = new Date().toISOString(),",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/customers/application/commands/customerCommands.ts",
+      "line": 176,
+      "text": "export function archiveCustomer(repository: CustomerRepository, customerId: string, now = new Date().toISOString()): Customer {",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/customers/application/commands/customerCommands.ts",
+      "line": 191,
+      "text": "const archived = archiveCustomer(repository, customerId, input.now ?? new Date().toISOString());",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/customers/application/commands/customerCommands.ts",
+      "line": 212,
+      "text": "const now = input.now ?? new Date().toISOString();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    },
+    {
+      "path": "src/modules/customers/domain/rules/customerRules.ts",
+      "line": 31,
+      "text": "const nowMs = new Date(input.now ?? new Date().toISOString()).getTime();",
+      "classification": "REVIEWED_NON_CONNECTED"
+    }
+  ],
+  "connectedMutationAuthoritativeGenerationCount": 0
+}

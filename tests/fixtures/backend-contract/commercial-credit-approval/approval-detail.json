@@ -1,0 +1,21 @@
+{
+  "id": "credit-approval-001",
+  "workspaceId": "workspace-a",
+  "orderId": "order-001",
+  "orderResourceVersion": 4,
+  "paymentPlanId": "payment-plan-001",
+  "paymentPlanResourceVersion": 2,
+  "amount": {
+    "amount": "1045000",
+    "currency": "VND"
+  },
+  "policyVersion": "credit-policy-1",
+  "evaluationFingerprint": "ffffffffffffffffffffffffffffffff",
+  "state": "REQUESTED",
+  "requestReason": "Đề nghị bán trả chậm theo chính sách khách hàng.",
+  "requestedBy": "user-sales-001",
+  "requestedAt": "2026-07-25T02:00:00Z",
+  "resourceVersion": 1,
+  "createdAt": "2026-07-25T02:00:00Z",
+  "updatedAt": "2026-07-25T02:00:00Z"
+}

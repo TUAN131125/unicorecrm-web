@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "rules": [
+    {"concept":"PRODUCT_CATALOG_MASTER","owner":"products","kind":"MUTABLE_MASTER_DATA"},
+    {"concept":"PRICE_DEFINITION","owner":"products-pricing","kind":"VERSIONED_MASTER_DATA"},
+    {"concept":"QUOTE_LINE_SNAPSHOT","owner":"quotes","kind":"IMMUTABLE_COMMERCIAL_SNAPSHOT"},
+    {"concept":"ORDER_LINE_SNAPSHOT","owner":"orders","kind":"IMMUTABLE_COMMERCIAL_SNAPSHOT"},
+    {"concept":"INVOICE_LINE_SNAPSHOT","owner":"invoices","kind":"IMMUTABLE_FINANCIAL_EVIDENCE"},
+    {"concept":"APPROVAL_EVIDENCE","owner":"owning-backend-workflow","kind":"IMMUTABLE_SERVER_EVIDENCE"},
+    {"concept":"SEQUENCE_NUMBER","owner":"owning-backend-module","kind":"SERVER_GENERATED"},
+    {"concept":"ATTACHMENT_DOCUMENT","owner":"document-evidence-service","kind":"REFERENCE_WITH_ACCESS_POLICY"}
+  ],
+  "blockedDecisions": ["DEC-PRODUCT-LIFECYCLE", "DEC-PRODUCT-USAGE-REFERENCE", "DEC-COMMERCIAL-EVIDENCE-RETENTION"]
+}

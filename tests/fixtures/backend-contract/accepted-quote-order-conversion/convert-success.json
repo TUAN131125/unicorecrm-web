@@ -1,0 +1,111 @@
+{
+  "commandId": "cmd-convert-001",
+  "correlationId": "corr-convert-001",
+  "aggregateId": "order-001",
+  "aggregateType": "Order",
+  "version": 4,
+  "occurredAt": "2026-07-25T03:00:00Z",
+  "outcome": "COMMITTED",
+  "emittedEventIds": [
+    "evt-order-created-001"
+  ],
+  "auditEvidenceIds": [
+    "audit-order-created-001"
+  ],
+  "result": {
+    "order": {
+      "id": "order-001",
+      "orderNumber": "O-2026-0001",
+      "orderDate": "2026-07-24",
+      "buyerRef": {
+        "type": "ORGANIZATION_ACCOUNT",
+        "id": "org-001"
+      },
+      "contactId": "contact-001",
+      "sourceQuoteId": "quote-001",
+      "sourceQuoteNumber": "Q-2026-0001",
+      "sourceDealId": "deal-001",
+      "state": "DRAFT",
+      "lineItems": [
+        {
+          "id": "line-001",
+          "productId": "product-001",
+          "skuSnapshot": "SKU-001",
+          "productNameSnapshot": "Commercial product snapshot",
+          "productTypeSnapshot": "PHYSICAL",
+          "quantity": "2",
+          "unitPrice": {
+            "amount": "500000",
+            "currency": "VND"
+          },
+          "discountRate": "5",
+          "taxRate": "10",
+          "taxMode": "EXCLUSIVE",
+          "lineSubtotal": {
+            "amount": "1000000",
+            "currency": "VND"
+          },
+          "lineDiscountAmount": {
+            "amount": "50000",
+            "currency": "VND"
+          },
+          "lineTaxAmount": {
+            "amount": "95000",
+            "currency": "VND"
+          },
+          "lineTotal": {
+            "amount": "1045000",
+            "currency": "VND"
+          }
+        }
+      ],
+      "subtotal": {
+        "amount": "1000000",
+        "currency": "VND"
+      },
+      "discountTotal": {
+        "amount": "50000",
+        "currency": "VND"
+      },
+      "taxTotal": {
+        "amount": "95000",
+        "currency": "VND"
+      },
+      "grandTotal": {
+        "amount": "1045000",
+        "currency": "VND"
+      },
+      "currency": "VND",
+      "recipientName": "Buyer contact",
+      "recipientPhone": "+84900000000",
+      "recipientEmail": "buyer@example.com",
+      "shippingAddress": {
+        "line1": "1 Contract Street",
+        "city": "Ho Chi Minh City",
+        "country": "VN"
+      },
+      "creditPolicyEvaluation": {
+        "status": "NOT_REQUIRED",
+        "blockerCodes": [],
+        "policyVersion": "credit-policy-1",
+        "evaluatedAt": "2026-07-24T04:00:00Z"
+      },
+      "actions": {
+        "confirm": {
+          "allowed": true,
+          "blockerCodes": []
+        },
+        "cancel": {
+          "allowed": true,
+          "blockerCodes": []
+        }
+      },
+      "resourceVersion": 4,
+      "createdAt": "2026-07-24T03:00:00Z",
+      "updatedAt": "2026-07-24T04:00:00Z"
+    },
+    "sourceQuoteId": "quote-001",
+    "sourceQuoteResourceVersion": 7,
+    "commercialSnapshotFingerprint": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  }
+}

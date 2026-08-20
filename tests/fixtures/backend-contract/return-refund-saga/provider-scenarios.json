@@ -1,0 +1,63 @@
+{
+  "contractVersion": "0.23.20-contract.0",
+  "scenarios": [
+    {
+      "id": "start-saga",
+      "operationId": "resolveReturnCreditRefund",
+      "expectedStatus": 202
+    },
+    {
+      "id": "replay-saga",
+      "operationId": "resolveReturnCreditRefund",
+      "expectedStatus": 202,
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "stale-return-version",
+      "operationId": "resolveReturnCreditRefund",
+      "expectedStatus": 412,
+      "expectedCode": "VERSION_CONFLICT"
+    },
+    {
+      "id": "amount-over-invoice",
+      "operationId": "resolveReturnCreditRefund",
+      "expectedStatus": 422,
+      "expectedCode": "RETURN_CREDIT_EXCEEDS_ISSUED_INVOICE_VALUE"
+    },
+    {
+      "id": "refund-over-effective-payment",
+      "operationId": "resolveReturnCreditRefund",
+      "expectedStatus": 422,
+      "expectedCode": "RETURN_REFUND_EXCEEDS_EFFECTIVE_PAYMENT_ALLOCATIONS"
+    },
+    {
+      "id": "customer-credit-blocked",
+      "operationId": "resolveReturnCreditRefund",
+      "expectedStatus": 409,
+      "expectedCode": "RETURN_CUSTOMER_CREDIT_POLICY_REQUIRED"
+    },
+    {
+      "id": "waiting-refund-read",
+      "operationId": "getReturnCreditRefundResolution",
+      "expectedStatus": 200,
+      "expectedState": "WAITING_REFUND"
+    },
+    {
+      "id": "manual-review-read",
+      "operationId": "getReturnCreditRefundResolution",
+      "expectedStatus": 200,
+      "expectedState": "MANUAL_REVIEW_REQUIRED"
+    },
+    {
+      "id": "cross-workspace-denied",
+      "operationId": "getReturnCreditRefundResolution",
+      "expectedStatus": 403,
+      "expectedCode": "WORKSPACE_MISMATCH"
+    },
+    {
+      "id": "no-frontend-rollback",
+      "operationId": "resolveReturnCreditRefund",
+      "assertion": "failure persists FAILED or MANUAL_REVIEW_REQUIRED"
+    }
+  ]
+}

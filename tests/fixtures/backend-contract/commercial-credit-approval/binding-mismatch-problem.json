@@ -1,0 +1,12 @@
+{
+  "type": "urn:unicore:error:credit-approval-binding-mismatch",
+  "title": "Credit approval binding mismatch",
+  "status": 409,
+  "code": "CREDIT_APPROVAL_BINDING_MISMATCH",
+  "detail": "Approval does not match the current order/payment plan binding.",
+  "retryable": false,
+  "correlationId": "corr-credit-bind-001",
+  "aggregateId": "credit-approval-001",
+  "expectedVersion": 4,
+  "currentVersion": 5
+}

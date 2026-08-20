@@ -1,0 +1,10 @@
+{
+  "type": "urn:unicorecrm:error:ORDER_CANCELLATION_BLOCKED",
+  "title": "Order cancellation is blocked by active obligations.",
+  "status": 409,
+  "code": "ORDER_CANCELLATION_BLOCKED",
+  "retryable": false,
+  "correlationId": "corr_order_cancel_blocked_001",
+  "aggregateId": "order_004",
+  "businessBlockers": ["INVOICE_REMEDIATION_REQUIRED:INV-001:ISSUED", "SHIPPING_CANCELLATION_REQUIRED:SHP-001"]
+}

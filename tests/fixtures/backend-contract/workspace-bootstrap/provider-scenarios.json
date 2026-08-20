@@ -1,0 +1,71 @@
+{
+  "contractVersion": "0.23.20-contract.0",
+  "scenarios": [
+    {
+      "id": "list-workspaces-success",
+      "operationId": "listMyWorkspaces",
+      "expectedStatus": 200
+    },
+    {
+      "id": "list-workspaces-repeat",
+      "operationId": "listMyWorkspaces",
+      "expectedStatus": 200
+    },
+    {
+      "id": "list-workspaces-empty",
+      "operationId": "listMyWorkspaces",
+      "expectedStatus": 200
+    },
+    {
+      "id": "list-workspaces-unauthenticated",
+      "operationId": "listMyWorkspaces",
+      "expectedStatus": 401,
+      "expectedCode": "AUTHENTICATION_REQUIRED"
+    },
+    {
+      "id": "list-workspaces-rate-limited",
+      "operationId": "listMyWorkspaces",
+      "expectedStatus": 429,
+      "expectedCode": "RATE_LIMITED"
+    },
+    {
+      "id": "bootstrap-success",
+      "operationId": "getWorkspaceBootstrap",
+      "expectedStatus": 200
+    },
+    {
+      "id": "bootstrap-repeat",
+      "operationId": "getWorkspaceBootstrap",
+      "expectedStatus": 200
+    },
+    {
+      "id": "bootstrap-capability-projection",
+      "operationId": "getWorkspaceBootstrap",
+      "expectedStatus": 200
+    },
+    {
+      "id": "bootstrap-unauthenticated",
+      "operationId": "getWorkspaceBootstrap",
+      "expectedStatus": 401,
+      "expectedCode": "AUTHENTICATION_REQUIRED"
+    },
+    {
+      "id": "bootstrap-membership-denied",
+      "operationId": "getWorkspaceBootstrap",
+      "expectedStatus": 403,
+      "expectedCode": "ACCESS_DENIED"
+    },
+    {
+      "id": "bootstrap-not-found",
+      "operationId": "getWorkspaceBootstrap",
+      "expectedStatus": 404,
+      "expectedCode": "RESOURCE_NOT_FOUND"
+    },
+    {
+      "id": "bootstrap-unavailable",
+      "operationId": "getWorkspaceBootstrap",
+      "expectedStatus": 503,
+      "expectedCode": "INTEGRATION_UNAVAILABLE"
+    }
+  ]
+}

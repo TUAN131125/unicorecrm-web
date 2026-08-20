@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "majorVersionLocation": "SERVER_BASE_PATH",
+  "currentMajor": "v1",
+  "additiveChangePolicy": "CONTRACT_TESTS_REQUIRED",
+  "breakingChangePolicy": "NEW_MAJOR_OR_EXPLICIT_PRE_IMPLEMENTATION_BASELINE_BREAK",
+  "deprecationHeaders": ["Deprecation", "Sunset", "Link"],
+  "minimumNoticeExpectationDays": 90,
+  "unknownEnumPolicy": "FAIL_CLOSED_UNLESS_EXPLICIT_EXTENSION_POINT"
+}

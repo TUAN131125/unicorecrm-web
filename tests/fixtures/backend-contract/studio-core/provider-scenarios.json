@@ -1,0 +1,229 @@
+{
+  "contractVersion": "0.23.20-contract.0",
+  "scenarios": [
+    {
+      "id": "get-configuration-success",
+      "operationId": "getWorkspaceConfiguration",
+      "expectedStatus": 200
+    },
+    {
+      "id": "get-configuration-repeat",
+      "operationId": "getWorkspaceConfiguration",
+      "expectedStatus": 200
+    },
+    {
+      "id": "get-configuration-cross-workspace",
+      "operationId": "getWorkspaceConfiguration",
+      "expectedStatus": 403,
+      "expectedCode": "WORKSPACE_MISMATCH"
+    },
+    {
+      "id": "get-configuration-unauthenticated",
+      "operationId": "getWorkspaceConfiguration",
+      "expectedStatus": 401,
+      "expectedCode": "AUTHENTICATION_REQUIRED"
+    },
+    {
+      "id": "business-information-success",
+      "operationId": "updateWorkspaceBusinessInformation",
+      "expectedStatus": 200,
+      "expectedOutcome": "COMMITTED"
+    },
+    {
+      "id": "business-information-replay",
+      "operationId": "updateWorkspaceBusinessInformation",
+      "expectedStatus": 200,
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "business-information-stale",
+      "operationId": "updateWorkspaceBusinessInformation",
+      "expectedStatus": 412,
+      "expectedCode": "VERSION_CONFLICT"
+    },
+    {
+      "id": "business-information-validation",
+      "operationId": "updateWorkspaceBusinessInformation",
+      "expectedStatus": 422,
+      "expectedCode": "VALIDATION_FAILED"
+    },
+    {
+      "id": "business-information-cross-workspace",
+      "operationId": "updateWorkspaceBusinessInformation",
+      "expectedStatus": 403,
+      "expectedCode": "WORKSPACE_MISMATCH"
+    },
+    {
+      "id": "locale-region-success",
+      "operationId": "updateWorkspaceLocaleRegion",
+      "expectedStatus": 200,
+      "expectedOutcome": "COMMITTED"
+    },
+    {
+      "id": "locale-region-replay",
+      "operationId": "updateWorkspaceLocaleRegion",
+      "expectedStatus": 200,
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "locale-region-stale",
+      "operationId": "updateWorkspaceLocaleRegion",
+      "expectedStatus": 412,
+      "expectedCode": "VERSION_CONFLICT"
+    },
+    {
+      "id": "locale-region-validation",
+      "operationId": "updateWorkspaceLocaleRegion",
+      "expectedStatus": 422,
+      "expectedCode": "VALIDATION_FAILED"
+    },
+    {
+      "id": "blueprint-success",
+      "operationId": "updateWorkspaceBlueprint",
+      "expectedStatus": 200,
+      "expectedOutcome": "COMMITTED"
+    },
+    {
+      "id": "blueprint-replay",
+      "operationId": "updateWorkspaceBlueprint",
+      "expectedStatus": 200,
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "blueprint-stale",
+      "operationId": "updateWorkspaceBlueprint",
+      "expectedStatus": 412,
+      "expectedCode": "VERSION_CONFLICT"
+    },
+    {
+      "id": "blueprint-validation",
+      "operationId": "updateWorkspaceBlueprint",
+      "expectedStatus": 422,
+      "expectedCode": "VALIDATION_FAILED"
+    },
+    {
+      "id": "features-success",
+      "operationId": "updateWorkspaceFeatures",
+      "expectedStatus": 200,
+      "expectedOutcome": "COMMITTED"
+    },
+    {
+      "id": "features-replay",
+      "operationId": "updateWorkspaceFeatures",
+      "expectedStatus": 200,
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "features-stale",
+      "operationId": "updateWorkspaceFeatures",
+      "expectedStatus": 412,
+      "expectedCode": "VERSION_CONFLICT"
+    },
+    {
+      "id": "features-validation",
+      "operationId": "updateWorkspaceFeatures",
+      "expectedStatus": 422,
+      "expectedCode": "VALIDATION_FAILED"
+    },
+    {
+      "id": "publish-success",
+      "operationId": "publishWorkspaceConfiguration",
+      "expectedStatus": 200,
+      "expectedOutcome": "COMMITTED"
+    },
+    {
+      "id": "publish-replay",
+      "operationId": "publishWorkspaceConfiguration",
+      "expectedStatus": 200,
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "publish-stale",
+      "operationId": "publishWorkspaceConfiguration",
+      "expectedStatus": 412,
+      "expectedCode": "VERSION_CONFLICT"
+    },
+    {
+      "id": "publish-conflict",
+      "operationId": "publishWorkspaceConfiguration",
+      "expectedStatus": 409,
+      "expectedCode": "LIFECYCLE_CONFLICT"
+    },
+    {
+      "id": "audit-success",
+      "operationId": "listWorkspaceConfigurationAudit",
+      "expectedStatus": 200
+    },
+    {
+      "id": "audit-cross-workspace",
+      "operationId": "listWorkspaceConfigurationAudit",
+      "expectedStatus": 403,
+      "expectedCode": "WORKSPACE_MISMATCH"
+    },
+    {
+      "id": "quick-setup-success",
+      "operationId": "getStudioQuickSetup",
+      "expectedStatus": 200
+    },
+    {
+      "id": "quick-setup-cross-workspace",
+      "operationId": "getStudioQuickSetup",
+      "expectedStatus": 403,
+      "expectedCode": "WORKSPACE_MISMATCH"
+    },
+    {
+      "id": "quick-open-success",
+      "operationId": "openStudioQuickSetup",
+      "expectedStatus": 200,
+      "expectedOutcome": "COMMITTED"
+    },
+    {
+      "id": "quick-open-replay",
+      "operationId": "openStudioQuickSetup",
+      "expectedStatus": 200,
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "quick-dismiss-success",
+      "operationId": "dismissStudioQuickSetupAutoOpen",
+      "expectedStatus": 200,
+      "expectedOutcome": "COMMITTED"
+    },
+    {
+      "id": "quick-complete-success",
+      "operationId": "completeStudioQuickSetupStep",
+      "expectedStatus": 200,
+      "expectedOutcome": "COMMITTED"
+    },
+    {
+      "id": "quick-complete-replay",
+      "operationId": "completeStudioQuickSetupStep",
+      "expectedStatus": 200,
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "quick-complete-stale",
+      "operationId": "completeStudioQuickSetupStep",
+      "expectedStatus": 412,
+      "expectedCode": "VERSION_CONFLICT"
+    },
+    {
+      "id": "quick-skip-success",
+      "operationId": "skipStudioQuickSetupStep",
+      "expectedStatus": 200,
+      "expectedOutcome": "COMMITTED"
+    },
+    {
+      "id": "quick-skip-replay",
+      "operationId": "skipStudioQuickSetupStep",
+      "expectedStatus": 200,
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "quick-skip-stale",
+      "operationId": "skipStudioQuickSetupStep",
+      "expectedStatus": 412,
+      "expectedCode": "VERSION_CONFLICT"
+    }
+  ]
+}

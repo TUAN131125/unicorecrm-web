@@ -1,0 +1,88 @@
+name: quality-and-release
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  security:
+    name: 01 Secret scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+      - run: npm run security:scan
+
+  quality:
+    name: 02 Quality, acceptance, release
+    needs: security
+    runs-on: ubuntu-latest
+    env:
+      UNICORECRM_TEST_API_BASE_URL: ${{ secrets.UNICORECRM_TEST_API_BASE_URL }}
+      UNICORECRM_TEST_ACCESS_TOKEN: ${{ secrets.UNICORECRM_TEST_ACCESS_TOKEN }}
+      UNICORECRM_TEST_WORKSPACE_ID: ${{ secrets.UNICORECRM_TEST_WORKSPACE_ID }}
+      UNICORECRM_TEST_CUSTOMER_ID: ${{ secrets.UNICORECRM_TEST_CUSTOMER_ID }}
+      UNICORECRM_TEST_SECONDARY_ACCESS_TOKEN: ${{ secrets.UNICORECRM_TEST_SECONDARY_ACCESS_TOKEN }}
+      UNICORECRM_TEST_SECONDARY_WORKSPACE_ID: ${{ secrets.UNICORECRM_TEST_SECONDARY_WORKSPACE_ID }}
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+      - name: 02 Dependency and lock policy
+        run: |
+          npm ci --ignore-scripts
+          npm run quality:gate -- --gate quality.package-lock-registry
+      - name: 03 Lint and typecheck
+        run: |
+          npm run lint
+          npm run typecheck
+      - name: 04 Architecture
+        run: npm run quality:group -- --group architecture --report artifacts/quality/architecture.json --junit artifacts/quality/architecture.junit.xml
+      - name: 05 OpenAPI and generated drift
+        run: npm run api:check
+      - name: 06 Unit and contract
+        run: npm run quality:group -- --groups unit,contract --report artifacts/quality/unit-contract.json --junit artifacts/quality/unit-contract.junit.xml
+      - name: 07 Integration and route smoke
+        run: npm run quality:group -- --groups integration,route-smoke --report artifacts/quality/integration-route.json --junit artifacts/quality/integration-route.junit.xml
+      - name: 08 Critical journeys
+        run: npm run e2e:critical
+      - name: 09 Production build
+        run: npm run build
+      - name: 10 Real backend contract
+        if: env.UNICORECRM_TEST_API_BASE_URL != '' && env.UNICORECRM_TEST_ACCESS_TOKEN != '' && env.UNICORECRM_TEST_WORKSPACE_ID != '' && env.UNICORECRM_TEST_CUSTOMER_ID != '' && env.UNICORECRM_TEST_SECONDARY_ACCESS_TOKEN != '' && env.UNICORECRM_TEST_SECONDARY_WORKSPACE_ID != ''
+        run: npm run quality:gate -- --gate quality.real-backend-contract
+      - name: 11 Connected browser setup
+        if: env.UNICORECRM_TEST_API_BASE_URL != '' && env.UNICORECRM_TEST_ACCESS_TOKEN != '' && env.UNICORECRM_TEST_WORKSPACE_ID != ''
+        run: npm run e2e:install
+      - name: 12 Connected browser acceptance
+        if: env.UNICORECRM_TEST_API_BASE_URL != '' && env.UNICORECRM_TEST_ACCESS_TOKEN != '' && env.UNICORECRM_TEST_WORKSPACE_ID != ''
+        run: npm run quality:gate -- --gate quality.connected-browser-e2e
+      - name: 13 Source release evidence
+        run: |
+          npm run release:prepare
+          npm run release:check
+      - name: Upload quality evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: quality-evidence
+          path: artifacts/quality
+          if-no-files-found: warn
+      - name: Upload source release
+        uses: actions/upload-artifact@v7
+        with:
+          name: unicorecrm-source-release
+          path: artifacts/release
+          if-no-files-found: error

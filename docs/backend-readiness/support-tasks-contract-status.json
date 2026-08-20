@@ -1,0 +1,32 @@
+{
+  "schemaVersion": 1,
+  "contractVersion": "0.23.20-contract.0",
+  "modules": [
+    "support",
+    "tasks"
+  ],
+  "connectedStatus": "DEDICATED_MODULE_API_BOUNDARIES_READY",
+  "demoRuntimeAllowed": true,
+  "authoritativeFieldsProhibitedInConnectedFrontend": [
+    "caseId",
+    "caseNumber",
+    "taskId",
+    "slaDeadline",
+    "serverTimestamp",
+    "lifecycleStatus",
+    "assignmentEvidence",
+    "activityAudit",
+    "resolutionEvidence",
+    "resourceVersion"
+  ],
+  "decisions": [
+    "DEC-P07-SUPPORT-CORE",
+    "DEC-P07-SUPPORT-COMMUNICATION",
+    "DEC-P07-TASK-CORE",
+    "DEC-P07-TASK-ACTIVITY",
+    "DEC-PHASE12-SUPPORT-API-BOUNDARY"
+  ],
+  "remainingBlockers": [
+    "Live provider/backend execution"
+  ]
+}

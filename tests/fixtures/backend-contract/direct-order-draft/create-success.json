@@ -1,0 +1,147 @@
+{
+  "commandId": "cmd_12345678",
+  "correlationId": "corr_12345678",
+  "aggregateId": "order_01",
+  "aggregateType": "order",
+  "version": 1,
+  "occurredAt": "2026-07-25T00:00:00Z",
+  "outcome": "COMMITTED",
+  "emittedEventIds": [
+    "evt_01"
+  ],
+  "auditEvidenceIds": [
+    "audit_01"
+  ],
+  "result": {
+    "order": {
+      "id": "order_01",
+      "orderNumber": "SO-2026-0001",
+      "orderDate": "2026-07-25",
+      "buyerRef": {
+        "type": "CONTACT",
+        "id": "contact_01"
+      },
+      "sourceDealId": "deal_01",
+      "state": "DRAFT",
+      "lineItems": [
+        {
+          "id": "line_01",
+          "productId": "product_01",
+          "skuSnapshot": "CRM-BASE",
+          "productNameSnapshot": "Gói dịch vụ CRM",
+          "quantity": "1",
+          "unitPrice": {
+            "amount": "1200000",
+            "currency": "VND"
+          },
+          "discountRate": "0",
+          "taxRate": "10",
+          "taxMode": "EXCLUSIVE",
+          "lineSubtotal": {
+            "amount": "1200000",
+            "currency": "VND"
+          },
+          "lineDiscountAmount": {
+            "amount": "0",
+            "currency": "VND"
+          },
+          "lineTaxAmount": {
+            "amount": "120000",
+            "currency": "VND"
+          },
+          "lineTotal": {
+            "amount": "1320000",
+            "currency": "VND"
+          }
+        }
+      ],
+      "adjustments": [],
+      "subtotal": {
+        "amount": "1200000",
+        "currency": "VND"
+      },
+      "discountTotal": {
+        "amount": "0",
+        "currency": "VND"
+      },
+      "taxTotal": {
+        "amount": "120000",
+        "currency": "VND"
+      },
+      "grandTotal": {
+        "amount": "1320000",
+        "currency": "VND"
+      },
+      "currency": "VND",
+      "actions": {
+        "confirm": {
+          "allowed": true,
+          "blockerCodes": []
+        },
+        "cancel": {
+          "allowed": true,
+          "blockerCodes": []
+        }
+      },
+      "resourceVersion": 1,
+      "createdAt": "2026-07-25T00:00:00Z",
+      "updatedAt": "2026-07-25T00:00:00Z"
+    },
+    "paymentPlan": {
+      "id": "plan_01",
+      "orderId": "order_01",
+      "buyerRef": {
+        "type": "CONTACT",
+        "id": "contact_01"
+      },
+      "kind": "FULL_PAYMENT",
+      "state": "DRAFT",
+      "currency": "VND",
+      "agreementSnapshot": {
+        "version": 1,
+        "kind": "FULL_PAYMENT",
+        "currency": "VND",
+        "lines": [
+          {
+            "id": "schedule_01",
+            "sequence": 1,
+            "label": "Thanh toán toàn bộ",
+            "purpose": "FULL",
+            "amountRule": {
+              "type": "FIXED",
+              "amount": {
+                "amount": "1320000",
+                "currency": "VND"
+              }
+            },
+            "previewAmount": {
+              "amount": "1320000",
+              "currency": "VND"
+            },
+            "dueRule": {
+              "type": "EVENT_RELATIVE",
+              "event": "ORDER_CONFIRMED",
+              "offsetDays": 0,
+              "dayBasis": "CALENDAR"
+            },
+            "allowedMethodCodes": [
+              "BANK_TRANSFER"
+            ],
+            "preferredMethodCode": "BANK_TRANSFER",
+            "fulfillmentGate": "NONE",
+            "invoicePolicyCode": "STANDARD_ORDER_INVOICE"
+          }
+        ],
+        "policyVersion": "order-draft-payment-agreement/v2"
+      },
+      "scheduleLineIds": [
+        "schedule_01"
+      ],
+      "evidenceCount": 0,
+      "resourceVersion": 1,
+      "createdAt": "2026-07-25T00:00:00Z",
+      "updatedAt": "2026-07-25T00:00:00Z"
+    },
+    "commercialSnapshotFingerprint": "sha256:0123456789abcdef"
+  }
+}

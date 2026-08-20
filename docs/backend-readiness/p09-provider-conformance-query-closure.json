@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "contractVersion": "0.23.20-contract.0",
+  "phase": "P0.9",
+  "sourceSha256": "fb504d1d15e57f2eca987d42268d682a2af944263bd7ed054b251580955d3ee8",
+  "decisions": [
+    {
+      "decisionId": "DEC-P09-REFERENCE-PROVIDER-CONFORMANCE",
+      "status": "CLOSED",
+      "owner": "api-contract-architecture+quality",
+      "decision": "A dependency-free, non-production reference provider host executes every provider fixture against the actual OpenAPI method/path/request/response schemas. It is contract evidence only and is prohibited from production composition.",
+      "operations": [],
+      "evidence": [
+        "tests/contract/provider/reference-host/referenceProviderHost.mjs",
+        "tests/contract/provider/run-reference-provider-conformance.mjs",
+        "tests/fixtures/backend-contract/*/provider-scenarios.json"
+      ]
+    },
+    {
+      "decisionId": "DEC-P09-CONNECTED-INTEGRATION-FIXTURE-MIGRATION",
+      "status": "CLOSED",
+      "owner": "frontend-architecture+quality",
+      "decision": "Connected integration and real-backend acceptance fixtures use generated OpenAPI Lead list/detail/create operations. Retired generic Lead update/qualification authority is tested only as fail-closed and is never treated as production success.",
+      "operations": [
+        "listLeads",
+        "getLead",
+        "createLead"
+      ],
+      "evidence": [
+        "tests/quality/integration/check-connected-backend-integration.mts",
+        "tests/quality/acceptance/check-real-backend-contract.mts",
+        "tests/fixtures/connected-host/connectedApiTestHost.mjs"
+      ]
+    },
+    {
+      "decisionId": "DEC-P09-LEAD-PRODUCT-READ-AUTHORITY",
+      "status": "CLOSED",
+      "owner": "leads+products+api-contract-architecture",
+      "decision": "Lead and Product list/detail reads use explicit closed OpenAPI projections. Frontend-local normalization and composed counts/facets remain non-authoritative and are not promoted to generic endpoints.",
+      "operations": [
+        "listLeads",
+        "getLead",
+        "listProducts",
+        "getProduct"
+      ],
+      "evidence": [
+        "docs/api/openapi.json",
+        "docs/backend-readiness/query-registry.json"
+      ]
+    },
+    {
+      "decisionId": "DEC-P09-SHIPPING-RETURN-READ-AUTHORITY",
+      "status": "CLOSED",
+      "owner": "shipping+returns+api-contract-architecture",
+      "decision": "Shipping Booking and Return list/detail reads use explicit closed OpenAPI projections with workspace-scoped authorization, whitelisted pagination/filter/sort semantics and server-owned resourceVersion.",
+      "operations": [
+        "listShippingBookings",
+        "getShippingBooking",
+        "listReturns",
+        "getReturn"
+      ],
+      "evidence": [
+        "docs/api/openapi.json",
+        "docs/backend-readiness/query-registry.json"
+      ]
+    },
+    {
+      "decisionId": "DEC-P09-LIVE-PROVIDER-CONFORMANCE",
+      "status": "BLOCKED_EXTERNAL",
+      "owner": "backend-provider-implementation+platform-security",
+      "decision": "The reference provider host does not prove production persistence, transaction isolation, provider transport, token validation or cross-workspace enforcement. All external provider packs must still execute against a provisioned backend and two isolated workspaces.",
+      "operations": [],
+      "blockingOperations": [],
+      "evidence": [
+        "No production/non-production backend provider URL, credentials or workspace fixtures were supplied."
+      ]
+    }
+  ]
+}

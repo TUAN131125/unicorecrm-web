@@ -1,0 +1,177 @@
+{
+  "contractVersion": "0.23.20-contract.0",
+  "scenarios": [
+    {
+      "id": "sign-in-success",
+      "operationId": "signIn",
+      "expectedStatus": 200
+    },
+    {
+      "id": "sign-in-replay",
+      "operationId": "signIn",
+      "expectedStatus": 200
+    },
+    {
+      "id": "sign-in-mfa-required",
+      "operationId": "signIn",
+      "expectedStatus": 202
+    },
+    {
+      "id": "sign-in-invalid-credentials",
+      "operationId": "signIn",
+      "expectedStatus": 401,
+      "expectedCode": "INVALID_CREDENTIALS"
+    },
+    {
+      "id": "sign-in-suspended",
+      "operationId": "signIn",
+      "expectedStatus": 403,
+      "expectedCode": "ACCOUNT_SUSPENDED"
+    },
+    {
+      "id": "sign-in-email-unverified",
+      "operationId": "signIn",
+      "expectedStatus": 403,
+      "expectedCode": "EMAIL_NOT_VERIFIED"
+    },
+    {
+      "id": "verify-mfa-success",
+      "operationId": "verifyMfa",
+      "expectedStatus": 200
+    },
+    {
+      "id": "verify-mfa-replay",
+      "operationId": "verifyMfa",
+      "expectedStatus": 200
+    },
+    {
+      "id": "verify-mfa-invalid",
+      "operationId": "verifyMfa",
+      "expectedStatus": 422,
+      "expectedCode": "MFA_INVALID"
+    },
+    {
+      "id": "verify-mfa-expired",
+      "operationId": "verifyMfa",
+      "expectedStatus": 409,
+      "expectedCode": "MFA_EXPIRED"
+    },
+    {
+      "id": "current-session-success",
+      "operationId": "getCurrentSession",
+      "expectedStatus": 200
+    },
+    {
+      "id": "current-session-expired",
+      "operationId": "getCurrentSession",
+      "expectedStatus": 401,
+      "expectedCode": "SESSION_EXPIRED"
+    },
+    {
+      "id": "refresh-success",
+      "operationId": "refreshSession",
+      "expectedStatus": 200
+    },
+    {
+      "id": "refresh-replay",
+      "operationId": "refreshSession",
+      "expectedStatus": 200
+    },
+    {
+      "id": "refresh-expired",
+      "operationId": "refreshSession",
+      "expectedStatus": 401,
+      "expectedCode": "SESSION_EXPIRED"
+    },
+    {
+      "id": "sign-out-success",
+      "operationId": "signOut",
+      "expectedStatus": 200
+    },
+    {
+      "id": "sign-out-replay",
+      "operationId": "signOut",
+      "expectedStatus": 200
+    },
+    {
+      "id": "register-success",
+      "operationId": "registerAccount",
+      "expectedStatus": 201
+    },
+    {
+      "id": "register-replay",
+      "operationId": "registerAccount",
+      "expectedStatus": 201
+    },
+    {
+      "id": "register-duplicate",
+      "operationId": "registerAccount",
+      "expectedStatus": 409,
+      "expectedCode": "ACCOUNT_ALREADY_EXISTS"
+    },
+    {
+      "id": "register-password-policy",
+      "operationId": "registerAccount",
+      "expectedStatus": 422,
+      "expectedCode": "PASSWORD_POLICY_VIOLATION"
+    },
+    {
+      "id": "verify-email-success",
+      "operationId": "verifyEmail",
+      "expectedStatus": 200
+    },
+    {
+      "id": "verify-email-replay",
+      "operationId": "verifyEmail",
+      "expectedStatus": 200
+    },
+    {
+      "id": "verify-email-invalid",
+      "operationId": "verifyEmail",
+      "expectedStatus": 422,
+      "expectedCode": "TOKEN_INVALID"
+    },
+    {
+      "id": "password-reset-request-accepted",
+      "operationId": "requestPasswordReset",
+      "expectedStatus": 202
+    },
+    {
+      "id": "password-reset-request-replay",
+      "operationId": "requestPasswordReset",
+      "expectedStatus": 202
+    },
+    {
+      "id": "password-reset-success",
+      "operationId": "resetPassword",
+      "expectedStatus": 200
+    },
+    {
+      "id": "password-reset-replay",
+      "operationId": "resetPassword",
+      "expectedStatus": 200
+    },
+    {
+      "id": "password-reset-expired",
+      "operationId": "resetPassword",
+      "expectedStatus": 409,
+      "expectedCode": "TOKEN_EXPIRED"
+    },
+    {
+      "id": "invitation-accept-success",
+      "operationId": "acceptWorkspaceInvitation",
+      "expectedStatus": 200
+    },
+    {
+      "id": "invitation-accept-replay",
+      "operationId": "acceptWorkspaceInvitation",
+      "expectedStatus": 200
+    },
+    {
+      "id": "invitation-invalid",
+      "operationId": "acceptWorkspaceInvitation",
+      "expectedStatus": 422,
+      "expectedCode": "INVITATION_INVALID"
+    }
+  ]
+}

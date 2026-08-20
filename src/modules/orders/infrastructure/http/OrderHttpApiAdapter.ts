@@ -1,0 +1,22 @@
+import type { CommercialApiClient, CreateDirectOrderDraftResponse, OrderBatchMutationResponse, OrderEligibilityReadModel, OrderListResponse, OrderMutationResponse, OrderPaymentProjectionReadModel } from "@/platform/api/generated/commercialApi";
+import type { AuthoritativePage } from "@/shared/application";
+import type { DirectOrderDraftAuthorityResult, OrderApiRuntime, OrderBatchMutationResult, OrderCommandOptions, OrderListQuery, OrderMutationResult, OrderVersionItem, OrderVersionedCommandOptions, RecordOrderSendEvidenceInput, OrderQueryPort, OrderCommandPort } from "../../application/ports/OrderApiRuntime";
+import { projectOrderReadModel, type OrderReadModel } from "../../application/read-models/orderReadModel";
+import type { CustomerOrder } from "../../domain/model/order.types";
+import { mapArchiveOrdersBatch, mapDirectOrderDraftMutation, mapOrderBatchMutation, mapOrderDraft, mapOrderMutation, mapRecordOrderSendEvidence } from "./OrderApiMapper";
+export class OrderHttpApiAdapter implements OrderQueryPort, OrderCommandPort {
+  constructor(private readonly api: CommercialApiClient) {}
+  async list(query: OrderListQuery = {}, signal?: AbortSignal): Promise<AuthoritativePage<CustomerOrder>> { const filters = query.filters ?? {}; const response = await this.api.listOrders<OrderListResponse>(compact({ cursor: query.cursor, limit: query.limit, search: query.search, sortBy: query.sortBy as any, sortDirection: query.sortDirection, state: filters.state, sourceQuoteId: filters.sourceQuoteId, sourceDealId: filters.sourceDealId, buyerType: filters.buyerType, buyerId: filters.buyerId }), signal); return { items: response.items.map((item) => projectOrderReadModel(item as OrderReadModel)), pageInfo: response.pageInfo, loadedAt: new Date().toISOString(), authority: "backend" }; }
+  async get(orderId: string, signal?: AbortSignal): Promise<CustomerOrder> { return projectOrderReadModel(await this.api.getOrder(orderId, {}, signal) as OrderReadModel); }
+  getFulfillmentEligibility(orderId: string, signal?: AbortSignal) { return this.api.getOrderFulfillmentEligibility<OrderEligibilityReadModel>(orderId, {}, signal); }
+  getInvoiceEligibility(orderId: string, signal?: AbortSignal) { return this.api.getOrderInvoiceEligibility<OrderEligibilityReadModel>(orderId, {}, signal); }
+  getPaymentProjection(orderId: string, signal?: AbortSignal) { return this.api.getOrderPaymentProjection<OrderPaymentProjectionReadModel>(orderId, {}, signal); }
+  async createDraft(order: CustomerOrder, options: OrderCommandOptions): Promise<DirectOrderDraftAuthorityResult> { return mapDirectOrderDraftMutation(await this.api.createOrderDraftCommand<CreateDirectOrderDraftResponse>(mapOrderDraft(order), options)); }
+  async replaceDraft(orderId: string, order: CustomerOrder, options: OrderVersionedCommandOptions): Promise<OrderMutationResult> { return mapOrderMutation(await this.api.updateOrderDraftCommand<OrderMutationResponse>(orderId, mapOrderDraft(order), options)); }
+  async repriceDraft(orderId: string, options: OrderVersionedCommandOptions): Promise<OrderMutationResult> { return mapOrderMutation(await this.api.repriceOrderDraft<OrderMutationResponse>(orderId, {}, options)); }
+  async recordSendEvidence(orderId: string, input: RecordOrderSendEvidenceInput, options: OrderVersionedCommandOptions): Promise<OrderMutationResult> { return mapOrderMutation(await this.api.recordOrderSendEvidenceCommand<OrderMutationResponse>(orderId, mapRecordOrderSendEvidence(input), options)); }
+  async archive(orderId: string, reason: string, options: OrderVersionedCommandOptions): Promise<OrderMutationResult> { return mapOrderMutation(await this.api.archiveOrderCommand<OrderMutationResponse>(orderId, { reason: reason.trim() }, options)); }
+  async archiveBatch(items: readonly OrderVersionItem[], reason: string, options: OrderCommandOptions): Promise<OrderBatchMutationResult> { return mapOrderBatchMutation(await this.api.archiveOrdersBatch<OrderBatchMutationResponse>(mapArchiveOrdersBatch(items, reason), options)); }
+  async duplicateDraft(orderId: string, title: string | undefined, options: OrderVersionedCommandOptions): Promise<OrderMutationResult> { return mapOrderMutation(await this.api.duplicateOrderDraft<OrderMutationResponse>(orderId, compact({ title: title?.trim() }), options)); }
+}
+function compact<T extends Record<string, unknown>>(value: T): T { return Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined)) as T; }

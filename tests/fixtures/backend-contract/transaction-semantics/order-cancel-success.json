@@ -1,0 +1,30 @@
+{
+  "commandId": "cmd_order_cancel_001",
+  "correlationId": "corr_order_cancel_001",
+  "aggregateId": "order_002",
+  "aggregateType": "order",
+  "version": 6,
+  "occurredAt": "2026-07-24T08:20:00.000Z",
+  "outcome": "COMMITTED",
+  "warnings": [
+    "PAYMENT_PLAN_WILL_BE_CANCELLED:payment_plan_002"
+  ],
+  "emittedEventIds": [
+    "evt_order_cancelled_001",
+    "evt_payment_plan_cancelled_001"
+  ],
+  "auditEvidenceIds": [
+    "audit_order_cancel_001"
+  ],
+  "result": {
+    "orderId": "order_002",
+    "orderState": "CANCELLED",
+    "alreadyCancelled": false,
+    "cancelledAt": "2026-07-24T08:20:00.000Z",
+    "paymentPlanId": "payment_plan_002",
+    "paymentPlanState": "CANCELLED",
+    "warnings": [
+      "PAYMENT_PLAN_WILL_BE_CANCELLED:payment_plan_002"
+    ]
+  }
+}

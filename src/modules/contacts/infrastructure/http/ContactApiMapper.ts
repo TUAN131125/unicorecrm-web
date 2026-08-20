@@ -1,0 +1,84 @@
+import type {
+  ContactDocument,
+  ContactRelationshipSummaryReadModel,
+} from "@/platform/api/generated/commercialApi";
+import { normalizeContactCanonicalProfile } from "../../domain/model/contactCanonicalProfile";
+import type { ContactRelationshipSummary } from "../../application/ports/ContactApiRuntime";
+import type {
+  Contact,
+  ContactDecisionRole,
+  ContactRelationshipLevel,
+} from "../../domain/model/contact.types";
+
+export function mapContactDocument(value: ContactDocument): Contact {
+  return normalizeContactCanonicalProfile({
+    id: value.id,
+    workspaceId: value.workspaceId,
+    name: value.displayName ?? value.fullName,
+    fullName: value.fullName,
+    salutation: value.salutation,
+    title: value.jobTitle,
+    roleTitle: value.jobTitle,
+    department: value.department,
+    roleAtCompany: value.roleAtCompany,
+    workEmail: value.workEmail,
+    personalEmail: value.personalEmail,
+    mobilePhone: value.mobilePhone,
+    workPhone: value.workPhone,
+    otherPhone: value.otherPhone,
+    zaloId: value.zaloId,
+    zalo: value.zaloId,
+    facebook: value.facebook,
+    preferredContactChannel: value.preferredContactChannel,
+    address: value.address,
+    addressDetails: value.addressDetails,
+    source: value.source,
+    ownerId: value.ownerId,
+    consent: value.consent,
+    doNotCall: value.doNotCall,
+    doNotEmail: value.doNotEmail,
+    doNotSms: value.doNotSms,
+    doNotZalo: value.doNotZalo,
+    doNotContact: value.doNotContact,
+    doNotContactReason: value.doNotContactReason,
+    decisionRole: value.decisionRole as ContactDecisionRole | undefined,
+    relationshipLevel: value.relationshipLevel as ContactRelationshipLevel | undefined,
+    painPoint: value.painPoint,
+    needSummary: value.needSummary,
+    notes: value.notes,
+    tags: value.tags ?? [],
+    organizationRelationships: value.organizationRelationships?.map((relationship) => ({
+      id: relationship.id,
+      organizationAccountId: relationship.organizationAccountId,
+      role: relationship.role,
+      roleTitle: relationship.roleTitle,
+      department: relationship.department,
+      decisionRole: relationship.decisionRole,
+      isPrimaryRepresentative: relationship.isPrimaryRepresentative,
+      effectiveFrom: relationship.effectiveFrom,
+      effectiveTo: relationship.effectiveTo,
+      createdAt: relationship.createdAt,
+      createdBy: relationship.createdBy,
+      updatedAt: relationship.updatedAt,
+      updatedBy: relationship.updatedBy,
+      endedReason: relationship.endedReason,
+    })),
+    status: value.status,
+    createdAt: value.createdAt,
+    updatedAt: value.updatedAt,
+    resourceVersion: value.version,
+  });
+}
+
+export function mapContactRelationshipSummary(value: ContactRelationshipSummaryReadModel): ContactRelationshipSummary {
+  return {
+    contact: mapContactDocument(value.contact),
+    organizationIds: [...value.organizationIds],
+    customerIds: [...value.customerIds],
+    linkedRecords: value.linkedRecords?.map((record) => ({ ...record })) ?? [],
+    linkedRecordCounts: { ...value.linkedRecordCounts },
+    allowedActions: [...value.allowedActions],
+    projectionVersion: value.projectionVersion,
+    generatedAt: value.generatedAt,
+  };
+}

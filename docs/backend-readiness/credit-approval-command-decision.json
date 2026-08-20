@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "contractVersion": "0.23.20-contract.0",
+  "decisionId": "DEC-P06-ORDER-CREDIT-APPROVAL",
+  "status": "CLOSED",
+  "canonicalAggregate": "OrderCreditApproval",
+  "states": [
+    "REQUESTED",
+    "APPROVED",
+    "REJECTED",
+    "REVOKED",
+    "CONSUMED",
+    "SUPERSEDED"
+  ],
+  "binding": [
+    "orderId",
+    "orderResourceVersion",
+    "paymentPlanId",
+    "paymentPlanResourceVersion",
+    "amount",
+    "currency",
+    "policyVersion",
+    "evaluationFingerprint"
+  ],
+  "expiryPolicy": "NO_WALL_CLOCK_EXPIRY_IN_P0_6; ANY_BINDING_CHANGE_SUPERSEDES",
+  "reusePolicy": "SINGLE_USE; CONSUMED_AT_ORDER_CONFIRMATION",
+  "capabilities": [
+    "orders.credit_approval.request",
+    "orders.credit_approval.decide"
+  ],
+  "operations": [
+    "requestOrderCreditApproval",
+    "getOrderCreditApproval",
+    "approveOrderCreditApproval",
+    "rejectOrderCreditApproval",
+    "revokeOrderCreditApproval"
+  ],
+  "confirmationRule": "confirmOrderWithPaymentPlan accepts creditApprovalId only; backend validates binding and consumes APPROVED evidence atomically.",
+  "prohibited": [
+    "inline approvedBy/approvedAt",
+    "role-name authorization",
+    "client-authored amount/policy/fingerprint",
+    "approval reuse after consumption or binding change"
+  ]
+}

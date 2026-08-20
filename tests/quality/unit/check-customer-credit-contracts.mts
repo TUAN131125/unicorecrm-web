@@ -1,0 +1,14 @@
+import assert from "node:assert/strict";
+import { money } from "@/shared/money";
+import { InMemoryPaymentRepository } from "@/modules/payments/infrastructure/InMemoryPaymentRepository";
+import { PAYMENT_METHOD_CATALOG } from "@/modules/payments/infrastructure/paymentCatalog.seed";
+import { allocatePaymentToInvoices, recordManualPayment } from "@/modules/payments/application/commands/paymentAllocationCommands";
+const now = "2026-07-15T00:00:00.000Z"; const buyerRef = { type: "CONTACT", id: "buyer" } as const;
+const repo = new InMemoryPaymentRepository({ methodCatalog: PAYMENT_METHOD_CATALOG });
+const recorded = recordManualPayment(repo, { id: "pay-credit", buyerRef, amount: money("100", "VND"), methodCode: "bank-transfer", channel: "BANK", occurredAt: now, idempotencyKey: "pay-credit", now, allowUnapplied: true, customerCreditId: "credit-1" });
+assert.ok(recorded.customerCredit); assert.equal(recorded.customerCredit?.availableAmount.amount, "100");
+assert.throws(() => allocatePaymentToInvoices(repo, { paymentRecordId: recorded.payment.id, expectedSourceVersion: 1, now, allocations: [{ id: "direct", invoice: { invoiceId: "inv", buyerRef, outstandingAmount: money("10", "VND"), version: 1 }, amount: money("10", "VND"), idempotencyKey: "direct" }] }), /converted to Customer Credit/);
+const allocated = allocatePaymentToInvoices(repo, { customerCreditId: "credit-1", expectedSourceVersion: 1, now, allocations: [{ id: "credit-a", invoice: { invoiceId: "inv", buyerRef, outstandingAmount: money("60", "VND"), version: 1 }, amount: money("60", "VND"), idempotencyKey: "credit-a" }] });
+assert.equal(allocated.remainingAmount.amount, "40");
+assert.equal(repo.listCustomerCredits()[0].state, "PARTIALLY_ALLOCATED");
+console.log("Customer Credit contracts: PASS");

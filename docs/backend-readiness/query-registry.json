@@ -1,0 +1,2193 @@
+{
+  "schemaVersion": 1,
+  "contractVersion": "0.23.20-contract.0",
+  "classifications": [
+    "PRODUCTION_API",
+    "COMPOSED_READ_MODEL",
+    "BFF_CANDIDATE",
+    "FRONTEND_LOCAL",
+    "DEMO_ONLY",
+    "UNRESOLVED"
+  ],
+  "moduleAuthorityQueries": [
+    {
+      "module": "commercial-evidence",
+      "moduleKey": "commercialEvidence",
+      "list": null,
+      "detail": null,
+      "listStatus": "UNRESOLVED",
+      "detailStatus": "UNRESOLVED",
+      "decisionId": "DEC-QUERY-COMMERCIAL-EVIDENCE-COVERAGE"
+    },
+    {
+      "module": "contacts",
+      "moduleKey": "contacts",
+      "list": {
+        "operationId": "listContacts",
+        "method": "GET",
+        "path": "/contacts",
+        "requestSchema": null,
+        "responseSchema": "ContactList",
+        "status": "PRODUCTION_CONTRACT_READY",
+        "capability": "contacts.read",
+        "resourceScope": "WORKSPACE",
+        "dataScope": "WORKSPACE",
+        "idempotencyPolicy": "NOT_APPLICABLE",
+        "concurrencyPolicy": "NOT_APPLICABLE",
+        "auditRequirement": "READ_ACCESS_LOG",
+        "eventExpectation": "NOT_APPLICABLE",
+        "transactionBoundary": "READ_ONLY",
+        "moduleOwner": "contacts",
+        "decisionId": null
+      },
+      "detail": {
+        "operationId": "getContact",
+        "method": "GET",
+        "path": "/contacts/{contactId}",
+        "requestSchema": null,
+        "responseSchema": "ContactDocument",
+        "status": "PRODUCTION_CONTRACT_READY",
+        "capability": "contacts.read",
+        "resourceScope": "RESOURCE",
+        "dataScope": "WORKSPACE",
+        "idempotencyPolicy": "NOT_APPLICABLE",
+        "concurrencyPolicy": "NOT_APPLICABLE",
+        "auditRequirement": "READ_ACCESS_LOG",
+        "eventExpectation": "NOT_APPLICABLE",
+        "transactionBoundary": "READ_ONLY",
+        "moduleOwner": "contacts",
+        "decisionId": null
+      },
+      "listStatus": "PRODUCTION_API",
+      "detailStatus": "PRODUCTION_API",
+      "decisionId": null
+    },
+    {
+      "module": "customers",
+      "moduleKey": "customers",
+      "list": {
+        "operationId": "listCustomers",
+        "method": "GET",
+        "path": "/customers",
+        "requestSchema": null,
+        "responseSchema": "CustomerList",
+        "status": "PRODUCTION_CONTRACT_READY",
+        "capability": "customers.view",
+        "resourceScope": "WORKSPACE",
+        "dataScope": "WORKSPACE",
+        "idempotencyPolicy": "NOT_APPLICABLE",
+        "concurrencyPolicy": "NOT_APPLICABLE",
+        "auditRequirement": "READ_ACCESS_LOG",
+        "eventExpectation": "NOT_APPLICABLE",
+        "transactionBoundary": "READ_ONLY",
+        "moduleOwner": "customers",
+        "decisionId": null
+      },
+      "detail": {
+        "operationId": "getCustomer",
+        "method": "GET",
+        "path": "/customers/{customerId}",
+        "requestSchema": null,
+        "responseSchema": "CustomerDocument",
+        "status": "PRODUCTION_CONTRACT_READY",
+        "capability": "customers.view",
+        "resourceScope": "RESOURCE",
+        "dataScope": "WORKSPACE",
+        "idempotencyPolicy": "NOT_APPLICABLE",
+        "concurrencyPolicy": "NOT_APPLICABLE",
+        "auditRequirement": "READ_ACCESS_LOG",
+        "eventExpectation": "NOT_APPLICABLE",
+        "transactionBoundary": "READ_ONLY",
+        "moduleOwner": "customers",
+        "decisionId": null
+      },
+      "listStatus": "PRODUCTION_API",
+      "detailStatus": "PRODUCTION_API",
+      "decisionId": null
+    },
+    {
+      "module": "deals",
+      "moduleKey": "deals",
+      "list": {
+        "operationId": "listDeals"
+      },
+      "detail": {
+        "operationId": "getDeal"
+      },
+      "listStatus": "PRODUCTION_API",
+      "detailStatus": "PRODUCTION_API",
+      "decisionId": "DEC-P03-DEAL-READ-MODEL-CLOSED"
+    },
+    {
+      "module": "invoices",
+      "moduleKey": "invoices",
+      "list": {
+        "operationId": "listInvoices",
+        "method": "GET",
+        "path": "/invoices",
+        "requestSchema": null,
+        "responseSchema": "InvoiceList",
+        "status": "PRODUCTION_CONTRACT_READY",
+        "capability": "invoices.read",
+        "resourceScope": "WORKSPACE",
+        "dataScope": "WORKSPACE",
+        "idempotencyPolicy": "NOT_APPLICABLE",
+        "concurrencyPolicy": "NOT_APPLICABLE",
+        "auditRequirement": "READ_ACCESS_LOG",
+        "eventExpectation": "NOT_APPLICABLE",
+        "transactionBoundary": "READ_ONLY",
+        "moduleOwner": "invoices",
+        "decisionId": null
+      },
+      "detail": {
+        "operationId": "getInvoice",
+        "method": "GET",
+        "path": "/invoices/{invoiceId}",
+        "requestSchema": null,
+        "responseSchema": "InvoiceDocument",
+        "status": "PRODUCTION_CONTRACT_READY",
+        "capability": "invoices.read",
+        "resourceScope": "RESOURCE",
+        "dataScope": "WORKSPACE",
+        "idempotencyPolicy": "NOT_APPLICABLE",
+        "concurrencyPolicy": "NOT_APPLICABLE",
+        "auditRequirement": "READ_ACCESS_LOG",
+        "eventExpectation": "NOT_APPLICABLE",
+        "transactionBoundary": "READ_ONLY",
+        "moduleOwner": "invoices",
+        "decisionId": null
+      },
+      "listStatus": "PRODUCTION_API",
+      "detailStatus": "PRODUCTION_API",
+      "decisionId": null
+    },
+    {
+      "module": "leads",
+      "moduleKey": "leads",
+      "list": {
+        "operationId": "listLeads"
+      },
+      "detail": {
+        "operationId": "getLead"
+      },
+      "listStatus": "PRODUCTION_API",
+      "detailStatus": "PRODUCTION_API",
+      "decisionId": "DEC-P10-LEADS-APPLICATION-DTO-ADAPTER"
+    },
+    {
+      "module": "orders",
+      "moduleKey": "orders",
+      "list": {
+        "operationId": "listOrders"
+      },
+      "detail": {
+        "operationId": "getOrder"
+      },
+      "listStatus": "PRODUCTION_API",
+      "detailStatus": "PRODUCTION_API",
+      "decisionId": "DEC-P03-ORDER-READ-MODEL-CLOSED"
+    },
+    {
+      "module": "organizations",
+      "moduleKey": "organizations",
+      "list": {
+        "operationId": "listOrganizations",
+        "method": "GET",
+        "path": "/organizations",
+        "requestSchema": null,
+        "responseSchema": "OrganizationList",
+        "status": "PRODUCTION_CONTRACT_READY",
+        "capability": "organizations.read",
+        "resourceScope": "WORKSPACE",
+        "dataScope": "WORKSPACE",
+        "idempotencyPolicy": "NOT_APPLICABLE",
+        "concurrencyPolicy": "NOT_APPLICABLE",
+        "auditRequirement": "READ_ACCESS_LOG",
+        "eventExpectation": "NOT_APPLICABLE",
+        "transactionBoundary": "READ_ONLY",
+        "moduleOwner": "organizations",
+        "decisionId": null
+      },
+      "detail": {
+        "operationId": "getOrganization",
+        "method": "GET",
+        "path": "/organizations/{organizationId}",
+        "requestSchema": null,
+        "responseSchema": "OrganizationDocument",
+        "status": "PRODUCTION_CONTRACT_READY",
+        "capability": "organizations.read",
+        "resourceScope": "RESOURCE",
+        "dataScope": "WORKSPACE",
+        "idempotencyPolicy": "NOT_APPLICABLE",
+        "concurrencyPolicy": "NOT_APPLICABLE",
+        "auditRequirement": "READ_ACCESS_LOG",
+        "eventExpectation": "NOT_APPLICABLE",
+        "transactionBoundary": "READ_ONLY",
+        "moduleOwner": "organizations",
+        "decisionId": null
+      },
+      "listStatus": "PRODUCTION_API",
+      "detailStatus": "PRODUCTION_API",
+      "decisionId": null
+    },
+    {
+      "module": "payments",
+      "moduleKey": "payments",
+      "list": {
+        "operationId": "listPaymentRecords",
+        "method": "GET",
+        "path": "/payments",
+        "requestSchema": null,
+        "responseSchema": "PaymentRecordList",
+        "status": "PRODUCTION_CONTRACT_READY",
+        "capability": "payments.read",
+        "resourceScope": "WORKSPACE",
+        "dataScope": "WORKSPACE",
+        "idempotencyPolicy": "NOT_APPLICABLE",
+        "concurrencyPolicy": "NOT_APPLICABLE",
+        "auditRequirement": "READ_ACCESS_LOG",
+        "eventExpectation": "NOT_APPLICABLE",
+        "transactionBoundary": "READ_ONLY",
+        "moduleOwner": "payments",
+        "decisionId": "DEC-P04-PAYMENT-LEDGER-READ-MODEL"
+      },
+      "detail": {
+        "operationId": "getPaymentRecordDetail",
+        "method": "GET",
+        "path": "/payments/{paymentRecordId}/detail",
+        "requestSchema": null,
+        "responseSchema": "PaymentRecordDetailResponse",
+        "status": "PRODUCTION_CONTRACT_READY",
+        "capability": "payments.read",
+        "resourceScope": "RESOURCE",
+        "dataScope": "WORKSPACE",
+        "idempotencyPolicy": "NOT_APPLICABLE",
+        "concurrencyPolicy": "NOT_APPLICABLE",
+        "auditRequirement": "READ_ACCESS_LOG",
+        "eventExpectation": "NOT_APPLICABLE",
+        "transactionBoundary": "READ_ONLY",
+        "moduleOwner": "payments",
+        "decisionId": "DEC-P04-PAYMENT-LEDGER-READ-MODEL"
+      },
+      "listStatus": "PRODUCTION_API",
+      "detailStatus": "PRODUCTION_API",
+      "decisionId": "DEC-P04-PAYMENT-LEDGER-READ-MODEL"
+    },
+    {
+      "module": "products",
+      "moduleKey": "products",
+      "list": {
+        "operationId": "listProducts"
+      },
+      "detail": {
+        "operationId": "getProduct"
+      },
+      "listStatus": "PRODUCTION_API",
+      "detailStatus": "PRODUCTION_API",
+      "decisionId": "DEC-P10-PRODUCTS-APPLICATION-DTO-ADAPTER"
+    },
+    {
+      "module": "quotes",
+      "moduleKey": "quotes",
+      "list": {
+        "operationId": "listQuotes"
+      },
+      "detail": {
+        "operationId": "getQuote"
+      },
+      "listStatus": "PRODUCTION_API",
+      "detailStatus": "PRODUCTION_API",
+      "decisionId": "DEC-P03-QUOTE-READ-MODEL-CLOSED"
+    },
+    {
+      "module": "returns",
+      "moduleKey": "returns",
+      "list": {
+        "operationId": "listReturns"
+      },
+      "detail": {
+        "operationId": "getReturn"
+      },
+      "listStatus": "PRODUCTION_API",
+      "detailStatus": "PRODUCTION_API",
+      "decisionId": "DEC-P10-RETURNS-APPLICATION-DTO-ADAPTER"
+    },
+    {
+      "module": "shipping",
+      "moduleKey": "shipping",
+      "list": {
+        "operationId": "listShippingBookings"
+      },
+      "detail": {
+        "operationId": "getShippingBooking"
+      },
+      "listStatus": "PRODUCTION_API",
+      "detailStatus": "PRODUCTION_API",
+      "decisionId": "DEC-P10-SHIPPING-APPLICATION-DTO-ADAPTER"
+    },
+    {
+      "module": "support",
+      "moduleKey": "support",
+      "list": {
+        "operationId": "listSupportCases"
+      },
+      "detail": {
+        "operationId": "getSupportCase"
+      },
+      "listStatus": "PRODUCTION_API",
+      "detailStatus": "PRODUCTION_API",
+      "decisionId": "DEC-PHASE12-SUPPORT-API-BOUNDARY"
+    },
+    {
+      "module": "tasks",
+      "moduleKey": "tasks",
+      "list": {
+        "operationId": "listTasks"
+      },
+      "detail": {
+        "operationId": "getTask"
+      },
+      "listStatus": "PRODUCTION_API",
+      "detailStatus": "PRODUCTION_API",
+      "decisionId": "DEC-P07-TASK-READ-MODEL"
+    }
+  ],
+  "queries": [
+    {
+      "stableQueryId": "QRY-001",
+      "symbol": "getEffectivePurchaseEvidence",
+      "path": "src/modules/commercial-evidence/application/queries/purchaseEvidenceQueries.ts",
+      "line": 26,
+      "moduleOwner": "commercial-evidence",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [],
+      "decisionId": "DEC-P10-COMMERCIAL-EVIDENCE-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-002",
+      "symbol": "getPurchaseEvidenceForRelationship",
+      "path": "src/modules/commercial-evidence/application/queries/purchaseEvidenceQueries.ts",
+      "line": 16,
+      "moduleOwner": "commercial-evidence",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [],
+      "decisionId": "DEC-P10-COMMERCIAL-EVIDENCE-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-003",
+      "symbol": "projectCustomerState",
+      "path": "src/modules/commercial-evidence/application/queries/purchaseEvidenceQueries.ts",
+      "line": 35,
+      "moduleOwner": "commercial-evidence",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [],
+      "decisionId": "DEC-P10-COMMERCIAL-EVIDENCE-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-004",
+      "symbol": "findContactsByOrganizationAccountId",
+      "path": "src/modules/contacts/application/queries/contactQueries.ts",
+      "line": 40,
+      "moduleOwner": "contacts",
+      "classification": "FRONTEND_LOCAL",
+      "openApiOperationIds": [],
+      "decisionId": null
+    },
+    {
+      "stableQueryId": "QRY-005",
+      "symbol": "getContact",
+      "path": "src/modules/contacts/application/queries/contactQueries.ts",
+      "line": 11,
+      "moduleOwner": "contacts",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [],
+      "decisionId": null
+    },
+    {
+      "stableQueryId": "QRY-006",
+      "symbol": "getContactStatusCounts",
+      "path": "src/modules/contacts/application/queries/contactQueries.ts",
+      "line": 32,
+      "moduleOwner": "contacts",
+      "classification": "FRONTEND_LOCAL",
+      "openApiOperationIds": [],
+      "decisionId": null
+    },
+    {
+      "stableQueryId": "QRY-007",
+      "symbol": "queryContacts",
+      "path": "src/modules/contacts/application/queries/contactQueries.ts",
+      "line": 15,
+      "moduleOwner": "contacts",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [],
+      "decisionId": null
+    },
+    {
+      "stableQueryId": "QRY-008",
+      "symbol": "resolveOrganizationContacts",
+      "path": "src/modules/contacts/application/queries/organizationContactQueries.ts",
+      "line": 5,
+      "moduleOwner": "contacts",
+      "classification": "FRONTEND_LOCAL",
+      "openApiOperationIds": [],
+      "decisionId": null
+    },
+    {
+      "stableQueryId": "QRY-009",
+      "symbol": "resolveOrganizationPrimaryContact",
+      "path": "src/modules/contacts/application/queries/organizationContactQueries.ts",
+      "line": 18,
+      "moduleOwner": "contacts",
+      "classification": "FRONTEND_LOCAL",
+      "openApiOperationIds": [],
+      "decisionId": null
+    },
+    {
+      "stableQueryId": "QRY-010",
+      "symbol": "getContactCollectionResource",
+      "path": "src/modules/contacts/application/vertical-slice/contactAuthoritativeQueries.ts",
+      "line": 25,
+      "moduleOwner": "contacts",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "listContacts"
+      ],
+      "decisionId": "DEC-P13-RELATIONSHIP-QUERY-BOUNDARY"
+    },
+    {
+      "stableQueryId": "QRY-011",
+      "symbol": "getContactDetailResource",
+      "path": "src/modules/contacts/application/vertical-slice/contactAuthoritativeQueries.ts",
+      "line": 16,
+      "moduleOwner": "contacts",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "getContact"
+      ],
+      "decisionId": "DEC-P13-RELATIONSHIP-QUERY-BOUNDARY"
+    },
+    {
+      "stableQueryId": "QRY-012",
+      "symbol": "findCustomerByRelationshipRef",
+      "path": "src/modules/customers/application/queries/customerQueries.ts",
+      "line": 8,
+      "moduleOwner": "customers",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [],
+      "decisionId": null
+    },
+    {
+      "stableQueryId": "QRY-013",
+      "symbol": "getCustomer",
+      "path": "src/modules/customers/application/queries/customerQueries.ts",
+      "line": 4,
+      "moduleOwner": "customers",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [],
+      "decisionId": null
+    },
+    {
+      "stableQueryId": "QRY-014",
+      "symbol": "getCustomerCareCards",
+      "path": "src/modules/customers/application/queries/customerQueries.ts",
+      "line": 26,
+      "moduleOwner": "customers",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [],
+      "decisionId": null
+    },
+    {
+      "stableQueryId": "QRY-015",
+      "symbol": "queryCustomers",
+      "path": "src/modules/customers/application/queries/customerQueries.ts",
+      "line": 12,
+      "moduleOwner": "customers",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [],
+      "decisionId": null
+    },
+    {
+      "stableQueryId": "QRY-016",
+      "symbol": "assertCustomerRelationshipContext",
+      "path": "src/modules/customers/application/queries/customerRelationshipContext.ts",
+      "line": 26,
+      "moduleOwner": "customers",
+      "classification": "FRONTEND_LOCAL",
+      "openApiOperationIds": [],
+      "decisionId": null
+    },
+    {
+      "stableQueryId": "QRY-017",
+      "symbol": "resolveCustomerRelationshipContext",
+      "path": "src/modules/customers/application/queries/customerRelationshipContext.ts",
+      "line": 12,
+      "moduleOwner": "customers",
+      "classification": "FRONTEND_LOCAL",
+      "openApiOperationIds": [],
+      "decisionId": null
+    },
+    {
+      "stableQueryId": "QRY-018",
+      "symbol": "auditCustomerRelationshipDataQuality",
+      "path": "src/modules/customers/application/queries/customerRelationshipDataQuality.ts",
+      "line": 49,
+      "moduleOwner": "customers",
+      "classification": "FRONTEND_LOCAL",
+      "openApiOperationIds": [],
+      "decisionId": null
+    },
+    {
+      "stableQueryId": "QRY-019",
+      "symbol": "getCustomerCollectionResource",
+      "path": "src/modules/customers/application/vertical-slice/customerAuthoritativeQueries.ts",
+      "line": 18,
+      "moduleOwner": "customers",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "listCustomers"
+      ],
+      "decisionId": "DEC-P13-RELATIONSHIP-QUERY-BOUNDARY"
+    },
+    {
+      "stableQueryId": "QRY-020",
+      "symbol": "getCustomerDetailResource",
+      "path": "src/modules/customers/application/vertical-slice/customerAuthoritativeQueries.ts",
+      "line": 22,
+      "moduleOwner": "customers",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "getCustomer"
+      ],
+      "decisionId": "DEC-P13-RELATIONSHIP-QUERY-BOUNDARY"
+    },
+    {
+      "stableQueryId": "QRY-021",
+      "symbol": "getDeal",
+      "path": "src/modules/deals/application/queries/dealQueries.ts",
+      "line": 11,
+      "moduleOwner": "deals",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "getDeal"
+      ],
+      "decisionId": "DEC-P03-COMMERCIAL-READ-MODELS"
+    },
+    {
+      "stableQueryId": "QRY-022",
+      "symbol": "getDealStats",
+      "path": "src/modules/deals/application/queries/dealQueries.ts",
+      "line": 28,
+      "moduleOwner": "deals",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [],
+      "decisionId": "DEC-P03-COMMERCIAL-READ-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-023",
+      "symbol": "queryDeals",
+      "path": "src/modules/deals/application/queries/dealQueries.ts",
+      "line": 15,
+      "moduleOwner": "deals",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "listDeals"
+      ],
+      "decisionId": "DEC-P03-COMMERCIAL-READ-MODELS"
+    },
+    {
+      "stableQueryId": "QRY-024",
+      "symbol": "getDealCollectionResource",
+      "path": "src/modules/deals/application/vertical-slice/dealAuthoritativeQueries.ts",
+      "line": 15,
+      "moduleOwner": "deals",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "listDeals"
+      ],
+      "decisionId": "DEC-P03-COMMERCIAL-READ-MODELS"
+    },
+    {
+      "stableQueryId": "QRY-025",
+      "symbol": "getDealDetailResource",
+      "path": "src/modules/deals/application/vertical-slice/dealAuthoritativeQueries.ts",
+      "line": 19,
+      "moduleOwner": "deals",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "getDeal"
+      ],
+      "decisionId": "DEC-P03-COMMERCIAL-READ-MODELS"
+    },
+    {
+      "stableQueryId": "QRY-026",
+      "symbol": "buildReceivables",
+      "path": "src/modules/invoices/application/queries/invoiceQueries.ts",
+      "line": 23,
+      "moduleOwner": "invoices",
+      "classification": "FRONTEND_LOCAL",
+      "openApiOperationIds": [],
+      "decisionId": null
+    },
+    {
+      "stableQueryId": "QRY-027",
+      "symbol": "getInvoiceById",
+      "path": "src/modules/invoices/application/queries/invoiceQueries.ts",
+      "line": 19,
+      "moduleOwner": "invoices",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [],
+      "decisionId": null
+    },
+    {
+      "stableQueryId": "QRY-028",
+      "symbol": "queryInvoices",
+      "path": "src/modules/invoices/application/queries/invoiceQueries.ts",
+      "line": 9,
+      "moduleOwner": "invoices",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [],
+      "decisionId": null
+    },
+    {
+      "stableQueryId": "QRY-029",
+      "symbol": "getInvoiceableOrderLines",
+      "path": "src/modules/invoices/application/queries/invoiceableOrderLines.ts",
+      "line": 22,
+      "moduleOwner": "invoices",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [],
+      "decisionId": null
+    },
+    {
+      "stableQueryId": "QRY-030",
+      "symbol": "buildLeadDuplicateIndex",
+      "path": "src/modules/leads/application/queries/leadDuplicateIndex.ts",
+      "line": 69,
+      "moduleOwner": "leads",
+      "classification": "FRONTEND_LOCAL",
+      "openApiOperationIds": [],
+      "decisionId": null
+    },
+    {
+      "stableQueryId": "QRY-031",
+      "symbol": "normalizeLeadEmail",
+      "path": "src/modules/leads/application/queries/leadDuplicateIndex.ts",
+      "line": 10,
+      "moduleOwner": "leads",
+      "classification": "FRONTEND_LOCAL",
+      "openApiOperationIds": [],
+      "decisionId": "DEC-P09-QRY-031"
+    },
+    {
+      "stableQueryId": "QRY-032",
+      "symbol": "normalizeLeadPhone",
+      "path": "src/modules/leads/application/queries/leadDuplicateIndex.ts",
+      "line": 14,
+      "moduleOwner": "leads",
+      "classification": "FRONTEND_LOCAL",
+      "openApiOperationIds": [],
+      "decisionId": "DEC-P09-QRY-032"
+    },
+    {
+      "stableQueryId": "QRY-033",
+      "symbol": "assertConnectedDuplicateCluster",
+      "path": "src/modules/leads/application/queries/leadIdentityResolution.ts",
+      "line": 34,
+      "moduleOwner": "leads",
+      "classification": "FRONTEND_LOCAL",
+      "openApiOperationIds": [],
+      "decisionId": null
+    },
+    {
+      "stableQueryId": "QRY-034",
+      "symbol": "getLeadDuplicateCandidates",
+      "path": "src/modules/leads/application/queries/leadIdentityResolution.ts",
+      "line": 27,
+      "moduleOwner": "leads",
+      "classification": "FRONTEND_LOCAL",
+      "openApiOperationIds": [],
+      "decisionId": "DEC-P10-LEAD-DUPLICATE-PRESENTATION-ASSIST"
+    },
+    {
+      "stableQueryId": "QRY-035",
+      "symbol": "getLeadDuplicateMatchKeys",
+      "path": "src/modules/leads/application/queries/leadIdentityResolution.ts",
+      "line": 15,
+      "moduleOwner": "leads",
+      "classification": "FRONTEND_LOCAL",
+      "openApiOperationIds": [],
+      "decisionId": "DEC-P10-LEAD-DUPLICATE-PRESENTATION-ASSIST"
+    },
+    {
+      "stableQueryId": "QRY-036",
+      "symbol": "getLead",
+      "path": "src/modules/leads/application/queries/leadQueries.ts",
+      "line": 11,
+      "moduleOwner": "leads",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "getLead"
+      ],
+      "decisionId": "DEC-P09-QRY-036"
+    },
+    {
+      "stableQueryId": "QRY-037",
+      "symbol": "getLeadOutcomeCounts",
+      "path": "src/modules/leads/application/queries/leadQueries.ts",
+      "line": 32,
+      "moduleOwner": "leads",
+      "classification": "FRONTEND_LOCAL",
+      "openApiOperationIds": [],
+      "decisionId": null
+    },
+    {
+      "stableQueryId": "QRY-038",
+      "symbol": "getLeadQueue",
+      "path": "src/modules/leads/application/queries/leadQueries.ts",
+      "line": 15,
+      "moduleOwner": "leads",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listLeads"
+      ],
+      "decisionId": "DEC-P09-QRY-038"
+    },
+    {
+      "stableQueryId": "QRY-039",
+      "symbol": "getLeadWorkStateCounts",
+      "path": "src/modules/leads/application/queries/leadQueries.ts",
+      "line": 19,
+      "moduleOwner": "leads",
+      "classification": "FRONTEND_LOCAL",
+      "openApiOperationIds": [],
+      "decisionId": null
+    },
+    {
+      "stableQueryId": "QRY-040",
+      "symbol": "buildLeadQueueGroups",
+      "path": "src/modules/leads/application/queries/leadQueueQueries.ts",
+      "line": 14,
+      "moduleOwner": "leads",
+      "classification": "FRONTEND_LOCAL",
+      "openApiOperationIds": [],
+      "decisionId": null
+    },
+    {
+      "stableQueryId": "QRY-041",
+      "symbol": "filterLeadQueue",
+      "path": "src/modules/leads/application/queries/leadQueueQueries.ts",
+      "line": 37,
+      "moduleOwner": "leads",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listLeads"
+      ],
+      "decisionId": "DEC-P09-QRY-041"
+    },
+    {
+      "stableQueryId": "QRY-042",
+      "symbol": "getLeadCollectionResource",
+      "path": "src/modules/leads/application/vertical-slice/leadAuthoritativeQueries.ts",
+      "line": 15,
+      "moduleOwner": "leads",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "listLeads"
+      ],
+      "decisionId": "DEC-P09-QRY-042"
+    },
+    {
+      "stableQueryId": "QRY-043",
+      "symbol": "getLeadDetailResource",
+      "path": "src/modules/leads/application/vertical-slice/leadAuthoritativeQueries.ts",
+      "line": 19,
+      "moduleOwner": "leads",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "getLead"
+      ],
+      "decisionId": "DEC-P09-QRY-043"
+    },
+    {
+      "stableQueryId": "QRY-044",
+      "symbol": "flattenOrders",
+      "path": "src/modules/orders/application/queries/orderQueries.ts",
+      "line": 10,
+      "moduleOwner": "orders",
+      "classification": "FRONTEND_LOCAL",
+      "openApiOperationIds": [],
+      "decisionId": null
+    },
+    {
+      "stableQueryId": "QRY-045",
+      "symbol": "getCompletedOrders",
+      "path": "src/modules/orders/application/queries/orderQueries.ts",
+      "line": 27,
+      "moduleOwner": "orders",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [],
+      "decisionId": "DEC-P03-COMMERCIAL-READ-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-046",
+      "symbol": "getDisplayOrdersForContact",
+      "path": "src/modules/orders/application/queries/orderQueries.ts",
+      "line": 39,
+      "moduleOwner": "orders",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [],
+      "decisionId": "DEC-P03-COMMERCIAL-READ-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-047",
+      "symbol": "getOrderById",
+      "path": "src/modules/orders/application/queries/orderQueries.ts",
+      "line": 24,
+      "moduleOwner": "orders",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "getOrder"
+      ],
+      "decisionId": "DEC-P03-COMMERCIAL-READ-MODELS"
+    },
+    {
+      "stableQueryId": "QRY-048",
+      "symbol": "getOrderStats",
+      "path": "src/modules/orders/application/queries/orderQueries.ts",
+      "line": 68,
+      "moduleOwner": "orders",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [],
+      "decisionId": "DEC-P03-COMMERCIAL-READ-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-049",
+      "symbol": "getOrdersForBuyer",
+      "path": "src/modules/orders/application/queries/orderQueries.ts",
+      "line": 28,
+      "moduleOwner": "orders",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [],
+      "decisionId": "DEC-P03-COMMERCIAL-READ-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-050",
+      "symbol": "getOrdersForContact",
+      "path": "src/modules/orders/application/queries/orderQueries.ts",
+      "line": 29,
+      "moduleOwner": "orders",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [],
+      "decisionId": "DEC-P03-COMMERCIAL-READ-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-051",
+      "symbol": "getOrdersForCustomer",
+      "path": "src/modules/orders/application/queries/orderQueries.ts",
+      "line": 25,
+      "moduleOwner": "orders",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [],
+      "decisionId": "DEC-P03-COMMERCIAL-READ-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-052",
+      "symbol": "getOrdersForDeal",
+      "path": "src/modules/orders/application/queries/orderQueries.ts",
+      "line": 31,
+      "moduleOwner": "orders",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [],
+      "decisionId": "DEC-P03-COMMERCIAL-READ-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-053",
+      "symbol": "getOrdersForQuote",
+      "path": "src/modules/orders/application/queries/orderQueries.ts",
+      "line": 26,
+      "moduleOwner": "orders",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [],
+      "decisionId": "DEC-P03-COMMERCIAL-READ-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-054",
+      "symbol": "normalizeQuoteAdjustmentToOrderAdjustment",
+      "path": "src/modules/orders/application/queries/orderQueries.ts",
+      "line": 98,
+      "moduleOwner": "orders",
+      "classification": "FRONTEND_LOCAL",
+      "openApiOperationIds": [],
+      "decisionId": null
+    },
+    {
+      "stableQueryId": "QRY-055",
+      "symbol": "normalizeSourceLineItemToOrderItem",
+      "path": "src/modules/orders/application/queries/orderQueries.ts",
+      "line": 79,
+      "moduleOwner": "orders",
+      "classification": "FRONTEND_LOCAL",
+      "openApiOperationIds": [],
+      "decisionId": null
+    },
+    {
+      "stableQueryId": "QRY-056",
+      "symbol": "queryOrders",
+      "path": "src/modules/orders/application/queries/orderQueries.ts",
+      "line": 59,
+      "moduleOwner": "orders",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "listOrders"
+      ],
+      "decisionId": "DEC-P03-COMMERCIAL-READ-MODELS"
+    },
+    {
+      "stableQueryId": "QRY-057",
+      "symbol": "resolveOrderSourceFromQuote",
+      "path": "src/modules/orders/application/queries/orderQueries.ts",
+      "line": 115,
+      "moduleOwner": "orders",
+      "classification": "FRONTEND_LOCAL",
+      "openApiOperationIds": [],
+      "decisionId": null
+    },
+    {
+      "stableQueryId": "QRY-058",
+      "symbol": "getOrderCollectionResource",
+      "path": "src/modules/orders/application/vertical-slice/orderAuthoritativeQueries.ts",
+      "line": 15,
+      "moduleOwner": "orders",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "listOrders"
+      ],
+      "decisionId": "DEC-P03-COMMERCIAL-READ-MODELS"
+    },
+    {
+      "stableQueryId": "QRY-059",
+      "symbol": "getOrderDetailResource",
+      "path": "src/modules/orders/application/vertical-slice/orderAuthoritativeQueries.ts",
+      "line": 19,
+      "moduleOwner": "orders",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "getOrder"
+      ],
+      "decisionId": "DEC-P03-COMMERCIAL-READ-MODELS"
+    },
+    {
+      "stableQueryId": "QRY-060",
+      "symbol": "getOrganizationAccountContactIds",
+      "path": "src/modules/organizations/application/queries/organizationAccountQueries.ts",
+      "line": 3,
+      "moduleOwner": "organizations",
+      "classification": "FRONTEND_LOCAL",
+      "openApiOperationIds": [],
+      "decisionId": null
+    },
+    {
+      "stableQueryId": "QRY-061",
+      "symbol": "getOrganizationAccountCollectionResource",
+      "path": "src/modules/organizations/application/vertical-slice/organizationAuthoritativeQueries.ts",
+      "line": 34,
+      "moduleOwner": "organizations",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "listOrganizations"
+      ],
+      "decisionId": "DEC-P13-RELATIONSHIP-QUERY-BOUNDARY"
+    },
+    {
+      "stableQueryId": "QRY-062",
+      "symbol": "getOrganizationAccountDetailResource",
+      "path": "src/modules/organizations/application/vertical-slice/organizationAuthoritativeQueries.ts",
+      "line": 19,
+      "moduleOwner": "organizations",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "getOrganization"
+      ],
+      "decisionId": "DEC-P13-RELATIONSHIP-QUERY-BOUNDARY"
+    },
+    {
+      "stableQueryId": "QRY-063",
+      "symbol": "getEffectivePaymentMethodCatalog",
+      "path": "src/modules/payments/application/queries/effectivePaymentMethodCatalog.ts",
+      "line": 13,
+      "moduleOwner": "payments",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "getPaymentMethodCatalog",
+        "getWorkspaceConfiguration"
+      ],
+      "decisionId": "DEC-P04-EFFECTIVE-PAYMENT-METHOD-CATALOG"
+    },
+    {
+      "stableQueryId": "QRY-064",
+      "symbol": "evaluatePaymentFulfillmentGate",
+      "path": "src/modules/payments/application/queries/paymentPlanQueries.ts",
+      "line": 79,
+      "moduleOwner": "payments",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listPaymentPlans",
+        "listPaymentScheduleLines"
+      ],
+      "decisionId": "DEC-P05-PAYMENT-PLAN-READ-MODEL"
+    },
+    {
+      "stableQueryId": "QRY-065",
+      "symbol": "getActivePaymentPlanForOrder",
+      "path": "src/modules/payments/application/queries/paymentPlanQueries.ts",
+      "line": 14,
+      "moduleOwner": "payments",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listPaymentPlans"
+      ],
+      "decisionId": "DEC-P05-PAYMENT-PLAN-READ-MODEL"
+    },
+    {
+      "stableQueryId": "QRY-066",
+      "symbol": "getCodCollectibleFromActivePlan",
+      "path": "src/modules/payments/application/queries/paymentPlanQueries.ts",
+      "line": 95,
+      "moduleOwner": "payments",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [],
+      "decisionId": "DEC-P10-COD-COLLECTIBLE-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-067",
+      "symbol": "getCustomerCredits",
+      "path": "src/modules/payments/application/queries/paymentPlanQueries.ts",
+      "line": 75,
+      "moduleOwner": "payments",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "listCustomerCredits"
+      ],
+      "decisionId": "DEC-P04-PAYMENT-LEDGER-READ-MODEL"
+    },
+    {
+      "stableQueryId": "QRY-068",
+      "symbol": "getEffectiveAllocationsForInvoice",
+      "path": "src/modules/payments/application/queries/paymentPlanQueries.ts",
+      "line": 71,
+      "moduleOwner": "payments",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "listPaymentAllocations"
+      ],
+      "decisionId": "DEC-P04-PAYMENT-LEDGER-READ-MODEL"
+    },
+    {
+      "stableQueryId": "QRY-069",
+      "symbol": "getPaymentIntents",
+      "path": "src/modules/payments/application/queries/paymentPlanQueries.ts",
+      "line": 31,
+      "moduleOwner": "payments",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "listPaymentIntents"
+      ],
+      "decisionId": "DEC-P05-PAYMENT-INTENT-READ-MODEL"
+    },
+    {
+      "stableQueryId": "QRY-070",
+      "symbol": "getPaymentMethodCatalog",
+      "path": "src/modules/payments/application/queries/paymentPlanQueries.ts",
+      "line": 22,
+      "moduleOwner": "payments",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "getPaymentMethodCatalog"
+      ],
+      "decisionId": "DEC-P05-PAYMENT-INTENT-MONEY-CONTRACT"
+    },
+    {
+      "stableQueryId": "QRY-071",
+      "symbol": "getPaymentPlansForOrder",
+      "path": "src/modules/payments/application/queries/paymentPlanQueries.ts",
+      "line": 10,
+      "moduleOwner": "payments",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "listPaymentPlans"
+      ],
+      "decisionId": "DEC-P05-PAYMENT-PLAN-READ-MODEL"
+    },
+    {
+      "stableQueryId": "QRY-072",
+      "symbol": "getPaymentRecordAvailableAmount",
+      "path": "src/modules/payments/application/queries/paymentPlanQueries.ts",
+      "line": 60,
+      "moduleOwner": "payments",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "getPaymentRecordDetail"
+      ],
+      "decisionId": "DEC-P04-PAYMENT-AVAILABLE-AMOUNT-PROJECTION"
+    },
+    {
+      "stableQueryId": "QRY-073",
+      "symbol": "getPaymentRecords",
+      "path": "src/modules/payments/application/queries/paymentPlanQueries.ts",
+      "line": 35,
+      "moduleOwner": "payments",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "listPaymentRecords"
+      ],
+      "decisionId": "DEC-P04-PAYMENT-LEDGER-READ-MODEL"
+    },
+    {
+      "stableQueryId": "QRY-074",
+      "symbol": "getRefundIntents",
+      "path": "src/modules/payments/application/queries/paymentPlanQueries.ts",
+      "line": 39,
+      "moduleOwner": "payments",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "listRefunds"
+      ],
+      "decisionId": "DEC-P04-REFUND-READ-MODEL"
+    },
+    {
+      "stableQueryId": "QRY-075",
+      "symbol": "getRefundablePaymentRecordsForOrder",
+      "path": "src/modules/payments/application/queries/paymentPlanQueries.ts",
+      "line": 46,
+      "moduleOwner": "payments",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listPaymentRecords",
+        "listRefunds",
+        "listPaymentAllocations"
+      ],
+      "decisionId": "DEC-P04-REFUNDABLE-PAYMENT-PROJECTION"
+    },
+    {
+      "stableQueryId": "QRY-076",
+      "symbol": "getScheduleLinesForPlan",
+      "path": "src/modules/payments/application/queries/paymentPlanQueries.ts",
+      "line": 18,
+      "moduleOwner": "payments",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "listPaymentScheduleLines"
+      ],
+      "decisionId": "DEC-P05-PAYMENT-PLAN-READ-MODEL"
+    },
+    {
+      "stableQueryId": "QRY-077",
+      "symbol": "evaluatePaymentBookingReadiness",
+      "path": "src/modules/payments/application/queries/paymentQueries.ts",
+      "line": 58,
+      "moduleOwner": "payments",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listPaymentPlans",
+        "listPaymentScheduleLines"
+      ],
+      "decisionId": "DEC-P05-PAYMENT-PLAN-READ-MODEL"
+    },
+    {
+      "stableQueryId": "QRY-078",
+      "symbol": "evaluatePaymentCompletionReadiness",
+      "path": "src/modules/payments/application/queries/paymentQueries.ts",
+      "line": 50,
+      "moduleOwner": "payments",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listPaymentPlans",
+        "listPaymentScheduleLines"
+      ],
+      "decisionId": "DEC-P05-PAYMENT-PLAN-READ-MODEL"
+    },
+    {
+      "stableQueryId": "QRY-079",
+      "symbol": "getCodCollectibleAmountForOrder",
+      "path": "src/modules/payments/application/queries/paymentQueries.ts",
+      "line": 76,
+      "moduleOwner": "payments",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listPaymentPlans",
+        "listPaymentScheduleLines",
+        "getPaymentMethodCatalog"
+      ],
+      "decisionId": "DEC-P05-PAYMENT-PLAN-READ-MODEL"
+    },
+    {
+      "stableQueryId": "QRY-080",
+      "symbol": "getPaymentObligations",
+      "path": "src/modules/payments/application/queries/paymentQueries.ts",
+      "line": 16,
+      "moduleOwner": "payments",
+      "classification": "DEMO_ONLY",
+      "openApiOperationIds": [],
+      "decisionId": "DEC-P10-LEGACY-PAYMENT-NUMERIC-QUERY-RETIREMENT"
+    },
+    {
+      "stableQueryId": "QRY-081",
+      "symbol": "getPaymentObligationsForOrder",
+      "path": "src/modules/payments/application/queries/paymentQueries.ts",
+      "line": 30,
+      "moduleOwner": "payments",
+      "classification": "DEMO_ONLY",
+      "openApiOperationIds": [],
+      "decisionId": "DEC-P10-LEGACY-PAYMENT-NUMERIC-QUERY-RETIREMENT"
+    },
+    {
+      "stableQueryId": "QRY-082",
+      "symbol": "getRefundablePaymentTransactionsForOrder",
+      "path": "src/modules/payments/application/queries/paymentQueries.ts",
+      "line": 82,
+      "moduleOwner": "payments",
+      "classification": "DEMO_ONLY",
+      "openApiOperationIds": [],
+      "decisionId": "DEC-P10-LEGACY-PAYMENT-NUMERIC-QUERY-RETIREMENT"
+    },
+    {
+      "stableQueryId": "QRY-083",
+      "symbol": "getTransactionsForOrder",
+      "path": "src/modules/payments/application/queries/paymentQueries.ts",
+      "line": 12,
+      "moduleOwner": "payments",
+      "classification": "DEMO_ONLY",
+      "openApiOperationIds": [],
+      "decisionId": "DEC-P10-LEGACY-PAYMENT-NUMERIC-QUERY-RETIREMENT"
+    },
+    {
+      "stableQueryId": "QRY-084",
+      "symbol": "isCodCollectibleObligation",
+      "path": "src/modules/payments/application/queries/paymentQueries.ts",
+      "line": 66,
+      "moduleOwner": "payments",
+      "classification": "FRONTEND_LOCAL",
+      "openApiOperationIds": [],
+      "decisionId": "DEC-P10-LEGACY-PAYMENT-NUMERIC-QUERY-RETIREMENT"
+    },
+    {
+      "stableQueryId": "QRY-085",
+      "symbol": "projectPaymentSummary",
+      "path": "src/modules/payments/application/queries/paymentQueries.ts",
+      "line": 92,
+      "moduleOwner": "payments",
+      "classification": "BFF_CANDIDATE",
+      "openApiOperationIds": [],
+      "decisionId": null
+    },
+    {
+      "stableQueryId": "QRY-086",
+      "symbol": "queryPaymentTransactions",
+      "path": "src/modules/payments/application/queries/paymentQueries.ts",
+      "line": 38,
+      "moduleOwner": "payments",
+      "classification": "DEMO_ONLY",
+      "openApiOperationIds": [],
+      "decisionId": "DEC-P10-LEGACY-PAYMENT-NUMERIC-QUERY-RETIREMENT"
+    },
+    {
+      "stableQueryId": "QRY-087",
+      "symbol": "getPaymentRecordDetail",
+      "path": "src/modules/payments/application/queries/paymentRecordDetail.ts",
+      "line": 30,
+      "moduleOwner": "payments",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "getPaymentRecordDetail"
+      ],
+      "decisionId": "DEC-P04-PAYMENT-LEDGER-READ-MODEL"
+    },
+    {
+      "stableQueryId": "QRY-088",
+      "symbol": "getProductCatalogStats",
+      "path": "src/modules/products/application/queries/productCatalogQueries.ts",
+      "line": 81,
+      "moduleOwner": "products",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listProducts"
+      ],
+      "decisionId": "DEC-P09-QRY-088"
+    },
+    {
+      "stableQueryId": "QRY-089",
+      "symbol": "getProductCategories",
+      "path": "src/modules/products/application/queries/productCatalogQueries.ts",
+      "line": 20,
+      "moduleOwner": "products",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listProducts"
+      ],
+      "decisionId": "DEC-P09-QRY-089"
+    },
+    {
+      "stableQueryId": "QRY-090",
+      "symbol": "getProductTags",
+      "path": "src/modules/products/application/queries/productCatalogQueries.ts",
+      "line": 24,
+      "moduleOwner": "products",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listProducts"
+      ],
+      "decisionId": "DEC-P09-QRY-090"
+    },
+    {
+      "stableQueryId": "QRY-091",
+      "symbol": "queryProducts",
+      "path": "src/modules/products/application/queries/productCatalogQueries.ts",
+      "line": 28,
+      "moduleOwner": "products",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listProducts"
+      ],
+      "decisionId": "DEC-P09-QRY-091"
+    },
+    {
+      "stableQueryId": "QRY-092",
+      "symbol": "getProductCollectionResource",
+      "path": "src/modules/products/application/vertical-slice/productAuthoritativeQueries.ts",
+      "line": 15,
+      "moduleOwner": "products",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "listProducts"
+      ],
+      "decisionId": "DEC-P09-QRY-092"
+    },
+    {
+      "stableQueryId": "QRY-093",
+      "symbol": "getProductDetailResource",
+      "path": "src/modules/products/application/vertical-slice/productAuthoritativeQueries.ts",
+      "line": 19,
+      "moduleOwner": "products",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "getProduct"
+      ],
+      "decisionId": "DEC-P09-QRY-093"
+    },
+    {
+      "stableQueryId": "QRY-094",
+      "symbol": "validateQuoteDraft",
+      "path": "src/modules/quotes/application/queries/quoteDraftValidation.ts",
+      "line": 13,
+      "moduleOwner": "quotes",
+      "classification": "FRONTEND_LOCAL",
+      "openApiOperationIds": [],
+      "decisionId": null
+    },
+    {
+      "stableQueryId": "QRY-095",
+      "symbol": "getQuote",
+      "path": "src/modules/quotes/application/queries/quoteQueries.ts",
+      "line": 11,
+      "moduleOwner": "quotes",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "getQuote"
+      ],
+      "decisionId": "DEC-P03-COMMERCIAL-READ-MODELS"
+    },
+    {
+      "stableQueryId": "QRY-096",
+      "symbol": "getQuoteDealId",
+      "path": "src/modules/quotes/application/queries/quoteQueries.ts",
+      "line": 33,
+      "moduleOwner": "quotes",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [],
+      "decisionId": "DEC-P03-COMMERCIAL-READ-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-097",
+      "symbol": "getQuoteStats",
+      "path": "src/modules/quotes/application/queries/quoteQueries.ts",
+      "line": 37,
+      "moduleOwner": "quotes",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [],
+      "decisionId": "DEC-P03-COMMERCIAL-READ-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-098",
+      "symbol": "isQuoteAccepted",
+      "path": "src/modules/quotes/application/queries/quoteQueries.ts",
+      "line": 28,
+      "moduleOwner": "quotes",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [],
+      "decisionId": "DEC-P03-COMMERCIAL-READ-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-099",
+      "symbol": "queryQuotes",
+      "path": "src/modules/quotes/application/queries/quoteQueries.ts",
+      "line": 15,
+      "moduleOwner": "quotes",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "listQuotes"
+      ],
+      "decisionId": "DEC-P03-COMMERCIAL-READ-MODELS"
+    },
+    {
+      "stableQueryId": "QRY-100",
+      "symbol": "getQuoteCollectionResource",
+      "path": "src/modules/quotes/application/vertical-slice/quoteAuthoritativeQueries.ts",
+      "line": 15,
+      "moduleOwner": "quotes",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "listQuotes"
+      ],
+      "decisionId": "DEC-P03-COMMERCIAL-READ-MODELS"
+    },
+    {
+      "stableQueryId": "QRY-101",
+      "symbol": "getQuoteDetailResource",
+      "path": "src/modules/quotes/application/vertical-slice/quoteAuthoritativeQueries.ts",
+      "line": 19,
+      "moduleOwner": "quotes",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "getQuote"
+      ],
+      "decisionId": "DEC-P03-COMMERCIAL-READ-MODELS"
+    },
+    {
+      "stableQueryId": "QRY-102",
+      "symbol": "getReturnOperationalStage",
+      "path": "src/modules/returns/application/queries/returnQueries.ts",
+      "line": 5,
+      "moduleOwner": "returns",
+      "classification": "FRONTEND_LOCAL",
+      "openApiOperationIds": [],
+      "decisionId": "DEC-P09-QRY-102"
+    },
+    {
+      "stableQueryId": "QRY-103",
+      "symbol": "getReturnStats",
+      "path": "src/modules/returns/application/queries/returnQueries.ts",
+      "line": 31,
+      "moduleOwner": "returns",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listReturns"
+      ],
+      "decisionId": "DEC-P09-QRY-103"
+    },
+    {
+      "stableQueryId": "QRY-104",
+      "symbol": "queryReturns",
+      "path": "src/modules/returns/application/queries/returnQueries.ts",
+      "line": 16,
+      "moduleOwner": "returns",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listReturns"
+      ],
+      "decisionId": "DEC-P09-QRY-104"
+    },
+    {
+      "stableQueryId": "QRY-105",
+      "symbol": "getReturnCollectionResource",
+      "path": "src/modules/returns/application/vertical-slice/returnAuthoritativeQueries.ts",
+      "line": 17,
+      "moduleOwner": "returns",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "listReturns"
+      ],
+      "decisionId": "DEC-P09-QRY-105"
+    },
+    {
+      "stableQueryId": "QRY-106",
+      "symbol": "getReturnDetailResource",
+      "path": "src/modules/returns/application/vertical-slice/returnAuthoritativeQueries.ts",
+      "line": 20,
+      "moduleOwner": "returns",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "getReturn"
+      ],
+      "decisionId": "DEC-P09-QRY-106"
+    },
+    {
+      "stableQueryId": "QRY-107",
+      "symbol": "getShippingBookingsForSource",
+      "path": "src/modules/shipping/application/queries/shippingQueries.ts",
+      "line": 6,
+      "moduleOwner": "shipping",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listShippingBookings"
+      ],
+      "decisionId": "DEC-P09-QRY-107"
+    },
+    {
+      "stableQueryId": "QRY-108",
+      "symbol": "getShippingKpis",
+      "path": "src/modules/shipping/application/queries/shippingQueries.ts",
+      "line": 34,
+      "moduleOwner": "shipping",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listShippingBookings"
+      ],
+      "decisionId": "DEC-P09-QRY-108"
+    },
+    {
+      "stableQueryId": "QRY-109",
+      "symbol": "queryShippingBookings",
+      "path": "src/modules/shipping/application/queries/shippingQueries.ts",
+      "line": 10,
+      "moduleOwner": "shipping",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listShippingBookings"
+      ],
+      "decisionId": "DEC-P09-QRY-109"
+    },
+    {
+      "stableQueryId": "QRY-110",
+      "symbol": "getShippingBookingCollectionResource",
+      "path": "src/modules/shipping/application/vertical-slice/shippingAuthoritativeQueries.ts",
+      "line": 15,
+      "moduleOwner": "shipping",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "listShippingBookings"
+      ],
+      "decisionId": "DEC-P09-QRY-110"
+    },
+    {
+      "stableQueryId": "QRY-111",
+      "symbol": "getShippingBookingDetailResource",
+      "path": "src/modules/shipping/application/vertical-slice/shippingAuthoritativeQueries.ts",
+      "line": 19,
+      "moduleOwner": "shipping",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "getShippingBooking"
+      ],
+      "decisionId": "DEC-P09-QRY-111"
+    },
+    {
+      "stableQueryId": "QRY-112",
+      "symbol": "getAtRiskSlaCases",
+      "path": "src/modules/support/application/queries/supportCaseQueries.ts",
+      "line": 35,
+      "moduleOwner": "support",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listSupportCases"
+      ],
+      "decisionId": "DEC-P07-SUPPORT-READ-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-113",
+      "symbol": "getBreachedSlaCases",
+      "path": "src/modules/support/application/queries/supportCaseQueries.ts",
+      "line": 30,
+      "moduleOwner": "support",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listSupportCases"
+      ],
+      "decisionId": "DEC-P07-SUPPORT-READ-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-114",
+      "symbol": "getClosedSupportCases",
+      "path": "src/modules/support/application/queries/supportCaseQueries.ts",
+      "line": 20,
+      "moduleOwner": "support",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listSupportCases"
+      ],
+      "decisionId": "DEC-P07-SUPPORT-READ-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-115",
+      "symbol": "getOpenSupportCases",
+      "path": "src/modules/support/application/queries/supportCaseQueries.ts",
+      "line": 15,
+      "moduleOwner": "support",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listSupportCases"
+      ],
+      "decisionId": "DEC-P07-SUPPORT-READ-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-116",
+      "symbol": "getResolvedSupportCases",
+      "path": "src/modules/support/application/queries/supportCaseQueries.ts",
+      "line": 25,
+      "moduleOwner": "support",
+      "classification": "FRONTEND_LOCAL",
+      "openApiOperationIds": [],
+      "decisionId": null
+    },
+    {
+      "stableQueryId": "QRY-117",
+      "symbol": "getResolvedSupportCasesOnDate",
+      "path": "src/modules/support/application/queries/supportCaseQueries.ts",
+      "line": 182,
+      "moduleOwner": "support",
+      "classification": "FRONTEND_LOCAL",
+      "openApiOperationIds": [],
+      "decisionId": null
+    },
+    {
+      "stableQueryId": "QRY-118",
+      "symbol": "getSupportCaseOwners",
+      "path": "src/modules/support/application/queries/supportCaseQueries.ts",
+      "line": 190,
+      "moduleOwner": "support",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listSupportCases"
+      ],
+      "decisionId": "DEC-P07-SUPPORT-READ-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-119",
+      "symbol": "getSupportCaseSlaCompliance",
+      "path": "src/modules/support/application/queries/supportCaseQueries.ts",
+      "line": 175,
+      "moduleOwner": "support",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listSupportCases"
+      ],
+      "decisionId": "DEC-P07-SUPPORT-READ-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-120",
+      "symbol": "getSupportCaseStats",
+      "path": "src/modules/support/application/queries/supportCaseQueries.ts",
+      "line": 81,
+      "moduleOwner": "support",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listSupportCases"
+      ],
+      "decisionId": "DEC-P07-SUPPORT-READ-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-121",
+      "symbol": "getSupportCasesByCategory",
+      "path": "src/modules/support/application/queries/supportCaseQueries.ts",
+      "line": 50,
+      "moduleOwner": "support",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listSupportCases"
+      ],
+      "decisionId": "DEC-P07-SUPPORT-READ-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-122",
+      "symbol": "getSupportCasesByCustomer",
+      "path": "src/modules/support/application/queries/supportCaseQueries.ts",
+      "line": 4,
+      "moduleOwner": "support",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listSupportCases"
+      ],
+      "decisionId": "DEC-P07-SUPPORT-READ-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-123",
+      "symbol": "getSupportCasesByPriority",
+      "path": "src/modules/support/application/queries/supportCaseQueries.ts",
+      "line": 45,
+      "moduleOwner": "support",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listSupportCases"
+      ],
+      "decisionId": "DEC-P07-SUPPORT-READ-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-124",
+      "symbol": "getSupportCasesByRelationship",
+      "path": "src/modules/support/application/queries/supportCaseQueries.ts",
+      "line": 9,
+      "moduleOwner": "support",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listSupportCases"
+      ],
+      "decisionId": "DEC-P07-SUPPORT-READ-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-125",
+      "symbol": "getSupportCasesByStatus",
+      "path": "src/modules/support/application/queries/supportCaseQueries.ts",
+      "line": 40,
+      "moduleOwner": "support",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listSupportCases"
+      ],
+      "decisionId": "DEC-P07-SUPPORT-READ-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-126",
+      "symbol": "getSupportCasesForOrder",
+      "path": "src/modules/support/application/queries/supportCaseQueries.ts",
+      "line": 60,
+      "moduleOwner": "support",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listSupportCases"
+      ],
+      "decisionId": "DEC-P07-SUPPORT-READ-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-127",
+      "symbol": "getSupportCasesForOwnedProduct",
+      "path": "src/modules/support/application/queries/supportCaseQueries.ts",
+      "line": 55,
+      "moduleOwner": "support",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listSupportCases"
+      ],
+      "decisionId": "DEC-P07-SUPPORT-READ-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-128",
+      "symbol": "querySupportCases",
+      "path": "src/modules/support/application/queries/supportCaseQueries.ts",
+      "line": 139,
+      "moduleOwner": "support",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listSupportCases"
+      ],
+      "decisionId": "DEC-P07-SUPPORT-READ-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-129",
+      "symbol": "getSupportCaseCollectionResource",
+      "path": "src/modules/support/application/vertical-slice/supportAuthoritativeQueries.ts",
+      "line": 25,
+      "moduleOwner": "support",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "listSupportCases"
+      ],
+      "decisionId": "DEC-P07-SUPPORT-READ-MODEL"
+    },
+    {
+      "stableQueryId": "QRY-130",
+      "symbol": "getSupportCaseDetailResource",
+      "path": "src/modules/support/application/vertical-slice/supportAuthoritativeQueries.ts",
+      "line": 16,
+      "moduleOwner": "support",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "getSupportCase"
+      ],
+      "decisionId": "DEC-P07-SUPPORT-READ-MODEL"
+    },
+    {
+      "stableQueryId": "QRY-131",
+      "symbol": "getActivitiesForCustomer",
+      "path": "src/modules/tasks/application/queries/taskQueries.ts",
+      "line": 44,
+      "moduleOwner": "tasks",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listActivities"
+      ],
+      "decisionId": "DEC-PHASE11-TASK-ACTIVITY-READ-MODEL"
+    },
+    {
+      "stableQueryId": "QRY-132",
+      "symbol": "getActivitiesForRecord",
+      "path": "src/modules/tasks/application/queries/taskQueries.ts",
+      "line": 26,
+      "moduleOwner": "tasks",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listActivities"
+      ],
+      "decisionId": "DEC-PHASE11-TASK-ACTIVITY-READ-MODEL"
+    },
+    {
+      "stableQueryId": "QRY-133",
+      "symbol": "getOverdueTasks",
+      "path": "src/modules/tasks/application/queries/taskQueries.ts",
+      "line": 18,
+      "moduleOwner": "tasks",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listTasks"
+      ],
+      "decisionId": "DEC-P07-TASK-READ-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-134",
+      "symbol": "getTaskStats",
+      "path": "src/modules/tasks/application/queries/taskQueries.ts",
+      "line": 30,
+      "moduleOwner": "tasks",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listTasks"
+      ],
+      "decisionId": "DEC-P07-TASK-READ-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-135",
+      "symbol": "getTasksForCustomer",
+      "path": "src/modules/tasks/application/queries/taskQueries.ts",
+      "line": 40,
+      "moduleOwner": "tasks",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listTasks"
+      ],
+      "decisionId": "DEC-P07-TASK-READ-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-136",
+      "symbol": "getTasksForRecord",
+      "path": "src/modules/tasks/application/queries/taskQueries.ts",
+      "line": 22,
+      "moduleOwner": "tasks",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listTasks"
+      ],
+      "decisionId": "DEC-P07-TASK-READ-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-137",
+      "symbol": "queryTasks",
+      "path": "src/modules/tasks/application/queries/taskQueries.ts",
+      "line": 8,
+      "moduleOwner": "tasks",
+      "classification": "COMPOSED_READ_MODEL",
+      "openApiOperationIds": [
+        "listTasks"
+      ],
+      "decisionId": "DEC-P07-TASK-READ-COMPOSITION"
+    },
+    {
+      "stableQueryId": "QRY-138",
+      "symbol": "getTaskCollectionResource",
+      "path": "src/modules/tasks/application/vertical-slice/taskAuthoritativeQueries.ts",
+      "line": 17,
+      "moduleOwner": "tasks",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "listTasks"
+      ],
+      "decisionId": "DEC-P07-TASK-READ-MODEL"
+    },
+    {
+      "stableQueryId": "QRY-139",
+      "symbol": "getTaskDetailResource",
+      "path": "src/modules/tasks/application/vertical-slice/taskAuthoritativeQueries.ts",
+      "line": 20,
+      "moduleOwner": "tasks",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "getTask"
+      ],
+      "decisionId": "DEC-P07-TASK-READ-MODEL"
+    },
+    {
+      "stableQueryId": "QRY-140",
+      "symbol": "getOrderCreditApprovalAuthoritative",
+      "path": "src/modules/orders/infrastructure/http/OrderCreditApprovalHttpAdapter.ts",
+      "line": 1,
+      "moduleOwner": "orders",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "getOrderCreditApproval"
+      ],
+      "decisionId": null
+    },
+    {
+      "stableQueryId": "QRY-141",
+      "symbol": "listRefundProviderAttemptsAuthoritative",
+      "path": "src/modules/payments/public/api.ts",
+      "line": 142,
+      "moduleOwner": "payments",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "listRefundProviderAttempts"
+      ],
+      "decisionId": "DEC-P08-REFUND-PROVIDER-RECOVERY"
+    },
+    {
+      "stableQueryId": "QRY-142",
+      "symbol": "getCurrentAuthSession",
+      "path": "src/platform/identity-auth/infrastructure/IdentityAuthHttpAdapter.ts",
+      "line": 1,
+      "moduleOwner": "identity-auth",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "getCurrentSession"
+      ],
+      "decisionId": "DEC-PHASE7-IDENTITY-AUTH-SESSION"
+    },
+    {
+      "stableQueryId": "QRY-143",
+      "symbol": "listAuthoritativeWorkspaceMemberships",
+      "path": "src/platform/workspace-context/infrastructure/WorkspaceBootstrapHttpAdapter.ts",
+      "line": 1,
+      "moduleOwner": "workspace-context",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "listMyWorkspaces"
+      ],
+      "decisionId": "DEC-PHASE8-AUTHORITATIVE-WORKSPACE-BOOTSTRAP"
+    },
+    {
+      "stableQueryId": "QRY-144",
+      "symbol": "getAuthoritativeWorkspaceBootstrap",
+      "path": "src/platform/workspace-context/infrastructure/WorkspaceBootstrapHttpAdapter.ts",
+      "line": 1,
+      "moduleOwner": "workspace-context",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "getWorkspaceBootstrap"
+      ],
+      "decisionId": "DEC-PHASE8-AUTHORITATIVE-WORKSPACE-BOOTSTRAP"
+    },
+    {
+      "stableQueryId": "QRY-145",
+      "symbol": "getAuthoritativeAuthorizationContext",
+      "path": "src/platform/access-control/infrastructure/AccessGovernanceHttpAdapter.ts",
+      "line": 1,
+      "moduleOwner": "access-control",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "getCurrentAuthorizationContext"
+      ],
+      "decisionId": "DEC-PHASE9-AUTHORITATIVE-ACCESS-GOVERNANCE"
+    },
+    {
+      "stableQueryId": "QRY-146",
+      "symbol": "getAuthoritativeWorkspaceAccessDirectory",
+      "path": "src/platform/access-control/infrastructure/AccessGovernanceHttpAdapter.ts",
+      "line": 1,
+      "moduleOwner": "access-control",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "getWorkspaceAccessDirectory"
+      ],
+      "decisionId": "DEC-PHASE9-AUTHORITATIVE-ACCESS-GOVERNANCE"
+    },
+    {
+      "stableQueryId": "QRY-147",
+      "symbol": "evaluateAuthoritativeRecordAccess",
+      "path": "src/platform/access-control/infrastructure/AccessGovernanceHttpAdapter.ts",
+      "line": 1,
+      "moduleOwner": "access-control",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "evaluateEffectiveRecordAccess"
+      ],
+      "decisionId": "DEC-PHASE9-AUTHORITATIVE-ACCESS-GOVERNANCE"
+    },
+    {
+      "stableQueryId": "QRY-148",
+      "symbol": "getAuthoritativeStudioCoreConfiguration",
+      "path": "src/workspaces/studio/infrastructure/StudioCoreHttpAdapter.ts",
+      "line": 1,
+      "moduleOwner": "workspaces/studio",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "getWorkspaceConfiguration"
+      ],
+      "decisionId": "DEC-PHASE10-AUTHORITATIVE-STUDIO-CORE"
+    },
+    {
+      "stableQueryId": "QRY-149",
+      "symbol": "getAuthoritativeWorkspaceCurrencies",
+      "path": "src/workspaces/studio/infrastructure/StudioCoreHttpAdapter.ts",
+      "line": 1,
+      "moduleOwner": "workspaces/studio",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "getWorkspaceCurrencies"
+      ],
+      "decisionId": "DEC-PHASE10-AUTHORITATIVE-STUDIO-CORE"
+    },
+    {
+      "stableQueryId": "QRY-150",
+      "symbol": "listAuthoritativeWorkspaceExchangeRates",
+      "path": "src/workspaces/studio/infrastructure/StudioCoreHttpAdapter.ts",
+      "line": 1,
+      "moduleOwner": "workspaces/studio",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "listWorkspaceExchangeRates"
+      ],
+      "decisionId": "DEC-PHASE10-AUTHORITATIVE-STUDIO-CORE"
+    },
+    {
+      "stableQueryId": "QRY-151",
+      "symbol": "listAuthoritativeStudioConfigurationAudit",
+      "path": "src/workspaces/studio/infrastructure/StudioCoreHttpAdapter.ts",
+      "line": 1,
+      "moduleOwner": "workspaces/studio",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "listWorkspaceConfigurationAudit"
+      ],
+      "decisionId": "DEC-PHASE10-AUTHORITATIVE-STUDIO-CORE"
+    },
+    {
+      "stableQueryId": "QRY-152",
+      "symbol": "getAuthoritativeStudioQuickSetup",
+      "path": "src/workspaces/studio/infrastructure/StudioCoreHttpAdapter.ts",
+      "line": 1,
+      "moduleOwner": "workspaces/studio",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "getStudioQuickSetup"
+      ],
+      "decisionId": "DEC-PHASE10-AUTHORITATIVE-STUDIO-CORE"
+    },
+    {
+      "stableQueryId": "QRY-153",
+      "symbol": "getActivityCollectionResource",
+      "path": "src/modules/tasks/application/vertical-slice/taskAuthoritativeQueries.ts",
+      "line": 29,
+      "moduleOwner": "tasks",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "listActivities"
+      ],
+      "decisionId": "DEC-PHASE11-TASK-ACTIVITY-READ-MODEL"
+    },
+    {
+      "stableQueryId": "QRY-154",
+      "symbol": "getContactRelationshipSummaryResource",
+      "path": "src/modules/contacts/application/vertical-slice/contactAuthoritativeQueries.ts",
+      "line": 28,
+      "moduleOwner": "contacts",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "getContactRelationshipSummary"
+      ],
+      "decisionId": "DEC-P13-RELATIONSHIP-QUERY-BOUNDARY"
+    },
+    {
+      "stableQueryId": "QRY-155",
+      "symbol": "getCustomer360Resource",
+      "path": "src/modules/customers/application/vertical-slice/customerAuthoritativeQueries.ts",
+      "line": 32,
+      "moduleOwner": "customers",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "getCustomer360"
+      ],
+      "decisionId": "DEC-P13-RELATIONSHIP-QUERY-BOUNDARY"
+    },
+    {
+      "stableQueryId": "QRY-156",
+      "symbol": "getOrganizationOverviewResource",
+      "path": "src/modules/organizations/application/vertical-slice/organizationAuthoritativeQueries.ts",
+      "line": 32,
+      "moduleOwner": "organizations",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "getOrganizationOverview"
+      ],
+      "decisionId": "DEC-P13-RELATIONSHIP-QUERY-BOUNDARY"
+    },
+    {
+      "stableQueryId": "QRY-157",
+      "symbol": "getDealForecastSummaryResource",
+      "path": "src/modules/deals/application/vertical-slice/dealAuthoritativeQueries.ts",
+      "line": 1,
+      "moduleOwner": "deals",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "getDealForecastSummary"
+      ],
+      "decisionId": "DEC-PHASE14-DEAL-FORECAST-PROJECTION"
+    },
+    {
+      "stableQueryId": "QRY-158",
+      "symbol": "getProductAvailabilityResource",
+      "path": "src/modules/products/infrastructure/http/ProductHttpApiAdapter.ts",
+      "line": 1,
+      "moduleOwner": "products",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "getProductAvailability"
+      ],
+      "decisionId": "DEC-P16-PRODUCT-CATALOG-PROJECTIONS"
+    },
+    {
+      "stableQueryId": "QRY-159",
+      "symbol": "getProductPriceProjectionResource",
+      "path": "src/modules/products/infrastructure/http/ProductHttpApiAdapter.ts",
+      "line": 1,
+      "moduleOwner": "products",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "getProductPriceProjection"
+      ],
+      "decisionId": "DEC-P16-PRODUCT-CATALOG-PROJECTIONS"
+    },
+    {
+      "stableQueryId": "QRY-160",
+      "symbol": "getOrderFulfillmentEligibilityResource",
+      "path": "src/modules/orders/infrastructure/http/OrderHttpApiAdapter.ts",
+      "line": 1,
+      "moduleOwner": "orders",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "getOrderFulfillmentEligibility"
+      ],
+      "decisionId": "DEC-P16-ORDER-DOWNSTREAM-ELIGIBILITY"
+    },
+    {
+      "stableQueryId": "QRY-161",
+      "symbol": "getOrderInvoiceEligibilityResource",
+      "path": "src/modules/orders/infrastructure/http/OrderHttpApiAdapter.ts",
+      "line": 1,
+      "moduleOwner": "orders",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "getOrderInvoiceEligibility"
+      ],
+      "decisionId": "DEC-P16-ORDER-DOWNSTREAM-ELIGIBILITY"
+    },
+    {
+      "stableQueryId": "QRY-162",
+      "symbol": "getOrderPaymentProjectionResource",
+      "path": "src/modules/orders/infrastructure/http/OrderHttpApiAdapter.ts",
+      "line": 1,
+      "moduleOwner": "orders",
+      "classification": "PRODUCTION_API",
+      "openApiOperationIds": [
+        "getOrderPaymentProjection"
+      ],
+      "decisionId": "DEC-P16-ORDER-DOWNSTREAM-ELIGIBILITY"
+    }
+  ]
+}

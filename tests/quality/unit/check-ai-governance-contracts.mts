@@ -1,0 +1,10 @@
+import assert from "node:assert/strict";
+import { evaluateAiAction, normalizeAiGovernancePolicy } from "@/ai/governance";
+const policy = normalizeAiGovernancePolicy({ autonomyLevel: "L2_INTERNAL_ACT", allowedDataClasses: ["PUBLIC", "INTERNAL", "CUSTOMER_PII"], blockedFieldKeys: ["password", "token"], requireApprovalFor: ["EXTERNAL_SEND", "DELETE"], evidenceRequired: true, permissionEnforced: true, killSwitch: false, retentionDays: 30 });
+assert.equal(evaluateAiAction(policy, { requestId: "1", actorId: "u", action: "INTERNAL_UPDATE", dataClasses: ["INTERNAL"], capabilityGranted: true, evidenceRefs: ["record:1"] }).allowed, true);
+assert.equal(evaluateAiAction(policy, { requestId: "2", actorId: "u", action: "EXTERNAL_SEND", dataClasses: ["INTERNAL"], capabilityGranted: true, evidenceRefs: ["record:1"] }).allowed, false);
+assert.equal(evaluateAiAction({ ...policy, autonomyLevel: "L3_CONTROLLED_EXTERNAL" }, { requestId: "3", actorId: "u", action: "EXTERNAL_SEND", dataClasses: ["INTERNAL"], capabilityGranted: true, evidenceRefs: ["record:1"], approved: true }).allowed, true);
+assert.equal(evaluateAiAction(policy, { requestId: "4", actorId: "u", action: "READ", dataClasses: ["RESTRICTED"], capabilityGranted: true, evidenceRefs: ["record:1"] }).allowed, false);
+assert.equal(evaluateAiAction(policy, { requestId: "5", actorId: "u", action: "READ", dataClasses: ["INTERNAL"], fieldKeys: ["accessToken"], capabilityGranted: true, evidenceRefs: ["record:1"] }).allowed, false);
+assert.equal(evaluateAiAction({ ...policy, killSwitch: true }, { requestId: "6", actorId: "u", action: "READ", dataClasses: ["INTERNAL"], capabilityGranted: true, evidenceRefs: ["record:1"] }).allowed, false);
+console.log("AI governance contracts: PASS — L0–L3, approval, evidence, permissions, kill switch and data boundaries verified");

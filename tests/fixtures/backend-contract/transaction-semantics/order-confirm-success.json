@@ -1,0 +1,27 @@
+{
+  "commandId": "cmd_order_confirm_001",
+  "correlationId": "corr_order_confirm_001",
+  "aggregateId": "order_001",
+  "aggregateType": "order",
+  "version": 5,
+  "occurredAt": "2026-07-24T08:10:00.000Z",
+  "outcome": "COMMITTED",
+  "emittedEventIds": [
+    "evt_order_confirmed_001",
+    "evt_payment_plan_activated_001"
+  ],
+  "auditEvidenceIds": [
+    "audit_order_confirm_001"
+  ],
+  "result": {
+    "orderId": "order_001",
+    "orderState": "CONFIRMED",
+    "confirmedAt": "2026-07-24T08:10:00.000Z",
+    "paymentPlanId": "payment_plan_001",
+    "paymentPlanState": "ACTIVE",
+    "paymentPlanVersion": 3,
+    "paymentInstructionCreated": true,
+    "dealId": "deal_001",
+    "dealOutcome": "WON"
+  }
+}

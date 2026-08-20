@@ -1,0 +1,46 @@
+{
+  "commandId": "cmd_refund_cancel_01HZZZZZZZZZZZZZZ",
+  "correlationId": "corr-refund-cancel-01HZZZZZZZZZZ",
+  "aggregateId": "refund_01HZZZZZZZZZZZZZZZZZZZZZ",
+  "aggregateType": "refund-intent",
+  "version": 3,
+  "occurredAt": "2026-07-24T10:22:00Z",
+  "outcome": "COMMITTED",
+  "emittedEventIds": ["evt_refund_cancel_requested_01"],
+  "auditEvidenceIds": ["audit_refund_cancel_01"],
+  "result": {
+    "refundIntent": {
+      "id": "refund_01HZZZZZZZZZZZZZZZZZZZZZ",
+      "workspaceId": "ws_01HZZZZZZZZZZZZZZZZZZZZZZZ",
+      "buyerRef": {"type": "ORGANIZATION_ACCOUNT", "id": "cust_01HZZZZZZZZZZZZZZZZZZZZZZ"},
+      "orderId": "ord_01HZZZZZZZZZZZZZZZZZZZZZZZ",
+      "invoiceIds": ["inv_01HZZZZZZZZZZZZZZZZZZZZZZZ"],
+      "source": {"type": "PAYMENT_RECORD", "id": "pay_01HZZZZZZZZZZZZZZZZZZZZZZZ"},
+      "amount": {"amount": "25.00", "currency": "USD"},
+      "state": "PROCESSING",
+      "providerCode": "BANK_A",
+      "latestProviderAttemptId": "refund_attempt_01HZZZZZZZZZZZZZZZZZZZZZ",
+      "reasonCode": "RETURN_APPROVED",
+      "reason": "Approved return refund",
+      "resourceVersion": 3,
+      "createdAt": "2026-07-24T10:00:00Z",
+      "updatedAt": "2026-07-24T10:22:00Z"
+    },
+    "providerAttempt": {
+      "id": "refund_attempt_01HZZZZZZZZZZZZZZZZZZZZZ",
+      "workspaceId": "ws_01HZZZZZZZZZZZZZZZZZZZZZZZ",
+      "refundIntentId": "refund_01HZZZZZZZZZZZZZZZZZZZZZ",
+      "providerCode": "BANK_A",
+      "sequenceNumber": 1,
+      "state": "CANCELLATION_REQUESTED",
+      "providerReference": "provider-refund-001",
+      "cancellationReasonCode": "CUSTOMER_REQUEST",
+      "cancellationReason": "Customer requested cancellation before provider settlement.",
+      "cancellationRequestedAt": "2026-07-24T10:22:00Z",
+      "submittedAt": "2026-07-24T10:01:00Z",
+      "resourceVersion": 3,
+      "createdAt": "2026-07-24T10:00:00Z",
+      "updatedAt": "2026-07-24T10:22:00Z"
+    }
+  }
+}

@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "phase": "P0.1",
+  "contractVersion": "0.14.0-contract.0",
+  "historicalSnapshot": true,
+  "currentAuthority": "docs/api/openapi.json plus docs/backend-readiness/unresolved-decisions.json",
+  "inputSha256": "3a552c51585a3d030e3cae3d5df3253b39fd08da13f6c9ec1352a80b286d3e95",
+  "decisions": [
+    {
+      "decisionId": "DEC-INVOICE-DRAFT-CREATE",
+      "status": "CLOSED",
+      "operationId": "createInvoiceDraft",
+      "evidence": [
+        "InvoiceApiPort.CreateInvoiceDraftInput",
+        "InvoiceFormPage create path",
+        "invoiceRules.validateInvoiceDraft",
+        "InvoiceDocument OpenAPI schema"
+      ],
+      "decision": "Backend creates aggregate/line IDs and calculates all monetary amounts from editable Order-backed draft intent.",
+      "providerScenarioIds": [
+        "INV-PROVIDER-001",
+        "INV-PROVIDER-002",
+        "INV-PROVIDER-003",
+        "INV-PROVIDER-008"
+      ]
+    },
+    {
+      "decisionId": "DEC-INVOICE-DRAFT-SAVE",
+      "status": "CLOSED",
+      "operationId": "saveInvoiceDraft",
+      "evidence": [
+        "InvoiceApiPort.SaveInvoiceDraftInput",
+        "InMemoryInvoiceApiAdapter.saveDraft",
+        "InvoiceFormPage edit path"
+      ],
+      "decision": "Only DRAFT editable fields are accepted; If-Match and Idempotency-Key are required; backend recalculates totals.",
+      "providerScenarioIds": [
+        "INV-PROVIDER-004",
+        "INV-PROVIDER-005",
+        "INV-PROVIDER-008"
+      ]
+    },
+    {
+      "decisionId": "DEC-INVOICE-ISSUE",
+      "status": "CLOSED",
+      "operationId": "issueInvoice",
+      "evidence": [
+        "invoiceCommands.issueInvoice",
+        "invoiceRules.validateInvoiceDraft",
+        "InvoiceIssueReadiness"
+      ],
+      "decision": "Issue is a versioned idempotent business command returning an authoritative issued Invoice outcome.",
+      "providerScenarioIds": [
+        "INV-PROVIDER-006"
+      ]
+    },
+    {
+      "decisionId": "DEC-QUOTE-ACCEPTANCE-SEMANTICS-CONFLICT",
+      "status": "BLOCKED",
+      "blockingOperations": [
+        "acceptQuote",
+        "acceptQuoteAndCloseDeal"
+      ],
+      "evidence": [
+        "AcceptQuoteResult returns quote + optional deal",
+        "former AcceptQuoteResponseResult required quote + deal + order"
+      ],
+      "owner": "Quote + Order Domain Owners"
+    },
+    {
+      "decisionId": "DEC-ORDER-CONFIRMATION-TRANSACTION",
+      "status": "BLOCKED",
+      "blockingOperations": [
+        "confirmOrderWithPaymentPlan"
+      ],
+      "evidence": [
+        "Frontend demo coordinates Order, Payment Plan, credit approval and Deal close with rollback"
+      ],
+      "owner": "Order + Payments + Sales Domain Owners"
+    },
+    {
+      "decisionId": "DEC-ORDER-CANCELLATION-COMPENSATION",
+      "status": "BLOCKED",
+      "blockingOperations": [
+        "cancelOrderWithCompensation"
+      ],
+      "evidence": [
+        "Frontend demo coordinates invoice/payment/shipping blockers and compensation"
+      ],
+      "owner": "Order + Finance + Fulfillment Domain Owners"
+    },
+    {
+      "decisionId": "DEC-PAYMENT-FINANCIAL-EFFECTS",
+      "status": "BLOCKED",
+      "blockingOperations": [
+        "allocatePayment",
+        "reconcilePaymentRecord",
+        "createRefundIntent",
+        "recordCodCustomerCollection",
+        "recordCodMerchantRemittance"
+      ],
+      "evidence": [
+        "PaymentApiPort commands and shipping COD workflow do not define one approved transaction/state model"
+      ],
+      "owner": "Payments/Finance Domain Owner"
+    }
+  ]
+}

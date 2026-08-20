@@ -1,0 +1,31 @@
+{
+  "sellerSnapshot": {
+    "displayName": "Unicore",
+    "legalName": "Unicore Software Co., Ltd.",
+    "taxId": "0312345678",
+    "addressLines": ["Ho Chi Minh City"],
+    "countryCode": "VN"
+  },
+  "buyerSnapshot": {
+    "displayName": "Example Buyer Updated",
+    "legalName": "Example Buyer JSC",
+    "taxId": "0300000001",
+    "addressLines": ["District 1"],
+    "countryCode": "VN"
+  },
+  "dueDate": "2026-08-20",
+  "paymentTerms": "Net 20",
+  "lines": [
+    {
+      "lineId": "invoice-line-001",
+      "sourceOrderLineId": "order-line-001",
+      "productId": "product_001",
+      "description": "Annual CRM subscription",
+      "unitOfMeasure": "license",
+      "quantity": "3",
+      "unitPrice": { "amount": "500000", "currency": "VND" },
+      "discountRate": "0",
+      "taxRate": "10"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+# P0.8 Refund Provider Attempt and Recovery Contract
+
+Contract version: `0.23.20-contract.0`. Input source SHA-256: `b8df0711793e681f230c987da82c5ac65da7ff4fe2e37b5faa1849fb6554f62d`.
+
+Cancellation request is not cancellation acknowledgement. `CANCELLED` is authoritative only after provider acknowledgement. Retry creates a new provider attempt linked to its predecessor; attempt identity, provider reference, timestamps, state and version are server-owned.
+
+| Decision | Status | Owner | Decision | Operations |
+| --- | --- | --- | --- | --- |
+| DEC-P08-REFUND-PROVIDER-ATTEMPT | CLOSED | payments+provider-integration | Refund provider execution is represented by a server-owned RefundProviderAttempt aggregate. Attempt identity, sequence, provider reference, timestamps, state and resourceVersion are authoritative. RefundIntent remains the financial intent and references only the latest attempt. | listRefundProviderAttempts |
+| DEC-P08-REFUND-CANCELLATION-ACK | CLOSED | payments+provider-integration | Cancellation is an asynchronous request. Public command records CANCELLATION_REQUESTED on the current attempt and returns 202. RefundIntent may become CANCELLED only after provider acknowledgement and only when no SUCCEEDED refund Payment Record exists. CANCELLATION_REJECTED and UNKNOWN require operator-visible recovery state; the frontend cannot synthesize terminal cancellation. | requestRefundCancellation |
+| DEC-P08-REFUND-RETRY-LINEAGE | CLOSED | payments+provider-integration | Retry is allowed only from a FAILED Refund Intent with a latest FAILED provider attempt. Backend creates a new attempt with a new ID and sequenceNumber and sets retryOfAttemptId to the failed predecessor. Active, cancellation-pending, cancelled, unknown or succeeded attempts cannot be retried by this public command. | retryRefundIntent |
+| DEC-P08-REFUND-IDEMPOTENCY-RETENTION | CLOSED | payments+provider-integration+operations | Cancellation/retry idempotency is scoped by workspace, operation and client key. Same-key/same-payload replays the original result; same-key/different-payload conflicts. Keys and provider request correlation must be retained at least through the Refund Intent lifecycle and provider settlement/reconciliation window; a provider adapter longer retention period prevails. Raw keys are never exposed in read projections. | requestRefundCancellation, retryRefundIntent |
+| DEC-P08-PROVIDER-ACK-TRANSPORT | BLOCKED_EXTERNAL | backend-provider-implementation | The frontend contract does not prescribe provider webhook transport. Backend adapter must authenticate provider callbacks/polls, correlate to provider attempt, reject conflicting provider references and persist acknowledgement atomically. | — |

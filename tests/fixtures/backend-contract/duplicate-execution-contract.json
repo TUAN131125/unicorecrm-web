@@ -1,0 +1,18 @@
+{
+  "operationId": "issueInvoice",
+  "policy": "REQUIRED",
+  "keyScope": "workspace+actor+operationId",
+  "sameKeySamePayload": {
+    "httpStatus": 200,
+    "outcome": "REPLAYED",
+    "sameCommandIdRequired": true
+  },
+  "sameKeyDifferentPayload": {
+    "httpStatus": 409,
+    "code": "IDEMPOTENCY_KEY_REUSED"
+  },
+  "concurrentDuplicate": {
+    "httpStatus": 409,
+    "code": "IDEMPOTENCY_REQUEST_IN_PROGRESS"
+  }
+}

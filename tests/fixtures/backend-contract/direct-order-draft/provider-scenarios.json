@@ -1,0 +1,59 @@
+{
+  "contractVersion": "0.23.20-contract.0",
+  "scenarios": [
+    {
+      "id": "create-direct-draft",
+      "operationId": "createOrderDraftCommand",
+      "expectedStatus": 201
+    },
+    {
+      "id": "idempotent-replay",
+      "operationId": "createOrderDraftCommand",
+      "expectedStatus": 201,
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "same-key-different-payload",
+      "operationId": "createOrderDraftCommand",
+      "expectedStatus": 409,
+      "expectedCode": "IDEMPOTENCY_KEY_REUSED"
+    },
+    {
+      "id": "source-quote-prohibited",
+      "operationId": "createOrderDraftCommand",
+      "expectedStatus": 422,
+      "expectedCode": "ORDER_DRAFT_SOURCE_QUOTE_NOT_ALLOWED"
+    },
+    {
+      "id": "pricing-invalid",
+      "operationId": "createOrderDraftCommand",
+      "expectedStatus": 422,
+      "expectedCode": "ORDER_DRAFT_PRICING_INVALID"
+    },
+    {
+      "id": "cross-workspace-denied",
+      "operationId": "createOrderDraftCommand",
+      "expectedStatus": 403,
+      "expectedCode": "WORKSPACE_MISMATCH"
+    },
+    {
+      "id": "mass-assignment-rejected",
+      "operationId": "createOrderDraftCommand",
+      "expectedStatus": 400,
+      "forbiddenFields": [
+        "id",
+        "orderNumber",
+        "state",
+        "totals",
+        "resourceVersion",
+        "createdAt"
+      ]
+    },
+    {
+      "id": "duplicate-business-key",
+      "operationId": "createOrderDraftCommand",
+      "expectedStatus": 409,
+      "expectedCode": "DUPLICATE_BUSINESS_KEY"
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "contractVersion": "0.23.20-contract.0",
+  "scenarios": [
+    {
+      "id": "list-cases",
+      "operationId": "listSupportCases",
+      "expectedStatus": 200
+    },
+    {
+      "id": "get-case",
+      "operationId": "getSupportCase",
+      "expectedStatus": 200
+    },
+    {
+      "id": "create-case",
+      "operationId": "createSupportCase",
+      "expectedStatus": 201
+    },
+    {
+      "id": "create-replay",
+      "operationId": "createSupportCase",
+      "expectedStatus": 201,
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "replace-profile",
+      "operationId": "replaceSupportCaseProfile",
+      "expectedStatus": 200
+    },
+    {
+      "id": "assign-case",
+      "operationId": "assignSupportCase",
+      "expectedStatus": 200
+    },
+    {
+      "id": "transition-case",
+      "operationId": "transitionSupportCase",
+      "expectedStatus": 200
+    },
+    {
+      "id": "invalid-transition",
+      "operationId": "transitionSupportCase",
+      "expectedStatus": 409,
+      "expectedCode": "SUPPORT_CASE_INVALID_TRANSITION"
+    },
+    {
+      "id": "add-reply",
+      "operationId": "addSupportCaseReply",
+      "expectedStatus": 200
+    },
+    {
+      "id": "add-internal-note",
+      "operationId": "addSupportCaseInternalNote",
+      "expectedStatus": 200
+    },
+    {
+      "id": "stale-version",
+      "operationId": "assignSupportCase",
+      "expectedStatus": 412,
+      "expectedCode": "VERSION_CONFLICT"
+    },
+    {
+      "id": "cross-workspace-denied",
+      "operationId": "getSupportCase",
+      "expectedStatus": 403,
+      "expectedCode": "WORKSPACE_MISMATCH"
+    },
+    {
+      "id": "mass-assignment-rejected",
+      "operationId": "createSupportCase",
+      "expectedStatus": 400,
+      "forbiddenFields": [
+        "id",
+        "caseNumber",
+        "status",
+        "slaStatus",
+        "resourceVersion",
+        "createdAt"
+      ]
+    }
+  ]
+}

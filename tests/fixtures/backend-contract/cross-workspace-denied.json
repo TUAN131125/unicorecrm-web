@@ -1,0 +1,8 @@
+{
+  "type": "urn:unicorecrm:problem:workspace-mismatch",
+  "title": "Resource is outside the active workspace",
+  "status": 403,
+  "code": "WORKSPACE_MISMATCH",
+  "retryable": false,
+  "correlationId": "corr_workspace_001"
+}

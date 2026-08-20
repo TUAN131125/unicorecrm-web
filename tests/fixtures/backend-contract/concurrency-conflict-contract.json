@@ -1,0 +1,13 @@
+{
+  "operationId": "issueInvoice",
+  "requestHeader": "If-Match",
+  "httpStatus": 412,
+  "code": "VERSION_CONFLICT",
+  "requiredFields": [
+    "aggregateId",
+    "expectedVersion",
+    "currentVersion",
+    "correlationId"
+  ],
+  "retryAfterRefetch": true
+}

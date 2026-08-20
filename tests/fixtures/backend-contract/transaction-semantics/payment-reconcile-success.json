@@ -1,0 +1,17 @@
+{
+  "commandId": "cmd_payment_reconcile_001",
+  "correlationId": "corr_payment_reconcile_001",
+  "aggregateId": "payment_record_001",
+  "aggregateType": "payment-record",
+  "version": 4,
+  "occurredAt": "2026-07-24T08:30:00.000Z",
+  "outcome": "COMMITTED",
+  "emittedEventIds": ["evt_payment_reconciled_001"],
+  "auditEvidenceIds": ["audit_payment_reconcile_001"],
+  "result": {
+    "paymentRecordId": "payment_record_001",
+    "reconciliationState": "MATCHED",
+    "version": 4,
+    "reconciledAt": "2026-07-24T08:30:00.000Z"
+  }
+}

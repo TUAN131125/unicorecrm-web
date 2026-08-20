@@ -1,0 +1,64 @@
+{
+  "ready": true,
+  "orderAmount": {
+    "amount": "1000000",
+    "currency": "VND"
+  },
+  "scheduledAmount": {
+    "amount": "1000000",
+    "currency": "VND"
+  },
+  "remainingAmount": {
+    "amount": "0",
+    "currency": "VND"
+  },
+  "resolvedLines": [
+    {
+      "id": "psl_001",
+      "planId": "plan_001",
+      "planVersion": 1,
+      "orderId": "order_001",
+      "buyerRef": {
+        "type": "ORGANIZATION_ACCOUNT",
+        "id": "buyer_001"
+      },
+      "sequence": 1,
+      "label": "Full payment",
+      "purpose": "FULL",
+      "amountRule": {
+        "type": "FIXED",
+        "amount": {
+          "amount": "1000000",
+          "currency": "VND"
+        }
+      },
+      "amount": {
+        "amount": "1000000",
+        "currency": "VND"
+      },
+      "dueRule": {
+        "type": "FIXED_DATE",
+        "date": "2026-08-01"
+      },
+      "allowedMethodCodes": [
+        "BANK_TRANSFER"
+      ],
+      "fulfillmentGate": "BEFORE_COMPLETION",
+      "state": "SCHEDULED",
+      "satisfiedAmount": {
+        "amount": "0",
+        "currency": "VND"
+      },
+      "outstandingAmount": {
+        "amount": "1000000",
+        "currency": "VND"
+      },
+      "resourceVersion": 1,
+      "createdAt": "2026-07-25T00:00:00Z",
+      "updatedAt": "2026-07-25T00:00:00Z"
+    }
+  ],
+  "warnings": [],
+  "blockers": [],
+  "prospectiveVersion": 2
+}

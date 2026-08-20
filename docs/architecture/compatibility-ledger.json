@@ -1,0 +1,1101 @@
+{
+  "schemaVersion": 1,
+  "baselineReleaseId": "unicorecrm-web@0.23.20-contract.0",
+  "sourceInventory": "docs/quality/repository-inventory.json",
+  "candidateSetSha256": "b15abf87c9b50e756833a2469b8f3c33aa26b3c6d443b3ab57b989fe45f9fb2c",
+  "candidateCount": 53,
+  "allowedStatus": [
+    "OPEN",
+    "IN_PROGRESS",
+    "BLOCKED",
+    "RETIRED"
+  ],
+  "allowedDecision": [
+    "RETAIN_TEMPORARILY",
+    "REVIEW_FOR_RETIREMENT"
+  ],
+  "retirementPolicy": "No compatibility path is removed only to improve a metric. Removal requires consumer evidence, migration/support-window closure, focused tests and regenerated inventory.",
+  "entries": [
+    {
+      "id": "COMP-001",
+      "path": "src/app/router/adapters/lead-qualification/LegacyLeadConvertRedirect.tsx",
+      "owner": "shared:app",
+      "signals": [
+        "legacy-path"
+      ],
+      "category": "ROUTE_REDIRECT",
+      "decision": "RETAIN_TEMPORARILY",
+      "priority": "LOW",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Route telemetry is zero for the agreed support window and all published links use canonical workspace routes.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-002",
+      "path": "src/i18n/LegacyUiTranslationBridge.tsx",
+      "owner": "shared:i18n",
+      "signals": [
+        "legacy-path",
+        "legacy-content",
+        "compatibility-content"
+      ],
+      "category": "I18N_BRIDGE",
+      "decision": "RETAIN_TEMPORARILY",
+      "priority": "MEDIUM",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "No runtime consumer requires legacy copy lookup and supported persisted/user content is canonicalized.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-003",
+      "path": "src/i18n/legacyUiCopy.ts",
+      "owner": "shared:i18n",
+      "signals": [
+        "legacy-path",
+        "legacy-content",
+        "compatibility-content"
+      ],
+      "category": "I18N_BRIDGE",
+      "decision": "RETAIN_TEMPORARILY",
+      "priority": "MEDIUM",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "No runtime consumer requires legacy copy lookup and supported persisted/user content is canonicalized.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-004",
+      "path": "src/migrations/canonical-v1/commercialEvidenceMigration.ts",
+      "owner": "shared:migrations",
+      "signals": [
+        "migration-path"
+      ],
+      "category": "MIGRATION_TOOLING",
+      "decision": "RETAIN_TEMPORARILY",
+      "priority": "LOW",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Supported import/snapshot migration window is closed and no supported fixture or operator tool imports this path.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-005",
+      "path": "src/migrations/canonical-v1/customerMigrationPreview.ts",
+      "owner": "shared:migrations",
+      "signals": [
+        "migration-path",
+        "legacy-content"
+      ],
+      "category": "MIGRATION_TOOLING",
+      "decision": "RETAIN_TEMPORARILY",
+      "priority": "MEDIUM",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Supported import/snapshot migration window is closed and no supported fixture or operator tool imports this path.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-006",
+      "path": "src/migrations/canonical-v1/customerRelationshipMigration.records.ts",
+      "owner": "shared:migrations",
+      "signals": [
+        "migration-path"
+      ],
+      "category": "MIGRATION_TOOLING",
+      "decision": "RETAIN_TEMPORARILY",
+      "priority": "MEDIUM",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Supported import/snapshot migration window is closed and no supported fixture or operator tool imports this path.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-007",
+      "path": "src/migrations/canonical-v1/customerRelationshipMigration.ts",
+      "owner": "shared:migrations",
+      "signals": [
+        "migration-path",
+        "legacy-content"
+      ],
+      "category": "MIGRATION_TOOLING",
+      "decision": "RETAIN_TEMPORARILY",
+      "priority": "MEDIUM",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Supported import/snapshot migration window is closed and no supported fixture or operator tool imports this path.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-008",
+      "path": "src/migrations/canonical-v1/dealQuoteNormalization.ts",
+      "owner": "shared:migrations",
+      "signals": [
+        "migration-path",
+        "legacy-content"
+      ],
+      "category": "MIGRATION_TOOLING",
+      "decision": "RETAIN_TEMPORARILY",
+      "priority": "MEDIUM",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Supported import/snapshot migration window is closed and no supported fixture or operator tool imports this path.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-009",
+      "path": "src/migrations/canonical-v1/index.ts",
+      "owner": "shared:migrations",
+      "signals": [
+        "migration-path"
+      ],
+      "category": "MIGRATION_TOOLING",
+      "decision": "RETAIN_TEMPORARILY",
+      "priority": "LOW",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Supported import/snapshot migration window is closed and no supported fixture or operator tool imports this path.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-010",
+      "path": "src/migrations/canonical-v1/leadMigrationPreview.ts",
+      "owner": "shared:migrations",
+      "signals": [
+        "migration-path",
+        "legacy-content"
+      ],
+      "category": "MIGRATION_TOOLING",
+      "decision": "RETAIN_TEMPORARILY",
+      "priority": "MEDIUM",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Supported import/snapshot migration window is closed and no supported fixture or operator tool imports this path.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-011",
+      "path": "src/migrations/canonical-v1/migrationIssues.ts",
+      "owner": "shared:migrations",
+      "signals": [
+        "migration-path"
+      ],
+      "category": "MIGRATION_TOOLING",
+      "decision": "RETAIN_TEMPORARILY",
+      "priority": "LOW",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Supported import/snapshot migration window is closed and no supported fixture or operator tool imports this path.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-012",
+      "path": "src/modules/commercial-evidence/infrastructure/purchaseEvidence.seed.ts",
+      "owner": "commercial-evidence",
+      "signals": [
+        "legacy-content"
+      ],
+      "category": "PERSISTED_DATA_ADAPTER",
+      "decision": "RETAIN_TEMPORARILY",
+      "priority": "LOW",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Minimum supported snapshot schema no longer contains the legacy shape and migrated snapshots have been persisted.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-013",
+      "path": "src/modules/contacts/domain/model/contact.types.ts",
+      "owner": "contacts",
+      "signals": [
+        "legacy-content",
+        "compatibility-content"
+      ],
+      "category": "DOMAIN_CONTRACT_DEBT",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "HIGH",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Canonical DTO/domain field is used by all reads, writes and migrations; no external contract references the legacy member.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-014",
+      "path": "src/modules/contacts/infrastructure/contact.mock.ts",
+      "owner": "contacts",
+      "signals": [
+        "legacy-content"
+      ],
+      "category": "PERSISTED_DATA_ADAPTER",
+      "decision": "RETAIN_TEMPORARILY",
+      "priority": "LOW",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Minimum supported snapshot schema no longer contains the legacy shape and migrated snapshots have been persisted.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-015",
+      "path": "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "owner": "contacts",
+      "signals": [
+        "legacy-content",
+        "compatibility-content"
+      ],
+      "category": "PRESENTATION_COMPATIBILITY",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "MEDIUM",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Canonical controller/view path covers the behavior and usage telemetry or consumer analysis proves the compatibility branch is unused.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "path": "src/modules/customers/application/queries/customerRelationshipDataQuality.ts",
+      "owner": "customers",
+      "signals": [
+        "compatibility-content"
+      ],
+      "category": "DOMAIN_CONTRACT_DEBT",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "MEDIUM",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Canonical customer relationship quality rules are consumed without compatibility aliases and backend contracts preserve the accepted data-quality semantics.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "backend contract evidence",
+        "focused customer data-quality test",
+        "repository inventory regeneration"
+      ],
+      "id": "COMP-016"
+    },
+    {
+      "id": "COMP-017",
+      "path": "src/modules/customers/infrastructure/customerMigration.seed.ts",
+      "owner": "customers",
+      "signals": [
+        "legacy-content"
+      ],
+      "category": "PERSISTED_DATA_ADAPTER",
+      "decision": "RETAIN_TEMPORARILY",
+      "priority": "LOW",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Minimum supported snapshot schema no longer contains the legacy shape and migrated snapshots have been persisted.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-018",
+      "path": "src/modules/customers/presentation/customerPresentationHelpers.ts",
+      "owner": "customers",
+      "signals": [
+        "compatibility-content"
+      ],
+      "category": "PRESENTATION_COMPATIBILITY",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "MEDIUM",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Canonical controller/view path covers the behavior and usage telemetry or consumer analysis proves the compatibility branch is unused.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-019",
+      "path": "src/modules/customers/presentation/detail/CustomerDetailInfoTab.tsx",
+      "owner": "customers",
+      "signals": [
+        "legacy-content"
+      ],
+      "category": "PRESENTATION_COMPATIBILITY",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "MEDIUM",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Canonical controller/view path covers the behavior and usage telemetry or consumer analysis proves the compatibility branch is unused.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-020",
+      "path": "src/modules/customers/presentation/detail/CustomerWorkspace.tsx",
+      "owner": "customers",
+      "signals": [
+        "export-alias"
+      ],
+      "category": "PRESENTATION_COMPATIBILITY",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "LOW",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "All consumers import RelationshipWorkspace directly and no supported extension relies on the CustomerWorkspace export alias.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-021",
+      "path": "src/modules/customers/presentation/model/customerDisplay.types.ts",
+      "owner": "customers",
+      "signals": [
+        "legacy-content"
+      ],
+      "category": "PRESENTATION_COMPATIBILITY",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "MEDIUM",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Canonical controller/view path covers the behavior and usage telemetry or consumer analysis proves the compatibility branch is unused.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-022",
+      "path": "src/modules/deals/domain/model/deal.types.ts",
+      "owner": "deals",
+      "signals": [
+        "deprecated-content",
+        "legacy-content",
+        "compatibility-content"
+      ],
+      "category": "DOMAIN_CONTRACT_DEBT",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "HIGH",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Canonical DTO/domain field is used by all reads, writes and migrations; no external contract references the legacy member.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-023",
+      "path": "src/modules/deals/presentation/hooks/useDealDetailController.tsx",
+      "owner": "deals",
+      "signals": [
+        "compatibility-content"
+      ],
+      "category": "PRESENTATION_COMPATIBILITY",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "MEDIUM",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Canonical controller/view path covers the behavior and usage telemetry or consumer analysis proves the compatibility branch is unused.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-024",
+      "path": "src/modules/invoices/application/ports/InvoiceApiPort.ts",
+      "owner": "invoices",
+      "signals": [
+        "legacy-content",
+        "compatibility-content"
+      ],
+      "category": "APPLICATION_CONTRACT_DEBT",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "MEDIUM",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Generated/canonical application contract replaces the compatibility shape and all consumers have migrated.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-025",
+      "path": "src/modules/invoices/domain/model/invoice.types.ts",
+      "owner": "invoices",
+      "signals": [
+        "compatibility-content"
+      ],
+      "category": "DOMAIN_CONTRACT_DEBT",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "HIGH",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Canonical DTO/domain field is used by all reads, writes and migrations; no external contract references the legacy member.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-026",
+      "path": "src/modules/leads/infrastructure/http/LeadModuleDataAuthorityBridge.ts",
+      "owner": "leads",
+      "signals": [
+        "compatibility-content"
+      ],
+      "category": "API_RUNTIME_COMPATIBILITY",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "MEDIUM",
+      "status": "OPEN",
+      "targetMilestone": "API_MANAGEMENT_MODULE_MIGRATION_COMPLETE",
+      "removalGate": "Every shared Lead consumer resolves LeadQueryPort and LeadCommandPort directly, the module data authority registry no longer requires a Lead compatibility entry, and connected runtime tests prove no generic Lead authority remains.",
+      "evidenceRequired": [
+        "Lead consumer import analysis",
+        "connected Lead runtime contract test",
+        "module data authority registry migration evidence",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-027",
+      "path": "src/modules/leads/manifest.ts",
+      "owner": "leads",
+      "signals": [
+        "legacy-content"
+      ],
+      "category": "GENERAL_COMPATIBILITY",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "LOW",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Owning team records consumer evidence and a safe migration/removal test before deletion.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-028",
+      "path": "src/modules/leads/public/leads.ts",
+      "owner": "leads",
+      "signals": [
+        "compatibility-content"
+      ],
+      "category": "PUBLIC_API_COMPATIBILITY",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "MEDIUM",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Canonical controller/view path covers the behavior and usage telemetry or consumer analysis proves the compatibility branch is unused.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-029",
+      "path": "src/modules/orders/domain/model/order.types.ts",
+      "owner": "orders",
+      "signals": [
+        "deprecated-content",
+        "legacy-content",
+        "compatibility-content"
+      ],
+      "category": "DOMAIN_CONTRACT_DEBT",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "HIGH",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Canonical DTO/domain field is used by all reads, writes and migrations; no external contract references the legacy member.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-030",
+      "path": "src/modules/orders/domain/rules/orderLifecycle.ts",
+      "owner": "orders",
+      "signals": [
+        "legacy-content"
+      ],
+      "category": "DOMAIN_CONTRACT_DEBT",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "HIGH",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Canonical DTO/domain field is used by all reads, writes and migrations; no external contract references the legacy member.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-031",
+      "path": "src/modules/orders/infrastructure/InMemoryOrderRepository.ts",
+      "owner": "orders",
+      "signals": [
+        "legacy-content"
+      ],
+      "category": "PERSISTED_DATA_ADAPTER",
+      "decision": "RETAIN_TEMPORARILY",
+      "priority": "LOW",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Minimum supported snapshot schema no longer contains the legacy shape and migrated snapshots have been persisted.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-032",
+      "path": "src/modules/organizations/infrastructure/organizationAccount.seed.ts",
+      "owner": "organizations",
+      "signals": [
+        "legacy-content"
+      ],
+      "category": "PERSISTED_DATA_ADAPTER",
+      "decision": "RETAIN_TEMPORARILY",
+      "priority": "LOW",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Minimum supported snapshot schema no longer contains the legacy shape and migrated snapshots have been persisted.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-033",
+      "path": "src/modules/payments/infrastructure/payment.seed.ts",
+      "owner": "payments",
+      "signals": [
+        "legacy-content"
+      ],
+      "category": "PERSISTED_DATA_ADAPTER",
+      "decision": "RETAIN_TEMPORARILY",
+      "priority": "LOW",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Minimum supported snapshot schema no longer contains the legacy shape and migrated snapshots have been persisted.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-034",
+      "path": "src/modules/payments/presentation/pages/PaymentDetailPage.tsx",
+      "owner": "payments",
+      "signals": [
+        "legacy-content"
+      ],
+      "category": "PRESENTATION_COMPATIBILITY",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "HIGH",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Canonical controller/view path covers the behavior and usage telemetry or consumer analysis proves the compatibility branch is unused.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-035",
+      "path": "src/modules/products/domain/model/product.types.ts",
+      "owner": "products",
+      "signals": [
+        "legacy-content",
+        "compatibility-content"
+      ],
+      "category": "DOMAIN_CONTRACT_DEBT",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "HIGH",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Canonical DTO/domain field is used by all reads, writes and migrations; no external contract references the legacy member.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-036",
+      "path": "src/modules/products/infrastructure/productConfiguration.store.ts",
+      "owner": "products",
+      "signals": [
+        "legacy-content"
+      ],
+      "category": "PERSISTED_DATA_ADAPTER",
+      "decision": "RETAIN_TEMPORARILY",
+      "priority": "LOW",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Minimum supported snapshot schema no longer contains the legacy shape and migrated snapshots have been persisted.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-037",
+      "path": "src/modules/quotes/domain/model/quote.types.ts",
+      "owner": "quotes",
+      "signals": [
+        "deprecated-content",
+        "legacy-content",
+        "compatibility-content"
+      ],
+      "category": "DOMAIN_CONTRACT_DEBT",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "HIGH",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Canonical DTO/domain field is used by all reads, writes and migrations; no external contract references the legacy member.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-038",
+      "path": "src/modules/quotes/domain/rules/quoteCalculations.ts",
+      "owner": "quotes",
+      "signals": [
+        "legacy-content"
+      ],
+      "category": "DOMAIN_CONTRACT_DEBT",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "HIGH",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Canonical DTO/domain field is used by all reads, writes and migrations; no external contract references the legacy member.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-039",
+      "path": "src/modules/quotes/presentation/pages/QuoteDetailPage.tsx",
+      "owner": "quotes",
+      "signals": [
+        "legacy-content"
+      ],
+      "category": "PRESENTATION_COMPATIBILITY",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "MEDIUM",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Canonical controller/view path covers the behavior and usage telemetry or consumer analysis proves the compatibility branch is unused.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-040",
+      "path": "src/modules/shipping/infrastructure/shippingBookingSnapshot.ts",
+      "owner": "shipping",
+      "signals": [
+        "legacy-content"
+      ],
+      "category": "PERSISTED_DATA_ADAPTER",
+      "decision": "RETAIN_TEMPORARILY",
+      "priority": "LOW",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Minimum supported snapshot schema no longer contains the legacy shape and migrated snapshots have been persisted.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-041",
+      "path": "src/modules/support/domain/model/supportCase.types.ts",
+      "owner": "support",
+      "signals": [
+        "legacy-content",
+        "compatibility-content"
+      ],
+      "category": "DOMAIN_CONTRACT_DEBT",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "HIGH",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Canonical DTO/domain field is used by all reads, writes and migrations; no external contract references the legacy member.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-042",
+      "path": "src/platform/access-control/runtime/accessControlRuntime.ts",
+      "owner": "platform:access-control",
+      "signals": [
+        "compatibility-content"
+      ],
+      "category": "GENERAL_COMPATIBILITY",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "LOW",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Owning team records consumer evidence and a safe migration/removal test before deletion.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "path": "src/platform/api/contracts/generatedOpenApiRuntimeContract.ts",
+      "owner": "platform:api",
+      "signals": [
+        "deprecated-content",
+        "compatibility-content"
+      ],
+      "category": "GENERATED_CONTRACT_COMPATIBILITY",
+      "decision": "RETAIN_TEMPORARILY",
+      "priority": "LOW",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_CONTRACT_DEPRECATION_CLOSURE",
+      "removalGate": "The deprecated OpenAPI operation is removed only after its replacement contract is implemented, all consumers migrate, and breaking-change evidence approves retirement.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "OpenAPI deprecation-window evidence",
+        "generated-client drift check",
+        "repository inventory regeneration"
+      ],
+      "id": "COMP-043"
+    },
+    {
+      "id": "COMP-044",
+      "path": "src/platform/configuration-runtime/types.ts",
+      "owner": "platform:configuration-runtime",
+      "signals": [
+        "deprecated-content"
+      ],
+      "category": "GENERAL_COMPATIBILITY",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "HIGH",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Owning team records consumer evidence and a safe migration/removal test before deletion.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-045",
+      "path": "src/platform/identity-auth/runtime/authRuntime.ts",
+      "owner": "platform:identity-auth",
+      "signals": [
+        "legacy-content"
+      ],
+      "category": "SESSION_STORAGE_MIGRATION_BRIDGE",
+      "decision": "RETAIN_TEMPORARILY",
+      "priority": "MEDIUM",
+      "status": "OPEN",
+      "targetMilestone": "PHASE_8_WORKSPACE_AND_IDENTITY_CUTOVER",
+      "removalGate": "Legacy session metadata key migration has completed, supported sessions have expired, and connected identity/browser regression proves no consumer requires the v2 cleanup bridge.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "session migration/support-window evidence",
+        "focused auth/session contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-046",
+      "path": "src/platform/persistence/BrowserStorageAdapter.ts",
+      "owner": "platform:persistence",
+      "signals": [
+        "legacy-content"
+      ],
+      "category": "GENERAL_COMPATIBILITY",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "LOW",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Owning team records consumer evidence and a safe migration/removal test before deletion.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-047",
+      "path": "src/platform/workspace-membership/domain/workspaceMembership.types.ts",
+      "owner": "platform:workspace-membership",
+      "signals": [
+        "compatibility-content"
+      ],
+      "category": "DOMAIN_CONTRACT_DEBT",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "HIGH",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Canonical DTO/domain field is used by all reads, writes and migrations; no external contract references the legacy member.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-048",
+      "path": "src/shared/components/ui/Button.tsx",
+      "owner": "shared:shared",
+      "signals": [
+        "compatibility-content"
+      ],
+      "category": "GENERAL_COMPATIBILITY",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "LOW",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Owning team records consumer evidence and a safe migration/removal test before deletion.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-049",
+      "path": "src/shared/components/ui/PageHeader.tsx",
+      "owner": "shared:shared",
+      "signals": [
+        "legacy-content"
+      ],
+      "category": "GENERAL_COMPATIBILITY",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "LOW",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Owning team records consumer evidence and a safe migration/removal test before deletion.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-050",
+      "path": "src/shared/order-to-cash/paymentMethodCatalog.ts",
+      "owner": "shared:shared",
+      "signals": [
+        "legacy-content",
+        "compatibility-content"
+      ],
+      "category": "GENERAL_COMPATIBILITY",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "MEDIUM",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Owning team records consumer evidence and a safe migration/removal test before deletion.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "path": "src/workflows/order-creation/index.ts",
+      "owner": "workflow:order-creation",
+      "signals": [
+        "compatibility-content"
+      ],
+      "category": "APPLICATION_CONTRACT_DEBT",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "MEDIUM",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Order creation consumers use the canonical workflow boundary directly and no compatibility export remains necessary for supported routes or commands.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "workflow call-graph evidence",
+        "focused order-creation contract test",
+        "repository inventory regeneration"
+      ],
+      "id": "COMP-051"
+    },
+    {
+      "id": "COMP-052",
+      "path": "src/workspaces/people-access/application/peopleAccessCommands.ts",
+      "owner": "workspace:people-access",
+      "signals": [
+        "compatibility-content"
+      ],
+      "category": "APPLICATION_CONTRACT_DEBT",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "MEDIUM",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Generated/canonical application contract replaces the compatibility shape and all consumers have migrated.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "migration/telemetry evidence",
+        "focused contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-053",
+      "path": "src/workspaces/studio/presentation/views/InformationFieldsView.tsx",
+      "owner": "workspace:studio",
+      "signals": [
+        "deprecated-content"
+      ],
+      "category": "PRESENTATION_COMPATIBILITY",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "MEDIUM",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "The information-fields view no longer exposes deprecated presentation behavior and all Studio consumers use the canonical configuration surface.",
+      "evidenceRequired": [
+        "consumer analysis",
+        "Studio route and configuration evidence",
+        "focused Studio contract test",
+        "repository inventory regeneration"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "contractVersion": "0.23.20-contract.0",
+  "scenarios": [
+    {
+      "id": "advance-to-contacting",
+      "operationId": "advanceLeadWorkState",
+      "expectedStatus": 200
+    },
+    {
+      "id": "advance-to-verifying",
+      "operationId": "advanceLeadWorkState",
+      "expectedStatus": 200
+    },
+    {
+      "id": "advance-replay",
+      "operationId": "advanceLeadWorkState",
+      "expectedStatus": 200,
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "advance-invalid-transition",
+      "operationId": "advanceLeadWorkState",
+      "expectedStatus": 409,
+      "expectedCode": "LEAD_INVALID_TRANSITION"
+    },
+    {
+      "id": "advance-progressive-profile-incomplete",
+      "operationId": "advanceLeadWorkState",
+      "expectedStatus": 422,
+      "expectedCode": "LEAD_PROGRESSIVE_PROFILE_INCOMPLETE"
+    },
+    {
+      "id": "disqualify-lead",
+      "operationId": "disqualifyLead",
+      "expectedStatus": 200
+    },
+    {
+      "id": "disqualify-replay",
+      "operationId": "disqualifyLead",
+      "expectedStatus": 200,
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "disqualify-evidence-required",
+      "operationId": "disqualifyLead",
+      "expectedStatus": 422,
+      "expectedCode": "LEAD_DISQUALIFICATION_EVIDENCE_REQUIRED"
+    },
+    {
+      "id": "reopen-disqualified-lead",
+      "operationId": "reopenDisqualifiedLead",
+      "expectedStatus": 200
+    },
+    {
+      "id": "reopen-not-allowed",
+      "operationId": "reopenDisqualifiedLead",
+      "expectedStatus": 409,
+      "expectedCode": "LEAD_REOPEN_NOT_ALLOWED"
+    },
+    {
+      "id": "advance-stale-version",
+      "operationId": "advanceLeadWorkState",
+      "expectedStatus": 412,
+      "expectedCode": "VERSION_CONFLICT"
+    },
+    {
+      "id": "advance-cross-workspace-denied",
+      "operationId": "advanceLeadWorkState",
+      "expectedStatus": 403,
+      "expectedCode": "WORKSPACE_MISMATCH"
+    }
+  ]
+}

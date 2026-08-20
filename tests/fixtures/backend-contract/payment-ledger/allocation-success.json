@@ -1,0 +1,45 @@
+{
+  "commandId": "cmd_01HZZZZZZZZZZZZZZZZZZZZZZZ",
+  "correlationId": "corr-01HZZZZZZZZZZZZZZZZZZZZZZ",
+  "aggregateId": "pay_01HZZZZZZZZZZZZZZZZZZZZZZZ",
+  "aggregateType": "payment-record",
+  "version": 2,
+  "occurredAt": "2026-07-24T10:00:00Z",
+  "outcome": "COMMITTED",
+  "emittedEventIds": [
+    "evt_01HZZZZZZZZZZZZZZZZZZZZZZZ"
+  ],
+  "auditEvidenceIds": [
+    "audit_01HZZZZZZZZZZZZZZZZZZZZZ"
+  ],
+  "result": {
+    "source": {
+      "type": "PAYMENT_RECORD",
+      "id": "pay_01HZZZZZZZZZZZZZZZZZZZZZZZ"
+    },
+    "allocations": [
+      {
+        "id": "alloc_01HZZZZZZZZZZZZZZZZZZZZZ",
+        "workspaceId": "ws_01HZZZZZZZZZZZZZZZZZZZZZZZ",
+        "buyerRef": {
+          "type": "ORGANIZATION_ACCOUNT",
+          "id": "cust_01HZZZZZZZZZZZZZZZZZZZZZZ"
+        },
+        "invoiceId": "inv_01HZZZZZZZZZZZZZZZZZZZZZZZ",
+        "sourceType": "PAYMENT_RECORD",
+        "sourceId": "pay_01HZZZZZZZZZZZZZZZZZZZZZZZ",
+        "amount": {
+          "amount": "40.00",
+          "currency": "USD"
+        },
+        "state": "EFFECTIVE",
+        "resourceVersion": 1,
+        "createdAt": "2026-07-24T10:00:00Z"
+      }
+    ],
+    "remainingAmount": {
+      "amount": "60.00",
+      "currency": "USD"
+    }
+  }
+}

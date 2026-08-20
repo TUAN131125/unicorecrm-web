@@ -1,0 +1,91 @@
+{
+  "commandId": "cmd_01J3HARDENING0000000000001",
+  "correlationId": "corr_01J3HARDENING000000000001",
+  "aggregateId": "inv_001",
+  "aggregateType": "INVOICE",
+  "version": 4,
+  "occurredAt": "2026-07-24T12:00:00.000Z",
+  "outcome": "COMMITTED",
+  "emittedEventIds": [
+    "evt_invoice_issued_001"
+  ],
+  "auditEvidenceIds": [
+    "audit_invoice_issued_001"
+  ],
+  "result": {
+    "id": "inv_001",
+    "workspaceId": "ws_001",
+    "invoiceNumber": "INV-2026-0001",
+    "buyerRef": {
+      "type": "ORGANIZATION_ACCOUNT",
+      "id": "org_001"
+    },
+    "sellerSnapshot": {
+      "displayName": "Unicore",
+      "addressLines": [
+        "Ho Chi Minh City"
+      ],
+      "countryCode": "VN"
+    },
+    "buyerSnapshot": {
+      "displayName": "Example Buyer",
+      "addressLines": [
+        "District 1"
+      ],
+      "countryCode": "VN"
+    },
+    "lifecycleState": "FUTURE_STATE",
+    "deliveryState": "NOT_SENT",
+    "issueDate": "2026-07-24",
+    "currency": "VND",
+    "lines": [
+      {
+        "id": "line_001",
+        "description": "Subscription",
+        "quantity": "1",
+        "unitPrice": {
+          "amount": "1000000",
+          "currency": "VND"
+        },
+        "discountAmount": {
+          "amount": "0",
+          "currency": "VND"
+        },
+        "taxAmount": {
+          "amount": "100000",
+          "currency": "VND"
+        },
+        "lineTotal": {
+          "amount": "1100000",
+          "currency": "VND"
+        }
+      }
+    ],
+    "totals": {
+      "subtotal": {
+        "amount": "1000000",
+        "currency": "VND"
+      },
+      "discountTotal": {
+        "amount": "0",
+        "currency": "VND"
+      },
+      "taxTotal": {
+        "amount": "100000",
+        "currency": "VND"
+      },
+      "grandTotal": {
+        "amount": "1100000",
+        "currency": "VND"
+      }
+    },
+    "sourceLinks": {
+      "orderId": "order_001"
+    },
+    "version": 4,
+    "idempotencyKey": "idem_issue_inv_001_v3",
+    "createdAt": "2026-07-24T10:00:00.000Z",
+    "updatedAt": "2026-07-24T12:00:00.000Z",
+    "issuedAt": "2026-07-24T12:00:00.000Z"
+  }
+}

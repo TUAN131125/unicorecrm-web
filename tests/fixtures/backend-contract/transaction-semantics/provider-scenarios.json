@@ -1,0 +1,68 @@
+{
+  "contractVersion": "0.23.20-contract.0",
+  "authority": "docs/api/openapi.json",
+  "scenarios": [
+    {
+      "id": "QUOTE_ACCEPT_SUCCESS",
+      "operationId": "acceptQuoteAndCloseDeal",
+      "expectedStatus": 200
+    },
+    {
+      "id": "QUOTE_ACCEPT_REPLAY",
+      "operationId": "acceptQuoteAndCloseDeal",
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "QUOTE_ACCEPT_DOES_NOT_CREATE_ORDER",
+      "operationId": "acceptQuoteAndCloseDeal",
+      "expectedResult": {
+        "orderCreated": false
+      }
+    },
+    {
+      "id": "QUOTE_ACCEPT_STALE_VERSION",
+      "operationId": "acceptQuoteAndCloseDeal",
+      "expectedProblemCode": "VERSION_CONFLICT"
+    },
+    {
+      "id": "ORDER_CONFIRM_SUCCESS",
+      "operationId": "confirmOrderWithPaymentPlan",
+      "expectedStatus": 200
+    },
+    {
+      "id": "ORDER_CONFIRM_CREDIT_APPROVAL_REQUIRED",
+      "operationId": "confirmOrderWithPaymentPlan",
+      "expectedProblemCode": "CREDIT_APPROVAL_REQUIRED"
+    },
+    {
+      "id": "ORDER_CONFIRM_REPLAY",
+      "operationId": "confirmOrderWithPaymentPlan",
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "ORDER_CANCEL_BLOCKED_BY_OBLIGATIONS",
+      "operationId": "cancelOrder",
+      "expectedProblemCode": "ORDER_CANCELLATION_BLOCKED"
+    },
+    {
+      "id": "ORDER_CANCEL_SUCCESS_NO_COMPENSATION",
+      "operationId": "cancelOrder",
+      "expectedStatus": 200
+    },
+    {
+      "id": "PAYMENT_RECONCILE_SUCCESS",
+      "operationId": "reconcilePaymentRecord",
+      "expectedStatus": 200
+    },
+    {
+      "id": "PAYMENT_RECONCILE_STALE_VERSION",
+      "operationId": "reconcilePaymentRecord",
+      "expectedProblemCode": "VERSION_CONFLICT"
+    },
+    {
+      "id": "CROSS_WORKSPACE_DENIAL",
+      "operationId": "cancelOrder",
+      "expectedProblemCode": "WORKSPACE_MISMATCH"
+    }
+  ]
+}

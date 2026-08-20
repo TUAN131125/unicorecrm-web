@@ -1,0 +1,43 @@
+{
+  "version": "1.4",
+  "description": "Contact visual baseline for the current shared CRM visual language, including mobile action-bar safe spacing, white action-button foregrounds, and stable interaction panels beneath overlay forms.",
+  "globalStyleFile": "src/index.css",
+  "globalStyleSha256": "d90c32e3180eef5967d0ff835768d39db683f960b4ecc6b558a1f311d1ec89c5",
+  "files": [
+    {
+      "path": "src/modules/contacts/presentation/detail/ContactRecordHeader.tsx",
+      "requiredClassFragments": [
+        "bg-white rounded-xl border border-slate-200",
+        "shadow-sm",
+        "text-slate-800",
+        "bg-rose-50",
+        "text-indigo-600"
+      ]
+    },
+    {
+      "path": "src/modules/contacts/presentation/views/ContactListView.tsx",
+      "requiredClassFragments": [
+        "<ListToolbar",
+        "filtersPanel={(",
+        "<ContactFilterPopover"
+      ]
+    },
+    {
+      "path": "src/modules/contacts/presentation/list/ContactTable.tsx",
+      "requiredClassFragments": [
+        "rounded-2xl border border-slate-200 shadow-sm",
+        "bg-slate-50/70 border-b border-slate-200",
+        "text-indigo-600 hover:text-indigo-800",
+        "bg-white"
+      ]
+    },
+    {
+      "path": "src/modules/contacts/presentation/list/ContactCardList.tsx",
+      "requiredClassFragments": [
+        "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3",
+        "text-indigo-600 hover:underline",
+        "border-t border-slate-50"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "source": {
+    "type": "PAYMENT_RECORD",
+    "id": "pay_01HZZZZZZZZZZZZZZZZZZZZZZZ"
+  },
+  "amount": {
+    "amount": "25.00",
+    "currency": "USD"
+  },
+  "reasonCode": "RETURN_APPROVED",
+  "reason": "Approved return refund",
+  "sourceReturnId": "ret_01HZZZZZZZZZZZZZZZZZZZZZZZ"
+}

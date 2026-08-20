@@ -1,0 +1,928 @@
+{
+  "schemaVersion": 1,
+  "allowedStatus": [
+    "CURRENT",
+    "TARGET",
+    "TRACKER",
+    "REFERENCE"
+  ],
+  "documents": {
+    "AGENTS.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "REPOSITORY",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "ARCHITECTURE.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "SHARED",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "README.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "REPOSITORY",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/README.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "REPOSITORY",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/ai/SKILLS.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "FRONTEND",
+      "owner": "product",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/api/README.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/api-contract-and-generated-client.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "SHARED",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/application-composition.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/backend-authoritative-audit-viewer.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/backend-readiness.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "SHARED",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/code-splitting-and-bundle-budget.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/compatibility-and-migration.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/compatibility-ledger.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "SHARED",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/compatibility-retirement-stage6.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/contact-organization-relationships.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/data-defaults-and-demo-runtime.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/deal-stage-window-query.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/decisions/ADR-001-identity-and-authentication.md": {
+      "status": "TARGET",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/decisions/ADR-002-workspace-tenancy.md": {
+      "status": "TARGET",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/decisions/ADR-003-money-and-rounding.md": {
+      "status": "TARGET",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/decisions/ADR-004-concurrency-and-idempotency.md": {
+      "status": "TARGET",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/decisions/ADR-005-workflow-transactions-and-events.md": {
+      "status": "TARGET",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/decisions/ADR-006-dotnet-modular-monolith-and-sqlserver.md": {
+      "status": "TARGET",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/decisions/README.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/dependency-boundaries.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "SHARED",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/dotnet-sqlserver-backend-target.md": {
+      "status": "TARGET",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/effective-record-access.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/error-handling.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/external-authority-health.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/http-api-foundation.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/large-file-presentation-responsibility-stage7.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "FRONTEND",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/lead-api-boundary.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "FRONTEND",
+      "owner": "leads",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/lead-identity-governance.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/module-api-boundary-template.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "SHARED",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/module-ownership-and-workflows.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "SHARED",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/mutation-command-authority.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/presentation-responsibility.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/record-retention-and-destructive-actions.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "SHARED",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/reference-financial-vertical-slice.md": {
+      "status": "REFERENCE",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/relationship-domain-api-boundary.md": {
+      "status": "CURRENT",
+      "authority": "AUTHORITATIVE",
+      "scope": "FRONTEND",
+      "owner": "relationship-domain",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/routing-shell-and-access-control.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/server-side-list-query.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/type-ownership.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "SHARED",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/type-safety-and-strictness.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/README.md": {
+      "status": "TARGET",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "api-architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/api-evolution-policy.md": {
+      "status": "TARGET",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "api-architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/command-registry.md": {
+      "status": "TARGET",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "api-architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/commercial-evidence-ownership.md": {
+      "status": "TARGET",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "api-architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/concurrency-policy.md": {
+      "status": "TARGET",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "api-architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/credit-approval-command-decision.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/error-catalog.md": {
+      "status": "TARGET",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "api-architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/idempotency-policy.md": {
+      "status": "TARGET",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "api-architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/identity-auth-session-contract.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "identity-auth",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/invoice-provider-contract-pack.md": {
+      "status": "TARGET",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "api-architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/lead-lifecycle-qualification-decision.md": {
+      "status": "CURRENT",
+      "authority": "DECISION_RECORD",
+      "scope": "FRONTEND_BACKEND_CONTRACT",
+      "owner": "leads",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/lead-lifecycle.md": {
+      "status": "TARGET",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "api-architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/lead-profile-contract-decision.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/money-contract.md": {
+      "status": "TARGET",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "api-architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/operation-authorization-matrix.md": {
+      "status": "TARGET",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "api-architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/p01-domain-decision-closure.md": {
+      "status": "REFERENCE",
+      "authority": "SUPPORTING",
+      "scope": "BACKEND_TARGET",
+      "owner": "api-architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/p02-transaction-semantics.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/p03-commercial-read-models.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/p04-payment-ledger-semantics.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/p05-return-refund-payment-plan-intent.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/p06-commercial-credit-conversion-refund-policy.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "P0.6 decision closure",
+      "owner": "api-contract-architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/p07-order-support-tasks-refund-recovery.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "P0.7 decision closure",
+      "owner": "api-contract-architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/p08-refund-provider-recovery.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "P0.8 refund provider recovery decision closure",
+      "owner": "api-contract-architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/p09-provider-conformance-query-closure.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/p10-provider-adapter-registry-closure.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "BACKEND_TARGET",
+      "owner": "api-contract-architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/payment-financial-effects-decisions.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/payment-plan-intent-money-contract.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/query-registry.md": {
+      "status": "TARGET",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "api-architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/quote-order-conversion-decision.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/quote-order-transaction-contract.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/remediation-ledger.md": {
+      "status": "TARGET",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "api-architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/return-refund-saga.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/support-tasks-contract-status.md": {
+      "status": "TARGET",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "api-architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/transaction-provider-contract-pack.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/unresolved-decisions.md": {
+      "status": "TARGET",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "api-architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/backend-readiness/workflow-ownership.md": {
+      "status": "TARGET",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "api-architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/business/customer-relationship-and-commercial-flow.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "product-architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/business/deployment-operations-forecast-and-ai-governance.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "product-architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/business/enterprise-security-and-resilience.md": {
+      "status": "TARGET",
+      "authority": "SUPPORTING",
+      "scope": "BACKEND_TARGET",
+      "owner": "product-architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/business/metric-catalog-and-reporting.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "product-architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/business/order-to-cash-frontend-build-spec.md": {
+      "status": "TARGET",
+      "authority": "SUPPORTING",
+      "scope": "BACKEND_TARGET",
+      "owner": "product-architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/business/order-to-cash-operations.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "product-architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/business/payment-plans-and-collections-frontend-spec.md": {
+      "status": "TARGET",
+      "authority": "SUPPORTING",
+      "scope": "BACKEND_TARGET",
+      "owner": "product-architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/business/pilot-end-to-end-acceptance.md": {
+      "status": "TRACKER",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "product-architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/business/role-based-navigation-and-product-language.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "product-architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/business/sales-quick-create-and-pipeline-health.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "product-architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/business/shipping-and-returns.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "product-architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/product/guidance-screen-inventory.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "FRONTEND",
+      "owner": "product",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/product/guidance-system.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "FRONTEND",
+      "owner": "product",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/product/studio-rebuild-roadmap.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "FRONTEND",
+      "owner": "product-architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/quality/api-contract-verification.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "REPOSITORY",
+      "owner": "quality-engineering",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/quality/backend-readiness-verification.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "REPOSITORY",
+      "owner": "quality-engineering",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/quality/ci-and-release.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "REPOSITORY",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/quality/connected-backend-acceptance.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "SHARED",
+      "owner": "quality",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/quality/form-and-presentation-contracts.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "REPOSITORY",
+      "owner": "quality-engineering",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/quality/quality-pipeline.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "REPOSITORY",
+      "owner": "quality-engineering",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/quality/release-identity.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "REPOSITORY",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/quality/repository-inventory.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "REPOSITORY",
+      "owner": "quality-engineering",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/quality/script-modernization/baseline-audit.md": {
+      "status": "REFERENCE",
+      "authority": "SUPPORTING",
+      "scope": "REPOSITORY",
+      "owner": "repository-quality",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/quality/script-modernization/sr2-quality-test-ownership-report.md": {
+      "status": "REFERENCE",
+      "authority": "SUPPORTING",
+      "scope": "REPOSITORY",
+      "owner": "repository-quality",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/quality/source-packaging.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "REPOSITORY",
+      "owner": "quality-engineering",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/quality/verification.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "REPOSITORY",
+      "owner": "quality-engineering",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "src/app/composition/README.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "REPOSITORY",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "src/modules/contacts/README.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "REPOSITORY",
+      "owner": "contacts",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "src/modules/deals/README.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "REPOSITORY",
+      "owner": "deals",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "src/modules/leads/README.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "REPOSITORY",
+      "owner": "leads",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "src/modules/products/README.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "REPOSITORY",
+      "owner": "products",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "src/modules/support/README.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "REPOSITORY",
+      "owner": "support",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "src/platform/api/README.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "FRONTEND",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "src/shared/patterns/README.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "REPOSITORY",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "src/workflows/README.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "REPOSITORY",
+      "owner": "workflows",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "src/workspaces/crm/README.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "REPOSITORY",
+      "owner": "crm",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "src/workspaces/people-access/README.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "REPOSITORY",
+      "owner": "people-access",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "tests/quality/README.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "REPOSITORY",
+      "owner": "repository-quality",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "tests/quality/architecture/README.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "REPOSITORY",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "tests/quality/contracts/README.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "tests/quality/integration/README.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "FRONTEND",
+      "owner": "repository-quality",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "tests/quality/route-smoke/README.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "FRONTEND",
+      "owner": "repository-quality",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "tests/quality/runtime/README.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "FRONTEND",
+      "owner": "repository-quality",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "tests/quality/unit/README.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "repository-quality",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "tests/tooling/README.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "REPOSITORY",
+      "owner": "repository-quality",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/quote-api-boundary.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "MODULE",
+      "owner": "quotes",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/deal-api-boundary.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "MODULE",
+      "owner": "deals",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/financial-operations-api-boundary.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "MODULE",
+      "owner": "finance",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/product-order-api-boundary.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "MODULE",
+      "owner": "products-and-orders",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/shipping-returns-api-boundary.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "MODULE",
+      "owner": "shipping-and-returns",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/architecture/task-activity-api-boundary.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "MODULE",
+      "owner": "tasks",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    }
+  }
+}

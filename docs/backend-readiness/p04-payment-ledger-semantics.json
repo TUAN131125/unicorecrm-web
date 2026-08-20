@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "contractVersion": "0.23.20-contract.0",
+  "phase": "P0.4",
+  "sourceSha256": "7e2795b78a992488b626a45300d652c5f8f521e322e20f20e1ca701f154c5e27",
+  "decisions": [
+    {
+      "decisionId": "DEC-P04-PAYMENT-ALLOCATION-LEDGER",
+      "status": "CLOSED",
+      "owner": "payments",
+      "decision": "One Payment Record or Customer Credit is allocated to one or more Invoice receivables in a single backend ledger transaction. Backend owns buyer/currency/outstanding/residual checks, allocation IDs, time, audit and events.",
+      "operations": [
+        "allocatePaymentSource"
+      ],
+      "evidence": [
+        "src/modules/payments/application/commands/paymentAllocationCommands.ts:allocatePaymentToInvoices",
+        "docs/business/payment-plans-and-collections-frontend-spec.md"
+      ]
+    },
+    {
+      "decisionId": "DEC-P04-PAYMENT-ALLOCATION-REVERSAL",
+      "status": "CLOSED",
+      "owner": "payments",
+      "decision": "Reversal is an immutable ledger command over one effective allocation; backend restores source residual and emits reversal evidence.",
+      "operations": [
+        "reversePaymentAllocation"
+      ],
+      "evidence": [
+        "src/modules/payments/application/commands/paymentAllocationCommands.ts:reverseInvoiceAllocation"
+      ]
+    },
+    {
+      "decisionId": "DEC-P04-REFUND-ASYNC-INTENT",
+      "status": "CLOSED",
+      "owner": "payments",
+      "decision": "Public API creates an asynchronous Refund Intent only. Provider execution and SUCCEEDED/FAILED completion, refund Payment Record and timestamps are backend-owned.",
+      "operations": [
+        "createRefundIntent",
+        "getRefund",
+        "listRefunds"
+      ],
+      "evidence": [
+        "src/modules/payments/application/commands/paymentRefundCommands.ts:createRefundIntent",
+        "src/modules/payments/application/commands/paymentRefundCommands.ts:completeRefundIntent"
+      ]
+    },
+    {
+      "decisionId": "DEC-P04-COD-COLLECTION-EVIDENCE",
+      "status": "CLOSED",
+      "owner": "payments",
+      "decision": "Customer collection evidence is distinct from merchant remittance and never makes COD effective for receivables.",
+      "operations": [
+        "recordCodCustomerCollection"
+      ],
+      "evidence": [
+        "src/modules/payments/application/commands/paymentCodCommands.ts:recordCodCustomerCollectionEvidence"
+      ]
+    },
+    {
+      "decisionId": "DEC-P04-COD-REMITTANCE-EVIDENCE",
+      "status": "CLOSED",
+      "owner": "payments",
+      "decision": "Merchant remittance requires customer collection; only REMITTED makes the COD Payment effective for receivables.",
+      "operations": [
+        "recordCodMerchantRemittance"
+      ],
+      "evidence": [
+        "src/modules/payments/application/commands/paymentCodCommands.ts:recordCodMerchantRemittanceEvidence",
+        "src/workflows/shipping-cod-evidence/index.ts"
+      ]
+    },
+    {
+      "decisionId": "DEC-P04-RETURN-REFUND-SAGA",
+      "status": "BLOCKED",
+      "owner": "returns+payments+invoices",
+      "question": "How does Return approval release allocations, create credits/refund intents and settle Invoice/Receivable state atomically or as a saga?",
+      "blockingOperations": [
+        "resolveReturnCreditRefund"
+      ],
+      "reason": "Cross-module compensation, retry and partial-failure semantics remain incomplete."
+    },
+    {
+      "decisionId": "DEC-P04-REFUND-CANCEL-RETRY",
+      "status": "BLOCKED",
+      "owner": "payments",
+      "question": "When may a failed/processing refund be cancelled or retried and how is provider idempotency retained?",
+      "blockingOperations": [],
+      "reason": "Frontend only proves creation and backend completion/failure primitives."
+    }
+  ]
+}

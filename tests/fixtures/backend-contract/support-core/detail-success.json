@@ -1,0 +1,41 @@
+{
+  "id": "case_01",
+  "caseNumber": "CS-2026-0001",
+  "title": "Không nhận được email",
+  "description": "Khách hàng chưa nhận được email xác nhận.",
+  "status": "new",
+  "priority": "high",
+  "category": "request",
+  "source": "email",
+  "channel": "email",
+  "customerId": "customer_01",
+  "customerName": "Nguyễn Văn A",
+  "relationshipRef": {
+    "type": "CONTACT",
+    "id": "contact_01"
+  },
+  "contactId": "contact_01",
+  "ownerId": "member_01",
+  "ownerName": "Agent A",
+  "createdAt": "2026-07-25T00:00:00Z",
+  "updatedAt": "2026-07-25T00:00:00Z",
+  "firstResponseDueAt": "2026-07-25T01:00:00Z",
+  "resolutionDueAt": "2026-07-26T00:00:00Z",
+  "slaStatus": "on_track",
+  "tags": [
+    "email"
+  ],
+  "activities": [
+    {
+      "id": "activity_01",
+      "type": "created",
+      "title": "Đã tạo phiếu",
+      "description": "Phiếu đã được tạo.",
+      "createdAt": "2026-07-25T00:00:00Z",
+      "actorId": "member_01",
+      "actorName": "Agent A"
+    }
+  ],
+  "comments": [],
+  "resourceVersion": 1
+}

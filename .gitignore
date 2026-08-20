@@ -1,0 +1,19 @@
+node_modules/
+build/
+dist/
+coverage/
+.DS_Store
+*.log
+
+.env*
+!.env.example
+
+playwright-report/
+test-results/
+artifacts/
+
+# Local AI / agent tooling
+.agents/
+.claude/
+.ai-workflows/design-reconstruction/
+.ai-workflows/

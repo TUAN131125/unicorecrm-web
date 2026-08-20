@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "authority": "src/modules/leads/domain/model/leadLifecycle.canonical.ts",
+  "workStates": [
+    "NEW",
+    "CONTACTING",
+    "VERIFYING",
+    "CLOSED"
+  ],
+  "qualificationOutcomes": [
+    "DISQUALIFIED",
+    "NURTURE",
+    "OPPORTUNITY",
+    "DIRECT_SALE"
+  ],
+  "initialState": "NEW",
+  "terminalWorkState": "CLOSED",
+  "activeTransitions": [
+    {
+      "from": "NEW",
+      "to": "CONTACTING",
+      "command": "lead.change-work-state",
+      "contractStatus": "READY"
+    },
+    {
+      "from": "CONTACTING",
+      "to": "VERIFYING",
+      "command": "lead.change-work-state",
+      "contractStatus": "READY"
+    }
+  ],
+  "closeTransitions": [
+    {
+      "from": [
+        "NEW",
+        "CONTACTING",
+        "VERIFYING"
+      ],
+      "to": "CLOSED",
+      "outcome": "DISQUALIFIED",
+      "command": "lead.disqualify",
+      "contractStatus": "READY",
+      "operationId": "disqualifyLead"
+    },
+    {
+      "from": [
+        "VERIFYING"
+      ],
+      "to": "CLOSED",
+      "outcome": "NURTURE",
+      "command": "lead.qualify-nurture",
+      "contractStatus": "READY",
+      "operationId": "qualifyLeadForNurture"
+    },
+    {
+      "from": [
+        "VERIFYING"
+      ],
+      "to": "CLOSED",
+      "outcome": "OPPORTUNITY",
+      "command": "lead.qualify-opportunity",
+      "contractStatus": "READY",
+      "operationId": "qualifyLeadForOpportunity"
+    },
+    {
+      "from": [
+        "VERIFYING"
+      ],
+      "to": "CLOSED",
+      "outcome": "DIRECT_SALE",
+      "command": "lead.qualify-direct-sale",
+      "contractStatus": "READY",
+      "operationId": "qualifyLeadForDirectSale"
+    }
+  ],
+  "reopen": {
+    "from": "CLOSED",
+    "requiredOutcome": "DISQUALIFIED",
+    "to": "CONTACTING",
+    "command": "lead.reopen",
+    "contractStatus": "READY",
+    "operationId": "reopenDisqualifiedLead"
+  },
+  "invariants": [
+    "CLOSED requires qualificationOutcome",
+    "qualificationOutcome only when CLOSED",
+    "positive outcome requires relationshipRef",
+    "OPPORTUNITY requires dealRef",
+    "dealRef forbidden for non-OPPORTUNITY"
+  ],
+  "archiveAnonymizeSemantics": "UNRESOLVED",
+  "concurrency": "IF_MATCH_REQUIRED for any future lifecycle operation",
+  "audit": "IMMUTABLE_COMMAND_AUDIT",
+  "unknownStatusPolicy": "FAIL_CLOSED",
+  "qualificationWorkflowOwnership": "BACKEND_ORCHESTRATED_PER_OUTCOME",
+  "genericQualificationOperation": "RETIRED_BLOCKED"
+}

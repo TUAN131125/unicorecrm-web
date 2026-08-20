@@ -1,0 +1,436 @@
+{
+  "schemaVersion": 1,
+  "count": 84,
+  "symbols": [
+    {
+      "symbol": "MetricStatus",
+      "path": "src/workspaces/crm/metrics/domain/metric.types.ts",
+      "line": 9
+    },
+    {
+      "symbol": "PilotCheckStatus",
+      "path": "src/workspaces/people-access/pilot-acceptance/domain/pilotAcceptance.types.ts",
+      "line": 23
+    },
+    {
+      "symbol": "PilotOverallStatus",
+      "path": "src/workspaces/people-access/pilot-acceptance/domain/pilotAcceptance.types.ts",
+      "line": 24
+    },
+    {
+      "symbol": "clearPilotAcceptanceState",
+      "path": "src/workspaces/people-access/pilot-acceptance/public/pilotAcceptance.ts",
+      "line": 21
+    },
+    {
+      "symbol": "getPilotAcceptanceState",
+      "path": "src/workspaces/people-access/pilot-acceptance/public/pilotAcceptance.ts",
+      "line": 24
+    },
+    {
+      "symbol": "getQuickSetupState",
+      "path": "src/workspaces/studio/runtime/quickSetupRuntime.ts",
+      "line": 15
+    },
+    {
+      "symbol": "QuickSetupStatus",
+      "path": "src/workspaces/studio/application/quickSetup.types.ts",
+      "line": 1
+    },
+    {
+      "symbol": "AuthoritativeResourceState",
+      "path": "src/shared/application/authoritativeResource.ts",
+      "line": 3
+    },
+    {
+      "symbol": "EvidenceVerificationState",
+      "path": "src/shared/evidence/evidence.types.ts",
+      "line": 11
+    },
+    {
+      "symbol": "MutationState",
+      "path": "src/shared/operations/mutationState.ts",
+      "line": 8
+    },
+    {
+      "symbol": "CustomerStatus",
+      "path": "src/platform/api/generated/commercialApi.ts",
+      "line": 204
+    },
+    {
+      "symbol": "LeadQualificationOutcome",
+      "path": "src/platform/api/generated/commercialApi.ts",
+      "line": 242
+    },
+    {
+      "symbol": "LeadWorkState",
+      "path": "src/platform/api/generated/commercialApi.ts",
+      "line": 244
+    },
+    {
+      "symbol": "SettlementState",
+      "path": "src/platform/api/generated/receivablesApi.ts",
+      "line": 48
+    },
+    {
+      "symbol": "WebhookStatus",
+      "path": "src/platform/developer-configuration/developerConfiguration.types.ts",
+      "line": 2
+    },
+    {
+      "symbol": "WorkspaceMembershipStatus",
+      "path": "src/platform/workspace-context/WorkspaceContextStore.ts",
+      "line": 5
+    },
+    {
+      "symbol": "CustomerCommunicationState",
+      "path": "src/platform/notifications/index.ts",
+      "line": 109
+    },
+    {
+      "symbol": "IntegrationStatus",
+      "path": "src/platform/integrations/integrationConfiguration.types.ts",
+      "line": 1
+    },
+    {
+      "symbol": "ExternalAuthorityHealthStatus",
+      "path": "src/platform/external-authority/application/externalAuthorityHealth.ts",
+      "line": 3
+    },
+    {
+      "symbol": "UserAccountStatus",
+      "path": "src/platform/identity-auth/domain/auth.types.ts",
+      "line": 1
+    },
+    {
+      "symbol": "SessionStatus",
+      "path": "src/platform/identity-auth/domain/auth.types.ts",
+      "line": 2
+    },
+    {
+      "symbol": "AuditEventOutcome",
+      "path": "src/platform/audit/application/auditTrail.ts",
+      "line": 11
+    },
+    {
+      "symbol": "WorkspaceMembershipStatus",
+      "path": "src/platform/workspace-membership/domain/workspaceMembership.types.ts",
+      "line": 1
+    },
+    {
+      "symbol": "WorkspaceInvitationStatus",
+      "path": "src/platform/workspace-membership/domain/workspaceMembership.types.ts",
+      "line": 27
+    },
+    {
+      "symbol": "OrganizationAccountStatus",
+      "path": "src/modules/organizations/domain/model/organizationAccount.types.ts",
+      "line": 7
+    },
+    {
+      "symbol": "QuoteLifecycleMutationMetadata",
+      "path": "src/modules/quotes/public/quotes.ts",
+      "line": 58
+    },
+    {
+      "symbol": "QuoteStatus",
+      "path": "src/modules/quotes/domain/model/quote.types.ts",
+      "line": 28
+    },
+    {
+      "symbol": "QuoteApprovalStatus",
+      "path": "src/modules/quotes/domain/model/quote.types.ts",
+      "line": 39
+    },
+    {
+      "symbol": "ReturnLifecycleMutationMetadata",
+      "path": "src/modules/returns/public/api.ts",
+      "line": 10
+    },
+    {
+      "symbol": "ReturnStatus",
+      "path": "src/modules/returns/domain/model/return.types.ts",
+      "line": 4
+    },
+    {
+      "symbol": "ReturnIntentStatus",
+      "path": "src/modules/returns/domain/model/return.types.ts",
+      "line": 40
+    },
+    {
+      "symbol": "getContactStatusLabel",
+      "path": "src/modules/contacts/presentation/list/contactList.helpers.ts",
+      "line": 16
+    },
+    {
+      "symbol": "getContactStatusBadgeStyle",
+      "path": "src/modules/contacts/presentation/detail/contactDetail.helpers.ts",
+      "line": 1
+    },
+    {
+      "symbol": "getContactStatusTranslation",
+      "path": "src/modules/contacts/presentation/detail/contactDetail.helpers.ts",
+      "line": 24
+    },
+    {
+      "symbol": "ContactStatus",
+      "path": "src/modules/contacts/domain/model/contact.types.ts",
+      "line": 4
+    },
+    {
+      "symbol": "SupportCaseStatus",
+      "path": "src/modules/support/domain/model/supportCase.types.ts",
+      "line": 2
+    },
+    {
+      "symbol": "SupportCaseSlaStatus",
+      "path": "src/modules/support/domain/model/supportCase.types.ts",
+      "line": 50
+    },
+    {
+      "symbol": "DealLifecycleMutationMetadata",
+      "path": "src/modules/deals/public/deals.ts",
+      "line": 52
+    },
+    {
+      "symbol": "DealNextStepStatus",
+      "path": "src/modules/deals/domain/rules/dealPipelineHealth.ts",
+      "line": 7
+    },
+    {
+      "symbol": "TaskStatus",
+      "path": "src/modules/tasks/domain/model/task.types.ts",
+      "line": 3
+    },
+    {
+      "symbol": "getPaymentIntentStatusAuthoritative",
+      "path": "src/modules/payments/public/api.ts",
+      "line": 137
+    },
+    {
+      "symbol": "PaymentTransactionStatus",
+      "path": "src/modules/payments/domain/model/payment.types.ts",
+      "line": 4
+    },
+    {
+      "symbol": "PaymentReconciliationState",
+      "path": "src/modules/payments/domain/model/payment.types.ts",
+      "line": 6
+    },
+    {
+      "symbol": "PaymentObligationStatus",
+      "path": "src/modules/payments/domain/model/payment.types.ts",
+      "line": 16
+    },
+    {
+      "symbol": "CodCollectionState",
+      "path": "src/modules/payments/domain/model/payment.types.ts",
+      "line": 17
+    },
+    {
+      "symbol": "PaymentSummaryState",
+      "path": "src/modules/payments/domain/model/payment.types.ts",
+      "line": 101
+    },
+    {
+      "symbol": "PaymentPlanState",
+      "path": "src/modules/payments/domain/model/paymentPlan.types.ts",
+      "line": 25
+    },
+    {
+      "symbol": "PaymentScheduleLineState",
+      "path": "src/modules/payments/domain/model/paymentPlan.types.ts",
+      "line": 26
+    },
+    {
+      "symbol": "PaymentIntentState",
+      "path": "src/modules/payments/domain/model/paymentCollection.types.ts",
+      "line": 6
+    },
+    {
+      "symbol": "RefundIntentState",
+      "path": "src/modules/payments/domain/model/paymentCollection.types.ts",
+      "line": 7
+    },
+    {
+      "symbol": "PaymentRecordState",
+      "path": "src/modules/payments/domain/model/paymentCollection.types.ts",
+      "line": 8
+    },
+    {
+      "symbol": "PaymentAllocationState",
+      "path": "src/modules/payments/domain/model/paymentCollection.types.ts",
+      "line": 9
+    },
+    {
+      "symbol": "CustomerCreditState",
+      "path": "src/modules/payments/domain/model/paymentCollection.types.ts",
+      "line": 10
+    },
+    {
+      "symbol": "CodCustomerCollectionState",
+      "path": "src/modules/payments/domain/model/paymentCollection.types.ts",
+      "line": 11
+    },
+    {
+      "symbol": "CodMerchantRemittanceState",
+      "path": "src/modules/payments/domain/model/paymentCollection.types.ts",
+      "line": 12
+    },
+    {
+      "symbol": "ShippingLifecycleMutationMetadata",
+      "path": "src/modules/shipping/public/api.ts",
+      "line": 18
+    },
+    {
+      "symbol": "ShippingProviderStatus",
+      "path": "src/modules/shipping/domain/model/shippingConfiguration.types.ts",
+      "line": 13
+    },
+    {
+      "symbol": "BookingStatus",
+      "path": "src/modules/shipping/domain/model/shipping.types.ts",
+      "line": 3
+    },
+    {
+      "symbol": "ExternalShippingStatus",
+      "path": "src/modules/shipping/domain/model/shipping.types.ts",
+      "line": 4
+    },
+    {
+      "symbol": "ProductStatus",
+      "path": "src/modules/products/domain/model/product.types.ts",
+      "line": 12
+    },
+    {
+      "symbol": "LeadLifecycleMutationMetadata",
+      "path": "src/modules/leads/public/leads.ts",
+      "line": 149
+    },
+    {
+      "symbol": "LeadWorkState",
+      "path": "src/modules/leads/domain/model/leadLifecycle.canonical.ts",
+      "line": 4
+    },
+    {
+      "symbol": "LeadWorkState",
+      "path": "src/modules/leads/domain/model/leadLifecycle.canonical.ts",
+      "line": 11
+    },
+    {
+      "symbol": "QualificationOutcome",
+      "path": "src/modules/leads/domain/model/leadLifecycle.canonical.ts",
+      "line": 14
+    },
+    {
+      "symbol": "QualificationOutcome",
+      "path": "src/modules/leads/domain/model/leadLifecycle.canonical.ts",
+      "line": 21
+    },
+    {
+      "symbol": "LeadLifecycleDisplayKey",
+      "path": "src/modules/leads/domain/model/leadLifecycle.canonical.ts",
+      "line": 76
+    },
+    {
+      "symbol": "OrderLifecycleMutationMetadata",
+      "path": "src/modules/orders/public/orders.ts",
+      "line": 26
+    },
+    {
+      "symbol": "OrderState",
+      "path": "src/modules/orders/domain/model/order.types.ts",
+      "line": 45
+    },
+    {
+      "symbol": "OrderState",
+      "path": "src/modules/orders/domain/model/order.types.ts",
+      "line": 51
+    },
+    {
+      "symbol": "getCustomerStateProjectionSnapshot",
+      "path": "src/modules/commercial-evidence/public/api.ts",
+      "line": 28
+    },
+    {
+      "symbol": "CustomerState",
+      "path": "src/modules/commercial-evidence/domain/model/purchaseEvidence.types.ts",
+      "line": 3
+    },
+    {
+      "symbol": "getAccountStatementResource",
+      "path": "src/modules/invoices/public/api.ts",
+      "line": 116
+    },
+    {
+      "symbol": "updateReceivableCollectionActivityState",
+      "path": "src/modules/invoices/runtime/receivableOperationsStore.ts",
+      "line": 64
+    },
+    {
+      "symbol": "updateReceivableCollectionActivityState",
+      "path": "src/modules/invoices/application/composition/invoiceApplicationServices.ts",
+      "line": 31
+    },
+    {
+      "symbol": "InvoiceLifecycleState",
+      "path": "src/modules/invoices/domain/model/invoice.types.ts",
+      "line": 5
+    },
+    {
+      "symbol": "InvoiceDeliveryState",
+      "path": "src/modules/invoices/domain/model/invoice.types.ts",
+      "line": 6
+    },
+    {
+      "symbol": "SettlementState",
+      "path": "src/modules/invoices/domain/model/invoice.types.ts",
+      "line": 7
+    },
+    {
+      "symbol": "CreditNoteState",
+      "path": "src/modules/invoices/domain/model/invoice.types.ts",
+      "line": 8
+    },
+    {
+      "symbol": "CustomerAssessmentSignalStatus",
+      "path": "src/modules/customers/presentation/model/customerAssessment.types.ts",
+      "line": 8
+    },
+    {
+      "symbol": "CustomerStatus",
+      "path": "src/modules/customers/presentation/model/customerDisplay.types.ts",
+      "line": 3
+    },
+    {
+      "symbol": "CustomerStatus",
+      "path": "src/modules/customers/domain/model/customer.types.ts",
+      "line": 6
+    },
+    {
+      "symbol": "CustomerOnboardingStatus",
+      "path": "src/modules/customers/domain/model/customer.types.ts",
+      "line": 16
+    },
+    {
+      "symbol": "CustomerCareCardStatus",
+      "path": "src/modules/customers/domain/model/customer.types.ts",
+      "line": 66
+    },
+    {
+      "path": "src/modules/payments/domain/model/paymentCollection.types.ts",
+      "symbol": "RefundProviderAttemptState",
+      "values": [
+        "QUEUED",
+        "SUBMITTED",
+        "PROCESSING",
+        "SUCCEEDED",
+        "FAILED",
+        "CANCELLATION_REQUESTED",
+        "CANCELLED",
+        "CANCELLATION_REJECTED",
+        "UNKNOWN"
+      ]
+    }
+  ]
+}

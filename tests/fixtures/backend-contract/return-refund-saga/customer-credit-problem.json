@@ -1,0 +1,9 @@
+{
+  "type": "urn:unicore:error:return-customer-credit-policy-required",
+  "title": "Customer Credit policy required",
+  "status": 409,
+  "code": "RETURN_CUSTOMER_CREDIT_POLICY_REQUIRED",
+  "retryable": false,
+  "correlationId": "corr_rr_002",
+  "aggregateId": "return_001"
+}

@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitAny": true,
+    "useUnknownInCatchVariables": true,
+    "noUncheckedIndexedAccess": true,
+    "exactOptionalPropertyTypes": true
+  },
+  "include": [
+    "src/shared/application/**/*.ts",
+    "src/platform/api/**/*.ts",
+    "src/shared/domain/**/*.ts",
+    "src/shared/money/**/*.ts",
+    "src/shared/order-to-cash/**/*.ts"
+  ]
+}

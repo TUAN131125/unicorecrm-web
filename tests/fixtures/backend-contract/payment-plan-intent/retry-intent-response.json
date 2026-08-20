@@ -1,0 +1,38 @@
+{
+  "commandId": "cmd_001",
+  "correlationId": "corr_001",
+  "aggregateId": "pi_002",
+  "aggregateType": "payment-intent",
+  "version": 1,
+  "occurredAt": "2026-07-25T00:00:00Z",
+  "outcome": "COMMITTED",
+  "result": {
+    "intent": {
+      "id": "pi_002",
+      "buyerRef": {
+        "type": "ORGANIZATION_ACCOUNT",
+        "id": "buyer_001"
+      },
+      "orderId": "order_001",
+      "invoiceIds": [
+        "inv_001"
+      ],
+      "scheduleLineIds": [
+        "psl_001"
+      ],
+      "amount": {
+        "amount": "1000000",
+        "currency": "VND"
+      },
+      "methodCode": "BANK_TRANSFER",
+      "providerCode": "BANK_A",
+      "state": "REQUIRES_ACTION",
+      "checkoutUrl": "https://payments.example.test/checkout/pi_001",
+      "expiresAt": "2026-07-25T01:00:00Z",
+      "resourceVersion": 1,
+      "createdAt": "2026-07-25T00:00:00Z",
+      "updatedAt": "2026-07-25T00:00:00Z"
+    },
+    "retryOfIntentId": "pi_001"
+  }
+}

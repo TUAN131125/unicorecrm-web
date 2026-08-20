@@ -1,0 +1,629 @@
+{
+  "schemaVersion": 1,
+  "sourceSha256": "655a4d9b2e547c92cfaaf62bfd5c4ccf637a4b8271eb703e13211538728f5b8c",
+  "createdBeforeSourceChanges": true,
+  "findings": [
+    {
+      "ID": "H-01",
+      "Severity": "High",
+      "Area": "API Contract",
+      "Finding": "Split contract authority; 88/106 mutations use open CommandPayload and generic mutation response.",
+      "Evidence": "docs/api/openapi.json — schemas CommandPayload, CommandMutationResponse",
+      "Impact": "Backend cannot derive typed request, response, validation, event, or audit requirements.",
+      "reproductionStatus": "CONFIRMED",
+      "remediationStatus": "CLOSED",
+      "owner": "API Contract Architecture",
+      "notes": "Reproduced from current source and OpenAPI. P0 closure status recorded after source remediation.",
+      "closureEvidence": "docs/api/openapi.json; 41 ready mutations use closed typed request/response schemas; generic production mutation request/result count is zero.",
+      "remainingRisk": "None for P0; blocked mutations still need module decisions before implementation."
+    },
+    {
+      "ID": "H-02",
+      "Severity": "High",
+      "Area": "API Contract",
+      "Finding": "Production command authority was incomplete and generic routing could diverge from the operation-level OpenAPI contract.",
+      "Evidence": "src/platform/api/runtime/RoutedHttpMutationAuthority.ts — MODULE_PREFIXES, WORKFLOW_ROUTES, COLLECTION_COMMANDS, execute()",
+      "Impact": "Backend and frontend can implement different URLs/semantics while local tests still pass.",
+      "reproductionStatus": "CONFIRMED",
+      "remediationStatus": "PARTIALLY_CLOSED",
+      "owner": "Module Domain Owners + API Contract Architect",
+      "notes": "Reproduced from current source and OpenAPI. P0 closure status recorded after source remediation.",
+      "closureEvidence": "docs/backend-readiness/command-registry.json; all 173 commands are classified: 152 ready, 17 blocked and 4 deprecated. Ready commands resolve through typed operation mappings; blocked/deprecated commands fail before network.",
+      "remainingRisk": "17 blocked commands and 4 deprecated commands require module-owned DTO, invariant and workflow decisions before production implementation."
+    },
+    {
+      "ID": "H-03",
+      "Severity": "High",
+      "Area": "Queries",
+      "Finding": "Generic connected authority assumes list/detail for all 15 modules; OpenAPI lacks 5 list and 11 detail operations.",
+      "Evidence": "src/platform/api/runtime/HttpModuleDataAuthority.ts — DEFAULT_MODULE_AUTHORITY_DEFINITIONS; docs/api/openapi.json",
+      "Impact": "Production screens can fail or force over-fetch/client filtering.",
+      "reproductionStatus": "CONFIRMED",
+      "remediationStatus": "PARTIALLY_CLOSED",
+      "owner": "Module Domain Owners + Read Model Architect",
+      "notes": "Reproduced from current source and OpenAPI. P0 closure status recorded after source remediation.",
+      "closureEvidence": "Lead, Product, Deal, Quote, Order, Shipping, Return, Support and Task list/detail authority is explicit; query registry classifies all 141 symbols without generic path inference.",
+      "remainingRisk": "12 query symbols remain unresolved; no generic route inference exists."
+    },
+    {
+      "ID": "H-04",
+      "Severity": "High",
+      "Area": "Lifecycle",
+      "Finding": "Lead domain lifecycle conflicts with OpenAPI status enum.",
+      "Evidence": "src/modules/leads/domain/model/leadLifecycle.canonical.ts — LeadWorkState, QualificationOutcome; docs/api/openapi.json — LeadDocument.status",
+      "Impact": "Backend state machine and persisted status would be incompatible.",
+      "reproductionStatus": "CONFIRMED",
+      "remediationStatus": "CLOSED",
+      "owner": "Module/Platform Owner",
+      "notes": "Reproduced from current source and OpenAPI. P0 closure status recorded after source remediation.",
+      "closureEvidence": "src/modules/leads/domain/model/leadLifecycle.canonical.ts; docs/backend-readiness/lead-lifecycle.json; OpenAPI LeadDocument uses leadWorkState + qualificationOutcome.",
+      "remainingRisk": "Positive close/reopen/archive operations remain blocked until evidence and transaction semantics are approved."
+    },
+    {
+      "ID": "H-05",
+      "Severity": "High",
+      "Area": "Audit/Authority",
+      "Finding": "Connected mutation layer fabricates commandId, correlationId, occurredAt and labels audit authority backend when response omits them.",
+      "Evidence": "src/platform/api/runtime/RoutedHttpMutationAuthority.ts — toMutationOutcome()",
+      "Impact": "Frontend can mask absent authoritative audit/version evidence.",
+      "reproductionStatus": "CONFIRMED",
+      "remediationStatus": "CLOSED",
+      "owner": "Module/Platform Owner",
+      "notes": "Reproduced from current source and OpenAPI. P0 closure status recorded after source remediation.",
+      "closureEvidence": "src/platform/api/runtime/RoutedHttpMutationAuthority.ts — assertAuthoritativeMutationResponse(); connected authority requires commandId/correlationId/version/occurredAt and never fabricates them.",
+      "remainingRisk": "Backend provider tests remain unavailable until a backend exists."
+    },
+    {
+      "ID": "H-06",
+      "Severity": "High",
+      "Area": "Authorization/Tenancy",
+      "Finding": "No OpenAPI operation carries required capability/resource/data-scope policy.",
+      "Evidence": "docs/api/openapi.json; src/platform/access-control/domain/capabilityCatalog.ts; runtimeCommandAuthorization.ts",
+      "Impact": "UI visibility/catalog cannot tell backend which permission to enforce per operation.",
+      "reproductionStatus": "CONFIRMED",
+      "remediationStatus": "CLOSED",
+      "owner": "Module/Platform Owner",
+      "notes": "Reproduced from current source and OpenAPI. P0 closure status recorded after source remediation.",
+      "closureEvidence": "docs/backend-readiness/operation-authorization-matrix.json; all 270 operations declare capability, module, resource scope, data scope, workspace and actor policies.",
+      "remainingRisk": "Resource predicates and live cross-workspace enforcement still require backend provider execution."
+    },
+    {
+      "ID": "H-07",
+      "Severity": "High",
+      "Area": "Support",
+      "Finding": "Support has no API and client owns server fields and transitions.",
+      "Evidence": "src/modules/support/application/commands/supportCaseCommands.ts; src/modules/support/domain/rules/supportCaseLifecycle.ts",
+      "Impact": "Race-prone sequence/SLA/status/audit and mass-assignment exposure.",
+      "reproductionStatus": "CONFIRMED",
+      "remediationStatus": "CLOSED",
+      "owner": "Support Backend Owner + Work Management Backend Owner + API Contract Architect",
+      "notes": "Reproduced from current source and OpenAPI. P0 closure status recorded after source remediation. P0.2 closes Quote acceptance, standard Order confirmation/cancellation and Payment reconciliation while preserving explicit blockers for credit override, allocation, refund and COD.",
+      "closureEvidence": "P0.7 typed Support and Task list/detail/lifecycle contracts, server-owned ID/sequence/SLA/version/audit evidence, connected fail-closed local mutations and provider packs.",
+      "remainingRisk": "Live provider execution remains BLOCKED_EXTERNAL; generic support.update stays blocked."
+    },
+    {
+      "ID": "H-08",
+      "Severity": "High",
+      "Area": "Workflow",
+      "Finding": "Frontend coordinates cross-module transactions with repository snapshots and rollback.",
+      "Evidence": "src/workflows/order-confirmation/index.ts; order-cancellation; quote-acceptance; return-credit-refund",
+      "Impact": "Browser cannot guarantee atomicity, durable saga state, retries, or compensation.",
+      "reproductionStatus": "CONFIRMED",
+      "remediationStatus": "CLOSED",
+      "owner": "Module/Platform Owner",
+      "notes": "Reproduced from current source and OpenAPI. P0 closure status recorded after source remediation. P0.2 closes Quote acceptance, standard Order confirmation/cancellation and Payment reconciliation while preserving explicit blockers for credit override, allocation, refund and COD.",
+      "closureEvidence": "P0.2 assigns Quote acceptance, standard Order confirmation/cancellation and Payment reconciliation to backend transaction boundaries; connected frontend coordination is prohibited.",
+      "remainingRisk": "Backend transaction/saga implementation and durable compensation tests are future work."
+    },
+    {
+      "ID": "H-09",
+      "Severity": "High",
+      "Area": "Security",
+      "Finding": "Open generic DTOs and Partial<T> update patterns create mass-assignment risk.",
+      "Evidence": "docs/api/openapi.json — CommandPayload additionalProperties; src/modules/support/application/commands/supportCaseCommands.ts — update spread",
+      "Impact": "Client-controlled status/owner/totals/evidence may be trusted accidentally.",
+      "reproductionStatus": "CONFIRMED",
+      "remediationStatus": "CLOSED",
+      "owner": "Module/Platform Owner",
+      "notes": "Reproduced from current source and OpenAPI. P0 closure status recorded after source remediation.",
+      "closureEvidence": "Generic CommandPayload/CommandMutationResponse removed; ready mutation DTOs are closed; blocked operations have no request body or 2xx response.",
+      "remainingRisk": "Legacy Partial<T>/browser repositories remain demo-only and must never be reused as backend DTOs."
+    },
+    {
+      "ID": "H-10",
+      "Severity": "High",
+      "Area": "Testing",
+      "Finding": "Connected acceptance proves a narrow Lead path against a test host, not full provider coverage.",
+      "Evidence": "tests/quality/acceptance/check-real-backend-contract.mts; tests/fixtures/connected-host/connectedApiTestHost.mjs",
+      "Impact": "Passing tests overstate production backend readiness across 15 modules.",
+      "reproductionStatus": "CONFIRMED",
+      "remediationStatus": "BLOCKED_EXTERNAL",
+      "owner": "Backend Implementation Team + CI/Environment Owner",
+      "notes": "Confirmed as evidence-scope limitation; no provider-wide production proof exists. P0 closure status recorded after source remediation.",
+      "closureEvidence": "16 deterministic provider packs with 234 scenarios pass against the P0.9 reference provider host using actual OpenAPI paths and schemas.",
+      "remainingRisk": "Reference conformance does not prove durable production backend behavior; external provider execution remains blocked."
+    },
+    {
+      "ID": "H-11",
+      "Severity": "High",
+      "Area": "Idempotency",
+      "Finding": "14 important mutation operations omit Idempotency-Key despite command semantics.",
+      "Evidence": "docs/api/openapi.json — issueInvoice, voidInvoice, payment plan/payment allocation/COD operations",
+      "Impact": "Replay can duplicate irreversible financial/lifecycle effects.",
+      "reproductionStatus": "CONFIRMED",
+      "remediationStatus": "CLOSED",
+      "owner": "Module/Platform Owner",
+      "notes": "Reproduced from current source and OpenAPI. P0 closure status recorded after source remediation.",
+      "closureEvidence": "docs/backend-readiness/idempotency-policy.json; every operation classified; all ready risky mutations require Idempotency-Key; issueInvoice adapter supplies a stable key.",
+      "remainingRisk": "Backend persistence/retention/replay behavior must be tested during implementation."
+    },
+    {
+      "ID": "H-12",
+      "Severity": "High",
+      "Area": "Data Model",
+      "Finding": "Money is decimal-string in shared/OpenAPI but number in Orders, Quotes, Payments, Shipping.",
+      "Evidence": "src/shared/money/money.ts; src/modules/orders/domain/model/order.types.ts; quote.types.ts; payment.types.ts; shipping.types.ts",
+      "Impact": "Precision, scale, rounding, and serialization can diverge.",
+      "reproductionStatus": "CONFIRMED",
+      "remediationStatus": "CLOSED",
+      "owner": "Module/Platform Owner",
+      "notes": "Reproduced from current source and OpenAPI. P0 closure status recorded after source remediation.",
+      "closureEvidence": "src/modules/invoices/application/ports/InvoiceApiPort.ts and OpenAPI draft request schemas exclude totals; demo adapter calculates totals; connected adapter requires typed backend result.",
+      "remainingRisk": "Global tax precision and allocation residual policy remain unresolved outside the Invoice vertical slice."
+    },
+    {
+      "ID": "M-01",
+      "Severity": "Medium",
+      "Area": "Errors",
+      "Finding": "50 frontend codes exist but ApiError.code is unrestricted string and operations do not enumerate stable codes.",
+      "Evidence": "src/shared/domain/applicationError.ts; docs/api/openapi.json — ApiError",
+      "Impact": "Frontend cannot reliably branch on business errors/provider contracts.",
+      "reproductionStatus": "CONFIRMED",
+      "remediationStatus": "CLOSED",
+      "owner": "API Contract Architecture",
+      "notes": "Reproduced from current source and OpenAPI. P0 closure status recorded after source remediation.",
+      "closureEvidence": "docs/backend-readiness/error-catalog.json; OpenAPI ErrorCode and ProblemDetails define 26 stable codes and operation references.",
+      "remainingRisk": "Module-specific error expansion may be needed as blocked operations are specified."
+    },
+    {
+      "ID": "M-02",
+      "Severity": "Medium",
+      "Area": "Errors",
+      "Finding": "Several screens render raw error messages.",
+      "Evidence": "src/modules/invoices/presentation/pages/InvoiceFormPage.tsx; payments pages; users/permissions pages",
+      "Impact": "May expose operator/provider details or unstable server text.",
+      "reproductionStatus": "CONFIRMED",
+      "remediationStatus": "OPEN_P1",
+      "owner": "API Contract Architecture",
+      "notes": "Reproduced from current source and OpenAPI. P0 closure status recorded after source remediation.",
+      "closureEvidence": "Canonical parser preserves code/correlation and user-safe title, but not every presentation surface was refactored in P0.",
+      "remainingRisk": "Raw/legacy UI message rendering still needs a presentation audit before integration."
+    },
+    {
+      "ID": "M-03",
+      "Severity": "Medium",
+      "Area": "Queries",
+      "Finding": "Generic adapters emit cursor/search/sort/filter conventions not declared consistently in OpenAPI.",
+      "Evidence": "src/platform/api/runtime/HttpModuleDataAuthority.ts — buildListQuery(); docs/api/openapi.json",
+      "Impact": "Backend query grammar and performance/index requirements are ambiguous.",
+      "reproductionStatus": "CONFIRMED",
+      "remediationStatus": "CLOSED",
+      "owner": "API Contract Architecture",
+      "notes": "Reproduced from current source and OpenAPI. P0 closure status recorded after source remediation.",
+      "closureEvidence": "HttpModuleDataAuthority only sends OpenAPI-whitelisted parameters and blocks unsupported query grammar.",
+      "remainingRisk": "Missing projection/filter decisions remain represented as blockers."
+    },
+    {
+      "ID": "M-04",
+      "Severity": "Medium",
+      "Area": "Enums",
+      "Finding": "Closed frontend/OpenAPI enums have no unknown-value fallback/version policy.",
+      "Evidence": "docs/api/openapi.json; module lifecycle/type files",
+      "Impact": "Additive backend states can break clients or be misrendered.",
+      "reproductionStatus": "CONFIRMED",
+      "remediationStatus": "CLOSED",
+      "owner": "Module/Platform Owner",
+      "notes": "Reproduced from current source and OpenAPI. P0 closure status recorded after source remediation.",
+      "closureEvidence": "openApiRuntimeValidation.ts rejects unknown closed-enum values; deterministic negative fixture added.",
+      "remainingRisk": "Future additive enum changes require explicit extension-point policy or coordinated client update."
+    },
+    {
+      "ID": "M-05",
+      "Severity": "Medium",
+      "Area": "Versioning",
+      "Finding": "/v1 and breaking checks exist, but no deprecation/sunset policy.",
+      "Evidence": "docs/api/openapi.json; scripts/api/openapi/breaking-changes.mjs",
+      "Impact": "Safe evolution and client migration timing are undefined.",
+      "reproductionStatus": "CONFIRMED",
+      "remediationStatus": "CLOSED",
+      "owner": "API Contract Architecture",
+      "notes": "Reproduced from current source and OpenAPI. P0 closure status recorded after source remediation.",
+      "closureEvidence": "docs/backend-readiness/api-evolution-policy.md/json and OpenAPI x-api-versioning-policy/x-deprecation-policy.",
+      "remainingRisk": "Operational enforcement of Sunset/Deprecation headers is backend P2."
+    },
+    {
+      "ID": "M-06",
+      "Severity": "Medium",
+      "Area": "Authority",
+      "Finding": "Many modules create IDs, timestamps, owner/actor strings and derived totals client-side.",
+      "Evidence": "module commands/hooks; customer360/read-model calculations",
+      "Impact": "Backend ownership must be explicit; accepting these fields enables spoofing/drift.",
+      "reproductionStatus": "CONFIRMED",
+      "remediationStatus": "PARTIALLY_CLOSED",
+      "owner": "Module/Platform Owner",
+      "notes": "Reproduced from current source and OpenAPI. P0 closure status recorded after source remediation.",
+      "closureEvidence": "Connected mutation/query boundaries prohibit server evidence generation and block unsafe projections.",
+      "remainingRisk": "Demo/browser code still creates local IDs/timestamps by design; architecture guard must keep it isolated."
+    },
+    {
+      "ID": "M-07",
+      "Severity": "Medium",
+      "Area": "Evidence",
+      "Finding": "Operation coverage ledger treats generated/generic boundary presence as connected coverage.",
+      "Evidence": "docs/api/operation-coverage-ledger.json",
+      "Impact": "Audit evidence can report “covered” while use-case payload/path is not implementable.",
+      "reproductionStatus": "CONFIRMED",
+      "remediationStatus": "CLOSED",
+      "owner": "Module/Platform Owner",
+      "notes": "Reproduced from current source and OpenAPI. P0 closure status recorded after source remediation.",
+      "closureEvidence": "docs/api/operation-coverage-ledger.json distinguishes 236 ready and 34 blocked operations instead of equating generated mapping with implementation.",
+      "remainingRisk": "Live provider/runtime coverage remains separate and BLOCKED_EXTERNAL."
+    },
+    {
+      "ID": "M-08",
+      "Severity": "Medium",
+      "Area": "Adapters",
+      "Finding": "Generic command router coexists with specialized invoice/payment generated clients.",
+      "Evidence": "RoutedHttpMutationAuthority.ts; src/platform/api/generated/*; invoice/payment HTTP adapters",
+      "Impact": "Duplicate contract surfaces can drift and invoke different semantics.",
+      "reproductionStatus": "CONFIRMED",
+      "remediationStatus": "CLOSED",
+      "owner": "Module/Platform Owner",
+      "notes": "Reproduced from current source and OpenAPI. P0 closure status recorded after source remediation.",
+      "closureEvidence": "Obsolete generic HttpMutationAuthority removed; RoutedHttpMutationAuthority is command-registry-only; generated clients remain infrastructure-only; connected generic mutations fail closed.",
+      "remainingRisk": "79 commands are intentionally blocked pending semantic decisions."
+    },
+    {
+      "ID": "M-09",
+      "Severity": "Medium",
+      "Area": "Support",
+      "Finding": "Case sequence and SLA use client clock/max+1 calculation.",
+      "Evidence": "supportCaseLifecycle.ts — createNextSupportCaseSequence(), transitionSupportCase()",
+      "Impact": "Concurrent creates and clock differences produce duplicates/incorrect SLA.",
+      "reproductionStatus": "CONFIRMED",
+      "remediationStatus": "BLOCKED",
+      "owner": "Support Backend Owner",
+      "notes": "Reproduced from current source and OpenAPI. P0 closure status recorded after source remediation.",
+      "closureEvidence": "Support connected mode is blocked and server-owned SLA/sequence decisions are recorded.",
+      "remainingRisk": "Support backend owner must define atomic sequence and calendar/SLA behavior."
+    },
+    {
+      "ID": "M-10",
+      "Severity": "Medium",
+      "Area": "Configuration",
+      "Finding": "Many configuration payloads are JsonObject/additionalProperties without typed schemas.",
+      "Evidence": "docs/api/openapi.json — configuration/studio operations",
+      "Impact": "Backend storage/validation/security boundaries are unspecified.",
+      "reproductionStatus": "CONFIRMED",
+      "remediationStatus": "BLOCKED",
+      "owner": "Configuration Domain Owners",
+      "notes": "Reproduced from current source and OpenAPI. P0 closure status recorded after source remediation.",
+      "closureEvidence": "Configuration reads remain explicitly typed only at envelope level and mutation operations are blocked when DTOs are generic.",
+      "remainingRisk": "Configuration-specific DTOs require configuration domain owners."
+    },
+    {
+      "ID": "M-11",
+      "Severity": "Medium",
+      "Area": "Verification",
+      "Finding": "Dependency-backed full typecheck/build/jsdom gates could not be run from archive.",
+      "Evidence": "package.json; absent node_modules; gate execution evidence",
+      "Impact": "Some runtime/type integration defects remain BLOCKED, not PASS.",
+      "reproductionStatus": "CONFIRMED",
+      "remediationStatus": "BLOCKED_EXTERNAL",
+      "owner": "Backend Implementation Team + CI/Environment Owner",
+      "notes": "Confirmed environment limitation; dependency-backed validation remains externally dependent. P0 closure status recorded after source remediation.",
+      "closureEvidence": "node_modules absent; dependency-backed typecheck/build/jsdom/browser/provider gates cannot run.",
+      "remainingRisk": "Static syntax and P0 deterministic gates do not replace full compilation/E2E."
+    },
+    {
+      "ID": "M-12",
+      "Severity": "Medium",
+      "Area": "Operations",
+      "Finding": "41 operations lack the full request/correlation/error/rate-limit header/error set used by the foundation.",
+      "Evidence": "docs/api/openapi.json; src/platform/api/client/FetchHttpClient.ts",
+      "Impact": "Observability and operational behavior differ by endpoint.",
+      "reproductionStatus": "CONFIRMED",
+      "remediationStatus": "CLOSED",
+      "owner": "API Contract Architecture",
+      "notes": "Reproduced from current source and OpenAPI. P0 closure status recorded after source remediation.",
+      "closureEvidence": "All 270 operations declare request/correlation/workspace policy, ProblemDetails errors, capability and operational metadata.",
+      "remainingRisk": "Rate-limit and production observability behavior still needs backend provider tests."
+    },
+    {
+      "ID": "L-01",
+      "Severity": "Low",
+      "Area": "OpenAPI Hygiene",
+      "Finding": "Top-level tags omit Shipping and Returns although operations use them.",
+      "Evidence": "docs/api/openapi.json — tags vs operation tags",
+      "Impact": "Generated docs/grouping are inconsistent.",
+      "reproductionStatus": "CONFIRMED",
+      "remediationStatus": "CLOSED",
+      "owner": "Module/Platform Owner",
+      "notes": "Reproduced from current source and OpenAPI. P0 closure status recorded after source remediation.",
+      "closureEvidence": "OpenAPI top-level tags cover all operation tags, including Shipping and Returns.",
+      "remainingRisk": "None."
+    },
+    {
+      "ID": "L-02",
+      "Severity": "Low",
+      "Area": "Architecture",
+      "Finding": "Guidance application store directly uses localStorage.",
+      "Evidence": "src/guidance/application/guidanceProgressStore.ts",
+      "Impact": "Minor layer leak; not a core backend blocker.",
+      "reproductionStatus": "CONFIRMED",
+      "remediationStatus": "OPEN_P3",
+      "owner": "Module/Platform Owner",
+      "notes": "Reproduced from current source and OpenAPI. P0 closure status recorded after source remediation.",
+      "closureEvidence": "Guidance progress remains browser UI preference and is excluded from backend aggregate authority.",
+      "remainingRisk": "Layer placement can be improved later."
+    },
+    {
+      "ID": "L-03",
+      "Severity": "Low",
+      "Area": "Persistence",
+      "Finding": "UI preferences and business compatibility snapshots share repository inventory terminology.",
+      "Evidence": "docs/quality/repository-inventory.json; browser persistence files",
+      "Impact": "Teams may mistake UI state for backend aggregate storage.",
+      "reproductionStatus": "CONFIRMED",
+      "remediationStatus": "CLOSED",
+      "owner": "Module/Platform Owner",
+      "notes": "Reproduced from current source and OpenAPI. P0 closure status recorded after source remediation.",
+      "closureEvidence": "Persistence/ownership documentation distinguishes UI preferences, demo snapshots and production aggregates.",
+      "remainingRisk": "Teams must continue enforcing naming/architecture guards."
+    },
+    {
+      "ID": "L-04",
+      "Severity": "Low",
+      "Area": "Errors",
+      "Finding": "ApiError.details is untyped and may contain unsafe diagnostics.",
+      "Evidence": "docs/api/openapi.json — ApiError.details",
+      "Impact": "Needs server-side allow-list/redaction.",
+      "reproductionStatus": "CONFIRMED",
+      "remediationStatus": "CLOSED",
+      "owner": "API Contract Architecture",
+      "notes": "Reproduced from current source and OpenAPI. P0 closure status recorded after source remediation.",
+      "closureEvidence": "ProblemDetails is closed and diagnostics are allow-listed; no generic ApiError.details exists in OpenAPI.",
+      "remainingRisk": "Frontend ApplicationError details remain internal compatibility data and should not be displayed raw."
+    }
+  ],
+  "p01InputSha256": "3a552c51585a3d030e3cae3d5df3253b39fd08da13f6c9ec1352a80b286d3e95",
+  "contractVersion": "0.23.20-contract.0",
+  "phaseHistory": [
+    {
+      "phase": "P0.1",
+      "date": "2026-07-24",
+      "inputSha256": "3a552c51585a3d030e3cae3d5df3253b39fd08da13f6c9ec1352a80b286d3e95",
+      "contractVersion": "0.14.0-contract.0",
+      "scope": "Invoice draft-to-issue decision closure and provider contract pack",
+      "result": "READY_WITH_BLOCKERS"
+    },
+    {
+      "phase": "P0.2",
+      "date": "2026-07-24",
+      "inputSha256": "366d10d194371629de89cb9bf550b47c0d5b96a66ec27eaee0843b918002c1d0",
+      "contractVersion": "0.16.0-contract.0",
+      "scope": "Quote acceptance, standard Order confirmation/cancellation and Payment reconciliation transaction semantics; provider contract pack",
+      "result": "READY_WITH_BLOCKERS"
+    },
+    {
+      "phase": "P0.3",
+      "date": "2026-07-24",
+      "inputSha256": "2a9bd14cc4fcb46ebd3ba51906150d704cf8f5f3df80f2b105cfd1991142371a",
+      "contractVersion": "0.16.0-contract.0",
+      "scope": "Authoritative Deal/Quote/Order read models and credit approval decision pack",
+      "result": "READY_WITH_BLOCKERS"
+    },
+    {
+      "phase": "P0.4",
+      "date": "2026-07-24",
+      "inputSha256": "7e2795b78a992488b626a45300d652c5f8f521e322e20f20e1ca701f154c5e27",
+      "contractVersion": "0.18.0-contract.0",
+      "scope": "Payment allocation/reversal ledger, asynchronous refund intent, COD evidence and authoritative Payment reads",
+      "result": "READY_WITH_BLOCKERS"
+    },
+    {
+      "phase": "P0.5",
+      "contractVersion": "0.18.0-contract.0",
+      "status": "READY_WITH_BLOCKERS",
+      "scope": "Return Refund Saga and Payment Plan/Intent Money Contract Pack"
+    },
+    {
+      "phase": "P0.7",
+      "date": "2026-07-25",
+      "inputSha256": "81beb97faac80b260b8ebac784f2087bb5f46a21de5ccca466444ca617905aee",
+      "contractVersion": "0.21.0-contract.0",
+      "scope": "Direct Order draft, Support core, Tasks core and Refund recovery decision narrowing",
+      "result": "READY_WITH_BLOCKERS"
+    },
+    {
+      "phase": "P0.8",
+      "date": "2026-07-25",
+      "inputSha256": "b8df0711793e681f230c987da82c5ac65da7ff4fe2e37b5faa1849fb6554f62d",
+      "contractVersion": "0.21.0-contract.0",
+      "scope": "Refund Provider Attempt identity, asynchronous cancellation acknowledgement, retry lineage and provider recovery contract",
+      "result": "READY_WITH_BLOCKERS"
+    }
+  ],
+  "p03": {
+    "inputSha256": "2a9bd14cc4fcb46ebd3ba51906150d704cf8f5f3df80f2b105cfd1991142371a",
+    "contractVersion": "0.16.0-contract.0",
+    "closedDecisions": [
+      "DEC-P03-COMMERCIAL-READ-MODELS"
+    ],
+    "blockedDecisions": [
+      "DEC-P03-ORDER-CREDIT-APPROVAL-LIFECYCLE",
+      "DEC-P03-ACCEPTED-QUOTE-ORDER-COMMAND-SPLIT"
+    ]
+  },
+  "p04": {
+    "status": "READY_WITH_BLOCKERS",
+    "closedDecisions": [
+      "DEC-P04-PAYMENT-ALLOCATION-LEDGER",
+      "DEC-P04-PAYMENT-ALLOCATION-REVERSAL",
+      "DEC-P04-REFUND-ASYNC-INTENT",
+      "DEC-P04-COD-COLLECTION-EVIDENCE",
+      "DEC-P04-COD-REMITTANCE-EVIDENCE"
+    ],
+    "remainingBlockers": [
+      "DEC-P04-RETURN-REFUND-SAGA",
+      "DEC-P04-REFUND-CANCEL-RETRY",
+      "DEC-P03-ORDER-CREDIT-APPROVAL-LIFECYCLE",
+      "DEC-P03-ACCEPTED-QUOTE-ORDER-COMMAND-SPLIT"
+    ],
+    "providerExecution": "BLOCKED_EXTERNAL"
+  },
+  "p05": {
+    "inputSha256": "190fc1fa7511dd26b5891b274389b19340af59870e47ea897cc511a930048049",
+    "contractVersion": "0.18.0-contract.0",
+    "status": "READY_WITH_BLOCKERS",
+    "closedDecisions": [
+      "DEC-P05-PAYMENT-PLAN-MONEY-CONTRACT",
+      "DEC-P05-PAYMENT-INTENT-MONEY-CONTRACT",
+      "DEC-P04-RETURN-REFUND-SAGA"
+    ],
+    "remainingBlockers": [
+      "DEC-P04-REFUND-CANCEL-RETRY",
+      "DEC-P05-RETURN-CUSTOMER-CREDIT-REFUND-POLICY",
+      "DEC-P03-ORDER-CREDIT-APPROVAL-LIFECYCLE",
+      "DEC-P03-ACCEPTED-QUOTE-ORDER-COMMAND-SPLIT"
+    ],
+    "providerExecution": "BLOCKED_EXTERNAL"
+  },
+  "p06": {
+    "phase": "P0.6",
+    "inputSha256": "86b73b3f5ae3a76e8ab1cc2def98d7f28e7d6e46aa13f0126471a2c44a8a3059",
+    "closedDecisions": [
+      "DEC-P06-ORDER-CREDIT-APPROVAL",
+      "DEC-P06-ACCEPTED-QUOTE-ORDER-CONVERSION",
+      "DEC-P06-RETURN-CUSTOMER-CREDIT-POLICY"
+    ],
+    "remainingBlockers": [
+      "DEC-P04-REFUND-CANCEL-RETRY",
+      "DEC-P06-DIRECT-ORDER-DRAFT",
+      "Support/Tasks production authority",
+      "live provider execution"
+    ],
+    "contractVersion": "0.19.0-contract.0",
+    "status": "READY_WITH_BLOCKERS",
+    "providerExecution": "BLOCKED_EXTERNAL"
+  },
+  "phases": [
+    {
+      "phase": "P0.6",
+      "date": "2026-07-25",
+      "inputSha256": "86b73b3f5ae3a76e8ab1cc2def98d7f28e7d6e46aa13f0126471a2c44a8a3059",
+      "contractVersion": "0.19.0-contract.0",
+      "scope": "Commercial credit approval, accepted Quote conversion, Return Customer Credit policy and Refund recovery decision narrowing",
+      "result": "READY_WITH_BLOCKERS"
+    },
+    {
+      "phase": "P0.7",
+      "date": "2026-07-25",
+      "inputSha256": "81beb97faac80b260b8ebac784f2087bb5f46a21de5ccca466444ca617905aee",
+      "contractVersion": "0.21.0-contract.0",
+      "scope": "Direct Order draft, Support core, Tasks core and Refund recovery decision narrowing",
+      "result": "READY_WITH_BLOCKERS"
+    },
+    {
+      "phase": "P0.8",
+      "date": "2026-07-25",
+      "inputSha256": "b8df0711793e681f230c987da82c5ac65da7ff4fe2e37b5faa1849fb6554f62d",
+      "contractVersion": "0.21.0-contract.0",
+      "scope": "Refund Provider Attempt identity, asynchronous cancellation acknowledgement, retry lineage and provider recovery contract",
+      "result": "READY_WITH_BLOCKERS"
+    }
+  ],
+  "p07": {
+    "phase": "P0.7",
+    "inputSha256": "81beb97faac80b260b8ebac784f2087bb5f46a21de5ccca466444ca617905aee",
+    "contractVersion": "0.21.0-contract.0",
+    "status": "READY_WITH_BLOCKERS",
+    "closedDecisions": [
+      "DEC-P07-DIRECT-ORDER-DRAFT",
+      "DEC-P07-SUPPORT-CORE",
+      "DEC-P07-SUPPORT-COMMUNICATION",
+      "DEC-P07-TASK-CORE",
+      "DEC-P07-TASK-ACTIVITY"
+    ],
+    "remainingBlockers": [
+      "DEC-P07-REFUND-RECOVERY",
+      "support.update generic mutation",
+      "live provider execution",
+      "dependency-backed typecheck/build/browser E2E"
+    ],
+    "providerExecution": "BLOCKED_EXTERNAL"
+  },
+  "p08": {
+    "status": "READY_WITH_BLOCKERS",
+    "closedDecisions": [
+      "DEC-P08-REFUND-PROVIDER-ATTEMPT",
+      "DEC-P08-REFUND-CANCELLATION-ACK",
+      "DEC-P08-REFUND-RETRY-LINEAGE",
+      "DEC-P08-REFUND-IDEMPOTENCY-RETENTION"
+    ],
+    "blockedExternal": [
+      "DEC-P08-PROVIDER-ACK-TRANSPORT",
+      "LIVE_PROVIDER_CONFORMANCE",
+      "DEPENDENCY_BACKED_BUILD"
+    ],
+    "contractVersion": "0.21.0-contract.0",
+    "result": "READY_WITH_BLOCKERS"
+  },
+  "history": [
+    {
+      "phase": "P0.9",
+      "date": "2026-07-25",
+      "inputSha256": "fb504d1d15e57f2eca987d42268d682a2af944263bd7ed054b251580955d3ee8",
+      "contractVersion": "0.23.1-contract.0",
+      "scope": "Reference provider conformance, connected Lead fixture migration and Lead/Product/Shipping/Return read authority closure",
+      "result": "READY_WITH_BLOCKERS"
+    },
+    {
+      "phase": "P0.10",
+      "date": "2026-07-25",
+      "inputSha256": "63fe5ce18d96c2718e3326629607157d9325e678aeba4c66f583c4eb8b86b147",
+      "contractVersion": "0.23.1-contract.0",
+      "scope": "Process-isolated provider conformance, application DTO adapter closure and complete query registry decisions",
+      "result": "READY_WITH_BLOCKERS"
+    }
+  ],
+  "p09": {
+    "status": "READY_WITH_BLOCKERS",
+    "closedDecisions": [
+      "DEC-P09-REFERENCE-PROVIDER-CONFORMANCE",
+      "DEC-P09-CONNECTED-INTEGRATION-FIXTURE-MIGRATION",
+      "DEC-P09-LEAD-PRODUCT-READ-AUTHORITY",
+      "DEC-P09-SHIPPING-RETURN-READ-AUTHORITY"
+    ],
+    "blockedExternal": [
+      "DEC-P09-LIVE-PROVIDER-CONFORMANCE",
+      "DEPENDENCY_BACKED_BUILD"
+    ],
+    "contractVersion": "0.23.1-contract.0",
+    "result": "READY_WITH_BLOCKERS"
+  },
+  "p10": {
+    "status": "READY_WITH_BLOCKERS",
+    "closedDecisions": [
+      "DEC-P10-APPLICATION-DTO-ADAPTERS",
+      "DEC-P10-QUERY-REGISTRY-CLOSURE",
+      "DEC-P10-PROCESS-ISOLATED-REFERENCE-CONFORMANCE"
+    ],
+    "blockedExternal": [
+      "DEC-P10-LIVE-DURABLE-PROVIDER-CONFORMANCE",
+      "DEC-P10-DEPENDENCY-BACKED-VERIFICATION"
+    ],
+    "contractVersion": "0.23.1-contract.0",
+    "result": "READY_WITH_BLOCKERS"
+  }
+}

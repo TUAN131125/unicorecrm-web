@@ -1,0 +1,62 @@
+{
+  "name": "unicorecrm-web",
+  "private": true,
+  "version": "0.23.20-contract.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port=3000 --host=0.0.0.0",
+    "build": "vite build && node tests/quality/architecture/check-bundle-budget.mjs",
+    "preview": "vite preview",
+    "clean": "rm -rf dist server.js",
+    "lint": "node scripts/quality/run-quality-pipeline.mjs --group lint",
+    "typecheck": "node scripts/quality/run-quality-pipeline.mjs --group typecheck",
+    "test": "node scripts/quality/run-quality-pipeline.mjs --groups unit,contract,integration,route-smoke",
+    "verify": "node scripts/quality/run-quality-pipeline.mjs --without-acceptance",
+    "verify:no-build": "node scripts/quality/run-quality-pipeline.mjs --without-build",
+    "security:scan": "node scripts/security/scan-current-tree.mjs",
+    "api:generate": "node scripts/api/generate-openapi-client.mjs",
+    "api:check": "node scripts/quality/run-quality-pipeline.mjs --gate quality.api-contract",
+    "repo:inventory": "node scripts/generate-repository-inventory.mjs",
+    "repo:check": "node scripts/quality/run-quality-pipeline.mjs --gate quality.repository-inventory",
+    "quality:list": "node scripts/quality/run-quality-pipeline.mjs --list",
+    "quality:gate": "node scripts/quality/run-quality-pipeline.mjs --require-gate",
+    "quality:group": "node scripts/quality/run-quality-pipeline.mjs --require-group",
+    "e2e": "playwright test",
+    "e2e:connected": "node tests/tooling/run-connected-playwright.mjs",
+    "e2e:install": "playwright install chromium",
+    "e2e:critical": "node scripts/quality/run-quality-pipeline.mjs --group critical-e2e",
+    "release:prepare": "node scripts/release/create-source-release.mjs",
+    "release:check": "node scripts/release/check-source-release.mjs"
+  },
+  "dependencies": {
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1",
+    "lucide-react": "^0.546.0",
+    "motion": "^12.23.24",
+    "react": "^19.0.1",
+    "react-dom": "^19.0.1",
+    "react-router-dom": "^7.17.0",
+    "recharts": "^3.8.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.14",
+    "@vitejs/plugin-react": "^5.0.4",
+    "@axe-core/playwright": "^4.12.1",
+    "@playwright/test": "^1.61.1",
+    "@types/jsdom": "^28.0.3",
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "esbuild": "^0.25.0",
+    "jsdom": "^26.1.0",
+    "tailwindcss": "^4.1.14",
+    "tsx": "^4.21.0",
+    "typescript": "~5.8.2",
+    "vite": "^6.2.3"
+  },
+  "description": "Frontend reference implementation and technology-neutral OpenAPI contracts for Unicore CRM with deterministic quality gates.",
+  "engines": {
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
+  }
+}

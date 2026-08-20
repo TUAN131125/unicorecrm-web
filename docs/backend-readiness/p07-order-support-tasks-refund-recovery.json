@@ -1,0 +1,101 @@
+{
+  "schemaVersion": 1,
+  "contractVersion": "0.23.20-contract.0",
+  "phase": "P0.7",
+  "historicalPhaseSnapshot": true,
+  "sourceSha256": "81beb97faac80b260b8ebac784f2087bb5f46a21de5ccca466444ca617905aee",
+  "decisions": [
+    {
+      "decisionId": "DEC-P07-DIRECT-ORDER-DRAFT",
+      "status": "CLOSED",
+      "owner": "orders+payments",
+      "decision": "Direct-sale Order draft creation is a single backend transaction creating a DRAFT Order and DRAFT Payment Plan. Client sends editable commercial intent; backend owns IDs, sequence number, pricing validation/calculation, snapshots, timestamps and versions. sourceQuoteId is prohibited.",
+      "operations": [
+        "createOrderDraftCommand"
+      ],
+      "evidence": [
+        "src/workflows/order-creation/index.ts:executeOrderCreation",
+        "src/modules/orders/domain/model/order.types.ts:CustomerOrder"
+      ]
+    },
+    {
+      "decisionId": "DEC-P07-SUPPORT-CORE",
+      "status": "CLOSED",
+      "owner": "support",
+      "decision": "Support Case identity, case number, SLA deadlines/status, lifecycle timestamps, audit activities and resourceVersion are backend-owned. Core create/assign/transition commands are explicit and versioned. Generic aggregate patch remains BLOCKED.",
+      "operations": [
+        "listSupportCases",
+        "getSupportCase",
+        "createSupportCase",
+        "assignSupportCase",
+        "transitionSupportCase"
+      ],
+      "evidence": [
+        "src/modules/support/domain/rules/supportCaseLifecycle.ts",
+        "src/modules/support/application/commands/supportCaseCommands.ts"
+      ]
+    },
+    {
+      "decisionId": "DEC-P07-SUPPORT-COMMUNICATION",
+      "status": "CLOSED",
+      "owner": "support",
+      "decision": "Agent replies and internal notes are separate commands; backend owns comment/activity IDs, actor identity and timestamps.",
+      "operations": [
+        "addSupportCaseReply",
+        "addSupportCaseInternalNote"
+      ],
+      "evidence": [
+        "src/modules/support/application/commands/supportCaseCommands.ts:addSupportCaseReply",
+        "src/modules/support/application/commands/supportCaseCommands.ts:addSupportCaseInternalNote"
+      ]
+    },
+    {
+      "decisionId": "DEC-P07-TASK-CORE",
+      "status": "CLOSED",
+      "owner": "tasks",
+      "decision": "Task lifecycle is OPEN to COMPLETED or CANCELLED only. Creation, completion, cancellation, assignment, reschedule and archive are explicit backend commands; IDs, actor/time/audit and version are server-owned.",
+      "operations": [
+        "listTasks",
+        "getTask",
+        "createTask",
+        "completeTask",
+        "cancelTask",
+        "assignTask",
+        "rescheduleTask",
+        "archiveTask"
+      ],
+      "evidence": [
+        "src/modules/tasks/domain/rules/taskLifecycle.ts",
+        "src/modules/tasks/application/commands/taskCommands.ts"
+      ]
+    },
+    {
+      "decisionId": "DEC-P07-TASK-ACTIVITY",
+      "status": "CLOSED",
+      "owner": "tasks",
+      "decision": "Relationship activity logging is a separate backend transaction. The client sends activity content and references; backend owns identity, actor and occurrence time.",
+      "operations": [
+        "logActivity"
+      ],
+      "evidence": [
+        "src/modules/tasks/application/commands/taskCommands.ts:logActivity"
+      ]
+    },
+    {
+      "decisionId": "DEC-P07-REFUND-RECOVERY",
+      "status": "BLOCKED",
+      "owner": "payments+provider-integration",
+      "decision": "Refund cancellation and retry remain blocked. Current source has RefundIntent lifecycle but no provider-attempt aggregate, cancellation acknowledgement, retry linkage, same-key retention or terminal-effect evidence. No operation or schema is invented.",
+      "operations": [],
+      "blockingOperations": [
+        "cancelRefundIntent",
+        "retryRefundIntent"
+      ],
+      "evidence": [
+        "src/modules/payments/domain/model/paymentCollection.types.ts:RefundIntentState",
+        "src/modules/payments/application/commands/paymentRefundCommands.ts"
+      ],
+      "currentResolution": "P0.8 later closed provider-attempt identity, asynchronous cancellation acknowledgement and retry lineage."
+    }
+  ]
+}

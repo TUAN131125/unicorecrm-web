@@ -1,0 +1,11 @@
+import assert from "node:assert/strict";
+import { money } from "@/shared/money";
+import { buildReceivables } from "@/modules/invoices/application/queries/invoiceQueries";
+import type { InvoiceRepositorySnapshot } from "@/modules/invoices/application/ports/InvoiceRepository";
+const buyerRef = { type: "CONTACT", id: "buyer" } as const;
+const invoice = { id: "inv", invoiceNumber: "INV-1", buyerRef, sellerSnapshot: { displayName: "Seller", addressLines: [] }, buyerSnapshot: { displayName: "Buyer", addressLines: [] }, lifecycleState: "ISSUED" as const, deliveryState: "NOT_SENT" as const, issueDate: "2026-06-01", dueDate: "2026-06-10", currency: "VND", lines: [{ id: "line", description: "Service", quantity: "1", unitPrice: money("100", "VND"), discountAmount: money("0", "VND"), taxAmount: money("0", "VND"), lineTotal: money("100", "VND") }], totals: { subtotal: money("100", "VND"), discountTotal: money("0", "VND"), taxTotal: money("0", "VND"), grandTotal: money("100", "VND") }, sourceLinks: {}, version: 2, idempotencyKey: "inv", createdAt: "2026-06-01", updatedAt: "2026-06-01", issuedAt: "2026-06-01" };
+const snapshot: InvoiceRepositorySnapshot = { accountingAsOfDate: "2026-07-15", invoices: [invoice, { ...invoice, id: "draft", invoiceNumber: undefined, lifecycleState: "DRAFT", idempotencyKey: "draft" }], creditNotes: [], deliveries: [] };
+const rows = buildReceivables(snapshot, [{ invoiceId: "inv", amount: money("30", "VND"), state: "EFFECTIVE" }, { invoiceId: "inv", amount: money("50", "VND"), state: "REVERSED" }], [{ invoiceId: "inv", amount: money("20", "VND"), state: "ISSUED" }], "2026-07-15");
+assert.equal(rows.length, 1, "Draft invoices must not create receivables"); assert.equal(rows[0].outstandingAmount.amount, "50"); assert.equal(rows[0].settlementState, "PARTIAL"); assert.equal(rows[0].agingBucket, "31_60");
+const unpaid = buildReceivables(snapshot, [], [], "2026-07-15")[0]; assert.equal(unpaid.outstandingAmount.amount, "100", "Pending/failed cash evidence without effective allocation cannot reduce receivables"); assert.equal(unpaid.settlementState, "OVERDUE");
+console.log("Receivables contracts: PASS");

@@ -1,0 +1,1242 @@
+{
+  "schemaVersion": 1,
+  "capturedDate": "2026-07-23",
+  "inputSha256": "6c9ccea9c8bef36022eb1d2a1a062f0f80fc183569826ac1de340d68c71ad782",
+  "statusVocabulary": [
+    "PASS",
+    "FAIL",
+    "NOT_RUN",
+    "BLOCKED"
+  ],
+  "commands": [
+    {
+      "id": "baseline-root-and-sha",
+      "command": "sha256sum input archive; inspect archive roots",
+      "status": "PASS",
+      "evidence": "SHA matched and archive has one unicorecrm-web root."
+    },
+    {
+      "id": "quality-list",
+      "command": "node scripts/quality/run-quality-pipeline.mjs --list",
+      "status": "PASS",
+      "evidence": "180 gates in 9 groups."
+    },
+    {
+      "id": "openapi-generated-drift",
+      "command": "node scripts/api/generate-openapi-client.mjs --check",
+      "status": "PASS",
+      "evidence": "Generated fingerprint ce5b31c5c6b584cc26d3c098e9f01da9f8e1f5df087c3e7e521d494639fb4d56."
+    },
+    {
+      "id": "repository-inventory",
+      "command": "node scripts/check-repository-inventory.mjs",
+      "status": "PASS",
+      "evidence": "Stored inventory matches the input tree."
+    },
+    {
+      "id": "quality-contract",
+      "command": "node --import tsx scripts/check-quality-pipeline.mts",
+      "status": "BLOCKED",
+      "evidence": "The input command requires tsx, which is not installed in the archive. The source-only contract can be executed separately with Node type stripping after the patch."
+    },
+    {
+      "id": "dependency-install",
+      "command": "npm ci",
+      "status": "BLOCKED",
+      "evidence": "npm ci was attempted and the package gateway returned HTTP 503 while fetching yallist-3.1.1.tgz."
+    },
+    {
+      "id": "full-quality-pipeline",
+      "command": "npm run verify",
+      "status": "NOT_RUN",
+      "evidence": "Dependency-backed gates require npm ci."
+    },
+    {
+      "id": "production-build",
+      "command": "npm run build",
+      "status": "NOT_RUN",
+      "evidence": "Dependencies are absent."
+    },
+    {
+      "id": "browser-e2e",
+      "command": "npm run e2e",
+      "status": "NOT_RUN",
+      "evidence": "Dependencies and browser binaries are absent."
+    },
+    {
+      "id": "git-history-secret-scan",
+      "command": "history-aware secret scanner",
+      "status": "BLOCKED",
+      "evidence": "The archive does not contain .git history."
+    }
+  ],
+  "gates": [
+    {
+      "group": "lint",
+      "gate": "lint",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "typecheck",
+      "gate": "typecheck:strict-core",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "typecheck",
+      "gate": "check:strict-type-regions",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "typecheck",
+      "gate": "check:type-safety-budget",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:repository-naming",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:package-lock-registry",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:architecture",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:application-composition",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:workspace-capability-manifest",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:backend-readiness",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:frontend-backend-separation",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:contract-baseline",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:api-contract",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:http-api-foundation",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:authoritative-module-adapters",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:effective-record-access",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:external-authority-health",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:backend-audit-viewer",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:commercial-authoritative-queries",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:server-side-list-query",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:deal-stage-window-query",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:entry-code-splitting",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:routed-mutation-authority",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:commercial-concurrency-metadata",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:mutation-conflict-ux",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:financial-vertical-slice",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:mutation-command-authority",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:record-retention-policy",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:error-handling",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:repository-inventory",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:repository-cleanup",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:studio-single-authority",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:studio-api-contract",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:studio-v1-removal",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:compatibility-retirement",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:global-data-boundaries",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:global-type-boundaries",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:presentation-responsibility",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:large-file-responsibility",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "architecture",
+      "gate": "check:quality-pipeline",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "unit",
+      "gate": "test:forecast-analytics",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "unit",
+      "gate": "test:order-to-cash-metrics",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "unit",
+      "gate": "test:payment-plan-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "unit",
+      "gate": "test:payment-method-catalog-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "unit",
+      "gate": "test:payment-intent-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "unit",
+      "gate": "test:payment-allocation-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "unit",
+      "gate": "test:customer-credit-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "unit",
+      "gate": "test:invoice-domain-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "unit",
+      "gate": "test:receivables-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "unit",
+      "gate": "test:ai-governance-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "unit",
+      "gate": "test:record-ownership-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "unit",
+      "gate": "test:orders",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "unit",
+      "gate": "test:customers",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "unit",
+      "gate": "check:metric-catalog-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "unit",
+      "gate": "test:contacts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "unit",
+      "gate": "test:read-models",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "unit",
+      "gate": "test:relationship-identity-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "unit",
+      "gate": "test:relationship-migration-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "unit",
+      "gate": "test:support",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "unit",
+      "gate": "test:products",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "unit",
+      "gate": "test:leads",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "unit",
+      "gate": "test:deals",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "unit",
+      "gate": "test:quotes",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "unit",
+      "gate": "test:application-foundation",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "unit",
+      "gate": "test:studio-quick-setup",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "unit",
+      "gate": "test:studio-currency-exchange-rates",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "unit",
+      "gate": "test:lead-lifecycle-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "unit",
+      "gate": "test:deal-lifecycle-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "unit",
+      "gate": "test:quote-direct-sale-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:frontend-quality-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:lead-data-safety-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "check:lead-identity-governance",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "check:contact-organization-relationships",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:lead-business-rules-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:lead-scale-experience-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "check:bilingual-ui",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "check:product-glossary",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "check:user-facing-identifiers",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "check:user-facing-copy",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "check:native-browser-dialogs",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "check:design-system-consistency",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "check:enterprise-experience",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "check:release-readiness",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:order-operations-frontend-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "check:order-to-cash-no-fake-success",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "check:order-to-cash-no-payment-hardcode",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "check:order-to-cash-money-safety",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "check:order-to-cash-typography",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "check:order-to-cash-cleanup",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:sales-quick-create-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:page-description-policy",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:ui-overlay-surfaces",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "check:guidance-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:form-runtime-sizing",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:enterprise-form-experience",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "check:form-dialog-structure",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "check:detail-opportunity-attachments",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "check:detail-panel-product-actions",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:quote-order-integrity-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:sales-order-p0-p1-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:order-operations-presentation-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:order-operations-workspace-ux",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:action-button-taxonomy",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:order-operations-hardening-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:customer-relationship-integrity",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:customer-relationship-completeness",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:customer-contact-ui-parity",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:record-detail-motion-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:customer-intelligence-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:customer-view-boundary",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:work-operations-ux",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:task-create-form-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:relationship-activity-form-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:canonical-crm-form-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:contextual-prefill-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:studio-configuration-experience",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:product-space-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:shipping-create-page-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:organization-b2b-ui",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:list-filter-popover-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:opportunity-presentation-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:quote-presentation-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:quote-approval-delivery-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:shell-ai-experience",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:people-access-ux",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:maintainability-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:qc88-remediation-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:display-format-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:deal-quote-migration-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:auth-ux-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:crm-presentation-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:deal-stage-localization",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "contract",
+      "gate": "test:sales-order-p2-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "integration",
+      "gate": "test:operational-context-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "integration",
+      "gate": "test:auth-session-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "integration",
+      "gate": "test:workspace-isolation-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "integration",
+      "gate": "test:studio-module-propagation",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "integration",
+      "gate": "test:enterprise-security-evidence",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "integration",
+      "gate": "check:write-boundary-authorization",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "integration",
+      "gate": "test:integration-resilience",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "integration",
+      "gate": "test:lead-webhook-connector",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "integration",
+      "gate": "test:lead-form-recovery-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "integration",
+      "gate": "test:crm-ui-interaction-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "integration",
+      "gate": "test:role-based-navigation",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "integration",
+      "gate": "test:read-only-cross-domain",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "integration",
+      "gate": "test:data-typography-kanban",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "integration",
+      "gate": "test:order-to-cash-api-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "integration",
+      "gate": "test:guidance-runtime",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "integration",
+      "gate": "test:temporal-input-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "integration",
+      "gate": "test:contact-saved-views",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "integration",
+      "gate": "test:payment-workflow-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "integration",
+      "gate": "test:order-creation-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "integration",
+      "gate": "test:order-payment-plan-ux",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "integration",
+      "gate": "test:order-customer-delivery-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "integration",
+      "gate": "test:shipping-returns-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "integration",
+      "gate": "test:return-credit-refund-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "integration",
+      "gate": "test:customer-integration-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "integration",
+      "gate": "test:customer360-reconciliation",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "integration",
+      "gate": "test:metric-drilldown-runtime",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "integration",
+      "gate": "test:tab-interaction-runtime",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "integration",
+      "gate": "test:dashboard-runtime",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "integration",
+      "gate": "test:reports-runtime",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "integration",
+      "gate": "test:workspace-governance-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "integration",
+      "gate": "test:access-control-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "integration",
+      "gate": "test:people-account-provisioning",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "integration",
+      "gate": "test:contact-visual-baseline",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "route-smoke",
+      "gate": "test:sidebar-navigation-migration",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "route-smoke",
+      "gate": "test:workspace-navigation-language",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "route-smoke",
+      "gate": "test:route-module-loads",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "route-smoke",
+      "gate": "test:studio-route-runtime",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "route-smoke",
+      "gate": "test:navigation-runtime",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "route-smoke",
+      "gate": "test:route-query-stability-runtime",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "route-smoke",
+      "gate": "test:shell-layout-contracts",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "route-smoke",
+      "gate": "test:overflow-resilience",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "critical-e2e",
+      "gate": "test:authenticated-app-startup",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "critical-e2e",
+      "gate": "test:pilot-journey-fixture",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "critical-e2e",
+      "gate": "test:pilot-end-to-end",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "critical-e2e",
+      "gate": "test:pilot-acceptance-boundary",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "critical-e2e",
+      "gate": "test:commercial-flow-regressions",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    },
+    {
+      "group": "build",
+      "gate": "build",
+      "status": "NOT_RUN",
+      "reason": "Input archive has no installed dependencies; gate ownership was listed but execution was not claimed."
+    }
+  ],
+  "preExistingFailures": [],
+  "knownBlocks": [
+    "Dependency-backed verification is blocked because npm ci returned HTTP 503 for yallist-3.1.1.tgz from the package gateway.",
+    "Git history and GitHub alert state cannot be assessed from the source archive."
+  ],
+  "phase3Execution": {
+    "inputSha256": "9602739ccb82c84a804018f26f1ecd562619b232fd2bd035f70b55ec656cd672",
+    "commands": [
+      {
+        "command": "node --experimental-strip-types tests/quality/architecture/check-quality-pipeline.mts",
+        "status": "PASS",
+        "evidence": "9 groups, 182 stable manifest-owned gates; stable sharding, reports, timeout and open-handle fixtures passed."
+      },
+      {
+        "command": "node scripts/quality/run-legacy-gate.mjs --validate",
+        "status": "PASS",
+        "evidence": "182 migration records."
+      },
+      {
+        "command": "node --experimental-strip-types tests/tooling/gate-migration-contract.test.mts",
+        "status": "PASS",
+        "evidence": "179 wrappers, zero script assertion owners."
+      },
+      {
+        "command": "node scripts/quality/run-quality-pipeline.mjs --gate quality.quality-pipeline --report <tmp> --junit <tmp>",
+        "status": "PASS",
+        "evidence": "JSON and JUnit report emitted from an external working-directory contract and direct execution."
+      },
+      {
+        "command": "node scripts/quality/run-quality-pipeline.mjs --gate quality.native-browser-dialogs --report <tmp>",
+        "status": "BLOCKED",
+        "evidence": "Runner returned exit code 2 and structured BLOCKED result before execution because repository TypeScript dependency is unavailable."
+      },
+      {
+        "command": "node scripts/security/scan-current-tree.mjs",
+        "status": "PASS",
+        "evidence": "Zero unmanaged high-confidence findings."
+      },
+      {
+        "command": "node scripts/api/generate-openapi-client.mjs --check",
+        "status": "PASS",
+        "evidence": "Generated OpenAPI output has no drift."
+      },
+      {
+        "command": "node scripts/generate-repository-inventory.mjs && quality.repository-inventory",
+        "status": "PASS",
+        "evidence": "Repository inventory regenerated and verified."
+      },
+      {
+        "command": "quality.repository-cleanup/global-data/global-type/secret-policy/gate-migration-contract",
+        "status": "PASS",
+        "evidence": "All seven dependency-free manifest gates passed through schema-v2 runner."
+      },
+      {
+        "command": "npm ci --ignore-scripts",
+        "status": "BLOCKED",
+        "evidence": "HTTP 503 fetching yallist-3.1.1.tgz from the package gateway."
+      },
+      {
+        "command": "npm run verify",
+        "status": "NOT_RUN",
+        "evidence": "Repository dependencies could not be installed."
+      },
+      {
+        "command": "npm run build",
+        "status": "NOT_RUN",
+        "evidence": "Repository dependencies could not be installed."
+      },
+      {
+        "command": "browser E2E",
+        "status": "NOT_RUN",
+        "evidence": "Dependencies and browser runtime are unavailable."
+      },
+      {
+        "command": "Git history/GitHub push-protection scan",
+        "status": "BLOCKED",
+        "evidence": "Source archive has no .git or GitHub alert metadata."
+      }
+    ],
+    "preExistingFailures": [
+      {
+        "gate": "test:action-button-taxonomy",
+        "status": "FAIL",
+        "evidence": "Same SupportCaseListPage Filter marker fails in input and Patch 3 work tree."
+      }
+    ]
+  }
+}

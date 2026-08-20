@@ -1,0 +1,15 @@
+{
+  "source": {
+    "type": "PAYMENT_RECORD",
+    "id": "pay_01HZZZZZZZZZZZZZZZZZZZZZZZ"
+  },
+  "targets": [
+    {
+      "invoiceId": "inv_01HZZZZZZZZZZZZZZZZZZZZZZZ",
+      "amount": {
+        "amount": "40.00",
+        "currency": "USD"
+      }
+    }
+  ]
+}

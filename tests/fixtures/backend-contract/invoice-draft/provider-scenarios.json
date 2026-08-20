@@ -1,0 +1,63 @@
+{
+  "schemaVersion": 1,
+  "verticalSlice": "invoice-draft-to-issue",
+  "contractVersion": "0.23.20-contract.0",
+  "operations": [
+    "createInvoiceDraft",
+    "saveInvoiceDraft",
+    "getInvoice",
+    "listInvoices",
+    "getInvoiceIssueReadiness",
+    "issueInvoice"
+  ],
+  "scenarios": [
+    {
+      "id": "INV-PROVIDER-001",
+      "operationId": "createInvoiceDraft",
+      "expect": "201 typed authoritative outcome with server-assigned aggregateId and calculated totals"
+    },
+    {
+      "id": "INV-PROVIDER-002",
+      "operationId": "createInvoiceDraft",
+      "expect": "same idempotency key and same payload replays the same command and aggregate"
+    },
+    {
+      "id": "INV-PROVIDER-003",
+      "operationId": "createInvoiceDraft",
+      "expect": "same idempotency key with different payload returns 409 IDEMPOTENCY_KEY_REUSED"
+    },
+    {
+      "id": "INV-PROVIDER-004",
+      "operationId": "saveInvoiceDraft",
+      "expect": "If-Match version is required and backend recalculates totals"
+    },
+    {
+      "id": "INV-PROVIDER-005",
+      "operationId": "saveInvoiceDraft",
+      "expect": "stale If-Match returns 412 VERSION_CONFLICT with versions"
+    },
+    {
+      "id": "INV-PROVIDER-006",
+      "operationId": "issueInvoice",
+      "expect": "issue returns authoritative invoice number, issued status, version, audit and event IDs"
+    },
+    {
+      "id": "INV-PROVIDER-007",
+      "operationId": "getInvoice",
+      "expect": "a secondary workspace cannot read the created invoice"
+    },
+    {
+      "id": "INV-PROVIDER-008",
+      "operationId": "saveInvoiceDraft",
+      "expect": "request containing totals or server fields is rejected as contract-invalid"
+    }
+  ],
+  "requiredEnvironment": [
+    "UNICORECRM_TEST_API_BASE_URL",
+    "UNICORECRM_TEST_ACCESS_TOKEN",
+    "UNICORECRM_TEST_WORKSPACE_ID",
+    "UNICORECRM_TEST_INVOICE_ORDER_ID",
+    "UNICORECRM_TEST_SECONDARY_ACCESS_TOKEN",
+    "UNICORECRM_TEST_SECONDARY_WORKSPACE_ID"
+  ]
+}

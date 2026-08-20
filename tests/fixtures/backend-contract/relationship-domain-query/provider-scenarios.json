@@ -1,0 +1,56 @@
+{
+  "contractVersion": "0.23.20-contract.0",
+  "scenarios": [
+    {
+      "id": "contact-summary",
+      "operationId": "getContactRelationshipSummary",
+      "expectedStatus": 200
+    },
+    {
+      "id": "contact-summary-cross-workspace",
+      "operationId": "getContactRelationshipSummary",
+      "expectedStatus": 403,
+      "expectedCode": "WORKSPACE_MISMATCH"
+    },
+    {
+      "id": "contact-summary-not-found",
+      "operationId": "getContactRelationshipSummary",
+      "expectedStatus": 404,
+      "expectedCode": "RESOURCE_NOT_FOUND"
+    },
+    {
+      "id": "customer-360",
+      "operationId": "getCustomer360",
+      "expectedStatus": 200
+    },
+    {
+      "id": "customer-360-cross-workspace",
+      "operationId": "getCustomer360",
+      "expectedStatus": 403,
+      "expectedCode": "WORKSPACE_MISMATCH"
+    },
+    {
+      "id": "customer-360-not-found",
+      "operationId": "getCustomer360",
+      "expectedStatus": 404,
+      "expectedCode": "RESOURCE_NOT_FOUND"
+    },
+    {
+      "id": "organization-overview",
+      "operationId": "getOrganizationOverview",
+      "expectedStatus": 200
+    },
+    {
+      "id": "organization-overview-cross-workspace",
+      "operationId": "getOrganizationOverview",
+      "expectedStatus": 403,
+      "expectedCode": "WORKSPACE_MISMATCH"
+    },
+    {
+      "id": "organization-overview-not-found",
+      "operationId": "getOrganizationOverview",
+      "expectedStatus": 404,
+      "expectedCode": "RESOURCE_NOT_FOUND"
+    }
+  ]
+}

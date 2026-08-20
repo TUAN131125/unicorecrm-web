@@ -1,0 +1,40 @@
+{
+  "commandId": "cmd_01HZZZZZZZZZZZZZZZZZZZZZZZ",
+  "correlationId": "corr-01HZZZZZZZZZZZZZZZZZZZZZZ",
+  "aggregateId": "pay_01HZZZZZZZZZZZZZZZZZZZZZZZ",
+  "aggregateType": "payment-record",
+  "version": 4,
+  "occurredAt": "2026-07-24T10:00:00Z",
+  "outcome": "COMMITTED",
+  "emittedEventIds": [
+    "evt_01HZZZZZZZZZZZZZZZZZZZZZZZ"
+  ],
+  "auditEvidenceIds": [
+    "audit_01HZZZZZZZZZZZZZZZZZZZZZ"
+  ],
+  "result": {
+    "id": "pay_01HZZZZZZZZZZZZZZZZZZZZZZZ",
+    "workspaceId": "ws_01HZZZZZZZZZZZZZZZZZZZZZZZ",
+    "buyerRef": {
+      "type": "ORGANIZATION_ACCOUNT",
+      "id": "cust_01HZZZZZZZZZZZZZZZZZZZZZZ"
+    },
+    "orderId": "ord_01HZZZZZZZZZZZZZZZZZZZZZZZ",
+    "kind": "PAYMENT",
+    "state": "SUCCEEDED",
+    "amount": {
+      "amount": "100.00",
+      "currency": "USD"
+    },
+    "methodCode": "cod",
+    "channel": "CARRIER",
+    "occurredAt": "2026-07-24T09:00:00Z",
+    "reconciliationState": "UNRECONCILED",
+    "codCustomerCollectionState": "COLLECTED",
+    "codMerchantRemittanceState": "PENDING",
+    "effectiveForReceivables": false,
+    "resourceVersion": 4,
+    "createdAt": "2026-07-24T09:00:00Z",
+    "updatedAt": "2026-07-24T10:00:00Z"
+  }
+}

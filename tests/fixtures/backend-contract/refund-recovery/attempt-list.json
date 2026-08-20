@@ -1,0 +1,17 @@
+[
+  {
+    "id": "refund_attempt_01HZZZZZZZZZZZZZZZZZZZZZ",
+    "workspaceId": "ws_01HZZZZZZZZZZZZZZZZZZZZZZZ",
+    "refundIntentId": "refund_01HZZZZZZZZZZZZZZZZZZZZZ",
+    "providerCode": "BANK_A",
+    "sequenceNumber": 1,
+    "state": "FAILED",
+    "providerReference": "provider-refund-001",
+    "failureCode": "PROVIDER_DECLINED",
+    "submittedAt": "2026-07-24T10:01:00Z",
+    "completedAt": "2026-07-24T10:20:00Z",
+    "resourceVersion": 2,
+    "createdAt": "2026-07-24T10:00:00Z",
+    "updatedAt": "2026-07-24T10:20:00Z"
+  }
+]

@@ -1,0 +1,8 @@
+{
+  "type": "https://errors.unicore.example/refund-retry-not-allowed",
+  "title": "Refund retry is not allowed in the current state",
+  "status": 409,
+  "code": "REFUND_RETRY_NOT_ALLOWED",
+  "retryable": false,
+  "correlationId": "corr-refund-retry-blocked-01"
+}

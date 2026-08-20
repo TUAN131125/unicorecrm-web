@@ -1,0 +1,9 @@
+{
+  "type": "NOTE",
+  "subject": "Đã gọi khách",
+  "body": "Khách xác nhận.",
+  "relationshipRef": {
+    "type": "CONTACT",
+    "id": "contact_01"
+  }
+}

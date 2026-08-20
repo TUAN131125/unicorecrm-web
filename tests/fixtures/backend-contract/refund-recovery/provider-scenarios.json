@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "contractVersion": "0.23.20-contract.0",
+  "pack": "refund-provider-recovery",
+  "scenarios": [
+    {
+      "id": "attempt-list-authoritative",
+      "operationId": "listRefundProviderAttempts",
+      "expectedStatus": 200,
+      "assertions": [
+        "server-assigned attempt identity",
+        "monotonic sequenceNumber",
+        "resourceVersion present"
+      ]
+    },
+    {
+      "id": "cancel-request-accepted-not-terminal",
+      "operationId": "requestRefundCancellation",
+      "expectedStatus": 202,
+      "assertions": [
+        "attempt=CANCELLATION_REQUESTED",
+        "refundIntent is not CANCELLED",
+        "provider acknowledgement pending"
+      ]
+    },
+    {
+      "id": "cancel-idempotent-replay",
+      "operationId": "requestRefundCancellation",
+      "expectedStatus": 202,
+      "assertions": [
+        "same commandId or outcome=REPLAYED",
+        "no duplicate cancellation request"
+      ]
+    },
+    {
+      "id": "cancel-key-payload-conflict",
+      "operationId": "requestRefundCancellation",
+      "expectedStatus": 409,
+      "errorCode": "IDEMPOTENCY_KEY_REUSED"
+    },
+    {
+      "id": "cancel-stale-version",
+      "operationId": "requestRefundCancellation",
+      "expectedStatus": 412,
+      "errorCode": "VERSION_CONFLICT"
+    },
+    {
+      "id": "cancel-already-pending",
+      "operationId": "requestRefundCancellation",
+      "expectedStatus": 409,
+      "errorCode": "REFUND_CANCELLATION_PENDING"
+    },
+    {
+      "id": "cancel-succeeded-refund-blocked",
+      "operationId": "requestRefundCancellation",
+      "expectedStatus": 422,
+      "errorCode": "REFUND_CANCELLATION_NOT_SUPPORTED"
+    },
+    {
+      "id": "cancel-cross-workspace-denied",
+      "operationId": "requestRefundCancellation",
+      "expectedStatus": 403,
+      "errorCode": "WORKSPACE_MISMATCH"
+    },
+    {
+      "id": "retry-failed-attempt",
+      "operationId": "retryRefundIntent",
+      "expectedStatus": 202,
+      "assertions": [
+        "new attempt ID",
+        "sequenceNumber incremented",
+        "retryOfAttemptId points to failed predecessor"
+      ]
+    },
+    {
+      "id": "retry-idempotent-replay",
+      "operationId": "retryRefundIntent",
+      "expectedStatus": 202,
+      "assertions": [
+        "no duplicate provider attempt",
+        "original outcome replayed"
+      ]
+    },
+    {
+      "id": "retry-active-attempt-blocked",
+      "operationId": "retryRefundIntent",
+      "expectedStatus": 409,
+      "errorCode": "REFUND_RETRY_NOT_ALLOWED"
+    },
+    {
+      "id": "retry-stale-version",
+      "operationId": "retryRefundIntent",
+      "expectedStatus": 412,
+      "errorCode": "VERSION_CONFLICT"
+    },
+    {
+      "id": "retry-cross-workspace-denied",
+      "operationId": "retryRefundIntent",
+      "expectedStatus": 403,
+      "errorCode": "WORKSPACE_MISMATCH"
+    },
+    {
+      "id": "provider-reference-conflict-manual-review",
+      "operationId": "listRefundProviderAttempts",
+      "expectedStatus": 200,
+      "assertions": [
+        "conflicting provider reference cannot overwrite attempt",
+        "manual review state preserved"
+      ]
+    }
+  ]
+}

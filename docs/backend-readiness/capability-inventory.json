@@ -1,0 +1,499 @@
+{
+  "schemaVersion": 1,
+  "source": "src/platform/access-control/domain/capabilityCatalog.ts",
+  "count": 123,
+  "capabilities": [
+    {
+      "key": "IDENTITY_AUTHENTICATE",
+      "value": "identity.authenticate"
+    },
+    {
+      "key": "IDENTITY_SESSION_READ",
+      "value": "identity.session.read"
+    },
+    {
+      "key": "IDENTITY_SESSION_REFRESH",
+      "value": "identity.session.refresh"
+    },
+    {
+      "key": "IDENTITY_SESSION_REVOKE",
+      "value": "identity.session.revoke"
+    },
+    {
+      "key": "IDENTITY_ACCOUNT_REGISTER",
+      "value": "identity.account.register"
+    },
+    {
+      "key": "IDENTITY_ACCOUNT_VERIFY",
+      "value": "identity.account.verify"
+    },
+    {
+      "key": "IDENTITY_ACCOUNT_RECOVER",
+      "value": "identity.account.recover"
+    },
+    {
+      "key": "IDENTITY_INVITATION_ACCEPT",
+      "value": "identity.invitation.accept"
+    },
+    {
+      "key": "WORKSPACE_MEMBERSHIP_LIST",
+      "value": "workspace.membership.list"
+    },
+    {
+      "key": "WORKSPACE_CONTEXT_RESOLVE",
+      "value": "workspace.context.resolve"
+    },
+    {
+      "key": "DASHBOARD_READ",
+      "value": "dashboard.read"
+    },
+    {
+      "key": "LEADS_READ",
+      "value": "leads.read"
+    },
+    {
+      "key": "LEADS_CREATE",
+      "value": "leads.create"
+    },
+    {
+      "key": "LEADS_UPDATE",
+      "value": "leads.update"
+    },
+    {
+      "key": "LEADS_DELETE",
+      "value": "leads.delete"
+    },
+    {
+      "key": "LEADS_EXPORT",
+      "value": "leads.export"
+    },
+    {
+      "key": "LEADS_BULK",
+      "value": "leads.bulk"
+    },
+    {
+      "key": "LEADS_ASSIGN",
+      "value": "leads.assign"
+    },
+    {
+      "key": "LEADS_QUALIFY",
+      "value": "leads.qualify"
+    },
+    {
+      "key": "CONTACTS_READ",
+      "value": "contacts.read"
+    },
+    {
+      "key": "CONTACTS_CREATE",
+      "value": "contacts.create"
+    },
+    {
+      "key": "CONTACTS_UPDATE",
+      "value": "contacts.update"
+    },
+    {
+      "key": "CONTACTS_DELETE",
+      "value": "contacts.delete"
+    },
+    {
+      "key": "CONTACTS_EXPORT",
+      "value": "contacts.export"
+    },
+    {
+      "key": "CONTACTS_BULK",
+      "value": "contacts.bulk"
+    },
+    {
+      "key": "CONTACTS_ASSIGN",
+      "value": "contacts.assign"
+    },
+    {
+      "key": "ORGANIZATIONS_READ",
+      "value": "organizations.read"
+    },
+    {
+      "key": "ORGANIZATIONS_CREATE",
+      "value": "organizations.create"
+    },
+    {
+      "key": "ORGANIZATIONS_UPDATE",
+      "value": "organizations.update"
+    },
+    {
+      "key": "TASKS_READ",
+      "value": "tasks.read"
+    },
+    {
+      "key": "TASKS_CREATE",
+      "value": "tasks.create"
+    },
+    {
+      "key": "TASKS_UPDATE",
+      "value": "tasks.update"
+    },
+    {
+      "key": "TASKS_ASSIGN",
+      "value": "tasks.assign"
+    },
+    {
+      "key": "TASKS_COMPLETE",
+      "value": "tasks.complete"
+    },
+    {
+      "key": "CUSTOMERS_VIEW",
+      "value": "customers.view"
+    },
+    {
+      "key": "CUSTOMERS_CREATE_SYSTEM",
+      "value": "customers.create_system"
+    },
+    {
+      "key": "CUSTOMERS_ONBOARD_EXISTING",
+      "value": "customers.onboard_existing"
+    },
+    {
+      "key": "CUSTOMERS_EDIT",
+      "value": "customers.edit"
+    },
+    {
+      "key": "CUSTOMERS_ASSIGN",
+      "value": "customers.assign"
+    },
+    {
+      "key": "CUSTOMERS_ARCHIVE",
+      "value": "customers.archive"
+    },
+    {
+      "key": "DEALS_READ",
+      "value": "deals.read"
+    },
+    {
+      "key": "DEALS_CREATE",
+      "value": "deals.create"
+    },
+    {
+      "key": "DEALS_UPDATE",
+      "value": "deals.update"
+    },
+    {
+      "key": "DEALS_DELETE",
+      "value": "deals.delete"
+    },
+    {
+      "key": "DEALS_EXPORT",
+      "value": "deals.export"
+    },
+    {
+      "key": "DEALS_BULK",
+      "value": "deals.bulk"
+    },
+    {
+      "key": "DEALS_ASSIGN",
+      "value": "deals.assign"
+    },
+    {
+      "key": "DEALS_CLOSE",
+      "value": "deals.close"
+    },
+    {
+      "key": "QUOTES_READ",
+      "value": "quotes.read"
+    },
+    {
+      "key": "QUOTES_CREATE",
+      "value": "quotes.create"
+    },
+    {
+      "key": "QUOTES_UPDATE",
+      "value": "quotes.update"
+    },
+    {
+      "key": "QUOTES_DELETE",
+      "value": "quotes.delete"
+    },
+    {
+      "key": "QUOTES_EXPORT",
+      "value": "quotes.export"
+    },
+    {
+      "key": "QUOTES_APPROVE",
+      "value": "quotes.approve"
+    },
+    {
+      "key": "ORDERS_READ",
+      "value": "orders.read"
+    },
+    {
+      "key": "ORDERS_CREATE",
+      "value": "orders.create"
+    },
+    {
+      "key": "ORDERS_UPDATE",
+      "value": "orders.update"
+    },
+    {
+      "key": "ORDERS_DELETE",
+      "value": "orders.delete"
+    },
+    {
+      "key": "ORDERS_EXPORT",
+      "value": "orders.export"
+    },
+    {
+      "key": "ORDERS_BULK",
+      "value": "orders.bulk"
+    },
+    {
+      "key": "ORDERS_CONFIRM",
+      "value": "orders.confirm"
+    },
+    {
+      "key": "ORDERS_COMPLETE",
+      "value": "orders.complete"
+    },
+    {
+      "key": "ORDERS_CREDIT_APPROVAL_REQUEST",
+      "value": "orders.credit_approval.request"
+    },
+    {
+      "key": "ORDERS_CREDIT_APPROVAL_DECIDE",
+      "value": "orders.credit_approval.decide"
+    },
+    {
+      "key": "PRODUCTS_READ",
+      "value": "products.read"
+    },
+    {
+      "key": "PRODUCTS_CREATE",
+      "value": "products.create"
+    },
+    {
+      "key": "PRODUCTS_UPDATE",
+      "value": "products.update"
+    },
+    {
+      "key": "PRODUCTS_DELETE",
+      "value": "products.delete"
+    },
+    {
+      "key": "PRODUCTS_EXPORT",
+      "value": "products.export"
+    },
+    {
+      "key": "PRODUCTS_CONFIGURE",
+      "value": "products.configure"
+    },
+    {
+      "key": "SUPPORT_READ",
+      "value": "support.read"
+    },
+    {
+      "key": "SUPPORT_CREATE",
+      "value": "support.create"
+    },
+    {
+      "key": "SUPPORT_UPDATE",
+      "value": "support.update"
+    },
+    {
+      "key": "SUPPORT_DELETE",
+      "value": "support.delete"
+    },
+    {
+      "key": "SUPPORT_EXPORT",
+      "value": "support.export"
+    },
+    {
+      "key": "SUPPORT_ASSIGN",
+      "value": "support.assign"
+    },
+    {
+      "key": "SUPPORT_COMPLETE",
+      "value": "support.complete"
+    },
+    {
+      "key": "REPORTS_READ",
+      "value": "reports.read"
+    },
+    {
+      "key": "REPORTS_EXPORT",
+      "value": "reports.export"
+    },
+    {
+      "key": "PAYMENTS_READ",
+      "value": "payments.read"
+    },
+    {
+      "key": "PAYMENTS_RECORD",
+      "value": "payments.record"
+    },
+    {
+      "key": "PAYMENTS_REFUND",
+      "value": "payments.refund"
+    },
+    {
+      "key": "PAYMENTS_RECONCILE",
+      "value": "payments.reconcile"
+    },
+    {
+      "key": "PAYMENTS_PLAN_READ",
+      "value": "payments.plan.read"
+    },
+    {
+      "key": "PAYMENTS_PLAN_CREATE",
+      "value": "payments.plan.create"
+    },
+    {
+      "key": "PAYMENTS_PLAN_UPDATE_DRAFT",
+      "value": "payments.plan.update_draft"
+    },
+    {
+      "key": "PAYMENTS_PLAN_ACTIVATE",
+      "value": "payments.plan.activate"
+    },
+    {
+      "key": "PAYMENTS_PLAN_SUPERSEDE",
+      "value": "payments.plan.supersede"
+    },
+    {
+      "key": "PAYMENTS_INTENT_CREATE",
+      "value": "payments.intent.create"
+    },
+    {
+      "key": "PAYMENTS_INTENT_CANCEL",
+      "value": "payments.intent.cancel"
+    },
+    {
+      "key": "PAYMENTS_RECORD_MANUAL",
+      "value": "payments.record_manual"
+    },
+    {
+      "key": "PAYMENTS_ALLOCATE",
+      "value": "payments.allocate"
+    },
+    {
+      "key": "PAYMENTS_REVERSE_ALLOCATION",
+      "value": "payments.reverse_allocation"
+    },
+    {
+      "key": "PAYMENTS_CUSTOMER_CREDIT_READ",
+      "value": "payments.customer_credit.read"
+    },
+    {
+      "key": "PAYMENTS_CUSTOMER_CREDIT_ALLOCATE",
+      "value": "payments.customer_credit.allocate"
+    },
+    {
+      "key": "INVOICES_READ",
+      "value": "invoices.read"
+    },
+    {
+      "key": "INVOICES_CREATE",
+      "value": "invoices.create"
+    },
+    {
+      "key": "INVOICES_UPDATE_DRAFT",
+      "value": "invoices.update_draft"
+    },
+    {
+      "key": "INVOICES_ISSUE",
+      "value": "invoices.issue"
+    },
+    {
+      "key": "INVOICES_RETRY_ISSUE",
+      "value": "invoices.retry_issue"
+    },
+    {
+      "key": "INVOICES_SEND",
+      "value": "invoices.send"
+    },
+    {
+      "key": "INVOICES_CREATE_CREDIT_NOTE",
+      "value": "invoices.create_credit_note"
+    },
+    {
+      "key": "INVOICES_DISCARD_DRAFT",
+      "value": "invoices.discard_draft"
+    },
+    {
+      "key": "INVOICES_VOID",
+      "value": "invoices.void"
+    },
+    {
+      "key": "RECEIVABLES_READ",
+      "value": "receivables.read"
+    },
+    {
+      "key": "RECEIVABLES_EXPORT",
+      "value": "receivables.export"
+    },
+    {
+      "key": "RETURNS_READ",
+      "value": "returns.read"
+    },
+    {
+      "key": "RETURNS_CREATE",
+      "value": "returns.create"
+    },
+    {
+      "key": "RETURNS_UPDATE",
+      "value": "returns.update"
+    },
+    {
+      "key": "RETURNS_APPROVE",
+      "value": "returns.approve"
+    },
+    {
+      "key": "RETURNS_RESOLVE",
+      "value": "returns.resolve"
+    },
+    {
+      "key": "SHIPPING_READ",
+      "value": "shipping.read"
+    },
+    {
+      "key": "SHIPPING_CREATE",
+      "value": "shipping.create"
+    },
+    {
+      "key": "SHIPPING_RETRY",
+      "value": "shipping.retry"
+    },
+    {
+      "key": "SHIPPING_CANCEL",
+      "value": "shipping.cancel"
+    },
+    {
+      "key": "SHIPPING_SYNC",
+      "value": "shipping.sync"
+    },
+    {
+      "key": "SHIPPING_MANAGE_PROVIDERS",
+      "value": "shipping.manageProviders"
+    },
+    {
+      "key": "STUDIO_READ",
+      "value": "studio.read"
+    },
+    {
+      "key": "STUDIO_CONFIGURE",
+      "value": "studio.configure"
+    },
+    {
+      "key": "ACCESS_READ",
+      "value": "access.read"
+    },
+    {
+      "key": "ACCESS_CONFIGURE",
+      "value": "access.configure"
+    },
+    {
+      "key": "AUDIT_READ",
+      "value": "audit.read"
+    },
+    {
+      "key": "AUDIT_CONFIGURE",
+      "value": "audit.configure"
+    }
+  ]
+}

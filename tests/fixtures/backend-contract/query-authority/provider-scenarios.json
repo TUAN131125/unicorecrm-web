@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "contractVersion": "0.23.20-contract.0",
+  "scenarios": [
+    {
+      "id": "lead-list",
+      "operationId": "listLeads",
+      "expectedStatus": 200
+    },
+    {
+      "id": "lead-detail",
+      "operationId": "getLead",
+      "expectedStatus": 200
+    },
+    {
+      "id": "product-list",
+      "operationId": "listProducts",
+      "expectedStatus": 200
+    },
+    {
+      "id": "product-detail",
+      "operationId": "getProduct",
+      "expectedStatus": 200
+    },
+    {
+      "id": "shipping-list",
+      "operationId": "listShippingBookings",
+      "expectedStatus": 200
+    },
+    {
+      "id": "shipping-detail",
+      "operationId": "getShippingBooking",
+      "expectedStatus": 200
+    },
+    {
+      "id": "return-list",
+      "operationId": "listReturns",
+      "expectedStatus": 200
+    },
+    {
+      "id": "return-detail",
+      "operationId": "getReturn",
+      "expectedStatus": 200
+    }
+  ]
+}

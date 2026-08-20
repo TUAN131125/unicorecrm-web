@@ -1,0 +1,9 @@
+{
+  "type": "urn:unicore:error:credit-approval-already-consumed",
+  "title": "Credit approval already consumed",
+  "status": 409,
+  "code": "CREDIT_APPROVAL_ALREADY_CONSUMED",
+  "retryable": false,
+  "correlationId": "corr-credit-used-001",
+  "aggregateId": "credit-approval-001"
+}

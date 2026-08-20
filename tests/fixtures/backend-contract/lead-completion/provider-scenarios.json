@@ -1,0 +1,397 @@
+{
+  "contractVersion": "0.23.20-contract.0",
+  "scenarios": [
+    {
+      "id": "archive-success",
+      "operationId": "archiveLead",
+      "expectedStatus": 200
+    },
+    {
+      "id": "archive-replay",
+      "operationId": "archiveLead",
+      "expectedStatus": 200,
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "archive-already",
+      "operationId": "archiveLead",
+      "expectedStatus": 409,
+      "expectedCode": "LEAD_ALREADY_ARCHIVED"
+    },
+    {
+      "id": "archive-stale-version",
+      "operationId": "archiveLead",
+      "expectedStatus": 412,
+      "expectedCode": "VERSION_CONFLICT"
+    },
+    {
+      "id": "archive-batch-success",
+      "operationId": "archiveLeadBatch",
+      "expectedStatus": 200
+    },
+    {
+      "id": "archive-batch-replay",
+      "operationId": "archiveLeadBatch",
+      "expectedStatus": 200,
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "archive-batch-empty",
+      "operationId": "archiveLeadBatch",
+      "expectedStatus": 422,
+      "expectedCode": "LEAD_BATCH_EMPTY"
+    },
+    {
+      "id": "archive-batch-stale",
+      "operationId": "archiveLeadBatch",
+      "expectedStatus": 412,
+      "expectedCode": "LEAD_BATCH_VERSION_CONFLICT"
+    },
+    {
+      "id": "anonymize-success",
+      "operationId": "anonymizeLead",
+      "expectedStatus": 200
+    },
+    {
+      "id": "anonymize-replay",
+      "operationId": "anonymizeLead",
+      "expectedStatus": 200,
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "anonymize-not-allowed",
+      "operationId": "anonymizeLead",
+      "expectedStatus": 409,
+      "expectedCode": "LEAD_ANONYMIZATION_NOT_ALLOWED"
+    },
+    {
+      "id": "anonymize-already",
+      "operationId": "anonymizeLead",
+      "expectedStatus": 409,
+      "expectedCode": "LEAD_ALREADY_ANONYMIZED"
+    },
+    {
+      "id": "consent-success",
+      "operationId": "recordLeadConsent",
+      "expectedStatus": 200
+    },
+    {
+      "id": "consent-replay",
+      "operationId": "recordLeadConsent",
+      "expectedStatus": 200,
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "consent-source-required",
+      "operationId": "recordLeadConsent",
+      "expectedStatus": 422,
+      "expectedCode": "LEAD_CONSENT_SOURCE_REQUIRED"
+    },
+    {
+      "id": "consent-expiry-invalid",
+      "operationId": "recordLeadConsent",
+      "expectedStatus": 422,
+      "expectedCode": "LEAD_CONSENT_EXPIRY_INVALID"
+    },
+    {
+      "id": "merge-success",
+      "operationId": "mergeLeadDuplicates",
+      "expectedStatus": 200
+    },
+    {
+      "id": "merge-replay",
+      "operationId": "mergeLeadDuplicates",
+      "expectedStatus": 200,
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "merge-reason-required",
+      "operationId": "mergeLeadDuplicates",
+      "expectedStatus": 422,
+      "expectedCode": "LEAD_DUPLICATE_MERGE_SOURCE_REQUIRED"
+    },
+    {
+      "id": "merge-relationship-conflict",
+      "operationId": "mergeLeadDuplicates",
+      "expectedStatus": 409,
+      "expectedCode": "LEAD_DUPLICATE_RELATIONSHIP_CONFLICT"
+    },
+    {
+      "id": "merge-stale-version",
+      "operationId": "mergeLeadDuplicates",
+      "expectedStatus": 412,
+      "expectedCode": "LEAD_DUPLICATE_VERSION_CONFLICT"
+    },
+    {
+      "id": "distinct-success",
+      "operationId": "confirmLeadDuplicatesDistinct",
+      "expectedStatus": 200
+    },
+    {
+      "id": "distinct-replay",
+      "operationId": "confirmLeadDuplicatesDistinct",
+      "expectedStatus": 200,
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "distinct-reason-required",
+      "operationId": "confirmLeadDuplicatesDistinct",
+      "expectedStatus": 422,
+      "expectedCode": "LEAD_DUPLICATE_REVIEW_REASON_REQUIRED"
+    },
+    {
+      "id": "distinct-stale-version",
+      "operationId": "confirmLeadDuplicatesDistinct",
+      "expectedStatus": 412,
+      "expectedCode": "LEAD_DUPLICATE_VERSION_CONFLICT"
+    },
+    {
+      "id": "assign-success",
+      "operationId": "assignLeadOwner",
+      "expectedStatus": 200
+    },
+    {
+      "id": "assign-replay",
+      "operationId": "assignLeadOwner",
+      "expectedStatus": 200,
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "assign-reason-required",
+      "operationId": "assignLeadOwner",
+      "expectedStatus": 422,
+      "expectedCode": "LEAD_ASSIGNMENT_REASON_REQUIRED"
+    },
+    {
+      "id": "assign-owner-invalid",
+      "operationId": "assignLeadOwner",
+      "expectedStatus": 422,
+      "expectedCode": "LEAD_OWNER_NOT_ASSIGNABLE"
+    },
+    {
+      "id": "import-success",
+      "operationId": "importLeadBatch",
+      "expectedStatus": 201
+    },
+    {
+      "id": "import-replay",
+      "operationId": "importLeadBatch",
+      "expectedStatus": 201,
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "import-empty",
+      "operationId": "importLeadBatch",
+      "expectedStatus": 422,
+      "expectedCode": "LEAD_IMPORT_EMPTY"
+    },
+    {
+      "id": "import-checksum-required",
+      "operationId": "importLeadBatch",
+      "expectedStatus": 422,
+      "expectedCode": "LEAD_IMPORT_CHECKSUM_REQUIRED"
+    },
+    {
+      "id": "import-duplicate-contact",
+      "operationId": "importLeadBatch",
+      "expectedStatus": 409,
+      "expectedCode": "LEAD_IMPORT_DUPLICATE_CONTACT"
+    },
+    {
+      "id": "handover-success",
+      "operationId": "handoverLeadWithTasks",
+      "expectedStatus": 200
+    },
+    {
+      "id": "handover-replay",
+      "operationId": "handoverLeadWithTasks",
+      "expectedStatus": 200,
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "handover-reason-required",
+      "operationId": "handoverLeadWithTasks",
+      "expectedStatus": 422,
+      "expectedCode": "LEAD_HANDOVER_REASON_REQUIRED"
+    },
+    {
+      "id": "handover-task-stale",
+      "operationId": "handoverLeadWithTasks",
+      "expectedStatus": 412,
+      "expectedCode": "LEAD_HANDOVER_TASK_VERSION_CONFLICT"
+    },
+    {
+      "id": "handover-task-scope-denied",
+      "operationId": "handoverLeadWithTasks",
+      "expectedStatus": 403,
+      "expectedCode": "LEAD_HANDOVER_TASK_SCOPE_DENIED"
+    },
+    {
+      "id": "handover-cross-workspace",
+      "operationId": "handoverLeadWithTasks",
+      "expectedStatus": 403,
+      "expectedCode": "WORKSPACE_MISMATCH"
+    },
+    {
+      "id": "advance-batch-success",
+      "operationId": "advanceLeadWorkStateBatch",
+      "expectedStatus": 200
+    },
+    {
+      "id": "advance-batch-replay",
+      "operationId": "advanceLeadWorkStateBatch",
+      "expectedStatus": 200,
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "advance-batch-stale",
+      "operationId": "advanceLeadWorkStateBatch",
+      "expectedStatus": 412,
+      "expectedCode": "VERSION_CONFLICT"
+    },
+    {
+      "id": "advance-batch-transition-conflict",
+      "operationId": "advanceLeadWorkStateBatch",
+      "expectedStatus": 409,
+      "expectedCode": "LEAD_BATCH_TRANSITION_CONFLICT"
+    },
+    {
+      "id": "assign-batch-success",
+      "operationId": "assignLeadOwnerBatch",
+      "expectedStatus": 200
+    },
+    {
+      "id": "assign-batch-replay",
+      "operationId": "assignLeadOwnerBatch",
+      "expectedStatus": 200,
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "assign-batch-stale",
+      "operationId": "assignLeadOwnerBatch",
+      "expectedStatus": 412,
+      "expectedCode": "VERSION_CONFLICT"
+    },
+    {
+      "id": "assign-batch-conflict",
+      "operationId": "assignLeadOwnerBatch",
+      "expectedStatus": 409,
+      "expectedCode": "LEAD_BATCH_ASSIGNMENT_CONFLICT"
+    },
+    {
+      "id": "disqualify-batch-success",
+      "operationId": "disqualifyLeadBatch",
+      "expectedStatus": 200
+    },
+    {
+      "id": "disqualify-batch-replay",
+      "operationId": "disqualifyLeadBatch",
+      "expectedStatus": 200,
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "disqualify-batch-stale",
+      "operationId": "disqualifyLeadBatch",
+      "expectedStatus": 412,
+      "expectedCode": "VERSION_CONFLICT"
+    },
+    {
+      "id": "disqualify-batch-conflict",
+      "operationId": "disqualifyLeadBatch",
+      "expectedStatus": 409,
+      "expectedCode": "LEAD_BATCH_DISQUALIFICATION_CONFLICT"
+    },
+    {
+      "id": "apply-tag-batch-success",
+      "operationId": "applyLeadTagBatch",
+      "expectedStatus": 200
+    },
+    {
+      "id": "apply-tag-batch-replay",
+      "operationId": "applyLeadTagBatch",
+      "expectedStatus": 200,
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "apply-tag-batch-stale",
+      "operationId": "applyLeadTagBatch",
+      "expectedStatus": 412,
+      "expectedCode": "VERSION_CONFLICT"
+    },
+    {
+      "id": "apply-tag-batch-tag-required",
+      "operationId": "applyLeadTagBatch",
+      "expectedStatus": 422,
+      "expectedCode": "LEAD_TAG_REQUIRED"
+    },
+    {
+      "id": "follow-up-batch-success",
+      "operationId": "scheduleLeadFollowUpBatch",
+      "expectedStatus": 200
+    },
+    {
+      "id": "follow-up-batch-replay",
+      "operationId": "scheduleLeadFollowUpBatch",
+      "expectedStatus": 200,
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "follow-up-batch-stale",
+      "operationId": "scheduleLeadFollowUpBatch",
+      "expectedStatus": 412,
+      "expectedCode": "VERSION_CONFLICT"
+    },
+    {
+      "id": "follow-up-batch-date-invalid",
+      "operationId": "scheduleLeadFollowUpBatch",
+      "expectedStatus": 422,
+      "expectedCode": "LEAD_FOLLOW_UP_DATE_INVALID"
+    },
+    {
+      "id": "queue-claim-success",
+      "operationId": "claimLeadFromQueue",
+      "expectedStatus": 200
+    },
+    {
+      "id": "queue-claim-replay",
+      "operationId": "claimLeadFromQueue",
+      "expectedStatus": 200,
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "queue-claim-stale",
+      "operationId": "claimLeadFromQueue",
+      "expectedStatus": 412,
+      "expectedCode": "VERSION_CONFLICT"
+    },
+    {
+      "id": "queue-claim-conflict",
+      "operationId": "claimLeadFromQueue",
+      "expectedStatus": 409,
+      "expectedCode": "LEAD_QUEUE_CLAIM_CONFLICT"
+    },
+    {
+      "id": "export-success",
+      "operationId": "requestLeadExport",
+      "expectedStatus": 200
+    },
+    {
+      "id": "export-replay",
+      "operationId": "requestLeadExport",
+      "expectedStatus": 200,
+      "expectedOutcome": "REPLAYED"
+    },
+    {
+      "id": "export-scope-denied",
+      "operationId": "requestLeadExport",
+      "expectedStatus": 403,
+      "expectedCode": "LEAD_EXPORT_SCOPE_DENIED"
+    },
+    {
+      "id": "export-unavailable",
+      "operationId": "requestLeadExport",
+      "expectedStatus": 503,
+      "expectedCode": "LEAD_EXPORT_UNAVAILABLE"
+    }
+  ]
+}

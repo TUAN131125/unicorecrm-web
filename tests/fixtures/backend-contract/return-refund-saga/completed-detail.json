@@ -1,0 +1,29 @@
+{
+  "id": "rrs_001",
+  "returnId": "return_001",
+  "state": "COMPLETED",
+  "requestedAmount": {
+    "amount": "1000000",
+    "currency": "VND"
+  },
+  "creditedAmount": {
+    "amount": "1000000",
+    "currency": "VND"
+  },
+  "cashRefundAmount": {
+    "amount": "500000",
+    "currency": "VND"
+  },
+  "creditNoteIds": [
+    "cn_001"
+  ],
+  "allocationReversalIds": [
+    "ar_001"
+  ],
+  "refundIntentIds": [
+    "ri_001"
+  ],
+  "resourceVersion": 3,
+  "createdAt": "2026-07-25T00:00:00Z",
+  "updatedAt": "2026-07-25T00:10:00Z"
+}

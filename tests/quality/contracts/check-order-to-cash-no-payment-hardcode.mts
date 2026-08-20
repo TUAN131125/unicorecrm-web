@@ -1,0 +1,4 @@
+import assert from "node:assert/strict"; import { readFileSync } from "node:fs";
+import { readPresentationComposition } from "../../../scripts/lib/presentationCompositionSource.mts";
+for (const file of ["src/modules/orders/presentation/pages/OrderFormPage.tsx","src/modules/quotes/presentation/pages/QuoteBuilderPage.tsx","src/modules/payments/presentation/pages/PaymentOperationsPage.tsx"]) { const source=readPresentationComposition(file,"utf8"); assert.ok(source.includes("Catalog")||source.includes("catalog")||source.includes("paymentMethods")); for(const literal of ['<option value="BANK_TRANSFER">','<option value="COD">','<option value="CARD">','<option value="E_WALLET">','const PAYMENT_METHODS']) assert.ok(!source.includes(literal), `${file} hardcodes ${literal}`); }
+console.log("Order-to-cash no-payment-hardcode guard: PASS");

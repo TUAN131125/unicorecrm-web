@@ -1,0 +1,9 @@
+{
+  "type": "https://unicore.example/problems/payment-allocation-exceeds-available",
+  "title": "Allocation exceeds available source balance",
+  "status": 422,
+  "code": "PAYMENT_ALLOCATION_EXCEEDS_AVAILABLE",
+  "retryable": false,
+  "correlationId": "corr-01HZZZZZZZZZZZZZZZZZZZZZZ",
+  "aggregateId": "pay_01HZZZZZZZZZZZZZZZZZZZZZZZ"
+}

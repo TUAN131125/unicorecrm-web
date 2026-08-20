@@ -1,0 +1,10 @@
+{
+  "type": "urn:unicorecrm:error:CREDIT_APPROVAL_REQUIRED",
+  "title": "Credit approval is required before Order confirmation.",
+  "status": 422,
+  "code": "CREDIT_APPROVAL_REQUIRED",
+  "retryable": false,
+  "correlationId": "corr_credit_approval_001",
+  "aggregateId": "order_003",
+  "businessBlockers": ["CREDIT_POLICY_APPROVAL_REQUIRED"]
+}

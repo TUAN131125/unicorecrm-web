@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "contractVersion": "0.23.20-contract.0",
+  "phase": "P0.6",
+  "historicalPhaseSnapshot": true,
+  "decisions": [
+    {
+      "decisionId": "DEC-P06-ORDER-CREDIT-APPROVAL",
+      "status": "CLOSED",
+      "owner": "orders/payments/receivables",
+      "decision": "Credit approval is a separate single-use aggregate bound to Order resourceVersion, Payment Plan resourceVersion, server-evaluated Money, policyVersion and evaluationFingerprint. No wall-clock expiry is invented; any binding change supersedes it. Confirmation consumes APPROVED evidence atomically."
+    },
+    {
+      "decisionId": "DEC-P06-ACCEPTED-QUOTE-ORDER-CONVERSION",
+      "status": "CLOSED",
+      "owner": "quotes/orders",
+      "decision": "Accepted Quote conversion is a separate server-assigned Order creation command. It copies immutable commercial snapshots and enforces one durable Order per Quote. Direct-sale order creation remains blocked under the old generic order.create command.",
+      "currentResolution": "DEC-P07-DIRECT-ORDER-DRAFT later closed direct-sale Order draft creation as createOrderDraftCommand."
+    },
+    {
+      "decisionId": "DEC-P06-RETURN-CUSTOMER-CREDIT-POLICY",
+      "status": "CLOSED",
+      "owner": "returns/payments/invoices",
+      "decision": "The Return saga never automatically reverses or consumes Customer-Credit-backed allocations. It persists MANUAL_REVIEW_REQUIRED with typed blocker evidence. Payment-backed allocation reversal remains backend-owned."
+    },
+    {
+      "decisionId": "DEC-P04-REFUND-CANCEL-RETRY",
+      "status": "BLOCKED",
+      "owner": "payments-domain-owner",
+      "question": "Define provider attempt identity, cancellation acknowledgement window, retry linkage, same-key retention and terminal recovery guarantees. RefundIntent states alone are insufficient evidence.",
+      "blockingOperations": [
+        "cancelRefundIntent",
+        "retryRefundIntent"
+      ],
+      "currentResolution": "Superseded by the P0.8 asynchronous requestRefundCancellation and retryRefundIntent contract."
+    }
+  ]
+}

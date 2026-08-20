@@ -1,0 +1,4 @@
+{
+  "reasonCode": "DUPLICATE_ALLOCATION",
+  "reason": "Allocation was posted twice."
+}

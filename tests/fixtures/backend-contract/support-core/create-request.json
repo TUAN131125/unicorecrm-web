@@ -1,0 +1,16 @@
+{
+  "title": "Không nhận được email",
+  "description": "Khách hàng chưa nhận được email xác nhận.",
+  "priority": "high",
+  "category": "request",
+  "source": "email",
+  "channel": "email",
+  "relationshipRef": {
+    "type": "CONTACT",
+    "id": "contact_01"
+  },
+  "contactId": "contact_01",
+  "tags": [
+    "email"
+  ]
+}

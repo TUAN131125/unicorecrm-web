@@ -1,0 +1,9 @@
+{
+  "type": "urn:unicore:error:quote-order-already-converted",
+  "title": "Quote already converted",
+  "status": 409,
+  "code": "QUOTE_ORDER_ALREADY_CONVERTED",
+  "retryable": false,
+  "correlationId": "corr-convert-duplicate",
+  "aggregateId": "quote-001"
+}

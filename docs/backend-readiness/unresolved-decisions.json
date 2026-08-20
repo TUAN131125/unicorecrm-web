@@ -1,0 +1,926 @@
+{
+  "schemaVersion": 1,
+  "policy": "OpenAPI operation status is authoritative. This ledger contains only current BLOCKED operations; a generic operation may remain blocked because a closed decision retired it in favor of typed alternatives.",
+  "groupedDecisions": [
+    {
+      "decisionId": "DEC-COMMAND-SEMANTICS",
+      "question": "Approve explicit request/result/invariants for blocked frontend commands.",
+      "availableEvidence": [
+        "command-registry.json",
+        "audit command_api_alignment.csv",
+        "frontend command symbols"
+      ],
+      "options": [
+        "Approve operation-specific DTO and backend owner",
+        "Classify DEMO_ONLY/FRONTEND_LOCAL_ONLY",
+        "Deprecate command"
+      ],
+      "recommendedOwner": "Module Domain Owner + API Contract Architect",
+      "blockingCommands": [
+        "contact-organization.end-relationship",
+        "contact-organization.set-primary-representative",
+        "contact-organization.upsert-relationship",
+        "contact.anonymize",
+        "contact.archive",
+        "contact.restore",
+        "customer-conversion.reconcile",
+        "customer.anonymize",
+        "customer.archive",
+        "deal.mark-lost-and-plan-recycle",
+        "invoice.allocate-receivable",
+        "order.change-state",
+        "order.confirm",
+        "organization.anonymize",
+        "organization.archive",
+        "organization.restore",
+        "payment.refresh-intent-status"
+      ],
+      "status": "BLOCKED"
+    },
+    {
+      "decisionId": "DEC-PLATFORM-CONNECTED-PROJECTIONS",
+      "question": "Define OpenAPI operations for effective access, audit trail and external authority health.",
+      "availableEvidence": [
+        "platform application ports",
+        "previous handwritten adapters"
+      ],
+      "options": [
+        "Add typed OpenAPI read models",
+        "Remove connected UI feature"
+      ],
+      "recommendedOwner": "Identity/Platform Backend Owner",
+      "blockingOperations": [
+        "auditTrail.list",
+        "externalAuthorityHealth.evaluate"
+      ],
+      "status": "PARTIALLY_CLOSED",
+      "resolvedOperations": [
+        "evaluateEffectiveRecordAccess"
+      ]
+    },
+    {
+      "decisionId": "DEC-SHIPPING-PROVIDER-CONTRACT",
+      "question": "Define provider quote/booking/cancel/get/sync DTOs with Money, idempotency and external evidence.",
+      "availableEvidence": [
+        "ShippingProvider port",
+        "HttpShippingProvider retired literal endpoints"
+      ],
+      "options": [
+        "Workspace Shipping API adapter",
+        "Backend orchestration only"
+      ],
+      "recommendedOwner": "Fulfillment Backend Owner",
+      "blockingOperations": [],
+      "status": "CLOSED_BY_PHASE18",
+      "resolvedOperations": [
+        "listShippingProviders",
+        "createShippingBookingCommand",
+        "getShippingBooking",
+        "cancelShippingBookingCommand",
+        "retryShippingBookingCommand",
+        "syncShippingBookingCommand"
+      ]
+    },
+    {
+      "decisionId": "DEC-MONEY-DOMAIN-POLICY",
+      "question": "Approve precision, document tax semantics and allocation residual rules.",
+      "availableEvidence": [
+        "Money schema",
+        "numeric frontend field inventory"
+      ],
+      "options": [
+        "Per-currency scale policy",
+        "Fixed max scale 6 with database precision decision"
+      ],
+      "recommendedOwner": "Finance Domain Owner",
+      "blockingOperations": [
+        "allocateCustomerCredit",
+        "allocatePayment",
+        "resolveReturnCreditRefund customer-credit variant"
+      ],
+      "status": "PARTIALLY_CLOSED_BY_TRANSPORT_CONTRACT"
+    },
+    {
+      "decisionId": "DEC-LEAD-ARCHIVE-ANONYMIZE",
+      "question": "Define archive/anonymize retention, reopen and conversion interaction.",
+      "availableEvidence": [
+        "canonical Lead lifecycle",
+        "lead retention commands"
+      ],
+      "options": [
+        "Soft archive",
+        "PII anonymization with immutable commercial references"
+      ],
+      "recommendedOwner": "Lead Domain Owner + Privacy Owner",
+      "blockingOperations": [],
+      "status": "CLOSED_BY_PHASE6",
+      "resolution": "Typed retention, consent and identity-resolution contracts are production-ready."
+    },
+    {
+      "decisionId": "DEC-QUOTE-ACCEPTANCE-SEMANTICS-CONFLICT",
+      "question": "Does quote acceptance only accept the Quote and optionally close its Deal, or must it atomically create an Order as the former OpenAPI response implied?",
+      "availableEvidence": [
+        "src/workflows/quote-acceptance/index.ts — AcceptQuoteResult",
+        "docs/api/openapi.json — former AcceptQuoteResponseResult",
+        "src/modules/quotes/domain/model/quote.types.ts"
+      ],
+      "options": [
+        "Atomic Quote + Deal transition; Order created separately",
+        "Atomic Quote + Deal + Order workflow with explicit order draft semantics"
+      ],
+      "recommendedOwner": "Quote Domain Owner + Order Domain Owner + API Contract Architect",
+      "blockingOperations": [
+        "acceptQuote"
+      ],
+      "blockingCommands": [],
+      "status": "CLOSED_BY_P02_P15_WITH_RETIRED_GENERIC_OPERATION",
+      "resolvedOperations": [
+        "acceptQuoteAndCloseDeal",
+        "convertAcceptedQuoteToOrderDraft"
+      ]
+    },
+    {
+      "decisionId": "DEC-ORDER-CONFIRMATION-TRANSACTION",
+      "question": "Which aggregate owns Order confirmation, Payment Plan activation, credit approval evidence and Deal close, and which effects are atomic?",
+      "availableEvidence": [
+        "src/workflows/order-confirmation/index.ts — executeOrderConfirmation",
+        "src/modules/orders/domain/model/order.types.ts",
+        "Payment plan domain contracts"
+      ],
+      "options": [
+        "Single backend workflow transaction",
+        "Order transaction plus outbox-driven Deal/Payment projections",
+        "Saga with explicit pending/failure states"
+      ],
+      "recommendedOwner": "Order Domain Owner + Payments Domain Owner + Sales Domain Owner",
+      "blockingOperations": [
+        "approveOrderCreditOverride"
+      ],
+      "blockingCommands": [
+        "order.confirm"
+      ],
+      "status": "CLOSED_BY_P02_P06_WITH_BLOCKED_INLINE_VARIANT",
+      "resolvedOperations": [
+        "confirmOrderWithPaymentPlan",
+        "approveOrderCreditApproval"
+      ]
+    },
+    {
+      "decisionId": "DEC-ORDER-CANCELLATION-COMPENSATION",
+      "question": "Define cancellation blockers and compensation ownership for issued invoices, effective allocations, active payment plans and shipping bookings.",
+      "availableEvidence": [
+        "src/workflows/order-cancellation/index.ts — evaluateOrderCancellation/executeOrderCancellation",
+        "Invoice, Payment and Shipping read models"
+      ],
+      "options": [
+        "Reject cancellation while downstream effects exist",
+        "Backend saga with compensating commands",
+        "Explicit superseding/void workflow"
+      ],
+      "recommendedOwner": "Order Domain Owner + Finance Domain Owner + Fulfillment Domain Owner",
+      "blockingOperations": [],
+      "blockingCommands": [],
+      "status": "CLOSED",
+      "resolution": "Standard Order cancellation rejects downstream invoice/payment/shipping obligations as blockers; no frontend compensation. order.cancel-with-compensation is deprecated."
+    },
+    {
+      "decisionId": "DEC-PAYMENT-FINANCIAL-EFFECTS",
+      "question": "Approve authoritative allocation, reconciliation, refund and COD state machines, residual policy, provider evidence and replay behavior.",
+      "availableEvidence": [
+        "src/modules/payments/application/ports/PaymentApiPort.ts",
+        "payment command models",
+        "src/workflows/shipping-cod-evidence/index.ts"
+      ],
+      "options": [
+        "Payment aggregate commands with serialized financial effects",
+        "Finance workflow saga with provider/outbox evidence"
+      ],
+      "recommendedOwner": "Payments/Finance Domain Owner + API Contract Architect",
+      "blockingOperations": [
+        "resolveReturnCreditRefund customer-credit variant"
+      ],
+      "blockingCommands": [],
+      "status": "PARTIALLY_CLOSED_BY_P04_P05_P06_P08",
+      "decision": "Allocation/reversal, Refund Intent creation and two-stage COD evidence are closed. Return orchestration and refund retry/cancellation remain unresolved."
+    },
+    {
+      "decisionId": "DEC-P02-QUOTE-ACCEPTANCE-SEPARATE-ORDER-CREATION",
+      "status": "CLOSED",
+      "owner": "Quote/Deal domain owners",
+      "question": "Does Quote acceptance create an Order?",
+      "decision": "No. Acceptance transitions Quote to ACCEPTED and closes a linked Deal as Won atomically. Order creation is a separate command that requires an already ACCEPTED Quote.",
+      "evidence": [
+        "src/workflows/quote-acceptance/index.ts#acceptQuoteAndCloseDeal",
+        "src/modules/quotes/domain/rules/quoteConversion.ts#assertQuoteConvertibleToOrder"
+      ],
+      "blockingOperations": []
+    },
+    {
+      "decisionId": "DEC-P02-ORDER-CONFIRMATION-NO-INLINE-CREDIT-OVERRIDE",
+      "status": "CLOSED_WITH_BLOCKED_VARIANT",
+      "owner": "Order/Finance domain owners",
+      "question": "Can the frontend provide credit approval evidence inline with Order confirmation?",
+      "decision": "No. Standard confirmation is atomic across Order, Payment Plan and optional Deal. If policy requires credit approval, backend returns CREDIT_APPROVAL_REQUIRED and no state changes occur. A separate approval command remains unresolved.",
+      "evidence": [
+        "src/workflows/order-confirmation/index.ts#executeOrderConfirmation"
+      ],
+      "blockingOperations": [
+        "approveOrderCreditOverride"
+      ]
+    },
+    {
+      "decisionId": "DEC-P02-ORDER-CANCELLATION-NO-COMPENSATION",
+      "status": "CLOSED",
+      "owner": "Order domain owner",
+      "question": "Does Order cancellation compensate invoices, payments and shipping?",
+      "decision": "No. Those obligations are blockers. The cancellation transaction only cancels the Order and an active Payment Plan after blockers are absent.",
+      "evidence": [
+        "src/workflows/order-cancellation/index.ts#evaluateOrderCancellation",
+        "src/workflows/order-cancellation/index.ts#executeOrderCancellation"
+      ],
+      "blockingOperations": []
+    },
+    {
+      "decisionId": "DEC-P02-PAYMENT-RECONCILIATION",
+      "status": "CLOSED",
+      "owner": "Payments domain owner",
+      "question": "What is the Payment Record reconciliation command?",
+      "decision": "A single-aggregate versioned command for SUCCEEDED records, setting MATCHED or MISMATCH. Actor, time, correlation and audit are backend-owned.",
+      "evidence": [
+        "src/modules/payments/application/commands/paymentRecordCommands.ts#reconcilePaymentRecord"
+      ],
+      "blockingOperations": []
+    },
+    {
+      "decisionId": "DEC-P02-PAYMENT-ALLOCATION",
+      "status": "SUPERSEDED_BY_P04",
+      "owner": "Payments and Receivables domain owners",
+      "question": "Who assigns allocation IDs, validates invoice balance and owns multi-invoice residual handling?",
+      "options": [
+        "Backend allocation transaction",
+        "Event-driven allocation ledger"
+      ],
+      "blockingOperations": [],
+      "decision": "Closed by DEC-P04-PAYMENT-ALLOCATION-LEDGER and DEC-P04-PAYMENT-ALLOCATION-REVERSAL."
+    },
+    {
+      "decisionId": "DEC-P02-REFUND-ASYNC-LIFECYCLE",
+      "status": "CLOSED_BY_P05_P06_P08",
+      "owner": "Payments and Returns domain owners",
+      "question": "Does refund creation mean intent accepted or funds succeeded, and which event releases Return resolution?",
+      "options": [
+        "Async refund intent + provider settlement events",
+        "Synchronous provider transaction where supported"
+      ],
+      "blockingOperations": [],
+      "decision": "Refund Intent creation and backend completion lifecycle are closed; cross-module Return saga and retry/cancel policy remain blocked."
+    },
+    {
+      "decisionId": "DEC-P02-COD-SETTLEMENT",
+      "status": "CLOSED_BY_P04",
+      "owner": "Payments, Shipping and Finance domain owners",
+      "question": "What evidence and ledger events prove COD collection and merchant remittance?",
+      "options": [
+        "Two-stage COD ledger",
+        "Provider settlement import + reconciliation"
+      ],
+      "blockingOperations": [],
+      "decision": "Two-stage COD customer collection and merchant remittance evidence are closed by P0.4."
+    },
+    {
+      "decisionId": "DEC-P03-COMMERCIAL-READ-MODELS",
+      "status": "CLOSED",
+      "question": "Provide authoritative Deal/Quote/Order list/detail projections and concurrency versions.",
+      "availableEvidence": [
+        "OpenAPI read schemas",
+        "vertical-slice query resources",
+        "commercial domain models"
+      ],
+      "options": [
+        "Closed by P0.3"
+      ],
+      "recommendedOwner": "API Contract Architect",
+      "blockingOperations": []
+    },
+    {
+      "decisionId": "DEC-P03-ORDER-CREDIT-APPROVAL-LIFECYCLE",
+      "status": "CLOSED_BY_P06",
+      "question": "What aggregate, lifecycle and evidence authorize an Order confirmation that exceeds server-evaluated credit policy?",
+      "availableEvidence": [
+        "Order confirmation must return CREDIT_APPROVAL_REQUIRED when server policy blocks confirmation.",
+        "Payment configuration contains thresholds and an approver role label, but no durable approval aggregate contract.",
+        "Frontend-authored inline credit approval has been removed from production request projection."
+      ],
+      "options": [
+        "Design dedicated approval aggregate and commands",
+        "Keep postpaid confirmation blocked"
+      ],
+      "recommendedOwner": "Credit Policy Domain Owner + Security/Authorization Architect + API Contract Architect",
+      "blockingOperations": [],
+      "resolvedOperations": [
+        "requestOrderCreditApproval",
+        "getOrderCreditApproval",
+        "approveOrderCreditApproval",
+        "rejectOrderCreditApproval",
+        "revokeOrderCreditApproval"
+      ]
+    },
+    {
+      "decisionId": "DEC-P03-ACCEPTED-QUOTE-ORDER-COMMAND-SPLIT",
+      "status": "CLOSED_BY_P06_P07",
+      "question": "The existing frontend order.create command combines direct-sale draft creation and accepted-Quote conversion, which have different preconditions and idempotency identities.",
+      "availableEvidence": [
+        "Only an ACCEPTED, non-expired Quote with buyer, line and positive total evidence is eligible.",
+        "A source Quote can produce at most one durable Order unless an explicit replacement policy is later approved.",
+        "Order receives an immutable commercial line/adjustment/payment-agreement snapshot; Product master changes cannot rewrite history.",
+        "Backend assigns Order ID, order number, timestamps, totals and resourceVersion.",
+        "A source Deal must already be WON or be handled by an explicitly approved backend transaction."
+      ],
+      "options": [
+        "Split direct draft and Quote conversion commands",
+        "Deprecate one path"
+      ],
+      "recommendedOwner": "Order Domain Owner + Quote Domain Owner + API Contract Architect",
+      "blockingOperations": [],
+      "resolvedOperations": [
+        "convertAcceptedQuoteToOrderDraft",
+        "createOrderDraftCommand"
+      ]
+    },
+    {
+      "decisionId": "DEC-P04-RETURN-REFUND-SAGA",
+      "status": "CLOSED_BY_P05",
+      "question": "Return credit/refund saga ownership and failure persistence.",
+      "availableEvidence": [
+        "P0.5 typed 202 start contract, persisted saga read model and explicit no-frontend-rollback policy."
+      ],
+      "options": [
+        "BACKEND_ORCHESTRATED_SAGA"
+      ],
+      "recommendedOwner": "returns+payments+invoices",
+      "blockingOperations": []
+    },
+    {
+      "decisionId": "DEC-P04-REFUND-CANCEL-RETRY",
+      "status": "CLOSED_BY_P08",
+      "question": "When may a failed/processing refund be cancelled or retried and how is provider idempotency retained?",
+      "availableEvidence": [
+        "P0.8 RefundProviderAttempt aggregate, asynchronous cancellation acknowledgement and retry lineage contract."
+      ],
+      "options": [
+        "REFUND_PROVIDER_ATTEMPT_RECOVERY_CONTRACT"
+      ],
+      "recommendedOwner": "payments+provider-integration",
+      "blockingOperations": [],
+      "decision": "Public recovery operations are typed and fail closed; provider transport/live conformance remains external."
+    },
+    {
+      "decisionId": "DEC-P05-RETURN-CUSTOMER-CREDIT-REFUND-POLICY",
+      "status": "CLOSED_BY_P06",
+      "question": "May Return resolution reverse or consume Customer Credit allocations, and what evidence is produced?",
+      "availableEvidence": [
+        "The local workflow explicitly throws RETURN_CUSTOMER_CREDIT_POLICY_REQUIRED."
+      ],
+      "options": [
+        "Disallow Customer Credit in saga",
+        "Reverse credit allocation and restore credit balance",
+        "Create a new customer-credit adjustment ledger entry"
+      ],
+      "recommendedOwner": "finance-domain-owner",
+      "blockingOperations": [],
+      "resolvedOperations": [
+        "resolveReturnCreditRefund"
+      ]
+    },
+    {
+      "decisionId": "DEC-P09-LIVE-PROVIDER-CONFORMANCE",
+      "question": "Execute all 516 provider scenarios against a provisioned backend with authenticated actors and two isolated workspaces.",
+      "availableEvidence": [
+        "Dependency-free reference provider conformance passes all current fixtures.",
+        "No backend URL, access tokens, database or workspace fixtures were supplied."
+      ],
+      "options": [
+        "Provision provider host and execute all packs",
+        "Keep release candidate blocked"
+      ],
+      "recommendedOwner": "Backend Platform + Security + Module Owners",
+      "blockingOperations": [],
+      "status": "BLOCKED_EXTERNAL"
+    }
+  ],
+  "operationDecisions": [
+    {
+      "decisionId": "DEC-ALLOCATECUSTOMERCREDIT",
+      "question": "Approve, redesign or retire OpenAPI operation allocateCustomerCredit.",
+      "recommendedOwner": "payments",
+      "blockingOperations": [
+        "allocateCustomerCredit"
+      ],
+      "status": "BLOCKED",
+      "availableEvidence": [
+        "POST /customer-credits/{customerCreditId}/allocations",
+        "BLOCKED by DEC-ALLOCATECUSTOMERCREDIT: request/response or business semantics are not authoritative. Generated clients reject this operation before network I/O."
+      ]
+    },
+    {
+      "decisionId": "DEC-ALLOCATEPAYMENT",
+      "question": "Approve, redesign or retire OpenAPI operation allocatePayment.",
+      "recommendedOwner": "payments",
+      "blockingOperations": [
+        "allocatePayment"
+      ],
+      "status": "BLOCKED",
+      "availableEvidence": [
+        "POST /payments/{paymentRecordId}/allocations",
+        "BLOCKED by DEC-ALLOCATEPAYMENT: request/response or business semantics are not authoritative. Generated clients reject this operation before network I/O."
+      ]
+    },
+    {
+      "decisionId": "DEC-CREATECRMOBJECTFIELD",
+      "question": "Approve, redesign or retire OpenAPI operation createCrmObjectField.",
+      "recommendedOwner": "platform/workspace-config",
+      "blockingOperations": [
+        "createCrmObjectField"
+      ],
+      "status": "BLOCKED",
+      "availableEvidence": [
+        "POST /crm-configuration/object-schemas/{objectKey}/fields",
+        "BLOCKED by DEC-CREATECRMOBJECTFIELD: request/response or business semantics are not authoritative. Generated clients reject this operation before network I/O."
+      ]
+    },
+    {
+      "decisionId": "DEC-CREATECRMPIPELINE",
+      "question": "Approve, redesign or retire OpenAPI operation createCrmPipeline.",
+      "recommendedOwner": "platform/workspace-config",
+      "blockingOperations": [
+        "createCrmPipeline"
+      ],
+      "status": "BLOCKED",
+      "availableEvidence": [
+        "POST /crm-configuration/pipelines",
+        "BLOCKED by DEC-CREATECRMPIPELINE: request/response or business semantics are not authoritative. Generated clients reject this operation before network I/O."
+      ]
+    },
+    {
+      "decisionId": "DEC-CREATECRMPIPELINESTAGE",
+      "question": "Approve, redesign or retire OpenAPI operation createCrmPipelineStage.",
+      "recommendedOwner": "platform/workspace-config",
+      "blockingOperations": [
+        "createCrmPipelineStage"
+      ],
+      "status": "BLOCKED",
+      "availableEvidence": [
+        "POST /crm-configuration/pipelines/{pipelineId}/stages",
+        "BLOCKED by DEC-CREATECRMPIPELINESTAGE: request/response or business semantics are not authoritative. Generated clients reject this operation before network I/O."
+      ]
+    },
+    {
+      "decisionId": "DEC-CREATEINTEGRATIONCONNECTION",
+      "question": "Approve, redesign or retire OpenAPI operation createIntegrationConnection.",
+      "recommendedOwner": "platform/integrations",
+      "blockingOperations": [
+        "createIntegrationConnection"
+      ],
+      "status": "BLOCKED",
+      "availableEvidence": [
+        "POST /integrations/connections",
+        "BLOCKED by DEC-CREATEINTEGRATIONCONNECTION: request/response or business semantics are not authoritative. Generated clients reject this operation before network I/O."
+      ]
+    },
+    {
+      "decisionId": "DEC-CREATEPRODUCTCONFIGURATIONTYPE",
+      "question": "Approve, redesign or retire OpenAPI operation createProductConfigurationType.",
+      "recommendedOwner": "products",
+      "blockingOperations": [
+        "createProductConfigurationType"
+      ],
+      "status": "BLOCKED",
+      "availableEvidence": [
+        "POST /products/configuration/types",
+        "BLOCKED by DEC-CREATEPRODUCTCONFIGURATIONTYPE: request/response or business semantics are not authoritative. Generated clients reject this operation before network I/O."
+      ]
+    },
+    {
+      "decisionId": "DEC-DELETECRMOBJECTFIELD",
+      "question": "Approve, redesign or retire OpenAPI operation deleteCrmObjectField.",
+      "recommendedOwner": "platform/workspace-config",
+      "blockingOperations": [
+        "deleteCrmObjectField"
+      ],
+      "status": "BLOCKED",
+      "availableEvidence": [
+        "DELETE /crm-configuration/object-schemas/{objectKey}/fields/{fieldId}",
+        "BLOCKED by DEC-DELETECRMOBJECTFIELD: request/response or business semantics are not authoritative. Generated clients reject this operation before network I/O."
+      ]
+    },
+    {
+      "decisionId": "DEC-DELETECRMPIPELINE",
+      "question": "Approve, redesign or retire OpenAPI operation deleteCrmPipeline.",
+      "recommendedOwner": "platform/workspace-config",
+      "blockingOperations": [
+        "deleteCrmPipeline"
+      ],
+      "status": "BLOCKED",
+      "availableEvidence": [
+        "DELETE /crm-configuration/pipelines/{pipelineId}",
+        "BLOCKED by DEC-DELETECRMPIPELINE: request/response or business semantics are not authoritative. Generated clients reject this operation before network I/O."
+      ]
+    },
+    {
+      "decisionId": "DEC-DELETECRMPIPELINESTAGE",
+      "question": "Approve, redesign or retire OpenAPI operation deleteCrmPipelineStage.",
+      "recommendedOwner": "platform/workspace-config",
+      "blockingOperations": [
+        "deleteCrmPipelineStage"
+      ],
+      "status": "BLOCKED",
+      "availableEvidence": [
+        "DELETE /crm-configuration/pipelines/{pipelineId}/stages/{stageId}",
+        "BLOCKED by DEC-DELETECRMPIPELINESTAGE: request/response or business semantics are not authoritative. Generated clients reject this operation before network I/O."
+      ]
+    },
+    {
+      "decisionId": "DEC-DELETEPRODUCTCONFIGURATIONTYPE",
+      "question": "Approve, redesign or retire OpenAPI operation deleteProductConfigurationType.",
+      "recommendedOwner": "products",
+      "blockingOperations": [
+        "deleteProductConfigurationType"
+      ],
+      "status": "BLOCKED",
+      "availableEvidence": [
+        "DELETE /products/configuration/types/{typeId}",
+        "BLOCKED by DEC-DELETEPRODUCTCONFIGURATIONTYPE: request/response or business semantics are not authoritative. Generated clients reject this operation before network I/O."
+      ]
+    },
+    {
+      "decisionId": "DEC-DISCONNECTINTEGRATIONCONNECTION",
+      "question": "Approve, redesign or retire OpenAPI operation disconnectIntegrationConnection.",
+      "recommendedOwner": "platform/integrations",
+      "blockingOperations": [
+        "disconnectIntegrationConnection"
+      ],
+      "status": "BLOCKED",
+      "availableEvidence": [
+        "POST /integrations/connections/{connectionId}/disconnect",
+        "BLOCKED by DEC-DISCONNECTINTEGRATIONCONNECTION: request/response or business semantics are not authoritative. Generated clients reject this operation before network I/O."
+      ]
+    },
+    {
+      "decisionId": "DEC-MARKDEALLOSTANDPLANRECYCLE",
+      "question": "Approve, redesign or retire OpenAPI operation markDealLostAndPlanRecycle.",
+      "recommendedOwner": "deals",
+      "blockingOperations": [
+        "markDealLostAndPlanRecycle"
+      ],
+      "status": "BLOCKED",
+      "availableEvidence": [
+        "POST /workflows/deal-recycle/{dealId}/mark-lost-and-plan-recycle",
+        "BLOCKED by DEC-MARKDEALLOSTANDPLANRECYCLE: request/response or business semantics are not authoritative. Generated clients reject this operation before network I/O."
+      ]
+    },
+    {
+      "decisionId": "DEC-MUTATION-RESULT-PROJECTION",
+      "question": "Approve, redesign or retire OpenAPI operation createContact.",
+      "recommendedOwner": "contacts",
+      "blockingOperations": [
+        "completeCustomerOnboarding",
+        "createContact",
+        "createOrganization",
+        "linkContactToOrganization",
+        "onboardExistingCustomer",
+        "updateContact",
+        "updateCustomerLifecycle",
+        "updateOrganization"
+      ],
+      "status": "BLOCKED",
+      "availableEvidence": [
+        "POST /contacts",
+        "BLOCKED by DEC-MUTATION-RESULT-PROJECTION.",
+        "PATCH /contacts/{contactId}",
+        "POST /customer-onboarding",
+        "PATCH /customers/{customerId}",
+        "POST /customers/{customerId}/complete-onboarding",
+        "POST /organizations",
+        "PATCH /organizations/{organizationId}",
+        "PUT /organizations/{organizationId}/contacts/{contactId}"
+      ]
+    },
+    {
+      "decisionId": "DEC-P15-TYPED-QUOTE-LIFECYCLE",
+      "question": "Retain ambiguous generic Quote lifecycle operations as blocked and use typed Quote commands.",
+      "recommendedOwner": "quotes",
+      "blockingOperations": [
+        "acceptQuote",
+        "changeQuoteStatusCommand"
+      ],
+      "status": "BLOCKED",
+      "availableEvidence": [
+        "POST /quotes/{quoteId}/accept",
+        "Retired generic/ambiguous Quote lifecycle operation. Use typed Quote commands and acceptQuoteAndCloseDeal.",
+        "POST /quotes/{quoteId}/change-status"
+      ],
+      "decisionState": "CLOSED_WITH_RETIRED_BLOCKED_OPERATIONS",
+      "resolvedOperations": [
+        "approveQuoteCommand",
+        "rejectQuoteCommand",
+        "expireQuoteCommand",
+        "reviseQuoteCommand",
+        "acceptQuoteAndCloseDeal"
+      ]
+    },
+    {
+      "decisionId": "DEC-PHASE5-GENERIC-LEAD-QUALIFICATION-RETIRED",
+      "question": "Retain generic Lead qualification as blocked and use the three typed qualification workflows.",
+      "recommendedOwner": "leads + owning downstream workflow modules",
+      "blockingOperations": [
+        "qualifyLead"
+      ],
+      "status": "BLOCKED",
+      "availableEvidence": [
+        "POST /leads/{leadId}/qualify",
+        "RETIRED by DEC-PHASE5-GENERIC-LEAD-QUALIFICATION-RETIRED. Use qualifyLeadForNurture, qualifyLeadForOpportunity or qualifyLeadForDirectSale. The generic operation remains fail-closed and performs no network I/O."
+      ],
+      "decisionState": "CLOSED_WITH_RETIRED_BLOCKED_OPERATION",
+      "resolvedOperations": [
+        "qualifyLeadForNurture",
+        "qualifyLeadForOpportunity",
+        "qualifyLeadForDirectSale"
+      ]
+    },
+    {
+      "decisionId": "DEC-PUTWORKSPACEEXCHANGERATE",
+      "question": "Approve, redesign or retire OpenAPI operation putWorkspaceExchangeRate.",
+      "recommendedOwner": "platform/workspace-config",
+      "blockingOperations": [
+        "putWorkspaceExchangeRate"
+      ],
+      "status": "BLOCKED",
+      "availableEvidence": [
+        "PUT /workspace-configuration/exchange-rates/{rateId}",
+        "BLOCKED by DEC-PUTWORKSPACEEXCHANGERATE: request/response or business semantics are not authoritative. Generated clients reject this operation before network I/O."
+      ]
+    },
+    {
+      "decisionId": "DEC-REPLACEINVOICESELLERINFORMATIONCONFIGURATION",
+      "question": "Approve, redesign or retire OpenAPI operation replaceInvoiceSellerInformationConfiguration.",
+      "recommendedOwner": "platform/workspace-config",
+      "blockingOperations": [
+        "replaceInvoiceSellerInformationConfiguration"
+      ],
+      "status": "BLOCKED",
+      "availableEvidence": [
+        "PUT /invoices/configuration/seller-information",
+        "BLOCKED by DEC-REPLACEINVOICESELLERINFORMATIONCONFIGURATION: request/response or business semantics are not authoritative. Generated clients reject this operation before network I/O."
+      ]
+    },
+    {
+      "decisionId": "DEC-REPLACEPAYMENTRECEIVINGACCOUNTS",
+      "question": "Approve, redesign or retire OpenAPI operation replacePaymentReceivingAccounts.",
+      "recommendedOwner": "platform/workspace-config",
+      "blockingOperations": [
+        "replacePaymentReceivingAccounts"
+      ],
+      "status": "BLOCKED",
+      "availableEvidence": [
+        "PUT /payments/configuration/receiving-accounts",
+        "BLOCKED by DEC-REPLACEPAYMENTRECEIVINGACCOUNTS: request/response or business semantics are not authoritative. Generated clients reject this operation before network I/O."
+      ]
+    },
+    {
+      "decisionId": "DEC-REPLACEWORKSPACECURRENCIES",
+      "question": "Approve, redesign or retire OpenAPI operation replaceWorkspaceCurrencies.",
+      "recommendedOwner": "platform/workspace-config",
+      "blockingOperations": [
+        "replaceWorkspaceCurrencies"
+      ],
+      "status": "BLOCKED",
+      "availableEvidence": [
+        "PUT /workspace-configuration/currencies",
+        "BLOCKED by DEC-REPLACEWORKSPACECURRENCIES: request/response or business semantics are not authoritative. Generated clients reject this operation before network I/O."
+      ]
+    },
+    {
+      "decisionId": "DEC-UPDATECRMOBJECTFIELD",
+      "question": "Approve, redesign or retire OpenAPI operation updateCrmObjectField.",
+      "recommendedOwner": "platform/workspace-config",
+      "blockingOperations": [
+        "updateCrmObjectField"
+      ],
+      "status": "BLOCKED",
+      "availableEvidence": [
+        "PATCH /crm-configuration/object-schemas/{objectKey}/fields/{fieldId}",
+        "BLOCKED by DEC-UPDATECRMOBJECTFIELD: request/response or business semantics are not authoritative. Generated clients reject this operation before network I/O."
+      ]
+    },
+    {
+      "decisionId": "DEC-UPDATECRMPIPELINE",
+      "question": "Approve, redesign or retire OpenAPI operation updateCrmPipeline.",
+      "recommendedOwner": "platform/workspace-config",
+      "blockingOperations": [
+        "updateCrmPipeline"
+      ],
+      "status": "BLOCKED",
+      "availableEvidence": [
+        "PATCH /crm-configuration/pipelines/{pipelineId}",
+        "BLOCKED by DEC-UPDATECRMPIPELINE: request/response or business semantics are not authoritative. Generated clients reject this operation before network I/O."
+      ]
+    },
+    {
+      "decisionId": "DEC-UPDATECRMPIPELINESTAGE",
+      "question": "Approve, redesign or retire OpenAPI operation updateCrmPipelineStage.",
+      "recommendedOwner": "platform/workspace-config",
+      "blockingOperations": [
+        "updateCrmPipelineStage"
+      ],
+      "status": "BLOCKED",
+      "availableEvidence": [
+        "PATCH /crm-configuration/pipelines/{pipelineId}/stages/{stageId}",
+        "BLOCKED by DEC-UPDATECRMPIPELINESTAGE: request/response or business semantics are not authoritative. Generated clients reject this operation before network I/O."
+      ]
+    },
+    {
+      "decisionId": "DEC-UPDATEINTEGRATIONCONNECTION",
+      "question": "Approve, redesign or retire OpenAPI operation updateIntegrationConnection.",
+      "recommendedOwner": "platform/integrations",
+      "blockingOperations": [
+        "updateIntegrationConnection"
+      ],
+      "status": "BLOCKED",
+      "availableEvidence": [
+        "PATCH /integrations/connections/{connectionId}",
+        "BLOCKED by DEC-UPDATEINTEGRATIONCONNECTION: request/response or business semantics are not authoritative. Generated clients reject this operation before network I/O."
+      ]
+    },
+    {
+      "decisionId": "DEC-UPDATEPRODUCTCONFIGURATIONTYPE",
+      "question": "Approve, redesign or retire OpenAPI operation updateProductConfigurationType.",
+      "recommendedOwner": "products",
+      "blockingOperations": [
+        "updateProductConfigurationType"
+      ],
+      "status": "BLOCKED",
+      "availableEvidence": [
+        "PATCH /products/configuration/types/{typeId}",
+        "BLOCKED by DEC-UPDATEPRODUCTCONFIGURATIONTYPE: request/response or business semantics are not authoritative. Generated clients reject this operation before network I/O."
+      ]
+    },
+    {
+      "decisionId": "DEC-VERIFYINTEGRATIONCONNECTION",
+      "question": "Approve, redesign or retire OpenAPI operation verifyIntegrationConnection.",
+      "recommendedOwner": "platform/integrations",
+      "blockingOperations": [
+        "verifyIntegrationConnection"
+      ],
+      "status": "BLOCKED",
+      "availableEvidence": [
+        "POST /integrations/connections/{connectionId}/verify",
+        "BLOCKED by DEC-VERIFYINTEGRATIONCONNECTION: request/response or business semantics are not authoritative. Generated clients reject this operation before network I/O."
+      ]
+    }
+  ],
+  "contractVersion": "0.23.20-contract.0",
+  "p06ClosedDecisions": [
+    "DEC-P06-ORDER-CREDIT-APPROVAL",
+    "DEC-P06-ACCEPTED-QUOTE-ORDER-CONVERSION",
+    "DEC-P06-RETURN-CUSTOMER-CREDIT-POLICY"
+  ],
+  "p08ClosedDecisions": [
+    {
+      "decisionId": "DEC-P08-REFUND-PROVIDER-ATTEMPT",
+      "status": "CLOSED",
+      "operations": [
+        "listRefundProviderAttempts"
+      ]
+    },
+    {
+      "decisionId": "DEC-P08-REFUND-CANCELLATION-ACK",
+      "status": "CLOSED",
+      "operations": [
+        "requestRefundCancellation"
+      ]
+    },
+    {
+      "decisionId": "DEC-P08-REFUND-RETRY-LINEAGE",
+      "status": "CLOSED",
+      "operations": [
+        "retryRefundIntent"
+      ]
+    },
+    {
+      "decisionId": "DEC-P08-REFUND-IDEMPOTENCY-RETENTION",
+      "status": "CLOSED",
+      "operations": [
+        "requestRefundCancellation",
+        "retryRefundIntent"
+      ]
+    }
+  ],
+  "p09ClosedDecisions": [
+    {
+      "decisionId": "DEC-P09-REFERENCE-PROVIDER-CONFORMANCE",
+      "status": "CLOSED",
+      "operations": []
+    },
+    {
+      "decisionId": "DEC-P09-CONNECTED-INTEGRATION-FIXTURE-MIGRATION",
+      "status": "CLOSED",
+      "operations": [
+        "listLeads",
+        "getLead",
+        "createLead"
+      ]
+    },
+    {
+      "decisionId": "DEC-P09-LEAD-PRODUCT-READ-AUTHORITY",
+      "status": "CLOSED",
+      "operations": [
+        "listLeads",
+        "getLead",
+        "listProducts",
+        "getProduct"
+      ]
+    },
+    {
+      "decisionId": "DEC-P09-SHIPPING-RETURN-READ-AUTHORITY",
+      "status": "CLOSED",
+      "operations": [
+        "listShippingBookings",
+        "getShippingBooking",
+        "listReturns",
+        "getReturn"
+      ]
+    }
+  ],
+  "phase5ClosedDecisions": [
+    {
+      "decisionId": "DEC-PHASE5-LEAD-QUALIFICATION-WORKFLOW-CONTRACTS",
+      "status": "CLOSED",
+      "operations": [
+        "qualifyLeadForNurture",
+        "qualifyLeadForOpportunity",
+        "qualifyLeadForDirectSale"
+      ]
+    },
+    {
+      "decisionId": "DEC-PHASE5-GENERIC-LEAD-QUALIFICATION-RETIRED",
+      "status": "CLOSED_WITH_RETIRED_BLOCKED_OPERATION",
+      "operations": [
+        "qualifyLead"
+      ]
+    }
+  ],
+  "phase6ClosedDecisions": [
+    {
+      "decisionId": "DEC-PHASE6-LEAD-RETENTION-CONSENT-IDENTITY",
+      "status": "CLOSED",
+      "operations": [
+        "archiveLead",
+        "archiveLeadBatch",
+        "anonymizeLead",
+        "recordLeadConsent",
+        "mergeLeadDuplicates",
+        "confirmLeadDuplicatesDistinct"
+      ],
+      "evidence": [
+        "docs/api/openapi.json",
+        "src/modules/leads/infrastructure/http/LeadHttpCommandAdapter.ts",
+        "tests/fixtures/backend-contract/lead-completion/provider-scenarios.json"
+      ]
+    },
+    {
+      "decisionId": "DEC-PHASE6-LEAD-MODULE-COMPLETION",
+      "status": "CLOSED",
+      "operations": [
+        "assignLeadOwner",
+        "importLeadBatch",
+        "handoverLeadWithTasks"
+      ],
+      "evidence": [
+        "docs/api/openapi.json",
+        "src/modules/leads/application/commands/leadApiCommands.ts",
+        "src/modules/leads/presentation/hooks/useLeadActions.ts"
+      ]
+    },
+    {
+      "decisionId": "DEC-PHASE6-LEAD-CLOSE-WITH-OUTCOME-RETIRED",
+      "status": "CLOSED_WITH_DEPRECATION",
+      "operations": [],
+      "evidence": [
+        "docs/backend-readiness/command-registry.json"
+      ],
+      "resolution": "Outcome closure is exclusively owned by the three typed Lead qualification workflows."
+    }
+  ],
+  "phase15ClosedDecisions": [
+    {
+      "decisionId": "DEC-PHASE15-QUOTE-API-BOUNDARY",
+      "status": "CLOSED",
+      "summary": "Dedicated Quote query/command ports, HTTP adapter, closed DTOs, authoritative mutation responses, idempotency and optimistic concurrency are production contract authority."
+    },
+    {
+      "decisionId": "DEC-P15-TYPED-QUOTE-LIFECYCLE",
+      "status": "CLOSED",
+      "summary": "Generic Quote status mutation is deprecated. Approval, delivery evidence, rejection, expiration, revision, archive and acceptance use typed operations."
+    }
+  ]
+}
