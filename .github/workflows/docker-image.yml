@@ -9,6 +9,7 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME_: TUAN131125/unicorecrm-web
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest

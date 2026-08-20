@@ -28769,7 +28769,7 @@
       "classification": "active-script",
       "reason": "Repository support file.",
       "owner": "repository",
-      "bytes": 1401,
+      "bytes": 1390,
       "lines": null,
       "usage": {
         "runtimeReachable": false,
@@ -44928,7 +44928,7 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "platform:identity-auth",
-      "bytes": 1692,
+      "bytes": 1693,
       "lines": 30,
       "usage": {
         "runtimeReachable": true,
@@ -52923,8 +52923,8 @@
       "classification": "active-test",
       "reason": "Test source.",
       "owner": "test",
-      "bytes": 8816,
-      "lines": 122,
+      "bytes": 8104,
+      "lines": 109,
       "usage": {
         "runtimeReachable": false,
         "scriptReachable": false,
@@ -52975,8 +52975,8 @@
       "classification": "active-test",
       "reason": "Test source.",
       "owner": "test",
-      "bytes": 16522,
-      "lines": 290,
+      "bytes": 16226,
+      "lines": 287,
       "usage": {
         "runtimeReachable": false,
         "scriptReachable": false,
@@ -53040,8 +53040,8 @@
       "classification": "active-test",
       "reason": "Test source.",
       "owner": "test",
-      "bytes": 5317,
-      "lines": 108,
+      "bytes": 4974,
+      "lines": 106,
       "usage": {
         "runtimeReachable": false,
         "scriptReachable": false,
@@ -53131,8 +53131,8 @@
       "classification": "active-test",
       "reason": "Test source.",
       "owner": "test",
-      "bytes": 5079,
-      "lines": 67,
+      "bytes": 4793,
+      "lines": 65,
       "usage": {
         "runtimeReachable": false,
         "scriptReachable": false,
@@ -53222,8 +53222,8 @@
       "classification": "active-test",
       "reason": "Test source.",
       "owner": "test",
-      "bytes": 5202,
-      "lines": 76,
+      "bytes": 4818,
+      "lines": 73,
       "usage": {
         "runtimeReachable": false,
         "scriptReachable": false,
@@ -53287,8 +53287,8 @@
       "classification": "active-test",
       "reason": "Test source.",
       "owner": "test",
-      "bytes": 5366,
-      "lines": 124,
+      "bytes": 5025,
+      "lines": 122,
       "usage": {
         "runtimeReachable": false,
         "scriptReachable": false,
@@ -53391,8 +53391,8 @@
       "classification": "active-test",
       "reason": "Test source.",
       "owner": "test",
-      "bytes": 9528,
-      "lines": 154,
+      "bytes": 9102,
+      "lines": 148,
       "usage": {
         "runtimeReachable": false,
         "scriptReachable": false,
@@ -53885,8 +53885,8 @@
       "classification": "active-test",
       "reason": "Test source.",
       "owner": "test",
-      "bytes": 17444,
-      "lines": 269,
+      "bytes": 17142,
+      "lines": 266,
       "usage": {
         "runtimeReachable": false,
         "scriptReachable": false,
@@ -54887,5 +54887,5 @@
       "quality.work-operations-ux"
     ]
   },
-  "inventoryFingerprint": "b3881a0bcce751ec57d84e73cde52a926569b9d494d548ece60a5e7246e2751e"
+  "inventoryFingerprint": "efa530d83e92ff99cde219ad151515fdb1c83b8a98ded96198492cfc3ade795e"
 }

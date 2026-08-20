@@ -37,7 +37,7 @@ Do not delete a dead, compatibility, deprecated or duplicate candidate based on 
 | Quality groups | 11 |
 | Verify gates | 310 |
 
-Inventory fingerprint: `b3881a0bcce751ec57d84e73cde52a926569b9d494d548ece60a5e7246e2751e`
+Inventory fingerprint: `efa530d83e92ff99cde219ad151515fdb1c83b8a98ded96198492cfc3ade795e`
 
 
 ## Quality pipeline
