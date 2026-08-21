@@ -1,8 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
-  History,
   Menu,
   MessageCircleMore,
   MoreHorizontal,
@@ -12,18 +11,22 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import { formatApplicationError } from "@/shared/operations";
 import type { AiContextWrapper } from "@/workspaces/crm/ai-context";
 import { DEFAULT_AI_GOVERNANCE_POLICY } from "@/ai/governance";
+import {
+  appendAiConversationMessage,
+  createAiConversation,
+  deleteAiConversation,
+  listAiConversations,
+  resolveAiInteractionState,
+  type AiInteractionState,
+} from "@/ai";
+import { useAiAssistantScope } from "@/ai/react/useAiAssistantScope";
 import { useI18n } from "../../i18n";
 import { useBodyScrollLock } from "@/shared/hooks/useBodyScrollLock";
 import { OVERLAY_Z } from "../overlay/overlayLayers";
 import { AiChatPanel } from "./AiChatPanel";
-import {
-  appendAiChatMessage,
-  createAiChatThread,
-  getAiChatThreads,
-  saveAiChatThreads,
-} from "../../ai/aiStorage";
 import type { AiChatMessage, AiChatThread } from "../../ai/aiTypes";
 
 interface AiAssistantDrawerProps {
@@ -45,45 +48,76 @@ export const AiAssistantDrawer: React.FC<AiAssistantDrawerProps> = ({ isOpen, on
   const { locale } = useI18n();
   const isVi = locale === "vi";
   const reduceMotion = useReducedMotion();
+  const scope = useAiAssistantScope();
   const aiDisabled = DEFAULT_AI_GOVERNANCE_POLICY.killSwitch;
   const [threads, setThreads] = useState<AiChatThread[]>([]);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [mobileHistoryOpen, setMobileHistoryOpen] = useState(false);
   const [menuThreadId, setMenuThreadId] = useState<string | null>(null);
+  const [runtimeState, setRuntimeState] = useState<AiInteractionState>("idle");
+  const [runtimeMessage, setRuntimeMessage] = useState<string | null>(null);
 
   useBodyScrollLock(isOpen);
 
   const welcomeMessage = isVi
     ? "Xin chào! Tôi là Trợ lý AI của UnicoreCRM. Bạn có thể hỏi dữ liệu CRM, yêu cầu phân tích hoặc ra lệnh tạo công việc."
     : "Hello! I am the UnicoreCRM AI Assistant. Ask about CRM data, request analysis, or command task creation.";
+  const newConversationTitle = isVi ? "Cuộc trò chuyện mới" : "New conversation";
 
-  const refreshThreads = (preferredId?: string) => {
-    const next = getAiChatThreads();
+  const reportRuntimeFailure = useCallback((error: unknown) => {
+    setRuntimeState(resolveAiInteractionState(error));
+    setRuntimeMessage(formatApplicationError(error, { locale }));
+  }, [locale]);
+
+  const commitThreads = useCallback((next: AiChatThread[], preferredId?: string) => {
     setThreads(next);
-    const preferredExists = preferredId && next.some((thread) => thread.id === preferredId);
-    const activeExists = activeThreadId && next.some((thread) => thread.id === activeThreadId);
-    setActiveThreadId(preferredExists ? preferredId! : activeExists ? activeThreadId : next[0]?.id ?? null);
-  };
+    setRuntimeState("success");
+    setRuntimeMessage(null);
+    setActiveThreadId((current) => {
+      if (preferredId && next.some((thread) => thread.id === preferredId)) return preferredId;
+      if (current && next.some((thread) => thread.id === current)) return current;
+      return next[0]?.id ?? null;
+    });
+  }, []);
 
-  const createThread = () => {
-    const thread = createAiChatThread(isVi ? "Cuộc trò chuyện mới" : "New conversation", welcomeMessage);
-    refreshThreads(thread.id);
-    setMobileHistoryOpen(false);
-  };
+  const createThread = useCallback(async () => {
+    try {
+      const thread = await createAiConversation(scope, { title: newConversationTitle, welcomeMessage });
+      commitThreads(await listAiConversations(scope), thread.id);
+      setMobileHistoryOpen(false);
+    } catch (error) {
+      reportRuntimeFailure(error);
+    }
+  }, [commitThreads, newConversationTitle, reportRuntimeFailure, scope, welcomeMessage]);
 
+  // Conversations are scoped by workspace and actor, so a workspace switch loads
+  // a different conversation set instead of revealing the previous one.
   useEffect(() => {
     if (!isOpen) return;
-    const existing = getAiChatThreads();
-    if (existing.length === 0) {
-      const thread = createAiChatThread(isVi ? "Cuộc trò chuyện mới" : "New conversation", welcomeMessage);
-      setThreads([thread]);
-      setActiveThreadId(thread.id);
-    } else {
-      setThreads(existing);
-      setActiveThreadId((current) => current && existing.some((thread) => thread.id === current) ? current : existing[0].id);
-    }
-  }, [isOpen, isVi, welcomeMessage]);
+    let cancelled = false;
+    setRuntimeState("loading");
+    void (async () => {
+      try {
+        const existing = await listAiConversations(scope);
+        if (cancelled) return;
+        if (existing.length > 0) {
+          commitThreads(existing);
+          return;
+        }
+        const thread = await createAiConversation(scope, { title: newConversationTitle, welcomeMessage });
+        if (cancelled) return;
+        commitThreads([thread], thread.id);
+      } catch (error) {
+        if (!cancelled) {
+          setThreads([]);
+          setActiveThreadId(null);
+          reportRuntimeFailure(error);
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [isOpen, scope, newConversationTitle, welcomeMessage, commitThreads, reportRuntimeFailure]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -111,39 +145,43 @@ export const AiAssistantDrawer: React.FC<AiAssistantDrawerProps> = ({ isOpen, on
     });
   }, [search, threads]);
 
-  const handleAddMessage = (message: AiChatMessage) => {
+  const handleAddMessage = useCallback(async (message: AiChatMessage) => {
     if (!activeThread) return;
-    const updated = appendAiChatMessage(activeThread.id, message);
-    if (!updated) return;
-    const next = getAiChatThreads();
-    setThreads(next);
-    setActiveThreadId(updated.id);
-  };
-
-  const deleteThread = (threadId: string) => {
-    const next = getAiChatThreads().filter((thread) => thread.id !== threadId);
-    saveAiChatThreads(next);
-    setMenuThreadId(null);
-    if (next.length === 0) {
-      const created = createAiChatThread(isVi ? "Cuộc trò chuyện mới" : "New conversation", welcomeMessage);
-      setThreads([created]);
-      setActiveThreadId(created.id);
-    } else {
-      setThreads(next);
-      setActiveThreadId((current) => current === threadId ? next[0].id : current);
+    try {
+      const updated = await appendAiConversationMessage(scope, activeThread.id, message);
+      if (!updated) return;
+      commitThreads(await listAiConversations(scope), updated.id);
+    } catch (error) {
+      reportRuntimeFailure(error);
     }
-  };
+  }, [activeThread, commitThreads, reportRuntimeFailure, scope]);
+
+  const deleteThread = useCallback(async (threadId: string) => {
+    setMenuThreadId(null);
+    try {
+      await deleteAiConversation(scope, threadId);
+      const remaining = await listAiConversations(scope);
+      if (remaining.length > 0) {
+        commitThreads(remaining);
+        return;
+      }
+      const created = await createAiConversation(scope, { title: newConversationTitle, welcomeMessage });
+      commitThreads([created], created.id);
+    } catch (error) {
+      reportRuntimeFailure(error);
+    }
+  }, [commitThreads, newConversationTitle, reportRuntimeFailure, scope, welcomeMessage]);
 
   const clearActiveThread = () => {
-    if (activeThread) deleteThread(activeThread.id);
+    if (activeThread) void deleteThread(activeThread.id);
   };
 
   const historyPanel = (
     <aside className="flex h-full min-h-0 w-[292px] shrink-0 flex-col border-r border-slate-200 bg-slate-50/85">
       <div className="shrink-0 p-3">
-        <button type="button" onClick={createThread} className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 text-xs font-semibold text-white shadow-sm transition-all hover:bg-violet-700">
+        <button type="button" onClick={() => void createThread()} className="flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 text-xs font-semibold text-white shadow-sm transition-all hover:bg-violet-700">
           <Plus size={15} />
-          {isVi ? "Cuộc trò chuyện mới" : "New conversation"}
+          {newConversationTitle}
         </button>
         <label className="mt-3 flex h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 shadow-sm">
           <Search size={14} className="shrink-0 text-slate-400" />
@@ -179,7 +217,7 @@ export const AiAssistantDrawer: React.FC<AiAssistantDrawerProps> = ({ isOpen, on
                 </button>
                 {menuThreadId === thread.id && (
                   <div className="absolute right-2 top-10 z-30 w-36 rounded-xl border border-slate-200 bg-white p-1 shadow-xl">
-                    <button type="button" onClick={() => deleteThread(thread.id)} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[11px] font-bold text-rose-600 hover:bg-rose-50">
+                    <button type="button" onClick={() => void deleteThread(thread.id)} className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-[11px] font-bold text-rose-600 hover:bg-rose-50">
                       <Trash2 size={13} />{isVi ? "Xóa" : "Delete"}
                     </button>
                   </div>
@@ -196,6 +234,8 @@ export const AiAssistantDrawer: React.FC<AiAssistantDrawerProps> = ({ isOpen, on
   );
 
   if (typeof document === "undefined") return null;
+
+  const runtimeUnavailable = runtimeMessage !== null && !activeThread;
 
   return createPortal(
     <AnimatePresence initial={false}>
@@ -222,11 +262,18 @@ export const AiAssistantDrawer: React.FC<AiAssistantDrawerProps> = ({ isOpen, on
               </div>
               <div className="min-w-0">
                 <div className="crm-text-wrap text-sm font-semibold text-slate-950">{isVi ? "Unicore AI" : "Unicore AI"}</div>
-                <div className="mt-0.5 flex items-center gap-1 text-[10px] font-semibold text-slate-400"><span className="h-2 w-2 rounded-full bg-emerald-500" />{aiDisabled ? (isVi ? "Đã tạm dừng bởi quản trị viên" : "Paused by administrator") : (isVi ? "Sẵn sàng" : "Ready")}</div>
+                <div className="mt-0.5 flex items-center gap-1 text-[10px] font-semibold text-slate-400">
+                  <span className={`h-2 w-2 rounded-full ${runtimeUnavailable ? "bg-amber-500" : "bg-emerald-500"}`} />
+                  {aiDisabled
+                    ? (isVi ? "Đã tạm dừng bởi quản trị viên" : "Paused by administrator")
+                    : runtimeUnavailable
+                      ? (isVi ? "Dịch vụ AI chưa sẵn sàng" : "AI service unavailable")
+                      : (isVi ? "Sẵn sàng" : "Ready")}
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <button type="button" onClick={createThread} className="hidden h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 shadow-sm hover:bg-slate-50 sm:flex"><Plus size={14} />{isVi ? "Trò chuyện mới" : "New chat"}</button>
+              <button type="button" onClick={() => void createThread()} className="hidden h-10 items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 text-xs font-bold text-slate-600 shadow-sm hover:bg-slate-50 sm:flex"><Plus size={14} />{isVi ? "Trò chuyện mới" : "New chat"}</button>
               <button type="button" onClick={onClose} aria-label={isVi ? "Đóng Trợ lý AI" : "Close AI Assistant"} className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:bg-slate-50 hover:text-slate-900"><X size={18} /></button>
             </div>
           </header>
@@ -239,8 +286,25 @@ export const AiAssistantDrawer: React.FC<AiAssistantDrawerProps> = ({ isOpen, on
               </div>
               {aiDisabled ? (
                 <div data-ai-governance="kill-switch" className="flex min-h-0 flex-1 items-center justify-center p-6"><div className="max-w-lg rounded-3xl border border-amber-200 bg-amber-50 p-6 text-center"><div className="text-sm font-black text-amber-900">{isVi ? "Trợ lý AI đang được tạm dừng" : "AI Assistant is paused"}</div><p className="mt-2 text-xs leading-6 text-amber-800">{isVi ? "Workspace Owner đã bật kill switch. Lịch sử vẫn được giữ nhưng hệ thống không phân tích dữ liệu hoặc đề xuất hành động mới." : "The Workspace Owner enabled the kill switch. History remains available, but no new data analysis or actions are produced."}</p></div></div>
+              ) : runtimeUnavailable ? (
+                <div data-ai-runtime-state={runtimeState} className="flex min-h-0 flex-1 items-center justify-center p-6">
+                  <div className="max-w-lg rounded-3xl border border-amber-200 bg-amber-50 p-6 text-center">
+                    <div className="text-sm font-black text-amber-900">{isVi ? "Dịch vụ AI chưa sẵn sàng" : "The AI service is unavailable"}</div>
+                    <p className="mt-2 text-xs leading-6 text-amber-800">{runtimeMessage}</p>
+                    <p className="mt-2 text-[11px] leading-5 text-amber-700">{isVi ? "Hệ thống không thay thế bằng dữ liệu mô phỏng." : "Simulated output is never substituted for a connected answer."}</p>
+                  </div>
+                </div>
               ) : activeThread ? (
-                <div className="min-h-0 flex-1"><AiChatPanel context={context} messages={activeThread.messages} onAddMessage={handleAddMessage} onClearThread={clearActiveThread} /></div>
+                <div className="min-h-0 flex-1">
+                  <AiChatPanel
+                    context={context}
+                    scope={scope}
+                    conversationId={activeThread.id}
+                    messages={activeThread.messages}
+                    onAddMessage={handleAddMessage}
+                    onClearThread={clearActiveThread}
+                  />
+                </div>
               ) : (
                 <div className="flex h-full items-center justify-center text-sm text-slate-400">{isVi ? "Đang tải cuộc trò chuyện..." : "Loading conversation..."}</div>
               )}

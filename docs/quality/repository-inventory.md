@@ -17,9 +17,9 @@ Do not delete a dead, compatibility, deprecated or duplicate candidate based on 
 
 | Metric | Count |
 |---|---:|
-| Repository files | 1951 |
-| Source files | 1330 |
-| Source lines | 200228 |
+| Repository files | 1963 |
+| Source files | 1341 |
+| Source lines | 201875 |
 | Registered modules | 15 |
 | Route keys | 78 |
 | Loadable route modules | 62 |
@@ -27,17 +27,17 @@ Do not delete a dead, compatibility, deprecated or duplicate candidate based on 
 | Workspace module flags | 13 |
 | Cross-module workflows | 22 |
 | Public boundary files | 107 |
-| Persistence entries | 2815 |
-| Repository/store/adapter files | 141 |
+| Persistence entries | 2813 |
+| Repository/store/adapter files | 143 |
 | Compatibility candidates | 53 |
 | Dead-code candidates | 0 |
 | Large source files (â‰¥ 500 lines) | 44 |
 | Circular dependency groups | 0 |
 | Package scripts | 23 |
 | Quality groups | 11 |
-| Verify gates | 310 |
+| Verify gates | 311 |
 
-Inventory fingerprint: `efa530d83e92ff99cde219ad151515fdb1c83b8a98ded96198492cfc3ade795e`
+Inventory fingerprint: `e4566dead3330ea4867b9c9c0e016018d144006bc414599611650a7774a409cb`
 
 
 ## Quality pipeline
@@ -47,7 +47,7 @@ Inventory fingerprint: `efa530d83e92ff99cde219ad151515fdb1c83b8a98ded96198492cfc
 | `lint` | 1 |
 | `typecheck` | 3 |
 | `architecture` | 55 |
-| `unit` | 29 |
+| `unit` | 30 |
 | `contract` | 64 |
 | `integration` | 34 |
 | `route-smoke` | 8 |
@@ -60,9 +60,9 @@ Inventory fingerprint: `efa530d83e92ff99cde219ad151515fdb1c83b8a98ded96198492cfc
 
 | Classification | Count |
 |---|---:|
-| `active-runtime` | 1252 |
+| `active-runtime` | 1261 |
 | `active-script` | 63 |
-| `active-test` | 400 |
+| `active-test` | 403 |
 | `compatibility` | 53 |
 | `documentation` | 178 |
 | `fixture` | 3 |
@@ -160,7 +160,6 @@ The journey table locks source evidence and executable command names. Actual com
 | `products` | 4 |
 | `quotes` | 5 |
 | `returns` | 8 |
-| `shared:ai` | 2 |
 | `shared:app` | 11 |
 | `shared:i18n` | 4 |
 | `shipping` | 3 |

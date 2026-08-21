@@ -109,6 +109,7 @@
         "quality.invoice-domain-contracts",
         "quality.receivables-contracts",
         "quality.ai-governance-contracts",
+        "quality.ai-application-contracts",
         "quality.record-ownership-contracts",
         "quality.orders",
         "quality.customers",
@@ -1706,6 +1707,34 @@
         {
           "type": "node",
           "entry": "tests/quality/unit/check-ai-governance-contracts.mts",
+          "nodeArgs": [
+            "--import",
+            "tsx",
+            "--import",
+            "./tests/fixtures/runtime/bootstrap-demo-application-composition.mjs"
+          ],
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "quality.ai-application-contracts",
+      "commandName": "test:ai-application-contracts",
+      "groupId": "unit",
+      "kind": "unit",
+      "owner": "quality-unit",
+      "entry": "tests/quality/unit/check-ai-application-contracts.mts",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node",
+        "tsx"
+      ],
+      "shardKey": "quality.ai-application-contracts",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/unit/check-ai-application-contracts.mts",
           "nodeArgs": [
             "--import",
             "tsx",

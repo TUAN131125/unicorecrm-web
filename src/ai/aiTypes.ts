@@ -1,3 +1,5 @@
+import type { AiActionIntent } from "./application/aiActionIntent";
+
 export type AiInsightType =
   | "summary"
   | "risk"
@@ -34,9 +36,17 @@ export interface AiSuggestedAction {
   id: string;
   label: string;
   description?: string;
+  /** Original discriminator, kept so stored conversations keep rendering. */
   actionType: "navigate" | "copy" | "draft" | "view" | "none";
   route?: string;
   payload?: string;
+  /**
+   * Canonical typed intent. When present it takes precedence over `actionType`.
+   * See `src/ai/application/aiActionIntent.ts` for the closed union.
+   */
+  intent?: AiActionIntent;
+  /** Explainability references carried through to the executed action. */
+  evidenceRefs?: string[];
 }
 
 export interface AiChatMessage {
@@ -55,4 +65,7 @@ export interface AiChatThread {
   messages: AiChatMessage[];
   createdAt: string;
   updatedAt: string;
+  /** Scope owners. Present on every thread produced by the AI runtime. */
+  workspaceId?: string;
+  actorId?: string;
 }

@@ -1,5 +1,6 @@
 import type { Deal } from "@/modules/deals";
-import { createTaskSnapshot, type Task } from "@/modules/tasks";
+import { createTaskCommand, createTaskSnapshot, type RecordRef, type Task, type TaskPriority } from "@/modules/tasks";
+import type { MutationOutcome } from "@/shared/application";
 
 function safeDueAt(value?: string, fallbackHours = 24): string {
   if (value && !Number.isNaN(new Date(value).getTime())) return new Date(value).toISOString();
@@ -31,31 +32,54 @@ export function ensureDealNextActionTask(deal: Deal): Task | undefined {
 }
 
 /**
- * Explicit AI recommendations may become a Task only after the caller chooses to
- * materialize the recommendation as work. Care cases intentionally do not create
- * mirror Tasks automatically; concrete actions are created from the Support Ticket UI.
+ * Canonical activation boundary for an AI recommendation that a human chose to
+ * materialize as work. It is the only path the AI Assistant may use to create a
+ * Task: the AI application service never touches the Task repository and the AI
+ * UI never composes a Task command itself. Support Tickets intentionally do not
+ * create mirror Tasks automatically; concrete actions are created from the
+ * Support Ticket UI.
+ *
+ * Evidence, `sourceRef.type = AI_SUGGESTION`, dedupe key and correlation id are
+ * preserved so the resulting Task stays explainable and replay-safe.
  */
-export function createAiSuggestedTask(input: {
+export interface AiSuggestedTaskActivationInput {
   suggestionId: string;
   title: string;
   description?: string;
   assigneeId: string;
   dueAt?: string;
-  recordRef?: { moduleKey: string; recordId: string; label?: string };
+  priority?: TaskPriority;
+  recordRef?: RecordRef;
   evidence: string;
-}): Task {
-  return createTaskSnapshot({
-    id: `task_ai_${input.suggestionId}`,
-    title: input.title,
-    description: input.description,
-    priority: "NORMAL",
-    assigneeId: input.assigneeId,
-    dueAt: safeDueAt(input.dueAt, 24),
-    recordRef: input.recordRef,
-    sourceRef: { type: "AI_SUGGESTION", id: input.suggestionId, evidence: input.evidence },
-    dedupeKey: `ai-task:${input.suggestionId}`,
-    actorId: "ai-policy",
-    actorName: "AI Internal Action",
-    correlationId: `ai:${input.suggestionId}`,
-  });
+  actor: { id: string; name: string };
+}
+
+export function getAiSuggestedTaskId(suggestionId: string): string {
+  return `task_ai_${suggestionId}`;
+}
+
+export async function activateAiSuggestedTask(
+  input: AiSuggestedTaskActivationInput,
+): Promise<MutationOutcome<Task>> {
+  const taskId = getAiSuggestedTaskId(input.suggestionId);
+  return createTaskCommand(
+    {
+      id: taskId,
+      title: input.title,
+      ...(input.description === undefined ? {} : { description: input.description }),
+      priority: input.priority ?? "NORMAL",
+      assigneeId: input.assigneeId,
+      dueAt: safeDueAt(input.dueAt, 24),
+      ...(input.recordRef === undefined ? {} : { recordRef: input.recordRef }),
+      sourceRef: { type: "AI_SUGGESTION", id: input.suggestionId, evidence: input.evidence },
+      dedupeKey: `ai-task:${input.suggestionId}`,
+      actorId: input.actor.id,
+      actorName: input.actor.name,
+    },
+    {
+      idempotencyKey: `task.create:${taskId}`,
+      correlationId: `ai:${input.suggestionId}`,
+      actor: { id: input.actor.id, name: input.actor.name },
+    },
+  );
 }

@@ -8,7 +8,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME_: TUAN131125/unicorecrm-web
+  IMAGE_NAME: TUAN131125/unicorecrm-web
 
 jobs:
   build-and-push:

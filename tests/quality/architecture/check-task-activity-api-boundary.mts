@@ -72,8 +72,15 @@ assert.doesNotMatch(taskApplication, /HttpModuleDataAuthority|createModuleCollec
 const workCalendar = read("src/workspaces/crm/presentation/pages/WorkCalendarPage.tsx");
 assert.match(workCalendar, /useTasksAuthoritative\(\)/u, "Work Calendar must bootstrap authoritative Tasks and Activities");
 const aiChat = read("src/components/ai/AiChatPanel.tsx");
-assert.match(aiChat, /await createTaskCommand/u, "AI-confirmed Task creation must use the async Task command boundary");
-assert.doesNotMatch(aiChat, /createTaskSnapshot/u, "AI-confirmed Task creation must not use browser snapshot authority");
+assert.doesNotMatch(aiChat, /createTaskCommand|createTaskSnapshot/u, "AI presentation must not compose Task commands or browser snapshot writes");
+assert.match(aiChat, /executeAiAction\(/u, "AI-confirmed Task creation must dispatch through the AI action application service");
+assert.match(aiChat, /type: "CREATE_TASK"/u, "AI Task creation must travel as a typed CREATE_TASK intent");
+const aiActionService = read("src/ai/application/aiActionApplicationService.ts");
+assert.doesNotMatch(aiActionService, /createTaskSnapshot|taskActivityRepository/u, "The AI action service must not reach Task state directly");
+const workActivation = read("src/workflows/work-activation/index.ts");
+assert.match(workActivation, /export async function activateAiSuggestedTask/u, "work-activation must own the AI Task activation command");
+assert.match(workActivation, /return createTaskCommand\(/u, "AI-confirmed Task creation must use the async Task command boundary");
+assert.doesNotMatch(workActivation, /export function createAiSuggestedTask/u, "AI Task creation must not keep a synchronous browser snapshot path");
 const generatedCommands = read("src/platform/api/contracts/generatedProductionCommandRegistry.ts");
 assert.doesNotMatch(generatedCommands, /"task\./u, "Dedicated Task commands must not enter the generic mutation router");
 

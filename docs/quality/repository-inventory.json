@@ -21,9 +21,9 @@
     ]
   },
   "summary": {
-    "repositoryFiles": 1951,
-    "sourceFiles": 1330,
-    "sourceLines": 200228,
+    "repositoryFiles": 1963,
+    "sourceFiles": 1341,
+    "sourceLines": 201875,
     "modules": 15,
     "routes": 78,
     "loadableRouteModules": 62,
@@ -31,23 +31,23 @@
     "workspaceFlags": 13,
     "workflows": 22,
     "publicBoundaryFiles": 107,
-    "publicExportStatements": 907,
-    "persistenceEntries": 2815,
-    "repositoryImplementations": 141,
+    "publicExportStatements": 909,
+    "persistenceEntries": 2813,
+    "repositoryImplementations": 143,
     "browserEventEntries": 13,
-    "mockAndDefaultDataSources": 22,
+    "mockAndDefaultDataSources": 26,
     "compatibilityCandidates": 53,
     "deprecatedComponents": 8,
     "duplicateGroups": 0,
     "largeFiles": 44,
     "circularDependencyGroups": 0,
     "packageScripts": 23,
-    "verifyGates": 310,
+    "verifyGates": 311,
     "qualityGroups": 11,
     "fileClassifications": {
-      "active-runtime": 1252,
+      "active-runtime": 1261,
       "active-script": 63,
-      "active-test": 400,
+      "active-test": 403,
       "compatibility": 53,
       "documentation": 178,
       "fixture": 3,
@@ -3765,10 +3765,11 @@
     {
       "path": "src/workflows/work-activation/index.ts",
       "owner": "workflow:work-activation",
-      "statementCount": 3,
+      "statementCount": 5,
       "exportedNames": [
-        "createAiSuggestedTask",
+        "AiSuggestedTaskActivationInput",
         "ensureDealNextActionTask",
+        "getAiSuggestedTaskId",
         "getDealNextActionTaskId"
       ],
       "reExportSources": []
@@ -13303,22 +13304,6 @@
         "path": "src/platform/api/contracts/generatedOpenApiRuntimeContract.ts",
         "line": 4,
         "browserGlobal": false
-      },
-      {
-        "keyPattern": "Failed to parse AI chat threads from localStorage",
-        "operation": "reference",
-        "owner": "shared:ai",
-        "path": "src/ai/aiStorage.ts",
-        "line": 25,
-        "browserGlobal": true
-      },
-      {
-        "keyPattern": "Failed to write AI chat threads to localStorage",
-        "operation": "reference",
-        "owner": "shared:ai",
-        "path": "src/ai/aiStorage.ts",
-        "line": 53,
-        "browserGlobal": true
       },
       {
         "keyPattern": "failureCode",
@@ -26321,7 +26306,6 @@
       "products": 4,
       "quotes": 5,
       "returns": 8,
-      "shared:ai": 2,
       "shared:app": 11,
       "shared:i18n": 4,
       "shipping": 3,
@@ -26333,13 +26317,30 @@
     "countsByOperation": {
       "declaration": 9,
       "read": 3,
-      "reference": 2,
       "remove": 1,
       "workspace-resource": 2795,
       "write": 5
     }
   },
   "repositories": [
+    {
+      "path": "src/ai/application/aiActionIntent.ts",
+      "owner": "shared:ai",
+      "layer": "application",
+      "kind": "generic",
+      "declarations": [
+        "toStoredActionType"
+      ]
+    },
+    {
+      "path": "src/ai/infrastructure/BrowserAiConversationStore.ts",
+      "owner": "shared:ai",
+      "layer": "infrastructure",
+      "kind": "browser-storage",
+      "declarations": [
+        "BrowserAiConversationStore"
+      ]
+    },
     {
       "path": "src/app/composition/connected/connectedFinancialModuleServices.ts",
       "owner": "shared:app",
@@ -27708,11 +27709,55 @@
   ],
   "mockAndDefaultData": [
     {
+      "path": "src/ai/application/aiActionApplicationService.ts",
+      "owner": "shared:ai",
+      "runtimeCandidate": true,
+      "symbols": [
+        "DemoAiDecisionInput"
+      ],
+      "signals": [
+        "exported-symbol"
+      ]
+    },
+    {
+      "path": "src/ai/application/aiRequestContext.ts",
+      "owner": "shared:ai",
+      "runtimeCandidate": true,
+      "symbols": [
+        "defaultAiContextScope"
+      ],
+      "signals": [
+        "exported-symbol"
+      ]
+    },
+    {
       "path": "src/ai/governance/aiGovernance.ts",
       "owner": "shared:ai",
       "runtimeCandidate": true,
       "symbols": [
         "DEFAULT_AI_GOVERNANCE_POLICY"
+      ],
+      "signals": [
+        "exported-symbol"
+      ]
+    },
+    {
+      "path": "src/ai/infrastructure/BrowserAiConversationStore.ts",
+      "owner": "shared:ai",
+      "runtimeCandidate": true,
+      "symbols": [
+        "DEFAULT_AI_PREFERENCES"
+      ],
+      "signals": [
+        "exported-symbol"
+      ]
+    },
+    {
+      "path": "src/ai/runtime/DemoAiRuntime.ts",
+      "owner": "shared:ai",
+      "runtimeCandidate": true,
+      "symbols": [
+        "DemoAiRuntime"
       ],
       "signals": [
         "exported-symbol"
@@ -28769,7 +28814,7 @@
       "classification": "active-script",
       "reason": "Repository support file.",
       "owner": "repository",
-      "bytes": 1390,
+      "bytes": 1389,
       "lines": null,
       "usage": {
         "runtimeReachable": false,
@@ -31317,7 +31362,7 @@
       "classification": "active-script",
       "reason": "Repository tooling or build configuration.",
       "owner": "tooling",
-      "bytes": 265687,
+      "bytes": 266522,
       "lines": null,
       "usage": {
         "runtimeReachable": false,
@@ -31504,18 +31549,18 @@
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": false,
-        "testReachable": false
+        "testReachable": true
       }
     },
     {
       "path": "src/ai/aiInsights.ts",
-      "classification": "active-runtime",
-      "reason": "Reachable from src/main.tsx.",
+      "classification": "active-test",
+      "reason": "Referenced by repository verification or tests but not by the runtime entry graph.",
       "owner": "shared:ai",
       "bytes": 15169,
       "lines": 447,
       "usage": {
-        "runtimeReachable": true,
+        "runtimeReachable": false,
         "scriptReachable": true,
         "testReachable": true
       }
@@ -31548,28 +31593,15 @@
     },
     {
       "path": "src/ai/aiMockEngine.ts",
-      "classification": "active-runtime",
-      "reason": "Reachable from src/main.tsx.",
+      "classification": "active-test",
+      "reason": "Referenced by repository verification or tests but not by the runtime entry graph.",
       "owner": "shared:ai",
       "bytes": 378,
       "lines": 17,
       "usage": {
-        "runtimeReachable": true,
+        "runtimeReachable": false,
         "scriptReachable": true,
         "testReachable": true
-      }
-    },
-    {
-      "path": "src/ai/aiStorage.ts",
-      "classification": "active-runtime",
-      "reason": "Reachable from src/main.tsx.",
-      "owner": "shared:ai",
-      "bytes": 4248,
-      "lines": 140,
-      "usage": {
-        "runtimeReachable": true,
-        "scriptReachable": false,
-        "testReachable": false
       }
     },
     {
@@ -31577,12 +31609,90 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "shared:ai",
-      "bytes": 1117,
-      "lines": 59,
+      "bytes": 1675,
+      "lines": 72,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": false,
-        "testReachable": false
+        "testReachable": true
+      }
+    },
+    {
+      "path": "src/ai/application/aiActionApplicationService.ts",
+      "classification": "active-runtime",
+      "reason": "Reachable from src/main.tsx.",
+      "owner": "shared:ai",
+      "bytes": 5277,
+      "lines": 144,
+      "usage": {
+        "runtimeReachable": true,
+        "scriptReachable": false,
+        "testReachable": true
+      }
+    },
+    {
+      "path": "src/ai/application/aiActionIntent.ts",
+      "classification": "active-runtime",
+      "reason": "Reachable from src/main.tsx.",
+      "owner": "shared:ai",
+      "bytes": 7172,
+      "lines": 209,
+      "usage": {
+        "runtimeReachable": true,
+        "scriptReachable": false,
+        "testReachable": true
+      }
+    },
+    {
+      "path": "src/ai/application/aiInteractionState.ts",
+      "classification": "active-runtime",
+      "reason": "Reachable from src/main.tsx.",
+      "owner": "shared:ai",
+      "bytes": 1614,
+      "lines": 52,
+      "usage": {
+        "runtimeReachable": true,
+        "scriptReachable": false,
+        "testReachable": true
+      }
+    },
+    {
+      "path": "src/ai/application/aiRequestContext.ts",
+      "classification": "active-runtime",
+      "reason": "Reachable from src/main.tsx.",
+      "owner": "shared:ai",
+      "bytes": 4286,
+      "lines": 120,
+      "usage": {
+        "runtimeReachable": true,
+        "scriptReachable": false,
+        "testReachable": true
+      }
+    },
+    {
+      "path": "src/ai/application/aiTaskDraftParsing.ts",
+      "classification": "active-runtime",
+      "reason": "Reachable from src/main.tsx.",
+      "owner": "shared:ai",
+      "bytes": 3939,
+      "lines": 101,
+      "usage": {
+        "runtimeReachable": true,
+        "scriptReachable": false,
+        "testReachable": true
+      }
+    },
+    {
+      "path": "src/ai/application/ports/aiRuntime.types.ts",
+      "classification": "active-runtime",
+      "reason": "Reachable from src/main.tsx.",
+      "owner": "shared:ai",
+      "bytes": 5128,
+      "lines": 171,
+      "usage": {
+        "runtimeReachable": true,
+        "scriptReachable": false,
+        "testReachable": true
       }
     },
     {
@@ -31631,6 +31741,84 @@
       "owner": "shared:ai",
       "bytes": 32,
       "lines": 2,
+      "usage": {
+        "runtimeReachable": true,
+        "scriptReachable": false,
+        "testReachable": true
+      }
+    },
+    {
+      "path": "src/ai/index.ts",
+      "classification": "active-runtime",
+      "reason": "Reachable from src/main.tsx.",
+      "owner": "shared:ai",
+      "bytes": 2843,
+      "lines": 110,
+      "usage": {
+        "runtimeReachable": true,
+        "scriptReachable": false,
+        "testReachable": true
+      }
+    },
+    {
+      "path": "src/ai/infrastructure/BrowserAiConversationStore.ts",
+      "classification": "active-runtime",
+      "reason": "Reachable from src/main.tsx.",
+      "owner": "shared:ai",
+      "bytes": 6674,
+      "lines": 159,
+      "usage": {
+        "runtimeReachable": true,
+        "scriptReachable": false,
+        "testReachable": true
+      }
+    },
+    {
+      "path": "src/ai/react/useAiAssistantScope.ts",
+      "classification": "active-runtime",
+      "reason": "Reachable from src/main.tsx.",
+      "owner": "shared:ai",
+      "bytes": 1138,
+      "lines": 28,
+      "usage": {
+        "runtimeReachable": true,
+        "scriptReachable": false,
+        "testReachable": true
+      }
+    },
+    {
+      "path": "src/ai/runtime/aiRuntimeBinding.ts",
+      "classification": "active-runtime",
+      "reason": "Reachable from src/main.tsx.",
+      "owner": "shared:ai",
+      "bytes": 2780,
+      "lines": 57,
+      "usage": {
+        "runtimeReachable": true,
+        "scriptReachable": false,
+        "testReachable": true
+      }
+    },
+    {
+      "path": "src/ai/runtime/ConnectedAiRuntime.ts",
+      "classification": "active-runtime",
+      "reason": "Reachable from src/main.tsx.",
+      "owner": "shared:ai",
+      "bytes": 6465,
+      "lines": 184,
+      "usage": {
+        "runtimeReachable": true,
+        "scriptReachable": false,
+        "testReachable": true
+      }
+    },
+    {
+      "path": "src/ai/runtime/DemoAiRuntime.ts",
+      "classification": "active-runtime",
+      "reason": "Reachable from src/main.tsx.",
+      "owner": "shared:ai",
+      "bytes": 5009,
+      "lines": 138,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": false,
@@ -31707,8 +31895,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "shared:app",
-      "bytes": 15462,
-      "lines": 270,
+      "bytes": 15906,
+      "lines": 276,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": false,
@@ -31863,8 +32051,8 @@
       "classification": "documentation",
       "reason": "Markdown documentation.",
       "owner": "shared:app",
-      "bytes": 2152,
-      "lines": 20,
+      "bytes": 4111,
+      "lines": 30,
       "usage": {
         "runtimeReachable": false,
         "scriptReachable": false,
@@ -32318,8 +32506,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "shared:components",
-      "bytes": 14754,
-      "lines": 265,
+      "bytes": 17725,
+      "lines": 329,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": false,
@@ -32331,8 +32519,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "shared:components",
-      "bytes": 22401,
-      "lines": 443,
+      "bytes": 23313,
+      "lines": 475,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": false,
@@ -32344,8 +32532,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "shared:components",
-      "bytes": 3074,
-      "lines": 79,
+      "bytes": 4451,
+      "lines": 111,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": false,
@@ -47905,8 +48093,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "workflow:work-activation",
-      "bytes": 2541,
-      "lines": 62,
+      "bytes": 3526,
+      "lines": 86,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -47918,8 +48106,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "workspace:crm",
-      "bytes": 8289,
-      "lines": 302,
+      "bytes": 12948,
+      "lines": 416,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": false,
@@ -47944,8 +48132,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "workspace:crm",
-      "bytes": 4123,
-      "lines": 124,
+      "bytes": 5032,
+      "lines": 153,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": false,
@@ -51974,8 +52162,8 @@
       "classification": "active-test",
       "reason": "Test source.",
       "owner": "test",
-      "bytes": 4915,
-      "lines": 85,
+      "bytes": 5774,
+      "lines": 92,
       "usage": {
         "runtimeReachable": false,
         "scriptReachable": false,
@@ -52793,8 +52981,8 @@
       "classification": "active-test",
       "reason": "Test source.",
       "owner": "test",
-      "bytes": 8651,
-      "lines": 82,
+      "bytes": 9145,
+      "lines": 85,
       "usage": {
         "runtimeReachable": false,
         "scriptReachable": false,
@@ -53391,8 +53579,8 @@
       "classification": "active-test",
       "reason": "Test source.",
       "owner": "test",
-      "bytes": 9102,
-      "lines": 148,
+      "bytes": 12003,
+      "lines": 189,
       "usage": {
         "runtimeReachable": false,
         "scriptReachable": false,
@@ -53575,6 +53763,19 @@
       "owner": "test",
       "bytes": 3791,
       "lines": 77,
+      "usage": {
+        "runtimeReachable": false,
+        "scriptReachable": false,
+        "testReachable": true
+      }
+    },
+    {
+      "path": "tests/quality/unit/check-ai-application-contracts.mts",
+      "classification": "active-test",
+      "reason": "Test source.",
+      "owner": "test",
+      "bytes": 21084,
+      "lines": 380,
       "usage": {
         "runtimeReachable": false,
         "scriptReachable": false,
@@ -54553,7 +54754,7 @@
     {
       "id": "unit",
       "label": "Unit",
-      "gateCount": 29,
+      "gateCount": 30,
       "gates": [
         "quality.forecast-analytics",
         "quality.order-to-cash-metrics",
@@ -54565,6 +54766,7 @@
         "quality.invoice-domain-contracts",
         "quality.receivables-contracts",
         "quality.ai-governance-contracts",
+        "quality.ai-application-contracts",
         "quality.record-ownership-contracts",
         "quality.orders",
         "quality.customers",
@@ -54887,5 +55089,5 @@
       "quality.work-operations-ux"
     ]
   },
-  "inventoryFingerprint": "efa530d83e92ff99cde219ad151515fdb1c83b8a98ded96198492cfc3ade795e"
+  "inventoryFingerprint": "e4566dead3330ea4867b9c9c0e016018d144006bc414599611650a7774a409cb"
 }

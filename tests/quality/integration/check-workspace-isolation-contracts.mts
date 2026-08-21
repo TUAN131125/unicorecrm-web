@@ -113,6 +113,44 @@ assert.equal(workspaceConfig.getWorkspaceConfigSnapshot().name, "Workspace One C
 assert.deepEqual(scopePhases, ["DISPOSING", "INVALIDATING", "LOADING", "READY"]);
 unsubscribeScope();
 
+// AI Assistant conversations are workspace- and actor-scoped state. Switching
+// workspace must load a different conversation set, never reveal the previous one.
+const ai = await import("@/ai");
+const aiScopeOne = { workspaceId: "ws1", workspaceKey: "unicore-vietnam", actorId: "u1", actorName: "Owner" };
+const aiScopeTwo = { workspaceId: "ws2", workspaceKey: "unicore-global", actorId: "u1", actorName: "Owner" };
+const aiScopeOtherActor = { ...aiScopeOne, actorId: "u2", actorName: "Second member" };
+
+const workspaceOneThread = await ai.createAiConversation(aiScopeOne, { title: "Workspace one AI", welcomeMessage: "hello" });
+assert.equal(workspaceOneThread.workspaceId, "ws1");
+await ai.appendAiConversationMessage(aiScopeOne, workspaceOneThread.id, {
+  id: "ai-msg-ws1",
+  role: "user",
+  content: "Workspace one confidential question",
+  createdAt: new Date().toISOString(),
+});
+
+workspaceContext.switchWorkspaceContext("unicore-global");
+await accessControl.loadAccessGovernance("ws2");
+const workspaceTwoThreads = await ai.listAiConversations(aiScopeTwo);
+assert.deepEqual(workspaceTwoThreads, [], "Workspace 2 must not see Workspace 1 AI conversations");
+const serializedWorkspaceTwo = JSON.stringify(workspaceTwoThreads);
+assert.equal(serializedWorkspaceTwo.includes("Workspace one confidential question"), false, "AI chat content must not leak across workspaces");
+assert.deepEqual(await ai.listAiConversations(aiScopeOtherActor), [], "AI conversations must not leak across actors inside one workspace");
+
+workspaceContext.switchWorkspaceContext("unicore-vietnam");
+await accessControl.loadAccessGovernance("ws1");
+const restoredThreads = await ai.listAiConversations(aiScopeOne);
+assert.equal(restoredThreads.some((thread) => thread.id === workspaceOneThread.id), true, "Returning to Workspace 1 must restore its own AI conversations");
+await ai.deleteAiConversation(aiScopeOne, workspaceOneThread.id);
+assert.equal(ai.isConnectedAiRuntime(), false, "Demo composition must not present itself as the connected AI runtime");
+
+const aiConversationKeys = [...Array.from({ length: localStorage.length }, (_, index) => localStorage.key(index))]
+  .filter((key): key is string => typeof key === "string" && key.includes(":ai:conversations"));
+assert.equal(localStorage.getItem("centrix_ai_chat_threads_v1"), null, "The unscoped AI conversation key must not be used");
+for (const key of aiConversationKeys) {
+  assert.match(key, /^workspace:ws[12]:ai:conversations:u[12]$/, `AI conversation storage must be workspace/actor scoped: ${key}`);
+}
+
 const scopedRuntimeFiles = [
   "src/modules/commercial-evidence/runtime/purchaseEvidenceModuleRuntime.ts",
   "src/modules/contacts/runtime/contactModuleRuntime.ts",
@@ -133,6 +171,9 @@ for (const file of scopedRuntimeFiles) {
   assert.ok(runtime.includes("createWorkspaceScopedRepository") || runtime.includes("WorkspaceScopedStorageAdapter"), `${file} must use a workspace-scoped runtime boundary`);
 }
 assert.ok(source("src/platform/workspace-config/workspaceConfigRuntime.ts").includes("WorkspaceScopedStorageAdapter"), "Workspace configuration must use workspace-scoped storage");
+const aiConversationStore = source("src/ai/infrastructure/BrowserAiConversationStore.ts");
+assert.ok(aiConversationStore.includes("WorkspaceScopedStorageAdapter"), "AI conversations must use workspace-scoped storage");
+assert.equal(/localStorage\s*\./.test(aiConversationStore), false, "AI conversations must not directly own global localStorage");
 
 const productConfig = source("src/modules/products/infrastructure/productConfiguration.store.ts");
 assert.ok(productConfig.includes("WorkspaceScopedStorageAdapter"), "Product configuration must be workspace-scoped");

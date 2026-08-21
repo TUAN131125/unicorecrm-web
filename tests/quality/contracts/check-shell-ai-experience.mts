@@ -51,15 +51,18 @@ assert.ok(aiButton.includes("Trợ lý AI") && aiButton.includes("AI assistant")
 assert.ok(aiDrawer.includes('data-ai-workspace="v3"'), "AI must retain a full-screen workspace contract.");
 assert.ok(aiDrawer.includes('data-ai-layout="chat-history"'), "AI workspace must use chat plus conversation history.");
 assert.ok(aiDrawer.includes('transformOrigin: "calc(100% - 44px) calc(100% - 44px)"') && aiDrawer.includes("scale: 0.96"), "AI workspace must open from the launcher with a polished transition.");
-assert.ok(aiDrawer.includes("getAiChatThreads") && aiDrawer.includes("createAiChatThread"), "AI workspace must load and create persistent chat threads.");
+assert.ok(aiDrawer.includes("listAiConversations") && aiDrawer.includes("createAiConversation"), "AI workspace must load and create persistent chat threads.");
+assert.ok(aiDrawer.includes("useAiAssistantScope()"), "AI conversations must be scoped to the active workspace and actor.");
+assert.equal(aiDrawer.includes("localStorage"), false, "AI workspace must not own browser persistence directly.");
 assert.equal(aiDrawer.includes("buildProactiveAiReminders"), false, "AI page must not render the previous reminder dashboard.");
 assert.equal(aiDrawer.includes("context.globalContext.customersCount"), false, "AI page must not render CRM statistics panels.");
 assert.ok(aiChat.includes('data-ai-chat-panel="v3"'), "AI chat must use the conversation-first panel contract.");
-assert.ok(aiChat.includes("askCrmAi(text, context)"), "AI responses must execute against the active CRM context.");
-assert.ok(aiChat.includes("createTaskCommand"), "AI chat must support confirmed task creation through the typed command boundary.");
-assert.equal(aiChat.includes("createTaskSnapshot"), false, "AI chat must not write through the retired browser snapshot boundary.");
+assert.ok(aiChat.includes("askAiAssistant({") && aiChat.includes("localContext: context"), "AI responses must execute against the active CRM context through the AI runtime boundary.");
+assert.ok(aiChat.includes('type: "CREATE_TASK"') && aiChat.includes("executeAiAction({"), "AI chat must support confirmed task creation through the typed action boundary.");
+assert.equal(aiChat.includes("createTaskSnapshot") || aiChat.includes("createTaskCommand"), false, "AI chat must not write Task state directly.");
 assert.ok(aiChat.includes("askNextTaskQuestion"), "AI task commands must request missing information.");
-assert.ok(aiChat.includes("isConfirmIntent"), "AI must require confirmation before writing a task.");
+assert.ok(aiChat.includes("isConfirmUtterance"), "AI must require confirmation before writing a task.");
+assert.ok(aiChat.includes("data-ai-interaction-state"), "AI chat must surface connected runtime and governance states.");
 assert.ok(aiContext.includes("parseCanonicalRoute(pathname)"), "AI record focus must resolve canonical workspace routes.");
 
 assert.equal(appShell.includes('data-page-transition="v1"'), false, "Legacy loading-like page transitions must remain removed.");

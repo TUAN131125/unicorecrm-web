@@ -37,6 +37,7 @@ import { WorkspaceConfigurationApiClient } from "@/platform/api/generated/worksp
 import { StudioQuickSetupApiClient } from "@/platform/api/generated/studioQuickSetupApi";
 import { StudioCoreHttpAdapter } from "@/workspaces/studio/infrastructure/StudioCoreHttpAdapter";
 import { configureConnectedStudioCoreGateway, resetStudioCoreRuntime } from "@/workspaces/studio/runtime/studioCoreRuntime";
+import { configureConnectedAiRuntime, resetAiRuntime } from "@/ai/runtime/aiRuntimeBinding";
 import { configureDefaultAccessGovernanceRuntime } from "@/platform/access-control/runtime/accessGovernanceRuntime";
 import { createPeopleAccessDemoRuntime } from "@/workspaces/people-access/runtime/createPeopleAccessDemoRuntime";
 import {
@@ -168,6 +169,11 @@ export async function initializeApplicationComposition(
   } else {
     resetStudioCoreRuntime();
   }
+  // AI is a cross-cutting CRM capability, not one of the 15 business modules.
+  // Connected mode binds the HTTP-backed runtime; demo mode falls back to the
+  // browser runtime. Connected mode never degrades to the demo AI runtime.
+  if (mode === "connected") configureConnectedAiRuntime(connectedHttpClient as HttpClient);
+  else resetAiRuntime();
   configureMutationAuthority(mutationAuthority);
   if (moduleDataAuthority) configureModuleDataAuthorityRegistry(moduleDataAuthority);
   else resetModuleDataAuthorityRegistry();

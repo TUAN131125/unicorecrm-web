@@ -1,48 +1,61 @@
-import { formatApplicationError } from "@/shared/operations";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
+  AlertTriangle,
   ArrowUp,
   CalendarClock,
   Check,
   CircleStop,
   LoaderCircle,
   MessageCircleMore,
+  RotateCw,
   Sparkles,
   Trash2,
   UserRound,
 } from "lucide-react";
-import type { AiChatMessage } from "../../ai/aiTypes";
-import { askCrmAi } from "../../ai/aiMockEngine";
+import { formatApplicationError } from "@/shared/operations";
 import type { AiContextWrapper } from "@/workspaces/crm/ai-context";
+import { useEffectiveAccess } from "@/platform/access-control";
+import { listWorkspaceMemberDirectory } from "@/platform/member-directory";
+import { DEFAULT_AI_GOVERNANCE_POLICY, normalizeAiGovernancePolicy } from "@/ai/governance";
+import {
+  askAiAssistant,
+  buildSanitizedAiRequestContext,
+  defaultAiContextScope,
+  executeAiAction,
+  isRetryableAiInteractionState,
+  resolveAiFocusedEntityRef,
+  resolveAiInteractionState,
+  type AiActionExecutionResult,
+  type AiActionIntent,
+  type AiInteractionState,
+  type AiWorkspaceScope,
+} from "@/ai";
+import {
+  isCancelUtterance,
+  isConfirmUtterance,
+  isCreateTaskUtterance,
+  parseTaskDraftFromUtterance,
+  parseTaskDueAt,
+  type AiTaskDraft,
+} from "@/ai/application/aiTaskDraftParsing";
+import type { AiChatMessage } from "../../ai/aiTypes";
 import { AiSuggestedActions } from "./AiSuggestedActions";
 import { useI18n } from "../../i18n";
-import { useEffectiveAccess } from "@/platform/access-control";
-import { getAuthSessionSnapshot } from "@/platform/identity-auth";
-import { listWorkspaceMemberDirectory } from "@/platform/member-directory";
-import { createTaskCommand, type TaskPriority } from "@/modules/tasks";
-import { DEFAULT_AI_GOVERNANCE_POLICY, normalizeAiGovernancePolicy, recordAiGovernanceDecision, type AiActionKind, type AiDataClass } from "@/ai/governance";
-import { useWorkspaceContextSnapshot } from "@/platform/workspace-context";
 
 interface AiChatPanelProps {
   context: AiContextWrapper;
+  scope: AiWorkspaceScope;
+  conversationId: string;
   messages: AiChatMessage[];
-  onAddMessage: (message: AiChatMessage) => void;
+  onAddMessage: (message: AiChatMessage) => void | Promise<void>;
   onClearThread?: () => void;
 }
 
-type TaskDraftStep = "title" | "due" | "assignee" | "confirm";
-interface PendingTaskDraft {
-  title?: string;
-  dueAt?: string;
-  assigneeId?: string;
-  assigneeName?: string;
-  priority: TaskPriority;
-  description?: string;
-  step: TaskDraftStep;
-}
-
-const makeMessage = (content: string, suggestedActions?: AiChatMessage["suggestedActions"]): AiChatMessage => ({
+const makeMessage = (
+  content: string,
+  suggestedActions?: AiChatMessage["suggestedActions"],
+): AiChatMessage => ({
   id: `ai_${Math.random().toString(36).slice(2, 11)}`,
   role: "assistant",
   content,
@@ -50,67 +63,27 @@ const makeMessage = (content: string, suggestedActions?: AiChatMessage["suggeste
   suggestedActions,
 });
 
-const normalize = (value: string) => value.trim().toLowerCase();
-const isCreateTaskIntent = (value: string) => /\b(tạo|thêm|lập|create|add)\b.*\b(công việc|task)\b/i.test(value);
-const isCancelIntent = (value: string) => /^(hủy|huỷ|bỏ|cancel|stop|không tạo)$/i.test(value.trim());
-const isConfirmIntent = (value: string) => /^(xác nhận|đồng ý|tạo đi|ok|okay|yes|confirm|create)$/i.test(value.trim());
+const STATE_LABELS: Record<AiInteractionState, { vi: string; en: string }> = {
+  idle: { vi: "", en: "" },
+  loading: { vi: "Đang suy nghĩ...", en: "Thinking..." },
+  streaming: { vi: "Đang trả lời...", en: "Responding..." },
+  success: { vi: "", en: "" },
+  permission_denied: { vi: "Bạn không có quyền thực hiện yêu cầu AI này.", en: "You do not have permission for this AI request." },
+  approval_required: { vi: "Hành động này cần được phê duyệt trước khi thực hiện.", en: "This action requires approval before it can run." },
+  context_unavailable: { vi: "Không có dữ liệu ngữ cảnh cho yêu cầu này.", en: "No context data is available for this request." },
+  provider_unavailable: { vi: "Dịch vụ AI chưa sẵn sàng. Hệ thống không dùng dữ liệu mô phỏng thay thế.", en: "The AI service is unavailable. Simulated output is not substituted." },
+  rate_limited: { vi: "Có quá nhiều yêu cầu AI. Hãy thử lại sau ít phút.", en: "Too many AI requests. Try again shortly." },
+  execution_failure: { vi: "Không thực hiện được hành động AI.", en: "The AI action could not be completed." },
+  retryable_failure: { vi: "Yêu cầu AI chưa hoàn tất. Bạn có thể thử lại.", en: "The AI request did not complete. You can try again." },
+};
 
-function parsePriority(text: string): TaskPriority {
-  const value = normalize(text);
-  if (/khẩn|urgent|critical/.test(value)) return "URGENT";
-  if (/ưu tiên cao|\bhigh\b/.test(value)) return "HIGH";
-  if (/ưu tiên thấp|\blow\b/.test(value)) return "LOW";
-  return "NORMAL";
-}
-
-function parseTaskTitle(text: string): string | undefined {
-  const quoted = text.match(/["“](.+?)["”]/)?.[1]?.trim();
-  if (quoted) return quoted;
-  const afterColon = text.split(":").slice(1).join(":").trim();
-  if (afterColon) return afterColon.replace(/\s+(hạn|vào|cho|giao)\b.*$/i, "").trim() || undefined;
-  const match = text.match(/(?:tạo|thêm|lập|create|add)\s+(?:một\s+)?(?:công việc|task)(?:\s+mới)?(?:\s+(?:tên|về|là))?\s+(.+?)(?=\s+(?:hạn|vào|cho|giao|due|assign)\b|$)/i);
-  const title = match?.[1]?.trim();
-  if (!title || /^(mới|new)$/i.test(title)) return undefined;
-  return title;
-}
-
-function parseDueAt(text: string): string | undefined {
-  const value = normalize(text);
-  const now = new Date();
-  const timeMatch = value.match(/(?:lúc|at)?\s*(\d{1,2})(?::|h)(\d{2})?/i);
-  const hour = Math.min(23, Number(timeMatch?.[1] ?? 9));
-  const minute = Math.min(59, Number(timeMatch?.[2] ?? 0));
-
-  if (/ngày mai|tomorrow/.test(value)) {
-    const date = new Date(now);
-    date.setDate(date.getDate() + 1);
-    date.setHours(hour, minute, 0, 0);
-    return date.toISOString();
-  }
-  if (/hôm nay|today/.test(value)) {
-    const date = new Date(now);
-    date.setHours(timeMatch ? hour : Math.min(23, now.getHours() + 1), minute, 0, 0);
-    if (date.getTime() <= now.getTime()) date.setHours(now.getHours() + 1, 0, 0, 0);
-    return date.toISOString();
-  }
-  const relative = value.match(/sau\s+(\d+)\s*(giờ|tiếng|hour|hours|ngày|day|days)/i);
-  if (relative) {
-    const count = Number(relative[1]);
-    const date = new Date(now);
-    if (/ngày|day/.test(relative[2])) date.setDate(date.getDate() + count);
-    else date.setHours(date.getHours() + count);
-    return date.toISOString();
-  }
-  const dateMatch = value.match(/(\d{1,2})[/-](\d{1,2})[/-](\d{4})(?:\s+(\d{1,2})(?::|h)(\d{2})?)?/);
-  if (dateMatch) {
-    const date = new Date(Number(dateMatch[3]), Number(dateMatch[2]) - 1, Number(dateMatch[1]), Number(dateMatch[4] ?? 9), Number(dateMatch[5] ?? 0), 0, 0);
-    return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
-  }
-  return undefined;
-}
+const BUSY_STATES: readonly AiInteractionState[] = ["loading", "streaming"];
+const SILENT_STATES: readonly AiInteractionState[] = ["idle", "success", "loading", "streaming"];
 
 export const AiChatPanel: React.FC<AiChatPanelProps> = ({
   context,
+  scope,
+  conversationId,
   messages,
   onAddMessage,
   onClearThread,
@@ -118,43 +91,31 @@ export const AiChatPanel: React.FC<AiChatPanelProps> = ({
   const { locale } = useI18n();
   const reduceMotion = useReducedMotion();
   const access = useEffectiveAccess();
-  const workspace = useWorkspaceContextSnapshot();
-  const governancePolicy = useMemo(() => normalizeAiGovernancePolicy(DEFAULT_AI_GOVERNANCE_POLICY), []);
   const isVi = locale === "vi";
+  const governancePolicy = useMemo(() => normalizeAiGovernancePolicy(DEFAULT_AI_GOVERNANCE_POLICY), []);
   const [input, setInput] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
-  const [pendingTask, setPendingTask] = useState<PendingTaskDraft | null>(null);
+  const [interactionState, setInteractionState] = useState<AiInteractionState>("idle");
+  const [statusDetail, setStatusDetail] = useState<string | null>(null);
+  const [lastQuestion, setLastQuestion] = useState<string | null>(null);
+  const [pendingTask, setPendingTask] = useState<AiTaskDraft | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const requestTimerRef = useRef<number | null>(null);
-  const directory = useMemo(() => listWorkspaceMemberDirectory(), [context.globalContext.actorId, messages.length]);
-  const session = getAuthSessionSnapshot();
-  const actorId = session?.principal.memberId || access.memberId || access.accountId || context.globalContext.actorId || "current-user";
-  const actorName = session?.principal.displayName || actorId;
-  const govern = (action: AiActionKind, dataClasses: AiDataClass[], evidenceRefs: string[], approved = false, fieldKeys?: string[]) => recordAiGovernanceDecision(workspace.workspaceId, governancePolicy, { requestId: `ai_request_${Date.now()}`, actorId, action, dataClasses, capabilityGranted: action !== "INTERNAL_UPDATE" || access.canPerform("tasks", "create"), evidenceRefs, approved, fieldKeys });
+  const abortRef = useRef<AbortController | null>(null);
+  const directory = useMemo(() => listWorkspaceMemberDirectory(), [scope.workspaceId, messages.length]);
+  const actorName = scope.actorName ?? scope.actorId;
+  const canCreateTask = access.canPerform("tasks", "create");
+  const isBusy = BUSY_STATES.includes(interactionState);
 
   const quickPrompts = isVi
-    ? [
-        "Tạo công việc mới",
-        "Hôm nay tôi nên ưu tiên việc gì?",
-        "Tóm tắt pipeline bán hàng",
-        "Khách hàng nào cần chăm sóc?",
-      ]
-    : [
-        "Create a new task",
-        "What should I prioritize today?",
-        "Summarize the sales pipeline",
-        "Which customers need attention?",
-      ];
+    ? ["Tạo công việc mới", "Hôm nay tôi nên ưu tiên việc gì?", "Tóm tắt pipeline bán hàng", "Khách hàng nào cần chăm sóc?"]
+    : ["Create a new task", "What should I prioritize today?", "Summarize the sales pipeline", "Which customers need attention?"];
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth" });
-  }, [messages, isTyping, reduceMotion]);
+  }, [messages, interactionState, reduceMotion]);
 
-  useEffect(() => () => {
-    if (requestTimerRef.current !== null) window.clearTimeout(requestTimerRef.current);
-  }, []);
+  useEffect(() => () => abortRef.current?.abort(), []);
 
   useEffect(() => {
     if (!textareaRef.current) return;
@@ -167,66 +128,143 @@ export const AiChatPanel: React.FC<AiChatPanelProps> = ({
     window.setTimeout(() => setToastMessage(null), 2200);
   };
 
+  const post = (message: AiChatMessage) => void Promise.resolve(onAddMessage(message));
+
+  const reportFailure = (error: unknown) => {
+    setInteractionState(resolveAiInteractionState(error));
+    setStatusDetail(formatApplicationError(error, { locale }));
+  };
+
   const resolveAssignee = (text: string) => {
-    const value = normalize(text);
-    if (/^(tôi|cho tôi|giao tôi|me|myself|assign to me)$/.test(value)) {
-      return { id: actorId, name: actorName };
-    }
+    const value = text.trim().toLowerCase();
+    if (/^(tôi|cho tôi|giao tôi|me|myself|assign to me)$/.test(value)) return { id: scope.actorId, name: actorName };
     const match = directory.find((member) => {
-      const name = normalize(member.displayName || "");
-      const email = normalize(member.email || "");
-      return value === name || value === email || name.includes(value) || value.includes(name);
+      const name = (member.displayName ?? "").trim().toLowerCase();
+      const email = (member.email ?? "").trim().toLowerCase();
+      return value === name || value === email || (name.length > 0 && (name.includes(value) || value.includes(name)));
     });
     return match ? { id: match.memberId, name: match.displayName } : undefined;
   };
 
-  const askNextTaskQuestion = (draft: PendingTaskDraft) => {
+  const askNextTaskQuestion = (draft: AiTaskDraft) => {
     if (!draft.title) {
       setPendingTask({ ...draft, step: "title" });
-      onAddMessage(makeMessage(isVi ? "Tên công việc là gì?" : "What is the task title?"));
+      post(makeMessage(isVi ? "Tên công việc là gì?" : "What is the task title?"));
       return;
     }
     if (!draft.dueAt) {
       setPendingTask({ ...draft, step: "due" });
-      onAddMessage(makeMessage(isVi ? "Hạn xử lý khi nào? Ví dụ: ‘ngày mai lúc 9h’ hoặc ‘15/07/2026 14:30’." : "When is it due? For example: ‘tomorrow at 9:00’ or ‘15/07/2026 14:30’."));
+      post(makeMessage(isVi ? "Hạn xử lý khi nào? Ví dụ: ‘ngày mai lúc 9h’ hoặc ‘15/07/2026 14:30’." : "When is it due? For example: ‘tomorrow at 9:00’ or ‘15/07/2026 14:30’."));
       return;
     }
     if (!draft.assigneeId) {
       setPendingTask({ ...draft, step: "assignee" });
-      onAddMessage(makeMessage(isVi ? "Giao cho ai? Bạn có thể trả lời ‘tôi’ hoặc nhập tên/email nhân viên." : "Who should own it? Reply ‘me’ or enter a member name/email."));
+      post(makeMessage(isVi ? "Giao cho ai? Bạn có thể trả lời ‘tôi’ hoặc nhập tên/email nhân viên." : "Who should own it? Reply ‘me’ or enter a member name/email."));
       return;
     }
-    const dueAt = draft.dueAt;
-    const ready = { ...draft, dueAt, step: "confirm" as const };
-    setPendingTask(ready);
-    const dueLabel = new Date(dueAt).toLocaleString(isVi ? "vi-VN" : "en-US");
-    onAddMessage(makeMessage(
+    setPendingTask({ ...draft, step: "confirm" });
+    setInteractionState("approval_required");
+    setStatusDetail(null);
+    const dueLabel = new Date(draft.dueAt).toLocaleString(isVi ? "vi-VN" : "en-US");
+    post(makeMessage(
       isVi
-        ? `Tôi sẽ tạo công việc:\n\n• Tên: ${ready.title}\n• Hạn: ${dueLabel}\n• Người phụ trách: ${ready.assigneeName}\n• Ưu tiên: ${ready.priority}\n\nHãy trả lời “Xác nhận” để tạo hoặc “Hủy”.`
-        : `I will create this task:\n\n• Title: ${ready.title}\n• Due: ${dueLabel}\n• Assignee: ${ready.assigneeName}\n• Priority: ${ready.priority}\n\nReply “Confirm” to create it or “Cancel”.`,
+        ? `Tôi sẽ tạo công việc:\n\n• Tên: ${draft.title}\n• Hạn: ${dueLabel}\n• Người phụ trách: ${draft.assigneeName}\n• Ưu tiên: ${draft.priority}\n\nHãy trả lời “Xác nhận” để tạo hoặc “Hủy”.`
+        : `I will create this task:\n\n• Title: ${draft.title}\n• Due: ${dueLabel}\n• Assignee: ${draft.assigneeName}\n• Priority: ${draft.priority}\n\nReply “Confirm” to create it or “Cancel”.`,
     ));
   };
 
-  const handleTaskCommand = async (text: string): Promise<boolean> => {
+  const buildCreateTaskIntent = (draft: AiTaskDraft): AiActionIntent => ({
+    type: "CREATE_TASK",
+    suggestionId: `${conversationId}_${Date.now()}`,
+    title: draft.title ?? "",
+    ...(draft.description === undefined ? {} : { description: draft.description }),
+    ...(draft.dueAt === undefined ? {} : { dueAt: draft.dueAt }),
+    ...(draft.assigneeId === undefined ? {} : { assigneeId: draft.assigneeId }),
+    priority: draft.priority,
+    evidenceRefs: [
+      `conversation:${conversationId}`,
+      `chat-confirmation:${draft.title ?? ""}`,
+      `assignee:${draft.assigneeId ?? scope.actorId}`,
+    ],
+  });
+
+  const runIntent = async (
+    intent: AiActionIntent,
+    approved: boolean,
+  ): Promise<AiActionExecutionResult | undefined> => {
+    setInteractionState("loading");
+    setStatusDetail(null);
+    try {
+      const result = await executeAiAction({
+        scope,
+        conversationId,
+        intent,
+        capabilityGranted: intent.type === "CREATE_TASK" ? canCreateTask : true,
+        ...(approved
+          ? { approval: { approved: true, approvedBy: scope.actorId, approvedAt: new Date().toISOString() } }
+          : {}),
+      });
+
+      if (result.status === "APPROVAL_REQUIRED") {
+        setInteractionState("approval_required");
+        setStatusDetail(result.decision.reasons[0] ?? null);
+        return result;
+      }
+      if (result.status === "BLOCKED" || result.status === "NOT_SUPPORTED") {
+        setInteractionState("permission_denied");
+        setStatusDetail(result.decision.reasons[0] ?? null);
+        post(makeMessage(
+          (isVi ? "AI không được phép thực hiện hành động này: " : "AI is not allowed to run this action: ")
+            + (result.decision.reasons[0] ?? (isVi ? "chính sách từ chối." : "policy denied.")),
+        ));
+        return result;
+      }
+      setInteractionState("success");
+      return result;
+    } catch (error) {
+      reportFailure(error);
+      return undefined;
+    }
+  };
+
+  const confirmPendingTask = async (draft: AiTaskDraft) => {
+    setPendingTask(null);
+    const result = await runIntent(buildCreateTaskIntent(draft), true);
+    const created = result?.status === "EXECUTED" ? result.createdTask : undefined;
+    if (!created) return;
+    post(makeMessage(
+      isVi ? `Đã tạo công việc “${created.title}”.` : `Task “${created.title}” was created.`,
+      [{
+        id: `open_${created.id}`,
+        label: isVi ? "Mở công việc" : "Open task",
+        actionType: "navigate",
+        route: `/tasks/${created.id}`,
+        intent: { type: "NAVIGATE", route: `/tasks/${created.id}` },
+      }],
+    ));
+  };
+
+  const handleTaskConversation = async (text: string): Promise<boolean> => {
     if (pendingTask) {
-      if (isCancelIntent(text)) {
+      if (isCancelUtterance(text)) {
         setPendingTask(null);
-        onAddMessage(makeMessage(isVi ? "Đã hủy yêu cầu tạo công việc." : "Task creation cancelled."));
+        setInteractionState("idle");
+        post(makeMessage(isVi ? "Đã hủy yêu cầu tạo công việc." : "Task creation cancelled."));
         return true;
       }
       if (pendingTask.step === "title") {
         const title = text.trim();
         if (!title) {
-          onAddMessage(makeMessage(isVi ? "Vui lòng nhập tên công việc." : "Please enter a task title."));
+          post(makeMessage(isVi ? "Vui lòng nhập tên công việc." : "Please enter a task title."));
           return true;
         }
         askNextTaskQuestion({ ...pendingTask, title });
         return true;
       }
       if (pendingTask.step === "due") {
-        const dueAt = parseDueAt(text);
+        const dueAt = parseTaskDueAt(text);
         if (!dueAt) {
-          onAddMessage(makeMessage(isVi ? "Tôi chưa nhận ra thời hạn. Hãy nhập như ‘ngày mai lúc 9h’ hoặc ‘15/07/2026 14:30’." : "I could not recognize the due date. Try ‘tomorrow at 9:00’ or ‘15/07/2026 14:30’."));
+          post(makeMessage(isVi ? "Tôi chưa nhận ra thời hạn. Hãy nhập như ‘ngày mai lúc 9h’ hoặc ‘15/07/2026 14:30’." : "I could not recognize the due date. Try ‘tomorrow at 9:00’ or ‘15/07/2026 14:30’."));
           return true;
         }
         askNextTaskQuestion({ ...pendingTask, dueAt });
@@ -236,106 +274,83 @@ export const AiChatPanel: React.FC<AiChatPanelProps> = ({
         const assignee = resolveAssignee(text);
         if (!assignee) {
           const suggestions = directory.slice(0, 5).map((member) => member.displayName).join(", ");
-          onAddMessage(makeMessage(isVi ? `Không tìm thấy nhân viên phù hợp. Hãy nhập tên/email chính xác hoặc trả lời “tôi”. Gợi ý: ${suggestions}` : `No matching member was found. Enter an exact name/email or reply “me”. Suggestions: ${suggestions}`));
+          post(makeMessage(isVi ? `Không tìm thấy nhân viên phù hợp. Hãy nhập tên/email chính xác hoặc trả lời “tôi”. Gợi ý: ${suggestions}` : `No matching member was found. Enter an exact name/email or reply “me”. Suggestions: ${suggestions}`));
           return true;
         }
         askNextTaskQuestion({ ...pendingTask, assigneeId: assignee.id, assigneeName: assignee.name });
         return true;
       }
-      if (pendingTask.step === "confirm") {
-        if (!isConfirmIntent(text)) {
-          onAddMessage(makeMessage(isVi ? "Hãy trả lời “Xác nhận” để tạo hoặc “Hủy” để dừng." : "Reply “Confirm” to create it or “Cancel” to stop."));
-          return true;
-        }
-        if (!access.canPerform("tasks", "create")) {
-          setPendingTask(null);
-          onAddMessage(makeMessage(isVi ? "Tài khoản hiện tại không có quyền tạo công việc." : "The current account does not have permission to create tasks."));
-          return true;
-        }
-        try {
-          const governance = govern("INTERNAL_UPDATE", ["INTERNAL", "CUSTOMER_PII"], [`chat-confirmation:${pendingTask.title}`, `assignee:${pendingTask.assigneeId}`], true, ["task.title", "task.assigneeId", "task.dueAt"]);
-          if (!governance.decision.allowed) {
-            setPendingTask(null);
-            onAddMessage(makeMessage((isVi ? "AI không được phép tạo công việc: " : "AI is not allowed to create the task: ") + governance.decision.reasons[0]));
-            return true;
-          }
-          const attemptId = `task_ai_${Date.now()}`;
-          const outcome = await createTaskCommand({
-            id: attemptId,
-            title: pendingTask.title!,
-            assigneeId: pendingTask.assigneeId!,
-            dueAt: pendingTask.dueAt!,
-            priority: pendingTask.priority,
-            ...(pendingTask.description ? { description: pendingTask.description } : {}),
-            actorId,
-            actorName,
-            sourceRef: { type: "AI_ASSISTANT", id: attemptId, evidence: "Created after explicit user confirmation in AI chat." },
-          }, {
-            idempotencyKey: `task.create:${attemptId}`,
-            actor: { id: actorId, name: actorName },
-          });
-          const created = outcome.data;
-          setPendingTask(null);
-          onAddMessage(makeMessage(
-            isVi ? `Đã tạo công việc “${created.title}”.` : `Task “${created.title}” was created.`,
-            [{ id: `open_${created.id}`, label: isVi ? "Mở công việc" : "Open task", actionType: "navigate", route: `/tasks/${created.id}` }],
-          ));
-        } catch (error) {
-          onAddMessage(makeMessage(formatApplicationError(error, { locale })));
-        }
+      if (!isConfirmUtterance(text)) {
+        post(makeMessage(isVi ? "Hãy trả lời “Xác nhận” để tạo hoặc “Hủy” để dừng." : "Reply “Confirm” to create it or “Cancel” to stop."));
         return true;
       }
+      await confirmPendingTask(pendingTask);
+      return true;
     }
 
-    if (!isCreateTaskIntent(text)) return false;
+    if (!isCreateTaskUtterance(text)) return false;
     const assignee = resolveAssignee(text);
-    const draft: PendingTaskDraft = {
-      title: parseTaskTitle(text),
-      dueAt: parseDueAt(text),
-      assigneeId: assignee?.id,
-      assigneeName: assignee?.name,
-      priority: parsePriority(text),
-      step: "title",
-    };
-    askNextTaskQuestion(draft);
+    askNextTaskQuestion({
+      ...parseTaskDraftFromUtterance(text),
+      ...(assignee ? { assigneeId: assignee.id, assigneeName: assignee.name } : {}),
+    });
     return true;
-  };
-
-  const stopRequest = () => {
-    if (requestTimerRef.current !== null) {
-      window.clearTimeout(requestTimerRef.current);
-      requestTimerRef.current = null;
-    }
-    setIsTyping(false);
   };
 
   const handleSend = async (rawText: string) => {
     const text = rawText.trim();
-    if (!text || isTyping) return;
+    if (!text || isBusy) return;
 
-    onAddMessage({
-      id: `usr_${Math.random().toString(36).slice(2, 11)}`,
-      role: "user",
-      content: text,
-      createdAt: new Date().toISOString(),
-    });
+    post({ id: `usr_${Math.random().toString(36).slice(2, 11)}`, role: "user", content: text, createdAt: new Date().toISOString() });
     setInput("");
+    setStatusDetail(null);
 
-    if (await handleTaskCommand(text)) return;
+    if (await handleTaskConversation(text)) return;
 
-    const governance = govern("RECOMMEND", ["INTERNAL", "CUSTOMER_PII"], [`crm-context:${workspace.workspaceId}`, `user-question:${text.slice(0, 80)}`]);
-    if (!governance.decision.allowed) {
-      onAddMessage(makeMessage((isVi ? "Yêu cầu AI bị chặn bởi chính sách: " : "The AI request was blocked by policy: ") + governance.decision.reasons[0]));
-      return;
+    setLastQuestion(text);
+    setInteractionState("loading");
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const focusedEntity = resolveAiFocusedEntityRef(context);
+    try {
+      const result = await askAiAssistant({
+        scope,
+        conversationId,
+        question: text,
+        locale: isVi ? "vi" : "en",
+        requestedContextScope: defaultAiContextScope(focusedEntity),
+        ...(focusedEntity ? { focusedEntity } : {}),
+        sanitizedContext: buildSanitizedAiRequestContext({
+          context,
+          policy: governancePolicy,
+          ...(focusedEntity ? { focusedEntity } : {}),
+        }),
+        localContext: context,
+        signal: controller.signal,
+      });
+      if (controller.signal.aborted) return;
+      if (result.decision.allowed) {
+        setInteractionState("success");
+      } else {
+        setInteractionState("permission_denied");
+        setStatusDetail(result.decision.reasons[0] ?? null);
+      }
+      post(result.message);
+    } catch (error) {
+      if (!controller.signal.aborted) reportFailure(error);
+    } finally {
+      if (abortRef.current === controller) abortRef.current = null;
     }
-    setIsTyping(true);
-    requestTimerRef.current = window.setTimeout(() => {
-      onAddMessage(askCrmAi(text, context));
-      setIsTyping(false);
-      requestTimerRef.current = null;
-    }, reduceMotion ? 60 : 460);
   };
 
+  const stopRequest = () => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setInteractionState("idle");
+  };
+
+  const statusMessage = statusDetail ?? (isVi ? STATE_LABELS[interactionState].vi : STATE_LABELS[interactionState].en);
+  const showStatusBanner = statusMessage.length > 0 && !SILENT_STATES.includes(interactionState);
   const hasConversation = messages.some((message) => message.role === "user");
 
   return (
@@ -365,7 +380,7 @@ export const AiChatPanel: React.FC<AiChatPanelProps> = ({
               <h2 className="mt-5 text-2xl font-black tracking-tight text-slate-950">{isVi ? "Tôi có thể giúp gì cho bạn?" : "How can I help?"}</h2>
               <div className="mt-6 grid w-full max-w-2xl gap-2 sm:grid-cols-2">
                 {quickPrompts.map((prompt) => (
-                  <button key={prompt} type="button" onClick={() => handleSend(prompt)} className="min-w-0 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700 shadow-sm transition-all hover:-translate-y-0.5 hover:border-violet-200 hover:bg-violet-50/40 hover:text-violet-700 hover:shadow-md [overflow-wrap:anywhere]">
+                  <button key={prompt} type="button" onClick={() => void handleSend(prompt)} className="min-w-0 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-left text-sm font-bold text-slate-700 shadow-sm transition-all hover:-translate-y-0.5 hover:border-violet-200 hover:bg-violet-50/40 hover:text-violet-700 hover:shadow-md [overflow-wrap:anywhere]">
                     {prompt}
                   </button>
                 ))}
@@ -385,16 +400,22 @@ export const AiChatPanel: React.FC<AiChatPanelProps> = ({
                   )}
                   <div className={`min-w-0 max-w-[min(82%,720px)] ${isUser ? "rounded-3xl rounded-br-lg bg-slate-950 px-4 py-3 text-white" : "px-1 py-1 text-slate-800"}`}>
                     <div className="whitespace-pre-wrap break-words text-sm font-medium leading-7 [overflow-wrap:anywhere]">{message.content}</div>
-                    {!isUser && message.suggestedActions?.length ? <AiSuggestedActions actions={message.suggestedActions} onTriggerToast={showToast} /> : null}
+                    {!isUser && message.suggestedActions?.length ? (
+                      <AiSuggestedActions
+                        actions={message.suggestedActions}
+                        onTriggerToast={showToast}
+                        onExecuteIntent={async (intent) => { await runIntent(intent, false); }}
+                      />
+                    ) : null}
                   </div>
                   {isUser && <div className="mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600"><UserRound size={15} /></div>}
                 </motion.div>
               );
             })}
-            {isTyping && (
+            {isBusy && (
               <div className="flex items-center gap-3 text-sm text-slate-500">
                 <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-violet-50 text-violet-600"><LoaderCircle className="animate-spin" size={16} /></div>
-                <span>{isVi ? "Đang suy nghĩ..." : "Thinking..."}</span>
+                <span>{isVi ? STATE_LABELS[interactionState].vi : STATE_LABELS[interactionState].en}</span>
               </div>
             )}
             <div ref={scrollRef} />
@@ -404,10 +425,21 @@ export const AiChatPanel: React.FC<AiChatPanelProps> = ({
 
       <footer className="shrink-0 border-t border-slate-200 bg-white/95 px-4 py-4 backdrop-blur-xl md:px-8">
         <div className="mx-auto w-full max-w-3xl">
+          {showStatusBanner && (
+            <div data-ai-interaction-state={interactionState} className="mb-2 flex items-start gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] font-semibold leading-5 text-amber-900">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <span className="min-w-0 flex-1 [overflow-wrap:anywhere]">{statusMessage}</span>
+              {isRetryableAiInteractionState(interactionState) && lastQuestion && (
+                <button type="button" onClick={() => void handleSend(lastQuestion)} className="flex shrink-0 items-center gap-1 rounded-lg border border-amber-300 bg-white px-2 py-1 font-bold text-amber-800 hover:bg-amber-100">
+                  <RotateCw size={11} />{isVi ? "Thử lại" : "Retry"}
+                </button>
+              )}
+            </div>
+          )}
           {pendingTask?.step === "confirm" && (
             <div className="mb-2 flex flex-wrap gap-2">
-              <button type="button" onClick={() => handleSend(isVi ? "Xác nhận" : "Confirm")} className="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-black text-white shadow-sm hover:bg-emerald-700">{isVi ? "Xác nhận tạo" : "Confirm creation"}</button>
-              <button type="button" onClick={() => handleSend(isVi ? "Hủy" : "Cancel")} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-600 hover:bg-slate-50">{isVi ? "Hủy" : "Cancel"}</button>
+              <button type="button" onClick={() => void handleSend(isVi ? "Xác nhận" : "Confirm")} className="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-black text-white shadow-sm hover:bg-emerald-700">{isVi ? "Xác nhận tạo" : "Confirm creation"}</button>
+              <button type="button" onClick={() => void handleSend(isVi ? "Hủy" : "Cancel")} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-600 hover:bg-slate-50">{isVi ? "Hủy" : "Cancel"}</button>
             </div>
           )}
           <div className="flex items-end gap-2 rounded-3xl border border-slate-200 bg-slate-50 p-2 shadow-sm transition-all focus-within:border-violet-300 focus-within:bg-white focus-within:ring-4 focus-within:ring-violet-500/10">
@@ -418,17 +450,17 @@ export const AiChatPanel: React.FC<AiChatPanelProps> = ({
               onKeyDown={(event) => {
                 if (event.key === "Enter" && !event.shiftKey) {
                   event.preventDefault();
-                  handleSend(input);
+                  void handleSend(input);
                 }
               }}
               rows={1}
               placeholder={pendingTask ? (isVi ? "Trả lời thông tin còn thiếu..." : "Provide the missing information...") : (isVi ? "Nhắn cho Unicore AI..." : "Message Unicore AI...")}
               className="max-h-[140px] min-h-[42px] min-w-0 flex-1 resize-none border-0 bg-transparent px-3 py-2.5 text-sm font-medium leading-6 text-slate-800 outline-none placeholder:text-slate-400"
             />
-            {isTyping ? (
+            {isBusy ? (
               <button type="button" onClick={stopRequest} aria-label={isVi ? "Dừng" : "Stop"} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-slate-950 text-white"><CircleStop size={18} /></button>
             ) : (
-              <button type="button" onClick={() => handleSend(input)} disabled={!input.trim()} aria-label={isVi ? "Gửi" : "Send"} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-violet-600 text-white shadow-sm transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-40"><ArrowUp size={18} /></button>
+              <button type="button" onClick={() => void handleSend(input)} disabled={!input.trim()} aria-label={isVi ? "Gửi" : "Send"} className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-violet-600 text-white shadow-sm transition hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-40"><ArrowUp size={18} /></button>
             )}
           </div>
           <div className="mt-2 flex items-center justify-between gap-3 text-[10px] font-medium text-slate-400">

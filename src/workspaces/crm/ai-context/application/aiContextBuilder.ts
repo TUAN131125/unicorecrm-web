@@ -5,6 +5,7 @@ import {
   type Customer,
 } from "@/modules/customers";
 import type { Contact } from "@/modules/contacts";
+import type { OrganizationAccount } from "@/modules/organizations";
 import { DealStage, type Deal } from "@/modules/deals";
 import type { Quote } from "@/modules/quotes";
 import type { SupportCase } from "@/modules/support";
@@ -26,6 +27,8 @@ export interface GlobalAiState {
   cases: SupportCase[];
   products: Product[];
   tasks?: Task[];
+  /** Canonical Organization relationship records read through the module public API. */
+  organizations?: OrganizationAccount[];
   actorId?: string;
 }
 
@@ -39,6 +42,7 @@ export interface AiContextWrapper {
     ordersCount: number;
     casesCount: number;
     productsCount: number;
+    organizationsCount: number;
     tasksCount: number;
     openTasksCount: number;
     overdueTasksCount: number;
@@ -55,12 +59,14 @@ export interface AiContextWrapper {
   orders: CustomerOrder[];
   cases: SupportCase[];
   products: Product[];
+  organizations: OrganizationAccount[];
   tasks: Task[];
   focusedItem?: {
     entityType:
       | "lead"
       | "customer"
       | "contact"
+      | "organization"
       | "deal"
       | "quote"
       | "order"
@@ -75,6 +81,7 @@ export interface AiContextWrapper {
 export function buildGlobalAiContext(state: GlobalAiState): AiContextWrapper {
   const flatOrders = flattenOrders(state.orders);
   const tasks = state.tasks ?? [];
+  const organizations = state.organizations ?? [];
   const openTasks = tasks.filter((task) => task.status === "OPEN");
   const overdueTasks = openTasks.filter((task) => new Date(task.dueAt).getTime() < Date.now());
 
@@ -106,6 +113,7 @@ export function buildGlobalAiContext(state: GlobalAiState): AiContextWrapper {
       ordersCount: flatOrders.length,
       casesCount: state.cases.length,
       productsCount: state.products.length,
+      organizationsCount: organizations.length,
       tasksCount: tasks.length,
       openTasksCount: openTasks.length,
       overdueTasksCount: overdueTasks.length,
@@ -122,6 +130,7 @@ export function buildGlobalAiContext(state: GlobalAiState): AiContextWrapper {
     orders: flatOrders,
     cases: state.cases,
     products: state.products,
+    organizations,
     tasks,
   };
 }
@@ -299,3 +308,108 @@ export function buildTaskAiContext(
   }
   return wrapper;
 }
+
+/**
+ * Organization is a first-class focused AI entity. The builder reads canonical
+ * Organization data and the CRM records related to it through public/read
+ * boundaries only; it introduces no writes and does not restate Customer 360
+ * business logic.
+ */
+export function buildOrganizationAiContext(
+  organizationAccountId: string,
+  state: GlobalAiState,
+): AiContextWrapper {
+  const wrapper = buildGlobalAiContext(state);
+  const organization = (state.organizations ?? []).find((item) => item.id === organizationAccountId);
+  if (!organization) return wrapper;
+
+  const relatedContactIds = new Set(organization.contactRefs.map((ref) => ref.id));
+  const contacts = state.contacts.filter((contact) => relatedContactIds.has(contact.id));
+  const contactIds = new Set(contacts.map((contact) => contact.id));
+
+  const deals = state.deals.filter(
+    (deal) => (deal.buyerRef.type === "ORGANIZATION_ACCOUNT" && deal.buyerRef.id === organizationAccountId)
+      || (deal.contactId ? contactIds.has(deal.contactId) : false),
+  );
+  const dealIds = new Set(deals.map((deal) => deal.id));
+  const quotes = state.quotes.filter((quote) => (quote.dealId ? dealIds.has(quote.dealId) : false));
+  const orders = wrapper.orders.filter(
+    (order) => (order.sourceDealId ? dealIds.has(order.sourceDealId) : false)
+      || (order.contactId ? contactIds.has(order.contactId) : false),
+  );
+  const cases = state.cases.filter((item) => (item.contactId ? contactIds.has(item.contactId) : false));
+  const tasks = wrapper.tasks.filter(
+    (task) => task.recordRef?.moduleKey === "organizations" && task.recordRef.recordId === organizationAccountId,
+  );
+
+  wrapper.focusedItem = {
+    entityType: "organization",
+    data: organization,
+    relatedItems: {
+      primaryContactId: organization.primaryContactId,
+      contacts,
+      deals,
+      quotes,
+      orders,
+      cases,
+      tasks,
+    },
+  };
+  return wrapper;
+}
+
+/**
+ * Contact is declared as a focused AI entity, so it owns a dedicated builder
+ * rather than falling back to the global context.
+ */
+export function buildContactAiContext(
+  contactId: string,
+  state: GlobalAiState,
+): AiContextWrapper {
+  const wrapper = buildGlobalAiContext(state);
+  const contact = state.contacts.find((item) => item.id === contactId);
+  if (!contact) return wrapper;
+
+  const organizations = (state.organizations ?? []).filter((account) =>
+    account.contactRefs.some((ref) => ref.id === contactId),
+  );
+  const deals = state.deals.filter((deal) => deal.contactId === contactId);
+  const dealIds = new Set(deals.map((deal) => deal.id));
+  const quotes = state.quotes.filter((quote) => (quote.dealId ? dealIds.has(quote.dealId) : false));
+  const orders = wrapper.orders.filter((order) => order.contactId === contactId);
+  const cases = state.cases.filter((item) => item.contactId === contactId);
+  const tasks = wrapper.tasks.filter(
+    (task) => task.recordRef?.moduleKey === "contacts" && task.recordRef.recordId === contactId,
+  );
+
+  wrapper.focusedItem = {
+    entityType: "contact",
+    data: contact,
+    relatedItems: { organizations, deals, quotes, orders, cases, tasks },
+  };
+  return wrapper;
+}
+
+/**
+ * GAP — focused AI context is not yet supported for these owners. Each one needs
+ * a canonical read boundary review before AI may summarize it:
+ *
+ * TODO(ai-context): payment  — Payment/receivable truth is financial data; a
+ *   FINANCIAL data-class decision and a Payments read projection are required.
+ * TODO(ai-context): invoice  — depends on the same receivables read boundary.
+ * TODO(ai-context): shipping — Shipping booking state is owned by carrier
+ *   integrations; the AI context must read a settled projection, not live state.
+ * TODO(ai-context): return   — Return resolution evidence is workflow-owned and
+ *   must be summarized from the resolution read model, not the aggregate.
+ * TODO(ai-context): product  — Catalog focus has no product-detail AI journey yet.
+ *
+ * Until then `resolveAiRouteFocus` deliberately does not map those routes, and
+ * the assistant answers from the global context instead of inventing a focus.
+ */
+export const UNSUPPORTED_FOCUSED_AI_ENTITIES = [
+  "payment",
+  "invoice",
+  "shipping",
+  "return",
+  "product",
+] as const;
