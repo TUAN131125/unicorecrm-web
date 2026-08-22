@@ -17,9 +17,9 @@ Do not delete a dead, compatibility, deprecated or duplicate candidate based on 
 
 | Metric | Count |
 |---|---:|
-| Repository files | 1963 |
-| Source files | 1341 |
-| Source lines | 201875 |
+| Repository files | 1964 |
+| Source files | 1342 |
+| Source lines | 202317 |
 | Registered modules | 15 |
 | Route keys | 78 |
 | Loadable route modules | 62 |
@@ -37,7 +37,7 @@ Do not delete a dead, compatibility, deprecated or duplicate candidate based on 
 | Quality groups | 11 |
 | Verify gates | 311 |
 
-Inventory fingerprint: `e4566dead3330ea4867b9c9c0e016018d144006bc414599611650a7774a409cb`
+Inventory fingerprint: `0309f21c6f8603555fa3c5c63bc2ccd6629fe78e9244d49e76d356b6bcb16756`
 
 
 ## Quality pipeline
@@ -60,9 +60,9 @@ Inventory fingerprint: `e4566dead3330ea4867b9c9c0e016018d144006bc414599611650a77
 
 | Classification | Count |
 |---|---:|
-| `active-runtime` | 1261 |
+| `active-runtime` | 1263 |
 | `active-script` | 63 |
-| `active-test` | 403 |
+| `active-test` | 402 |
 | `compatibility` | 53 |
 | `documentation` | 178 |
 | `fixture` | 3 |
@@ -180,30 +180,30 @@ The JSON manifest includes each detected key pattern, operation, path, line and 
 | `src/i18n/translations/vi.ts` | 4989 | `shared:i18n` |
 | `src/i18n/types.ts` | 2036 | `shared:i18n` |
 | `src/platform/api/generated/financialApi.ts` | 1757 | `platform:api` |
+| `src/modules/contacts/presentation/hooks/useContactDetailController.tsx` | 1264 | `contacts` |
 | `src/modules/deals/presentation/pages/DealPipelinePage.tsx` | 1226 | `deals` |
-| `src/modules/contacts/presentation/hooks/useContactDetailController.tsx` | 1179 | `contacts` |
-| `src/modules/contacts/presentation/hooks/useContactListController.tsx` | 1165 | `contacts` |
+| `src/modules/contacts/presentation/hooks/useContactListController.tsx` | 1212 | `contacts` |
 | `src/modules/quotes/presentation/views/QuoteBuilderView.tsx` | 1106 | `quotes` |
 | `src/modules/leads/presentation/views/LeadDetailView.tsx` | 1104 | `leads` |
 | `src/modules/quotes/presentation/pages/QuoteListPage.tsx` | 1103 | `quotes` |
 | `src/modules/leads/presentation/pages/LeadListPage.tsx` | 1081 | `leads` |
 | `src/modules/quotes/presentation/hooks/useQuoteBuilderController.tsx` | 982 | `quotes` |
 | `src/modules/leads/presentation/components/LeadFormView.tsx` | 935 | `leads` |
-| `src/modules/orders/presentation/hooks/useOrderFormController.tsx` | 926 | `orders` |
-| `src/modules/deals/presentation/hooks/useDealPipelineController.ts` | 838 | `deals` |
+| `src/modules/orders/presentation/hooks/useOrderFormController.tsx` | 935 | `orders` |
+| `src/modules/deals/presentation/hooks/useDealPipelineController.ts` | 869 | `deals` |
+| `src/modules/quotes/presentation/pages/QuoteDetailPage.tsx` | 854 | `quotes` |
 | `src/i18n/legacyUiCopy.ts` | 832 | `shared:i18n` |
 | `src/modules/orders/presentation/views/OrderListView.tsx` | 812 | `orders` |
-| `src/modules/quotes/presentation/pages/QuoteDetailPage.tsx` | 791 | `quotes` |
 | `src/modules/orders/presentation/pages/OrderDetailPage.tsx` | 722 | `orders` |
 | `src/modules/leads/infrastructure/http/LeadHttpCommandAdapter.ts` | 703 | `leads` |
 | `src/guidance/content/crm/extendedScreens.ts` | 696 | `shared:guidance` |
-| `src/modules/organizations/presentation/pages/OrganizationAccountDetailPage.tsx` | 670 | `organizations` |
+| `src/modules/organizations/presentation/pages/OrganizationAccountDetailPage.tsx` | 678 | `organizations` |
 | `src/modules/products/presentation/pages/ProductDetailPage.tsx` | 655 | `products` |
 | `src/modules/leads/presentation/hooks/useLeadFormController.tsx` | 650 | `leads` |
 | `src/modules/products/presentation/components/ProductFormModal.tsx` | 637 | `products` |
 | `src/modules/payments/presentation/pages/PaymentOperationsPage.tsx` | 627 | `payments` |
+| `src/modules/customers/presentation/pages/Customer360Page.tsx` | 618 | `customers` |
 | `src/modules/leads/presentation/hooks/useLeadDetailController.tsx` | 613 | `leads` |
-| `src/modules/contacts/presentation/detail/tabs/ContactInfoTab.tsx` | 608 | `contacts` |
 
 ## Circular dependency groups
 

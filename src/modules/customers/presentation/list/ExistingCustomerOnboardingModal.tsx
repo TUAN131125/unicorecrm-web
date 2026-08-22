@@ -32,6 +32,7 @@ export function ExistingCustomerOnboardingModal({ isOpen, onClose, actorId, isVi
   const [documentRef, setDocumentRef] = React.useState("");
   const [note, setNote] = React.useState("");
   const [error, setError] = React.useState("");
+  const [submitting, setSubmitting] = React.useState(false);
 
   React.useEffect(() => {
     if (!isOpen) return;
@@ -43,16 +44,25 @@ export function ExistingCustomerOnboardingModal({ isOpen, onClose, actorId, isVi
     setDocumentRef("");
     setNote("");
     setError("");
+    setSubmitting(false);
   }, [isOpen]);
 
-  const submit = (event: React.FormEvent) => {
+  // `customer.onboard-existing` has no production contract yet: OpenAPI
+  // `onboardExistingCustomer` is BLOCKED and WF-07 customer-onboarding is
+  // `contractReadiness: BLOCKED` with `connectedFrontendCoordinatorAllowed: false`.
+  // Connected mode therefore fails closed inside the workflow; the modal must not
+  // report success, and must not compose the onboarding out of separate local writes.
+  const submit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (submitting) return;
     if (!relationshipId) {
       setError(isVi ? "Chọn Contact hoặc Tổ chức." : "Select a Contact or Organization.");
       return;
     }
+    setError("");
+    setSubmitting(true);
     try {
-      const result = onboardExistingCustomerWorkflow({
+      const result = await onboardExistingCustomerWorkflow({
         relationshipRef: { type: kind, id: relationshipId },
         evidenceType,
         occurredAt: `${occurredAt}T12:00:00.000Z`,
@@ -70,6 +80,8 @@ export function ExistingCustomerOnboardingModal({ isOpen, onClose, actorId, isVi
       onClose();
     } catch (caught) {
       setError(formatApplicationError(caught, { locale: isVi ? "vi" : "en" }));
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -106,7 +118,7 @@ export function ExistingCustomerOnboardingModal({ isOpen, onClose, actorId, isVi
         </div>
         <Textarea label={isVi ? "Ghi chú xác minh" : "Verification note"} value={note} onChange={(event) => setNote(event.target.value)} />
         {error ? <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-semibold text-rose-700">{error}</div> : null}
-        <div className="crm-form-action-bar flex justify-end gap-2 border-t border-slate-100 pt-4"><Button type="button" variant="secondary" onClick={onClose}>{isVi ? "Hủy" : "Cancel"}</Button><Button type="submit" variant="primary">{isVi ? "Ghi nhận khách hàng" : "Create from evidence"}</Button></div>
+        <div className="crm-form-action-bar flex justify-end gap-2 border-t border-slate-100 pt-4"><Button type="button" variant="secondary" onClick={onClose} disabled={submitting}>{isVi ? "Hủy" : "Cancel"}</Button><Button type="submit" variant="primary" loading={submitting} disabled={submitting}>{isVi ? "Ghi nhận khách hàng" : "Create from evidence"}</Button></div>
       </form>
     </Modal>
   );

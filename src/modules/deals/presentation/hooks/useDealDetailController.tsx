@@ -21,6 +21,7 @@ import { getOrdersForDeal } from "@/modules/orders";
 import type { CustomerOrder } from "@/modules/orders";
 import { logActivityViaApi, type ActivityType, type NoteActivityDraft } from "@/modules/tasks";
 import { closeDealLostCommand, closeDealWonCommand, transitionDealStageCommand, updateDealCommand } from "../../public/deals";
+import type { DealLineItem } from "../../domain/model/deal.types";
 import { acceptQuoteAndCloseDealCommand } from "@/workflows/quote-acceptance";
 import { findCustomerByRelationshipRefSnapshot } from "@/modules/customers";
 import { getAuthSessionSnapshot } from "@/platform/identity-auth";
@@ -288,6 +289,24 @@ export function useDealDetailController({
     }
   };
 
+  // Applying a Product Picker selection replaces the Deal commercial lines. It is a
+  // business mutation and must use the canonical `deal.update` command, never a local
+  // Deal projection write.
+  const handleApplyLineItems = async (nextLines: DealLineItem[]): Promise<boolean> => {
+    if (isTerminal) return false;
+    const newAmount = nextLines.reduce((sum, item) => {
+      const discountedPrice = (item.unitPrice ?? item.unitPriceSnapshot ?? 0) * (1 - item.discountPercent / 100);
+      return sum + (discountedPrice * item.quantity);
+    }, 0);
+    try {
+      await updateDealCommand(deal.id, { lineItems: nextLines, amount: newAmount });
+      return true;
+    } catch (error) {
+      triggerToast("error", formatApplicationError(error, { locale }));
+      return false;
+    }
+  };
+
   // Opens Product Picker modal instead of inserting random placeholder products
   const handleAddSampleItem = () => {
     if (isTerminal) return;
@@ -529,6 +548,7 @@ export function useDealDetailController({
     isTerminal,
     handleNextStage,
     handleUpdateLineItem,
+    handleApplyLineItems,
     handleAddSampleItem,
     handleDeleteLineItem,
     getLostReasonLabel,

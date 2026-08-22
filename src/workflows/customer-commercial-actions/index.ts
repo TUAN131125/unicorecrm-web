@@ -1,6 +1,6 @@
-import { createDealSnapshot, DealStage, type Deal, type DealForecastCategory, type DealLineItem } from "@/modules/deals";
+import { createDealCommand, DealStage, type Deal, type DealForecastCategory, type DealLineItem } from "@/modules/deals";
 import { assertCustomerRelationshipContextSnapshot } from "@/modules/customers";
-import { createTaskSnapshot } from "@/modules/tasks";
+import { createTaskCommand } from "@/modules/tasks";
 
 export interface CreateDealForCustomerInput {
   customerId: string;
@@ -28,12 +28,26 @@ function taskIdForDeal(dealId: string, dueAt: string): string {
   return `task_deal_${dealId}_${dueAt.slice(0, 10)}`;
 }
 
-export function createDealForCustomer(input: CreateDealForCustomerInput): Deal {
+/**
+ * Creates a commercial opportunity for an existing Customer relationship.
+ *
+ * Both steps use authoritative commands (`deal.create`, `task.create`). They are
+ * NOT atomic with each other: WF-04 customer-commercial-actions is still
+ * `contractReadiness: BLOCKED` with `connectedFrontendCoordinatorAllowed: false`,
+ * and no backend operation commits a Deal and its follow-up Task in one
+ * transaction. A Task failure therefore leaves a committed Deal without its
+ * follow-up Task and must propagate to the caller rather than be swallowed.
+ * Atomic Customer-commercial-action semantics remain a backend requirement.
+ *
+ * The Task identifier is server-assigned (`CreateTaskRequest` carries no `id`),
+ * so `taskIdForDeal` only derives a deterministic idempotency/dedupe key.
+ */
+export async function createDealForCustomer(input: CreateDealForCustomerInput): Promise<Deal> {
   const { customer, relationshipRef } = assertCustomerRelationshipContextSnapshot(input.customerId);
   const now = input.now ?? new Date().toISOString();
   const dueAt = input.followUpTask ? new Date(input.followUpTask.dueAt).toISOString() : undefined;
   const taskId = dueAt ? taskIdForDeal(input.id, dueAt) : undefined;
-  const deal = createDealSnapshot({
+  const deal = (await createDealCommand({
     id: input.id,
     name: input.name.trim(),
     buyerRef: relationshipRef,
@@ -62,10 +76,13 @@ export function createDealForCustomer(input: CreateDealForCustomerInput): Deal {
       createdAt: now,
       author: input.actorName ?? "System",
     }],
-  });
+  }, {
+    idempotencyKey: `deal.create:${input.id}`,
+    correlationId: `customer:${customer.id}`,
+  })).data;
 
   if (dueAt && taskId && input.followUpTask) {
-    createTaskSnapshot({
+    await createTaskCommand({
       id: taskId,
       title: input.followUpTask.title.trim(),
       description: input.followUpTask.description?.trim() || input.notes?.trim() || undefined,
@@ -81,6 +98,9 @@ export function createDealForCustomer(input: CreateDealForCustomerInput): Deal {
       actorName: input.actorName ?? "CRM User",
       correlationId: `deal:${deal.id}`,
       now,
+    }, {
+      idempotencyKey: `task.create:${taskId}`,
+      correlationId: `deal:${deal.id}`,
     });
   }
 

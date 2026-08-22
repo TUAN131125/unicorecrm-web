@@ -11,6 +11,8 @@ import {
   type DealFormDraft,
 } from "@/modules/deals";
 import { createDurableId } from "@/shared/ids";
+import { formatApplicationError } from "@/shared/operations";
+import { notifyProduct } from "@/components/feedback/ProductDialogService";
 import { ensureDealNextActionTask, getDealNextActionTaskId } from "@/workflows/work-activation";
 import type { Contact } from "@/modules/contacts";
 import type { OrganizationAccount } from "../../public/api";
@@ -97,7 +99,19 @@ export function OrganizationCreateOpportunityModal({
         author: actorName,
       }],
     })).data;
-    if (nextActionAt) ensureDealNextActionTask(deal);
+    // Separate authoritative command; WF-21 has no atomic Deal+Task workflow. The Deal
+    // is already committed, so a Task failure is a partial outcome, not total failure.
+    if (nextActionAt) {
+      try {
+        await ensureDealNextActionTask(deal);
+      } catch (error) {
+        notifyProduct(locale === "vi"
+          ? `Đã tạo cơ hội "${deal.name}". Chưa tạo được công việc kế tiếp: ${formatApplicationError(error, { locale })}`
+          : `Opportunity "${deal.name}" was created. Its next-action Task was not created: ${formatApplicationError(error, { locale })}`, "danger");
+        onCreated(deal);
+        return;
+      }
+    }
     onCreated(deal);
   };
 

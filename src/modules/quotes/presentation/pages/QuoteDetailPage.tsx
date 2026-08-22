@@ -2,6 +2,8 @@ import { formatApplicationError } from "@/shared/operations";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { acceptQuoteAndCloseDealCommand } from "@/workflows/quote-acceptance";
+import { convertAcceptedQuoteToOrderDraftCommand } from "@/workflows/accepted-quote-order-conversion";
+import { isOrderConnectedMode } from "@/modules/orders";
 import { AnimatePresence, motion } from "motion/react";
 import {
   AlertCircle,
@@ -23,6 +25,7 @@ import {
   XSquare,
 } from "lucide-react";
 import { getDealSnapshot, getDealStagesSnapshot, isWonStage } from "@/modules/deals";
+import { getQuoteConversionIssues } from "../../domain/rules/quoteConversion";
 import { QuoteApprovalStatus, QuoteStatus, SalesDocumentAdjustmentType } from "../../domain/model/quote.types";
 import { approveQuoteCommand, duplicateQuoteCommand, createQuoteRevisionCommand, archiveQuoteCommand, requestQuoteApprovalChangesCommand, requestQuoteApprovalCommand, recordQuoteDeliveryCommand, transitionQuoteStatusCommand } from "../../public/quotes";
 import { CAPABILITIES, useEffectiveAccess, useEffectiveRecordAccessDecision } from "@/platform/access-control";
@@ -123,6 +126,7 @@ export const QuoteDetailPage: React.FC = () => {
   const [isDeliveryConfirmationOpen, setIsDeliveryConfirmationOpen] = useState(false);
   const [isDocumentPreviewOpen, setIsDocumentPreviewOpen] = useState(false);
   const [exportBusy, setExportBusy] = useState(false);
+  const [creatingOrder, setCreatingOrder] = useState(false);
   const autoExportRef = useRef<string | null>(null);
 
   const quote = useMemo(() => quotes.find((item) => item.id === quoteId), [quotes, quoteId]);
@@ -364,6 +368,51 @@ export const QuoteDetailPage: React.FC = () => {
     }
   };
 
+  /**
+   * Accepted Quote -> Draft Order.
+   *
+   * Connected mode executes the canonical `order.convert-accepted-quote-to-draft`
+   * command so the backend copies the immutable commercial snapshot and assigns the
+   * Order identity. The generic direct-order authoring form must never be used for an
+   * accepted Quote in connected mode. Demo mode keeps its separate local authoring
+   * path, which the command registry classifies as OPENAPI_CONNECTED_ONLY_DEMO_SEPARATE.
+   */
+  const handleCreateOrder = async () => {
+    if (creatingOrder) return;
+    if (!isOrderConnectedMode()) {
+      navigate(`/orders/new?quoteId=${quote.id}`);
+      return;
+    }
+    const issues = getQuoteConversionIssues(quote);
+    if (issues.length > 0) {
+      triggerToast("error", issues.map((issue) => issue.message).join(" "));
+      return;
+    }
+    if (quote.resourceVersion === undefined) {
+      triggerToast("error", locale === "vi"
+        ? "Báo giá chưa có phiên bản tài nguyên từ máy chủ. Hãy tải lại trước khi tạo Đơn hàng."
+        : "The Quote has no authoritative resource version yet. Reload before creating the Order.");
+      return;
+    }
+    // Deterministic per Quote version: a repeated submission replays the same
+    // backend command instead of creating a second Draft Order.
+    const creationIntentId = `order-intent:${quote.id}:${quote.resourceVersion}`;
+    setCreatingOrder(true);
+    try {
+      const outcome = await convertAcceptedQuoteToOrderDraftCommand({
+        creationIntentId,
+        quoteId: quote.id,
+        expectedQuoteVersion: quote.resourceVersion,
+        idempotencyKey: `order.convert-accepted-quote:${creationIntentId}`,
+      });
+      navigate(`/orders/${outcome.data.order.id}`);
+    } catch (error) {
+      triggerToast("error", formatApplicationError(error, { locale }));
+    } finally {
+      setCreatingOrder(false);
+    }
+  };
+
   const confirmDelete = async () => {
     try {
       await archiveQuoteCommand(quote.id, { reason: locale === "vi" ? "Lưu trữ từ trang chi tiết Báo giá." : "Archived from Quote detail.", actorId });
@@ -457,7 +506,21 @@ export const QuoteDetailPage: React.FC = () => {
       case "expire":
         return secondaryButton(locale === "vi" ? "Đánh dấu hết hạn" : "Mark expired", <Clock size={12} />, () => handleStatusChange(QuoteStatus.EXPIRED));
       case "create-order":
-        return primaryButton(locale === "vi" ? "Tạo đơn hàng" : "Create order", <ShoppingBag size={12} />, () => navigate(`/orders/new?quoteId=${quote.id}`));
+        return (
+          <Button
+            key={actionId}
+            type="button"
+            variant="primary"
+            size="sm"
+            icon={<ShoppingBag size={12} />}
+            loading={creatingOrder}
+            disabled={creatingOrder}
+            onClick={() => { void handleCreateOrder(); }}
+            className={recordDetailHeaderActionButtonClassName}
+          >
+            {locale === "vi" ? "Tạo đơn hàng" : "Create order"}
+          </Button>
+        );
       case "revise":
         return secondaryButton(`Revision v${quote.version + 1}`, <RefreshCw size={12} />, handleRevision);
       case "duplicate":
@@ -499,7 +562,7 @@ export const QuoteDetailPage: React.FC = () => {
       case "accept": return { id: actionId, label: locale === "vi" ? "Chấp nhận" : "Accept", icon: <CheckCircle2 size={14} />, onClick: () => handleStatusChange(QuoteStatus.ACCEPTED), variant: "success" };
       case "reject": return { id: actionId, label: locale === "vi" ? "Từ chối" : "Reject", icon: <X size={14} />, onClick: () => handleStatusChange(QuoteStatus.REJECTED), destructive: true };
       case "expire": return { id: actionId, label: locale === "vi" ? "Đánh dấu hết hạn" : "Mark expired", icon: <Clock size={14} />, onClick: () => handleStatusChange(QuoteStatus.EXPIRED) };
-      case "create-order": return { id: actionId, label: locale === "vi" ? "Tạo đơn hàng" : "Create order", icon: <ShoppingBag size={14} />, onClick: () => navigate(`/orders/new?quoteId=${quote.id}`), variant: "primary" };
+      case "create-order": return { id: actionId, label: locale === "vi" ? "Tạo đơn hàng" : "Create order", icon: <ShoppingBag size={14} />, onClick: () => { void handleCreateOrder(); }, disabled: creatingOrder, variant: "primary" };
       case "revise": return { id: actionId, label: `Revision v${quote.version + 1}`, icon: <RefreshCw size={14} />, onClick: handleRevision };
       case "duplicate": return { id: actionId, label: locale === "vi" ? "Nhân bản" : "Duplicate", icon: <Copy size={14} />, onClick: handleDuplicate };
       case "export-pdf": return { id: actionId, label: locale === "vi" ? "Xuất PDF" : "Export PDF", icon: <Download size={14} />, onClick: () => { void handleExportPdf(); }, disabled: exportBusy, variant: "info" };

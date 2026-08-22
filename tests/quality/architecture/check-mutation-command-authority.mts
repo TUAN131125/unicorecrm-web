@@ -149,6 +149,14 @@ const requiredEvidence: Record<string, RegExp[]> = {
   "src/workflows/return-credit-refund/index.ts": [/executeReturnCreditRefundCommand/, /replaceInvoicesSnapshot/, /replacePaymentsSnapshot/, /replaceReturnsSnapshot/],
   "src/workflows/return-resolution/index.ts": [/beginReturnPickupCommand/, /beginReturnReplacementCommand/, /completeReturnReplacementFromDeliveryCommand/, /completeReturnRepairCommand/],
   "src/modules/support/public/cases.ts": [/transitionSupportCaseCommand/, /reassignSupportCaseCommand/, /saveSupportCaseCommand/, /support\.transition/],
+  // Commands wired by the connected-mutation repair phases.
+  "src/workflows/accepted-quote-order-conversion/index.ts": [/convertAcceptedQuoteToOrderDraftCommand/, /order\.convert-accepted-quote-to-draft/],
+  "src/modules/quotes/presentation/pages/QuoteDetailPage.tsx": [/convertAcceptedQuoteToOrderDraftCommand/, /outcome\.data\.order\.id/],
+  "src/workflows/work-activation/index.ts": [/export async function ensureDealNextActionTask/, /createTaskCommand\(/, /NOT ATOMIC WITH THE DEAL COMMAND/],
+  "src/workflows/customer-commercial-actions/index.ts": [/createDealCommand/, /createTaskCommand/, /NOT atomic/],
+  "src/modules/customers/presentation/pages/Customer360Page.tsx": [/completeTaskCommand/, /logActivityCommand/],
+  "src/modules/organizations/presentation/pages/OrganizationAccountDetailPage.tsx": [/logActivityCommand/],
+  "src/modules/contacts/presentation/hooks/useContactDetailController.tsx": [/createTaskCommand/, /completeTaskCommand/, /rescheduleTaskCommand/],
 };
 for (const [relative, patterns] of Object.entries(requiredEvidence)) {
   const source = read(relative);
@@ -180,6 +188,18 @@ const forbiddenPresentationSymbols = [
   "executeDealRecycle(",
   "executeReturnCreditRefund(",
   "executeMutationCommand(",
+  // Task/Activity and Deal snapshot bridges: a production-ready canonical command
+  // exists for every one of these, so presentation use is always a defect.
+  "createTaskSnapshot",
+  "completeTaskSnapshot",
+  "cancelTaskSnapshot",
+  "reassignTaskSnapshot",
+  "rescheduleTaskSnapshot",
+  "logActivitySnapshot",
+  "createDealSnapshot",
+  "reassignDealSnapshot",
+  "updateDealForecastSnapshot",
+  "importDealsDemoSample",
 ];
 const presentationFiles = walkAllFiles(path.join(root, "src"))
   .filter((file) => /[\\/]presentation[\\/].*\.(ts|tsx)$/.test(file));
@@ -191,6 +211,149 @@ for (const file of presentationFiles) {
   }
 }
 assert.deepEqual(violations, [], `Presentation must use application/workflow command boundaries:\n${violations.join("\n")}`);
+
+// ---------------------------------------------------------------------------
+// Pinned inventory of presentation-layer local mutations that remain ONLY because
+// their backend contract is still BLOCKED. Each entry fails closed in connected
+// mode; none is a silent local fallback. The inventory is compared exactly, so a
+// NEW blocked local mutation fails this gate until it is justified and pinned, and
+// an entry that disappears (because the backend contract landed) must be removed.
+// ---------------------------------------------------------------------------
+const blockedPresentationMutations: Record<string, readonly { symbol: string; blockedBy: string }[]> = {
+  "src/modules/contacts/presentation/hooks/useContacts.ts": [
+    { symbol: "updateContacts", blockedBy: "DEC-COMMAND-SEMANTICS / updateContact" },
+  ],
+  "src/modules/contacts/presentation/hooks/useContactListController.tsx": [
+    { symbol: "saveContactSnapshot", blockedBy: "DEC-COMMAND-SEMANTICS / createContact" },
+    { symbol: "upsertContactOrganizationRelationshipWorkflow", blockedBy: "DEC-WORKFLOW-CONTACT-ORGANIZATION-RELATIONSHIP (WF-02)" },
+  ],
+  "src/modules/contacts/presentation/hooks/useContactDetailController.tsx": [
+    { symbol: "executeContactOpportunityCreation", blockedBy: "DEC-WORKFLOW-CONTACT-OPPORTUNITY-CREATION (WF-01)" },
+  ],
+  "src/modules/customers/presentation/list/ExistingCustomerOnboardingModal.tsx": [
+    { symbol: "onboardExistingCustomerWorkflow", blockedBy: "DEC-WORKFLOW-CUSTOMER-ONBOARDING (WF-07)" },
+  ],
+  "src/modules/customers/presentation/pages/Customer360Page.tsx": [
+    { symbol: "updateCustomerLifecycleSnapshot", blockedBy: "DEC-COMMAND-SEMANTICS / updateCustomerLifecycle" },
+    { symbol: "completeCustomerOnboardingSnapshot", blockedBy: "DEC-COMMAND-SEMANTICS / completeCustomerOnboarding" },
+    { symbol: "updateCustomerIdentityFrom360", blockedBy: "DEC-WORKFLOW-CUSTOMER-IDENTITY (WF-06)" },
+  ],
+  "src/modules/organizations/presentation/detail/OrganizationEditModal.tsx": [
+    { symbol: "saveOrganizationAccountSnapshot", blockedBy: "DEC-COMMAND-SEMANTICS / updateOrganization" },
+  ],
+  "src/modules/organizations/presentation/list/OrganizationCreateModal.tsx": [
+    { symbol: "createOrganizationWithRepresentativeWorkflow", blockedBy: "DEC-WORKFLOW-CONTACT-ORGANIZATION-RELATIONSHIP (WF-02)" },
+  ],
+  "src/modules/organizations/presentation/detail/OrganizationRepresentativeModal.tsx": [
+    { symbol: "createOrganizationRepresentativeWorkflow", blockedBy: "DEC-WORKFLOW-CONTACT-ORGANIZATION-RELATIONSHIP (WF-02)" },
+  ],
+};
+const trackedBlockedSymbols = [...new Set(Object.values(blockedPresentationMutations).flatMap((entries) => entries.map((entry) => entry.symbol)))];
+const observedBlocked: string[] = [];
+for (const file of presentationFiles) {
+  const source = fs.readFileSync(file, "utf8");
+  const relative = path.relative(root, file).split(path.sep).join("/");
+  for (const symbol of trackedBlockedSymbols) {
+    if (source.includes(symbol)) observedBlocked.push(`${relative} -> ${symbol}`);
+  }
+}
+const pinnedBlocked = Object.entries(blockedPresentationMutations)
+  .flatMap(([relative, entries]) => entries.map((entry) => `${relative} -> ${entry.symbol}`));
+assert.deepEqual(
+  observedBlocked.slice().sort(),
+  pinnedBlocked.slice().sort(),
+  "Blocked presentation mutations must match the pinned backend-blocked inventory exactly.",
+);
+
+// Every pinned entry must still be genuinely blocked: no pinned symbol may point at
+// an OpenAPI operation that has become production-ready without being rewired.
+const openApiDocument = JSON.parse(fs.readFileSync(path.join(root, "docs/api/openapi.json"), "utf8")) as {
+  paths: Record<string, Record<string, { operationId?: string; "x-contract-status"?: string }>>;
+};
+const readyOperationIds = new Set<string>();
+for (const item of Object.values(openApiDocument.paths)) {
+  for (const operation of Object.values(item)) {
+    if (!operation?.operationId) continue;
+    if ((operation["x-contract-status"] ?? "PRODUCTION_CONTRACT_READY") === "PRODUCTION_CONTRACT_READY") {
+      readyOperationIds.add(operation.operationId);
+    }
+  }
+}
+for (const operationId of ["createContact", "updateContact", "createOrganization", "updateOrganization", "onboardExistingCustomer", "updateCustomerLifecycle", "completeCustomerOnboarding"]) {
+  assert.equal(
+    readyOperationIds.has(operationId),
+    false,
+    `${operationId} is now production-ready: rewire its presentation flow and remove it from the blocked inventory.`,
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Blocked-action UX: a backend-blocked business action must never fail silently and
+// must never leak an architecture error code or decision id to an end user.
+// ---------------------------------------------------------------------------
+const availabilityHelper = read("src/shared/operations/backendAvailability.ts");
+for (const code of [
+  "CONNECTED_LOCAL_WRITE_FORBIDDEN",
+  "CONNECTED_OPERATION_REQUIRES_BACKEND",
+  "CONNECTED_COMMAND_CONTRACT_BLOCKED",
+  "CONNECTED_COMMAND_REQUIRES_ASYNC_AUTHORITY",
+]) {
+  assert.ok(availabilityHelper.includes(code), `Backend-availability helper must recognize ${code}.`);
+}
+assert.doesNotMatch(availabilityHelper, /DEC-[A-Z-]+/u, "User-facing copy must not embed decision ids.");
+
+const blockedUxEvidence: Record<string, RegExp[]> = {
+  "src/modules/contacts/presentation/hooks/useContactListController.tsx": [
+    /isContactConnectedMode/, /refuseUnavailableContactWrite/, /backendUnavailableMessage/,
+  ],
+  "src/modules/contacts/presentation/hooks/useContactDetailController.tsx": [
+    /isContactConnectedMode/, /refuseUnavailableContactWrite/, /backendUnavailableMessage/,
+  ],
+  "src/modules/customers/presentation/pages/Customer360Page.tsx": [/formatOperationUnavailableError/],
+};
+for (const [relative, patterns] of Object.entries(blockedUxEvidence)) {
+  const source = read(relative);
+  for (const pattern of patterns) assert.match(source, pattern, `${relative} must report blocked actions to the user (${pattern}).`);
+}
+
+// No presentation file may render a raw architecture error code.
+const leakedCodes = presentationFiles.flatMap((file) => {
+  const source = fs.readFileSync(file, "utf8");
+  return ["CONNECTED_OPERATION_REQUIRES_BACKEND", "CONNECTED_COMMAND_CONTRACT_BLOCKED", "CONNECTED_COMMAND_REQUIRES_ASYNC_AUTHORITY"]
+    .filter((code) => source.includes(code))
+    .map((code) => `${path.relative(root, file)} -> ${code}`);
+});
+assert.deepEqual(leakedCodes, [], `Presentation must not embed architecture error codes:\n${leakedCodes.join("\n")}`);
+
+// ---------------------------------------------------------------------------
+// Non-atomic Deal+Task flows must report partial success, never total failure.
+// ---------------------------------------------------------------------------
+const partialFailureEvidence: Record<string, RegExp[]> = {
+  "src/modules/deals/presentation/hooks/useDealPipelineController.ts": [
+    /Opportunity created, but its next-action Task was not created/,
+    /was updated\. Its next-action Task was not created/,
+  ],
+  "src/modules/contacts/presentation/hooks/useContactListController.tsx": [
+    /was created\. Its follow-up Task was not created/,
+  ],
+  "src/modules/organizations/presentation/detail/OrganizationCreateOpportunityModal.tsx": [
+    /was created\. Its next-action Task was not created/,
+  ],
+};
+for (const [relative, patterns] of Object.entries(partialFailureEvidence)) {
+  const source = read(relative);
+  for (const pattern of patterns) assert.match(source, pattern, `${relative} must report Deal+Task partial success (${pattern}).`);
+}
+
+// Retry safety: every Task activation keeps a deterministic idempotency key.
+assert.match(read("src/workflows/work-activation/index.ts"), /idempotencyKey: `task\.create:\$\{intentId\}`/u, "Deal next-action Task activation must stay replay-safe.");
+assert.match(read("src/modules/contacts/presentation/hooks/useContactListController.tsx"), /idempotencyKey: `task\.create:\$\{followUpTaskId\}`/u, "Contact follow-up Task must stay replay-safe.");
+
+// Product Picker must be outcome-gated on the authoritative Deal command.
+const dealDialogs = read("src/modules/deals/presentation/views/DealDetailDialogs.tsx");
+assert.match(dealDialogs, /handleApplyLineItems\(nextLines\)\.then\(\(applied\) => \{/u, "Product Picker must await the Deal command outcome.");
+assert.match(dealDialogs, /if \(applied\) setIsProductPickerOpen\(false\)/u, "Product Picker must stay open when the Deal command fails.");
+assert.doesNotMatch(dealDialogs, /setDeals\(/u, "Product Picker must not write the Deal projection locally.");
 
 const directStorageOrNetwork = presentationFiles.flatMap((file) => {
   const source = fs.readFileSync(file, "utf8");

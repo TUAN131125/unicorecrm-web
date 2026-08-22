@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { existsSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import { repositoryRoot } from "../../../scripts/quality/core/repo-context.mjs";
+import { walkAllFiles } from "../../../scripts/quality/core/filesystem.mjs";
 
 const root = repositoryRoot;
 const requiredFiles = [
@@ -83,6 +84,36 @@ assert.match(workActivation, /return createTaskCommand\(/u, "AI-confirmed Task c
 assert.doesNotMatch(workActivation, /export function createAiSuggestedTask/u, "AI Task creation must not keep a synchronous browser snapshot path");
 const generatedCommands = read("src/platform/api/contracts/generatedProductionCommandRegistry.ts");
 assert.doesNotMatch(generatedCommands, /"task\./u, "Dedicated Task commands must not enter the generic mutation router");
+
+// Connected-reachable UI must never mutate Tasks or Activities through the
+// demo-only synchronous snapshot bridge. Those helpers stay exported for the demo
+// runtimes and demo-mode branches, but presentation may not reach them.
+const TASK_SNAPSHOT_MUTATIONS = [
+  "createTaskSnapshot",
+  "completeTaskSnapshot",
+  "cancelTaskSnapshot",
+  "reassignTaskSnapshot",
+  "rescheduleTaskSnapshot",
+  "logActivitySnapshot",
+] as const;
+const presentationTaskViolations: string[] = [];
+for (const file of walkAllFiles(join(root, "src"))) {
+  if (!/[\\/]presentation[\\/].*\.(ts|tsx)$/.test(file)) continue;
+  const source = readFileSync(file, "utf8");
+  for (const symbol of TASK_SNAPSHOT_MUTATIONS) {
+    if (source.includes(symbol)) presentationTaskViolations.push(`${relative(root, file)} -> ${symbol}`);
+  }
+}
+assert.deepEqual(
+  presentationTaskViolations,
+  [],
+  `Presentation must use the async Task/Activity commands:\n${presentationTaskViolations.join("\n")}`,
+);
+
+// work-activation must activate the Deal next action through the authoritative command.
+assert.match(workActivation, /export async function ensureDealNextActionTask/u, "Deal next-action activation must be an async authoritative command");
+assert.doesNotMatch(workActivation, /createTaskSnapshot/u, "Deal next-action activation must not use the demo snapshot bridge");
+assert.match(workActivation, /NOT ATOMIC WITH THE DEAL COMMAND/u, "The missing atomic Deal+Task backend workflow must stay documented");
 
 console.log(`Tasks & Activities API boundary: PASS (${requiredOperations.length} authoritative operations).`);
 

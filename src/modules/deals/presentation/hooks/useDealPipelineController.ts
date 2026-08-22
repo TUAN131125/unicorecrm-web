@@ -387,7 +387,24 @@ export function useDealPipelineController() {
       }],
     });
     const created = createdOutcome.data;
-    if (nextActionAt) ensureDealNextActionTask(created);
+    // Deal is already committed. Task activation is a separate authoritative command
+    // (no atomic Deal+Task backend workflow exists), so a failure here must be
+    // reported instead of being swallowed into a "created successfully" message.
+    if (nextActionAt) {
+      try {
+        await ensureDealNextActionTask(created);
+      } catch (error) {
+        notifyProduct(
+          locale === "vi"
+            ? `Đã tạo cơ hội nhưng chưa tạo được công việc kế tiếp: ${formatApplicationError(error, { locale })}`
+            : `Opportunity created, but its next-action Task was not created: ${formatApplicationError(error, { locale })}`,
+          "danger",
+          { actionLabel: locale === "vi" ? "Mở chi tiết" : "Open record", onAction: () => navigate(`/deals/${created.id}`), durationMs: 10000 },
+        );
+        setIsAddModalOpen(false);
+        return;
+      }
+    }
     const ownerName = ownership?.visibleOwners.find((owner) => owner.memberId === created.ownerId)?.displayName || created.ownerId;
     notifyProduct(
       locale === "vi" ? `Đã tạo cơ hội và giao cho ${ownerName}.` : `Opportunity created and assigned to ${ownerName}.`,
@@ -490,7 +507,21 @@ export function useDealPipelineController() {
         nextActionSummary: form.nextActionSummary,
         taskId,
       });
-      ensureDealNextActionTask(nextActionOutcome.data);
+      // Forecast + next-action are already committed. WF-21 is blocked, so Task
+      // activation is a separate command: report the partial outcome and stop before
+      // the remaining owner/stage commands rather than failing silently.
+      try {
+        await ensureDealNextActionTask(nextActionOutcome.data);
+      } catch (error) {
+        notifyProduct(
+          locale === "vi"
+            ? `Đã cập nhật cơ hội "${editingDeal.name}". Chưa tạo được công việc kế tiếp: ${formatApplicationError(error, { locale })}. Các thay đổi còn lại chưa được áp dụng.`
+            : `Opportunity "${editingDeal.name}" was updated. Its next-action Task was not created: ${formatApplicationError(error, { locale })}. Remaining changes were not applied.`,
+          "danger",
+          { actionLabel: locale === "vi" ? "Mở chi tiết" : "Open record", onAction: () => navigate(`/deals/${editingDeal.id}`), durationMs: 10000 },
+        );
+        return;
+      }
     }
 
     if (ownerChanged && handoverReason) {

@@ -98,7 +98,7 @@ assert.ok(model.quotes.every((item) => item.customerId === customer.id || relati
 assert.ok(model.orders.every((item) => item.customerId === customer.id || relationshipRefKey(item.buyerRef) === relationshipRefKey(customer.relationshipRef)), "Customer 360 Purchases must include the first purchase history.");
 
 const dealId = `deal_customer_contract_${Date.now()}`;
-const deal = createDealForCustomer({
+const deal = await createDealForCustomer({
   customerId: customer.id,
   id: dealId,
   name: "Customer contract opportunity",
@@ -108,9 +108,15 @@ const deal = createDealForCustomer({
   actorName: "Customer Contract",
   now: "2026-07-09T00:00:00.000Z",
 });
-assert.equal(deal.customerId, customer.id, "Customer-created Deal must carry customerId.");
+// `CreateDealRequest` carries no customerId: the authoritative Deal links to the
+// Customer through buyerRef, and Deal.customerId is a legacy compatibility
+// projection the frontend must not manufacture after an authoritative create.
 assert.deepEqual(deal.buyerRef, customer.relationshipRef, "Customer-created Deal must inherit relationshipRef without re-selection.");
-assert.ok(getDealsSnapshot().some((item) => item.id === dealId), "Customer quick action must create the Deal in the Deals module repository.");
+assert.ok(
+  buildCustomer360ReadModel(customer).deals.some((item) => item.id === deal.id),
+  "Customer-created Deal must resolve back to its Customer through canonical relationship lineage.",
+);
+assert.ok(getDealsSnapshot().some((item) => item.id === deal.id), "Customer quick action must create the Deal in the Deals module repository.");
 
 const suffix = Date.now();
 const care = createCustomerCareCardWithTask({

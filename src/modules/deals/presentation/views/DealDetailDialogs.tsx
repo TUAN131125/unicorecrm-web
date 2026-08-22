@@ -37,7 +37,6 @@ export function DealDetailDialogs({
     crmConfig,
     orders,
     deals,
-    setDeals,
     stageConfigs,
     dealId,
     navigate,
@@ -93,6 +92,7 @@ export function DealDetailDialogs({
     isTerminal,
     handleNextStage,
     handleUpdateLineItem,
+    handleApplyLineItems,
     handleAddSampleItem,
     handleDeleteLineItem,
     getLostReasonLabel,
@@ -309,19 +309,11 @@ export function DealDetailDialogs({
               };
             });
 
-            const newAmount = nextLines.reduce((sum, item) => {
-              const discountedPrice = (item.unitPrice ?? item.unitPriceSnapshot ?? 0) * (1 - item.discountPercent / 100);
-              return sum + (discountedPrice * item.quantity);
-            }, 0);
-
-            setDeals(prev => prev.map(d => d.id === deal.id ? {
-              ...d,
-              lineItems: nextLines,
-              amount: newAmount,
-              updatedAt: new Date().toISOString()
-            } : d));
-
-            setIsProductPickerOpen(false);
+            // Outcome-gated: the picker only closes after `deal.update` commits, so a
+            // failed update never looks like a successful line-item change.
+            void handleApplyLineItems(nextLines).then((applied) => {
+              if (applied) setIsProductPickerOpen(false);
+            });
           }}
         />
       )}

@@ -107,6 +107,16 @@ assert.match(detailController, /closeDealLostCommand/u, "Deal detail loss must u
 assert.match(detailController, /logActivityViaApi/u, "Deal timeline writes must be owned by the Tasks activity API");
 assert.doesNotMatch(detailController, /executeDealRecycleCommand/u, "Deal detail must not retain frontend-owned recycle orchestration");
 
+// Customer-initiated opportunity creation must use the authoritative Deal command.
+// WF-04 customer-commercial-actions is still BLOCKED with
+// connectedFrontendCoordinatorAllowed:false, so the Deal and its follow-up Task are
+// two authoritative commands and the non-atomicity must stay documented.
+const customerCommercialActions = read("src/workflows/customer-commercial-actions/index.ts");
+assert.match(customerCommercialActions, /createDealCommand/u, "Customer opportunity creation must use the typed Deal API command");
+assert.match(customerCommercialActions, /createTaskCommand/u, "Customer opportunity follow-up must use the typed Task API command");
+assert.doesNotMatch(customerCommercialActions, /createDealSnapshot|createTaskSnapshot/u, "Customer opportunity creation must not use demo snapshot bridges");
+assert.match(customerCommercialActions, /NOT atomic/u, "The missing atomic Customer-commercial-action transaction must stay documented");
+
 const forecastOperation = operations.get("getDealForecastSummary");
 assert.equal(forecastOperation["x-transaction-boundary"], "READ_ONLY_COMPOSED_PROJECTION");
 assert.equal(forecastOperation["x-money-policy"], "DECIMAL_STRING_MULTI_CURRENCY_BUCKETS");

@@ -1,3 +1,4 @@
+import { formatApplicationError, backendUnavailableMessage, formatOperationUnavailableError } from "@/shared/operations";
 import React, { useState, useEffect } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ShieldAlert, Sparkles } from "lucide-react";
@@ -33,14 +34,14 @@ import { getInvoicesSnapshot, getReceivablesSnapshot, subscribeToInvoices } from
 import { getPaymentsSnapshot, subscribeToPayments } from "@/modules/payments";
 import { getShippingSnapshot, subscribeToShipping } from "@/modules/shipping";
 import { getReturnsSnapshot, subscribeToReturns } from "@/modules/returns";
-import { completeTaskSnapshot, createTaskSnapshot, rescheduleTaskSnapshot, type NoteActivityDraft, type Task, type TaskActivitySnapshot } from "@/modules/tasks";
+import { completeTaskCommand, createTaskCommand, rescheduleTaskCommand, type NoteActivityDraft, type Task, type TaskActivitySnapshot } from "@/modules/tasks";
 import type { SupportCase } from "@/modules/support";
 import { relationshipRefKey, type RelationshipRef } from "@/platform/identity";
 import { getAuthSessionSnapshot } from "@/platform/identity-auth";
 import { listWorkspaceMemberDirectory, resolveWorkspaceMemberName } from "@/platform/member-directory";
 import { getDisplayOrdersForContact } from "@/modules/orders";
 import { useContacts } from "../hooks/useContacts";
-import { archiveContactCommand, getContactPreference, restoreContactCommand, setContactPreference } from "../../public/contacts";
+import { archiveContactCommand, getContactPreference, isContactConnectedMode, restoreContactCommand, setContactPreference } from "../../public/contacts";
 import {
   createContactOpportunityCreationRuntime,
   executeContactOpportunityCreation,
@@ -159,6 +160,22 @@ export function useContactDetailController(props: ContactDetailPageProps) {
 
   // Toast / Notification
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [pendingTaskId, setPendingTaskId] = useState<string | null>(null);
+
+  /**
+   * Contact record writes (profile edits, timeline/activity projections, opportunity
+   * creation) have no production contract yet: `createContact`/`updateContact` are
+   * BLOCKED and WF-01 contact-opportunity-creation is blocked with
+   * `connectedFrontendCoordinatorAllowed: false`. In connected mode these fail closed
+   * inside the contacts projection, so the action is refused up front with a
+   * user-readable reason instead of throwing out of the event handler.
+   */
+  const contactWritesUnavailable = isContactConnectedMode();
+  const refuseUnavailableContactWrite = (action: string): boolean => {
+    if (!contactWritesUnavailable) return false;
+    showToast(backendUnavailableMessage({ locale, action }));
+    return true;
+  };
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
@@ -291,6 +308,7 @@ export function useContactDetailController(props: ContactDetailPageProps) {
 
   // Saving edited fields
   const handleSaveContact = (updatedContact: Contact) => {
+    if (refuseUnavailableContactWrite(locale === "vi" ? "Cập nhật hồ sơ Liên hệ" : "Updating the Contact profile")) return;
     setContacts(prev => prev.map(c => {
       if (c.id === contact.id) {
         const currentActivities = c.activities || [];
@@ -314,7 +332,9 @@ export function useContactDetailController(props: ContactDetailPageProps) {
   };
 
   // Creating opportunity wizard trigger with full CRM details
-  const handleCreateOpportunity = (dealData: {
+  // WF-01 contact-opportunity-creation is blocked with
+  // connectedFrontendCoordinatorAllowed:false, so connected mode cannot compose it.
+  const handleCreateOpportunity = async (dealData: {
     name: string;
     amount: number;
     productId: string;
@@ -338,6 +358,7 @@ export function useContactDetailController(props: ContactDetailPageProps) {
     note: string;
     lineItems?: any[];
   }) => {
+    if (refuseUnavailableContactWrite(locale === "vi" ? "Tạo cơ hội từ Liên hệ" : "Creating an opportunity from this Contact")) return;
     const lineItemsArray = dealData.lineItems && dealData.lineItems.length > 0
       ? dealData.lineItems.map((li: any, idx: number) => ({
           id: `li_${Date.now()}_${idx}`,
@@ -451,7 +472,7 @@ export function useContactDetailController(props: ContactDetailPageProps) {
 
     if (followUpDueAt && followUpTaskId) {
       const actorId = currentMemberId || opportunityResult.deal.ownerId;
-      createTaskSnapshot({
+      await createTaskCommand({
         id: followUpTaskId,
         title: dealData.nextAction,
         description: dealData.demandSummary || undefined,
@@ -462,8 +483,12 @@ export function useContactDetailController(props: ContactDetailPageProps) {
         relationshipRef: contactRelationshipRef,
         recordRef: { moduleKey: "deals", recordId: opportunityResult.deal.id, label: opportunityResult.deal.name },
         sourceRef: { type: "CONTACT_DEAL_FOLLOW_UP", id: opportunityResult.deal.id },
+        dedupeKey: `contact-deal-follow-up:${opportunityResult.deal.id}:${followUpDueAt}`,
         actorId,
         actorName: resolveWorkspaceMemberName(actorId),
+      }, {
+        idempotencyKey: `task.create:${followUpTaskId}`,
+        correlationId: `deal:${opportunityResult.deal.id}`,
       });
     }
 
@@ -522,7 +547,8 @@ export function useContactDetailController(props: ContactDetailPageProps) {
     }
   };
 
-  const handleCompleteTask = (id: string) => {
+  const handleCompleteTask = async (id: string) => {
+    if (pendingTaskId) return;
     const task = canonicalTaskById.get(id);
     if (!task) return;
     const actorId = currentMemberId || contact.ownerId;
@@ -530,16 +556,24 @@ export function useContactDetailController(props: ContactDetailPageProps) {
       showToast(tx("contactDetail.toast.taskOwnerRequired", "Cần xác định người dùng hiện tại trước khi hoàn thành công việc."));
       return;
     }
-    completeTaskSnapshot(id, {
-      actorId,
-      actorName: resolveWorkspaceMemberName(actorId),
-      outcome: tx("contactDetail.activity.completedText", "Đã hoàn thành từ hồ sơ Contact."),
-    });
-    showToast(tx("contactDetail.toast.taskCompleted", "Đã hoàn thành công việc thành công!"));
+    setPendingTaskId(id);
+    try {
+      await completeTaskCommand(id, {
+        actorId,
+        actorName: resolveWorkspaceMemberName(actorId),
+        outcome: tx("contactDetail.activity.completedText", "Đã hoàn thành từ hồ sơ Contact."),
+      });
+      showToast(tx("contactDetail.toast.taskCompleted", "Đã hoàn thành công việc thành công!"));
+    } catch (error) {
+      showToast(formatApplicationError(error, { locale }));
+    } finally {
+      setPendingTaskId(null);
+    }
   };
 
   // Interaction handlers for modular action modals
   const handleSaveQuickNote = (noteData: { title: string; body: string; type: string; pinned?: boolean; occurredAt?: string }) => {
+    if (refuseUnavailableContactWrite(locale === "vi" ? "Ghi chú nhanh" : "Saving a quick note")) return;
     const occurredAt = noteData.occurredAt || new Date().toISOString();
     const timestampStr = occurredAt.split("T")[0];
     const newNote = {
@@ -553,7 +587,8 @@ export function useContactDetailController(props: ContactDetailPageProps) {
     };
     setContactNotes(prev => [newNote, ...prev]);
 
-    // Append CRM activity
+    // Append CRM activity (blocked projection in connected mode; already reported above).
+    if (contactWritesUnavailable) return;
     setContacts(prev => prev.map(c => {
       if (contact && c.id === contact.id) {
         const currentActivities = c.activities || [];
@@ -579,7 +614,17 @@ export function useContactDetailController(props: ContactDetailPageProps) {
     setActiveTab("relationship", "notes");
   };
 
+  // The Task itself is already committed authoritatively by TaskCreateModal. Only the
+  // Contact timeline projection is blocked, so report that partial outcome precisely.
   const handleSaveTask = (task: Task) => {
+    if (contactWritesUnavailable) {
+      setShowTaskModal(false);
+      setActiveTab("work", "tasks");
+      showToast(locale === "vi"
+        ? "Đã tạo công việc. Chưa ghi được vào dòng thời gian Liên hệ vì máy chủ chưa hỗ trợ."
+        : "Task created. It could not be added to the Contact timeline yet because server support has not been released.");
+      return;
+    }
     setContacts((current) => current.map((item) => {
       if (item.id !== contact.id) return item;
       const currentActivities = item.activities || [];
@@ -599,7 +644,7 @@ export function useContactDetailController(props: ContactDetailPageProps) {
     setActiveTab("work", "tasks");
   };
 
-  const handleSaveMeeting = (meetingData: {
+  const handleSaveMeeting = async (meetingData: {
     title: string;
     startDate: string;
     startTime: string;
@@ -611,10 +656,17 @@ export function useContactDetailController(props: ContactDetailPageProps) {
     agenda?: string;
     reminder?: boolean;
   }) => {
+    // Contact timeline projection is blocked; the authoritative Task command is not.
+    if (contactWritesUnavailable) {
+      showToast(locale === "vi"
+        ? "Đã tạo công việc cho cuộc họp. Chưa ghi được vào dòng thời gian Liên hệ vì máy chủ chưa hỗ trợ."
+        : "The meeting Task was created. It could not be added to the Contact timeline yet because server support has not been released.");
+    }
     const assigneeId = resolveTaskAssigneeId(meetingData.owner, members, currentMemberId || contact.ownerId);
     const actorId = currentMemberId || contact.ownerId || assigneeId;
-    createTaskSnapshot({
-      id: `task_contact_meeting_${Date.now()}`,
+    const meetingTaskId = `task_contact_meeting_${toDueAt(meetingData.startDate, meetingData.startTime)}`;
+    await createTaskCommand({
+      id: meetingTaskId,
       title: `${tx("contactDetail.activityPanel.filters.meeting", "Họp")}: ${meetingData.title}`,
       description: [meetingData.agenda, meetingData.channel, meetingData.location].filter(Boolean).join(" · ") || undefined,
       priority: "HIGH",
@@ -624,11 +676,16 @@ export function useContactDetailController(props: ContactDetailPageProps) {
       relationshipRef: contactRelationshipRef,
       recordRef: { moduleKey: "contacts", recordId: contact.id, label: contact.fullName || contact.name },
       sourceRef: { type: "CONTACT_MEETING", id: contact.id },
+      dedupeKey: `contact-meeting:${contact.id}:${toDueAt(meetingData.startDate, meetingData.startTime)}`,
       actorId,
       actorName: resolveWorkspaceMemberName(actorId),
+    }, {
+      idempotencyKey: `task.create:${meetingTaskId}`,
+      correlationId: `contact:${contact.id}`,
     });
 
-    // Append CRM activity
+    // Append CRM activity (blocked projection in connected mode; already reported above).
+    if (contactWritesUnavailable) return;
     setContacts(prev => prev.map(c => {
       if (contact && c.id === contact.id) {
         const currentActivities = c.activities || [];
@@ -654,15 +711,16 @@ export function useContactDetailController(props: ContactDetailPageProps) {
     setActiveTab("work", "tasks");
   };
 
-  const handleSaveLogCall = (callData: {
+  const handleSaveLogCall = async (callData: {
     direction: string;
     result: string;
     summary: string;
     nextFollowUpDate?: string;
     createFollowUpTask?: boolean;
   }) => {
-    // Append CRM activity
-    setContacts(prev => prev.map(c => {
+    // The Contact timeline projection is blocked in connected mode, but the
+    // authoritative follow-up Task command below is not: skip only the projection.
+    if (!contactWritesUnavailable) setContacts(prev => prev.map(c => {
       if (contact && c.id === contact.id) {
         const currentActivities = c.activities || [];
         const newActivity = {
@@ -685,8 +743,9 @@ export function useContactDetailController(props: ContactDetailPageProps) {
     if (callData.createFollowUpTask && callData.nextFollowUpDate) {
       const assigneeId = currentMemberId || contact.ownerId || members[0]?.memberId || "";
       if (assigneeId) {
-        createTaskSnapshot({
-          id: `task_contact_call_${Date.now()}`,
+        const callTaskId = `task_contact_call_${toDueAt(callData.nextFollowUpDate)}`;
+        await createTaskCommand({
+          id: callTaskId,
           title: `${tx("contactDetail.activity.followUp", "Theo sát cuộc gọi")}: ${callData.summary.substring(0, 30)}...`,
           priority: "NORMAL",
           assigneeId,
@@ -695,14 +754,22 @@ export function useContactDetailController(props: ContactDetailPageProps) {
           relationshipRef: contactRelationshipRef,
           recordRef: { moduleKey: "contacts", recordId: contact.id, label: contact.fullName || contact.name },
           sourceRef: { type: "CONTACT_CALL_FOLLOW_UP", id: contact.id },
+          dedupeKey: `contact-call-follow-up:${contact.id}:${toDueAt(callData.nextFollowUpDate)}`,
           actorId: currentMemberId || assigneeId,
           actorName: resolveWorkspaceMemberName(currentMemberId || assigneeId),
+        }, {
+          idempotencyKey: `task.create:${callTaskId}`,
+          correlationId: `contact:${contact.id}`,
         });
       }
     }
 
     setShowLogCallModal(false);
-    showToast(tx("contactDetail.toast.callLoggedSuccessfully", "Ghi nhận cuộc gọi thành công."));
+    showToast(contactWritesUnavailable
+      ? (locale === "vi"
+        ? "Đã tạo công việc theo dõi cuộc gọi. Chưa ghi được vào dòng thời gian Liên hệ vì máy chủ chưa hỗ trợ."
+        : "The call follow-up Task was created. It could not be added to the Contact timeline yet because server support has not been released.")
+      : tx("contactDetail.toast.callLoggedSuccessfully", "Ghi nhận cuộc gọi thành công."));
   };
 
   const handleSendEmail = (emailData: {
@@ -711,7 +778,9 @@ export function useContactDetailController(props: ContactDetailPageProps) {
     body: string;
     attachProposal?: boolean;
   }) => {
-    // Append CRM activity
+    if (refuseUnavailableContactWrite(locale === "vi" ? "Ghi email vào hồ sơ Liên hệ" : "Recording the email on the Contact")) return;
+    // Append CRM activity (blocked projection in connected mode; already reported above).
+    if (contactWritesUnavailable) return;
     setContacts(prev => prev.map(c => {
       if (contact && c.id === contact.id) {
         const currentActivities = c.activities || [];
@@ -751,7 +820,9 @@ export function useContactDetailController(props: ContactDetailPageProps) {
     phone: string;
     body: string;
   }) => {
-    // Append CRM activity
+    if (refuseUnavailableContactWrite(locale === "vi" ? "Ghi SMS vào hồ sơ Liên hệ" : "Recording the SMS on the Contact")) return;
+    // Append CRM activity (blocked projection in connected mode; already reported above).
+    if (contactWritesUnavailable) return;
     setContacts(prev => prev.map(c => {
       if (contact && c.id === contact.id) {
         const currentActivities = c.activities || [];
@@ -780,6 +851,7 @@ export function useContactDetailController(props: ContactDetailPageProps) {
 
   // Contact notes tab actions
   const handleCreateNote = (noteData: NoteActivityDraft) => {
+    if (refuseUnavailableContactWrite(locale === "vi" ? "Tạo ghi chú" : "Creating the note")) return;
     const occurredAt = new Date(noteData.occurredAt).toISOString();
     const timestampStr = occurredAt.split("T")[0];
     const newNote = {
@@ -815,6 +887,7 @@ export function useContactDetailController(props: ContactDetailPageProps) {
   };
 
   const handleUpdateNote = (id: string, noteData: { title: string; body: string; pinned?: boolean }) => {
+    if (refuseUnavailableContactWrite(locale === "vi" ? "Cập nhật ghi chú" : "Updating the note")) return;
     setContactNotes(prev => prev.map(n => n.id === id ? { ...n, ...noteData } : n));
     setContacts(prev => prev.map(c => {
       if (contact && c.id === contact.id) {
@@ -838,6 +911,7 @@ export function useContactDetailController(props: ContactDetailPageProps) {
   };
 
   const handleDeleteNote = (id: string) => {
+    if (refuseUnavailableContactWrite(locale === "vi" ? "Xóa ghi chú" : "Deleting the note")) return;
     setContactNotes(prev => prev.filter(n => n.id !== id));
     setContacts(prev => prev.map(c => {
       if (contact && c.id === contact.id) {
@@ -861,6 +935,7 @@ export function useContactDetailController(props: ContactDetailPageProps) {
   };
 
   const handleTogglePinNote = (id: string) => {
+    if (refuseUnavailableContactWrite(locale === "vi" ? "Ghim ghi chú" : "Pinning the note")) return;
     setContactNotes(prev => prev.map(n => n.id === id ? { ...n, pinned: !n.pinned } : n));
     showToast(tx("contactDetail.toast.notePinToggled", "Thay đổi trạng thái ghim ghi chú thành công."));
   };
@@ -873,6 +948,7 @@ export function useContactDetailController(props: ContactDetailPageProps) {
     description?: string;
     file?: File;
   }) => {
+    if (refuseUnavailableContactWrite(locale === "vi" ? "Tải tài liệu lên hồ sơ Liên hệ" : "Uploading the attachment")) return;
     const timestampStr = new Date().toISOString().split("T")[0];
     const newAttachment = {
       id: `att-${Date.now()}`,
@@ -907,6 +983,7 @@ export function useContactDetailController(props: ContactDetailPageProps) {
   };
 
   const handleDeleteAttachment = (id: string) => {
+    if (refuseUnavailableContactWrite(locale === "vi" ? "Xóa tài liệu" : "Deleting the attachment")) return;
     const att = contactAttachments.find(a => a.id === id);
     setContactAttachments(prev => prev.filter(a => a.id !== id));
 
@@ -1009,16 +1086,24 @@ export function useContactDetailController(props: ContactDetailPageProps) {
   };
 
   // Task updates always go through the canonical Tasks module.
-  const handleRescheduleTask = (id: string, newDate: string) => {
+  const handleRescheduleTask = async (id: string, newDate: string) => {
+    if (pendingTaskId) return;
     const task = canonicalTaskById.get(id);
     const actorId = currentMemberId || contact.ownerId;
     if (!task || !actorId) return;
-    rescheduleTaskSnapshot(id, {
-      dueAt: toDueAt(newDate, task.dueAt.includes("T") ? task.dueAt.split("T")[1]?.slice(0, 5) : undefined),
-      actorId,
-      actorName: resolveWorkspaceMemberName(actorId),
-    });
-    showToast(tx("contactDetail.toast.taskRescheduled", "Điều chỉnh lịch hạn xử lý công việc thành công!"));
+    setPendingTaskId(id);
+    try {
+      await rescheduleTaskCommand(id, {
+        dueAt: toDueAt(newDate, task.dueAt.includes("T") ? task.dueAt.split("T")[1]?.slice(0, 5) : undefined),
+        actorId,
+        actorName: resolveWorkspaceMemberName(actorId),
+      });
+      showToast(tx("contactDetail.toast.taskRescheduled", "Điều chỉnh lịch hạn xử lý công việc thành công!"));
+    } catch (error) {
+      showToast(formatApplicationError(error, { locale }));
+    } finally {
+      setPendingTaskId(null);
+    }
   };
 
   // Sum up totals for info calculations

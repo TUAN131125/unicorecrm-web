@@ -1,5 +1,5 @@
 import type { Deal } from "@/modules/deals";
-import { createTaskCommand, createTaskSnapshot, type RecordRef, type Task, type TaskPriority } from "@/modules/tasks";
+import { createTaskCommand, type RecordRef, type Task, type TaskPriority } from "@/modules/tasks";
 import type { MutationOutcome } from "@/shared/application";
 
 function safeDueAt(value?: string, fallbackHours = 24): string {
@@ -11,10 +11,27 @@ export function getDealNextActionTaskId(dealId: string, dueAt: string): string {
   return `task_deal_${dealId}_${dueAt.slice(0, 10)}`;
 }
 
-export function ensureDealNextActionTask(deal: Deal): Task | undefined {
+/**
+ * Activates the Deal "next action" as a real Task through the authoritative
+ * `task.create` command.
+ *
+ * NOT ATOMIC WITH THE DEAL COMMAND. No backend workflow operation exists that
+ * commits a Deal mutation and its next-action Task in one transaction: the command
+ * registry has `deal.create`, `deal.update-next-action` and `task.create` as three
+ * independent commands, and OpenAPI exposes no `/workflows/...` operation covering
+ * both. Callers must therefore await this and surface its failure instead of
+ * reporting the Deal operation as fully successful. Atomic Deal+Task activation
+ * remains a backend requirement.
+ *
+ * The Task identifier is server-assigned (`CreateTaskRequest` carries no `id`), so
+ * `getDealNextActionTaskId` is used only to derive a deterministic idempotency key
+ * and dedupe key; a repeated activation replays instead of creating a second Task.
+ */
+export async function ensureDealNextActionTask(deal: Deal): Promise<MutationOutcome<Task> | undefined> {
   if (!deal.nextActionAt || ["WON", "LOST"].includes(String(deal.stage))) return undefined;
-  return createTaskSnapshot({
-    id: getDealNextActionTaskId(deal.id, deal.nextActionAt),
+  const intentId = getDealNextActionTaskId(deal.id, deal.nextActionAt);
+  return createTaskCommand({
+    id: intentId,
     title: deal.nextActionSummary || `Next action for ${deal.name}`,
     description: `Keep the active Deal moving before ${new Date(deal.nextActionAt).toLocaleString()}.`,
     priority: "HIGH",
@@ -28,6 +45,9 @@ export function ensureDealNextActionTask(deal: Deal): Task | undefined {
     actorName: "Work Activation Workflow",
     correlationId: `deal:${deal.id}`,
     now: deal.createdAt,
+  }, {
+    idempotencyKey: `task.create:${intentId}`,
+    correlationId: `deal:${deal.id}`,
   });
 }
 

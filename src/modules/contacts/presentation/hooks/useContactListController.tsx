@@ -1,11 +1,12 @@
+import { backendUnavailableMessage, formatOperationUnavailableError } from "@/shared/operations";
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Contact } from "../../domain/model/contact.types";
-import { archiveContactCommand, restoreContactCommand, saveContactSnapshot } from "../../public/contacts";
+import { archiveContactCommand, isContactConnectedMode, restoreContactCommand, saveContactSnapshot } from "../../public/contacts";
 import { getOrganizationAccountsSnapshot } from "@/modules/organizations";
 import type { CustomerDisplay as Customer } from "@/modules/customers";
 import { createDealCommand, Deal, DealStage } from "@/modules/deals";
-import { createTaskSnapshot } from "@/modules/tasks";
+import { createTaskCommand } from "@/modules/tasks";
 import { getDealNextActionTaskId } from "@/workflows/work-activation";
 import { CRMActivity } from "@/shared/domain";
 import type { CrmWorkspaceConfig } from "@/platform/workspace-config";
@@ -226,6 +227,7 @@ export function useContactListController({
   };
   // Bulk actions operations
   const handleBulkChangeOwner = (targetOwnerId: string, remark: string) => {
+    if (refuseUnavailableContactWrite(locale === "vi" ? "Bàn giao hàng loạt" : "Bulk owner reassignment")) return;
     const updatedContacts = contacts.map(c => {
       if (selectedContactIds.includes(c.id)) {
         const handoverAct: CRMActivity = {
@@ -253,6 +255,7 @@ export function useContactListController({
     showToast(tx("contactList.toastMessage.bulkReassigned", `Đã bàn giao ${selectedContactIds.length} liên hệ thành công`, { count: selectedContactIds.length }));
   };
   const handleBulkChangeStatus = (newStatus: string) => {
+    if (refuseUnavailableContactWrite(locale === "vi" ? "Đổi trạng thái hàng loạt" : "Bulk status change")) return;
     const updatedContacts = contacts.map(c => {
       if (selectedContactIds.includes(c.id)) {
         const statusAct: CRMActivity = {
@@ -323,6 +326,7 @@ export function useContactListController({
     });
   };
   const handleBulkDelete = () => {
+    if (refuseUnavailableContactWrite(locale === "vi" ? "Xóa liên hệ hàng loạt" : "Bulk contact delete")) return;
     requestConfirmation(
       tx("contactList.confirm.bulkDeleteTitle", "Xóa liên hệ hàng loạt"),
       tx("contactList.confirm.bulkDelete", `Bạn có chắc chắn muốn xóa ${selectedContactIds.length} liên hệ được chọn?`, { count: selectedContactIds.length }),
@@ -335,6 +339,7 @@ export function useContactListController({
     );
   };
   const handleBulkArchive = () => {
+    if (refuseUnavailableContactWrite(locale === "vi" ? "Lưu trữ hàng loạt" : "Bulk archive")) return;
     requestConfirmation(
       tx("contactList.confirm.bulkArchiveTitle", "Lưu trữ liên hệ hàng loạt"),
       tx("contactList.confirm.bulkArchive", `Bạn có chắc muốn lưu trữ ${selectedContactIds.length} liên hệ đã chọn?`, { count: selectedContactIds.length }),
@@ -352,6 +357,7 @@ export function useContactListController({
     );
   };
   const handleBulkAddTags = () => {
+    if (refuseUnavailableContactWrite(locale === "vi" ? "Thêm nhãn hàng loạt" : "Bulk tagging")) return;
     requestPrompt(
       tx("contactList.prompt.addTagsTitle", "Thêm thẻ nhãn hàng loạt"),
       tx("contactList.prompt.addTags", "Nhập các thẻ nhãn mới (ngăn cách bằng dấu phẩy):"),
@@ -373,6 +379,7 @@ export function useContactListController({
     );
   };
   const handleBulkDoNotContact = () => {
+    if (refuseUnavailableContactWrite(locale === "vi" ? "Chặn liên hệ hàng loạt" : "Bulk do-not-contact")) return;
     requestPrompt(
       tx("contactList.prompt.doNotContactReasonTitle", "Yêu cầu chặn liên hệ"),
       tx("contactList.prompt.doNotContactReason", "Xác nhận chặn / Yêu cầu dừng liên hệ cho các mục đã chọn. Nhập lý do chặn:"),
@@ -426,8 +433,22 @@ export function useContactListController({
       toastTimerRef.current = undefined;
     }, 4000);
   };
+
+  /**
+   * Contact record writes have no production contract yet (`createContact` /
+   * `updateContact` are BLOCKED, and no bulk Contact operation exists at all). In
+   * connected mode they fail closed inside the contacts projection, so the action is
+   * refused up front with a user-readable reason.
+   */
+  const contactWritesUnavailable = isContactConnectedMode();
+  const refuseUnavailableContactWrite = (action: string): boolean => {
+    if (!contactWritesUnavailable) return false;
+    showToast(backendUnavailableMessage({ locale, action }));
+    return true;
+  };
   // 1. Core Logic: Add New Contact callback
   const handleSaveContact = (data: ContactCreateInput) => {
+    if (refuseUnavailableContactWrite(locale === "vi" ? "Tạo liên hệ" : "Creating a Contact")) return;
     const code = data.contactCode.trim() || `CN${String(contacts.length + 1).padStart(4, "0")}`;
     const tagArray = data.tagsString.split(",").map((tag) => tag.trim()).filter(Boolean);
     const createdAt = new Date().toISOString();
@@ -531,6 +552,7 @@ export function useContactListController({
   };
   // 2. Action Handlers safely complying with CRM Workflows
   const handleCall = (contact: Contact) => {
+    if (refuseUnavailableContactWrite(locale === "vi" ? "Ghi cuộc gọi vào hồ sơ Liên hệ" : "Recording the call on the Contact")) return;
     if (contact.phone) {
       showToast(t("contactList.toast.calling", { name: contact.name || contact.phone }));
       // Record call activity in-app
@@ -561,6 +583,7 @@ export function useContactListController({
     }
   };
   const handleEmail = (contact: Contact) => {
+    if (refuseUnavailableContactWrite(locale === "vi" ? "Ghi email vào hồ sơ Liên hệ" : "Recording the email on the Contact")) return;
     if (contact.email) {
       showToast(t("contactList.toast.draftingEmail", { email: contact.email }));
       const emailAct: CRMActivity = {
@@ -683,8 +706,12 @@ export function useContactListController({
       ]
     };
     const createdDeal = (await createDealCommand(newDeal)).data;
+    // Authoritative Task command. NOT atomic with the Deal command above (WF-21 is
+    // blocked): the Deal is already committed, so a Task failure must be reported as a
+    // partial outcome naming what committed and what did not — never as total failure.
     if (followUpDueAt && followUpTaskId) {
-      createTaskSnapshot({
+      try {
+        await createTaskCommand({
         id: followUpTaskId,
         title: oppData.followUpTaskTitle,
         description: oppData.demandSummary || undefined,
@@ -695,9 +722,29 @@ export function useContactListController({
         relationshipRef: createdDeal.buyerRef,
         recordRef: { moduleKey: "deals", recordId: createdDeal.id, label: createdDeal.name },
         sourceRef: { type: "CONTACT_DEAL_FOLLOW_UP", id: createdDeal.id },
-        actorId: createdDeal.ownerId,
-        actorName: dealOwner,
-      });
+          dedupeKey: `contact-deal-follow-up:${createdDeal.id}:${followUpDueAt}`,
+          actorId: createdDeal.ownerId,
+          actorName: dealOwner,
+        }, {
+          idempotencyKey: `task.create:${followUpTaskId}`,
+          correlationId: `deal:${createdDeal.id}`,
+        });
+      } catch (error) {
+        // Deterministic idempotency key: retrying the same follow-up replays rather
+        // than creating a second Task. The committed Deal must not be rolled back.
+        showToast(locale === "vi"
+          ? `Đã tạo cơ hội "${createdDeal.name}". Chưa tạo được công việc theo dõi: ${formatOperationUnavailableError(error, { locale })}`
+          : `Opportunity "${createdDeal.name}" was created. Its follow-up Task was not created: ${formatOperationUnavailableError(error, { locale })}`);
+        setSelectedContactForDeal(null);
+        return;
+      }
+    }
+    if (contactWritesUnavailable) {
+      showToast(locale === "vi"
+        ? `Đã tạo cơ hội "${createdDeal.name}". Chưa cập nhật được trạng thái Liên hệ vì máy chủ chưa hỗ trợ.`
+        : `Opportunity "${createdDeal.name}" was created. The Contact status could not be updated yet because server support has not been released.`);
+      setSelectedContactForDeal(null);
+      return;
     }
     // Update contact status after creating an opportunity.
     const createOppAct: CRMActivity = {

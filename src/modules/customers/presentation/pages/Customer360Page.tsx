@@ -1,3 +1,4 @@
+import { formatApplicationError, formatOperationUnavailableError } from "@/shared/operations";
 import React, { useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useNavigate } from "react-router-dom";
@@ -9,9 +10,9 @@ import { getAuthSessionSnapshot } from "@/platform/identity-auth";
 import { CAPABILITIES, useEffectiveAccess } from "@/platform/access-control";
 import { listWorkspaceMemberDirectory, resolveWorkspaceMemberName } from "@/platform/member-directory";
 import {
-  completeTaskSnapshot,
+  completeTaskCommand,
   TaskCreateModal,
-  logActivitySnapshot,
+  logActivityCommand,
   type Task,
 } from "@/modules/tasks";
 import { createDealForCustomer } from "@/workflows/customer-commercial-actions";
@@ -92,6 +93,11 @@ export const Customer360Page: React.FC<Customer360PageProps> = ({
     null,
   );
   const [archiveOpen, setArchiveOpen] = useState(false);
+  const [savingActivity, setSavingActivity] = useState(false);
+  const [completingTaskId, setCompletingTaskId] = useState<string | null>(null);
+  const [creatingDeal, setCreatingDeal] = useState(false);
+  const [savingIdentity, setSavingIdentity] = useState(false);
+  const [completingOnboarding, setCompletingOnboarding] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [customerAttachments, setCustomerAttachments] = useState<RecordAttachmentItem[]>([]);
 
@@ -122,8 +128,14 @@ export const Customer360Page: React.FC<Customer360PageProps> = ({
 
   const openTaskModal = () => setTaskOpen(true);
 
+  // Customer identity + lifecycle have no production contract yet (WF-06 and
+  // `updateCustomerLifecycle` are blocked). Connected mode fails closed inside the
+  // workflow; the user must be told the action is unavailable, never left guessing.
   const saveCustomerProfile = (draft: CustomerEditDraft) => {
-    updateCustomerIdentityFrom360(customer.id, {
+    if (savingIdentity) return;
+    setSavingIdentity(true);
+    try {
+      updateCustomerIdentityFrom360(customer.id, {
       displayName: draft.displayName,
       email: draft.email,
       phone: draft.phone,
@@ -168,29 +180,40 @@ export const Customer360Page: React.FC<Customer360PageProps> = ({
       organizationNotes: draft.organizationNotes,
       actorId: currentMemberId || "system",
     });
-    updateCustomerLifecycleSnapshot(customer.id, {
-      status: draft.status,
-      health: draft.health,
-      careOwnerId: draft.careOwnerId || undefined,
-      segment: draft.segment.trim() || undefined,
-      tags: splitTags(draft.tags),
-      nextCareAt: toOptionalBusinessIso(draft.nextCareAt),
-      lastCareAt: toOptionalBusinessIso(draft.lastCareAt),
-      tier: draft.tier,
-      serviceLevel: draft.serviceLevel,
-      careCadenceDays: Math.max(1, Math.min(365, Number(draft.careCadenceDays) || 30)),
-    });
-    setEditOpen(false);
-    showToast(
-      isVi
-        ? "Đã cập nhật Customer và ghi dữ liệu về đúng module sở hữu."
-        : "Customer updated through the correct owning modules.",
-    );
+      updateCustomerLifecycleSnapshot(customer.id, {
+        status: draft.status,
+        health: draft.health,
+        careOwnerId: draft.careOwnerId || undefined,
+        segment: draft.segment.trim() || undefined,
+        tags: splitTags(draft.tags),
+        nextCareAt: toOptionalBusinessIso(draft.nextCareAt),
+        lastCareAt: toOptionalBusinessIso(draft.lastCareAt),
+        tier: draft.tier,
+        serviceLevel: draft.serviceLevel,
+        careCadenceDays: Math.max(1, Math.min(365, Number(draft.careCadenceDays) || 30)),
+      });
+      setEditOpen(false);
+      showToast(
+        isVi
+          ? "Đã cập nhật Customer và ghi dữ liệu về đúng module sở hữu."
+          : "Customer updated through the correct owning modules.",
+      );
+    } catch (error) {
+      showToast(formatOperationUnavailableError(error, {
+        locale,
+        action: isVi ? "Cập nhật hồ sơ Customer" : "Updating the Customer profile",
+      }));
+    } finally {
+      setSavingIdentity(false);
+    }
   };
 
-  const createDeal = (draft: DealFormDraft) => {
+  const createDeal = async (draft: DealFormDraft) => {
+    if (creatingDeal) return;
     const lineItems = mapSelectedPickerItemsToDealLineItems(draft.lineItems);
-    const deal = createDealForCustomer({
+    setCreatingDeal(true);
+    try {
+      const deal = await createDealForCustomer({
       customerId: customer.id,
       id: crypto.randomUUID(),
       name: draft.name,
@@ -206,16 +229,22 @@ export const Customer360Page: React.FC<Customer360PageProps> = ({
         dueAt: draft.nextActionAt,
         description: draft.demandSummary || undefined,
       } : undefined,
-      notes: [draft.demandSummary, draft.painPoints, draft.notes].filter(Boolean).join(" · "),
-      interestedProducts: draft.lineItems.map((item) => item.product.id),
-      lineItems,
-    });
-    setDealOpen(false);
-    navigate(`/deals/${deal.id}`);
+        notes: [draft.demandSummary, draft.painPoints, draft.notes].filter(Boolean).join(" · "),
+        interestedProducts: draft.lineItems.map((item) => item.product.id),
+        lineItems,
+      });
+      setDealOpen(false);
+      navigate(`/deals/${deal.id}`);
+    } catch (error) {
+      showToast(formatApplicationError(error, { locale }));
+    } finally {
+      setCreatingDeal(false);
+    }
   };
 
 
-  const saveQuickActivity = (draft: CustomerQuickActivityDraft) => {
+  const saveQuickActivity = async (draft: CustomerQuickActivityDraft) => {
+    if (savingActivity) return;
     if (!currentMemberId) {
       showToast(
         isVi
@@ -224,32 +253,40 @@ export const Customer360Page: React.FC<Customer360PageProps> = ({
       );
       return;
     }
-    logActivitySnapshot({
-      id: crypto.randomUUID(),
-      type: draft.type,
-      subject: draft.subject,
-      body: draft.body,
-      actorId: currentMemberId,
-      actorName: currentActorName,
-      occurredAt: draft.occurredAt,
-      customerId: customer.id,
-      relationshipRef: customer.relationshipRef,
-      recordRef: {
-        moduleKey: "customers",
-        recordId: customer.id,
-        label: model.identity.displayName,
-      },
-      sourceRef: { type: "CUSTOMER_360", id: customer.id },
-    });
-    setQuickAction(null);
-    showToast(
-      isVi
-        ? "Đã ghi hoạt động vào timeline Customer 360."
-        : "Activity logged to the Customer 360 timeline.",
-    );
+    setSavingActivity(true);
+    try {
+      await logActivityCommand({
+        id: crypto.randomUUID(),
+        type: draft.type,
+        subject: draft.subject,
+        body: draft.body,
+        actorId: currentMemberId,
+        actorName: currentActorName,
+        occurredAt: draft.occurredAt,
+        customerId: customer.id,
+        relationshipRef: customer.relationshipRef,
+        recordRef: {
+          moduleKey: "customers",
+          recordId: customer.id,
+          label: model.identity.displayName,
+        },
+        sourceRef: { type: "CUSTOMER_360", id: customer.id },
+      });
+      setQuickAction(null);
+      showToast(
+        isVi
+          ? "Đã ghi hoạt động vào timeline Customer 360."
+          : "Activity logged to the Customer 360 timeline.",
+      );
+    } catch (error) {
+      showToast(formatApplicationError(error, { locale }));
+    } finally {
+      setSavingActivity(false);
+    }
   };
 
-  const completeTask = (task: Task) => {
+  const completeTask = async (task: Task) => {
+    if (completingTaskId) return;
     if (!currentMemberId) {
       showToast(
         isVi
@@ -258,14 +295,21 @@ export const Customer360Page: React.FC<Customer360PageProps> = ({
       );
       return;
     }
-    completeTaskSnapshot(task.id, {
-      actorId: currentMemberId,
-      actorName: currentActorName,
-      outcome: isVi
-        ? "Hoàn thành từ Customer 360"
-        : "Completed from Customer 360",
-    });
-    showToast(isVi ? "Đã hoàn thành công việc." : "Task completed.");
+    setCompletingTaskId(task.id);
+    try {
+      await completeTaskCommand(task.id, {
+        actorId: currentMemberId,
+        actorName: currentActorName,
+        outcome: isVi
+          ? "Hoàn thành từ Customer 360"
+          : "Completed from Customer 360",
+      });
+      showToast(isVi ? "Đã hoàn thành công việc." : "Task completed.");
+    } catch (error) {
+      showToast(formatApplicationError(error, { locale }));
+    } finally {
+      setCompletingTaskId(null);
+    }
   };
 
   const openSource = () =>
@@ -313,9 +357,21 @@ export const Customer360Page: React.FC<Customer360PageProps> = ({
           <Button
             type="button"
             variant="primary"
+            disabled={completingOnboarding}
             onClick={() => {
-              completeCustomerOnboardingSnapshot(customer.id, currentMemberId || "system");
-              showToast(isVi ? "Đã hoàn tất onboarding Customer." : "Customer onboarding completed.");
+              if (completingOnboarding) return;
+              setCompletingOnboarding(true);
+              try {
+                completeCustomerOnboardingSnapshot(customer.id, currentMemberId || "system");
+                showToast(isVi ? "Đã hoàn tất onboarding Customer." : "Customer onboarding completed.");
+              } catch (error) {
+                showToast(formatOperationUnavailableError(error, {
+                  locale,
+                  action: isVi ? "Hoàn tất onboarding Customer" : "Completing Customer onboarding",
+                }));
+              } finally {
+                setCompletingOnboarding(false);
+              }
             }}
           >
             {isVi ? "Hoàn tất onboarding" : "Complete onboarding"}

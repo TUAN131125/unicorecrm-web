@@ -31,7 +31,7 @@ import { Input, Select, RecordTabTransition } from "@/shared/components/ui";
 // Import modular tabs
 import { getPurchasedProductsForContact } from "@/modules/customers";
 import { CustomerOrder } from "@/modules/orders";
-import { completeTaskSnapshot, rescheduleTaskSnapshot, type TaskActivitySnapshot } from "@/modules/tasks";
+import { type TaskActivitySnapshot } from "@/modules/tasks";
 import type { SupportCase } from "@/modules/support";
 import { relationshipRefKey, type RelationshipRef } from "@/platform/identity";
 import { getAuthSessionSnapshot } from "@/platform/identity-auth";
@@ -39,11 +39,6 @@ import { listWorkspaceMemberDirectory, resolveWorkspaceMemberName } from "@/plat
 import { getDisplayOrdersForContact } from "@/modules/orders";
 import { useContacts } from "../hooks/useContacts";
 import { getContactPreference, setContactPreference } from "../../public/contacts";
-import {
-  createContactOpportunityCreationRuntime,
-  executeContactOpportunityCreation,
-} from "@/workflows/contact-opportunity-creation";
-
 import { findCustomerForContact, getCustomerDisplayNameForContact } from "../model/contactCustomerLookup";
 
 interface ContactDetailPageProps {

@@ -1,6 +1,6 @@
 import { createMutationMetadata, executeMutationCommand, type MutationCommandMetadata, type MutationOutcome } from "@/shared/application";
 import type { Contact } from "../domain/model/contact.types";
-import { contactPreferences, contactRepository } from "../application/composition/contactApplicationServices";
+import { contactPreferences, contactRepository, isContactConnectedApiRuntime } from "../application/composition/contactApplicationServices";
 import {
   anonymizeContact,
   archiveContact,
@@ -9,6 +9,9 @@ import {
   updateContactCollection,
   type ContactCollectionUpdater,
 } from "../application/commands/contactRepositoryCommands";
+
+/** True when Contact data is served by the backend, where local Contact writes are refused. */
+export function isContactConnectedMode(): boolean { return isContactConnectedApiRuntime(); }
 
 export function getContactsSnapshot(): Contact[] {
   return contactRepository.list();

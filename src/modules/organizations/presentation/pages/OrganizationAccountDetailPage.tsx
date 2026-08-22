@@ -31,7 +31,7 @@ import { getSupportCasesSnapshot, subscribeToSupportCases } from "@/modules/supp
 import {
   TaskCreateModal,
   getTaskActivitySnapshot,
-  logActivitySnapshot,
+  logActivityCommand,
   subscribeToTaskActivity,
 } from "@/modules/tasks";
 import { formatMoneyDto } from "@/shared/money";
@@ -62,7 +62,6 @@ import {
 } from "../model/organizationAccountView";
 import {
   getOrganizationAccountsSnapshot,
-  saveOrganizationAccountSnapshot,
   subscribeToOrganizationAccounts,
   type OrganizationAccount,
 } from "../../public/api";
@@ -110,6 +109,7 @@ export const OrganizationAccountDetailPage: React.FC = () => {
   );
   const [attachments, setAttachments] = useState<RecordAttachmentItem[]>([]);
   const [message, setMessage] = useState<string | null>(null);
+  const [savingActivity, setSavingActivity] = useState(false);
   const [endRepresentativeContactId, setEndRepresentativeContactId] = useState<string | null>(null);
   const [endRepresentativeReason, setEndRepresentativeReason] = useState("");
 
@@ -254,26 +254,34 @@ export const OrganizationAccountDetailPage: React.FC = () => {
 
   const openTaskModal = () => setTaskOpen(true);
 
-  const saveQuickActivity = (draft: OrganizationQuickActivityDraft) => {
+  const saveQuickActivity = async (draft: OrganizationQuickActivityDraft) => {
+    if (savingActivity) return;
     if (!currentMemberId) {
       setMessage(text("Phiên đăng nhập chưa có member hợp lệ.", "The active session has no valid member."));
       return;
     }
-    logActivitySnapshot({
-      id: crypto.randomUUID(),
-      type: draft.type,
-      subject: draft.subject,
-      body: draft.body,
-      actorId: currentMemberId,
-      actorName: currentActorName,
-      occurredAt: draft.occurredAt,
-      customerId: linkedCustomer?.id,
-      relationshipRef: { type: "ORGANIZATION_ACCOUNT", id: account.id },
-      recordRef: { moduleKey: "organizations", recordId: account.id, label: account.displayName },
-      sourceRef: { type: "ORGANIZATION_DETAIL", id: account.id },
-    });
-    setQuickAction(null);
-    setMessage(text("Đã ghi hoạt động vào timeline tổ chức.", "Activity added to the organization timeline."));
+    setSavingActivity(true);
+    try {
+      await logActivityCommand({
+        id: crypto.randomUUID(),
+        type: draft.type,
+        subject: draft.subject,
+        body: draft.body,
+        actorId: currentMemberId,
+        actorName: currentActorName,
+        occurredAt: draft.occurredAt,
+        customerId: linkedCustomer?.id,
+        relationshipRef: { type: "ORGANIZATION_ACCOUNT", id: account.id },
+        recordRef: { moduleKey: "organizations", recordId: account.id, label: account.displayName },
+        sourceRef: { type: "ORGANIZATION_DETAIL", id: account.id },
+      });
+      setQuickAction(null);
+      setMessage(text("Đã ghi hoạt động vào timeline tổ chức.", "Activity added to the organization timeline."));
+    } catch (error) {
+      setMessage(formatApplicationError(error, { locale }));
+    } finally {
+      setSavingActivity(false);
+    }
   };
 
   const uploadAttachment = (data: RecordAttachmentUploadData) => {

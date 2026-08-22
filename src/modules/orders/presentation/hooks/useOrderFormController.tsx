@@ -30,6 +30,7 @@ import type { CustomerOrder, OrderAdjustment, OrderItem } from "../../domain/mod
 import { calculateOrderPricing, normalizeOrderItem } from "../../domain/rules/orderCalculations";
 import { assertOrderCommercialMutationAllowed } from "../../domain/rules/orderCommercialIntegrity";
 import { normalizeSourceLineItemToOrderItem, resolveOrderSourceFromQuote } from "../../application/queries/orderQueries";
+import { isOrderConnectedMode } from "../../public/orders";
 import { OrderLineItemsEditor } from "../components/OrderLineItemsEditor";
 import { OrderStatusBadge } from "../components/OrderStatusBadge";
 import { getOrderFulfillmentFieldErrors, orderRequiresShipping, resolveOrderLineFulfillmentKind } from "../../domain/rules/orderFulfillment";
@@ -698,6 +699,14 @@ export function useOrderFormController(props: OrderFormPageProps) {
     }
     setValidationError(null);
 
+    // An accepted Quote must be converted by `order.convert-accepted-quote-to-draft`
+    // so the backend owns the immutable commercial snapshot and the Order identity.
+    // Generic direct-order authoring must never be the accepted-Quote creation path.
+    if (!isEditMode && searchParams.get("quoteId") && isOrderConnectedMode()) {
+      return showValidationError(locale === "vi"
+        ? "Đơn hàng từ Báo giá đã chấp nhận phải được tạo bằng lệnh chuyển đổi trên trang chi tiết Báo giá, không phải bằng biểu mẫu tạo Đơn hàng trực tiếp."
+        : "An accepted Quote must be converted from the Quote detail page. Direct Order authoring cannot create an Order from an accepted Quote.", "order-source-context");
+    }
     if (existingLinkedOrder) return showValidationError(locale === "vi" ? `Báo giá này đã được chuyển thành đơn ${existingLinkedOrder.orderNumber}.` : `This Quote has already been converted to Order ${existingLinkedOrder.orderNumber}.`, "order-source-context");
     if (sourceValidationError) return showValidationError(sourceValidationError, "order-source-context");
     if (!buyerRef?.id) return showValidationError(locale === "vi" ? "Vui lòng chọn bên mua là cá nhân hoặc tổ chức." : "Select a contact or organization as the buyer.", "order-buyer");

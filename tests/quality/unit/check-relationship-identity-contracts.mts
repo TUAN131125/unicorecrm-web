@@ -53,7 +53,7 @@ assert.ok(!report.includes("signals: RelationshipIntelligenceSignal[]"), "Relati
 assert.ok(!report.includes("actions: RelationshipIntelligenceAction[]"), "Relationship report must not require a fixed actions block");
 
 const contactDetail = read("src/modules/contacts/presentation/pages/ContactDetailPage.tsx");
-for (const marker of ["relationshipRefKey", "canonicalQuotes", "taskActivity.tasks", "createTaskSnapshot", "completeTaskSnapshot", "rescheduleTaskSnapshot"]) {
+for (const marker of ["relationshipRefKey", "canonicalQuotes", "taskActivity.tasks", "createTaskCommand", "completeTaskCommand", "rescheduleTaskCommand"]) {
   assert.ok(contactDetail.includes(marker), `Contact detail canonical integration must contain ${marker}`);
 }
 for (const forbidden of ["payments.obligations", "displayInvoices", "Proposal_CloudSuite_Enterprise.pdf", "INV-2026-004", "QT-2026NL-114", "tk-1", "act-init-task"]) {
