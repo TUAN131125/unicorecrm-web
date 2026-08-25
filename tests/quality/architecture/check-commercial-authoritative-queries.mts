@@ -85,6 +85,30 @@ for (const [relativePath, ...patterns] of expectedSources) {
   for (const pattern of patterns) assert.match(source, pattern, `${relativePath} is missing ${pattern}.`);
 }
 
+// The `onScopeChange: () => replaceX([])` shapes required above are only safe because
+// the two shared scope hooks classify a workspace switch as a projection eviction rather
+// than an authoritative local write. Without that classification the connected projection
+// guard rejects every one of them at runtime, so this gate would otherwise be mandating a
+// pattern the runtime refuses. Enforced here so the caller contract and the runtime
+// contract cannot drift apart.
+const scopeResetHooks = [
+  "src/shared/operations/useModuleAuthoritativeResource.ts",
+  "src/modules/leads/presentation/hooks/useLeadAuthoritativeResource.ts",
+] as const;
+for (const relativePath of scopeResetHooks) {
+  const source = fs.readFileSync(path.join(root, relativePath), "utf8");
+  assert.match(
+    source,
+    /runWorkspaceScopeReset\(\(\)\s*=>\s*options\.onScopeChange\?\.\(\)\)/u,
+    `${relativePath} must evict the previous workspace cache inside runWorkspaceScopeReset.`,
+  );
+  assert.doesNotMatch(
+    source,
+    /^\s*options\.onScopeChange\?\.\(\);\s*$/mu,
+    `${relativePath} must not invoke onScopeChange outside the projection reset scope.`,
+  );
+}
+
 const authoritativeDetailRoutes = [
   ["src/modules/customers/detail-route.tsx", /getCustomerDetailResource/, /AuthoritativeQueryBoundary/, /scopeKey:\s*workspace\.workspaceId/],
   ["src/modules/organizations/detail-route.tsx", /getOrganizationAccountDetailResource/, /AuthoritativeQueryBoundary/, /replaceOrganizationAccounts\(\[\]\)/],

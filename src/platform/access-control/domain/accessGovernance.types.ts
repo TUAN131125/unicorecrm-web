@@ -29,8 +29,16 @@ export interface AuthorizationContextProjection {
   productSpaces: Array<"crm" | "studio" | "people">;
   dataScopes: Record<string, DataScope>;
   fieldSecurity: Record<string, Record<string, FieldAccess>>;
-  /** Demo projections use the local policy default; connected projections remain fail-closed when a field is omitted. */
+  /**
+   * The access a resource/field pair carries when the authority declares no explicit
+   * entry for it. The backend contract is explicit-entry-only: an absent field-security
+   * policy means the field is visible and an absent data scope means WORKSPACE, so the
+   * connected projection declares those defaults rather than inventing a stricter rule
+   * than the server it mirrors.
+   */
   unlistedFieldAccess?: FieldAccess;
+  /** The data scope a resource carries when the authority declares no explicit entry. */
+  unlistedDataScope?: DataScope;
   evaluatedAt: string;
 }
 
@@ -50,8 +58,16 @@ export interface WorkspaceAccessDirectory {
 export interface AccessGovernanceSnapshot {
   workspaceId: string;
   revision: number;
+  /** GET /access/context. The authoritative capability/product-space grant for CRM runtime. */
   authorization: AuthorizationContextProjection;
-  directory: WorkspaceAccessDirectory;
+  /**
+   * GET /access/directory. The People & Access administration surface only. It is a
+   * deferred backend capability, so it is optional and its absence must never block
+   * CRM runtime.
+   */
+  directory?: WorkspaceAccessDirectory;
+  /** Set when the directory read failed or is unavailable in this deployment. */
+  directoryError?: string;
 }
 
 export interface AccessCommandOptions {
@@ -180,13 +196,13 @@ export function projectEffectiveAccess(context: AuthorizationContextProjection):
     can: (capability) => capabilities.has(capability),
     canAccessModule: (moduleKey) => { const capability = readCapabilityForModule(moduleKey); return capability ? capabilities.has(capability) : false; },
     canPerform: (moduleKey, action) => { const capability = capabilityForAction(moduleKey, action); return capability ? capabilities.has(capability) : false; },
-    getDataScope: (resourceKey) => context.dataScopes[resourceKey] ?? "CUSTOM",
+    getDataScope: (resourceKey) => context.dataScopes[resourceKey] ?? context.unlistedDataScope ?? "CUSTOM",
     canAccessRecord: (resourceKey, record) => {
       const readCapability = readCapabilityForModule(resourceKey) ?? `${resourceKey}.read`;
       if (!capabilities.has(readCapability) || !record || typeof record !== "object") return false;
       const value = record as Record<string, unknown>;
       if (typeof value.workspaceId === "string" && value.workspaceId !== context.workspaceId) return false;
-      const scope = context.dataScopes[resourceKey] ?? "CUSTOM";
+      const scope = context.dataScopes[resourceKey] ?? context.unlistedDataScope ?? "CUSTOM";
       if (scope === "WORKSPACE") return true;
       if (scope !== "OWN") return false;
       return [value.ownerId, value.assigneeId, value.createdBy, value.assignedTo].includes(context.memberId);

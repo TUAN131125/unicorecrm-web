@@ -90,7 +90,8 @@ const note = await api.createCreditNote({
   amount: money("20", "VND"),
   idempotencyKey: "credit-note",
 });
-assert.equal(note.state, "ISSUED");
+assert.equal(note.creditNote.state, "ISSUED");
+assert.equal(note.evidence.authority, "demo");
 
 const retryDraft = await api.createDraft({ ...baseInput, creationIntentId: "create-intent-002", idempotencyKey: "invoice-retry" });
 const failed = recordInvoiceIssueFailure(repo, retryDraft.id, {
@@ -99,5 +100,6 @@ const failed = recordInvoiceIssueFailure(repo, retryDraft.id, {
   now: "2026-07-15T00:00:00.000Z",
 });
 const retried = await api.retryIssue(failed.id, { expectedVersion: failed.version });
-assert.equal(retried.lifecycleState, "ISSUED");
+assert.equal(retried.invoice.lifecycleState, "ISSUED");
+assert.equal(retried.evidence.authority, "demo");
 console.log("Invoice domain contracts: PASS");

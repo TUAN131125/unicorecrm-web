@@ -16,6 +16,7 @@ import {
 } from "@/platform/access-control";
 import { usePlatformState } from "@/platform/application-state";
 import { useI18n } from "@/i18n";
+import { formatApplicationError } from "@/shared/operations";
 import { Button, Modal, PageHeader } from "@/shared/components/ui";
 import { MailPlus, Plus, ShieldCheck, UserPlus } from "lucide-react";
 import { MemberAccessModal } from "../components/MemberAccessModal";
@@ -89,7 +90,12 @@ export const UsersPermissionsPage: React.FC = () => {
       await applyAccessGovernanceMutation(activeWorkspace.workspaceId, result);
       if (successMessage) setMessage({ tone: "success", text: successMessage });
     } catch (error) {
-      setMessage({ tone: "error", text: error instanceof Error ? error.message : text("Không thể cập nhật quyền truy cập.", "Could not update access control.") });
+      // Raw exception text can be an internal diagnostic; the central formatter owns the
+      // safe copy and falls back to a category sentence for anything unrecognised.
+      setMessage({ tone: "error", text: formatApplicationError(error, {
+        locale,
+        fallbackMessage: text("Không thể cập nhật quyền truy cập.", "Could not update access control."),
+      }) });
     }
   };
 

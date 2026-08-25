@@ -14,7 +14,8 @@ import {
   Wrench,
 } from "lucide-react";
 import { useI18n } from "@/i18n";
-import { getConfiguredProductTypes, saveConfiguredProductTypes, type ConfiguredProductType } from "@/modules/products";
+import { unavailableFeatureMessage } from "@/shared/operations";
+import { getConfiguredProductTypes, saveConfiguredProductTypes, type ConfiguredProductType, isProductConfigurationSaveUnavailable } from "@/modules/products";
 import { CAPABILITIES, useEffectiveAccess } from "@/platform/access-control";
 import { cn } from "@/shared/lib/classnames/cn";
 import {
@@ -63,6 +64,7 @@ function newType(): ConfiguredProductType {
 export function ProductTypesView() {
   const { locale } = useI18n();
   const text = (vi: string, en: string) => locale === "vi" ? vi : en;
+  const [unavailableNotice, setUnavailableNotice] = React.useState<string | null>(null);
   const canConfigure = useEffectiveAccess().can(CAPABILITIES.STUDIO_CONFIGURE);
   const [source, setSource] = React.useState(() => getConfiguredProductTypes());
   const [draft, setDraft] = React.useState(() => structuredClone(source));
@@ -113,6 +115,12 @@ export function ProductTypesView() {
   };
   const save = () => {
     if (validationIssues.length > 0) return;
+    // `/products/configuration/types` writes are BLOCKED, so connected mode cannot persist
+    // this configuration authoritatively.
+    if (isProductConfigurationSaveUnavailable()) {
+      setUnavailableNotice(unavailableFeatureMessage({ vi: "Chưa thể lưu loại sản phẩm", en: "Product types cannot be saved yet" }, { locale }));
+      return;
+    }
     saveConfiguredProductTypes(draft);
     const next = getConfiguredProductTypes();
     setSource(next);
@@ -137,7 +145,8 @@ export function ProductTypesView() {
       dirty={dirty}
       actions={<><StudioButton tone="accent" icon={<Plus size={15} />} disabled={!canConfigure} onClick={add}>{text("Thêm loại", "Add type")}</StudioButton><StudioButton tone="primary" icon={<Save size={15} />} disabled={!canConfigure || !dirty || validationIssues.length > 0} onClick={save}>{text("Lưu", "Save")}</StudioButton></>}
     >
-      {!canConfigure ? <p className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{text("Bạn chỉ có quyền xem cấu hình.", "You have read-only access to configuration.")}</p> : null}
+      {unavailableNotice ? <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{unavailableNotice}</p> : null}
+            {!canConfigure ? <p className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{text("Bạn chỉ có quyền xem cấu hình.", "You have read-only access to configuration.")}</p> : null}
 
       <StudioMetricsGrid>
         <StudioMetricCard label={text("Loại hoạt động", "Active types")} value={`${activeTypes.length}/${draft.length}`} description={text("Được hiển thị trong biểu mẫu và bộ chọn sản phẩm.", "Available in product forms and pickers.")} icon={<Box size={17} />} tone="violet" />

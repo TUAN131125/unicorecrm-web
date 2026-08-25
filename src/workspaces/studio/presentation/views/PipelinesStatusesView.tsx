@@ -13,7 +13,8 @@ import {
   Workflow,
 } from "lucide-react";
 import { useI18n } from "@/i18n";
-import { getDealPipelines, replaceDealPipelines, subscribeToDealStages, type DealPipelineDefinition } from "@/modules/deals";
+import { unavailableFeatureMessage } from "@/shared/operations";
+import { getDealPipelines, replaceDealPipelines, subscribeToDealStages, type DealPipelineDefinition, isDealPipelineConfigurationSaveUnavailable } from "@/modules/deals";
 import { CAPABILITIES, useEffectiveAccess } from "@/platform/access-control";
 import { useSubscribableSnapshot } from "@/platform/react";
 import { ConfirmDialog } from "@/shared/components/ui";
@@ -79,6 +80,7 @@ function createStage(order: number): PipelineStage {
 export function PipelinesStatusesView() {
   const { t, locale } = useI18n();
   const text = (vi: string, en: string) => locale === "vi" ? vi : en;
+  const [unavailableNotice, setUnavailableNotice] = React.useState<string | null>(null);
   const access = useEffectiveAccess();
   const source = useSubscribableSnapshot(getDealPipelines, subscribeToDealPipelineSnapshot);
   const canConfigure = access.can(CAPABILITIES.STUDIO_CONFIGURE);
@@ -129,6 +131,12 @@ export function PipelinesStatusesView() {
   };
   const save = () => {
     if (validationIssues.length > 0) return;
+    // Every `/crm-configuration/pipelines` write operation is BLOCKED, so connected mode has
+    // no authoritative pipeline write to route this to.
+    if (isDealPipelineConfigurationSaveUnavailable()) {
+      setUnavailableNotice(unavailableFeatureMessage({ vi: "Chưa thể lưu cấu hình pipeline", en: "The pipeline configuration cannot be saved yet" }, { locale }));
+      return;
+    }
     setDraft(replaceDealPipelines(draft));
   };
   const addPipeline = () => {
@@ -184,7 +192,8 @@ export function PipelinesStatusesView() {
 
   const content = (
     <>
-      {!canConfigure ? <p className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{t("studio.readOnly")}</p> : null}
+      {unavailableNotice ? <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{unavailableNotice}</p> : null}
+            {!canConfigure ? <p className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{t("studio.readOnly")}</p> : null}
       <StudioMetricsGrid>
         <StudioMetricCard label={text("Pipeline hoạt động", "Active pipelines")} value={`${activePipelines.length}/${draft.length}`} description={text("Dùng cho tạo mới và phân loại cơ hội.", "Available to new opportunities and routing.")} icon={<Workflow size={17} />} tone="violet" />
         <StudioMetricCard label={text("Giai đoạn đang mở", "Open stages")} value={allStages.filter((stage) => stage.isActive && stage.category === "open").length} description={text("Được dùng trên Kanban và dự báo.", "Used by Kanban and forecasting.")} icon={<CircleDot size={17} />} />

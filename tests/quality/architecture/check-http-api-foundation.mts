@@ -72,6 +72,50 @@ const unsafeClient = new FetchHttpClient({ baseUrl: "https://api.example.test", 
 await assert.rejects(unsafeClient.request({ operationId: "issueInvoice", method: "POST", path: "/invoices/inv/issue", body: issueRequest, retry: "idempotent" }));
 assert.equal(nonIdempotentAttempts, 1, "Mutation without Idempotency-Key is never retried.");
 
+let refreshToken = "expired-token";
+let refreshCalls = 0;
+const refreshHeaders: string[] = [];
+let refreshAttempts = 0;
+const refreshClient = new FetchHttpClient({
+  baseUrl: "https://api.example.test",
+  accessTokenProvider: { getAccessToken: () => refreshToken },
+  workspaceIdProvider: { getWorkspaceId: () => "ws" },
+  fetchImplementation: async (_input, init) => {
+    refreshAttempts += 1;
+    refreshHeaders.push(new Headers(init?.headers).get("Authorization") ?? "");
+    return refreshAttempts === 1
+      ? jsonResponse(problem("TOKEN_EXPIRED", 401, false, "corr-expired"), 401)
+      : jsonResponse([]);
+  },
+  onUnauthorized: async () => {
+    refreshCalls += 1;
+    refreshToken = "refreshed-token";
+    return true;
+  },
+  retryPolicy: { maxAttempts: 1 },
+});
+assert.deepEqual(await refreshClient.request<unknown[]>({ operationId: "listInvoices", method: "GET", path: "/invoices" }), []);
+assert.equal(refreshCalls, 1, "One canonical 401 coordinates one refresh attempt.");
+assert.deepEqual(refreshHeaders, ["Bearer expired-token", "Bearer refreshed-token"], "The replay rebuilds headers with the refreshed access token.");
+
+const semanticExtensionClient = new FetchHttpClient({
+  baseUrl: "https://api.example.test",
+  accessTokenProvider: { getAccessToken: () => "token" },
+  workspaceIdProvider: { getWorkspaceId: () => "ws" },
+  fetchImplementation: async () => jsonResponse({ advisory: true }),
+});
+assert.deepEqual(
+  await semanticExtensionClient.request({
+    operationId: "requestAiAdvisory",
+    method: "POST",
+    path: "/ai/advisories",
+    body: { question: "next?", locale: "en", contextReferences: { leadId: "lead-1" } },
+    contractAuthority: "semantic-extension",
+  }),
+  { advisory: true },
+  "A semantic extension uses its colocated validator instead of pretending to be historical OpenAPI.",
+);
+
 const noAuthClient = new FetchHttpClient({ baseUrl: "https://api.example.test", workspaceIdProvider: { getWorkspaceId: () => "ws" }, fetchImplementation });
 await assert.rejects(noAuthClient.request({ operationId: "listInvoices", method: "GET", path: "/invoices" }), (error: unknown) => error instanceof ApiClientError && error.code === "AUTHENTICATION_REQUIRED");
 const noWorkspaceClient = new FetchHttpClient({ baseUrl: "https://api.example.test", accessTokenProvider: { getAccessToken: () => "token" }, fetchImplementation });
@@ -129,13 +173,16 @@ assert.deepEqual(adapterRequests[1]?.body, {
   providerCode: "BANK_A",
   returnRouteKey: "payment-return",
 });
-const delivery = await invoiceAdapter.send("inv_001", {
+const sendResult = await invoiceAdapter.send("inv_001", {
   expectedVersion: 4,
   channel: "EMAIL",
   recipient: "buyer@example.test",
   idempotencyKey: "send-1",
 });
-assert.equal(delivery.id, "delivery-1");
+assert.equal(sendResult.delivery.id, "delivery-1");
+// The dedicated adapter must surface the backend's own mutation evidence.
+assert.equal(sendResult.evidence.authority, "backend");
+assert.equal(sendResult.evidence.commandId, issueResponse.commandId);
 assert.equal(adapterRequests[2]?.operationId, "sendInvoice");
 assert.equal(adapterRequests[2]?.idempotencyKey, "send-1");
 assert.equal(adapterRequests[2]?.expectedVersion, 4);

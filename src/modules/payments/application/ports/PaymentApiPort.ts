@@ -8,6 +8,39 @@ import type { RequestRefundCancellationCommand, RetryRefundIntentCommand } from 
 import type { ReconcilePaymentRecordCommand } from "../commands/paymentRecordCommands";
 import type { PaymentRecordDetailDto } from "../queries/paymentRecordDetail";
 
+/**
+ * Authoritative evidence returned by a dedicated Payment mutation.
+ *
+ * Mirrors `DealMutationEvidence`. The connected HTTP adapter fills every field from
+ * the backend mutation response envelope; the demo adapter marks itself
+ * `authority: "demo"`. Named `...CommandResult` because the generated OpenAPI client
+ * already exports `ManualPaymentMutationResult` for the wire payload.
+ */
+export interface PaymentMutationEvidence {
+  authority: "backend" | "demo" | "test";
+  commandId: string;
+  correlationId: string;
+  aggregateId: string;
+  aggregateType: string;
+  version: number;
+  occurredAt: string;
+  outcome: "COMMITTED" | "REPLAYED" | "DEMO_COMMITTED";
+  warnings: readonly string[];
+  emittedEventIds: readonly string[];
+  auditEvidenceIds: readonly string[];
+}
+
+export interface ManualPaymentCommandResult {
+  payment: PaymentRecord;
+  customerCredit?: CustomerCredit;
+  evidence: PaymentMutationEvidence;
+}
+
+export interface PaymentRequestDeliveryCommandResult {
+  intent: PaymentIntent;
+  evidence: PaymentMutationEvidence;
+}
+
 export interface RecordPaymentRequestDeliveryInput {
   expectedVersion: number;
   idempotencyKey: string;
@@ -36,13 +69,16 @@ export interface PaymentApiPort {
   getIntentStatus(intentId: string, signal?: AbortSignal): Promise<PaymentIntent>;
   cancelIntent(intentId: string, expectedVersion: number, signal?: AbortSignal): Promise<PaymentIntent>;
   retryIntent(intentId: string, command: RetryPaymentIntentCommand, signal?: AbortSignal): Promise<PaymentIntent>;
-  recordManualPayment(command: RecordManualPaymentCommand, signal?: AbortSignal): Promise<{ payment: PaymentRecord; customerCredit?: CustomerCredit }>;
+  // DEDICATED_MODULE_HTTP_ADAPTER in the canonical command registry: never routed
+  // through RoutedHttpMutationAuthority, so it carries backend evidence itself.
+  recordManualPayment(command: RecordManualPaymentCommand, signal?: AbortSignal): Promise<ManualPaymentCommandResult>;
   allocate(command: AllocatePaymentCommand, signal?: AbortSignal): Promise<{ allocations: InvoicePaymentAllocation[]; remainingAmount: { amount: string; currency: string } }>;
   reverseAllocation(allocationId: string, input: { expectedVersion: number; reasonCode?: string; reason?: string; actorId?: string }, signal?: AbortSignal): Promise<InvoicePaymentAllocation>;
   reconcilePaymentRecord(paymentRecordId: string, command: ReconcilePaymentRecordCommand, signal?: AbortSignal): Promise<PaymentRecord>;
   recordCodCustomerCollection(paymentRecordId: string, input: { expectedVersion: number; state: PaymentRecord["codCustomerCollectionState"]; evidenceMetadata?: Record<string, string>; now: string }, signal?: AbortSignal): Promise<PaymentRecord>;
   recordCodMerchantRemittance(paymentRecordId: string, input: { expectedVersion: number; state: PaymentRecord["codMerchantRemittanceState"]; evidenceMetadata?: Record<string, string>; now: string }, signal?: AbortSignal): Promise<PaymentRecord>;
-  recordPaymentRequestDelivery(intentId: string, command: RecordPaymentRequestDeliveryInput, signal?: AbortSignal): Promise<PaymentIntent>;
+  // DEDICATED_MODULE_HTTP_ADAPTER, as above.
+  recordPaymentRequestDelivery(intentId: string, command: RecordPaymentRequestDeliveryInput, signal?: AbortSignal): Promise<PaymentRequestDeliveryCommandResult>;
   createRefundIntent(command: CreateRefundIntentCommand, signal?: AbortSignal): Promise<RefundIntent>;
   getRefund(refundIntentId: string, signal?: AbortSignal): Promise<RefundIntent>;
   listRefundProviderAttempts(refundIntentId: string, signal?: AbortSignal): Promise<RefundProviderAttempt[]>;

@@ -57,6 +57,16 @@ export interface MutationCommandErrorOptions {
   cause?: unknown;
 }
 
+/**
+ * A failed authoritative mutation.
+ *
+ * `message` is the internal diagnostic: it names command types, workflow ids, operation
+ * ids and version requirements, which is exactly what logs and tests need. It is
+ * deliberately NOT promoted to `userMessage` — an architecture refusal would otherwise be
+ * rendered verbatim by the central formatter. A throw site that genuinely has product-safe
+ * copy passes `userMessage` explicitly; everything else is mapped from its stable code by
+ * `presentApplicationError`.
+ */
 export class MutationCommandError extends ApplicationError {
   constructor(options: MutationCommandErrorOptions) {
     super({
@@ -67,7 +77,7 @@ export class MutationCommandError extends ApplicationError {
       ...(options.fieldErrors === undefined ? {} : { fieldErrors: options.fieldErrors }),
       ...(options.correlationId === undefined ? {} : { correlationId: options.correlationId }),
       ...(options.retryable === undefined ? {} : { retryable: options.retryable }),
-      userMessage: options.userMessage ?? options.message,
+      ...(options.userMessage === undefined ? {} : { userMessage: options.userMessage }),
       ...(options.details === undefined ? {} : { details: options.details }),
       ...(options.cause === undefined ? {} : { cause: options.cause }),
     });
@@ -83,6 +93,14 @@ export interface MutationAuthorityPort {
     metadata: MutationCommandMetadata,
     localExecutor?: LocalMutationExecutor<TResult>,
   ): Promise<MutationOutcome<TResult>>;
+  /**
+   * Whether this authority can carry the canonical command at all. A connected
+   * authority answers from the generated production command registry, so a command the
+   * canonical registry does not classify as a routable production contract can be
+   * refused at the module boundary instead of failing inside transport. An authority
+   * that omits this (the demo authority) executes every command locally.
+   */
+  supports?(commandType: string): boolean;
 }
 
 export function createMutationMetadata(

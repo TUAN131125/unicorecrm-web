@@ -9,7 +9,7 @@ import { getPaymentRecordDetail } from "../application/queries/paymentRecordDeta
 import { getOperationalAuditSnapshot } from "@/platform/operational-audit";
 import { completeRefundIntent, createRefundIntent } from "../application/commands/paymentRefundCommands";
 import { createDurableId } from "@/shared/ids";
-import type { PaymentApiPort } from "../application/ports/PaymentApiPort";
+import type { PaymentApiPort, PaymentMutationEvidence } from "../application/ports/PaymentApiPort";
 import type { PaymentRepository } from "../application/ports/PaymentRepository";
 import type { RefundProviderAttempt } from "../domain/model/paymentCollection.types";
 
@@ -45,7 +45,10 @@ export class InMemoryPaymentApiAdapter implements PaymentApiPort {
     const origin = provider?.checkoutOrigins?.[0];
     return retryPaymentIntent(this.repository, intentId, { ...command, checkoutUrl: origin ? `${origin}/pay/${encodeURIComponent(command.id)}` : undefined });
   }
-  async recordManualPayment(command: Parameters<PaymentApiPort["recordManualPayment"]>[0]) { return recordManualPayment(this.repository, command); }
+  async recordManualPayment(command: Parameters<PaymentApiPort["recordManualPayment"]>[0]) {
+    const result = recordManualPayment(this.repository, command);
+    return { ...result, evidence: demoEvidence(command.idempotencyKey, result.payment.id, "payment-record", result.payment.version, command.now) };
+  }
   async allocate(command: Parameters<PaymentApiPort["allocate"]>[0]) { return allocatePaymentToInvoices(this.repository, command); }
   async reverseAllocation(allocationId: string, input: Parameters<PaymentApiPort["reverseAllocation"]>[1]) { return reverseInvoiceAllocation(this.repository, allocationId, { ...input, now: new Date().toISOString(), reasonCode: input.reasonCode ?? "API_REVERSAL", reason: input.reason ?? "Allocation reversal requested through Payment API adapter." }); }
   async reconcilePaymentRecord(paymentRecordId: string, command: Parameters<PaymentApiPort["reconcilePaymentRecord"]>[1]) { return reconcilePaymentRecord(this.repository, paymentRecordId, command); }
@@ -53,7 +56,7 @@ export class InMemoryPaymentApiAdapter implements PaymentApiPort {
   async recordCodMerchantRemittance(paymentRecordId: string, input: Parameters<PaymentApiPort["recordCodMerchantRemittance"]>[1]) { return recordCodMerchantRemittanceEvidence(this.repository, paymentRecordId, input as Parameters<typeof recordCodMerchantRemittanceEvidence>[2]); }
   async recordPaymentRequestDelivery(intentId: string, command: Parameters<PaymentApiPort["recordPaymentRequestDelivery"]>[1]) {
     const now = new Date().toISOString();
-    return recordPaymentRequestDelivery(this.repository, intentId, {
+    const intent = recordPaymentRequestDelivery(this.repository, intentId, {
       expectedVersion: command.expectedVersion,
       actorId: "demo-local-runtime",
       actorName: "Demo local runtime",
@@ -69,6 +72,7 @@ export class InMemoryPaymentApiAdapter implements PaymentApiPort {
         createdAt: now,
       },
     });
+    return { intent, evidence: demoEvidence(command.idempotencyKey, intent.id, "payment-intent", intent.version, now) };
   }
   async createRefundIntent(command: Parameters<PaymentApiPort["createRefundIntent"]>[0]) {
     const created = createRefundIntent(this.repository, command);
@@ -111,4 +115,25 @@ export class InMemoryPaymentApiAdapter implements PaymentApiPort {
     this.demoRefundAttempts.set(refundIntentId, [...attempts, attempt]);
     return { refundIntent, providerAttempt: attempt };
   }
+}
+
+/**
+ * Demo-authority mutation evidence, following the convention established by the
+ * Deal demo runtime. Explicitly marked `authority: "demo"` and
+ * `outcome: "DEMO_COMMITTED"` so it can never be mistaken for backend evidence.
+ */
+function demoEvidence(commandId: string, aggregateId: string, aggregateType: string, version: number, occurredAt: string): PaymentMutationEvidence {
+  return {
+    authority: "demo",
+    commandId,
+    correlationId: `corr_${crypto.randomUUID()}`,
+    aggregateId,
+    aggregateType,
+    version,
+    occurredAt,
+    outcome: "DEMO_COMMITTED",
+    warnings: [],
+    emittedEventIds: [],
+    auditEvidenceIds: [],
+  };
 }

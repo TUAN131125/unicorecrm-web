@@ -17,12 +17,7 @@ import {
   type OrganizationAccount,
 } from "@/modules/organizations";
 import { replaceContacts } from "@/modules/contacts";
-import {
-  createMutationMetadata,
-  executeMutationCommand,
-  type MutationCommandMetadata,
-  type MutationOutcome,
-} from "@/shared/application";
+import { assertMutationCommandSupported, createMutationMetadata, executeMutationCommand, isMutationCommandUnavailable, type MutationCommandMetadata, type MutationOutcome } from "@/shared/application";
 
 export interface UpsertContactOrganizationRelationshipCommand {
   contactId: string;
@@ -253,10 +248,20 @@ export function createOrganizationRepresentativeWorkflow(
   }
 }
 
+/**
+ * True when contact-organization relationship changes cannot run in the active runtime.
+ * All three relationship commands are BLOCKED in the canonical registry, so presentation
+ * can refuse before starting a mutation the boundary would reject.
+ */
+export function isContactOrganizationRelationshipUnavailable(): boolean {
+  return isMutationCommandUnavailable("contact-organization.upsert-relationship");
+}
+
 export function upsertContactOrganizationRelationshipCommand(
   command: UpsertContactOrganizationRelationshipCommand,
   metadata: Partial<MutationCommandMetadata> = {},
 ): Promise<MutationOutcome<ContactOrganizationRelationshipResult>> {
+  assertMutationCommandSupported("contact-organization.upsert-relationship", "Contact-organization relationship save");
   const current = requireContact(command.contactId);
   return executeMutationCommand(
     {
@@ -278,6 +283,7 @@ export function endContactOrganizationRelationshipCommand(
   command: EndContactOrganizationRelationshipCommand,
   metadata: Partial<MutationCommandMetadata> = {},
 ): Promise<MutationOutcome<ContactOrganizationRelationshipResult>> {
+  assertMutationCommandSupported("contact-organization.end-relationship", "Contact-organization relationship end");
   const current = requireContact(command.contactId);
   return executeMutationCommand(
     {
@@ -299,6 +305,7 @@ export function setPrimaryOrganizationRepresentativeCommand(
   command: SetPrimaryOrganizationRepresentativeCommand,
   metadata: Partial<MutationCommandMetadata> = {},
 ): Promise<MutationOutcome<ContactOrganizationRelationshipResult>> {
+  assertMutationCommandSupported("contact-organization.set-primary-representative", "Primary representative change");
   const current = requireOrganization(command.organizationAccountId);
   return executeMutationCommand(
     {

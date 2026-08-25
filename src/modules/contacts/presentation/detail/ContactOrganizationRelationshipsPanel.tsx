@@ -10,9 +10,10 @@ import {
 } from "@/modules/organizations";
 import { getAuthSessionSnapshot } from "@/platform/identity-auth";
 import { useSubscribableSnapshot } from "@/platform/react";
-import { formatApplicationError } from "@/shared/operations";
+import { backendUnavailableMessage, formatApplicationError } from "@/shared/operations";
 import {
   endContactOrganizationRelationshipCommand,
+  isContactOrganizationRelationshipUnavailable,
   upsertContactOrganizationRelationshipCommand,
 } from "@/workflows/contact-organization-relationship";
 
@@ -90,6 +91,11 @@ export function ContactOrganizationRelationshipsPanel({ contact, onOpenOrganizat
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!draft.organizationAccountId) return setError(text("Chọn tổ chức cần liên kết.", "Select an organization."));
+    // The three contact-organization relationship commands are BLOCKED canonical commands:
+    // refuse before the mutation is started rather than failing inside the command boundary.
+    if (isContactOrganizationRelationshipUnavailable()) {
+      return setError(backendUnavailableMessage({ locale, action: text("Liên kết tổ chức", "Linking an organization") }));
+    }
     setSaving(true);
     setError(null);
     try {
@@ -116,6 +122,9 @@ export function ContactOrganizationRelationshipsPanel({ contact, onOpenOrganizat
 
   const endRelationship = async () => {
     if (!endTarget || !endReason.trim()) return;
+    if (isContactOrganizationRelationshipUnavailable()) {
+      return setError(backendUnavailableMessage({ locale, action: text("Kết thúc quan hệ", "Ending a relationship") }));
+    }
     setSaving(true);
     setError(null);
     try {

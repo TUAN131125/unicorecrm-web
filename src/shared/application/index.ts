@@ -5,6 +5,12 @@ export * from "./data-authority";
 export * from "./mutation/mutationAuthority";
 export * from "./mutation/mutationAuthorityBinding";
 export { LocalMutationAuthority } from "./mutation/LocalMutationAuthority";
+export {
+  declareUnavailableBusinessOperation,
+  getUnavailableBusinessOperations,
+  isBusinessOperationUnavailable,
+  resetBusinessOperationAvailability,
+} from "./mutation/businessOperationAvailability";
 
 export * from "./retention";
 

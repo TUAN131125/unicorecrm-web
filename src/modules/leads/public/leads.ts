@@ -1,3 +1,4 @@
+import { runBackendProjection } from "@/shared/application";
 import { ApplicationError, type CRMActivity } from "@/shared/domain";
 import type { RelationshipRef } from "@/platform/identity";
 import {
@@ -36,8 +37,13 @@ export function getLeadSnapshot(leadId: string): Lead | undefined {
   return leadRepository.getById(leadId);
 }
 
+/**
+ * Read-model projection only. Replacing the whole collection either commits a backend
+ * page or evicts the previous one, so it declares the projection scope itself rather
+ * than relying on every caller to remember to.
+ */
 export function replaceLeads(leads: Lead[]): void {
-  updateLeadCollection(leadRepository, leads);
+  runBackendProjection("leads", () => updateLeadCollection(leadRepository, leads));
 }
 
 export function updateLeads(updater: LeadCollectionUpdater): Lead[] {

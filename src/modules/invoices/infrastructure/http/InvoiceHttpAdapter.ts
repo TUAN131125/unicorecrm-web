@@ -16,7 +16,13 @@ import type {
   SendInvoiceRequest,
   VoidInvoiceRequest,
 } from "@/platform/api/generated/financialApi";
-import type { InvoiceApiPort } from "../../application/ports/InvoiceApiPort";
+import type {
+  CreditNoteCommandResult,
+  InvoiceApiPort,
+  InvoiceCommandResult,
+  InvoiceDeliveryCommandResult,
+  InvoiceMutationEvidence,
+} from "../../application/ports/InvoiceApiPort";
 import type { Invoice } from "../../domain/model/invoice.types";
 import {
   mapCreditNoteDocument,
@@ -93,10 +99,10 @@ export class InvoiceHttpAdapter implements InvoiceApiPort {
       expectedVersion: input.expectedVersion,
       retry: "idempotent",
     });
-    return requireNestedInvoiceMutationResult(response, "retryInvoiceIssue", invoiceId);
+    return requireNestedInvoiceCommandResult(response, "retryInvoiceIssue", invoiceId);
   }
 
-  async send(invoiceId: string, input: Parameters<InvoiceApiPort["send"]>[1], signal?: AbortSignal) {
+  async send(invoiceId: string, input: Parameters<InvoiceApiPort["send"]>[1], signal?: AbortSignal): Promise<InvoiceDeliveryCommandResult> {
     const body: SendInvoiceRequest = {
       channel: input.channel,
       ...(input.recipient?.trim() ? { recipient: input.recipient.trim() } : {}),
@@ -108,10 +114,13 @@ export class InvoiceHttpAdapter implements InvoiceApiPort {
       retry: "idempotent",
     });
     assertAggregate(response, "sendInvoice", invoiceId);
-    return mapInvoiceDeliveryDocument(response.result.delivery);
+    return {
+      delivery: mapInvoiceDeliveryDocument(response.result.delivery),
+      evidence: requireBackendEvidence(response, "sendInvoice"),
+    };
   }
 
-  async createCreditNote(input: Parameters<InvoiceApiPort["createCreditNote"]>[0], signal?: AbortSignal) {
+  async createCreditNote(input: Parameters<InvoiceApiPort["createCreditNote"]>[0], signal?: AbortSignal): Promise<CreditNoteCommandResult> {
     const lines = input.lines?.length
       ? input.lines.map((line) => ({
           ...(line.invoiceLineId ? { invoiceLineId: line.invoiceLineId } : {}),
@@ -139,7 +148,10 @@ export class InvoiceHttpAdapter implements InvoiceApiPort {
       retry: "idempotent",
     });
     assertAggregate(response, "createInvoiceCreditNote", input.invoiceId);
-    return mapCreditNoteDocument(response.result.creditNote);
+    return {
+      creditNote: mapCreditNoteDocument(response.result.creditNote),
+      evidence: requireBackendEvidence(response, "createInvoiceCreditNote"),
+    };
   }
 
   async discardDraft(invoiceId: string, input: Parameters<InvoiceApiPort["discardDraft"]>[1], signal?: AbortSignal) {
@@ -150,7 +162,7 @@ export class InvoiceHttpAdapter implements InvoiceApiPort {
       expectedVersion: input.expectedVersion,
       retry: "idempotent",
     });
-    return requireNestedInvoiceMutationResult(response, "discardInvoiceDraft", invoiceId);
+    return requireNestedInvoiceCommandResult(response, "discardInvoiceDraft", invoiceId);
   }
 
   async voidInvoice(invoiceId: string, input: Parameters<InvoiceApiPort["voidInvoice"]>[1], signal?: AbortSignal) {
@@ -161,7 +173,7 @@ export class InvoiceHttpAdapter implements InvoiceApiPort {
       expectedVersion: input.expectedVersion,
       retry: "idempotent",
     });
-    return requireNestedInvoiceMutationResult(response, "voidInvoice", invoiceId);
+    return requireNestedInvoiceCommandResult(response, "voidInvoice", invoiceId);
   }
 }
 
@@ -170,9 +182,63 @@ interface DirectInvoiceMutationEnvelope {
   result: InvoiceDocument;
 }
 
-interface NestedInvoiceMutationEnvelope {
+interface NestedInvoiceMutationEnvelope extends BackendEvidenceEnvelope {
   aggregateId: string;
   result: { invoice: InvoiceDocument };
+}
+
+/**
+ * The authoritative evidence every Invoice mutation response carries. Each field is
+ * `required` in the OpenAPI mutation response schemas, so a missing field is a
+ * contract violation rather than something the client may default or invent.
+ */
+interface BackendEvidenceEnvelope {
+  commandId?: unknown;
+  correlationId?: unknown;
+  aggregateId?: unknown;
+  aggregateType?: unknown;
+  version?: unknown;
+  occurredAt?: unknown;
+  outcome?: unknown;
+  warnings?: unknown;
+  emittedEventIds?: unknown;
+  auditEvidenceIds?: unknown;
+}
+
+function requireBackendEvidence(response: BackendEvidenceEnvelope, operationId: string): InvoiceMutationEvidence {
+  for (const field of ["commandId", "correlationId", "aggregateId", "aggregateType", "occurredAt"] as const) {
+    const value = response[field];
+    if (typeof value !== "string" || value.trim().length === 0) {
+      throw new Error(`CONNECTED_CONTRACT_VIOLATION:${operationId}:missing-evidence-${field}`);
+    }
+  }
+  if (typeof response.version !== "number") {
+    throw new Error(`CONNECTED_CONTRACT_VIOLATION:${operationId}:missing-evidence-version`);
+  }
+  if (response.outcome !== "COMMITTED" && response.outcome !== "REPLAYED") {
+    throw new Error(`CONNECTED_CONTRACT_VIOLATION:${operationId}:missing-evidence-outcome`);
+  }
+  return {
+    authority: "backend",
+    commandId: response.commandId as string,
+    correlationId: response.correlationId as string,
+    aggregateId: response.aggregateId as string,
+    aggregateType: response.aggregateType as string,
+    version: response.version,
+    occurredAt: response.occurredAt as string,
+    outcome: response.outcome,
+    warnings: readStringList(response.warnings, operationId, "warnings"),
+    emittedEventIds: readStringList(response.emittedEventIds, operationId, "emittedEventIds"),
+    auditEvidenceIds: readStringList(response.auditEvidenceIds, operationId, "auditEvidenceIds"),
+  };
+}
+
+function readStringList(value: unknown, operationId: string, field: string): readonly string[] {
+  if (value === undefined) return [];
+  if (!Array.isArray(value) || value.some((item) => typeof item !== "string")) {
+    throw new Error(`CONNECTED_CONTRACT_VIOLATION:${operationId}:invalid-evidence-${field}`);
+  }
+  return value as string[];
 }
 
 function assertAggregate(response: { aggregateId: string }, operationId: string, expectedInvoiceId?: string): void {
@@ -192,10 +258,13 @@ function requireDirectInvoiceMutationResult(response: DirectInvoiceMutationEnvel
   return mapInvoiceDocument(response.result);
 }
 
-function requireNestedInvoiceMutationResult(response: NestedInvoiceMutationEnvelope, operationId: string, expectedInvoiceId?: string): Invoice {
+function requireNestedInvoiceCommandResult(response: NestedInvoiceMutationEnvelope, operationId: string, expectedInvoiceId?: string): InvoiceCommandResult {
   assertAggregate(response, operationId, expectedInvoiceId);
   if (!response.result?.invoice || response.result.invoice.id !== response.aggregateId) {
     throw new Error(`CONNECTED_CONTRACT_VIOLATION:${operationId}:result-id-mismatch`);
   }
-  return mapInvoiceDocument(response.result.invoice);
+  return {
+    invoice: mapInvoiceDocument(response.result.invoice),
+    evidence: requireBackendEvidence(response, operationId),
+  };
 }

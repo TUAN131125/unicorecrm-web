@@ -29,10 +29,43 @@ export function runBackendProjection<T>(
   }
 }
 
+/**
+ * Workspace/scope cache eviction depth.
+ *
+ * Switching workspace discards the previous scope's cached read models. That is a
+ * projection operation, not an authoritative business mutation, so it must not be
+ * refused by the connected projection guard. It cannot use `runBackendProjection`
+ * because a single scope change evicts several modules and the shared reset hook
+ * does not know which module keys its caller owns.
+ */
+let activeScopeResetDepth = 0;
+
+/**
+ * Runs a workspace/scope cache reset. Projection writes are accepted for the duration
+ * of `work` and refused again as soon as it returns, so the guard stays closed for
+ * ordinary local business writes.
+ *
+ * `work` must stay synchronous: the permission is a call-stack scope, not a time
+ * window, and an awaited continuation would resume after the scope has closed.
+ */
+export function runWorkspaceScopeReset<T>(work: () => T): T {
+  activeScopeResetDepth += 1;
+  try {
+    return work();
+  } finally {
+    activeScopeResetDepth -= 1;
+  }
+}
+
+export function isWorkspaceScopeResetActive(): boolean {
+  return activeScopeResetDepth > 0;
+}
+
 export function assertBackendProjectionWrite(
   moduleKey: ModuleDataAuthorityKey,
   operation: string,
 ): void {
+  if (activeScopeResetDepth > 0) return;
   if (activeProjectionKeys.at(-1) === moduleKey) return;
   throw new ConnectedProjectionWriteError(moduleKey, operation);
 }

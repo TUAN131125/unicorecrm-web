@@ -41,14 +41,15 @@ import { getAuthSessionSnapshot } from "@/platform/identity-auth";
 import { listWorkspaceMemberDirectory, resolveWorkspaceMemberName } from "@/platform/member-directory";
 import { getDisplayOrdersForContact } from "@/modules/orders";
 import { useContacts } from "../hooks/useContacts";
-import { archiveContactCommand, getContactPreference, isContactConnectedMode, restoreContactCommand, setContactPreference } from "../../public/contacts";
+import { archiveContactCommand, getContactPreference, isContactConnectedMode, isContactRetentionUnavailable, restoreContactCommand, setContactPreference } from "../../public/contacts";
 import {
   createContactOpportunityCreationRuntime,
   executeContactOpportunityCreation,
+  isContactOpportunityCreationUnavailable,
 } from "@/workflows/contact-opportunity-creation";
 
 import { findCustomerForContact, getCustomerDisplayNameForContact } from "../model/contactCustomerLookup";
-import { getDealNextActionTaskId } from "@/workflows/work-activation";
+import { getDealNextActionTaskIntentKey } from "@/workflows/work-activation";
 
 export interface ContactDetailPageProps {
   customers: Customer[];
@@ -173,6 +174,18 @@ export function useContactDetailController(props: ContactDetailPageProps) {
   const contactWritesUnavailable = isContactConnectedMode();
   const refuseUnavailableContactWrite = (action: string): boolean => {
     if (!contactWritesUnavailable) return false;
+    showToast(backendUnavailableMessage({ locale, action }));
+    return true;
+  };
+  /**
+   * WF-01 refusal, owned by WF-01. The workflow is BLOCKED with
+   * `connectedFrontendCoordinatorAllowed: false`, so connected mode must refuse before the
+   * first Deal, Contact or Task write — on the workflow's own availability rather than on
+   * Contact-write availability, which would stop protecting WF-01 the day `updateContact`
+   * gains a production contract.
+   */
+  const refuseUnavailableContactOpportunity = (action: string): boolean => {
+    if (!isContactOpportunityCreationUnavailable()) return false;
     showToast(backendUnavailableMessage({ locale, action }));
     return true;
   };
@@ -358,7 +371,7 @@ export function useContactDetailController(props: ContactDetailPageProps) {
     note: string;
     lineItems?: any[];
   }) => {
-    if (refuseUnavailableContactWrite(locale === "vi" ? "Tạo cơ hội từ Liên hệ" : "Creating an opportunity from this Contact")) return;
+    if (refuseUnavailableContactOpportunity(locale === "vi" ? "Tạo cơ hội từ Liên hệ" : "Creating an opportunity from this Contact")) return;
     const lineItemsArray = dealData.lineItems && dealData.lineItems.length > 0
       ? dealData.lineItems.map((li: any, idx: number) => ({
           id: `li_${Date.now()}_${idx}`,
@@ -396,7 +409,7 @@ export function useContactDetailController(props: ContactDetailPageProps) {
     const followUpDueAt = dealData.createFollowUpTask && dealData.nextFollowUpDate
       ? new Date(dealData.nextFollowUpDate).toISOString()
       : undefined;
-    const followUpTaskId = followUpDueAt ? getDealNextActionTaskId(dealId, followUpDueAt) : undefined;
+    const followUpTaskIntentKey = followUpDueAt ? getDealNextActionTaskIntentKey(dealId, followUpDueAt) : undefined;
     const newDealVal: Deal = {
       id: dealId,
       name: dealData.name,
@@ -419,10 +432,12 @@ export function useContactDetailController(props: ContactDetailPageProps) {
       updatedAt: now,
       interestedProducts: interestedIds,
       lineItems: lineItemsArray,
-      ...(followUpDueAt && followUpTaskId ? {
+      // Task ids are server-assigned and the follow-up Task is created after this Deal,
+      // so no Task foreign reference is available; the deterministic key below is an
+      // idempotency key only.
+      ...(followUpDueAt ? {
         nextActionAt: followUpDueAt,
         nextActionSummary: dealData.nextAction,
-        nextActionRef: { type: "TASK" as const, id: followUpTaskId },
       } : {}),
     };
 
@@ -470,10 +485,10 @@ export function useContactDetailController(props: ContactDetailPageProps) {
     };
     setContactNotes(prev => [newNote, ...prev]);
 
-    if (followUpDueAt && followUpTaskId) {
+    if (followUpDueAt && followUpTaskIntentKey) {
       const actorId = currentMemberId || opportunityResult.deal.ownerId;
       await createTaskCommand({
-        id: followUpTaskId,
+        id: followUpTaskIntentKey,
         title: dealData.nextAction,
         description: dealData.demandSummary || undefined,
         priority: dealData.priority === "MEDIUM" ? "NORMAL" : dealData.priority as "LOW" | "NORMAL" | "HIGH" | "URGENT",
@@ -487,7 +502,7 @@ export function useContactDetailController(props: ContactDetailPageProps) {
         actorId,
         actorName: resolveWorkspaceMemberName(actorId),
       }, {
-        idempotencyKey: `task.create:${followUpTaskId}`,
+        idempotencyKey: `task.create:${followUpTaskIntentKey}`,
         correlationId: `deal:${opportunityResult.deal.id}`,
       });
     }
@@ -510,7 +525,16 @@ export function useContactDetailController(props: ContactDetailPageProps) {
     setActiveTab("sales", "opportunities");
   };
 
+  // `contact.archive` / `contact.restore` are BLOCKED canonical commands, so the action is
+  // refused before any mutation is started rather than failing inside the command boundary.
+  const refuseUnavailableContactRetention = (action: string): boolean => {
+    if (!isContactRetentionUnavailable()) return false;
+    showToast(backendUnavailableMessage({ locale, action }));
+    return true;
+  };
+
   const confirmDeleteContact = async () => {
+    if (refuseUnavailableContactRetention(locale === "vi" ? "Lưu trữ liên hệ" : "Archiving a Contact")) return;
     const actorId = currentMemberId || contact.ownerId || "current-user";
     await archiveContactCommand(contact.id, {
       reason: locale === "vi" ? "Lưu trữ từ trang chi tiết Liên hệ." : "Archived from Contact detail.",
@@ -522,6 +546,9 @@ export function useContactDetailController(props: ContactDetailPageProps) {
   };
 
   const handleArchiveToggle = async () => {
+    if (refuseUnavailableContactRetention(contact.status === "archived"
+      ? (locale === "vi" ? "Khôi phục liên hệ" : "Restoring a Contact")
+      : (locale === "vi" ? "Lưu trữ liên hệ" : "Archiving a Contact"))) return;
     const actorId = currentMemberId || contact.ownerId || "current-user";
     if (contact.status === "archived") {
       await restoreContactCommand(contact.id, { actorId, actorName: resolveWorkspaceMemberName(actorId), reason: locale === "vi" ? "Khôi phục từ lưu trữ." : "Restored from archive." });

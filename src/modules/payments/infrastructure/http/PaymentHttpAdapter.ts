@@ -58,7 +58,7 @@ import {
   projectPaymentScheduleLine,
 } from "./paymentPlanIntentDtoMapper";
 import type { HttpClient } from "@/platform/api";
-import type { PaymentApiPort } from "../../application/ports/PaymentApiPort";
+import type { PaymentApiPort, PaymentMutationEvidence } from "../../application/ports/PaymentApiPort";
 
 export class PaymentHttpAdapter implements PaymentApiPort {
   private readonly api: FinancialApiClient;
@@ -230,6 +230,7 @@ export class PaymentHttpAdapter implements PaymentApiPort {
     return {
       payment: projectPaymentRecord(response.result.payment),
       ...(response.result.customerCredit ? { customerCredit: projectCustomerCredit(response.result.customerCredit) } : {}),
+      evidence: requireBackendEvidence(response, "recordManualPayment"),
     };
   }
 
@@ -306,7 +307,10 @@ export class PaymentHttpAdapter implements PaymentApiPort {
       expectedVersion: command.expectedVersion,
       retry: "idempotent",
     });
-    return projectPaymentIntent(response.result.intent);
+    return {
+      intent: projectPaymentIntent(response.result.intent),
+      evidence: requireBackendEvidence(response, "recordPaymentRequestDelivery"),
+    };
   }
 
   async createRefundIntent(command: Parameters<PaymentApiPort["createRefundIntent"]>[0], signal?: AbortSignal) {
@@ -401,4 +405,58 @@ function optionalCodEvidence(metadata?: Record<string, string>): Pick<RecordCodC
     ...(metadata?.providerReference?.trim() ? { providerReference: metadata.providerReference.trim() } : {}),
     ...(metadata?.note?.trim() ? { note: metadata.note.trim() } : {}),
   };
+}
+
+/**
+ * The authoritative evidence every dedicated Payment mutation response carries.
+ * Each field is `required` in the OpenAPI mutation response schemas, so a missing
+ * field is a contract violation rather than something the client may default.
+ */
+interface BackendEvidenceEnvelope {
+  commandId?: unknown;
+  correlationId?: unknown;
+  aggregateId?: unknown;
+  aggregateType?: unknown;
+  version?: unknown;
+  occurredAt?: unknown;
+  outcome?: unknown;
+  warnings?: unknown;
+  emittedEventIds?: unknown;
+  auditEvidenceIds?: unknown;
+}
+
+function requireBackendEvidence(response: BackendEvidenceEnvelope, operationId: string): PaymentMutationEvidence {
+  for (const field of ["commandId", "correlationId", "aggregateId", "aggregateType", "occurredAt"] as const) {
+    const value = response[field];
+    if (typeof value !== "string" || value.trim().length === 0) {
+      throw new Error(`CONNECTED_CONTRACT_VIOLATION:${operationId}:missing-evidence-${field}`);
+    }
+  }
+  if (typeof response.version !== "number") {
+    throw new Error(`CONNECTED_CONTRACT_VIOLATION:${operationId}:missing-evidence-version`);
+  }
+  if (response.outcome !== "COMMITTED" && response.outcome !== "REPLAYED") {
+    throw new Error(`CONNECTED_CONTRACT_VIOLATION:${operationId}:missing-evidence-outcome`);
+  }
+  return {
+    authority: "backend",
+    commandId: response.commandId as string,
+    correlationId: response.correlationId as string,
+    aggregateId: response.aggregateId as string,
+    aggregateType: response.aggregateType as string,
+    version: response.version,
+    occurredAt: response.occurredAt as string,
+    outcome: response.outcome,
+    warnings: readStringList(response.warnings, operationId, "warnings"),
+    emittedEventIds: readStringList(response.emittedEventIds, operationId, "emittedEventIds"),
+    auditEvidenceIds: readStringList(response.auditEvidenceIds, operationId, "auditEvidenceIds"),
+  };
+}
+
+function readStringList(value: unknown, operationId: string, field: string): readonly string[] {
+  if (value === undefined) return [];
+  if (!Array.isArray(value) || value.some((item) => typeof item !== "string")) {
+    throw new Error(`CONNECTED_CONTRACT_VIOLATION:${operationId}:invalid-evidence-${field}`);
+  }
+  return value as string[];
 }

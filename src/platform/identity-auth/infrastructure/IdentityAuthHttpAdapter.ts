@@ -48,6 +48,7 @@ const AUTH_FAILURE_CODES = new Set<AuthFailureCode>([
   "SESSION_EXPIRED",
   "SESSION_REVOKED",
   "AUTH_ADAPTER_UNAVAILABLE",
+  "SERVICE_UNAVAILABLE",
   "TOKEN_INVALID",
   "TOKEN_EXPIRED",
   "INVITATION_INVALID",
@@ -262,12 +263,32 @@ function mapInvitation(value: InvitationAcceptanceResponse): InvitationAcceptanc
   return { workspaceId: value.workspaceId, membershipId: value.membershipId, acceptedAt: value.acceptedAt };
 }
 
+/**
+ * Transport-level outcomes that mean "the identity backend did not answer".
+ * They must never be presented as a rejected credential.
+ */
+const TRANSPORT_FAILURE_CODES = new Set([
+  "NETWORK_UNAVAILABLE",
+  "REQUEST_TIMEOUT",
+  "HTTP_RETRY_EXHAUSTED",
+  "AUTH_TOKEN_UNAVAILABLE",
+]);
+
 function authFailure<T>(error: unknown): AuthResult<T> {
   if (error instanceof ApiClientError) {
-    const code = AUTH_FAILURE_CODES.has(error.code as AuthFailureCode) ? error.code as AuthFailureCode : error.code === "INTEGRATION_UNAVAILABLE" ? "AUTH_ADAPTER_UNAVAILABLE" : "UNKNOWN";
-    return { ok: false, code, message: error.userMessage ?? error.message };
+    return { ok: false, code: mapAuthFailureCode(error), message: error.userMessage ?? error.message };
   }
-  return { ok: false, code: "AUTH_ADAPTER_UNAVAILABLE", message: error instanceof Error ? error.message : "Identity service is unavailable." };
+  return { ok: false, code: "SERVICE_UNAVAILABLE", message: error instanceof Error ? error.message : "Identity service is unavailable." };
+}
+
+function mapAuthFailureCode(error: ApiClientError): AuthFailureCode {
+  if (AUTH_FAILURE_CODES.has(error.code as AuthFailureCode)) return error.code as AuthFailureCode;
+  if (error.code === "INTEGRATION_UNAVAILABLE") return "AUTH_ADAPTER_UNAVAILABLE";
+  if (TRANSPORT_FAILURE_CODES.has(error.code) || error.status === undefined) return "SERVICE_UNAVAILABLE";
+  // A backend fault is a backend fault. Only the contract-declared 401/403 codes
+  // above describe the submitted credential.
+  if (error.status >= 500) return "SERVICE_UNAVAILABLE";
+  return "UNKNOWN";
 }
 
 export function createAuthAttemptId(purpose: string): string {

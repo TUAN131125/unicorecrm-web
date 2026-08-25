@@ -248,6 +248,9 @@ function assertSourceRelationship(order: CustomerOrder, now?: string): Quote | u
       throw new MutationCommandError({
         code: "DEAL_CLOSED_LOST",
         message: `The source Deal ${sourceDeal.name} is Closed Lost and cannot create an Order.`,
+        // Product-level business rule: the sentence names a Deal the user is looking at,
+        // not internal topology, so it is safe to show.
+        userMessage: `The source Deal ${sourceDeal.name} is Closed Lost and cannot create an Order.`,
         category: "BUSINESS_RULE",
         details: { dealId: sourceDeal.id, dealName: sourceDeal.name },
       });
@@ -256,6 +259,7 @@ function assertSourceRelationship(order: CustomerOrder, now?: string): Quote | u
       throw new MutationCommandError({
         code: "DEAL_NOT_WON",
         message: `The source Deal ${sourceDeal.name} must be Won before creating an Order.`,
+        userMessage: `The source Deal ${sourceDeal.name} must be Won before creating an Order.`,
         category: "BUSINESS_RULE",
         details: { dealId: sourceDeal.id, dealName: sourceDeal.name, stage: sourceDeal.stage },
       });
@@ -389,6 +393,7 @@ export async function executeOrderDraftUpdate(command: ExecuteOrderDraftUpdateCo
     throw new MutationCommandError({
       code: "ORDER_VERSION_CONFLICT",
       message: "The Order changed after this form was opened. Reload before saving again.",
+      userMessage: "The Order changed after this form was opened. Reload before saving again.",
       category: "CONFLICT",
     });
   }

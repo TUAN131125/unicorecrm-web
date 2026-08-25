@@ -8,6 +8,7 @@ import { PermissionRouteGuard } from "@/components/PermissionRouteGuard";
 import { CAPABILITIES, type Capability } from "@/platform/access-control";
 import { buildWorkspaceCapabilityManifest, type WorkspaceCapabilityKey } from "@/platform/capability-manifest";
 import type { CrmWorkspaceConfig } from "@/platform/workspace-config";
+import { isLeadPositiveQualificationUnavailable } from "@/workflows/lead-qualification/application/leadQualificationAvailability";
 
 const DashboardPage = lazyRouteComponent("DashboardPage", () => import("@/workspaces/crm/dashboard"), (m) => m.DashboardPage);
 const MyWorkPage = lazyRouteComponent("MyWorkPage", () => import("@/workspaces/crm/my-work"), (m) => m.MyWorkPage);
@@ -108,6 +109,7 @@ export function createCrmWorkspaceRoutes(crmConfig: CrmWorkspaceConfig): RouteOb
   const shippingEnabled = canRead("shipping");
   const returnsEnabled = canRead("returns");
   const customersEnabled = canRead("customers");
+  const positiveLeadQualificationEnabled = canWrite("leads") && !isLeadPositiveQualificationUnavailable();
 
   return [
     { path: relativeRoutePath(ROUTE_KEYS.DASHBOARD), element: <DashboardPage /> },
@@ -121,9 +123,9 @@ export function createCrmWorkspaceRoutes(crmConfig: CrmWorkspaceConfig): RouteOb
     { path: relativeRoutePath(ROUTE_KEYS.LEADS), element: moduleRoute("leads", canRead("leads"), <LeadListPage />) },
     { path: relativeRoutePath(ROUTE_KEYS.LEADS_QUEUE), element: moduleRoute("leads", canRead("leads"), <LeadQueuePage />) },
     { path: relativeRoutePath(ROUTE_KEYS.LEAD_DETAIL), element: moduleRoute("leads", canRead("leads"), <LeadDetailPage />) },
-    { path: relativeRoutePath(ROUTE_KEYS.LEAD_QUALIFY), element: moduleActionRoute(canWrite("leads"), CAPABILITIES.LEADS_QUALIFY, <LeadQualificationPage />) },
-    { path: relativeRoutePath(ROUTE_KEYS.LEAD_SELL_NOW), element: moduleActionRoute(canWrite("leads"), CAPABILITIES.LEADS_QUALIFY, <LeadSellNowPage />) },
-    { path: relativeRoutePath(ROUTE_KEYS.LEAD_CONVERT), element: moduleActionRoute(canWrite("leads"), CAPABILITIES.LEADS_QUALIFY, <LegacyLeadConvertRedirect />) },
+    { path: relativeRoutePath(ROUTE_KEYS.LEAD_QUALIFY), element: moduleActionRoute(positiveLeadQualificationEnabled, CAPABILITIES.LEADS_QUALIFY, <LeadQualificationPage />) },
+    { path: relativeRoutePath(ROUTE_KEYS.LEAD_SELL_NOW), element: moduleActionRoute(positiveLeadQualificationEnabled, CAPABILITIES.LEADS_QUALIFY, <LeadSellNowPage />) },
+    { path: relativeRoutePath(ROUTE_KEYS.LEAD_CONVERT), element: moduleActionRoute(positiveLeadQualificationEnabled, CAPABILITIES.LEADS_QUALIFY, <LegacyLeadConvertRedirect />) },
 
     { path: relativeRoutePath(ROUTE_KEYS.CATALOG), element: permissionRoute("products", <ProductListPage />) },
     { path: relativeRoutePath(ROUTE_KEYS.PRODUCT_DETAIL), element: permissionRoute("products", <ProductDetailPage />) },

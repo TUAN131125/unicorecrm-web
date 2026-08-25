@@ -7,6 +7,7 @@ export const ROUTE_KEYS = {
   RESET_PASSWORD: "/reset-password",
   INVITATION_ACCEPTANCE: "/accept-invitation",
   WORKSPACE_SELECTION: "/select-workspace",
+  INITIAL_SETUP: "/initial-setup",
   SESSION_EXPIRED: "/session-expired",
   ACCESS_DENIED: "/access-denied",
   ACCOUNT_SUSPENDED: "/account-suspended",

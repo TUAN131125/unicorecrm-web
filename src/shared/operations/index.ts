@@ -3,6 +3,7 @@ export * from "./useMutationTask";
 export * from "./useAuthoritativeResource";
 export * from "./errorPresentation";
 export * from "./backendAvailability";
+export * from "./partialCommit";
 export * from "./MutationConflictDialog";
 
 export * from "./GlobalMutationConflictHost";

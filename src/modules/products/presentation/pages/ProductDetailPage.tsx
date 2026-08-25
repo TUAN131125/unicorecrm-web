@@ -1,3 +1,4 @@
+import { formatOperationUnavailableError } from "@/shared/operations";
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
@@ -243,7 +244,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
         await archiveProductsCommand([product.id], { reason: "Archived from product detail", actorId, actorName });
         showToast(isVi ? "Sản phẩm đã được lưu trữ." : "Product archived.");
       }
-    } catch (error) { showToast(normalizeApplicationError(error).userMessage ?? normalizeApplicationError(error).message); }
+    } catch (error) { showToast(formatOperationUnavailableError(error, { locale })); }
   };
 
   const handleDeleteConfirm = async () => {
@@ -263,7 +264,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
       if (!activeFormProduct?.id) navigate(`/products/${outcome.data.id}`);
       setIsFormOpen(false);
       setActiveFormProduct(null);
-    } catch (error) { showToast(normalizeApplicationError(error).userMessage ?? normalizeApplicationError(error).message); }
+    } catch (error) { showToast(formatOperationUnavailableError(error, { locale })); }
   };
 
   const tabItems = [

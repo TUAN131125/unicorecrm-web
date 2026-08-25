@@ -1,5 +1,6 @@
 import {
   assertBackendProjectionWrite,
+  declareUnavailableBusinessOperation,
   type ModuleDataAuthorityKey,
 } from "@/shared/application";
 
@@ -99,6 +100,32 @@ export class ConnectedOperationUnavailableError extends Error {
 
 export function connectedOperationUnavailable(operation: string): never {
   throw new ConnectedOperationUnavailableError(operation);
+}
+
+/**
+ * Binds a port member that connected mode cannot perform authoritatively.
+ *
+ * Declaring the operation at the moment it is bound keeps the runtime availability
+ * registry and the composition in lockstep: a module boundary and its UI can refuse the
+ * action up front, and the binding still fails closed if anything reaches it anyway.
+ */
+export function unavailableConnectedOperation(operation: string): () => never {
+  declareUnavailableBusinessOperation(operation);
+  return () => connectedOperationUnavailable(operation);
+}
+
+/**
+ * Declares a workflow that connected mode cannot coordinate, for a workflow that has no
+ * ports to bind.
+ *
+ * Some canonical workflows are `connectedFrontendCoordinatorAllowed: false` yet call module
+ * commands directly rather than through injected ports, so there is no binding to attach
+ * the declaration to. Declaring it from the connected composition keeps the availability
+ * registry owned by composition either way: the workflow boundary and its callers read the
+ * same registry, and a demo composition declares nothing.
+ */
+export function declareUnavailableConnectedWorkflow(operation: string): void {
+  declareUnavailableBusinessOperation(operation);
 }
 
 function cloneProjectionValue<T>(value: T): T {

@@ -4,7 +4,8 @@ import { useSearchParams, useNavigate, useParams } from "react-router-dom";
 import { AlertCircle, ArrowLeft, CheckCircle2, Download, FileText, Landmark, Mail, MessageCircle, Percent, Plus, PlusCircle, Save, ShieldCheck, ShoppingBag, Trash2 } from "lucide-react";
 import type { CustomerDisplay as Customer } from "@/modules/customers";
 import { getQuoteDocumentLabel, type CrmWorkspaceConfig } from "@/platform/workspace-config";
-import { DealStage, updateDeals, type Deal, type DealActivity } from "@/modules/deals";
+import { DealStage, isDealConnectedMode, updateDeals, type Deal, type DealActivity } from "@/modules/deals";
+import { invalidateModuleQueries } from "@/shared/application";
 import { validateQuoteDraft } from "../../application/queries/quoteDraftValidation";
 import { QuoteApprovalStatus, QuoteStatus, SalesDocumentAdjustmentType, type Quote, type QuoteDeliveryChannel, type QuoteLineItem, type QuotePaymentMethod, type QuotePaymentTiming, type SalesDocumentAdjustment } from "../../domain/model/quote.types";
 import { applyQuoteApprovalAssessment, canQuoteBeSent, DEFAULT_QUOTE_APPROVAL_POLICY, evaluateQuoteApproval } from "../../domain/rules/quoteApprovalPolicy";
@@ -683,6 +684,20 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
 
   const appendDealActivity = (quote: Quote, activityKind: "created" | "updated") => {
     if (!referencedDeal) return;
+    // Saving a Quote does not authorize a Deal write. `quote.create` / `quote.update-draft`
+    // declare readModelRefreshRequirement ["QUOTE_LIST","QUOTE_DETAIL"] only, so the
+    // backend does not record quote activity on the Deal. Connected mode therefore
+    // refreshes the Deal from authority rather than inventing a cross-module Deal
+    // activity; demo mode keeps its own Deal timeline entry.
+    if (isDealConnectedMode()) {
+      void invalidateModuleQueries({
+        moduleKeys: ["deals"],
+        commandType: activityKind === "created" ? "quote.create" : "quote.update-draft",
+        aggregateId: referencedDeal.id,
+        occurredAt: new Date().toISOString(),
+      });
+      return;
+    }
     const activity: DealActivity = {
       id: createDurableId(`act_${activityKind}`),
       createdAt: new Date().toISOString(),

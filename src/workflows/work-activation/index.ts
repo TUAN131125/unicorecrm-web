@@ -1,13 +1,30 @@
 import type { Deal } from "@/modules/deals";
 import { createTaskCommand, type RecordRef, type Task, type TaskPriority } from "@/modules/tasks";
 import type { MutationOutcome } from "@/shared/application";
+import { assertWorkActivationAvailable } from "./application/workActivationAvailability";
+
+export {
+  WORK_ACTIVATION_OPERATION,
+  assertWorkActivationAvailable,
+  isWorkActivationUnavailable,
+} from "./application/workActivationAvailability";
 
 function safeDueAt(value?: string, fallbackHours = 24): string {
   if (value && !Number.isNaN(new Date(value).getTime())) return new Date(value).toISOString();
   return new Date(Date.now() + fallbackHours * 60 * 60 * 1000).toISOString();
 }
 
-export function getDealNextActionTaskId(dealId: string, dueAt: string): string {
+/**
+ * Deterministic Task creation *intent* key for a Deal next action.
+ *
+ * NOT a Task identifier. The Task aggregate id is server-assigned: `CreateTaskRequest`
+ * in `docs/api/openapi.json` is a closed schema carrying no `id`, and the authoritative
+ * id only arrives in `TaskMutationResult.task.id`. This value is safe as an idempotency
+ * key and dedupe key so a repeated activation replays instead of creating a second Task;
+ * it must never be persisted as a Task foreign reference (`Deal.nextActionRef.id`,
+ * `CreateDealRequest.nextActionTaskId`, `UpdateDealNextActionRequest.taskId`).
+ */
+export function getDealNextActionTaskIntentKey(dealId: string, dueAt: string): string {
   return `task_deal_${dealId}_${dueAt.slice(0, 10)}`;
 }
 
@@ -24,12 +41,16 @@ export function getDealNextActionTaskId(dealId: string, dueAt: string): string {
  * remains a backend requirement.
  *
  * The Task identifier is server-assigned (`CreateTaskRequest` carries no `id`), so
- * `getDealNextActionTaskId` is used only to derive a deterministic idempotency key
- * and dedupe key; a repeated activation replays instead of creating a second Task.
+ * `getDealNextActionTaskIntentKey` is used only to derive a deterministic idempotency
+ * key and dedupe key; a repeated activation replays instead of creating a second Task.
+ * Callers must not persist that key as a Deal Task foreign reference.
  */
 export async function ensureDealNextActionTask(deal: Deal): Promise<MutationOutcome<Task> | undefined> {
   if (!deal.nextActionAt || ["WON", "LOST"].includes(String(deal.stage))) return undefined;
-  const intentId = getDealNextActionTaskId(deal.id, deal.nextActionAt);
+  // Asserted only once activation would actually happen: a call that is a no-op for this
+  // Deal is not the workflow and must not be refused.
+  assertWorkActivationAvailable("Activating the next action for a Deal");
+  const intentId = getDealNextActionTaskIntentKey(deal.id, deal.nextActionAt);
   return createTaskCommand({
     id: intentId,
     title: deal.nextActionSummary || `Next action for ${deal.name}`,
@@ -74,17 +95,22 @@ export interface AiSuggestedTaskActivationInput {
   actor: { id: string; name: string };
 }
 
-export function getAiSuggestedTaskId(suggestionId: string): string {
+/**
+ * Deterministic Task creation *intent* key for an activated AI suggestion. Same
+ * identity rule as `getDealNextActionTaskIntentKey`: the Task aggregate id is
+ * server-assigned, so this value may only key idempotency and dedupe.
+ */
+export function getAiSuggestedTaskIntentKey(suggestionId: string): string {
   return `task_ai_${suggestionId}`;
 }
 
 export async function activateAiSuggestedTask(
   input: AiSuggestedTaskActivationInput,
 ): Promise<MutationOutcome<Task>> {
-  const taskId = getAiSuggestedTaskId(input.suggestionId);
+  const intentId = getAiSuggestedTaskIntentKey(input.suggestionId);
   return createTaskCommand(
     {
-      id: taskId,
+      id: intentId,
       title: input.title,
       ...(input.description === undefined ? {} : { description: input.description }),
       priority: input.priority ?? "NORMAL",
@@ -97,7 +123,7 @@ export async function activateAiSuggestedTask(
       actorName: input.actor.name,
     },
     {
-      idempotencyKey: `task.create:${taskId}`,
+      idempotencyKey: `task.create:${intentId}`,
       correlationId: `ai:${input.suggestionId}`,
       actor: { id: input.actor.id, name: input.actor.name },
     },

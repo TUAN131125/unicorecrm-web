@@ -20,6 +20,12 @@ export interface HttpRequest<TBody = unknown> {
   expectedVersion?: HttpResourceVersion;
   correlationId?: string;
   credentials?: RequestCredentials;
+  /**
+   * OpenAPI validation is the default. A narrow backend project extension may
+   * opt into its own colocated runtime validator when the historical frontend
+   * OpenAPI does not yet describe the operation.
+   */
+  contractAuthority?: "openapi" | "semantic-extension";
 }
 
 export interface HttpClient {

@@ -85,11 +85,7 @@ export const LoginPage: React.FC = () => {
           navigate(`${ROUTE_KEYS.VERIFY_EMAIL}?email=${encodeURIComponent(email.trim())}`);
           return;
         }
-        if (result.code === "AUTH_ADAPTER_UNAVAILABLE") {
-          setError(vi ? "Đăng nhập hiện chưa khả dụng." : "Sign-in is currently unavailable.");
-          return;
-        }
-        setError(vi ? "Email hoặc mật khẩu không đúng." : "Email or password is incorrect.");
+        setError(describeSignInFailure(result.code, vi));
         return;
       }
 
@@ -241,5 +237,36 @@ export const LoginPage: React.FC = () => {
     </AuthShell>
   );
 };
+
+/**
+ * Only a contract-declared credential rejection may be shown as a wrong password.
+ * A connection failure, a timeout or a server fault is a different outcome and is
+ * reported as one.
+ */
+function describeSignInFailure(code: string, vi: boolean): string {
+  switch (code) {
+    case "INVALID_CREDENTIALS":
+      return vi ? "Email hoặc mật khẩu không đúng." : "Email or password is incorrect.";
+    case "ACCESS_DENIED":
+    case "AUTHENTICATION_REQUIRED":
+      return vi
+        ? "Tài khoản này không được phép đăng nhập."
+        : "This account is not permitted to sign in.";
+    case "RATE_LIMITED":
+      return vi
+        ? "Quá nhiều lần thử. Vui lòng thử lại sau."
+        : "Too many attempts. Please try again later.";
+    case "SERVICE_UNAVAILABLE":
+      return vi
+        ? "Không kết nối được máy chủ UnicoreCRM. Kiểm tra ApiHost rồi thử lại."
+        : "Cannot reach the UnicoreCRM server. Check that the ApiHost is running, then try again.";
+    case "AUTH_ADAPTER_UNAVAILABLE":
+      return vi ? "Đăng nhập hiện chưa khả dụng." : "Sign-in is currently unavailable.";
+    default:
+      return vi
+        ? "Đăng nhập thất bại do lỗi máy chủ. Vui lòng thử lại."
+        : "Sign-in failed because of a server error. Please try again.";
+  }
+}
 
 export default LoginPage;

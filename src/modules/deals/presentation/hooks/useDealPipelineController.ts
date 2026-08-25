@@ -7,7 +7,7 @@ import { validateDealProgressiveProfile } from "../../domain/rules/dealProgressi
 import { useDeals } from "../hooks/useDeals";
 import { useDealStageWindows } from "../hooks/useDealStageWindows";
 import { useDealStages } from "../hooks/useDealStages";
-import { assertDealDemoImportAllowed, exportDealsSnapshot } from "../../public/deals";
+import { assertDealDemoImportAllowed, exportDealsSnapshot, isDealStageResetUnavailable } from "../../public/deals";
 import { useI18n } from "@/i18n";
 import { getContactsSnapshot } from "@/modules/contacts";
 import { getOrganizationAccountsSnapshot } from "@/modules/organizations";
@@ -23,14 +23,14 @@ import {
 } from "../../public/deals";
 import { findCustomerByRelationshipRefSnapshot } from "@/modules/customers";
 import { getCustomerPresentationRecordSnapshot } from "@/modules/customers";
-import { ensureDealNextActionTask, getDealNextActionTaskId } from "@/workflows/work-activation";
+import { ensureDealNextActionTask, isWorkActivationUnavailable } from "@/workflows/work-activation";
 import { notifyProduct, requestConfirmation, requestDecision, requestTextInput } from "@/components/feedback/ProductDialogService";
 import { CAPABILITIES } from "@/platform/access-control";
 import { filterRuntimeRecordsByOwnership, useRecordOwnershipContext, type OwnershipScopeView } from "@/platform/record-ownership";
 import { mapSelectedPickerItemsToDealLineItems, type DealFormDraft } from "../components/DealFormModal";
 import { createCreateCommandTarget, createDurableId } from "@/shared/ids";
 import { getAuthSessionSnapshot } from "@/platform/identity-auth";
-import { formatApplicationError } from "@/shared/operations";
+import { backendUnavailableMessage, describePartialCommit, executeSequentialCommits, formatApplicationError } from "@/shared/operations";
 
 export function useDealPipelineController() {
 
@@ -57,9 +57,25 @@ export function useDealPipelineController() {
   const { deals, setDeals, query: collectionQuery } = useDeals({ loadAuthoritative: viewMode !== "kanban" });
   const ownership = useRecordOwnershipContext("deals", CAPABILITIES.DEALS_ASSIGN);
   const [ownershipScope, setOwnershipScope] = useState<OwnershipScopeView>("ALLOWED");
+  /**
+   * Kanban card order is a presentation preference, not business data: `DealReadModel`
+   * has no ordering field and no command persists one, so drag order must never be
+   * written to the Deal repository. It is held here and applied on top of the
+   * authoritative collection, which stays the single source of truth for Deal.stage.
+   */
+  const [kanbanCardOrder, setKanbanCardOrder] = useState<readonly string[]>([]);
+  const orderedDeals = useMemo(() => {
+    if (kanbanCardOrder.length === 0) return deals;
+    const rank = new Map(kanbanCardOrder.map((dealId, index) => [dealId, index]));
+    // Array.prototype.sort is stable, so deals without an explicit rank keep the
+    // authoritative order among themselves.
+    return [...deals].sort((left, right) => (
+      (rank.get(left.id) ?? Number.MAX_SAFE_INTEGER) - (rank.get(right.id) ?? Number.MAX_SAFE_INTEGER)
+    ));
+  }, [deals, kanbanCardOrder]);
   const scopedDeals = useMemo(
-    () => filterRuntimeRecordsByOwnership("deals", CAPABILITIES.DEALS_ASSIGN, deals, ownershipScope),
-    [deals, ownershipScope, ownership?.workspaceId, ownership?.memberId, ownership?.dataScope],
+    () => filterRuntimeRecordsByOwnership("deals", CAPABILITIES.DEALS_ASSIGN, orderedDeals, ownershipScope),
+    [orderedDeals, ownershipScope, ownership?.workspaceId, ownership?.memberId, ownership?.dataScope],
   );
   const ownershipScopeCounts = useMemo(() => ({
     MINE: filterRuntimeRecordsByOwnership("deals", CAPABILITIES.DEALS_ASSIGN, deals, "MINE").length,
@@ -186,24 +202,26 @@ export function useDealPipelineController() {
     const moved = (await transitionDealStageCommand(draggedId, targetStage)).data;
     if (!moved) return;
 
-    // Preserve a deterministic visual order after the canonical stage command succeeds.
-    // Dropping on a card inserts before that card; dropping on the open column body appends
-    // to the target stage instead of falling back to the record's previous global position.
-    setDeals((current) => {
-      const dealToMove = current.find((deal) => deal.id === draggedId);
-      if (!dealToMove) return current;
-      const otherDeals = current.filter((deal) => deal.id !== draggedId);
-      const explicitTargetIndex = targetCardId
-        ? otherDeals.findIndex((deal) => deal.id === targetCardId)
-        : -1;
+    // `moved` carries the authoritative stage, already projected from the command
+    // response by transitionDealStageCommand. Only the visual order is decided here, and
+    // it is presentation state: dropping on a card inserts before that card, dropping on
+    // the open column body appends to the target stage.
+    setKanbanCardOrder((current) => {
+      const base = current.length > 0 ? current : deals.map((deal) => deal.id);
+      if (!base.includes(draggedId)) return current;
+      const stageOf = (dealId: string) => (
+        dealId === draggedId ? targetStage : deals.find((deal) => deal.id === dealId)?.stage
+      );
+      const others = base.filter((dealId) => dealId !== draggedId);
+      const explicitTargetIndex = targetCardId ? others.indexOf(targetCardId) : -1;
       const targetIndex = explicitTargetIndex >= 0
         ? explicitTargetIndex
-        : otherDeals.reduce(
-          (lastIndex, deal, index) => deal.stage === targetStage ? index + 1 : lastIndex,
-          otherDeals.length,
+        : others.reduce(
+          (lastIndex, dealId, index) => stageOf(dealId) === targetStage ? index + 1 : lastIndex,
+          others.length,
         );
-      const result = [...otherDeals];
-      result.splice(targetIndex, 0, dealToMove);
+      const result = [...others];
+      result.splice(targetIndex, 0, draggedId);
       return result;
     });
   };
@@ -331,6 +349,20 @@ export function useDealPipelineController() {
     const nextActionAt = form.createFollowUpTask && form.nextActionAt
       ? new Date(form.nextActionAt).toISOString()
       : undefined;
+    // WF-21 work-activation is BLOCKED with `connectedFrontendCoordinatorAllowed: false`.
+    // The Deal command and `task.create` are both ready, so nothing else would stop this
+    // from committing the Deal and only then failing to activate the requested work.
+    // Refuse the whole action up front rather than silently degrading "Deal + follow-up
+    // work" into "Deal only" — that would turn a two-part user intent into partial success.
+    if (nextActionAt && isWorkActivationUnavailable()) {
+      notifyProduct(
+        locale === "vi"
+          ? "Chưa thể tạo cơ hội kèm công việc kế tiếp: máy chủ chưa hỗ trợ kích hoạt công việc. Hãy bỏ chọn công việc theo dõi để chỉ tạo cơ hội."
+          : "An opportunity with a follow-up task cannot be created yet: work activation is not supported by the server. Clear the follow-up task to create the opportunity only.",
+        "warning",
+      );
+      return;
+    }
     const validationDraft = {
       name: form.name,
       buyerRef: relationship.buyerRef,
@@ -355,7 +387,6 @@ export function useDealPipelineController() {
 
     const lineItems = mapSelectedPickerItemsToDealLineItems(form.lineItems);
     const dealId = createCreateCommandTarget("deal");
-    const nextActionTaskId = nextActionAt ? getDealNextActionTaskId(dealId, nextActionAt) : undefined;
     const createdOutcome = await createDealCommand({
       id: dealId,
       name: form.name,
@@ -368,10 +399,14 @@ export function useDealPipelineController() {
       notes: [form.demandSummary, form.painPoints, form.notes].filter(Boolean).join(" · ") || undefined,
       expectedCloseDate: form.expectedCloseDate,
       forecastCategory: form.forecastCategory,
-      ...(nextActionAt && nextActionTaskId ? {
+      // The Task id is server-assigned, and the next-action Task is only created after
+      // this Deal command commits, so no Task reference is known here. A deterministic
+      // client key must not be persisted as `nextActionTaskId`; the schedule is carried
+      // by `nextActionAt`/`nextActionSummary` and the Task references this Deal through
+      // its own `recordRef`/`sourceRef`.
+      ...(nextActionAt ? {
         nextActionAt,
         nextActionSummary: form.nextActionSummary,
-        nextActionRef: { type: "TASK" as const, id: nextActionTaskId },
       } : {}),
       createdAt: now,
       updatedAt: now,
@@ -426,6 +461,19 @@ export function useDealPipelineController() {
     const nextActionAt = form.createFollowUpTask && form.nextActionAt
       ? new Date(form.nextActionAt).toISOString()
       : undefined;
+    // WF-21 work-activation is BLOCKED and coordinator-forbidden. This handler commits the
+    // profile and forecast commands before it reaches the next-action step, so the refusal
+    // has to happen here — before the first Deal mutation — for the activation request to
+    // cost nothing.
+    if (nextActionAt && isWorkActivationUnavailable()) {
+      notifyProduct(
+        locale === "vi"
+          ? "Chưa thể cập nhật cơ hội kèm công việc kế tiếp: máy chủ chưa hỗ trợ kích hoạt công việc. Hãy bỏ chọn công việc theo dõi để lưu các thay đổi còn lại."
+          : "This opportunity cannot be updated with a follow-up task yet: work activation is not supported by the server. Clear the follow-up task to save the remaining changes.",
+        "warning",
+      );
+      return;
+    }
     const editDraft = {
       ...editingDeal,
       name: form.name,
@@ -480,76 +528,116 @@ export function useDealPipelineController() {
 
     const stageChanged = editingDeal.stage !== form.stage;
     const lineItems = mapSelectedPickerItemsToDealLineItems(form.lineItems);
-    await updateDealCommand(editingDeal.id, {
-      name: form.name,
-      amount: form.amount,
-      currency: form.currency,
-      notes: [form.demandSummary, form.painPoints, form.notes].filter(Boolean).join(" · ") || undefined,
-      interestedProducts: form.lineItems.map((item) => item.product.id),
-      lineItems,
-      ...(!form.createFollowUpTask ? {
-        nextActionAt: undefined,
-        nextActionSummary: undefined,
-        nextActionRef: undefined,
-      } : {}),
-      updatedAt: new Date().toISOString(),
-    });
-    await updateDealForecastCommand(editingDeal.id, {
-      expectedCloseDate: form.expectedCloseDate,
-      opportunityScore: form.probability,
-      forecastCategory: form.forecastCategory,
-      actor: ownership?.displayName,
-    });
-    if (nextActionAt) {
-      const taskId = getDealNextActionTaskId(editingDeal.id, nextActionAt);
-      const nextActionOutcome = await updateDealNextActionCommand(editingDeal.id, {
-        nextActionAt,
-        nextActionSummary: form.nextActionSummary,
-        taskId,
-      });
-      // Forecast + next-action are already committed. WF-21 is blocked, so Task
-      // activation is a separate command: report the partial outcome and stop before
-      // the remaining owner/stage commands rather than failing silently.
-      try {
-        await ensureDealNextActionTask(nextActionOutcome.data);
-      } catch (error) {
-        notifyProduct(
-          locale === "vi"
-            ? `Đã cập nhật cơ hội "${editingDeal.name}". Chưa tạo được công việc kế tiếp: ${formatApplicationError(error, { locale })}. Các thay đổi còn lại chưa được áp dụng.`
-            : `Opportunity "${editingDeal.name}" was updated. Its next-action Task was not created: ${formatApplicationError(error, { locale })}. Remaining changes were not applied.`,
-          "danger",
-          { actionLabel: locale === "vi" ? "Mở chi tiết" : "Open record", onAction: () => navigate(`/deals/${editingDeal.id}`), durationMs: 10000 },
-        );
-        return;
-      }
-    }
-
-    if (ownerChanged && handoverReason) {
-      await reassignDealCommand(editingDeal.id, {
-        ownerId: form.ownerId,
-        reason: handoverReason,
-        activity: {
-          id: createDurableId("deal_activity_owner"),
-          type: "system",
-          title: locale === "vi" ? "Bàn giao cơ hội" : "Opportunity handover",
-          description: `${locale === "vi" ? "Lý do" : "Reason"}: ${handoverReason}`,
+    // No backend operation updates profile, forecast, next action, ownership and stage
+    // together, so this is several authoritative commands. An earlier one can commit and a
+    // later one fail; the committed work stays committed on the server, so it is reported
+    // rather than discarded. Nothing here reverses a committed command.
+    const report = await executeSequentialCommits([
+      {
+        step: "profile",
+        run: () => updateDealCommand(editingDeal.id, {
+          name: form.name,
+          amount: form.amount,
+          currency: form.currency,
+          notes: [form.demandSummary, form.painPoints, form.notes].filter(Boolean).join(" · ") || undefined,
+          interestedProducts: form.lineItems.map((item) => item.product.id),
+          lineItems,
+          ...(!form.createFollowUpTask ? {
+            nextActionAt: undefined,
+            nextActionSummary: undefined,
+            nextActionRef: undefined,
+          } : {}),
+          updatedAt: new Date().toISOString(),
+        }),
+      },
+      {
+        step: "forecast",
+        run: () => updateDealForecastCommand(editingDeal.id, {
+          expectedCloseDate: form.expectedCloseDate,
+          opportunityScore: form.probability,
+          forecastCategory: form.forecastCategory,
+          actor: ownership?.displayName,
+        }),
+      },
+      // `taskId` is omitted deliberately: the Task id is server-assigned, so there is no
+      // authoritative Task reference to send. A deterministic client key here would persist
+      // a Task foreign reference that matches no Task.
+      ...(nextActionAt ? [{
+        step: "nextAction",
+        run: () => updateDealNextActionCommand(editingDeal.id, {
+          nextActionAt,
+          nextActionSummary: form.nextActionSummary,
+        }),
+      }, {
+        // WF-21. Unreachable in connected mode (the guard above returns first); demo owns
+        // its own activation, and a failure there is now a reported partial outcome rather
+        // than a special case.
+        step: "activation",
+        run: () => ensureDealNextActionTask({ ...editingDeal, nextActionAt, nextActionSummary: form.nextActionSummary }),
+      }] : []),
+      ...(ownerChanged && handoverReason ? [{
+        step: "owner",
+        run: () => reassignDealCommand(editingDeal.id, {
+          ownerId: form.ownerId,
+          reason: handoverReason,
+          activity: {
+            id: createDurableId("deal_activity_owner"),
+            type: "system" as const,
+            title: locale === "vi" ? "Bàn giao cơ hội" : "Opportunity handover",
+            description: `${locale === "vi" ? "Lý do" : "Reason"}: ${handoverReason}`,
+            createdAt: new Date().toISOString(),
+            author: ownership?.displayName || t("common.system"),
+          },
+        }),
+      }] : []),
+      ...(stageChanged ? [{
+        step: "stage",
+        run: () => transitionDealStageCommand(editingDeal.id, form.stage, {
+          id: createDurableId("deal_activity_stage"),
+          type: "stage" as const,
+          title: t("deals.activities.stageChangedTitle"),
+          description: t("deals.activities.stageChangedDescription", { from: getDealStageLabel(editingDeal.stage), to: getDealStageLabel(form.stage) }),
           createdAt: new Date().toISOString(),
-          author: ownership?.displayName || t("common.system"),
-        },
-      });
-    }
+          author: t("common.system"),
+          metadata: { fromStage: editingDeal.stage, toStage: form.stage },
+        }),
+      }] : []),
+    ]);
 
-    if (stageChanged) {
-      const now = new Date().toISOString();
-      await transitionDealStageCommand(editingDeal.id, form.stage, {
-        id: createDurableId("deal_activity_stage"),
-        type: "stage",
-        title: t("deals.activities.stageChangedTitle"),
-        description: t("deals.activities.stageChangedDescription", { from: getDealStageLabel(editingDeal.stage), to: getDealStageLabel(form.stage) }),
-        createdAt: now,
-        author: t("common.system"),
-        metadata: { fromStage: editingDeal.stage, toStage: form.stage },
-      });
+    if (report.status !== "FULL_SUCCESS") {
+      const stepLabels: Record<string, { vi: string; en: string }> = {
+        profile: { vi: "Thông tin cơ hội", en: "The opportunity details" },
+        forecast: { vi: "Dự báo", en: "The forecast" },
+        nextAction: { vi: "Hành động kế tiếp", en: "The next action" },
+        activation: { vi: "Công việc kế tiếp", en: "The follow-up task" },
+        owner: { vi: "Bàn giao người phụ trách", en: "The handover" },
+        stage: { vi: "Giai đoạn", en: "The stage change" },
+      };
+      const describe = (keys: readonly string[]) => keys
+        .map((key) => (locale === "vi" ? stepLabels[key]?.vi : stepLabels[key]?.en) ?? key)
+        .join(", ");
+      const failureText = formatApplicationError(report.error, { locale });
+      if (report.status === "PARTIAL_SUCCESS") {
+        const summary = describePartialCommit(
+          report,
+          {
+            committed: describe(report.committed.map((entry) => entry.step)),
+            failed: describe(report.failedStep === undefined ? [] : [report.failedStep]),
+          },
+          locale,
+        );
+        notifyProduct(`${summary} ${failureText}`, "danger", {
+          actionLabel: locale === "vi" ? "Mở chi tiết" : "Open record",
+          onAction: () => navigate(`/deals/${editingDeal.id}`),
+          durationMs: 10000,
+        });
+      } else {
+        notifyProduct(failureText, "danger");
+      }
+      // Whatever committed is authoritative and the local projection is now stale. The
+      // commands already project their own authoritative results; the modal stays open so
+      // the user can retry only what failed.
+      return;
     }
 
     setIsEditModalOpen(false);
@@ -737,6 +825,15 @@ export function useDealPipelineController() {
 
   // Restore default stage configuration through the module repository.
   const handleResetStageConfigs = async () => {
+    // Stage configuration has no backend reset contract, so connected mode refuses before the
+    // confirmation dialog instead of throwing out of the handler afterwards.
+    if (isDealStageResetUnavailable()) {
+      notifyProduct(backendUnavailableMessage({
+        locale,
+        action: locale === "vi" ? "Khôi phục giai đoạn mặc định" : "Restoring the default stages",
+      }), "warning");
+      return;
+    }
     const confirmed = await requestConfirmation({
       title: locale === "vi" ? "Khôi phục giai đoạn mặc định?" : "Restore default stages?",
       message: locale === "vi" ? "Thiết lập giai đoạn hiện tại sẽ được thay thế bằng cấu hình mặc định. Các thay đổi tùy chỉnh sẽ bị mất." : "Current stage settings will be replaced by the default configuration. Custom changes will be lost.",

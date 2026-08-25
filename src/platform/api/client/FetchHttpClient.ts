@@ -32,7 +32,7 @@ export interface FetchHttpClientOptions {
   fetchImplementation?: typeof fetch;
   defaultTimeoutMs?: number;
   retryPolicy?: Partial<Omit<HttpRetryPolicy, "retryableStatuses">> & { retryableStatuses?: Iterable<number> };
-  onUnauthorized?: () => void | Promise<void>;
+  onUnauthorized?: () => boolean | void | Promise<boolean | void>;
 }
 
 export class FetchHttpClient implements HttpClient {
@@ -42,10 +42,14 @@ export class FetchHttpClient implements HttpClient {
   private readonly retryPolicy: HttpRetryPolicy;
   private readonly requestIdProvider: RequestIdProvider;
   private readonly correlationIdProvider: CorrelationIdProvider;
+  private unauthorizedRefresh: Promise<boolean> | undefined;
 
   constructor(private readonly options: FetchHttpClientOptions) {
     this.baseUrl = normalizeBaseUrl(options.baseUrl);
-    this.fetchImplementation = options.fetchImplementation ?? fetch;
+    // The default implementation must stay bound to the global scope. Storing a
+    // bare `fetch` reference on the instance would invoke it with the client as
+    // its receiver, which browsers reject with "Illegal invocation".
+    this.fetchImplementation = options.fetchImplementation ?? globalThis.fetch.bind(globalThis);
     this.defaultTimeoutMs = options.defaultTimeoutMs ?? 15_000;
     this.retryPolicy = {
       maxAttempts: options.retryPolicy?.maxAttempts ?? DEFAULT_RETRY_POLICY.maxAttempts,
@@ -58,12 +62,15 @@ export class FetchHttpClient implements HttpClient {
   }
 
   async request<TResponse, TBody = unknown>(input: HttpRequest<TBody>): Promise<TResponse> {
-    assertOpenApiPayload(input.operationId, "request", input.body);
+    if (input.contractAuthority !== "semantic-extension") {
+      assertOpenApiPayload(input.operationId, "request", input.body);
+    }
     const requestId = this.requestIdProvider.createRequestId();
     const correlationId = input.correlationId?.trim() || this.correlationIdProvider.createCorrelationId();
-    const headers = await this.buildHeaders(input, requestId, correlationId);
+    let headers = await this.buildHeaders(input, requestId, correlationId);
     const body = input.body === undefined ? undefined : serializeApiPayload(input.body);
     const maxAttempts = this.resolveMaxAttempts(input);
+    let authorizationReplayed = false;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
       const attemptSignal = createAttemptSignal(input.signal, input.timeoutMs ?? this.defaultTimeoutMs);
@@ -77,13 +84,21 @@ export class FetchHttpClient implements HttpClient {
         });
         const payload = await readJsonResponse(response);
         if (response.ok) {
-          assertOpenApiPayload(input.operationId, "response", payload, response.status);
+          if (input.contractAuthority !== "semantic-extension") {
+            assertOpenApiPayload(input.operationId, "response", payload, response.status);
+          }
           return payload as TResponse;
         }
 
         const error = mapHttpError(response, payload, requestId, correlationId);
-        if (response.status === 401) {
-          try { await this.options.onUnauthorized?.(); } catch { /* preserve the authoritative API error */ }
+        if (response.status === 401 && !authorizationReplayed && this.canReplayAfterRefresh(input)) {
+          const refreshed = await this.coordinateUnauthorizedRefresh();
+          if (refreshed) {
+            authorizationReplayed = true;
+            headers = await this.buildHeaders(input, requestId, correlationId);
+            attempt -= 1;
+            continue;
+          }
         }
         if (!this.shouldRetry(input, attempt, maxAttempts, response.status, error)) throw error;
         await waitForRetry(response, attempt, this.retryPolicy, input.signal);
@@ -187,6 +202,22 @@ export class FetchHttpClient implements HttpClient {
     if (isSafeMethod(input.method)) return this.retryPolicy.maxAttempts;
     if (input.retry === "idempotent" && input.idempotencyKey) return this.retryPolicy.maxAttempts;
     return 1;
+  }
+
+  private canReplayAfterRefresh(input: HttpRequest): boolean {
+    return isSafeMethod(input.method) || (input.retry === "idempotent" && Boolean(input.idempotencyKey));
+  }
+
+  private coordinateUnauthorizedRefresh(): Promise<boolean> {
+    if (this.unauthorizedRefresh) return this.unauthorizedRefresh;
+    const refresh = this.options.onUnauthorized;
+    if (!refresh) return Promise.resolve(false);
+    this.unauthorizedRefresh = Promise.resolve()
+      .then(() => refresh())
+      .then((result) => result === true)
+      .catch(() => false)
+      .finally(() => { this.unauthorizedRefresh = undefined; });
+    return this.unauthorizedRefresh;
   }
 
   private shouldRetry(

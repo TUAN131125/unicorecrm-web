@@ -1,4 +1,4 @@
-import type { InvoiceApiPort, InvoiceDraftLineInput } from "../application/ports/InvoiceApiPort";
+import type { InvoiceApiPort, InvoiceDraftLineInput, InvoiceMutationEvidence } from "../application/ports/InvoiceApiPort";
 import {
   addMoney,
   compareMoney,
@@ -89,15 +89,19 @@ export class InMemoryInvoiceApiAdapter implements InvoiceApiPort {
     return { ready: blockers.length === 0, blockers, invoiceVersion: invoice.version };
   }
   async issue(invoiceId: string, input: { expectedVersion: number }) { const now = new Date().toISOString(); return issueInvoice(this.repository, invoiceId, { ...input, invoiceNumber: `DEV-${invoiceId}`, issueDate: now.slice(0, 10), issuedAt: now }); }
-  async retryIssue(invoiceId: string, input: { expectedVersion: number }) { const now = new Date().toISOString(); return retryInvoiceIssue(this.repository, invoiceId, { ...input, invoiceNumber: `DEV-${invoiceId}`, issueDate: now.slice(0, 10), issuedAt: now }); }
+  async retryIssue(invoiceId: string, input: { expectedVersion: number }) {
+    const now = new Date().toISOString();
+    const invoice = retryInvoiceIssue(this.repository, invoiceId, { ...input, invoiceNumber: `DEV-${invoiceId}`, issueDate: now.slice(0, 10), issuedAt: now });
+    return { invoice, evidence: demoEvidence(`invoice-retry-issue:${invoiceId}:${input.expectedVersion}`, invoice.id, invoice.version, now) };
+  }
   async send(invoiceId: string, input: Parameters<InvoiceApiPort["send"]>[1]) {
-    const replay = this.repository.listDeliveries().find((item) => item.id === `delivery_${input.idempotencyKey}`);
-    if (replay) return replay;
     const invoice = this.repository.listInvoices().find((item) => item.id === invoiceId);
     if (!invoice) throw new Error(`Invoice ${invoiceId} not found.`);
+    const replay = this.repository.listDeliveries().find((item) => item.id === `delivery_${input.idempotencyKey}`);
+    if (replay) return { delivery: replay, evidence: demoEvidence(input.idempotencyKey, invoice.id, invoice.version, replay.createdAt) };
     if (invoice.version !== input.expectedVersion) throw new Error("INVOICE_VERSION_CONFLICT");
     const now = new Date().toISOString();
-    return recordInvoiceDelivery(this.repository, {
+    const delivery = recordInvoiceDelivery(this.repository, {
       id: `delivery_${input.idempotencyKey}`,
       invoiceId,
       channel: input.channel,
@@ -106,6 +110,7 @@ export class InMemoryInvoiceApiAdapter implements InvoiceApiPort {
       sentAt: now,
       createdAt: now,
     });
+    return { delivery, evidence: demoEvidence(input.idempotencyKey, invoice.id, invoice.version, now) };
   }
   async createCreditNote(input: Parameters<InvoiceApiPort["createCreditNote"]>[0]) {
     const invoice = this.repository.listInvoices().find((item) => item.id === input.invoiceId);
@@ -127,11 +132,11 @@ export class InMemoryInvoiceApiAdapter implements InvoiceApiPort {
     const total = sumMoney(requestedLines.map((line) => line.amount), invoice.currency);
     if (!isPositiveMoney(total) || compareMoney(total, invoice.totals.grandTotal) > 0) throw new Error("CREDIT_NOTE_AMOUNT_INVALID");
     const replay = this.repository.listCreditNotes().find((item) => item.idempotencyKey === input.idempotencyKey);
-    if (replay) return replay;
+    if (replay) return { creditNote: replay, evidence: demoEvidence(input.idempotencyKey, invoice.id, invoice.version, replay.createdAt) };
     const sequence = this.repository.listCreditNotes().length + 1;
     const id = `cn_dev_${String(sequence).padStart(5, "0")}`;
     const now = new Date().toISOString();
-    return issueCreditNote(this.repository, {
+    const creditNote = issueCreditNote(this.repository, {
       id,
       creditNoteNumber: `DEV-CN-${String(sequence).padStart(5, "0")}`,
       invoiceId: invoice.id,
@@ -148,9 +153,39 @@ export class InMemoryInvoiceApiAdapter implements InvoiceApiPort {
       updatedAt: now,
       issuedAt: now,
     });
+    return { creditNote, evidence: demoEvidence(input.idempotencyKey, invoice.id, invoice.version, now) };
   }
-  async discardDraft(invoiceId: string, input: Parameters<InvoiceApiPort["discardDraft"]>[1]) { return discardInvoiceDraft(this.repository, invoiceId, { ...input, now: new Date().toISOString() }); }
-  async voidInvoice(invoiceId: string, input: Parameters<InvoiceApiPort["voidInvoice"]>[1]) { return voidIssuedInvoice(this.repository, invoiceId, { ...input, now: new Date().toISOString() }); }
+  async discardDraft(invoiceId: string, input: Parameters<InvoiceApiPort["discardDraft"]>[1]) {
+    const now = new Date().toISOString();
+    const invoice = discardInvoiceDraft(this.repository, invoiceId, { ...input, now });
+    return { invoice, evidence: demoEvidence(`invoice-discard:${invoiceId}:${input.expectedVersion}`, invoice.id, invoice.version, now) };
+  }
+  async voidInvoice(invoiceId: string, input: Parameters<InvoiceApiPort["voidInvoice"]>[1]) {
+    const now = new Date().toISOString();
+    const invoice = voidIssuedInvoice(this.repository, invoiceId, { ...input, now });
+    return { invoice, evidence: demoEvidence(`invoice-void:${invoiceId}:${input.expectedVersion}:${input.reason.trim()}`, invoice.id, invoice.version, now) };
+  }
+}
+
+/**
+ * Demo-authority mutation evidence, following the convention established by the
+ * Deal demo runtime. It is explicitly marked `authority: "demo"` and
+ * `outcome: "DEMO_COMMITTED"` so it can never be mistaken for backend evidence.
+ */
+function demoEvidence(commandId: string, aggregateId: string, version: number, occurredAt: string): InvoiceMutationEvidence {
+  return {
+    authority: "demo",
+    commandId,
+    correlationId: `corr_${crypto.randomUUID()}`,
+    aggregateId,
+    aggregateType: "invoice",
+    version,
+    occurredAt,
+    outcome: "DEMO_COMMITTED",
+    warnings: [],
+    emittedEventIds: [],
+    auditEvidenceIds: [],
+  };
 }
 
 function buildDraftLines(

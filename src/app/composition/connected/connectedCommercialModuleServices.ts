@@ -27,7 +27,7 @@ import { relationshipRefKey } from "@/platform/identity";
 import {
   ConnectedCollectionProjection,
   ConnectedSnapshotProjection,
-  connectedOperationUnavailable,
+  unavailableConnectedOperation,
 } from "./connectedProjectionRepositories";
 import { createConnectedPreferencePort } from "./connectedClientUtilities";
 
@@ -140,7 +140,7 @@ function createShipping(httpClient: HttpClient): ShippingApplicationServices {
       getPickupLocations: () => pickupProjection,
       getReturnLocations: () => returnProjection,
       getProviders: () => [],
-      saveProviders: () => connectedOperationUnavailable("Shipping provider configuration"),
+      saveProviders: unavailableConnectedOperation("Shipping provider configuration"),
       replaceLocations: (pickup, returns) => {
         pickupProjection = [...pickup];
         returnProjection = [...returns];

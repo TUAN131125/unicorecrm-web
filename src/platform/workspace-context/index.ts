@@ -5,6 +5,10 @@ export { WorkspaceBootstrapHttpAdapter } from "./infrastructure/WorkspaceBootstr
 export {
   configureConnectedWorkspaceBootstrapGateway,
   resetConnectedWorkspaceBootstrapGateway,
+  configureWorkspaceRuntimeParticipant,
+  resetWorkspaceRuntimeParticipant,
+  enterWorkspace,
+  enterWorkspaceByKey,
   isConnectedWorkspaceRuntime,
   getWorkspaceContextSnapshot,
   getWorkspaceBootstrapSnapshot,

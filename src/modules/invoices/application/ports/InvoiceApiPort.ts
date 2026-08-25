@@ -76,6 +76,45 @@ export interface CreateCreditNoteInput {
   idempotencyKey: string;
 }
 
+/**
+ * Authoritative evidence returned by an Invoice mutation.
+ *
+ * Mirrors the shape established by `DealMutationEvidence`. The connected HTTP
+ * adapter populates every field from the backend mutation response envelope and
+ * never synthesizes one; the demo adapter marks itself `authority: "demo"`.
+ *
+ * Named `...CommandResult` rather than `...MutationResult` because the generated
+ * OpenAPI client already exports `InvoiceMutationResult` for the wire payload.
+ */
+export interface InvoiceMutationEvidence {
+  authority: "backend" | "demo" | "test";
+  commandId: string;
+  correlationId: string;
+  aggregateId: string;
+  aggregateType: string;
+  version: number;
+  occurredAt: string;
+  outcome: "COMMITTED" | "REPLAYED" | "DEMO_COMMITTED";
+  warnings: readonly string[];
+  emittedEventIds: readonly string[];
+  auditEvidenceIds: readonly string[];
+}
+
+export interface InvoiceCommandResult {
+  invoice: Invoice;
+  evidence: InvoiceMutationEvidence;
+}
+
+export interface InvoiceDeliveryCommandResult {
+  delivery: InvoiceDeliveryRecord;
+  evidence: InvoiceMutationEvidence;
+}
+
+export interface CreditNoteCommandResult {
+  creditNote: CreditNote;
+  evidence: InvoiceMutationEvidence;
+}
+
 export interface InvoiceApiPort {
   list(signal?: AbortSignal): Promise<Invoice[]>;
   listCreditNotes(invoiceId?: string, signal?: AbortSignal): Promise<CreditNote[]>;
@@ -85,9 +124,12 @@ export interface InvoiceApiPort {
   saveDraft(input: SaveInvoiceDraftInput, signal?: AbortSignal): Promise<Invoice>;
   getIssueReadiness(invoiceId: string, signal?: AbortSignal): Promise<{ ready: boolean; blockers: string[]; invoiceVersion: number }>;
   issue(invoiceId: string, input: { expectedVersion: number }, signal?: AbortSignal): Promise<Invoice>;
-  retryIssue(invoiceId: string, input: { expectedVersion: number }, signal?: AbortSignal): Promise<Invoice>;
-  send(invoiceId: string, input: SendInvoiceInput, signal?: AbortSignal): Promise<InvoiceDeliveryRecord>;
-  createCreditNote(input: CreateCreditNoteInput, signal?: AbortSignal): Promise<CreditNote>;
-  discardDraft(invoiceId: string, input: { expectedVersion: number }, signal?: AbortSignal): Promise<Invoice>;
-  voidInvoice(invoiceId: string, input: { expectedVersion: number; reason: string }, signal?: AbortSignal): Promise<Invoice>;
+  // The five commands below are DEDICATED_MODULE_HTTP_ADAPTER in the canonical
+  // command registry, so they never route through RoutedHttpMutationAuthority and
+  // must carry the backend's authoritative mutation evidence themselves.
+  retryIssue(invoiceId: string, input: { expectedVersion: number }, signal?: AbortSignal): Promise<InvoiceCommandResult>;
+  send(invoiceId: string, input: SendInvoiceInput, signal?: AbortSignal): Promise<InvoiceDeliveryCommandResult>;
+  createCreditNote(input: CreateCreditNoteInput, signal?: AbortSignal): Promise<CreditNoteCommandResult>;
+  discardDraft(invoiceId: string, input: { expectedVersion: number }, signal?: AbortSignal): Promise<InvoiceCommandResult>;
+  voidInvoice(invoiceId: string, input: { expectedVersion: number; reason: string }, signal?: AbortSignal): Promise<InvoiceCommandResult>;
 }

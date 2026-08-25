@@ -1,5 +1,7 @@
 export * from "./client";
 export * from "./errors";
+export * from "./extensions/aiAdvisoryApi";
+export * from "./extensions/workspaceProvisioningApi";
 export * from "./runtime";
 export * from "./catalog";
 export type * from "./module-boundary";

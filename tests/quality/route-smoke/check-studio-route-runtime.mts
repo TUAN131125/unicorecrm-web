@@ -47,7 +47,10 @@ const result = await build({
   platform: "browser",
   target: ["es2022"],
   define: {
-    "import.meta.env": JSON.stringify({ DEV: true, PROD: false, MODE: "test", BASE_URL: "/" }),
+    // This harness boots the bundle in JSDOM with no API host, so it exercises the
+    // browser-only demo runtime explicitly. Connected mode is the default everywhere
+    // else and is covered by the connected end-to-end suite.
+    "import.meta.env": JSON.stringify({ DEV: true, PROD: false, MODE: "test", BASE_URL: "/", VITE_RUNTIME_MODE: "demo" }),
   },
   loader: { ".css": "empty" },
   alias: { "@": "./src" },

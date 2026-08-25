@@ -1,3 +1,4 @@
+import { isBusinessOperationUnavailable } from "@/shared/application";
 import type { Product } from "../domain/model/product.types";
 import type { ConfiguredProductField, ConfiguredProductType } from "../domain/model/productConfiguration.types";
 import {
@@ -21,3 +22,12 @@ export const isConfiguredProductTypeUsed = (typeCode: string, products: Product[
 export const isConfiguredProductFieldUsed = (fieldKey: string, products: Product[]): boolean => isConfiguredProductFieldUsedRuntime(fieldKey, products);
 export const getDefaultProductConfiguration = getDefaultProductConfigurationRuntime;
 export const resetProductConfiguration = resetProductConfigurationRuntime;
+
+/**
+ * True when product type/field configuration cannot be saved authoritatively.
+ * `/products/configuration/types` and `/products/configuration/fields` writes are BLOCKED.
+ */
+export function isProductConfigurationSaveUnavailable(): boolean {
+  return isBusinessOperationUnavailable("Product type configuration save")
+    || isBusinessOperationUnavailable("Product field configuration save");
+}

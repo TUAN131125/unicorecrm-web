@@ -13,7 +13,9 @@ import {
   WalletCards,
 } from "lucide-react";
 import { useI18n } from "@/i18n";
+import { unavailableFeatureMessage } from "@/shared/operations";
 import { CAPABILITIES, useEffectiveAccess } from "@/platform/access-control";
+import { isIntegrationConfigurationWriteUnavailable } from "@/platform/connected-configuration/connectedConfigurationAvailability";
 import {
   disconnectIntegrationConnection,
   getIntegrationConfiguration,
@@ -60,6 +62,7 @@ export function IntegrationsView() {
   const { locale } = useI18n();
   const text = (vi: string, en: string) => locale === "vi" ? vi : en;
   const canConfigure = useEffectiveAccess().can(CAPABILITIES.STUDIO_CONFIGURE);
+  const [unavailableNotice, setUnavailableNotice] = React.useState<string | null>(null);
   const source = useSubscribableSnapshot(getIntegrationConfiguration, subscribeToIntegrationConfiguration);
   const [editing, setEditing] = React.useState<IntegrationConnection | null>(null);
   const [search, setSearch] = React.useState("");
@@ -111,9 +114,24 @@ export function IntegrationsView() {
       setDialogError(text("Cần tên kết nối và mã tham chiếu xác thực.", "Connection name and credential reference are required."));
       return;
     }
+    // `createIntegrationConnection` and `updateIntegrationConnection` are BLOCKED while
+    // `listIntegrationConnections` is READY. Refuse rather than pair an authoritative read
+    // with a connection credential persisted only in this browser.
+    if (isIntegrationConfigurationWriteUnavailable()) {
+      setDialogError(unavailableFeatureMessage({ vi: "Chưa thể lưu kết nối tích hợp", en: "The integration connection cannot be saved yet" }, { locale }));
+      return;
+    }
     saveIntegrationConnection(editing);
     setEditing(null);
     setDialogError("");
+  };
+
+  const disconnectConnection = (connectionId: string) => {
+    if (isIntegrationConfigurationWriteUnavailable()) {
+      setUnavailableNotice(unavailableFeatureMessage({ vi: "Chưa thể ngắt kết nối tích hợp", en: "The integration connection cannot be disconnected yet" }, { locale }));
+      return;
+    }
+    disconnectIntegrationConnection(connectionId);
   };
   const formatDate = (value: string | null) => {
     if (!value) return text("Chưa có", "Not available");
@@ -132,6 +150,7 @@ export function IntegrationsView() {
 
   const content = (
     <>
+      {unavailableNotice ? <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{unavailableNotice}</p> : null}
       {!canConfigure ? <p className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{text("Bạn chỉ có quyền xem cấu hình.", "You have read-only access to configuration.")}</p> : null}
 
       <StudioMetricsGrid>
@@ -178,7 +197,7 @@ export function IntegrationsView() {
                   <div className="mt-auto flex flex-wrap gap-2 pt-4">
                     <StudioButton size="sm" icon={<Settings2 size={13} />} disabled={!canConfigure} onClick={() => open(provider.code)}>{connection ? text("Quản lý", "Manage") : text("Cấu hình", "Configure")}</StudioButton>
                     {connection?.status === "PENDING_VERIFICATION" ? <StudioButton size="sm" disabled icon={<Clock3 size={13} />}>{text("Đang kiểm tra", "Checking")}</StudioButton> : null}
-                    {connection && connection.status !== "DISCONNECTED" ? <StudioButton size="sm" tone="danger" icon={<Unplug size={13} />} disabled={!canConfigure} onClick={() => disconnectIntegrationConnection(connection.id)}>{text("Ngắt", "Disconnect")}</StudioButton> : null}
+                    {connection && connection.status !== "DISCONNECTED" ? <StudioButton size="sm" tone="danger" icon={<Unplug size={13} />} disabled={!canConfigure} onClick={() => disconnectConnection(connection.id)}>{text("Ngắt", "Disconnect")}</StudioButton> : null}
                   </div>
                 </article>
               );

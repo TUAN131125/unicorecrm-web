@@ -18,7 +18,9 @@ interface Violation {
 
 const root = repositoryRoot;
 const excludedDirectories = new Set([".git", ".cache", "coverage", "dist", "node_modules", ".agents", ".claude", ".ai-workflows", "design-reconstruction"]);
-const rootMarkdownAllowlist = new Set(["AGENTS.md", "ARCHITECTURE.md", "README.md"]);
+// `CLAUDE.md` is the root AI operating-memory entrypoint, the same class of root
+// instruction file as `AGENTS.md`. It imports the compact memory files under `docs/ai/`.
+const rootMarkdownAllowlist = new Set(["AGENTS.md", "ARCHITECTURE.md", "CLAUDE.md", "README.md"]);
 const textExtensions = new Set([
   ".cjs",
   ".css",

@@ -18,6 +18,7 @@ import {
   appendAiConversationMessage,
   createAiConversation,
   deleteAiConversation,
+  isConnectedAiRuntime,
   listAiConversations,
   resolveAiInteractionState,
   type AiInteractionState,
@@ -50,6 +51,7 @@ export const AiAssistantDrawer: React.FC<AiAssistantDrawerProps> = ({ isOpen, on
   const reduceMotion = useReducedMotion();
   const scope = useAiAssistantScope();
   const aiDisabled = DEFAULT_AI_GOVERNANCE_POLICY.killSwitch;
+  const connectedAdvisoryOnly = isConnectedAiRuntime();
   const [threads, setThreads] = useState<AiChatThread[]>([]);
   const [activeThreadId, setActiveThreadId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -60,9 +62,13 @@ export const AiAssistantDrawer: React.FC<AiAssistantDrawerProps> = ({ isOpen, on
 
   useBodyScrollLock(isOpen);
 
-  const welcomeMessage = isVi
-    ? "Xin chào! Tôi là Trợ lý AI của UnicoreCRM. Bạn có thể hỏi dữ liệu CRM, yêu cầu phân tích hoặc ra lệnh tạo công việc."
-    : "Hello! I am the UnicoreCRM AI Assistant. Ask about CRM data, request analysis, or command task creation.";
+  const welcomeMessage = connectedAdvisoryOnly
+    ? (isVi
+      ? "Xin chào! Tôi cung cấp tư vấn chỉ đọc cho Lead, Deal hoặc Task đang được chọn. Các hành động tạo hoặc cập nhật dữ liệu không khả dụng trong Trợ lý AI."
+      : "Hello! I provide read-only advice for the selected Lead, Deal, or Task. Create and update actions are unavailable in the AI Assistant.")
+    : (isVi
+      ? "Xin chào! Tôi là Trợ lý AI của UnicoreCRM. Bạn có thể hỏi dữ liệu CRM, yêu cầu phân tích hoặc ra lệnh tạo công việc."
+      : "Hello! I am the UnicoreCRM AI Assistant. Ask about CRM data, request analysis, or command task creation.");
   const newConversationTitle = isVi ? "Cuộc trò chuyện mới" : "New conversation";
 
   const reportRuntimeFailure = useCallback((error: unknown) => {

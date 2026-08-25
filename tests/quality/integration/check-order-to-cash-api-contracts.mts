@@ -66,6 +66,16 @@ const invoiceDocument = {
   createdAt: now,
   updatedAt: now,
 };
+// Dedicated Invoice/Payment mutations return the backend's authoritative evidence
+// envelope, so contract fakes must supply it exactly as OpenAPI requires it.
+const mutationEvidence = {
+  commandId: "cmd_order_to_cash_contract",
+  correlationId: "corr_order_to_cash_contract",
+  aggregateType: "INVOICE",
+  version: 1,
+  occurredAt: now,
+  outcome: "COMMITTED" as const,
+};
 const client = {
   request: async <TResponse,>(input: HttpRequest): Promise<TResponse> => {
     calls.push(input);
@@ -81,7 +91,7 @@ const client = {
         prospectiveVersion: 2,
       } as TResponse;
     }
-    if (input.path === "/payments/manual-records") return { result: { payment: paymentDocument } } as TResponse;
+    if (input.path === "/payments/manual-records") return { ...mutationEvidence, aggregateId: "payment", aggregateType: "PAYMENT_RECORD", result: { payment: paymentDocument } } as TResponse;
     if (input.path === "/payment-intents/intent/retry") return { result: { intent: intentDocument } } as TResponse;
     if (input.path === "/payment-intents/intent") return intentDocument as TResponse;
     if (input.path === "/payment-allocations") return { result: { allocations: [], remainingAmount: zero } } as TResponse;
@@ -91,7 +101,7 @@ const client = {
     if (input.path === "/invoices/invoice/draft") return { aggregateId: "invoice", result: invoiceDocument } as TResponse;
     if (input.path === "/invoices/invoice/issue-readiness") return { ready: true, blockers: [], invoiceVersion: 1 } as TResponse;
     if (input.path === "/invoices/invoice/retry-issue" || input.path === "/invoices/invoice/discard") {
-      return { aggregateId: "invoice", result: { invoice: invoiceDocument } } as TResponse;
+      return { ...mutationEvidence, aggregateId: "invoice", result: { invoice: invoiceDocument } } as TResponse;
     }
     if (input.path === "/receivables") {
       return { asOfDate: "2026-07-17", items: [], pageInfo: { hasNextPage: false } } as TResponse;

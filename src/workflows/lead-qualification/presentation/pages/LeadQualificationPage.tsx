@@ -14,6 +14,7 @@ import {
 } from "@/modules/products";
 import { useWorkspaceConfigSnapshot, useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
 import { useI18n } from "@/i18n";
+import { formatApplicationError } from "@/shared/operations";
 import { executeLeadNurtureCommand, executeLeadOpportunityCommand } from "../../public/leadQualification";
 import type { LeadRelationshipInput } from "../../domain/leadQualification.types";
 import { RelationshipResolutionFields } from "../components/RelationshipResolutionFields";
@@ -208,14 +209,14 @@ export const LeadQualificationPage: React.FC = () => {
 
     setSubmitting(true);
     try {
-      if (!eligible) throw new Error(vi ? "Tiềm năng phải ở bước Đang xác minh." : "Lead must be in Verifying.");
+      if (!eligible) { setOperationError(vi ? "Tiềm năng phải ở bước Đang xác minh." : "Lead must be in Verifying."); return; }
       if (selectedOutcome === "DISQUALIFIED") {
         await disqualifyLeadViaApi(lead.id, { reason, evidence });
       } else if (selectedOutcome === "NURTURE") {
-        if (!relationship) throw new Error(vi ? "Thiếu thông tin quan hệ khách hàng." : "Relationship input is missing.");
+        if (!relationship) { setOperationError(vi ? "Thiếu thông tin quan hệ khách hàng." : "Relationship input is missing."); return; }
         await executeLeadNurtureCommand({ leadId: lead.id, relationship, revisitAt, reason, note: evidence, ownerId: lead.ownerId });
       } else if (selectedOutcome === "OPPORTUNITY") {
-        if (!relationship) throw new Error(vi ? "Thiếu thông tin quan hệ khách hàng." : "Relationship input is missing.");
+        if (!relationship) { setOperationError(vi ? "Thiếu thông tin quan hệ khách hàng." : "Relationship input is missing."); return; }
         await executeLeadOpportunityCommand({
           leadId: lead.id,
           relationship,
@@ -236,7 +237,8 @@ export const LeadQualificationPage: React.FC = () => {
           },
         });
       } else {
-        throw new Error(vi ? "Chọn một kết quả xử lý." : "Choose a qualification outcome.");
+        setOperationError(vi ? "Chọn một kết quả xử lý." : "Choose a qualification outcome.");
+        return;
       }
       navigate(`/leads/${lead.id}`);
     } catch (caught) {
@@ -245,7 +247,9 @@ export const LeadQualificationPage: React.FC = () => {
         setFieldErrors(localizedErrors);
         focusFirstInvalidField(localizedErrors);
       } else {
-        setOperationError(caught instanceof Error ? caught.message : String(caught));
+        // MA-08: an authoritative refusal carries an internal diagnostic (workflow ids,
+        // command classifications). The central formatter owns what a user may see.
+        setOperationError(formatApplicationError(caught, { locale }));
       }
     } finally {
       setSubmitting(false);

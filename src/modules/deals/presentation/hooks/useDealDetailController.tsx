@@ -20,7 +20,8 @@ import { useI18n } from "@/i18n";
 import { getOrdersForDeal } from "@/modules/orders";
 import type { CustomerOrder } from "@/modules/orders";
 import { logActivityViaApi, type ActivityType, type NoteActivityDraft } from "@/modules/tasks";
-import { closeDealLostCommand, closeDealWonCommand, transitionDealStageCommand, updateDealCommand } from "../../public/deals";
+import { closeDealLostCommand, closeDealWonCommand, isDealConnectedMode, transitionDealStageCommand, updateDealCommand } from "../../public/deals";
+import { invalidateModuleQueries } from "@/shared/application";
 import type { DealLineItem } from "../../domain/model/deal.types";
 import { acceptQuoteAndCloseDealCommand } from "@/workflows/quote-acceptance";
 import { findCustomerByRelationshipRefSnapshot } from "@/modules/customers";
@@ -98,6 +99,20 @@ export function useDealDetailController({
       sourceRef: { type: input.sourceType, id: input.sourceId },
     });
     const saved = outcome.data.activity;
+    // `task.log-activity` declares readModelRefreshRequirement ["tasks"], so the Tasks
+    // module owns this activity and the backend does not record it on the Deal read
+    // model. Connected mode must not fabricate a Deal activity locally: it refreshes the
+    // authoritative Deal instead, so whatever the backend did record surfaces from
+    // authority. Demo mode keeps its local Deal timeline, which is demo-authoritative.
+    if (isDealConnectedMode()) {
+      await invalidateModuleQueries({
+        moduleKeys: ["deals"],
+        commandType: "task.log-activity",
+        aggregateId: deal.id,
+        occurredAt: saved.occurredAt,
+      });
+      return;
+    }
     const projection: DealActivity = {
       id: saved.id,
       type: input.activityType,

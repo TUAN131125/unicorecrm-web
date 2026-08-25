@@ -1,25 +1,17 @@
 import { normalizeApplicationError } from "@/shared/domain";
-import { formatApplicationError, type ErrorPresentationOptions } from "./errorPresentation";
+import { BACKEND_UNAVAILABLE_CODES, formatApplicationError, unavailableMessages, UNSAFE_FOR_DISPLAY_CODES, type ErrorPresentationOptions } from "./errorPresentation";
 
-/**
- * Architecture codes raised when connected mode refuses a business mutation because
- * the backend contract for it is not production-ready.
- *
- * These are fail-closed guards, not transient infrastructure faults: retrying cannot
- * succeed until the backend contract ships. Their raw messages name internal
- * registries, decision ids and command classifications, so presentation must never
- * show them to an end user.
- */
-const BACKEND_UNAVAILABLE_CODES: ReadonlySet<string> = new Set([
-  "CONNECTED_LOCAL_WRITE_FORBIDDEN",
-  "CONNECTED_OPERATION_REQUIRES_BACKEND",
-  "CONNECTED_COMMAND_CONTRACT_BLOCKED",
-  "CONNECTED_COMMAND_REQUIRES_ASYNC_AUTHORITY",
-]);
+export { UNSAFE_FOR_DISPLAY_CODES, isUnsafeForDisplay } from "./errorPresentation";
+
 
 export function isBackendUnavailableError(error: unknown): boolean {
   const code = normalizeApplicationError(error).code;
   return BACKEND_UNAVAILABLE_CODES.has(code);
+}
+
+/** Architecture refusals that are declared centrally; re-exported for callers. */
+export function isArchitectureRefusal(error: unknown): boolean {
+  return UNSAFE_FOR_DISPLAY_CODES.has(normalizeApplicationError(error).code);
 }
 
 export interface OperationUnavailableOptions extends ErrorPresentationOptions {
@@ -54,9 +46,28 @@ export function backendUnavailableMessage(options: OperationUnavailableOptions =
   if (vietnamese) {
     return action
       ? `${action} chưa khả dụng: hệ thống máy chủ chưa hỗ trợ thao tác này. Dữ liệu của bạn chưa được thay đổi.`
-      : "Thao tác này chưa khả dụng: hệ thống máy chủ chưa hỗ trợ. Dữ liệu của bạn chưa được thay đổi.";
+      : unavailableMessages.vi;
   }
   return action
     ? `${action} is not available yet: server support for this action has not been released. Nothing was changed.`
-    : "This action is not available yet: server support has not been released. Nothing was changed.";
+    : unavailableMessages.en;
+}
+
+/**
+ * Product-facing "this feature is not available yet" copy, naming what could not be saved.
+ *
+ * Deliberately worded in feature terms rather than infrastructure terms: a configuration
+ * screen that cannot save yet is a missing feature to the person using it, not a routing
+ * or adapter fact. `backendUnavailableMessage` stays for mutation surfaces that already
+ * use its wording; this is the shared copy for known-unavailable configuration actions,
+ * so the same sentence is not re-typed on every screen.
+ */
+export function unavailableFeatureMessage(
+  what: { readonly vi: string; readonly en: string },
+  options: ErrorPresentationOptions = {},
+): string {
+  const vietnamese = options.locale?.toLowerCase().startsWith("vi") ?? false;
+  return vietnamese
+    ? `${what.vi}: tính năng này chưa khả dụng. Dữ liệu của bạn chưa được thay đổi.`
+    : `${what.en}: this is not available yet. Nothing was changed.`;
 }

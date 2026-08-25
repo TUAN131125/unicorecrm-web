@@ -1,4 +1,4 @@
-import { formatApplicationError } from "@/shared/operations";
+import { backendUnavailableMessage, formatApplicationError } from "@/shared/operations";
 import React from "react";
 import { BellRing, BookOpenText, CalendarClock, CircleAlert, CreditCard, Landmark, Link2, MessageSquareText, ReceiptText, RotateCcw, ShieldAlert, UserRound } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -25,6 +25,8 @@ import { compareMoney, formatMoneyDto, minMoney, money, subtractMoney, sumMoney 
 import { reversePaymentAllocationCanonical } from "@/modules/payments";
 import {
   allocateReceivableCanonical,
+  isReceivableAllocationUnavailable,
+  isReceivableCollectionActivityUnavailable,
   getReceivableCollectionActivities,
   saveReceivableCollectionActivity,
   subscribeToReceivableCollectionActivities,
@@ -140,6 +142,11 @@ export const ReceivableDetailPage: React.FC = () => {
   };
 
   const submitAllocation = async () => {
+    // `invoice.allocate-receivable` is a BLOCKED canonical command: refuse before the
+    // mutation is started rather than after the user has filled the allocation form.
+    if (isReceivableAllocationUnavailable()) {
+      return setError(backendUnavailableMessage({ locale, action: text("Phân bổ công nợ", "Allocating a receivable") }));
+    }
     const source = sourceOptions.find((item) => item.key === sourceKey);
     if (!source) return setError(text("Chọn nguồn thanh toán còn khả dụng.", "Select an available payment source."));
     try {
@@ -203,6 +210,11 @@ export const ReceivableDetailPage: React.FC = () => {
   };
 
   const submitCollectionAction = () => {
+    // Collection activity has no authoritative backend owner yet, so connected mode refuses
+    // before the port is touched instead of recording a local-only history entry.
+    if (isReceivableCollectionActivityUnavailable()) {
+      return setError(backendUnavailableMessage({ locale, action: text("Ghi nhận hoạt động thu hồi công nợ", "Recording a collection activity") }));
+    }
     if (!collectionForm.note.trim()) return setError(text("Ghi chú hoặc nội dung giao tiếp là bắt buộc.", "A note or communication content is required."));
     if (collectionForm.type === "OWNER_ASSIGNED" && !collectionForm.ownerId.trim()) return setError(text("Người phụ trách là bắt buộc.", "Collection owner is required."));
     if (collectionForm.type === "PROMISE_TO_PAY" && !collectionForm.dueAt) return setError(text("Ngày cam kết thanh toán là bắt buộc.", "Promise-to-pay date is required."));
@@ -222,6 +234,9 @@ export const ReceivableDetailPage: React.FC = () => {
   };
 
   const completeActivity = (activityId: string) => {
+    if (isReceivableCollectionActivityUnavailable()) {
+      return setError(backendUnavailableMessage({ locale, action: text("Hoàn tất hoạt động theo dõi", "Completing a follow-up activity") }));
+    }
     updateReceivableCollectionActivityState(activityId, "COMPLETED");
     notifyProduct(text("Đã hoàn tất hoạt động theo dõi.", "Follow-up activity completed."), "success");
   };

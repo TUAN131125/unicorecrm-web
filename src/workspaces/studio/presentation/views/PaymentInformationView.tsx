@@ -1,7 +1,8 @@
 import React from "react";
 import { Pencil, Plus, Save, Trash2 } from "lucide-react";
 import { useI18n } from "@/i18n";
-import { getPaymentConfigurationSnapshot, savePaymentConfiguration, subscribeToPaymentConfiguration, type PaymentConfiguration, type ReceivingAccount } from "@/modules/payments";
+import { unavailableFeatureMessage } from "@/shared/operations";
+import { getPaymentConfigurationSnapshot, isPaymentConfigurationSaveUnavailable, savePaymentConfiguration, subscribeToPaymentConfiguration, type PaymentConfiguration, type ReceivingAccount } from "@/modules/payments";
 import { CAPABILITIES, useEffectiveAccess } from "@/platform/access-control";
 import { useSubscribableSnapshot } from "@/platform/react";
 import { useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
@@ -25,6 +26,7 @@ function emptyAccount(currency: string): ReceivingAccount {
 export function PaymentInformationView() {
   const { locale } = useI18n();
   const text = (vi: string, en: string) => locale === "vi" ? vi : en;
+  const [unavailableNotice, setUnavailableNotice] = React.useState<string | null>(null);
   const canConfigure = useEffectiveAccess().can(CAPABILITIES.STUDIO_CONFIGURE);
   const source = useSubscribableSnapshot(getPaymentConfigurationSnapshot, subscribeToPaymentConfiguration);
   const workspace = useWorkspaceOperationalConfiguration();
@@ -34,6 +36,13 @@ export function PaymentInformationView() {
   React.useEffect(() => setDraft(source), [source]);
   const dirty = JSON.stringify(draft) !== JSON.stringify(source);
   const save = () => {
+    // Payment configuration has no authoritative owner in this runtime: the receiving-account
+    // write operation is BLOCKED and nothing else persists it. Refuse rather than keep a local
+    // copy that would look like committed configuration.
+    if (isPaymentConfigurationSaveUnavailable()) {
+      setUnavailableNotice(unavailableFeatureMessage({ vi: "Chưa thể lưu cấu hình thanh toán", en: "The payment configuration cannot be saved yet" }, { locale }));
+      return;
+    }
     setDraft(savePaymentConfiguration(draft));
   };
   const saveAccount = () => { if (!account?.bankName.trim() || !account.accountNumber.trim()) return; setDraft((current) => ({ ...current, receivingAccounts: current.receivingAccounts.some((item) => item.id === account.id) ? current.receivingAccounts.map((item) => item.id === account.id ? account : item) : [...current.receivingAccounts, account] })); setAccount(null); };
@@ -41,7 +50,8 @@ export function PaymentInformationView() {
 
   const content = (
     <>
-      {!canConfigure ? <p className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{text("Bạn chỉ có quyền xem cấu hình.", "You have read-only access to configuration.")}</p> : null}
+      {unavailableNotice ? <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{unavailableNotice}</p> : null}
+            {!canConfigure ? <p className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{text("Bạn chỉ có quyền xem cấu hình.", "You have read-only access to configuration.")}</p> : null}
       <div className="space-y-5">
         <StudioSection title={text("Tài khoản nhận tiền", "Receiving accounts")} actions={<StudioButton tone="accent" size="sm" icon={<Plus size={14} />} disabled={!canConfigure} onClick={() => setAccount(emptyAccount(workspace.localeRegion.currencies.baseCurrency))}>{text("Thêm tài khoản", "Add account")}</StudioButton>}>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">

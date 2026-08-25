@@ -1,7 +1,8 @@
 import React from "react";
 import { CalendarClock, Landmark, ReceiptText, Save } from "lucide-react";
 import { useI18n } from "@/i18n";
-import { getInvoiceSellerInformation, saveInvoiceSellerInformation, subscribeToInvoiceConfiguration, type InvoiceSellerInformation } from "@/modules/invoices";
+import { unavailableFeatureMessage } from "@/shared/operations";
+import { getInvoiceSellerInformation, saveInvoiceSellerInformation, subscribeToInvoiceConfiguration, type InvoiceSellerInformation, isInvoiceSellerInformationSaveUnavailable } from "@/modules/invoices";
 import { getPaymentConfigurationSnapshot, subscribeToPaymentConfiguration } from "@/modules/payments";
 import { CAPABILITIES, useEffectiveAccess } from "@/platform/access-control";
 import { useSubscribableSnapshot } from "@/platform/react";
@@ -25,6 +26,7 @@ import {
 
 export function InvoiceInformationView() {
   const { locale } = useI18n();
+  const [unavailableNotice, setUnavailableNotice] = React.useState<string | null>(null);
   const text = React.useCallback((vi: string, en: string) => locale === "vi" ? vi : en, [locale]);
   const canConfigure = useEffectiveAccess().can(CAPABILITIES.STUDIO_CONFIGURE);
   const source = useSubscribableSnapshot(getInvoiceSellerInformation, subscribeToInvoiceConfiguration);
@@ -35,6 +37,12 @@ export function InvoiceInformationView() {
   const dirty = JSON.stringify(draft) !== JSON.stringify(source);
   const update = <K extends keyof InvoiceSellerInformation>(key: K, value: InvoiceSellerInformation[K]) => setDraft((current) => ({ ...current, [key]: value }));
   const save = () => {
+    // `replaceInvoiceSellerInformationConfiguration` is BLOCKED, so connected mode has no
+    // authoritative write. Refuse rather than persist seller information only in the browser.
+    if (isInvoiceSellerInformationSaveUnavailable()) {
+      setUnavailableNotice(unavailableFeatureMessage({ vi: "Chưa thể lưu thông tin người bán", en: "The seller information cannot be saved yet" }, { locale }));
+      return;
+    }
     setDraft(saveInvoiceSellerInformation(draft));
   };
   const selectedAddress = workspace.addresses.find((address) => address.id === draft.invoiceAddressId);
@@ -49,7 +57,8 @@ export function InvoiceInformationView() {
 
   const content = (
     <>
-      {!canConfigure ? <p className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{text("Bạn chỉ có quyền xem cấu hình.", "You have read-only access to configuration.")}</p> : null}
+      {unavailableNotice ? <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{unavailableNotice}</p> : null}
+            {!canConfigure ? <p className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{text("Bạn chỉ có quyền xem cấu hình.", "You have read-only access to configuration.")}</p> : null}
       <StudioMetricsGrid>
         <StudioMetricCard label={text("Thông tin người bán", "Seller identity")} value={draft.sellerName.trim() && draft.taxId.trim() ? text("Sẵn sàng", "Ready") : text("Cần bổ sung", "Needs attention")} description={draft.sellerName || text("Chưa có tên người bán", "Seller name not set")} icon={<ReceiptText size={17} />} tone={draft.sellerName.trim() && draft.taxId.trim() ? "success" : "warning"} />
         <StudioMetricCard label={text("Hạn thanh toán", "Payment term")} value={`${draft.defaultDueDays} ${text("ngày", "days")}`} description={text("Áp dụng mặc định cho hóa đơn mới.", "Applied by default to new invoices.")} icon={<CalendarClock size={17} />} />

@@ -13,7 +13,7 @@ import {
 import { createDurableId } from "@/shared/ids";
 import { formatApplicationError } from "@/shared/operations";
 import { notifyProduct } from "@/components/feedback/ProductDialogService";
-import { ensureDealNextActionTask, getDealNextActionTaskId } from "@/workflows/work-activation";
+import { ensureDealNextActionTask, isWorkActivationUnavailable } from "@/workflows/work-activation";
 import type { Contact } from "@/modules/contacts";
 import type { OrganizationAccount } from "../../public/api";
 
@@ -57,7 +57,18 @@ export function OrganizationCreateOpportunityModal({
     const nextActionAt = draft.createFollowUpTask && draft.nextActionAt
       ? new Date(draft.nextActionAt).toISOString()
       : undefined;
-    const nextActionTaskId = nextActionAt ? getDealNextActionTaskId(dealId, nextActionAt) : undefined;
+    // WF-21 work-activation is BLOCKED with `connectedFrontendCoordinatorAllowed: false`.
+    // Refuse the combined intent before the Deal command rather than committing the Deal
+    // and then reporting that the requested follow-up work could not be activated.
+    if (nextActionAt && isWorkActivationUnavailable()) {
+      notifyProduct(
+        locale === "vi"
+          ? "Chưa thể tạo cơ hội kèm công việc kế tiếp: máy chủ chưa hỗ trợ kích hoạt công việc. Hãy bỏ chọn công việc theo dõi để chỉ tạo cơ hội."
+          : "An opportunity with a follow-up task cannot be created yet: work activation is not supported by the server. Clear the follow-up task to create the opportunity only.",
+        "warning",
+      );
+      return;
+    }
     const deal = (await createDealCommand({
       id: dealId,
       name: draft.name,
@@ -83,10 +94,11 @@ export function OrganizationCreateOpportunityModal({
       updatedAt: now,
       interestedProducts: draft.lineItems.map((item) => item.product.id),
       lineItems,
-      ...(nextActionAt && nextActionTaskId ? {
+      // No Task reference is available before the Deal commits: Task ids are
+      // server-assigned and `ensureDealNextActionTask` runs after this command.
+      ...(nextActionAt ? {
         nextActionAt,
         nextActionSummary: draft.nextActionSummary,
-        nextActionRef: { type: "TASK" as const, id: nextActionTaskId },
       } : {}),
       notes: [draft.demandSummary, draft.painPoints, draft.notes].filter(Boolean).join(" · ") || undefined,
       address: account.address,

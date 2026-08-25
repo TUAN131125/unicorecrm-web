@@ -23,6 +23,7 @@ import {
   buildSanitizedAiRequestContext,
   defaultAiContextScope,
   executeAiAction,
+  isConnectedAiRuntime,
   isRetryableAiInteractionState,
   resolveAiFocusedEntityRef,
   resolveAiInteractionState,
@@ -105,11 +106,16 @@ export const AiChatPanel: React.FC<AiChatPanelProps> = ({
   const directory = useMemo(() => listWorkspaceMemberDirectory(), [scope.workspaceId, messages.length]);
   const actorName = scope.actorName ?? scope.actorId;
   const canCreateTask = access.canPerform("tasks", "create");
+  const connectedAdvisoryOnly = isConnectedAiRuntime();
   const isBusy = BUSY_STATES.includes(interactionState);
 
-  const quickPrompts = isVi
-    ? ["Tạo công việc mới", "Hôm nay tôi nên ưu tiên việc gì?", "Tóm tắt pipeline bán hàng", "Khách hàng nào cần chăm sóc?"]
-    : ["Create a new task", "What should I prioritize today?", "Summarize the sales pipeline", "Which customers need attention?"];
+  const quickPrompts = connectedAdvisoryOnly
+    ? (isVi
+      ? ["Tôi nên làm gì tiếp theo?", "Điểm nào cần chú ý?", "Tóm tắt bản ghi này"]
+      : ["What should I do next?", "What needs attention?", "Summarize this record"])
+    : (isVi
+      ? ["Tạo công việc mới", "Hôm nay tôi nên ưu tiên việc gì?", "Tóm tắt pipeline bán hàng", "Khách hàng nào cần chăm sóc?"]
+      : ["Create a new task", "What should I prioritize today?", "Summarize the sales pipeline", "Which customers need attention?"]);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth" });
@@ -245,6 +251,17 @@ export const AiChatPanel: React.FC<AiChatPanelProps> = ({
   };
 
   const handleTaskConversation = async (text: string): Promise<boolean> => {
+    if (connectedAdvisoryOnly && isCreateTaskUtterance(text)) {
+      setPendingTask(null);
+      setInteractionState("permission_denied");
+      setStatusDetail(isVi
+        ? "Hành động tạo công việc bằng AI chưa khả dụng. Hãy tạo công việc trong mô-đun Công việc."
+        : "AI task creation is not available. Create the task in the Tasks module.");
+      post(makeMessage(isVi
+        ? "Trợ lý AI chỉ cung cấp tư vấn trong chế độ kết nối và sẽ không tạo công việc."
+        : "The AI Assistant is advisory-only in connected mode and will not create a task."));
+      return true;
+    }
     if (pendingTask) {
       if (isCancelUtterance(text)) {
         setPendingTask(null);
@@ -436,7 +453,7 @@ export const AiChatPanel: React.FC<AiChatPanelProps> = ({
               )}
             </div>
           )}
-          {pendingTask?.step === "confirm" && (
+          {!connectedAdvisoryOnly && pendingTask?.step === "confirm" && (
             <div className="mb-2 flex flex-wrap gap-2">
               <button type="button" onClick={() => void handleSend(isVi ? "Xác nhận" : "Confirm")} className="rounded-xl bg-emerald-600 px-3 py-2 text-xs font-black text-white shadow-sm hover:bg-emerald-700">{isVi ? "Xác nhận tạo" : "Confirm creation"}</button>
               <button type="button" onClick={() => void handleSend(isVi ? "Hủy" : "Cancel")} className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-600 hover:bg-slate-50">{isVi ? "Hủy" : "Cancel"}</button>
@@ -464,7 +481,9 @@ export const AiChatPanel: React.FC<AiChatPanelProps> = ({
             )}
           </div>
           <div className="mt-2 flex items-center justify-between gap-3 text-[10px] font-medium text-slate-400">
-            <span className="flex items-center gap-1"><CalendarClock size={12} />{isVi ? "AI sẽ hỏi lại trước khi tạo dữ liệu." : "AI asks before creating data."}</span>
+            <span className="flex items-center gap-1"><CalendarClock size={12} />{connectedAdvisoryOnly
+              ? (isVi ? "AI chỉ cung cấp tư vấn và không cập nhật dữ liệu." : "AI provides advice and does not update data.")
+              : (isVi ? "AI sẽ hỏi lại trước khi tạo dữ liệu." : "AI asks before creating data.")}</span>
             {onClearThread && <button type="button" onClick={onClearThread} className="flex items-center gap-1 font-bold text-slate-400 hover:text-rose-600"><Trash2 size={12} />{isVi ? "Xóa cuộc trò chuyện" : "Clear conversation"}</button>}
           </div>
         </div>

@@ -85,10 +85,20 @@ assert.equal(releasePolicy.archiveName, "unicorecrm-web.zip");
 assert.equal(releasePolicy.rootDirectory, "unicorecrm-web");
 const sourceFiles = collectReleaseFiles();
 assert.ok(sourceFiles.length > 1_000, "Release source inventory is unexpectedly small.");
-assert.equal(sourceFiles.some((file) => file.relativePath.startsWith("artifacts/")), false);
-assert.equal(sourceFiles.some((file) => file.relativePath.startsWith("node_modules/")), false);
-assert.equal(sourceFiles.some((file) => file.relativePath.startsWith("dist/")), false);
+// Derived from the release policy rather than a hand-written subset, so the artifact rule
+// cannot drift from the policy that defines it. This gate owns artifact hygiene: it is the
+// only place where a real archive exists, which is why the repository-scoped contract gate
+// asserts the policy instead of probing the working tree for node_modules/dist/.git.
+assert.ok(releasePolicy.excludedDirectories.length > 0, "Release policy must exclude at least one directory.");
+for (const excluded of releasePolicy.excludedDirectories) {
+  assert.equal(
+    sourceFiles.some((file) => file.relativePath === excluded || file.relativePath.startsWith(`${excluded}/`)),
+    false,
+    `Release source inventory must not contain ${excluded}/.`,
+  );
+}
 assert.equal(sourceFiles.some((file) => file.relativePath === ".env.example"), true);
+assert.equal(sourceFiles.some((file) => file.relativePath === ".env"), false, "Environment secrets must never enter the release inventory.");
 
 const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "unicore-release-contract-"));
 try {

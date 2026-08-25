@@ -923,6 +923,48 @@
       "scope": "MODULE",
       "owner": "tasks",
       "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "CLAUDE.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "REPOSITORY",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/ai/PROJECT_STATE.md": {
+      "status": "TRACKER",
+      "authority": "SUPPORTING",
+      "scope": "REPOSITORY",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/ai/ARCHITECTURE_INVARIANTS.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "REPOSITORY",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/ai/ROADMAP.md": {
+      "status": "TRACKER",
+      "authority": "SUPPORTING",
+      "scope": "REPOSITORY",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/ai/DEFERRED_FINDINGS.md": {
+      "status": "TRACKER",
+      "authority": "SUPPORTING",
+      "scope": "REPOSITORY",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/ai/README.md": {
+      "status": "REFERENCE",
+      "authority": "SUPPORTING",
+      "scope": "REPOSITORY",
+      "owner": "architecture",
+      "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
     }
   }
 }

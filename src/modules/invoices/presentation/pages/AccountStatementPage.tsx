@@ -18,7 +18,9 @@ import { usePlatformState } from "@/platform/application-state";
 import { toWorkspacePath } from "@/platform/navigation";
 import { CAPABILITIES, useEffectiveAccess } from "@/platform/access-control";
 import { addMoney, compareMoney, formatMoneyDto, money, subtractMoney, sumMoney, type MoneyDto } from "@/shared/money";
-import { saveReceivableCollectionActivity } from "../../public/api";
+import { backendUnavailableMessage } from "@/shared/operations";
+import { notifyProduct } from "@/components/feedback/ProductDialogService";
+import { isReceivableCollectionActivityUnavailable, saveReceivableCollectionActivity } from "../../public/api";
 import { useAccountStatementQuery } from "../hooks/useInvoiceVerticalSlice";
 import { resolveBuyerPresentation } from "../model/buyerPresentation";
 
@@ -218,6 +220,13 @@ export const AccountStatementPage: React.FC = () => {
   };
 
   const recordStatementSent = () => {
+    // The statement itself is an authoritative read; recording that it was sent is collection
+    // activity, which has no backend owner yet. Connected mode refuses that part up front and
+    // still lets the user compose the email.
+    if (isReceivableCollectionActivityUnavailable()) {
+      notifyProduct(backendUnavailableMessage({ locale, action: text("Ghi nhận đã gửi sao kê", "Recording that the statement was sent") }), "warning");
+      return;
+    }
     saveReceivableCollectionActivity({
       buyerId,
       invoiceId: receivables[0]?.invoiceId,

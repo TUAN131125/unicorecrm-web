@@ -1,6 +1,10 @@
 import { getAuthSessionSnapshot } from "@/platform/identity-auth";
 import { appendTamperEvidentAuditRecord } from "@/platform/enterprise-security";
-import { getWorkspaceContextSnapshot } from "@/platform/workspace-context";
+import {
+  getWorkspaceContextSnapshot,
+  isConnectedWorkspaceRuntime,
+  listWorkspaceMemberships,
+} from "@/platform/workspace-context";
 import { getCurrentMembershipForWorkspaceId } from "@/platform/workspace-membership";
 import type { Capability } from "../domain/accessControl.types";
 import { can, canAccessRecord } from "./accessControlRuntime";
@@ -30,10 +34,22 @@ export function assertRuntimeWorkspaceAccess(expectedWorkspaceId?: string): void
   if (expectedWorkspaceId && expectedWorkspaceId !== activeWorkspaceId) {
     deny("WorkspaceBoundaryDenied", "command targets a different workspace.", { expectedWorkspaceId, activeWorkspaceId });
   }
-  const membership = getCurrentMembershipForWorkspaceId(activeWorkspaceId);
-  if (!membership || membership.status !== "active") {
+  const membership = resolveActiveMembershipStatus(activeWorkspaceId);
+  if (membership !== "active") {
     deny("WorkspaceMembershipDenied", "active workspace membership is required.", { activeWorkspaceId });
   }
+}
+
+/**
+ * Membership authority follows the runtime. Connected mode reads the membership list
+ * the backend returned from GET /workspaces; the development catalogue answers only
+ * for the demo runtime.
+ */
+function resolveActiveMembershipStatus(workspaceId: string): string | undefined {
+  if (isConnectedWorkspaceRuntime()) {
+    return listWorkspaceMemberships().find((membership) => membership.workspaceId === workspaceId)?.status;
+  }
+  return getCurrentMembershipForWorkspaceId(workspaceId)?.status;
 }
 
 /** Enforces action authorization at an application/runtime command boundary. */

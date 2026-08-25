@@ -1,4 +1,4 @@
-import { formatApplicationError } from "@/shared/operations";
+import { describePartialCommit, executeSequentialCommits, formatApplicationError } from "@/shared/operations";
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
@@ -323,21 +323,45 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
       `${locale === "vi" ? "Thời lượng" : "Duration"}: ${draft.durationMinutes} ${locale === "vi" ? "phút" : "minutes"}`,
       draft.body,
     ].filter(Boolean).join(" | ");
-    await addTimelineActivity("call", `${locale === "vi" ? "Cuộc gọi" : "Call"}: ${draft.subject}`, fullDesc);
-    if (draft.createFollowUpTask && draft.nextFollowUpAt) {
-      await createTaskCommand({
+    // The activity and the follow-up Task are two authoritative commands and no backend
+    // operation commits them together. The activity can commit and the Task still fail, so
+    // the outcome is reported instead of the whole action appearing to do nothing. The
+    // committed activity is never reversed from here.
+    const followUpDueAt = draft.createFollowUpTask && draft.nextFollowUpAt
+      ? new Date(draft.nextFollowUpAt).toISOString()
+      : undefined;
+    const callReport = await executeSequentialCommits([
+      {
+        step: "activity",
+        run: () => addTimelineActivity("call", `${locale === "vi" ? "Cuộc gọi" : "Call"}: ${draft.subject}`, fullDesc),
+      },
+      ...(followUpDueAt ? [{
+        step: "followUpTask",
+        run: () => createTaskCommand({
         id: `task_lead_call_${lead.id}_${Date.now()}`,
         title: `${locale === "vi" ? "Theo dõi cuộc gọi" : "Follow up call"}: ${draft.subject}`,
         description: draft.body || undefined,
         priority: "NORMAL",
         assigneeId: lead.ownerId,
-        dueAt: new Date(draft.nextFollowUpAt).toISOString(),
+        dueAt: followUpDueAt,
         relationshipRef: lead.relationshipRef,
         recordRef: { moduleKey: "leads", recordId: lead.id, label: lead.name },
         sourceRef: { type: "LEAD_CALL_FOLLOW_UP", id: lead.id },
-        actorId: lead.ownerId,
-        actorName: resolveWorkspaceMemberName(lead.ownerId),
-      });
+          actorId: lead.ownerId,
+          actorName: resolveWorkspaceMemberName(lead.ownerId),
+        }),
+      }] : []),
+    ]);
+
+    if (callReport.status !== "FULL_SUCCESS") {
+      const failure = formatApplicationError(callReport.error, { locale });
+      showToast(callReport.status === "PARTIAL_SUCCESS"
+        ? `${describePartialCommit(callReport, {
+            committed: locale === "vi" ? "Cuộc gọi" : "The call log",
+            failed: locale === "vi" ? "Công việc theo dõi" : "the follow-up task",
+          }, locale)} ${failure}`
+        : failure);
+      return;
     }
     setShowCallModal(false);
     setCallForm((current) => ({ ...current, title: "", desc: "" }));

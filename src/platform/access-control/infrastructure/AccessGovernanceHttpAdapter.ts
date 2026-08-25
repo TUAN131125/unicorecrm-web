@@ -63,6 +63,12 @@ function mapAuthorizationContext(value: AuthorizationContextDocument): Authoriza
     productSpaces: [...value.productSpaces],
     dataScopes,
     fieldSecurity,
+    // The backend authorization contract is explicit-entry-only. Its own readers treat a
+    // resource with no data-scope policy as WORKSPACE and a field with no field-security
+    // policy as visible, so the connected projection mirrors that rather than applying a
+    // stricter rule than the authority it reads from.
+    unlistedFieldAccess: "READ_WRITE",
+    unlistedDataScope: "WORKSPACE",
     evaluatedAt: value.evaluatedAt,
   };
 }

@@ -23,7 +23,7 @@ import { runBackendProjection } from "@/shared/application";
 import type { HttpClient } from "@/platform/api";
 import {
   ConnectedSnapshotProjection,
-  connectedOperationUnavailable,
+  unavailableConnectedOperation,
 } from "./connectedProjectionRepositories";
 
 const EMPTY_ACCOUNTING_AS_OF_DATE = "1970-01-01";
@@ -73,8 +73,8 @@ export function createConnectedFinancialModuleServices(
       receivablesApi,
       receivableOperations: {
         list: () => [],
-        save: () => connectedOperationUnavailable("Receivable collection activity save"),
-        updateState: () => connectedOperationUnavailable("Receivable collection activity state update"),
+        save: unavailableConnectedOperation("Receivable collection activity save"),
+        updateState: unavailableConnectedOperation("Receivable collection activity state update"),
         subscribe: () => () => undefined,
       },
       verticalSlice: invoiceVerticalSlice,
@@ -131,8 +131,8 @@ function createPaymentConfiguration(): PaymentApplicationServices["configuration
   const snapshot = emptyPaymentConfiguration();
   return {
     getSnapshot: () => snapshot,
-    saveConfiguration: () => connectedOperationUnavailable("Payment configuration save"),
-    saveReceivingAccounts: () => connectedOperationUnavailable("Payment receiving-account save"),
+    saveConfiguration: unavailableConnectedOperation("Payment configuration save"),
+    saveReceivingAccounts: unavailableConnectedOperation("Payment receiving-account save"),
     subscribe: () => () => undefined,
   };
 }
@@ -153,7 +153,7 @@ function createInvoiceConfiguration(): InvoiceApplicationServices["configuration
   };
   return {
     getSellerInformation: () => snapshot,
-    saveSellerInformation: () => connectedOperationUnavailable("Invoice seller-information save"),
+    saveSellerInformation: unavailableConnectedOperation("Invoice seller-information save"),
     subscribe: () => () => undefined,
   };
 }

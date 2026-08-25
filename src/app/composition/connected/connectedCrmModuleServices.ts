@@ -16,6 +16,7 @@ import { createLeadConnectedApiRuntime } from "@/modules/leads/infrastructure/ht
 import { createContactConnectedApiRuntime } from "@/modules/contacts/infrastructure/http/createContactConnectedApiRuntime";
 import { createCustomerConnectedApiRuntime } from "@/modules/customers/infrastructure/http/createCustomerConnectedApiRuntime";
 import { createDealConnectedApiRuntime } from "@/modules/deals/infrastructure/http/createDealConnectedApiRuntime";
+import { DEFAULT_DEAL_STAGES } from "@/modules/deals/domain/rules/dealStages";
 import { createOrganizationConnectedApiRuntime } from "@/modules/organizations/infrastructure/http/createOrganizationConnectedApiRuntime";
 import { createProductConnectedApiRuntime } from "@/modules/products/infrastructure/http/createProductConnectedApiRuntime";
 import { relationshipRefKey } from "@/platform/identity";
@@ -23,7 +24,7 @@ import {
   ConnectedCollectionProjection,
   ConnectedOperationUnavailableError,
   ConnectedSnapshotProjection,
-  connectedOperationUnavailable,
+  unavailableConnectedOperation,
 } from "./connectedProjectionRepositories";
 import {
   createConnectedPreferencePort,
@@ -94,7 +95,7 @@ function createCustomers(httpClient: HttpClient): CustomerApplicationServices {
     },
     runtime: {
       ensureReady: () => undefined,
-      reconcileFromPurchaseEvidence: () => connectedOperationUnavailable("Customer reconciliation"),
+      reconcileFromPurchaseEvidence: unavailableConnectedOperation("Customer reconciliation"),
       getMigrationProfile: () => undefined,
     },
     api: createCustomerConnectedApiRuntime(httpClient),
@@ -103,7 +104,11 @@ function createCustomers(httpClient: HttpClient): CustomerApplicationServices {
 
 function createDeals(httpClient: HttpClient): DealApplicationServices {
   const deals = new ConnectedCollectionProjection<Deal>("deals", (record) => record.id);
-  const stages = new ConnectedSnapshotProjection<OpportunityStageConfig[]>("deals", []);
+  // The Deal stage catalogue is fixed by the Deals backend (DealStages), not configurable
+  // and not exposed by any read operation. Seeding the projection with the canonical
+  // catalogue mirrors that authority; leaving it empty would silently disable the Deal
+  // pipeline because a deferred workspace-configuration API does not exist yet.
+  const stages = new ConnectedSnapshotProjection<OpportunityStageConfig[]>("deals", DEFAULT_DEAL_STAGES);
   const pipelines = new ConnectedSnapshotProjection<DealPipelineDefinition[]>("deals", []);
   return {
     api: createDealConnectedApiRuntime(httpClient),
@@ -116,13 +121,15 @@ function createDeals(httpClient: HttpClient): DealApplicationServices {
     stages: {
       list: () => stages.snapshot(),
       replace: (records) => stages.replace(records),
-      reset: () => connectedOperationUnavailable("Deal stage reset"),
+      reset: unavailableConnectedOperation("Deal stage reset"),
       subscribe: (listener) => stages.subscribe(listener),
       listPipelines: () => pipelines.snapshot(),
-      replacePipelines: (records) => {
-        pipelines.replace(records);
-        return pipelines.snapshot();
-      },
+      // Pipeline configuration is workspace configuration owned by the backend: every
+      // `/crm-configuration/pipelines` write operation is BLOCKED in OpenAPI, and nothing
+      // projects pipelines from the backend, so a presentation-originated write here would
+      // only ever be a local one. Declared unavailable rather than left to fail inside the
+      // projection guard, so the boundary and the UI can refuse first.
+      replacePipelines: unavailableConnectedOperation("Deal pipeline configuration save"),
     },
     exporter: {
       exportCsv(filename, records, columns) {
@@ -203,15 +210,18 @@ function createProducts(httpClient: HttpClient): ProductApplicationServices {
     preferences: createConnectedPreferencePort(),
     configuration: {
       getTypes: () => types.snapshot(),
-      saveTypes: (records) => types.replace(records),
+      // `/products/configuration/types` and `/products/configuration/fields` writes are
+      // BLOCKED in OpenAPI and no backend read feeds these projections, so a connected save
+      // could only be a local write.
+      saveTypes: unavailableConnectedOperation("Product type configuration save"),
       getFields: () => fields.snapshot(),
-      saveFields: (records) => fields.replace(records),
+      saveFields: unavailableConnectedOperation("Product field configuration save"),
       isTypeUsed: (typeCode, products) => products.some((product) => product.type === typeCode),
       isFieldUsed: (fieldKey, products) => products.some((product) => fieldKey in product),
       getDefaults: () => ({ types: [], fields: [] }),
-      reset: () => connectedOperationUnavailable("Product configuration reset"),
+      reset: unavailableConnectedOperation("Product configuration reset"),
     },
-    resetCatalogToDemo: () => connectedOperationUnavailable("Product demo catalog reset"),
+    resetCatalogToDemo: unavailableConnectedOperation("Product demo catalog reset"),
   };
 }
 

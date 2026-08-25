@@ -1,4 +1,4 @@
-import { formatApplicationError } from "@/shared/operations";
+import { backendUnavailableMessage, formatApplicationError } from "@/shared/operations";
 import { useAuthoritativeResource } from "@/shared/operations";
 import React from "react";
 import {
@@ -52,6 +52,7 @@ import {
   createPaymentIntentCanonical,
   recordCodCustomerCollectionCanonical,
   recordCodMerchantRemittanceCanonical,
+  isPaymentIntentRefreshUnavailable,
   recordManualPaymentCanonical,
   refreshPaymentIntentCanonical,
   retryPaymentIntentCanonical,
@@ -431,6 +432,12 @@ export const PaymentOperationsPage: React.FC = () => {
   };
 
   const refreshIntent = async (intent: PaymentIntent) => {
+    // `payment.refresh-intent-status` is a BLOCKED canonical command: refuse before the
+    // mutation is started rather than reporting a routing failure afterwards.
+    if (isPaymentIntentRefreshUnavailable()) {
+      notifyProduct(backendUnavailableMessage({ locale, action: text("Đồng bộ trạng thái thanh toán", "Synchronizing the payment state") }), "warning");
+      return;
+    }
     try {
       await refreshPaymentIntentCanonical(intent.id);
       notifyProduct(text("Đã đồng bộ trạng thái từ nhà cung cấp.", "State synchronized from the provider."), "success");

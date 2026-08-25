@@ -6,6 +6,7 @@ import {
   runBackendProjection,
   type MutationCommandMetadata,
   type MutationOutcome,
+  isBusinessOperationUnavailable,
 } from "@/shared/application";
 import type { Deal, OpportunityStageConfig } from "../domain/model/deal.types";
 import {
@@ -41,6 +42,15 @@ import type {
   ReplaceDealProfileInput,
 } from "../application/ports/DealApiRuntime";
 
+/**
+ * True when the Deal repository is the connected projection rather than the demo
+ * store. Presentation uses this to keep local Deal projection writes on the demo path,
+ * mirroring `isOrderConnectedMode` in the Orders module.
+ */
+export function isDealConnectedMode(): boolean {
+  return isDealConnectedApiRuntime();
+}
+
 export function getDealsSnapshot(): Deal[] {
   return dealRepository.list().filter((deal) => !deal.archivedAt);
 }
@@ -53,9 +63,14 @@ export function getDealSnapshot(dealId: string): Deal | undefined {
   return dealRepository.getById(dealId);
 }
 
-/** Read-model projection only; never a connected mutation authority. */
+/**
+ * Read-model projection only; never a connected mutation authority. Replacing the whole
+ * collection is by definition a projection write - it either commits a backend page or
+ * evicts the previous one - so it declares that scope itself instead of relying on every
+ * caller to remember to.
+ */
 export function replaceDeals(deals: Deal[]): void {
-  dealRepository.replace(deals);
+  runBackendProjection("deals", () => dealRepository.replace(deals));
 }
 
 /** Read-projection helper. Connected feature code must use typed async commands. */
@@ -263,6 +278,22 @@ export function getDealStagesSnapshot(): OpportunityStageConfig[] {
 
 export function replaceDealStages(stages: OpportunityStageConfig[]): void {
   dealStageRepository.replace(stages);
+}
+
+/**
+ * True when the Deal stage configuration cannot be restored authoritatively in the active
+ * runtime. Connected mode binds the stage reset to an unavailable operation.
+ */
+export function isDealStageResetUnavailable(): boolean {
+  return isBusinessOperationUnavailable("Deal stage reset");
+}
+
+/**
+ * True when Deal pipeline configuration cannot be saved authoritatively. Every
+ * `/crm-configuration/pipelines` write operation is BLOCKED in OpenAPI.
+ */
+export function isDealPipelineConfigurationSaveUnavailable(): boolean {
+  return isBusinessOperationUnavailable("Deal pipeline configuration save");
 }
 
 export function resetDealStages(): OpportunityStageConfig[] {

@@ -1,4 +1,4 @@
-import { createMutationMetadata, executeMutationCommand, type MutationCommandMetadata, type MutationOutcome } from "@/shared/application";
+import { assertMutationCommandSupported, createMutationMetadata, executeMutationCommand, type MutationCommandMetadata, type MutationOutcome } from "@/shared/application";
 import type { OrganizationAccount } from "../domain/model/organizationAccount.types";
 import { isOrganizationConnectedApiRuntime, organizationAccountRepository } from "../application/composition/organizationApplicationServices";
 
@@ -52,6 +52,7 @@ export function saveOrganizationAccountSnapshot(
 export type OrganizationRetentionMutationMetadata = Partial<MutationCommandMetadata>;
 
 export function archiveOrganizationAccountCommand(accountId: string, input: Parameters<typeof archiveOrganizationAccount>[2], metadata: OrganizationRetentionMutationMetadata = {}): Promise<MutationOutcome<OrganizationAccount>> {
+  assertMutationCommandSupported("organization.archive", "Organization archive");
   return executeMutationCommand(
     { commandType: "organization.archive", aggregateType: "organization", aggregateId: accountId, payload: input },
     createMutationMetadata(`organization.archive:${accountId}`, { ...metadata, actor: metadata.actor ?? { id: input.actorId, name: input.actorName } }),
@@ -60,6 +61,7 @@ export function archiveOrganizationAccountCommand(accountId: string, input: Para
 }
 
 export function restoreOrganizationAccountCommand(accountId: string, input: Parameters<typeof restoreOrganizationAccount>[2], metadata: OrganizationRetentionMutationMetadata = {}): Promise<MutationOutcome<OrganizationAccount>> {
+  assertMutationCommandSupported("organization.restore", "Organization restore");
   return executeMutationCommand(
     { commandType: "organization.restore", aggregateType: "organization", aggregateId: accountId, payload: input },
     createMutationMetadata(`organization.restore:${accountId}`, { ...metadata, actor: metadata.actor ?? { id: input.actorId, name: input.actorName } }),
@@ -68,6 +70,7 @@ export function restoreOrganizationAccountCommand(accountId: string, input: Para
 }
 
 export function anonymizeOrganizationAccountCommand(accountId: string, input: Parameters<typeof anonymizeOrganizationAccount>[2], metadata: OrganizationRetentionMutationMetadata = {}): Promise<MutationOutcome<OrganizationAccount>> {
+  assertMutationCommandSupported("organization.anonymize", "Organization anonymization");
   return executeMutationCommand(
     { commandType: "organization.anonymize", aggregateType: "organization", aggregateId: accountId, payload: input },
     createMutationMetadata(`organization.anonymize:${accountId}`, { ...metadata, actor: metadata.actor ?? { id: input.actorId, name: input.actorName } }),

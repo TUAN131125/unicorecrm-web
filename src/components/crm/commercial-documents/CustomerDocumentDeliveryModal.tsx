@@ -2,6 +2,7 @@ import React from "react";
 import { CheckCircle2 } from "lucide-react";
 import { Button, Input, Modal, Select, Textarea } from "@/shared/components/ui";
 import type { CustomerDocumentDeliveryChannel, CustomerDocumentDeliveryValue } from "@/shared/domain/commercialDocumentDelivery";
+import { formatApplicationError } from "@/shared/operations";
 
 export interface CustomerDocumentDeliveryModalProps {
   isOpen: boolean;
@@ -104,7 +105,9 @@ export const CustomerDocumentDeliveryModal: React.FC<CustomerDocumentDeliveryMod
         fileName: initialFileName,
       });
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : String(caught));
+      // MA-08: `onConfirm` runs an authoritative delivery command, so a refusal here
+      // carries internal topology. Route it through the central formatter.
+      setError(formatApplicationError(caught, { locale }));
       setBusy(false);
     }
   };

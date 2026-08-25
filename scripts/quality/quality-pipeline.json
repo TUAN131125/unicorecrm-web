@@ -63,6 +63,17 @@
         "quality.deal-stage-window-query",
         "quality.entry-code-splitting",
         "quality.routed-mutation-authority",
+        "quality.dedicated-module-command-dispatch",
+        "quality.workflow-coordinator-ownership",
+        "quality.partial-commit-outcomes",
+        "quality.user-facing-error-safety",
+        "quality.post-commit-projection-writes",
+        "quality.composition-presentation-dependency",
+        "quality.mutation-authority-semantic-coverage",
+        "quality.mutation-authority-negative-controls",
+        "quality.connected-business-operation-availability",
+        "quality.connected-platform-configuration-authority",
+        "quality.server-assigned-task-identity",
         "quality.commercial-concurrency-metadata",
         "quality.mutation-conflict-ux",
         "quality.financial-vertical-slice",
@@ -109,6 +120,8 @@
         "quality.invoice-domain-contracts",
         "quality.receivables-contracts",
         "quality.ai-governance-contracts",
+        "quality.partial-commit-semantics",
+        "quality.user-facing-error-presentation",
         "quality.ai-application-contracts",
         "quality.record-ownership-contracts",
         "quality.orders",
@@ -235,6 +248,14 @@
         "quality.metric-drilldown-runtime",
         "quality.tab-interaction-runtime",
         "quality.dashboard-runtime",
+        "quality.workspace-scope-reset",
+        "quality.server-assigned-task-identity-contracts",
+        "quality.blocked-command-containment",
+        "quality.connected-unavailable-port-containment",
+        "quality.wf01-contact-opportunity-ownership",
+        "quality.wf04-customer-commercial-actions-ownership",
+        "quality.wf21-work-activation-ownership",
+        "quality.partial-commit-controller-runtime",
         "quality.reports-runtime",
         "quality.workspace-governance-contracts",
         "quality.access-control-contracts",
@@ -1534,6 +1555,294 @@
       ]
     },
     {
+      "id": "quality.dedicated-module-command-dispatch",
+      "commandName": "check:dedicated-module-command-dispatch",
+      "groupId": "architecture",
+      "kind": "architecture",
+      "owner": "quality-architecture",
+      "entry": "tests/quality/architecture/check-dedicated-module-command-dispatch.mts",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node"
+      ],
+      "shardKey": "quality.dedicated-module-command-dispatch",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/architecture/check-dedicated-module-command-dispatch.mts",
+          "nodeArgs": [
+            "--experimental-transform-types",
+            "--loader",
+            "./scripts/quality/core/typescript-path-loader.mjs"
+          ],
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "quality.workflow-coordinator-ownership",
+      "commandName": "check:workflow-coordinator-ownership",
+      "groupId": "architecture",
+      "kind": "architecture",
+      "owner": "quality-architecture",
+      "entry": "tests/quality/architecture/check-workflow-coordinator-ownership.mts",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node"
+      ],
+      "shardKey": "quality.workflow-coordinator-ownership",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/architecture/check-workflow-coordinator-ownership.mts",
+          "nodeArgs": [
+            "--experimental-transform-types",
+            "--loader",
+            "./scripts/quality/core/typescript-path-loader.mjs"
+          ],
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "quality.partial-commit-outcomes",
+      "commandName": "check:partial-commit-outcomes",
+      "groupId": "architecture",
+      "kind": "architecture",
+      "owner": "quality-architecture",
+      "entry": "tests/quality/architecture/check-partial-commit-outcomes.mts",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node"
+      ],
+      "shardKey": "quality.partial-commit-outcomes",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/architecture/check-partial-commit-outcomes.mts",
+          "nodeArgs": [
+            "--experimental-transform-types",
+            "--loader",
+            "./scripts/quality/core/typescript-path-loader.mjs"
+          ],
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "quality.user-facing-error-safety",
+      "commandName": "check:user-facing-error-safety",
+      "groupId": "architecture",
+      "kind": "architecture",
+      "owner": "quality-architecture",
+      "entry": "tests/quality/architecture/check-user-facing-error-safety.mts",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node"
+      ],
+      "shardKey": "quality.user-facing-error-safety",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/architecture/check-user-facing-error-safety.mts",
+          "nodeArgs": [
+            "--experimental-transform-types",
+            "--loader",
+            "./scripts/quality/core/typescript-path-loader.mjs"
+          ],
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "quality.post-commit-projection-writes",
+      "commandName": "check:post-commit-projection-writes",
+      "groupId": "architecture",
+      "kind": "architecture",
+      "owner": "quality-architecture",
+      "entry": "tests/quality/architecture/check-post-commit-projection-writes.mts",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node"
+      ],
+      "shardKey": "quality.post-commit-projection-writes",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/architecture/check-post-commit-projection-writes.mts",
+          "nodeArgs": [
+            "--experimental-transform-types",
+            "--loader",
+            "./scripts/quality/core/typescript-path-loader.mjs"
+          ],
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "quality.composition-presentation-dependency",
+      "commandName": "check:composition-presentation-dependency",
+      "groupId": "architecture",
+      "kind": "architecture",
+      "owner": "quality-architecture",
+      "entry": "tests/quality/architecture/check-composition-presentation-dependency.mts",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node",
+        "typescript"
+      ],
+      "shardKey": "quality.composition-presentation-dependency",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/architecture/check-composition-presentation-dependency.mts",
+          "nodeArgs": [
+            "--experimental-transform-types",
+            "--loader",
+            "./scripts/quality/core/typescript-path-loader.mjs"
+          ],
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "quality.mutation-authority-semantic-coverage",
+      "commandName": "check:mutation-authority-semantic-coverage",
+      "groupId": "architecture",
+      "kind": "architecture",
+      "owner": "quality-architecture",
+      "entry": "tests/quality/architecture/check-mutation-authority-semantic-coverage.mts",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node"
+      ],
+      "shardKey": "quality.mutation-authority-semantic-coverage",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/architecture/check-mutation-authority-semantic-coverage.mts",
+          "nodeArgs": [
+            "--experimental-transform-types",
+            "--loader",
+            "./scripts/quality/core/typescript-path-loader.mjs"
+          ],
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "quality.mutation-authority-negative-controls",
+      "commandName": "check:mutation-authority-negative-controls",
+      "groupId": "architecture",
+      "kind": "architecture",
+      "owner": "quality-architecture",
+      "entry": "tests/quality/architecture/check-mutation-authority-negative-controls.mts",
+      "timeoutMs": 600000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node"
+      ],
+      "shardKey": "quality.mutation-authority-negative-controls",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/architecture/check-mutation-authority-negative-controls.mts",
+          "nodeArgs": [
+            "--experimental-transform-types",
+            "--loader",
+            "./scripts/quality/core/typescript-path-loader.mjs"
+          ],
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "quality.connected-business-operation-availability",
+      "commandName": "check:connected-business-operation-availability",
+      "groupId": "architecture",
+      "kind": "architecture",
+      "owner": "quality-architecture",
+      "entry": "tests/quality/architecture/check-connected-business-operation-availability.mts",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node"
+      ],
+      "shardKey": "quality.connected-business-operation-availability",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/architecture/check-connected-business-operation-availability.mts",
+          "nodeArgs": [
+            "--experimental-transform-types",
+            "--loader",
+            "./scripts/quality/core/typescript-path-loader.mjs"
+          ],
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "quality.connected-platform-configuration-authority",
+      "commandName": "check:connected-platform-configuration-authority",
+      "groupId": "architecture",
+      "kind": "architecture",
+      "owner": "quality-architecture",
+      "entry": "tests/quality/architecture/check-connected-platform-configuration-authority.mts",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node",
+        "typescript"
+      ],
+      "shardKey": "quality.connected-platform-configuration-authority",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/architecture/check-connected-platform-configuration-authority.mts",
+          "nodeArgs": [
+            "--experimental-transform-types",
+            "--loader",
+            "./scripts/quality/core/typescript-path-loader.mjs"
+          ],
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "quality.server-assigned-task-identity",
+      "commandName": "check:server-assigned-task-identity",
+      "groupId": "architecture",
+      "kind": "architecture",
+      "owner": "quality-architecture",
+      "entry": "tests/quality/architecture/check-server-assigned-task-identity.mts",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node"
+      ],
+      "shardKey": "quality.server-assigned-task-identity",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/architecture/check-server-assigned-task-identity.mts",
+          "nodeArgs": [
+            "--experimental-transform-types",
+            "--loader",
+            "./scripts/quality/core/typescript-path-loader.mjs"
+          ],
+          "args": []
+        }
+      ]
+    },
+    {
       "id": "quality.secret-policy",
       "commandName": "test:secret-policy",
       "groupId": "architecture",
@@ -1707,6 +2016,62 @@
         {
           "type": "node",
           "entry": "tests/quality/unit/check-ai-governance-contracts.mts",
+          "nodeArgs": [
+            "--import",
+            "tsx",
+            "--import",
+            "./tests/fixtures/runtime/bootstrap-demo-application-composition.mjs"
+          ],
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "quality.partial-commit-semantics",
+      "commandName": "test:partial-commit-semantics",
+      "groupId": "unit",
+      "kind": "unit",
+      "owner": "quality-unit",
+      "entry": "tests/quality/unit/check-partial-commit-semantics.mts",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node",
+        "tsx"
+      ],
+      "shardKey": "quality.partial-commit-semantics",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/unit/check-partial-commit-semantics.mts",
+          "nodeArgs": [
+            "--import",
+            "tsx",
+            "--import",
+            "./tests/fixtures/runtime/bootstrap-demo-application-composition.mjs"
+          ],
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "quality.user-facing-error-presentation",
+      "commandName": "test:user-facing-error-presentation",
+      "groupId": "unit",
+      "kind": "unit",
+      "owner": "quality-unit",
+      "entry": "tests/quality/unit/check-user-facing-error-presentation.mts",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node",
+        "tsx"
+      ],
+      "shardKey": "quality.user-facing-error-presentation",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/unit/check-user-facing-error-presentation.mts",
           "nodeArgs": [
             "--import",
             "tsx",
@@ -4535,6 +4900,214 @@
         {
           "type": "node",
           "entry": "tests/quality/integration/check-dashboard-runtime.mts",
+          "nodeArgs": [
+            "--import",
+            "tsx"
+          ],
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "quality.workspace-scope-reset",
+      "commandName": "test:workspace-scope-reset",
+      "groupId": "integration",
+      "kind": "integration",
+      "owner": "quality-integration",
+      "entry": "tests/quality/integration/check-workspace-scope-reset.mts",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node",
+        "tsx"
+      ],
+      "shardKey": "quality.workspace-scope-reset",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/integration/check-workspace-scope-reset.mts",
+          "nodeArgs": [
+            "--import",
+            "tsx"
+          ],
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "quality.server-assigned-task-identity-contracts",
+      "commandName": "test:server-assigned-task-identity-contracts",
+      "groupId": "integration",
+      "kind": "integration",
+      "owner": "quality-integration",
+      "entry": "tests/quality/integration/check-server-assigned-task-identity-contracts.mts",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node",
+        "tsx"
+      ],
+      "shardKey": "quality.server-assigned-task-identity-contracts",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/integration/check-server-assigned-task-identity-contracts.mts",
+          "nodeArgs": [
+            "--import",
+            "tsx"
+          ],
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "quality.blocked-command-containment",
+      "commandName": "test:blocked-command-containment",
+      "groupId": "integration",
+      "kind": "integration",
+      "owner": "quality-integration",
+      "entry": "tests/quality/integration/check-blocked-command-containment.mts",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node",
+        "tsx"
+      ],
+      "shardKey": "quality.blocked-command-containment",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/integration/check-blocked-command-containment.mts",
+          "nodeArgs": [
+            "--import",
+            "tsx"
+          ],
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "quality.connected-unavailable-port-containment",
+      "commandName": "test:connected-unavailable-port-containment",
+      "groupId": "integration",
+      "kind": "integration",
+      "owner": "quality-integration",
+      "entry": "tests/quality/integration/check-connected-unavailable-port-containment.mts",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node",
+        "tsx"
+      ],
+      "shardKey": "quality.connected-unavailable-port-containment",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/integration/check-connected-unavailable-port-containment.mts",
+          "nodeArgs": [
+            "--import",
+            "tsx"
+          ],
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "quality.wf01-contact-opportunity-ownership",
+      "commandName": "test:wf01-contact-opportunity-ownership",
+      "groupId": "integration",
+      "kind": "integration",
+      "owner": "quality-integration",
+      "entry": "tests/quality/integration/check-wf01-contact-opportunity-ownership.mts",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node",
+        "tsx"
+      ],
+      "shardKey": "quality.wf01-contact-opportunity-ownership",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/integration/check-wf01-contact-opportunity-ownership.mts",
+          "nodeArgs": [
+            "--import",
+            "tsx"
+          ],
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "quality.wf04-customer-commercial-actions-ownership",
+      "commandName": "test:wf04-customer-commercial-actions-ownership",
+      "groupId": "integration",
+      "kind": "integration",
+      "owner": "quality-integration",
+      "entry": "tests/quality/integration/check-wf04-customer-commercial-actions-ownership.mts",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node",
+        "tsx"
+      ],
+      "shardKey": "quality.wf04-customer-commercial-actions-ownership",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/integration/check-wf04-customer-commercial-actions-ownership.mts",
+          "nodeArgs": [
+            "--import",
+            "tsx"
+          ],
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "quality.wf21-work-activation-ownership",
+      "commandName": "test:wf21-work-activation-ownership",
+      "groupId": "integration",
+      "kind": "integration",
+      "owner": "quality-integration",
+      "entry": "tests/quality/integration/check-wf21-work-activation-ownership.mts",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node",
+        "tsx"
+      ],
+      "shardKey": "quality.wf21-work-activation-ownership",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/integration/check-wf21-work-activation-ownership.mts",
+          "nodeArgs": [
+            "--import",
+            "tsx"
+          ],
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "quality.partial-commit-controller-runtime",
+      "commandName": "test:partial-commit-controller-runtime",
+      "groupId": "integration",
+      "kind": "integration",
+      "owner": "quality-integration",
+      "entry": "tests/quality/integration/check-partial-commit-controller-runtime.mts",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node",
+        "tsx"
+      ],
+      "shardKey": "quality.partial-commit-controller-runtime",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/integration/check-partial-commit-controller-runtime.mts",
           "nodeArgs": [
             "--import",
             "tsx"

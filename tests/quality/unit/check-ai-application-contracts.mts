@@ -24,8 +24,6 @@ import {
 import { DEFAULT_AI_GOVERNANCE_POLICY, normalizeAiGovernancePolicy } from "@/ai/governance";
 import {
   ConnectedAiRuntime,
-  toConnectedAiActionPayload,
-  toConnectedAiAskPayload,
 } from "@/ai/runtime/ConnectedAiRuntime";
 import { DemoAiRuntime } from "@/ai/runtime/DemoAiRuntime";
 import { getAiRuntimeMode, isConnectedAiRuntime } from "@/ai/runtime/aiRuntimeBinding";
@@ -38,8 +36,8 @@ import {
   UNSUPPORTED_FOCUSED_AI_ENTITIES,
   type GlobalAiState,
 } from "@/workspaces/crm/ai-context/application/aiContextBuilder";
-import { getAiSuggestedTaskId } from "@/workflows/work-activation";
-import { getTaskSnapshot } from "@/modules/tasks";
+import { getAiSuggestedTaskIntentKey } from "@/workflows/work-activation";
+import { getTaskActivitySnapshot, getTaskSnapshot } from "@/modules/tasks";
 import type { StoragePort } from "@/platform/persistence";
 
 const root = repositoryRoot;
@@ -56,6 +54,22 @@ const scopeA: AiWorkspaceScope = { workspaceId: "ws-a", workspaceKey: "alpha", a
 const scopeB: AiWorkspaceScope = { workspaceId: "ws-b", workspaceKey: "beta", actorId: "member-1", actorName: "Member One" };
 const scopeAOther: AiWorkspaceScope = { ...scopeA, actorId: "member-2", actorName: "Member Two" };
 const policy = normalizeAiGovernancePolicy(DEFAULT_AI_GOVERNANCE_POLICY);
+
+/**
+ * M11 (DF-03) — locate an AI-activated Task by what the activation actually persists.
+ *
+ * `getTaskSnapshot(getAiSuggestedTaskIntentKey(id))` cannot answer this question. Task
+ * ids have been server-assigned since M3: `createTaskCommand` drops the caller-supplied
+ * `id` before dispatch, so that lookup returns `undefined` whether or not a Task was
+ * created, and every assertion built on it passes vacuously.
+ *
+ * `dedupeKey` and `sourceRef` are the authoritative markers `activateAiSuggestedTask`
+ * writes, so they identify the Task without pretending to know its id.
+ */
+const findAiSuggestedTask = (suggestionId: string) => getTaskActivitySnapshot().tasks.find(
+  (task) => task.dedupeKey === `ai-task:${suggestionId}`
+    || (task.sourceRef?.type === "AI_SUGGESTION" && task.sourceRef.id === suggestionId),
+);
 
 // ---------------------------------------------------------------------------
 // 1. Typed AI action intents: closed union, no arbitrary command names.
@@ -134,7 +148,7 @@ const blockedExecution = await executeGovernedAiActionIntent(
 );
 assert.equal(blockedExecution.status, "BLOCKED");
 assert.equal(blockedExecution.createdTask, undefined, "A blocked AI action must not create a Task.");
-assert.equal(getTaskSnapshot(getAiSuggestedTaskId(createTaskIntent.suggestionId)), undefined, "No Task may exist after a blocked decision.");
+assert.equal(findAiSuggestedTask(createTaskIntent.suggestionId), undefined, "No Task may exist after a blocked decision.");
 
 const externalSendPolicy = { ...policy, autonomyLevel: "L3_CONTROLLED_EXTERNAL" as const, requireApprovalFor: ["INTERNAL_UPDATE" as const] };
 const withoutApproval = evaluateDemoAiActionDecision({
@@ -151,7 +165,7 @@ const approvalRequiredResult = await executeGovernedAiActionIntent(
   withoutApproval,
 );
 assert.equal(approvalRequiredResult.status, "APPROVAL_REQUIRED");
-assert.equal(getTaskSnapshot(getAiSuggestedTaskId(createTaskIntent.suggestionId)), undefined);
+assert.equal(findAiSuggestedTask(createTaskIntent.suggestionId), undefined, "No Task may exist while approval is still outstanding.");
 
 const withApproval = evaluateDemoAiActionDecision({
   scope: scopeA,
@@ -162,6 +176,28 @@ const withApproval = evaluateDemoAiActionDecision({
   persist: false,
 });
 assert.equal(withApproval.allowed, true, "Explicit approval must unblock an approval-required action.");
+
+// Positive control for the two assertions above. They are only meaningful if the finder
+// can actually see an activated Task: executing the approved intent must make exactly the
+// same lookup succeed. Without this, "no Task exists" would again be unfalsifiable.
+const approvedExecution = await executeGovernedAiActionIntent(
+  { scope: scopeA, intent: createTaskIntent, approval: { approved: true, approvedBy: "member-1" } },
+  withApproval,
+);
+assert.equal(approvedExecution.status, "EXECUTED", "An approved AI action must execute.");
+const activatedTask = findAiSuggestedTask(createTaskIntent.suggestionId);
+assert.ok(activatedTask, "The approved AI action must create a Task the semantic finder can locate.");
+assert.equal(activatedTask.sourceRef?.type, "AI_SUGGESTION", "An AI-activated Task must keep its AI provenance.");
+
+// RC-01 restated as an executed fact rather than an assumption: the deterministic intent
+// key is an idempotency/dedupe value, never the aggregate id the runtime assigned.
+const aiIntentKey = getAiSuggestedTaskIntentKey(createTaskIntent.suggestionId);
+assert.notEqual(activatedTask.id, aiIntentKey, "The AI intent key must never become the Task aggregate id.");
+assert.equal(
+  getTaskSnapshot(aiIntentKey),
+  undefined,
+  "Looking a Task up by its client-side intent key must stay unresolvable — that is why it cannot be used as an assertion subject.",
+);
 
 // Evidence references are preserved end to end.
 const evidence = aiEvidenceForIntent(createTaskIntent, ["assignee:member-1"]);
@@ -191,30 +227,71 @@ for (const component of ["src/components/ai/AiChatPanel.tsx", "src/components/ai
 }
 
 // ---------------------------------------------------------------------------
-// 4. Connected runtime fails closed and never falls back to the demo runtime.
+// 4. Connected runtime calls the admitted read-only advisory extension and
+// keeps every mutation tool fail-closed.
 // ---------------------------------------------------------------------------
 const connectedSource = read("src/ai/runtime/ConnectedAiRuntime.ts");
 for (const forbidden of ["DemoAiRuntime", "askCrmAi", "localStorage", "BrowserStorageAdapter", "openai", "anthropic", "gemini"]) {
   assert.equal(connectedSource.toLowerCase().includes(forbidden.toLowerCase()), false, `Connected AI runtime must not reference ${forbidden}.`);
 }
-const connected = new ConnectedAiRuntime({ request: async <T,>(): Promise<T> => ({}) as T });
+const connectedRequests: Array<{ operationId: string; path: string; body?: unknown; contractAuthority?: string }> = [];
+const connected = new ConnectedAiRuntime({
+  request: async <T,>(input: { operationId: string; path: string; body?: unknown; contractAuthority?: string }): Promise<T> => {
+    connectedRequests.push(input);
+    return {
+      executionId: "ai_exec_contract",
+      summary: "Lead is ready for a follow-up.",
+      suggestedNextAction: "Call the lead tomorrow.",
+      attentionPoints: ["Confirm the budget."],
+      advisory: true,
+      contextReferences: { leadId: "lead-1" },
+      provider: { name: "DevelopmentDeterministic", model: "deterministic-v1" },
+    } as T;
+  },
+});
 assert.equal(connected.mode, "connected");
+const connectedThread = await connected.createConversation(scopeA, { title: "t", welcomeMessage: "w" });
+assert.deepEqual((await connected.listConversations(scopeA)).map((thread) => thread.id), [connectedThread.id]);
+assert.deepEqual(await connected.listConversations(scopeB), [], "Connected presentation threads must be workspace scoped.");
+
+const advisory = await connected.ask({
+  scope: scopeA,
+  conversationId: connectedThread.id,
+  question: "What should I do next?",
+  locale: "en",
+  requestedContextScope: ["FOCUSED_RECORD"],
+  focusedEntity: { entityType: "lead", entityId: "lead-1" },
+});
+assert.equal(advisory.decision.allowed, true);
+assert.equal(advisory.decision.authority, "backend");
+assert.match(advisory.message.content, /Read-only advisory/u);
+assert.match(advisory.message.content, /DevelopmentDeterministic/u);
+assert.equal(connectedRequests[0]?.operationId, "requestAiAdvisory");
+assert.equal(connectedRequests[0]?.path, "/ai/advisories");
+assert.equal(connectedRequests[0]?.contractAuthority, "semantic-extension");
+assert.deepEqual(connectedRequests[0]?.body, {
+  question: "What should I do next?",
+  locale: "en",
+  contextReferences: { leadId: "lead-1" },
+});
+assert.equal(JSON.stringify(connectedRequests[0]?.body).includes("localContext"), false);
+assert.equal(JSON.stringify(connectedRequests[0]?.body).includes("workspaceId"), false, "Trusted workspace authority must stay in the request header.");
+
+await assert.rejects(
+  connected.ask({ scope: scopeA, conversationId: connectedThread.id, question: "global", locale: "en", requestedContextScope: [] }),
+  (error: unknown) => error instanceof Error && "code" in error && error.code === "AI_CONTEXT_UNAVAILABLE",
+  "The backend extension requires a focused Lead, Deal or Task and must not receive browser-composed record collections.",
+);
 for (const operation of [
-  () => connected.ask({ scope: scopeA, conversationId: "c1", question: "hi", locale: "en", requestedContextScope: [] }),
-  () => connected.listConversations(scopeA),
-  () => connected.createConversation(scopeA, { title: "t", welcomeMessage: "w" }),
   () => connected.getGovernanceDecision(scopeA, { type: "NONE" }),
   () => connected.executeAction({ scope: scopeA, intent: createTaskIntent }),
 ]) {
   await assert.rejects(
     operation(),
     (error: unknown) => error instanceof Error && "code" in error && error.code === "CONTRACT_OPERATION_BLOCKED",
-    "Connected AI operations must fail closed instead of silently using demo output.",
+    "Connected AI mutation operations must fail closed instead of treating advisory output as authority.",
   );
 }
-await connected.listConversations(scopeA).catch((error: unknown) => {
-  assert.equal(resolveAiInteractionState(error), "provider_unavailable", "A blocked contract must present as an unavailable provider.");
-});
 
 // Demo composition never presents itself as the connected runtime.
 assert.equal(getAiRuntimeMode(), "demo");
@@ -250,25 +327,10 @@ const financialSanitized = buildSanitizedAiRequestContext({
 });
 assert.notEqual(financialSanitized.commercial, undefined, "An authorized policy may include commercial totals.");
 
-const askPayload = toConnectedAiAskPayload({
-  scope: scopeA,
-  conversationId: "thread-1",
-  question: "Summarize the pipeline",
-  locale: "en",
-  requestedContextScope: defaultAiContextScope(undefined),
-  sanitizedContext: sanitized,
-  localContext: globalContext,
-});
-assert.equal("localContext" in askPayload, false, "The browser CRM context must never reach the wire.");
+const askPayload = connectedRequests[0]?.body;
 assert.equal(JSON.stringify(askPayload).includes('"leads":['), false, "Connected requests must not transmit CRM record collections.");
-assert.equal(askPayload.workspaceId, "ws-a");
-assert.equal(askPayload.actorId, "member-1");
 assert.equal(containsBlockedFieldKey(askPayload, ["accessToken", "password"]), false, "No credential-like key may appear in a connected payload.");
 assert.equal(containsBlockedFieldKey({ nested: { accessToken: "x" } }, ["accessToken"]), true);
-
-const actionPayload = toConnectedAiActionPayload({ scope: scopeA, intent: createTaskIntent, evidenceRefs: ["conversation:thread-1"] });
-assert.deepEqual(actionPayload.evidenceRefs, ["conversation:thread-1"], "Action requests carry evidence references to the backend.");
-assert.equal(actionPayload.approval, undefined, "A frontend-created approval flag is never implied.");
 
 // ---------------------------------------------------------------------------
 // 6. Conversations are scoped by workspace and actor.

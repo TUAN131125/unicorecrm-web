@@ -11,7 +11,9 @@ import {
   Trash2,
 } from "lucide-react";
 import { useI18n } from "@/i18n";
+import { unavailableFeatureMessage } from "@/shared/operations";
 import { CAPABILITIES, useEffectiveAccess } from "@/platform/access-control";
+import { isDeveloperWebhookSaveUnavailable } from "@/platform/connected-configuration/connectedConfigurationAvailability";
 import {
   getDeveloperConfiguration,
   saveDeveloperWebhooks,
@@ -91,6 +93,7 @@ export function WebhooksApiView() {
   const { locale } = useI18n();
   const text = (vi: string, en: string) => locale === "vi" ? vi : en;
   const canConfigure = useEffectiveAccess().can(CAPABILITIES.STUDIO_CONFIGURE);
+  const [unavailableNotice, setUnavailableNotice] = React.useState<string | null>(null);
   const source = useSubscribableSnapshot(getDeveloperConfiguration, subscribeToDeveloperConfiguration);
   const [workingWebhooks, setWorkingWebhooks] = React.useState(source.webhooks);
   const [editing, setEditing] = React.useState<WebhookDefinition | null>(null);
@@ -114,7 +117,16 @@ export function WebhooksApiView() {
     editing.direction === "OUTBOUND" && !isValidHttpsUrl(editing.endpointUrl) ? text("Webhook gửi ra cần endpoint HTTPS hợp lệ.", "Outbound webhooks require a valid HTTPS endpoint.") : "",
   ].filter(Boolean) : [];
 
-  const save = () => setWorkingWebhooks(saveDeveloperWebhooks(workingWebhooks).webhooks);
+  // OpenAPI publishes no webhook operation in either direction, so connected mode has no
+  // authoritative write. Refuse rather than persist workspace webhook registrations in one
+  // browser and present them as workspace configuration.
+  const save = () => {
+    if (isDeveloperWebhookSaveUnavailable()) {
+      setUnavailableNotice(unavailableFeatureMessage({ vi: "Chưa thể lưu cấu hình webhook", en: "The webhook configuration cannot be saved yet" }, { locale }));
+      return;
+    }
+    setWorkingWebhooks(saveDeveloperWebhooks(workingWebhooks).webhooks);
+  };
   const saveDialog = () => {
     if (!editing || dialogIssues.length > 0) return;
     setWorkingWebhooks((items) => items.some((item) => item.id === editing.id)
@@ -228,6 +240,7 @@ export function WebhooksApiView() {
         </div>
       )}
 
+      {unavailableNotice ? <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{unavailableNotice}</p> : null}
       {tab !== "API" ? <StudioSaveBar dirty={dirty && canConfigure} saving={false} onSave={save} saveLabel={text("Lưu", "Save")} cleanLabel={text("Đã lưu.", "Saved.")} dirtyLabel={text("Có thay đổi chưa lưu.", "Unsaved changes.")} /> : null}
 
       <StudioDialog

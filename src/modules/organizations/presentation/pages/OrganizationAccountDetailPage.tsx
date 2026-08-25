@@ -1,4 +1,4 @@
-import { formatApplicationError } from "@/shared/operations";
+import { backendUnavailableMessage, formatApplicationError } from "@/shared/operations";
 import React, { useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { AlertCircle, BriefcaseBusiness, Building2, CalendarClock, CheckCircle2, FileCheck2, FileText, Headphones, Package, Plus, Quote, RotateCcw, Truck, WalletCards } from "lucide-react";
@@ -18,7 +18,7 @@ import {
 } from "@/components/crm/relationship-detail";
 import { useI18n } from "@/i18n";
 import { getContactsSnapshot, subscribeToContacts, type Contact } from "@/modules/contacts";
-import { endContactOrganizationRelationshipCommand, setPrimaryOrganizationRepresentativeCommand } from "@/workflows/contact-organization-relationship";
+import { endContactOrganizationRelationshipCommand, isContactOrganizationRelationshipUnavailable, setPrimaryOrganizationRepresentativeCommand } from "@/workflows/contact-organization-relationship";
 import { getDealsSnapshot, subscribeToDeals } from "@/modules/deals";
 import { findCustomerByRelationshipRefSnapshot, getCustomersSnapshot, subscribeToCustomers } from "@/modules/customers";
 import { getInvoicesSnapshot, getReceivablesSnapshot, subscribeToInvoices } from "@/modules/invoices";
@@ -218,6 +218,12 @@ export const OrganizationAccountDetailPage: React.FC = () => {
   }
 
   const setPrimaryRepresentative = async (contactId: string) => {
+    // `contact-organization.set-primary-representative` is a BLOCKED canonical command:
+    // refuse before the mutation is started.
+    if (isContactOrganizationRelationshipUnavailable()) {
+      setMessage(backendUnavailableMessage({ locale, action: text("Đổi đại diện chính", "Changing the primary representative") }));
+      return;
+    }
     try {
       await setPrimaryOrganizationRepresentativeCommand({ organizationAccountId: account.id, contactId, actorId });
       recordOperationalAudit({ moduleKey: "organizations", recordId: account.id, action: "PrimaryRepresentativeChanged", actorId, actorName: currentActorName, before: { primaryContactId: account.primaryContactId }, after: { primaryContactId: contactId } });
@@ -234,6 +240,10 @@ export const OrganizationAccountDetailPage: React.FC = () => {
 
   const confirmEndRepresentativeRelationship = async () => {
     if (!endRepresentativeContactId || !endRepresentativeReason.trim()) return;
+    if (isContactOrganizationRelationshipUnavailable()) {
+      setMessage(backendUnavailableMessage({ locale, action: text("Kết thúc quan hệ đại diện", "Ending the representative relationship") }));
+      return;
+    }
     try {
       await endContactOrganizationRelationshipCommand({ contactId: endRepresentativeContactId, organizationAccountId: account.id, actorId, reason: endRepresentativeReason.trim() });
       setMessage(text("Đã kết thúc quan hệ đại diện và giữ lịch sử.", "The representative relationship ended and remains in history."));

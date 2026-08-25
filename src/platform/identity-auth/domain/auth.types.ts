@@ -118,6 +118,8 @@ export type AuthFailureCode =
   | "SESSION_EXPIRED"
   | "SESSION_REVOKED"
   | "AUTH_ADAPTER_UNAVAILABLE"
+  /** The identity backend could not be reached, timed out, or failed unexpectedly. */
+  | "SERVICE_UNAVAILABLE"
   | "TOKEN_INVALID"
   | "TOKEN_EXPIRED"
   | "INVITATION_INVALID"

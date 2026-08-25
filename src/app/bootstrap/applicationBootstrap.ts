@@ -115,8 +115,13 @@ export async function bootstrapApplicationComposition(
   const mode = resolveRuntimeMode(environment);
   if (mode === "connected") {
     const baseUrl = requireConnectedBaseUrl(environment);
+    // The authenticated Identity operations - GET /auth/session and
+    // POST /auth/session/logout - are bearer authorized like any other endpoint. The
+    // provider reads the runtime the gateway below installs, so it resolves lazily per
+    // request rather than at construction time.
     const identityHttp = new FetchHttpClient({
       baseUrl,
+      accessTokenProvider: { getAccessToken: () => getConnectedAuthAccessToken() },
       defaultTimeoutMs: parseTimeout(environment.VITE_API_TIMEOUT_MS),
     });
     configureConnectedAuthGateway(new IdentityAuthHttpAdapter(new IdentityApiClient(identityHttp)));
@@ -134,10 +139,10 @@ export async function bootstrapApplicationComposition(
   return initializeApplicationComposition(plan.composition);
 }
 
-function createUnauthorizedHandler(bindings?: ConnectedRuntimeBindings): () => Promise<void> {
+function createUnauthorizedHandler(bindings?: ConnectedRuntimeBindings): () => Promise<boolean> {
   return async () => {
     const internalRefresh = await refreshAuthSession().catch(() => ({ ok: false as const }));
-    if (internalRefresh.ok) return;
+    if (internalRefresh.ok) return true;
 
     let hostRefreshed = false;
     try {
@@ -145,7 +150,7 @@ function createUnauthorizedHandler(bindings?: ConnectedRuntimeBindings): () => P
     } catch {
       hostRefreshed = false;
     }
-    if (hostRefreshed) return;
+    if (hostRefreshed) return true;
 
     try {
       await bindings?.onUnauthorized?.();
@@ -155,13 +160,22 @@ function createUnauthorizedHandler(bindings?: ConnectedRuntimeBindings): () => P
       await terminateAuthSession("UNAUTHORIZED");
       await bindings?.logout?.();
     }
+    return false;
   };
 }
 
+/**
+ * The local ApiHost origin. Local development talks to the real backend without
+ * requiring an environment file; every other environment must declare its own
+ * VITE_API_BASE_URL.
+ */
+export const LOCAL_DEVELOPMENT_API_BASE_URL = "http://localhost:5080";
+
 function requireConnectedBaseUrl(environment: ApplicationRuntimeEnvironment): string {
   const baseUrl = environment.VITE_API_BASE_URL?.trim();
-  if (!baseUrl) throw new Error("Connected runtime requires VITE_API_BASE_URL.");
-  return baseUrl;
+  if (baseUrl) return baseUrl;
+  if (environment.PROD === true) throw new Error("Connected runtime requires VITE_API_BASE_URL.");
+  return LOCAL_DEVELOPMENT_API_BASE_URL;
 }
 
 function resolveRuntimeMode(environment: ApplicationRuntimeEnvironment): ApplicationRuntimeMode {
@@ -170,7 +184,10 @@ function resolveRuntimeMode(environment: ApplicationRuntimeEnvironment): Applica
     throw new Error(`Unsupported VITE_RUNTIME_MODE: ${configured}. Expected demo or connected.`);
   }
   if (configured) return configured as ApplicationRuntimeMode;
-  return environment.PROD === true ? "connected" : "demo";
+  // Connected is the default in every environment. Demo remains available, but only
+  // when a deployment asks for it explicitly, so no runtime silently authenticates
+  // or resolves workspaces against browser-local state.
+  return "connected";
 }
 
 function parseTimeout(value: string | undefined): number | undefined {

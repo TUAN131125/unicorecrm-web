@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from "react";
-import { AuthoritativeQueryNotice } from "@/shared/operations";
+import { AuthoritativeQueryNotice, backendUnavailableMessage } from "@/shared/operations";
 import { useCustomers } from "../hooks/useCustomers";
 import { AnimatePresence } from "motion/react";
 import { useNavigate } from "react-router-dom";
@@ -11,7 +11,7 @@ import { ConfirmDialog, IconButton } from "@/shared/components/ui";
 import { useI18n } from "@/i18n";
 import { getAuthSessionSnapshot } from "@/platform/identity-auth";
 import { CAPABILITIES, useEffectiveAccess } from "@/platform/access-control";
-import { archiveCustomerCommand, type Customer } from "../../public/api";
+import { archiveCustomerCommand, isCustomerRetentionUnavailable, type Customer } from "../../public/api";
 import { useCustomerListFilters } from "../hooks/useCustomerListFilters";
 import { useCustomerListViewSettings } from "../hooks/useCustomerListViewSettings";
 import { CustomerCardList } from "../list/CustomerCardList";
@@ -260,6 +260,13 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
   };
 
   const confirmArchive = async () => {
+    // `customer.archive` is a BLOCKED canonical command: refuse before any of the batch is
+    // dispatched, so no partial archive can be attempted.
+    if (isCustomerRetentionUnavailable()) {
+      setArchiveTargets([]);
+      showToast(backendUnavailableMessage({ locale, action: isVi ? "Lưu trữ khách hàng" : "Archiving customers" }));
+      return;
+    }
     await Promise.all(archiveTargets.map((row) => archiveCustomerCommand(row.customer.id, {
       reason: "Archived from the customer workspace",
       actorId,

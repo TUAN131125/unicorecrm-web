@@ -1,4 +1,4 @@
-import { formatApplicationError, formatOperationUnavailableError } from "@/shared/operations";
+import { backendUnavailableMessage, formatApplicationError, formatOperationUnavailableError } from "@/shared/operations";
 import React, { useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useNavigate } from "react-router-dom";
@@ -15,11 +15,12 @@ import {
   logActivityCommand,
   type Task,
 } from "@/modules/tasks";
-import { createDealForCustomer } from "@/workflows/customer-commercial-actions";
+import { createDealForCustomer, isCustomerCommercialActionsUnavailable } from "@/workflows/customer-commercial-actions";
 import { DealFormModal, getDealStagesSnapshot, mapSelectedPickerItemsToDealLineItems, type DealFormDraft } from "@/modules/deals";
 import { updateCustomerIdentityFrom360 } from "@/workflows/customer-identity";
 import {
   archiveCustomerCommand,
+  isCustomerRetentionUnavailable,
   completeCustomerOnboardingSnapshot,
   updateCustomerLifecycleSnapshot,
   type Customer,
@@ -210,6 +211,18 @@ export const Customer360Page: React.FC<Customer360PageProps> = ({
 
   const createDeal = async (draft: DealFormDraft) => {
     if (creatingDeal) return;
+    // WF-04 customer-commercial-actions is BLOCKED with
+    // `connectedFrontendCoordinatorAllowed: false`. `deal.create` and `task.create` are both
+    // ready, so nothing else would stop this from committing a Deal and then a Task for a
+    // workflow the backend owns. Refuse on WF-04 itself, before the first command.
+    if (isCustomerCommercialActionsUnavailable()) {
+      setDealOpen(false);
+      showToast(backendUnavailableMessage({
+        locale,
+        action: isVi ? "Tạo cơ hội thương mại cho khách hàng" : "Creating a commercial opportunity for this Customer",
+      }));
+      return;
+    }
     const lineItems = mapSelectedPickerItemsToDealLineItems(draft.lineItems);
     setCreatingDeal(true);
     try {
@@ -573,6 +586,13 @@ export const Customer360Page: React.FC<Customer360PageProps> = ({
         isOpen={archiveOpen}
         onClose={() => setArchiveOpen(false)}
         onConfirm={async () => {
+          // `customer.archive` is a BLOCKED canonical command: refuse before the mutation
+          // is started instead of failing inside the command boundary.
+          if (isCustomerRetentionUnavailable()) {
+            setArchiveOpen(false);
+            showToast(backendUnavailableMessage({ locale, action: isVi ? "Lưu trữ khách hàng" : "Archiving a customer" }));
+            return;
+          }
           await archiveCustomerCommand(customer.id, {
             reason: "Archived from Customer 360",
             actorId: currentMemberId ?? "system",

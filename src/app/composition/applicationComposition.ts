@@ -38,13 +38,21 @@ import { StudioQuickSetupApiClient } from "@/platform/api/generated/studioQuickS
 import { StudioCoreHttpAdapter } from "@/workspaces/studio/infrastructure/StudioCoreHttpAdapter";
 import { configureConnectedStudioCoreGateway, resetStudioCoreRuntime } from "@/workspaces/studio/runtime/studioCoreRuntime";
 import { configureConnectedAiRuntime, resetAiRuntime } from "@/ai/runtime/aiRuntimeBinding";
-import { configureDefaultAccessGovernanceRuntime } from "@/platform/access-control/runtime/accessGovernanceRuntime";
+import {
+  configureDefaultAccessGovernanceRuntime,
+  loadAccessGovernance,
+} from "@/platform/access-control/runtime/accessGovernanceRuntime";
+import {
+  configureWorkspaceRuntimeParticipant,
+  resetWorkspaceRuntimeParticipant,
+} from "@/platform/workspace-context";
 import { createPeopleAccessDemoRuntime } from "@/workspaces/people-access/runtime/createPeopleAccessDemoRuntime";
 import {
   configureModuleDataAuthorityRegistry,
   configureMutationAuthority,
   resetModuleDataAuthorityRegistry,
   type MutationAuthorityPort,
+  resetBusinessOperationAvailability,
 } from "@/shared/application";
 import {
   createHttpModuleDataAuthorityRegistry,
@@ -72,6 +80,7 @@ import {
 import type { ApplicationServiceBundle } from "./applicationServiceBundle";
 import { createConfigurationApiClients, type ConfigurationApiClients } from "@/platform/api";
 import { CONNECTED_MODULE_QUERY_RESPONSE_MAPPERS } from "./connectedModuleQueryResponseMappers";
+import { declareConnectedPlatformConfigurationUnavailability } from "./connected/connectedPlatformConfigurationServices";
 
 export type ApplicationRuntimeMode = "demo" | "connected";
 
@@ -87,7 +96,7 @@ export interface ApplicationHttpConfiguration {
   fetchImplementation?: FetchHttpClientOptions["fetchImplementation"];
   defaultTimeoutMs?: number;
   retryPolicy?: FetchHttpClientOptions["retryPolicy"];
-  onUnauthorized?: FetchHttpClientOptions["onUnauthorized"];
+  onUnauthorized?: () => Promise<boolean | void>;
   onMutationCommitted?: RoutedHttpMutationAuthorityOptions["onCommitted"];
   telemetry?: ConnectedApplicationRuntimeProviders["telemetry"];
 }
@@ -125,6 +134,13 @@ export async function initializeApplicationComposition(
       "Connected application composition owns HTTP application services. Host-injected ApplicationServiceBundle values are not accepted.",
     );
   }
+  // Availability declarations belong to the runtime being built, so the previous runtime's
+  // declarations are cleared before the new composition registers its own.
+  resetBusinessOperationAvailability();
+  // Platform configuration singletons have no ports to bind, so the connected composition
+  // declares their unavailability directly. Declared before the service bundle is built so
+  // nothing constructed below can observe a half-populated availability registry.
+  if (mode === "connected") declareConnectedPlatformConfigurationUnavailability();
   const connectedHttpClient = mode === "connected" ? resolveConnectedHttpClient(options.http) : undefined;
   const services = mode === "connected"
     ? createConnectedApplicationServiceBundle(connectedHttpClient as HttpClient, { telemetry: options.http?.telemetry })
@@ -158,6 +174,18 @@ export async function initializeApplicationComposition(
   configureDefaultAccessGovernanceRuntime(mode === "connected"
     ? new AccessGovernanceHttpAdapter(new AccessGovernanceApiClient(connectedHttpClient as HttpClient))
     : createPeopleAccessDemoRuntime());
+  // Canonical workspace entry resolves the AccessControl context before the frontend
+  // commits a workspace. Registering it here keeps workspace-context free of an
+  // access-control dependency while making the check unavoidable.
+  if (mode === "connected") {
+    configureWorkspaceRuntimeParticipant(async (workspaceId, signal) => {
+      const state = await loadAccessGovernance(workspaceId, signal);
+      if (signal?.aborted) return;
+      if (!state.snapshot) throw new Error(state.error ?? "ACCESS_CONTEXT_UNAVAILABLE");
+    });
+  } else {
+    resetWorkspaceRuntimeParticipant();
+  }
   configureLeadQualificationApiRuntime(mode === "connected"
     ? createLeadQualificationConnectedApiRuntime(connectedHttpClient as HttpClient)
     : createLeadQualificationDemoApiRuntime());

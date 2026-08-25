@@ -77,6 +77,16 @@ export class RoutedHttpMutationAuthority implements MutationAuthorityPort {
     this.onCommitted = options.onCommitted;
   }
 
+  /**
+   * Only a command the generated production registry carries can be routed. Commands
+   * owned by a dedicated module or workflow adapter, and BLOCKED commands, are
+   * deliberately absent, so a module boundary can refuse them before dispatch instead
+   * of reaching `execute` and failing inside the routing layer.
+   */
+  supports(commandType: string): boolean {
+    return isProductionCommandType(commandType);
+  }
+
   async execute<TPayload, TResult>(
     command: BackendMutationCommand<TPayload>,
     metadata: MutationCommandMetadata,

@@ -1,10 +1,12 @@
 import React from "react";
 import { Building2, ChevronRight } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { productSpaceHome, ROUTE_KEYS } from "@/platform/navigation";
 import { useI18n } from "@/i18n";
 import { terminateAuthSession } from "@/platform/identity-auth";
 import {
+  enterWorkspace,
+  isConnectedWorkspaceRuntime,
   loadWorkspaceMemberships,
   resetWorkspaceContextSelection,
   switchWorkspaceContext,
@@ -20,11 +22,19 @@ export const WorkspaceSelectionPage: React.FC = () => {
   const [loading, setLoading] = React.useState(true);
   const [selectingKey, setSelectingKey] = React.useState<string>();
   const [error, setError] = React.useState<string>();
+  const [onboardingRequired, setOnboardingRequired] = React.useState(false);
 
+  // GET /workspaces is the only authority for whether onboarding applies. No
+  // first-login flag, stored value, CRM record count or 404 participates.
   const load = React.useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     setError(undefined);
-    try { setMemberships((await loadWorkspaceMemberships(signal)).filter((membership) => membership.status === "active")); }
+    try {
+      const active = (await loadWorkspaceMemberships(signal)).filter((membership) => membership.status === "active");
+      if (signal?.aborted) return;
+      setMemberships(active);
+      setOnboardingRequired(active.length === 0 && isConnectedWorkspaceRuntime());
+    }
     catch { if (!signal?.aborted) setError(vi ? "Không thể tải danh sách không gian làm việc." : "Unable to load workspaces."); }
     finally { if (!signal?.aborted) setLoading(false); }
   }, [vi]);
@@ -39,12 +49,19 @@ export const WorkspaceSelectionPage: React.FC = () => {
     setSelectingKey(membership.workspaceKey);
     setError(undefined);
     try {
+      if (isConnectedWorkspaceRuntime()) {
+        const context = await enterWorkspace(membership.workspaceId);
+        navigate(productSpaceHome(context.workspace.workspaceKey, "crm"), { replace: true });
+        return;
+      }
       const selected = await switchWorkspaceContext(membership.workspaceKey);
       navigate(productSpaceHome(selected.workspaceKey, "crm"), { replace: true });
     } catch {
       setError(vi ? "Không thể xác minh quyền truy cập không gian làm việc này." : "Unable to verify access to this workspace.");
     } finally { setSelectingKey(undefined); }
   };
+
+  if (onboardingRequired) return <Navigate to={ROUTE_KEYS.INITIAL_SETUP} replace />;
 
   const switchAccount = async () => {
     resetWorkspaceContextSelection();

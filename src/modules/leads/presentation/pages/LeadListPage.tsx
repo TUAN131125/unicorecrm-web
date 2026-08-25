@@ -138,7 +138,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
     enabled: viewMode === "table",
     query: leadServerQuery,
     initialPageSize: 50,
-    project: replaceLeads,
+    project: projectServerLeadPage,
   });
   const localPagination = useLeadPagination(filters.filteredLeads, 50);
   const pagination = serverPagination.connected && viewMode === "table"
@@ -1078,3 +1078,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
     </ListPageFrame>
   );
 };
+
+function projectServerLeadPage(records: readonly Lead[]): void {
+  replaceLeads([...records]);
+}

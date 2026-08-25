@@ -1,4 +1,4 @@
-import { createMutationMetadata, MutationCommandError, runBackendProjection, type MutationCommandMetadata, type MutationOutcome } from "@/shared/application";
+import { createMutationMetadata, isBusinessOperationUnavailable, MutationCommandError, runBackendProjection, type MutationCommandMetadata, type MutationOutcome } from "@/shared/application";
 import type { ProductDraftInput, ProductMutationEvidence } from "../application/ports/ProductApiRuntime";
 import type { Product } from "../domain/model/product.types";
 import { getProductApiRuntime, isProductConnectedApiRuntime, productCatalogExporter, productPreferences, productRepository, resetProductRepositoryToDemo } from "../application/composition/productApplicationServices";
@@ -46,6 +46,11 @@ export async function restoreProductsCommand(productIds: readonly string[], inpu
 
 export function subscribeToProductCatalog(listener: (products: Product[]) => void): () => void { return productRepository.subscribe(listener); }
 export function assertProductCatalogImportAvailable(): void { assertDemoOnly("importProductCatalog"); }
+/**
+ * True when the demo catalog reset cannot run in the active runtime. Connected mode binds
+ * the catalog reset to an unavailable operation because no backend reset contract exists.
+ */
+export function isProductDemoCatalogResetUnavailable(): boolean { return isBusinessOperationUnavailable("Product demo catalog reset"); }
 export function resetProductCatalogToDemo(): Product[] { assertDemoOnly("resetProductCatalogToDemo"); return resetProductRepositoryToDemo(); }
 export function exportProductCatalogJson(products: readonly Product[]): void { assertDemoOnly("exportProductCatalogJson"); productCatalogExporter.exportJson(products); }
 export function exportProductCatalogCsv(products: readonly Product[]): void { assertDemoOnly("exportProductCatalogCsv"); productCatalogExporter.exportCsv(products); }

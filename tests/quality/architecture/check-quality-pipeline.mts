@@ -25,9 +25,9 @@ assert.deepEqual(
 );
 assert.equal(manifest.groups.at(-2)?.id, "build", "Production build must run immediately before external acceptance.");
 assert.equal(manifest.groups.at(-1)?.id, "acceptance", "External backend and browser acceptance must remain the final quality group.");
-assert.equal(manifest.gates.length, 311);
-assert.equal(new Set(manifest.gates.map((gate: { id: string }) => gate.id)).size, 311, "Stable gate IDs must be unique.");
-assert.equal(new Set(manifest.gates.map((gate: { commandName: string }) => gate.commandName)).size, 311, "Compatibility command names must be unique.");
+assert.equal(manifest.gates.length, 332);
+assert.equal(new Set(manifest.gates.map((gate: { id: string }) => gate.id)).size, 332, "Stable gate IDs must be unique.");
+assert.equal(new Set(manifest.gates.map((gate: { commandName: string }) => gate.commandName)).size, 332, "Compatibility command names must be unique.");
 assert.equal(fs.existsSync(path.join(repositoryRoot, "scripts/quality/gate-migration-manifest.json")), false, "The migration ledger must be retired after compatibility cleanup.");
 assert.equal(fs.existsSync(path.join(repositoryRoot, "scripts/quality/run-legacy-gate.mjs")), false, "The legacy gate dispatcher must remain retired.");
 assert.equal(manifest.gates.some((gate: { id: string }) => gate.id === "quality.gate-migration-contract"), false);
@@ -322,5 +322,5 @@ const retiredRunnerPath = ["scripts", "run-verify.cjs"].join("/");
 assert.equal(fs.existsSync(path.join(repositoryRoot, retiredRunnerPath)), false);
 
 const indexed = indexQualityManifest(manifest);
-assert.equal(indexed.gatesById.size, 311);
+assert.equal(indexed.gatesById.size, 332);
 console.log(`Quality pipeline: PASS (${validation.groupCount} groups, ${validation.gateCount} stable manifest-owned gates).`);

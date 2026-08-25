@@ -1,14 +1,14 @@
-import { formatApplicationError, useServerPagedModuleCollection } from "@/shared/operations";
+import { formatApplicationError, formatOperationUnavailableError, summarizeBulkCommits, unavailableFeatureMessage, useServerPagedModuleCollection } from "@/shared/operations";
 import React, { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import type { CustomerOrder, OrderState } from "../../domain/model/order.types";
 import type { PaymentRepositorySnapshot, PaymentSummaryState } from "@/modules/payments";
 import { evaluatePaymentFulfillmentGateSnapshot, projectPaymentSummaryFromSnapshot } from "@/modules/payments";
 import type { ShippingBooking } from "@/modules/shipping";
-import { useOrders, useOrderCompatibilitySetter } from "../hooks/useOrders";
-import { archiveOrderCommandBoundary, archiveOrdersCommandBoundary, getOrderPreference, removeOrderPreference, replaceOrderList, setOrderPreference } from "../../public/orders";
+import { useOrders } from "../hooks/useOrders";
+import { archiveOrderCommandBoundary, archiveOrdersCommandBoundary, duplicateOrderDraftCommand, getOrderPreference, removeOrderPreference, replaceOrderList, setOrderPreference } from "../../public/orders";
 import { useI18n } from "@/i18n";
-import { evaluateOrderClosingPolicy, executeOrderClosingCommand } from "@/workflows/order-closing";
+import { evaluateOrderClosingPolicy, executeOrderClosingCommand, isOrderClosingUnavailable } from "@/workflows/order-closing";
 import { executeOrderConfirmationCommand } from "@/workflows/order-confirmation";
 import { executeOrderCancellationCommand } from "@/workflows/order-cancellation";
 import { useEffectiveAccess } from "@/platform/access-control";
@@ -16,7 +16,6 @@ import { usePlatformState } from "@/platform/application-state";
 import { toWorkspacePath } from "@/platform/navigation";
 import { useCustomerSnapshots } from "../hooks/useCustomerSnapshots";
 import { useOrderListFilters } from "../hooks/useOrderListFilters";
-import { createCreateCommandTarget, createProvisionalDocumentNumber } from "@/shared/ids";
 import { useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
 import type { OrderStatusConfig, ColumnConfig, OrderColumnDef } from "../list/orderList.types";
 
@@ -74,7 +73,6 @@ export function useOrderListController({
     return "table";
   });
   const { orders, query: fullCollectionQuery } = useOrders({ loadAuthoritative: view === "kanban" });
-  const setOrders = useOrderCompatibilitySetter();
   const customers = useCustomerSnapshots();
 
   const access = useEffectiveAccess();
@@ -301,6 +299,8 @@ export function useOrderListController({
     if (nextState === "COMPLETED") {
       if (orderObj.state !== "CONFIRMED") { setAlertMessage({ type: "error", text: locale === "vi" ? "Chỉ Order CONFIRMED mới có thể hoàn tất." : "Only a CONFIRMED Order can be completed." }); return; }
       if (!canCompleteOrder) { setAlertMessage({ type: "error", text: tx("orders.permission.completeDenied", "You do not have permission to complete orders.") }); return; }
+      // WF-12 order-closing is BLOCKED and coordinator-forbidden; refuse on WF-12 first.
+      if (isOrderClosingUnavailable()) { setAlertMessage({ type: "error", text: unavailableFeatureMessage({ vi: "Chưa thể hoàn tất đơn hàng", en: "The Order cannot be completed yet" }, { locale }) }); return; }
       const result = (await executeOrderClosingCommand({ orderIds: [id] })).data;
       const blockedItem = result.blocked.find((item) => item.orderId === id);
       if (result.completedIds.includes(id) || result.alreadyCompletedIds.includes(id)) setAlertMessage({ type: "success", text: locale === "vi" ? `Order ${orderObj.orderNumber} đã hoàn tất theo fulfillment evidence.` : `Order ${orderObj.orderNumber} completed from fulfillment evidence.` });
@@ -330,40 +330,28 @@ export function useOrderListController({
     setAlertMessage({ type: "success", text: locale === "vi" ? "Đã lưu trữ đơn hàng; record nghiệp vụ không bị xóa." : "Order archived without deleting the durable record." });
   };
 
-  // Duplicate single order helper
-  const duplicateOrder = (srcOrder: CustomerOrder) => {
-    const freshId = createCreateCommandTarget("order");
-    const freshNumber = createProvisionalDocumentNumber("ORD-DUP");
-
-    const dupe: CustomerOrder = {
-      ...srcOrder,
-      id: freshId,
-      orderNumber: freshNumber,
-      state: "DRAFT",
-      orderDate: new Date().toISOString().split("T")[0],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      confirmedAt: undefined,
-      completedAt: undefined,
-      completion: undefined,
-      cancelledAt: undefined,
-      cancellation: undefined,
-      archivedAt: undefined,
-    };
-
-    const cid = srcOrder.customerId || "temp";
-    setOrders(prev => {
-      const clone = { ...prev };
-      clone[cid] = [dupe, ...(clone[cid] || [])];
-      return clone;
-    });
-
-    setAlertMessage({
-      type: "success",
-      text: locale === "vi"
-        ? `Đã nhân bản Order DRAFT ${freshNumber} từ ${srcOrder.orderNumber || ""}`
-        : `Duplicated DRAFT Order ${freshNumber} from ${srcOrder.orderNumber || ""}`
-    });
+  /**
+   * Duplicating an Order is an authoritative backend operation: `order.duplicate-draft` is
+   * PRODUCTION_CONTRACT_READY with its own dedicated Order adapter, and the backend decides
+   * the new aggregate's id, number and version. The previous implementation cloned the source
+   * Order in the browser and wrote it into the Order projection, which fabricated an
+   * authoritative aggregate the backend had never issued.
+   */
+  const duplicateOrder = async (srcOrder: CustomerOrder) => {
+    try {
+      const duplicated = (await duplicateOrderDraftCommand(srcOrder.id)).data;
+      setAlertMessage({
+        type: "success",
+        text: locale === "vi"
+          ? `Đã nhân bản Order DRAFT ${duplicated.orderNumber} từ ${srcOrder.orderNumber || ""}`
+          : `Duplicated DRAFT Order ${duplicated.orderNumber} from ${srcOrder.orderNumber || ""}`,
+      });
+    } catch (error) {
+      setAlertMessage({ type: "error", text: formatOperationUnavailableError(error, {
+        locale,
+        action: locale === "vi" ? "Nhân bản đơn hàng" : "Duplicating the order",
+      }) });
+    }
   };
 
   // Bulk execution
@@ -381,6 +369,8 @@ export function useOrderListController({
     }
 
     if (action === "complete") {
+      // WF-12 order-closing is BLOCKED and coordinator-forbidden; refuse on WF-12 first.
+      if (isOrderClosingUnavailable()) { setAlertMessage({ type: "error", text: unavailableFeatureMessage({ vi: "Chưa thể hoàn tất đơn hàng", en: "The Orders cannot be completed yet" }, { locale }) }); return; }
       const result = (await executeOrderClosingCommand({ orderIds: selectedOrderIds })).data;
       if (result.blocked.length > 0) {
         setAlertMessage({
@@ -390,6 +380,10 @@ export function useOrderListController({
         return;
       }
     } else {
+      // No batch cancellation endpoint exists, so this is one authoritative command per
+      // order. Settling per item keeps the outcomes of the orders that already cancelled;
+      // reporting both halves is what stops a partial result from reading as a total
+      // failure and inviting the user to retry orders that already committed.
       const settled = await Promise.allSettled(selectedOrderIds.map((id) => {
         const order = flatOrders.find((item) => item.id === id);
         return executeOrderCancellationCommand(
@@ -397,11 +391,22 @@ export function useOrderListController({
           order?.resourceVersion === undefined ? {} : { expectedVersion: order.resourceVersion },
         );
       }));
-      const blocked = settled.flatMap((entry) => entry.status === "fulfilled"
-        ? []
-        : [{ message: formatApplicationError(entry.reason, { locale }) }]);
-      if (blocked.length > 0) {
-        setAlertMessage({ type: "error", text: blocked.map((result) => result.message).filter(Boolean).join(" | ") || "Bulk cancellation blocked." });
+      const bulk = summarizeBulkCommits(selectedOrderIds, settled);
+      if (bulk.status !== "FULL_SUCCESS") {
+        const failureText = bulk.failed
+          .map((entry) => `${entry.id}: ${formatApplicationError(entry.error, { locale })}`)
+          .join(" | ");
+        setAlertMessage({
+          type: "error",
+          text: bulk.status === "PARTIAL_SUCCESS"
+            ? (locale === "vi"
+              ? `Đã hủy ${bulk.committed.length}/${selectedOrderIds.length} đơn hàng. Chưa hủy được: ${failureText}`
+              : `Cancelled ${bulk.committed.length} of ${selectedOrderIds.length} orders. Not cancelled: ${failureText}`)
+            : (failureText || "Bulk cancellation blocked."),
+        });
+        // The orders that did cancel stay cancelled; clear only those from the selection so
+        // a retry targets what actually remains.
+        setSelectedOrderIds((current) => current.filter((id) => !bulk.committed.includes(id)));
         return;
       }
     }

@@ -1,4 +1,6 @@
-import { createMutationMetadata, executeMutationCommand } from "@/shared/application";
+import { assertMutationCommandSupported, isBusinessOperationUnavailable, createMutationMetadata, executeMutationCommand, isMutationCommandUnavailable, type MutationCommandMetadata, type MutationOutcome } from "@/shared/application";
+import type { ManualPaymentCommandResult, PaymentMutationEvidence } from "../application/ports/PaymentApiPort";
+import type { PaymentIntent } from "../domain/model/paymentCollection.types";
 import { createDurableId } from "@/shared/ids";
 import {
   recordFailedPayment,
@@ -70,7 +72,7 @@ export type {
 import { getEffectivePaymentMethodCatalog } from "../application/queries/effectivePaymentMethodCatalog";
 import type { PaymentRepositorySnapshot } from "../application/ports/PaymentRepository";
 export type { PaymentRepositorySnapshot } from "../application/ports/PaymentRepository";
-export type { PaymentApiPort } from "../application/ports/PaymentApiPort";
+export type { ManualPaymentCommandResult, PaymentApiPort, PaymentMutationEvidence, PaymentRequestDeliveryCommandResult } from "../application/ports/PaymentApiPort";
 export type { PaymentPlan, PaymentPlanPreview, PaymentPlanState, PaymentScheduleLine, PaymentScheduleLineState, PaymentAgreementSnapshot, PaymentAgreementLineSnapshot, PaymentDueRule as PaymentPlanDueRule } from "../domain/model/paymentPlan.types";
 export type { PaymentRecordDetailDto } from "../application/queries/paymentRecordDetail";
 export type { CustomerCredit, CustomerCreditState, InvoicePaymentAllocation, PaymentAllocationState, PaymentIntent, PaymentIntentState, PaymentRequestDelivery, PaymentMethodAvailability, PaymentMethodCatalogItem, PaymentMethodKind, PaymentProviderCatalogItem, PaymentRecord, PaymentRecordState, RefundIntent, RefundIntentState, RefundProviderAttempt, RefundProviderAttemptState } from "../domain/model/paymentCollection.types";
@@ -78,6 +80,15 @@ export { getPaymentObligations, getPaymentObligationsForOrder } from "../applica
 export { PaymentValidationError } from "../domain/rules/paymentValidation";
 export type { PaymentValidationDetails, PaymentValidationFieldErrors } from "../domain/rules/paymentValidation";
 export const getPaymentsSnapshot = () => { const snapshot = paymentRepository.snapshot(); return { ...snapshot, methodCatalog: getEffectivePaymentMethodCatalog(snapshot.methodCatalog, paymentConfiguration.getSnapshot()) }; };
+/**
+ * True when payment configuration cannot be saved authoritatively. Only
+ * `listPaymentReceivingAccounts` is READY; the receiving-account write is BLOCKED and no
+ * endpoint owns the wider payment configuration.
+ */
+export function isPaymentConfigurationSaveUnavailable(): boolean {
+  return isBusinessOperationUnavailable("Payment configuration save");
+}
+
 export const getPaymentConfigurationSnapshot = () => paymentConfiguration.getSnapshot();
 export const savePaymentConfiguration = (value: Parameters<typeof paymentConfiguration.saveConfiguration>[0]) => paymentConfiguration.saveConfiguration(value);
 export const saveReceivingAccounts = (accounts: Parameters<typeof paymentConfiguration.saveReceivingAccounts>[0]) => paymentConfiguration.saveReceivingAccounts(accounts);
@@ -156,11 +167,19 @@ export type { PaymentWorkspaceDto, PaymentVerticalSlice } from "../application/v
 export const getPaymentWorkspaceResource = () => paymentVerticalSlice.workspace;
 export const getPaymentRecordDetailResource = (paymentRecordId: string) => paymentVerticalSlice.detail(paymentRecordId);
 export const refreshPaymentWorkspace = () => paymentVerticalSlice.refreshAll();
-export const recordManualPaymentCanonical = (input: Parameters<typeof paymentVerticalSlice.recordManualPayment>[0], signal?: AbortSignal) => executeMutationCommand(
-  { commandType: "payment.record-manual", aggregateType: "payment-record", aggregateId: input.id, payload: input },
-  createMutationMetadata(`payment.record-manual:${input.id}`, { idempotencyKey: input.idempotencyKey, signal }),
-  () => paymentVerticalSlice.recordManualPayment(input, signal),
-);
+/**
+ * `payment.record-manual` and `payment.record-request-delivery` are
+ * DEDICATED_MODULE_HTTP_ADAPTER in the canonical command registry, so the OpenAPI
+ * generator deliberately keeps them out of PRODUCTION_COMMAND_CONTRACTS and
+ * RoutedHttpMutationAuthority refuses them. They execute through the Payment
+ * dedicated adapter and report the backend's own mutation evidence. Every other
+ * Payment command here stays on the routed authority because it is a routed command.
+ */
+export const recordManualPaymentCanonical = async (input: Parameters<typeof paymentVerticalSlice.recordManualPayment>[0], signal?: AbortSignal): Promise<MutationOutcome<Omit<ManualPaymentCommandResult, "evidence">>> => {
+  const options = createMutationMetadata(`payment.record-manual:${input.id}`, { idempotencyKey: input.idempotencyKey, signal });
+  const { evidence, ...data } = await paymentVerticalSlice.recordManualPayment(input, signal);
+  return paymentMutationOutcome("payment.record-manual", options, data, evidence);
+};
 export const createPaymentIntentCanonical = (input: Parameters<typeof paymentVerticalSlice.createIntent>[0], signal?: AbortSignal) => executeMutationCommand(
   { commandType: "payment.create-intent", aggregateType: "payment-intent", aggregateId: input.id, payload: input },
   createMutationMetadata(`payment.create-intent:${input.id}`, { idempotencyKey: input.idempotencyKey, signal }),
@@ -176,11 +195,23 @@ export const retryPaymentIntentCanonical = (intentId: string, input: Parameters<
   createMutationMetadata(`payment.retry-intent:${intentId}`, { idempotencyKey: input.idempotencyKey, expectedVersion: input.expectedVersion, signal }),
   () => paymentVerticalSlice.retryIntent(intentId, input, signal),
 );
-export const refreshPaymentIntentCanonical = (intentId: string, signal?: AbortSignal) => executeMutationCommand(
-  { commandType: "payment.refresh-intent-status", aggregateType: "payment-intent", aggregateId: intentId, payload: {} },
-  createMutationMetadata(`payment.refresh-intent-status:${intentId}`, { signal }),
-  () => paymentVerticalSlice.refreshIntentStatus(intentId, signal),
-);
+/**
+ * `payment.refresh-intent-status` is BLOCKED in the canonical registry, so it is absent from
+ * `PRODUCTION_COMMAND_CONTRACTS` and cannot be carried by the routed authority. Connected mode
+ * refuses here, before the mutation authority is entered; demo keeps its local executor.
+ */
+export function isPaymentIntentRefreshUnavailable(): boolean {
+  return isMutationCommandUnavailable("payment.refresh-intent-status");
+}
+
+export const refreshPaymentIntentCanonical = (intentId: string, signal?: AbortSignal) => {
+  assertMutationCommandSupported("payment.refresh-intent-status", "Payment intent status refresh");
+  return executeMutationCommand(
+    { commandType: "payment.refresh-intent-status", aggregateType: "payment-intent", aggregateId: intentId, payload: {} },
+    createMutationMetadata(`payment.refresh-intent-status:${intentId}`, { signal }),
+    () => paymentVerticalSlice.refreshIntentStatus(intentId, signal),
+  );
+};
 function paymentAllocationBatchKey(input: Parameters<typeof paymentVerticalSlice.allocate>[0]): string {
   const sourceId = input.paymentRecordId ?? input.customerCreditId ?? "unknown";
   const targetFingerprint = input.allocations
@@ -244,8 +275,32 @@ export const recordCodMerchantRemittanceCanonical = (paymentRecordId: string, in
   createMutationMetadata(`payment.record-cod-remittance:${paymentRecordId}`, { idempotencyKey: `payment.cod.remittance:${paymentRecordId}:${input.expectedVersion}:${input.state ?? "UNKNOWN"}`, expectedVersion: input.expectedVersion, signal }),
   () => paymentVerticalSlice.recordCodMerchantRemittance(paymentRecordId, input, signal),
 );
-export const recordPaymentRequestDeliveryCanonical = (intentId: string, input: Parameters<typeof paymentVerticalSlice.recordRequestDelivery>[1], signal?: AbortSignal) => executeMutationCommand(
-  { commandType: "payment.record-request-delivery", aggregateType: "payment-intent", aggregateId: intentId, payload: input },
-  createMutationMetadata(`payment.record-request-delivery:${intentId}`, { idempotencyKey: input.idempotencyKey, expectedVersion: input.expectedVersion, signal }),
-  () => paymentVerticalSlice.recordRequestDelivery(intentId, input, signal),
-);
+export const recordPaymentRequestDeliveryCanonical = async (intentId: string, input: Parameters<typeof paymentVerticalSlice.recordRequestDelivery>[1], signal?: AbortSignal): Promise<MutationOutcome<PaymentIntent>> => {
+  const options = createMutationMetadata(`payment.record-request-delivery:${intentId}`, { idempotencyKey: input.idempotencyKey, expectedVersion: input.expectedVersion, signal });
+  const result = await paymentVerticalSlice.recordRequestDelivery(intentId, input, signal);
+  return paymentMutationOutcome("payment.record-request-delivery", options, result.intent, result.evidence);
+};
+
+/** Projects a dedicated Payment adapter result into the public MutationOutcome contract. */
+function paymentMutationOutcome<T>(
+  commandType: string,
+  options: MutationCommandMetadata,
+  data: T,
+  evidence: PaymentMutationEvidence,
+): MutationOutcome<T> {
+  return {
+    data,
+    commandId: evidence.commandId,
+    commandType,
+    aggregateType: evidence.aggregateType,
+    aggregateId: evidence.aggregateId,
+    idempotencyKey: options.idempotencyKey,
+    correlationId: evidence.correlationId,
+    occurredAt: evidence.occurredAt,
+    version: evidence.version,
+    outcome: evidence.outcome,
+    warnings: [...evidence.warnings],
+    emittedEvents: [...evidence.emittedEventIds],
+    audit: { authority: evidence.authority === "backend" ? "backend" : "demo", evidenceIds: [...evidence.auditEvidenceIds] },
+  };
+}

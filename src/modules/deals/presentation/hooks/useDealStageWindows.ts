@@ -60,18 +60,20 @@ export function useDealStageWindows(options: UseDealStageWindowsOptions): DealSt
     [options.stages],
   );
   const windowSize = normalizeWindowSize(options.windowSize ?? DEFAULT_WINDOW_SIZE);
+  /**
+   * Only the parameters listDeals actually declares are sent. Close-date status, amount,
+   * currency and ownership scope are presentation filters with no backend query parameter;
+   * the controller already applies them to the loaded window, so sending them would only
+   * make every stage request fail the transport contract check.
+   */
   const query = React.useMemo<Omit<ModuleListQuery, "cursor" | "limit">>(() => ({
     search: options.search?.trim() || undefined,
     sortBy: "updatedAt",
     sortDirection: "desc",
     filters: {
       ownerId: normalizeFilter(options.ownerId, "all"),
-      closeDateStatus: normalizeFilter(options.closeDateStatus, "all"),
-      minimumAmount: options.minimumAmount && options.minimumAmount > 0 ? options.minimumAmount : undefined,
-      currency: normalizeFilter(options.currency, "all"),
-      ownershipScope: options.ownershipScope,
     },
-  }), [options.closeDateStatus, options.currency, options.minimumAmount, options.ownerId, options.ownershipScope, options.search]);
+  }), [options.ownerId, options.search]);
   const requestedStages = React.useMemo(
     () => options.stageFilter && options.stageFilter !== "all"
       ? stages.filter((stage) => stage === options.stageFilter)
@@ -107,7 +109,13 @@ export function useDealStageWindows(options: UseDealStageWindowsOptions): DealSt
     reset();
   }, [reset, resetKey]);
 
-  React.useEffect(() => () => abortAll(), [abortAll]);
+  // Aborting the in-flight windows also has to release the initial-load latch, or the
+  // stage windows stay empty forever after a remount: the latch was already claimed by
+  // the aborted round and no later effect would ever issue the requests again.
+  React.useEffect(() => () => {
+    abortAll();
+    initialLoadKeyRef.current = undefined;
+  }, [abortAll]);
 
   React.useEffect(() => {
     if (!enabled) return;
@@ -145,7 +153,8 @@ export function useDealStageWindows(options: UseDealStageWindowsOptions): DealSt
         ...(cursor === undefined ? {} : { cursor }),
         filters: {
           ...query.filters,
-          stage,
+          // listDeals filters by the backend stage code, not by a presentation stage name.
+          stageCode: stage,
         },
       }, controller.signal);
       if (controller.signal.aborted || requestVersionsRef.current.get(stage) !== requestVersion) return;

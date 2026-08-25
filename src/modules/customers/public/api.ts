@@ -1,5 +1,5 @@
 import type { RelationshipRef } from "@/platform/identity";
-import { createMutationMetadata, executeMutationCommand, type MutationCommandMetadata, type MutationOutcome } from "@/shared/application";
+import { assertMutationCommandSupported, createMutationMetadata, executeMutationCommand, isMutationCommandUnavailable, type MutationCommandMetadata, type MutationOutcome } from "@/shared/application";
 import { getWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import { anonymizeCustomer, applyCalculatedCustomerHealth, archiveCustomer, archiveCustomerRecord, completeCustomerOnboarding, saveCustomerCareCard, updateCustomerLifecycle } from "../application/commands/customerCommands";
 import { findCustomerByRelationshipRef, getCustomer, getCustomerCareCards, queryCustomers } from "../application/queries/customerQueries";
@@ -57,11 +57,20 @@ export function applyCalculatedCustomerHealthSnapshot(customerId: string, health
 
 export type CustomerRetentionMutationMetadata = Partial<MutationCommandMetadata>;
 
+/**
+ * True when Customer retention cannot run in the active runtime: `customer.archive` and
+ * `customer.anonymize` are BLOCKED in the canonical registry.
+ */
+export function isCustomerRetentionUnavailable(): boolean {
+  return isMutationCommandUnavailable("customer.archive");
+}
+
 export function archiveCustomerCommand(
   customerId: string,
   input: Parameters<typeof archiveCustomerRecord>[2],
   metadata: CustomerRetentionMutationMetadata = {},
 ): Promise<MutationOutcome<Customer>> {
+  assertMutationCommandSupported("customer.archive", "Customer archive");
   const current = getCustomerSnapshot(customerId);
   return executeMutationCommand(
     { commandType: "customer.archive", aggregateType: "customer", aggregateId: customerId, payload: input },
@@ -79,6 +88,7 @@ export function anonymizeCustomerCommand(
   input: Parameters<typeof anonymizeCustomer>[2],
   metadata: CustomerRetentionMutationMetadata = {},
 ): Promise<MutationOutcome<Customer>> {
+  assertMutationCommandSupported("customer.anonymize", "Customer anonymization");
   const current = getCustomerSnapshot(customerId);
   return executeMutationCommand(
     { commandType: "customer.anonymize", aggregateType: "customer", aggregateId: customerId, payload: input },

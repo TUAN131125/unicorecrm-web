@@ -291,7 +291,11 @@ for (const operationId of ["createContact", "updateContact", "createOrganization
 // Blocked-action UX: a backend-blocked business action must never fail silently and
 // must never leak an architecture error code or decision id to an end user.
 // ---------------------------------------------------------------------------
-const availabilityHelper = read("src/shared/operations/backendAvailability.ts");
+// The architecture-code declaration lives with the presentation layer (M10): declaring it
+// beside the availability helper would close an import cycle with the formatter. Both files
+// are read so the recognition rule still covers whichever one owns the codes.
+const availabilityHelper = read("src/shared/operations/backendAvailability.ts")
+  + read("src/shared/operations/errorPresentation.ts");
 for (const code of [
   "CONNECTED_LOCAL_WRITE_FORBIDDEN",
   "CONNECTED_OPERATION_REQUIRES_BACKEND",
@@ -331,7 +335,12 @@ assert.deepEqual(leakedCodes, [], `Presentation must not embed architecture erro
 const partialFailureEvidence: Record<string, RegExp[]> = {
   "src/modules/deals/presentation/hooks/useDealPipelineController.ts": [
     /Opportunity created, but its next-action Task was not created/,
-    /was updated\. Its next-action Task was not created/,
+    // The Deal edit path issues several authoritative commands, so its partial outcome is
+    // reported through the shared partial-commit reporter rather than one pinned sentence:
+    // the report names every step that committed, not just the Task.
+    /executeSequentialCommits\(/u,
+    /describePartialCommit\(/u,
+    /report\.status !== "FULL_SUCCESS"/u,
   ],
   "src/modules/contacts/presentation/hooks/useContactListController.tsx": [
     /was created\. Its follow-up Task was not created/,
@@ -347,7 +356,7 @@ for (const [relative, patterns] of Object.entries(partialFailureEvidence)) {
 
 // Retry safety: every Task activation keeps a deterministic idempotency key.
 assert.match(read("src/workflows/work-activation/index.ts"), /idempotencyKey: `task\.create:\$\{intentId\}`/u, "Deal next-action Task activation must stay replay-safe.");
-assert.match(read("src/modules/contacts/presentation/hooks/useContactListController.tsx"), /idempotencyKey: `task\.create:\$\{followUpTaskId\}`/u, "Contact follow-up Task must stay replay-safe.");
+assert.match(read("src/modules/contacts/presentation/hooks/useContactListController.tsx"), /idempotencyKey: `task\.create:\$\{followUpTaskIntentKey\}`/u, "Contact follow-up Task must stay replay-safe.");
 
 // Product Picker must be outcome-gated on the authoritative Deal command.
 const dealDialogs = read("src/modules/deals/presentation/views/DealDetailDialogs.tsx");

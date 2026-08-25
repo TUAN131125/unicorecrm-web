@@ -1,5 +1,6 @@
 import React from "react";
 import type { AuthoritativeResource } from "@/shared/application";
+import { runWorkspaceScopeReset } from "@/shared/application";
 import { useAuthoritativeResource } from "@/shared/operations";
 import { isLeadConnectedApiRuntime } from "../../application/composition/leadApplicationServices";
 
@@ -21,7 +22,10 @@ export function useLeadAuthoritativeResource<T>(
     const previousScope = previousScopeRef.current;
     previousScopeRef.current = options.scopeKey;
     if (!connected || previousScope === undefined || previousScope === options.scopeKey) return;
-    options.onScopeChange?.();
+    // Evicting the previous workspace's cached read model is a projection operation,
+    // not an authoritative business mutation, so it runs inside the scope-reset scope.
+    // Callers stay free to pass a plain `replaceX([])` cache reset.
+    runWorkspaceScopeReset(() => options.onScopeChange?.());
     resource.reset();
   }, [connected, options.scopeKey, options.onScopeChange, resource]);
 

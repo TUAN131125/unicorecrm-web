@@ -16,6 +16,7 @@ import { useEffectiveAccess } from "@/platform/access-control";
 import { useWorkspaceConfigSnapshot, useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
 import { useI18n } from "@/i18n";
 import { formatVnd } from "@/shared/lib/format/currency";
+import { formatApplicationError } from "@/shared/operations";
 import { executeLeadDirectSaleCommand } from "../../public/leadQualification";
 import type { LeadRelationshipInput } from "../../domain/leadQualification.types";
 import { RelationshipResolutionFields } from "../components/RelationshipResolutionFields";
@@ -106,7 +107,7 @@ export const LeadSellNowPage: React.FC = () => {
   const execute = async () => {
     setError(null);
     try {
-      if (!relationship) throw new Error(vi ? "Thiếu buyer relationship." : "Buyer relationship is missing.");
+      if (!relationship) { setError(vi ? "Thiếu buyer relationship." : "Buyer relationship is missing."); return; }
       const workflowOutcome = await executeLeadDirectSaleCommand({
         leadId: lead.id,
         relationship,
@@ -132,7 +133,9 @@ export const LeadSellNowPage: React.FC = () => {
       });
       setResult({ quoteId: workflowOutcome.data.quoteId, orderId: workflowOutcome.data.orderId });
     } catch (caught) {
-      setError(caught instanceof Error ? caught.message : String(caught));
+      // MA-08: the direct-sale workflow refusal is an internal diagnostic; the central
+      // formatter decides what the user may see.
+      setError(formatApplicationError(caught, { locale }));
     }
   };
 

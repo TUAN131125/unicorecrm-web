@@ -25,6 +25,7 @@ import {
 } from "@/platform/workspace-config";
 import { updateStudioBusinessInformation } from "../../public/studioCore";
 import { cn } from "@/shared/lib/classnames/cn";
+import { formatApplicationError } from "@/shared/operations";
 import {
   StudioMetricCard,
   StudioMetricsGrid,
@@ -154,7 +155,13 @@ export function BusinessInformationView() {
       setMessage(t("common.updatedSuccessfully"));
       return true;
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : text("Không thể lưu cấu hình doanh nghiệp.", "Unable to save business configuration."));
+      // MA-08: a configuration refusal carries an internal diagnostic. The central
+      // formatter owns what the user is shown; the fallback keeps this feature's own wording
+      // for everything else.
+      setError(formatApplicationError(cause, {
+        locale,
+        fallbackMessage: text("Không thể lưu cấu hình doanh nghiệp.", "Unable to save business configuration."),
+      }));
       return false;
     } finally {
       setSaving(false);

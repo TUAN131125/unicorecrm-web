@@ -1,3 +1,7 @@
+import {
+  assertConfigurationOperationAvailable,
+  CRM_OBJECT_SCHEMA_SAVE_OPERATION,
+} from "@/platform/connected-configuration/connectedConfigurationAvailability";
 import { BrowserStorageAdapter, type StoragePort } from "@/platform/persistence";
 import { createWorkspaceScopedRepository, WorkspaceScopedStorageAdapter } from "@/platform/workspace-scope";
 import type { CrmConfiguration, EffectiveViewResult, RuntimeBusinessForm, RuntimeObjectSchema, RuntimeUserViewPreference, RuntimeViewPolicy } from "./types";
@@ -48,7 +52,15 @@ const storage = new BrowserStorageAdapter();
 const repository = createWorkspaceScopedRepository<CrmConfigurationRepository>({ resourceKey: "crm_configuration", authorizeReads: false, createRepository: (workspaceId) => new BrowserCrmConfigurationRepository(new WorkspaceScopedStorageAdapter(storage, workspaceId, "crm-configuration")) });
 
 export const getConfigurationRuntimeSnapshot = (): CrmConfiguration => repository.getSnapshot();
-export const saveCrmObjectSchemas = (value: RuntimeObjectSchema[]): CrmConfiguration => repository.saveObjectSchemas(value);
+/**
+ * Object-schema writes are browser-persisted. `listCrmObjectSchemas` is READY while
+ * `createCrmObjectField` / `updateCrmObjectField` / `deleteCrmObjectField` are all BLOCKED,
+ * so connected mode must not write the schema locally. Reads stay available.
+ */
+export const saveCrmObjectSchemas = (value: RuntimeObjectSchema[]): CrmConfiguration => {
+  assertConfigurationOperationAvailable(CRM_OBJECT_SCHEMA_SAVE_OPERATION);
+  return repository.saveObjectSchemas(value);
+};
 export const subscribeToConfigurationRuntime = (listener: () => void): (() => void) => repository.subscribe(listener);
 export const getObjectSchema = (objectType: string): RuntimeObjectSchema | undefined => repository.getSnapshot().objectSchemas.find((schema) => schema.objectType === objectType);
 

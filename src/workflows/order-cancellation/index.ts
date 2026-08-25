@@ -131,6 +131,8 @@ export function executeOrderCancellationCommand(
         throw new MutationCommandError({
           code: "ORDER_CANCELLATION_BLOCKED",
           message: result.message || result.blockers.join(" ") || "Order cancellation blocked.",
+          // Domain blockers are written for the operator, not for diagnostics.
+          userMessage: result.message || result.blockers.join(" ") || "Order cancellation blocked.",
           category: "BUSINESS_RULE",
           retryable: false,
           details: { blockers: result.blockers, warnings: result.warnings },

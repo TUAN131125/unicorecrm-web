@@ -6,7 +6,7 @@ import { CAPABILITIES, assertRuntimeCommandAccess, assertRuntimeCapability } fro
 import { appendRecordOwnershipAudit, enforceCreateOwner, getRecordOwnershipContext } from "@/platform/record-ownership";
 import { assertValidLeadContactData } from "../../domain/rules/leadContactData";
 import { getLeadProgressiveProfilePolicy } from "../policies/leadProgressiveProfilePolicyRuntime";
-import { anonymizedRecordLabel, assertDestructiveActionAllowed, redactEmailForRetention } from "@/shared/application";
+import { anonymizedRecordLabel, assertDestructiveActionAllowed, isWorkspaceScopeResetActive, redactEmailForRetention } from "@/shared/application";
 
 export type LeadCollectionUpdater = Lead[] | ((current: Lead[]) => Lead[]);
 
@@ -14,6 +14,15 @@ export function updateLeadCollection(
   repository: LeadRepository,
   updater: LeadCollectionUpdater,
 ): Lead[] {
+  // A workspace/scope change evicts the previous scope's cached Leads. That is a
+  // projection eviction, not a business update, so it is not gated on leads.update:
+  // every reader can switch workspace, and no lead is being changed. All other
+  // callers keep the full authorization, ownership and lifecycle checks below.
+  if (isWorkspaceScopeResetActive()) {
+    const evicted = typeof updater === "function" ? updater(repository.list()) : updater;
+    repository.replace(evicted);
+    return evicted;
+  }
   assertRuntimeCapability(CAPABILITIES.LEADS_UPDATE);
   const current = repository.list();
   const next = typeof updater === "function" ? updater(current) : updater;

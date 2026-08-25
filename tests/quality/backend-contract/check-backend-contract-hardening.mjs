@@ -956,7 +956,23 @@ const checks = {
     const d = json("docs/backend-readiness/contract-inventory.json");
     assert(d.modules.length === 15 && d.routeCount === 78 && d.commands === 173 && d.queries === 162 && d.workflows === 27 && d.openApiOperations === 270, "Contract inventory drift");
     assert(d.genericProductionMutationRequestOperations === 0 && d.genericProductionMutationResponseOperations === 0, "Generic mutation inventory non-zero");
-    for (const forbidden of ["node_modules", "dist", ".git", "coverage", "playwright-report", "test-results"]) assert(!exists(forbidden), `Forbidden artifact present: ${forbidden}`);
+    // Artifact hygiene is a property of the release ARTIFACT, not of the working tree.
+    // node_modules is required to run this pipeline at all, dist is produced by
+    // quality.build earlier in the same run, and .git is the repository, so asserting their
+    // absence here could never hold and said nothing about what actually ships.
+    //
+    // The rule is not dropped. It is owned by `quality.ci-release-contract`, which builds
+    // the real deterministic source archive and requires `isForbiddenArchiveEntry` to reject
+    // every entry. What IS repository-scoped, and is asserted here, is that the release
+    // policy still forbids these classes — so the artifact rule cannot be silently narrowed
+    // by editing the policy instead of the gate.
+    const releasePolicy = json("scripts/release/release-policy.json");
+    for (const forbidden of ["node_modules", "dist", ".git", "coverage", "playwright-report", "test-results"]) {
+      assert(
+        releasePolicy.excludedDirectories.includes(forbidden),
+        `Release policy no longer excludes ${forbidden} from the source release artifact.`,
+      );
+    }
     const repositoryInventory = json("docs/quality/repository-inventory.json");
     assert(repositoryInventory.summary.repositoryFiles >= 1558, "Unexpected source file loss");
     assert(d.sourceInputSha256 === "34da811714597df29b09505e51d5c283dd67707421b5ed75940281e2fa804f8a", "P0.10 input SHA authority drift");

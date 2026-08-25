@@ -2,6 +2,7 @@ import React from "react";
 import type { RouteObject } from "react-router-dom";
 import { lazyRouteComponent } from "@/app/router/runtime";
 import { PermissionRouteGuard } from "@/components/PermissionRouteGuard";
+import { useI18n } from "@/i18n";
 import {
   STUDIO_SECTIONS,
   type StudioSectionId,
@@ -36,6 +37,47 @@ function resolveStudioRouteScreen(sectionId: StudioSectionId): React.ElementType
   }
 }
 
+/**
+ * Studio configuration is a deferred surface. Its runtime is loaded here, when a Studio
+ * route is actually entered, so a missing or failing Studio/WorkspaceConfiguration API
+ * can never participate in - or block - CRM startup.
+ */
+const StudioCoreRuntimeBoundary: React.FC<React.PropsWithChildren> = ({ children }) => {
+  const { locale } = useI18n();
+  const vi = locale === "vi";
+  const [state, setState] = React.useState<"loading" | "ready" | "unavailable">("loading");
+
+  React.useEffect(() => {
+    const controller = new AbortController();
+    void (async () => {
+      try {
+        const { loadStudioCoreRuntime } = await import("@/workspaces/studio/runtime/studioCoreRuntime");
+        await loadStudioCoreRuntime(controller.signal);
+        if (!controller.signal.aborted) setState("ready");
+      } catch {
+        if (!controller.signal.aborted) setState("unavailable");
+      }
+    })();
+    return () => controller.abort();
+  }, []);
+
+  if (state === "loading") {
+    return (
+      <div className="p-8 text-xs text-slate-500" role="status">
+        {vi ? "Đang tải cấu hình Studio…" : "Loading Studio configuration…"}
+      </div>
+    );
+  }
+  if (state === "unavailable") {
+    return (
+      <div className="mx-auto mt-12 max-w-md rounded-xl border border-amber-200 bg-amber-50 p-8 text-center text-xs text-amber-900" role="alert">
+        {vi ? "Cấu hình Studio chưa khả dụng trên máy chủ này." : "Studio configuration is not available on this server."}
+      </div>
+    );
+  }
+  return <>{children}</>;
+};
+
 function StudioRouteScreen({ sectionId, screen: Screen }: { sectionId: StudioSectionId; screen: React.ElementType }) {
   return <div data-studio-route-section={sectionId}><Screen /></div>;
 }
@@ -43,14 +85,20 @@ function StudioRouteScreen({ sectionId, screen: Screen }: { sectionId: StudioSec
 export function createStudioWorkspaceRoutes(): RouteObject[] {
   return [{
     index: true,
-    element: <PermissionRouteGuard capability="studio.read"><StudioIndexRoute /></PermissionRouteGuard>,
+    element: (
+      <PermissionRouteGuard capability="studio.read">
+        <StudioCoreRuntimeBoundary><StudioIndexRoute /></StudioCoreRuntimeBoundary>
+      </PermissionRouteGuard>
+    ),
   }, ...STUDIO_SECTIONS.map((section): RouteObject => {
     const Screen = resolveStudioRouteScreen(section.id);
     return {
       path: section.routePath,
       element: (
         <PermissionRouteGuard capability={section.requiredCapability}>
-          <StudioRouteScreen sectionId={section.id} screen={Screen} />
+          <StudioCoreRuntimeBoundary>
+            <StudioRouteScreen sectionId={section.id} screen={Screen} />
+          </StudioCoreRuntimeBoundary>
         </PermissionRouteGuard>
       ),
     };

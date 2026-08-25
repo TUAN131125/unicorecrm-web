@@ -223,8 +223,18 @@ class ConnectedAuthSessionRuntime {
   }
 
   async signOut(reason = "USER_SIGN_OUT"): Promise<void> {
-    try { await this.gateway.signOut({ reason }, { idempotencyKey: createAuthAttemptId("sign-out") }); }
-    finally { this.clear(null); }
+    try {
+      // The access token is short lived, so by the time a user signs out it has often
+      // expired. Recover it through the backend refresh contract first - the refresh
+      // cookie is still valid - otherwise POST /auth/session/logout is never sent and the
+      // session stays active on the server while the browser only forgets it locally.
+      if (!this.gateway.getAccessToken()) {
+        await this.gateway.refreshSession({ idempotencyKey: createAuthAttemptId("sign-out-refresh") });
+      }
+      await this.gateway.signOut({ reason }, { idempotencyKey: createAuthAttemptId("sign-out") });
+    } finally {
+      this.clear(null);
+    }
   }
 
   subscribe(listener: SessionListener): () => void { this.listeners.add(listener); return () => this.listeners.delete(listener); }

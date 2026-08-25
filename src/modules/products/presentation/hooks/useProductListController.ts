@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useI18n } from "@/i18n";
+import { formatOperationUnavailableError, backendUnavailableMessage } from "@/shared/operations";
 import { useModuleAuthoritativeResource } from "@/shared/operations";
 import { useWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import { useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
@@ -29,6 +30,7 @@ import {
   replaceProductCatalog,
   restoreProductsCommand,
   saveProductCommand,
+  isProductDemoCatalogResetUnavailable,
   resetProductCatalogToDemo,
   setProductPreference,
   subscribeToProductCatalog,
@@ -53,7 +55,7 @@ export function useProductListController({
   customers = [],
   orders = {},
 }: ProductListPageProps) {
-  const { tx } = useI18n();
+  const { tx, locale } = useI18n();
   const workspace = useWorkspaceContextSnapshot();
   const workspaceConfiguration = useWorkspaceOperationalConfiguration();
   const productQuery = useModuleAuthoritativeResource(getProductCollectionResource(), {
@@ -233,7 +235,7 @@ export function useProductListController({
       setIsFormOpen(false);
       setActiveFormProduct(null);
     } catch (error) {
-      triggerToast(normalizeApplicationError(error).userMessage ?? normalizeApplicationError(error).message, "error");
+      triggerToast(formatOperationUnavailableError(error, { locale }), "error");
     }
   };
 
@@ -257,7 +259,7 @@ export function useProductListController({
         await archiveProductsCommand([product.id], { reason: "Archived from product catalog", actorId, actorName });
         triggerToast(tx("products.toast.archiveSuccess", "Sản phẩm đã được lưu trữ trong danh mục phụ."));
       }
-    } catch (error) { triggerToast(normalizeApplicationError(error).userMessage ?? normalizeApplicationError(error).message, "error"); }
+    } catch (error) { triggerToast(formatOperationUnavailableError(error, { locale }), "error"); }
   };
 
   const usageSources = useMemo(() => ({
@@ -296,12 +298,12 @@ export function useProductListController({
   // Actions: Bulk operations
   const handleBulkArchive = async () => {
     try { await archiveProductsCommand(selectedProductIds, { reason: "Bulk archive from product catalog", actorId, actorName }); setSelectedProductIds([]); triggerToast(tx("products.toast.archiveSuccess", "Hàng loạt sản phẩm đã được lưu trữ.")); }
-    catch (error) { triggerToast(normalizeApplicationError(error).userMessage ?? normalizeApplicationError(error).message, "error"); }
+    catch (error) { triggerToast(formatOperationUnavailableError(error, { locale }), "error"); }
   };
 
   const handleBulkUnarchive = async () => {
     try { await restoreProductsCommand(selectedProductIds, { actorId, actorName }); setSelectedProductIds([]); triggerToast(tx("products.toast.unarchiveSuccess", "Hàng loạt sản phẩm đã được hủy lưu trữ thành công.")); }
-    catch (error) { triggerToast(normalizeApplicationError(error).userMessage ?? normalizeApplicationError(error).message, "error"); }
+    catch (error) { triggerToast(formatOperationUnavailableError(error, { locale }), "error"); }
   };
 
   const handleExportCatalog = () => {
@@ -354,8 +356,17 @@ export function useProductListController({
 
   // Actions: Restore the module-owned demo catalog
   const handleRefresh = () => {
+    // Restoring the demo catalog is a demo-authoritative operation: connected mode has no
+    // backend reset contract, so the action is refused before the catalog is touched.
+    if (isProductDemoCatalogResetUnavailable()) {
+      triggerToast(backendUnavailableMessage({
+        locale,
+        action: locale === "vi" ? "Nhập lại danh mục mẫu" : "Restoring the sample catalog",
+      }), "error");
+      return;
+    }
     try { setProducts(resetProductCatalogToDemo()); setSelectedProductIds([]); triggerToast(tx("products.toast.importSuccess", "Nhập lại danh sách 12 sản phẩm mẫu thành công."), "success"); }
-    catch (error) { triggerToast(normalizeApplicationError(error).userMessage ?? normalizeApplicationError(error).message, "error"); }
+    catch (error) { triggerToast(formatOperationUnavailableError(error, { locale }), "error"); }
   };
 
   return {

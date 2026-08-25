@@ -9,6 +9,8 @@ import {
   Trash2,
 } from "lucide-react";
 import { useI18n } from "@/i18n";
+import { unavailableFeatureMessage } from "@/shared/operations";
+import { isCrmObjectSchemaSaveUnavailable } from "@/platform/connected-configuration/connectedConfigurationAvailability";
 import { saveCrmObjectSchemas, type ConfigurationFieldDataType, type RuntimeFieldDefinition, useConfigurationRuntime } from "@/platform/configuration-runtime";
 import { CAPABILITIES, useEffectiveAccess } from "@/platform/access-control";
 import { cn } from "@/shared/lib/classnames/cn";
@@ -83,6 +85,7 @@ export function InformationFieldsView() {
   const { locale } = useI18n();
   const text = (vi: string, en: string) => locale === "vi" ? vi : en;
   const canConfigure = useEffectiveAccess().can(CAPABILITIES.STUDIO_CONFIGURE);
+  const [unavailableNotice, setUnavailableNotice] = React.useState<string | null>(null);
   const source = useConfigurationRuntime();
   const [draft, setDraft] = React.useState(source.objectSchemas);
   const [objectType, setObjectType] = React.useState(source.objectSchemas[0]?.objectType ?? "lead");
@@ -125,7 +128,13 @@ export function InformationFieldsView() {
     setEditing(null);
   };
   const archiveField = (key: string) => updateFields((items) => items.map((field) => field.key === key ? { ...field, status: "INACTIVE" } : field));
+  // `listCrmObjectSchemas` is READY while every object-field write is BLOCKED, so connected
+  // mode must not persist a workspace schema in this browser behind an authoritative read.
   const save = () => {
+    if (isCrmObjectSchemaSaveUnavailable()) {
+      setUnavailableNotice(unavailableFeatureMessage({ vi: "Chưa thể lưu cấu hình trường thông tin", en: "The field configuration cannot be saved yet" }, { locale }));
+      return;
+    }
     setDraft(saveCrmObjectSchemas(draft).objectSchemas);
   };
   const updateEditing = (patch: Partial<RuntimeFieldDefinition>) => setEditing((current) => current ? { ...current, ...patch } : current);
@@ -141,6 +150,7 @@ export function InformationFieldsView() {
 
   const content = (
     <>
+      {unavailableNotice ? <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{unavailableNotice}</p> : null}
       {!canConfigure ? <p className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{text("Bạn chỉ có quyền xem cấu hình.", "You have read-only access to configuration.")}</p> : null}
       <StudioMetricsGrid>
         <StudioMetricCard label={text("Tổng số trường", "Total fields")} value={allFields.length} description={text(`${draft.length} đối tượng dùng cùng một nguồn cấu hình.`, `${draft.length} objects share one configuration source.`)} icon={<Braces size={17} />} tone="violet" />

@@ -70,6 +70,7 @@ import { usePlatformState } from "@/platform/application-state";
 import {
   evaluateOrderClosingPolicy,
   executeOrderClosingCommand,
+  isOrderClosingUnavailable,
 } from "@/workflows/order-closing";
 import { executeOrderConfirmationCommand } from "@/workflows/order-confirmation";
 import { recordOrderDeliveryCommandBoundary } from "../../public/orders";
@@ -84,7 +85,7 @@ import { useCustomerSnapshots } from "../hooks/useCustomerSnapshots";
 import { useOrders } from "../hooks/useOrders";
 import { getOrderDetailResource } from "../../application/vertical-slice/orderAuthoritativeQueries";
 import { replaceOrders } from "../../public/orders";
-import { AuthoritativeQueryBoundary, AuthoritativeQueryNotice, useModuleAuthoritativeResource } from "@/shared/operations";
+import { AuthoritativeQueryBoundary, AuthoritativeQueryNotice, unavailableFeatureMessage, useModuleAuthoritativeResource } from "@/shared/operations";
 import { CommercialLineagePanel } from "@/components/crm/CommercialLineagePanel";
 import {
   CustomerDocumentDeliveryModal,
@@ -363,6 +364,13 @@ export const OrderDetailPage: React.FC<OrderDetailPageProps> = ({ contacts = [],
   };
 
   const completeOrder = async () => {
+    // WF-12 order-closing is BLOCKED with `connectedFrontendCoordinatorAllowed: false`.
+    // Refuse on WF-12 before the command so the user is told the action is unavailable
+    // instead of the boundary assertion throwing out of the click handler.
+    if (isOrderClosingUnavailable()) {
+      setMessage({ tone: "error", text: unavailableFeatureMessage({ vi: "Chưa thể hoàn tất đơn hàng", en: "The Order cannot be completed yet" }, { locale }) });
+      return;
+    }
     const result = (await executeOrderClosingCommand({ orderIds: [order.id] })).data;
     const blocked = result.blocked.find((item) => item.orderId === order.id);
     if (result.completedIds.includes(order.id) || result.alreadyCompletedIds.includes(order.id)) setMessage({

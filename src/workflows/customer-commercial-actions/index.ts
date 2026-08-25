@@ -1,6 +1,13 @@
 import { createDealCommand, DealStage, type Deal, type DealForecastCategory, type DealLineItem } from "@/modules/deals";
 import { assertCustomerRelationshipContextSnapshot } from "@/modules/customers";
 import { createTaskCommand } from "@/modules/tasks";
+import { assertCustomerCommercialActionsAvailable } from "./application/customerCommercialActionsAvailability";
+
+export {
+  CUSTOMER_COMMERCIAL_ACTIONS_OPERATION,
+  assertCustomerCommercialActionsAvailable,
+  isCustomerCommercialActionsUnavailable,
+} from "./application/customerCommercialActionsAvailability";
 
 export interface CreateDealForCustomerInput {
   customerId: string;
@@ -24,7 +31,12 @@ export interface CreateDealForCustomerInput {
   lineItems?: DealLineItem[];
 }
 
-function taskIdForDeal(dealId: string, dueAt: string): string {
+/**
+ * Deterministic Task creation *intent* key. NOT a Task identifier: `CreateTaskRequest`
+ * carries no `id` and the authoritative Task id is server-assigned, so this value may
+ * only key idempotency/dedupe and must never become a Deal Task foreign reference.
+ */
+function dealFollowUpTaskIntentKey(dealId: string, dueAt: string): string {
   return `task_deal_${dealId}_${dueAt.slice(0, 10)}`;
 }
 
@@ -39,14 +51,17 @@ function taskIdForDeal(dealId: string, dueAt: string): string {
  * follow-up Task and must propagate to the caller rather than be swallowed.
  * Atomic Customer-commercial-action semantics remain a backend requirement.
  *
- * The Task identifier is server-assigned (`CreateTaskRequest` carries no `id`),
- * so `taskIdForDeal` only derives a deterministic idempotency/dedupe key.
+ * The Task identifier is server-assigned (`CreateTaskRequest` carries no `id`), so
+ * `dealFollowUpTaskIntentKey` only derives a deterministic idempotency/dedupe key. The
+ * Deal therefore carries the next-action schedule without a Task foreign reference; the
+ * follow-up Task points back at the Deal through its own `recordRef`/`sourceRef`.
  */
 export async function createDealForCustomer(input: CreateDealForCustomerInput): Promise<Deal> {
+  assertCustomerCommercialActionsAvailable("Creating a commercial opportunity for a Customer");
   const { customer, relationshipRef } = assertCustomerRelationshipContextSnapshot(input.customerId);
   const now = input.now ?? new Date().toISOString();
   const dueAt = input.followUpTask ? new Date(input.followUpTask.dueAt).toISOString() : undefined;
-  const taskId = dueAt ? taskIdForDeal(input.id, dueAt) : undefined;
+  const taskIntentKey = dueAt ? dealFollowUpTaskIntentKey(input.id, dueAt) : undefined;
   const deal = (await createDealCommand({
     id: input.id,
     name: input.name.trim(),
@@ -60,10 +75,9 @@ export async function createDealForCustomer(input: CreateDealForCustomerInput): 
     createdAt: now,
     updatedAt: now,
     forecastCategory: input.forecastCategory ?? "PIPELINE",
-    ...(dueAt && taskId ? {
+    ...(dueAt ? {
       nextActionAt: dueAt,
       nextActionSummary: input.followUpTask?.title.trim(),
-      nextActionRef: { type: "TASK" as const, id: taskId },
     } : {}),
     interestedProducts: input.interestedProducts ?? [],
     lineItems: input.lineItems ?? [],
@@ -81,9 +95,9 @@ export async function createDealForCustomer(input: CreateDealForCustomerInput): 
     correlationId: `customer:${customer.id}`,
   })).data;
 
-  if (dueAt && taskId && input.followUpTask) {
+  if (dueAt && taskIntentKey && input.followUpTask) {
     await createTaskCommand({
-      id: taskId,
+      id: taskIntentKey,
       title: input.followUpTask.title.trim(),
       description: input.followUpTask.description?.trim() || input.notes?.trim() || undefined,
       priority: "NORMAL",
@@ -99,7 +113,7 @@ export async function createDealForCustomer(input: CreateDealForCustomerInput): 
       correlationId: `deal:${deal.id}`,
       now,
     }, {
-      idempotencyKey: `task.create:${taskId}`,
+      idempotencyKey: `task.create:${taskIntentKey}`,
       correlationId: `deal:${deal.id}`,
     });
   }
