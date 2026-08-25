@@ -44,7 +44,9 @@ for (const token of [
 ]) assert.ok(bootstrapSource.includes(token), `Runtime bootstrap is missing ${token}.`);
 assert.doesNotMatch(bootstrapSource, /getApplicationServices/, "Host runtime must not supply an ApplicationServiceBundle.");
 
-assert.equal(resolveApplicationBootstrapPlan({ DEV: true }).mode, "demo");
+// Connected is the default in every environment; demo is only ever chosen explicitly.
+assert.equal(resolveApplicationBootstrapPlan({ DEV: true }).mode, "connected");
+assert.equal(resolveApplicationBootstrapPlan({ DEV: true, VITE_RUNTIME_MODE: "demo" }).mode, "demo");
 assert.throws(() => resolveApplicationBootstrapPlan({ PROD: true }), /VITE_API_BASE_URL/);
 const productionPlan = resolveApplicationBootstrapPlan(
   { PROD: true, VITE_API_BASE_URL: "https://api.example.test/v1", VITE_API_TIMEOUT_MS: "15000" },

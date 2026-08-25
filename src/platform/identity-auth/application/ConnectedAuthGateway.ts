@@ -5,6 +5,8 @@ import type {
   AuthResult,
   AuthSession,
   ConnectedSignInOutcome,
+  EmailVerificationRequestAccepted,
+  EmailVerificationRequestCommand,
   InvitationAcceptanceResult,
   PasswordResetCommand,
   PasswordResetCompleted,
@@ -33,6 +35,7 @@ export interface ConnectedAuthGateway {
   signOut(command: SignOutCommand, options: AuthCommandOptions): Promise<AuthResult<SessionRevocationResult>>;
   register(command: RegisterCommand, options: AuthCommandOptions): Promise<AuthResult<UserAccount>>;
   verifyEmail(command: VerifyEmailCommand, options: AuthCommandOptions): Promise<AuthResult<UserAccount>>;
+  requestEmailVerification(command: EmailVerificationRequestCommand, options: AuthCommandOptions): Promise<AuthResult<EmailVerificationRequestAccepted>>;
   requestPasswordReset(command: PasswordResetRequestCommand, options: AuthCommandOptions): Promise<AuthResult<PasswordResetRequestAccepted>>;
   resetPassword(command: PasswordResetCommand, options: AuthCommandOptions): Promise<AuthResult<PasswordResetCompleted>>;
   acceptInvitation(command: AcceptInvitationCommand, options: AuthCommandOptions): Promise<AuthResult<InvitationAcceptanceResult>>;

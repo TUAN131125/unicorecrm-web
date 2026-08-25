@@ -21,9 +21,9 @@
     ]
   },
   "summary": {
-    "repositoryFiles": 2005,
-    "sourceFiles": 1356,
-    "sourceLines": 205301,
+    "repositoryFiles": 2007,
+    "sourceFiles": 1358,
+    "sourceLines": 205972,
     "modules": 15,
     "routes": 79,
     "loadableRouteModules": 63,
@@ -31,7 +31,7 @@
     "workspaceFlags": 13,
     "workflows": 22,
     "publicBoundaryFiles": 107,
-    "publicExportStatements": 935,
+    "publicExportStatements": 936,
     "persistenceEntries": 2813,
     "repositoryImplementations": 143,
     "browserEventEntries": 13,
@@ -45,7 +45,7 @@
     "verifyGates": 332,
     "qualityGroups": 11,
     "fileClassifications": {
-      "active-runtime": 1275,
+      "active-runtime": 1277,
       "active-script": 63,
       "active-test": 425,
       "compatibility": 53,
@@ -2806,7 +2806,7 @@
     {
       "path": "src/platform/api/index.ts",
       "owner": "platform:api",
-      "statementCount": 10,
+      "statementCount": 11,
       "exportedNames": [
         "CommercialApiClient",
         "FinancialApiClient",
@@ -2819,6 +2819,7 @@
         "./client",
         "./errors",
         "./extensions/aiAdvisoryApi",
+        "./extensions/emailVerificationApi",
         "./extensions/workspaceProvisioningApi",
         "./generated",
         "./generated/commercialApi",
@@ -2999,6 +3000,7 @@
         "configureConnectedAuthGateway",
         "consumeAuthBoundaryReason",
         "createAuthAttemptId",
+        "developmentEmailVerificationCode",
         "developmentMfaCodeHint",
         "getAuthSessionSnapshot",
         "getConnectedAuthAccessToken",
@@ -3013,6 +3015,7 @@
         "registerAccount",
         "registerUser",
         "removeProvisionedUserAccount",
+        "requestAccountEmailVerification",
         "requestAccountPasswordReset",
         "requestPasswordReset",
         "resetConnectedAuthGateway",
@@ -3836,7 +3839,7 @@
         "operation": "read",
         "owner": "feature:auth",
         "path": "src/features/auth/pages/LoginPage.tsx",
-        "line": 37,
+        "line": 44,
         "browserGlobal": true
       },
       {
@@ -25132,7 +25135,7 @@
         "operation": "write",
         "owner": "feature:auth",
         "path": "src/features/auth/pages/LoginPage.tsx",
-        "line": 92,
+        "line": 102,
         "browserGlobal": true
       },
       {
@@ -25140,7 +25143,7 @@
         "operation": "remove",
         "owner": "feature:auth",
         "path": "src/features/auth/pages/LoginPage.tsx",
-        "line": 93,
+        "line": 103,
         "browserGlobal": true
       },
       {
@@ -32001,8 +32004,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "shared:app",
-      "bytes": 8066,
-      "lines": 210,
+      "bytes": 8310,
+      "lines": 212,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": false,
@@ -33652,8 +33655,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "feature:auth",
-      "bytes": 11910,
-      "lines": 273,
+      "bytes": 12579,
+      "lines": 283,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": false,
@@ -33678,8 +33681,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "feature:auth",
-      "bytes": 9254,
-      "lines": 210,
+      "bytes": 9778,
+      "lines": 223,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": false,
@@ -33704,8 +33707,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "feature:auth",
-      "bytes": 3060,
-      "lines": 61,
+      "bytes": 14093,
+      "lines": 308,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": false,
@@ -33719,6 +33722,19 @@
       "owner": "feature:auth",
       "bytes": 5147,
       "lines": 105,
+      "usage": {
+        "runtimeReachable": true,
+        "scriptReachable": false,
+        "testReachable": true
+      }
+    },
+    {
+      "path": "src/features/auth/routing/emailVerificationContext.ts",
+      "classification": "active-runtime",
+      "reason": "Reachable from src/main.tsx.",
+      "owner": "feature:auth",
+      "bytes": 2429,
+      "lines": 51,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": false,
@@ -33756,8 +33772,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "feature:workspace-setup",
-      "bytes": 13959,
-      "lines": 320,
+      "bytes": 14356,
+      "lines": 325,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": false,
@@ -44490,6 +44506,19 @@
       }
     },
     {
+      "path": "src/platform/api/extensions/emailVerificationApi.ts",
+      "classification": "active-runtime",
+      "reason": "Reachable from src/main.tsx.",
+      "owner": "platform:api",
+      "bytes": 5749,
+      "lines": 155,
+      "usage": {
+        "runtimeReachable": true,
+        "scriptReachable": true,
+        "testReachable": true
+      }
+    },
+    {
       "path": "src/platform/api/extensions/workspaceProvisioningApi.ts",
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
@@ -44676,8 +44705,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "platform:api",
-      "bytes": 1562,
-      "lines": 74,
+      "bytes": 1613,
+      "lines": 75,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -45287,8 +45316,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "platform:identity-auth",
-      "bytes": 932,
-      "lines": 24,
+      "bytes": 1152,
+      "lines": 28,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -45300,8 +45329,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "platform:identity-auth",
-      "bytes": 1930,
-      "lines": 42,
+      "bytes": 2155,
+      "lines": 45,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -45313,8 +45342,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "platform:identity-auth",
-      "bytes": 1693,
-      "lines": 30,
+      "bytes": 2013,
+      "lines": 37,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -45326,8 +45355,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "platform:identity-auth",
-      "bytes": 5506,
-      "lines": 248,
+      "bytes": 6354,
+      "lines": 272,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -45339,8 +45368,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "platform:identity-auth",
-      "bytes": 1287,
-      "lines": 44,
+      "bytes": 1358,
+      "lines": 46,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -45352,8 +45381,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "platform:identity-auth",
-      "bytes": 15019,
-      "lines": 356,
+      "bytes": 16668,
+      "lines": 393,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -45365,8 +45394,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "platform:identity-auth",
-      "bytes": 11344,
-      "lines": 298,
+      "bytes": 14601,
+      "lines": 377,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -45378,8 +45407,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "platform:identity-auth",
-      "bytes": 1494,
-      "lines": 24,
+      "bytes": 1762,
+      "lines": 26,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -45404,8 +45433,8 @@
       "classification": "compatibility",
       "reason": "legacy-content",
       "owner": "platform:identity-auth",
-      "bytes": 21232,
-      "lines": 321,
+      "bytes": 22863,
+      "lines": 350,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -51826,8 +51855,8 @@
       "classification": "active-test",
       "reason": "Test source.",
       "owner": "test",
-      "bytes": 11738,
-      "lines": 246,
+      "bytes": 12102,
+      "lines": 253,
       "usage": {
         "runtimeReachable": false,
         "scriptReachable": false,
@@ -51878,8 +51907,8 @@
       "classification": "active-test",
       "reason": "Test source.",
       "owner": "test",
-      "bytes": 12471,
-      "lines": 215,
+      "bytes": 12665,
+      "lines": 217,
       "usage": {
         "runtimeReachable": false,
         "scriptReachable": false,
@@ -52190,8 +52219,8 @@
       "classification": "active-test",
       "reason": "Test source.",
       "owner": "test",
-      "bytes": 6936,
-      "lines": 110,
+      "bytes": 12625,
+      "lines": 192,
       "usage": {
         "runtimeReachable": false,
         "scriptReachable": false,
@@ -52970,8 +52999,8 @@
       "classification": "active-test",
       "reason": "Test source.",
       "owner": "test",
-      "bytes": 4544,
-      "lines": 63,
+      "bytes": 5183,
+      "lines": 77,
       "usage": {
         "runtimeReachable": false,
         "scriptReachable": false,
@@ -53009,8 +53038,8 @@
       "classification": "active-test",
       "reason": "Test source.",
       "owner": "test",
-      "bytes": 4197,
-      "lines": 98,
+      "bytes": 5949,
+      "lines": 133,
       "usage": {
         "runtimeReachable": false,
         "scriptReachable": false,
@@ -55710,5 +55739,5 @@
       "quality.work-operations-ux"
     ]
   },
-  "inventoryFingerprint": "e03986e866933cc3ae7ced2e80f9e2d2ef3b0de83228fb111a06df330b5dc6c8"
+  "inventoryFingerprint": "01a5deaf365791bd538678a62fce43a0fdbc9298639f7ea715250c2bd17928e1"
 }

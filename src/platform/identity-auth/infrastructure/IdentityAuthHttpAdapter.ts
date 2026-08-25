@@ -8,6 +8,11 @@ import type {
   SessionRevocationResponse,
   UserAccountDocument,
 } from "@/platform/api/generated/identityApi";
+import type {
+  EmailVerificationApiClient,
+  EmailVerificationRequestAcceptedResponse,
+  VerifiedUserAccountResponse,
+} from "@/platform/api/extensions/emailVerificationApi";
 import { ApiClientError } from "@/platform/api/errors/ApiClientError";
 import type { ConnectedAuthGateway } from "../application/ConnectedAuthGateway";
 import type {
@@ -18,6 +23,8 @@ import type {
   AuthResult,
   AuthSession,
   ConnectedSignInOutcome,
+  EmailVerificationRequestAccepted,
+  EmailVerificationRequestCommand,
   InvitationAcceptanceResult,
   PasswordResetCommand,
   PasswordResetCompleted,
@@ -51,6 +58,7 @@ const AUTH_FAILURE_CODES = new Set<AuthFailureCode>([
   "SERVICE_UNAVAILABLE",
   "TOKEN_INVALID",
   "TOKEN_EXPIRED",
+  "VALIDATION_FAILED",
   "INVITATION_INVALID",
   "UNKNOWN",
 ]);
@@ -64,7 +72,10 @@ export class IdentityAuthHttpAdapter implements ConnectedAuthGateway {
   private accessToken: string | undefined;
   private accessTokenExpiresAt: string | undefined;
 
-  constructor(private readonly api: IdentityApiClient) {}
+  constructor(
+    private readonly api: IdentityApiClient,
+    private readonly emailVerification: EmailVerificationApiClient,
+  ) {}
 
   async bootstrap(options: AuthCommandOptions = { idempotencyKey: createAuthAttemptId("bootstrap") }): Promise<AuthResult<AuthSession | null>> {
     const result = await this.refreshSession(options);
@@ -143,20 +154,50 @@ export class IdentityAuthHttpAdapter implements ConnectedAuthGateway {
     }
   }
 
+  /**
+   * Registration also issues the first verification code, and it fails closed when the host
+   * cannot deliver mail rather than creating an account nobody could ever activate. That is
+   * the only integration this operation touches, so the failure is reported as what it is.
+   */
   async register(command: RegisterCommand, options: AuthCommandOptions): Promise<AuthResult<UserAccount>> {
     try {
       const response = await this.api.registerAccount({ email: command.email.trim(), password: command.password, displayName: command.displayName.trim() }, requestOptions(options));
       return { ok: true, value: mapAccount(response) };
     } catch (error) {
-      return authFailure(error);
+      return emailVerificationFailure(error);
     }
   }
 
+  /**
+   * Consumes one six-digit code. The generated client still describes the retired
+   * token-based request, so the OTP contract is issued through the colocated semantic
+   * extension instead.
+   */
   async verifyEmail(command: VerifyEmailCommand, options: AuthCommandOptions): Promise<AuthResult<UserAccount>> {
     try {
-      return { ok: true, value: mapAccount(await this.api.verifyEmail({ token: command.token }, requestOptions(options))) };
+      const response = await this.emailVerification.verifyEmail(
+        { email: command.email.trim(), code: command.code.trim() },
+        emailVerificationOptions(options),
+      );
+      return { ok: true, value: mapVerifiedAccount(response) };
     } catch (error) {
-      return authFailure(error);
+      return emailVerificationFailure(error);
+    }
+  }
+
+  /**
+   * Asks the backend to issue a new code. The backend answers uniformly, so the result
+   * carries no signal about whether an account exists or whether anything was sent.
+   */
+  async requestEmailVerification(command: EmailVerificationRequestCommand, options: AuthCommandOptions): Promise<AuthResult<EmailVerificationRequestAccepted>> {
+    try {
+      const response = await this.emailVerification.requestEmailVerification(
+        { email: command.email.trim() },
+        emailVerificationOptions(options),
+      );
+      return { ok: true, value: mapVerificationRequestAccepted(response) };
+    } catch (error) {
+      return emailVerificationFailure(error);
     }
   }
 
@@ -209,6 +250,13 @@ export class IdentityAuthHttpAdapter implements ConnectedAuthGateway {
   }
 }
 
+function emailVerificationOptions(options: AuthCommandOptions) {
+  return {
+    idempotencyKey: options.idempotencyKey,
+    ...(options.signal === undefined ? {} : { signal: options.signal }),
+  };
+}
+
 function requestOptions(options: AuthCommandOptions) {
   return {
     idempotencyKey: options.idempotencyKey,
@@ -250,6 +298,21 @@ function mapAccount(value: UserAccountDocument): UserAccount {
   };
 }
 
+function mapVerifiedAccount(value: VerifiedUserAccountResponse): UserAccount {
+  return {
+    accountId: value.accountId,
+    email: value.email,
+    displayName: value.displayName,
+    status: value.status,
+    ...(value.emailVerifiedAt ? { emailVerifiedAt: value.emailVerifiedAt } : {}),
+    createdAt: value.createdAt,
+  };
+}
+
+function mapVerificationRequestAccepted(value: EmailVerificationRequestAcceptedResponse): EmailVerificationRequestAccepted {
+  return { requestId: value.requestId, acceptedAt: value.acceptedAt };
+}
+
 function mapRevocation(value: SessionRevocationResponse): SessionRevocationResult {
   return { sessionId: value.sessionId, revokedAt: value.revokedAt };
 }
@@ -281,9 +344,25 @@ function authFailure<T>(error: unknown): AuthResult<T> {
   return { ok: false, code: "SERVICE_UNAVAILABLE", message: error instanceof Error ? error.message : "Identity service is unavailable." };
 }
 
+/**
+ * Email verification is the one identity path where an unusable email boundary is a
+ * distinct, actionable outcome rather than a generic adapter fault: nothing the caller
+ * does will produce a code until the host can send mail again.
+ */
+function emailVerificationFailure<T>(error: unknown): AuthResult<T> {
+  if (error instanceof ApiClientError && error.code === "INTEGRATION_UNAVAILABLE") {
+    return { ok: false, code: "EMAIL_DELIVERY_UNAVAILABLE", message: error.userMessage ?? error.message };
+  }
+  return authFailure(error);
+}
+
 function mapAuthFailureCode(error: ApiClientError): AuthFailureCode {
   if (AUTH_FAILURE_CODES.has(error.code as AuthFailureCode)) return error.code as AuthFailureCode;
   if (error.code === "INTEGRATION_UNAVAILABLE") return "AUTH_ADAPTER_UNAVAILABLE";
+  // Registration is the only identity operation with a business key, and its duplicate is
+  // always the address. Left unmapped it would surface as an unexplained server error to
+  // someone who simply already has an account.
+  if (error.code === "DUPLICATE_BUSINESS_KEY") return "ACCOUNT_ALREADY_EXISTS";
   if (TRANSPORT_FAILURE_CODES.has(error.code) || error.status === undefined) return "SERVICE_UNAVAILABLE";
   // A backend fault is a backend fault. Only the contract-declared 401/403 codes
   // above describe the submitted credential.

@@ -3,7 +3,7 @@ import {
   type ApplicationRuntimeMode,
   type InitializeApplicationCompositionOptions,
 } from "@/app/composition";
-import { FetchHttpClient, type AccessTokenProvider } from "@/platform/api";
+import { EmailVerificationApiClient, FetchHttpClient, type AccessTokenProvider } from "@/platform/api";
 import { IdentityApiClient } from "@/platform/api/generated/identityApi";
 import { WorkspaceBootstrapApiClient } from "@/platform/api/generated/workspaceBootstrapApi";
 import { IdentityAuthHttpAdapter } from "@/platform/identity-auth/infrastructure/IdentityAuthHttpAdapter";
@@ -124,7 +124,9 @@ export async function bootstrapApplicationComposition(
       accessTokenProvider: { getAccessToken: () => getConnectedAuthAccessToken() },
       defaultTimeoutMs: parseTimeout(environment.VITE_API_TIMEOUT_MS),
     });
-    configureConnectedAuthGateway(new IdentityAuthHttpAdapter(new IdentityApiClient(identityHttp)));
+    // The email-verification OTP operations are not described by the pinned OpenAPI
+    // document, so they arrive through the semantic extension over the same client.
+    configureConnectedAuthGateway(new IdentityAuthHttpAdapter(new IdentityApiClient(identityHttp), new EmailVerificationApiClient(identityHttp)));
     await bootstrapAuthSession();
     const workspaceHttp = new FetchHttpClient({
       baseUrl,

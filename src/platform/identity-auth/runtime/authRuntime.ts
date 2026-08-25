@@ -5,16 +5,19 @@ import type { AuthGateway } from "../application/AuthGateway";
 import type {
   AuthResult,
   AuthSession,
+  EmailVerificationRequestAccepted,
   ProvisionUserAccountCommand,
   ProvisionedUserAccount,
   RegisterCommand,
   SecurityEvent,
   SignInCommand,
   UserAccount,
+  VerifyEmailCommand,
   VerifyMfaCommand,
 } from "../domain/auth.types";
 import {
   DevelopmentAuthAdapter,
+  getDevelopmentEmailVerificationCode,
   getDevelopmentMfaCodeHint,
   isProvisionedDevelopmentAccount,
   listDevelopmentAccountDescriptors,
@@ -125,6 +128,14 @@ class DevelopmentAuthRuntime {
     const result = this.adapter.verifyEmail(token);
     if (result.ok) this.recordSecurityEvent({ accountId: result.value.accountId, type: "EMAIL_VERIFIED" });
     return result;
+  }
+  verifyEmailCode(command: VerifyEmailCommand): AuthResult<UserAccount> {
+    const result = this.adapter.verifyEmailCode(command);
+    if (result.ok) this.recordSecurityEvent({ accountId: result.value.accountId, type: "EMAIL_VERIFIED" });
+    return result;
+  }
+  requestEmailVerification(email: string): AuthResult<EmailVerificationRequestAccepted> {
+    return this.adapter.requestEmailVerification(email);
   }
   requestPasswordReset(email: string): AuthResult<{ requestId: string }> {
     const result = this.adapter.requestPasswordReset(email);
@@ -283,7 +294,23 @@ export const verifyMfaAuthentication = (command: VerifyMfaCommand): Promise<Auth
 export const refreshAuthSession = (): Promise<AuthResult<AuthSession>> => connectedRuntime ? connectedRuntime.refresh() : Promise.resolve(developmentRuntime.refresh());
 export const terminateAuthSession = async (reason?: string): Promise<void> => { if (connectedRuntime) await connectedRuntime.signOut(reason); else developmentRuntime.signOut(reason); };
 export const registerAccount = (command: RegisterCommand): Promise<AuthResult<UserAccount>> => connectedGateway ? connectedGateway.register(command, { idempotencyKey: createAuthAttemptId("register") }) : Promise.resolve(developmentRuntime.register(command));
-export const verifyAccountEmail = (token: string): Promise<AuthResult<UserAccount>> => connectedGateway ? connectedGateway.verifyEmail({ token }, { idempotencyKey: createAuthAttemptId("verify-email") }) : Promise.resolve(developmentRuntime.verifyEmail(token));
+/**
+ * Canonical async email-verification boundary. The credential is a six-digit code sent to
+ * the address being verified, so both values travel together and every attempt carries its
+ * own idempotency key - reusing one would replay an earlier answer instead of judging the
+ * code the caller just typed.
+ */
+export const verifyAccountEmail = (command: VerifyEmailCommand): Promise<AuthResult<UserAccount>> => connectedGateway
+  ? connectedGateway.verifyEmail(command, { idempotencyKey: createAuthAttemptId("verify-email") })
+  : Promise.resolve(developmentRuntime.verifyEmailCode(command));
+
+/**
+ * Asks for a new code. The backend answers uniformly, so a success here means only that the
+ * request was accepted - never that an account exists or that a code was sent.
+ */
+export const requestAccountEmailVerification = (email: string): Promise<AuthResult<EmailVerificationRequestAccepted>> => connectedGateway
+  ? connectedGateway.requestEmailVerification({ email }, { idempotencyKey: createAuthAttemptId("request-email-verification") })
+  : Promise.resolve(developmentRuntime.requestEmailVerification(email));
 export const requestAccountPasswordReset = (email: string) => connectedGateway
   ? connectedGateway.requestPasswordReset({ email }, { idempotencyKey: createAuthAttemptId("request-password-reset") })
   : Promise.resolve(mapDevelopmentPasswordResetRequest(developmentRuntime.requestPasswordReset(email)));
@@ -303,6 +330,8 @@ function mapDevelopmentInvitation(result: AuthResult<{ workspaceId: string }>) {
 /** Legacy synchronous demo contract retained for source-level demo tests only. */
 export const signIn = (command: SignInCommand) => connectedRuntime ? ({ ok: false, code: "AUTH_ADAPTER_UNAVAILABLE", message: "Use authenticateUser in connected mode." } as const) : developmentRuntime.signIn(command);
 export const verifyMfaChallenge = (command: VerifyMfaCommand) => connectedRuntime ? ({ ok: false, code: "AUTH_ADAPTER_UNAVAILABLE", message: "Use verifyMfaAuthentication in connected mode." } as const) : developmentRuntime.verifyMfa(command);
+/** Demo-only affordance. Connected mode has no browser-side code and returns nothing. */
+export const developmentEmailVerificationCode = () => !connectedRuntime && configuredEnvironmentMode() === "development" ? getDevelopmentEmailVerificationCode() : undefined;
 export const developmentMfaCodeHint = (challengeId: string) => !connectedRuntime && configuredEnvironmentMode() === "development" ? getDevelopmentMfaCodeHint(challengeId) : undefined;
 export const refreshSession = () => connectedRuntime ? ({ ok: false, code: "AUTH_ADAPTER_UNAVAILABLE", message: "Use refreshAuthSession in connected mode." } as const) : developmentRuntime.refresh();
 export const signOut = (reason?: string) => { if (connectedRuntime) void connectedRuntime.signOut(reason); else developmentRuntime.signOut(reason); };

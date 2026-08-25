@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ChevronDown, Eye, EyeOff, Lock, Mail, UserRoundCheck } from "lucide-react";
-import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { productSpaceHome } from "@/platform/navigation";
 import { ROUTE_KEYS } from "@/platform/navigation";
 import { useI18n } from "@/i18n";
@@ -23,18 +23,26 @@ import {
 } from "../components";
 import { startExternalAuth } from "../routing/externalAuthRedirect";
 import { resolveSafePostLoginRedirect } from "../routing/postLoginRedirect";
+import { emailVerificationNavigationState, resolveEmailVerificationSubject } from "../routing/emailVerificationContext";
 
 export const LoginPage: React.FC = () => {
   const { locale, t } = useI18n();
   const vi = locale === "vi";
   const navigate = useNavigate();
+  const location = useLocation();
   const reduceMotion = useReducedMotion();
   const [searchParams] = useSearchParams();
   const redirect = resolveSafePostLoginRedirect(searchParams.get("redirect"));
   const developmentAccounts = useMemo(() => listDevelopmentAccounts(), []);
   const showDevelopmentAccess = isDevelopmentAuthAdapter() && developmentAccounts.length > 0;
 
-  const [email, setEmail] = useState(() => typeof window === "undefined" ? "" : window.localStorage.getItem("unicore_last_login_email") ?? "");
+  // A just-verified address arrives in the history entry and takes precedence over the
+  // remembered one, so finishing verification opens sign-in on the account that was verified.
+  const [email, setEmail] = useState(() => {
+    const verified = resolveEmailVerificationSubject(location.state);
+    if (verified) return verified;
+    return typeof window === "undefined" ? "" : window.localStorage.getItem("unicore_last_login_email") ?? "";
+  });
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberAccount, setRememberAccount] = useState(true);
@@ -81,8 +89,10 @@ export const LoginPage: React.FC = () => {
           navigate(`${ROUTE_KEYS.MFA_VERIFICATION}?${params.toString()}`, { replace: true });
           return;
         }
+        // A refused sign-in that names an unverified address is not a rejected credential.
+        // It is a route into verification, and it carries the address it was refused for.
         if (result.code === "EMAIL_NOT_VERIFIED") {
-          navigate(`${ROUTE_KEYS.VERIFY_EMAIL}?email=${encodeURIComponent(email.trim())}`);
+          navigate(ROUTE_KEYS.VERIFY_EMAIL, { state: emailVerificationNavigationState(email.trim()) });
           return;
         }
         setError(describeSignInFailure(result.code, vi));

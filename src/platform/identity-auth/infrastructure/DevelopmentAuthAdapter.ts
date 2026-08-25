@@ -5,16 +5,19 @@ import type {
   AuthFailureCode,
   AuthResult,
   AuthSession,
+  EmailVerificationRequestAccepted,
   ProvisionUserAccountCommand,
   ProvisionedUserAccount,
   RegisterCommand,
   SignInCommand,
   UserAccount,
+  VerifyEmailCommand,
   VerifyMfaCommand,
 } from "../domain/auth.types";
 
 import {
   DEVELOPMENT_ACCOUNTS,
+  DEVELOPMENT_EMAIL_VERIFICATION_CODE,
   DEVELOPMENT_MFA_CODE,
   type DevelopmentAccountDescriptor,
 } from "../development/developmentIdentityCatalog";
@@ -209,6 +212,11 @@ function accountById(accountId: string): DevelopmentAccountDescriptor | undefine
   return listDevelopmentAccountDescriptors().find((account) => account.accountId === accountId);
 }
 
+/** Demo-only affordance: the fixed code the demo adapter accepts. */
+export function getDevelopmentEmailVerificationCode(): string {
+  return DEVELOPMENT_EMAIL_VERIFICATION_CODE;
+}
+
 export function getDevelopmentMfaCodeHint(challengeId: string): string | undefined {
   const challenge = mfaChallenges.get(challengeId);
   if (!challenge || challenge.consumedAt || Date.now() >= new Date(challenge.expiresAt).getTime()) return undefined;
@@ -337,6 +345,35 @@ export class DevelopmentAuthAdapter implements AuthGateway {
         createdAt: now,
       },
     };
+  }
+
+  /**
+   * Demo counterpart of the six-digit code contract. Demo mode sends no email, so the
+   * accepted code is the fixed local value the sample-code affordance fills in.
+   */
+  verifyEmailCode(command: VerifyEmailCommand): AuthResult<UserAccount> {
+    const email = normalizeEmail(command.email);
+    if (!email.includes("@")) return fail("VALIDATION_FAILED", "A valid email address is required.");
+    if (!/^\d{6}$/.test(command.code.trim())) return fail("VALIDATION_FAILED", "The verification code must contain exactly six digits.");
+    if (command.code.trim() !== DEVELOPMENT_EMAIL_VERIFICATION_CODE) return fail("TOKEN_INVALID", "Verification code is invalid.");
+    const now = nowIso();
+    return {
+      ok: true,
+      value: {
+        accountId: `dev_registered_${email.replace(/[^a-z0-9]+/g, "_")}`,
+        email,
+        displayName: email.split("@")[0] ?? "Development user",
+        status: "ACTIVE",
+        emailVerifiedAt: now,
+        createdAt: now,
+      },
+    };
+  }
+
+  requestEmailVerification(email: string): AuthResult<EmailVerificationRequestAccepted> {
+    const normalized = normalizeEmail(email);
+    if (!normalized.includes("@")) return fail("VALIDATION_FAILED", "A valid email address is required.");
+    return { ok: true, value: { requestId: `dev_evr_${normalized.replace(/[^a-z0-9]+/g, "_")}`, acceptedAt: nowIso() } };
   }
 
   requestPasswordReset(email: string): AuthResult<{ requestId: string }> {

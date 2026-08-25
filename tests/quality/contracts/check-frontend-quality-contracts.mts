@@ -5,6 +5,7 @@ import path from "node:path";
 import { escapeSpreadsheetSafeCsvCell, neutralizeSpreadsheetFormula } from "../../../src/shared/lib/csv/spreadsheetSafeCsv";
 import { serializeProductsAsCsv } from "../../../src/modules/products/application/import-export/productCsv";
 import { resolveSafePostLoginRedirect, withRedirectQuery } from "../../../src/features/auth/routing/postLoginRedirect";
+import { emailVerificationNavigationState, resolveEmailVerificationSubject } from "../../../src/features/auth/routing/emailVerificationContext";
 
 const root = repositoryRoot;
 const read = (relativePath: string) => fs.readFileSync(path.join(root, relativePath), "utf8");
@@ -62,6 +63,40 @@ for (const hostile of [
 }
 const loginUrl = withRedirectQuery("/login", canonical);
 assert.equal(new URLSearchParams(loginUrl.split("?")[1]).get("redirect"), canonical);
+
+// The verification screen has exactly one subject, and exactly one source for it: the
+// navigation state a previous screen handed it. Anything else resolves to nothing, so the
+// screen routes back instead of submitting a guess or an address a link chose for it.
+assert.equal(resolveEmailVerificationSubject({ email: "person@example.com" }), "person@example.com");
+assert.equal(resolveEmailVerificationSubject({ email: "  person@example.com  " }), "person@example.com");
+for (const emptySubject of [
+  null,
+  undefined,
+  {},
+  { email: 42 },
+  { email: "   " },
+  { email: "not-an-address" },
+  { email: "person@example.com extra" },
+  { email: `${"a".repeat(250)}@example.com` },
+  "person@example.com",
+  ["person@example.com"],
+] as const) {
+  assert.equal(
+    resolveEmailVerificationSubject(emptySubject),
+    undefined,
+    `A screen with no usable navigation state must resolve to undefined: ${JSON.stringify(emptySubject)}`,
+  );
+}
+// The resolver takes navigation state alone. A URL parameter must not be able to name the
+// address the screen verifies or resends to, so no second source is accepted.
+assert.equal(resolveEmailVerificationSubject.length, 1, "The subject resolver must accept navigation state only.");
+const verifyEmailPageSource = read("src/features/auth/pages/VerifyEmailPage.tsx");
+assert.doesNotMatch(
+  verifyEmailPageSource,
+  /useSearchParams|searchParams/u,
+  "The verification screen must not read its subject, or anything else, from the query string.",
+);
+assert.deepEqual(emailVerificationNavigationState("  person@example.com  "), { email: "person@example.com" });
 
 const dialog = read("src/shared/components/ui/Dialog.tsx");
 const drawer = read("src/shared/components/ui/Drawer.tsx");

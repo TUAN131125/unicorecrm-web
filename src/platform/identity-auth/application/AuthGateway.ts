@@ -1,9 +1,11 @@
 import type {
   AuthResult,
   AuthSession,
+  EmailVerificationRequestAccepted,
   RegisterCommand,
   SignInCommand,
   UserAccount,
+  VerifyEmailCommand,
   VerifyMfaCommand,
 } from "../domain/auth.types";
 
@@ -17,6 +19,8 @@ export interface AuthGateway {
   revokeSession(sessionId: string, reason?: string): void;
   register(command: RegisterCommand): AuthResult<UserAccount>;
   verifyEmail(token: string): AuthResult<UserAccount>;
+  verifyEmailCode(command: VerifyEmailCommand): AuthResult<UserAccount>;
+  requestEmailVerification(email: string): AuthResult<EmailVerificationRequestAccepted>;
   requestPasswordReset(email: string): AuthResult<{ requestId: string }>;
   resetPassword(token: string, nextPassword: string): AuthResult<void>;
   acceptInvitation(token: string): AuthResult<{ workspaceId: string }>;

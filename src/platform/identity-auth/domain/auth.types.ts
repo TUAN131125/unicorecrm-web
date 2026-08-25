@@ -122,6 +122,10 @@ export type AuthFailureCode =
   | "SERVICE_UNAVAILABLE"
   | "TOKEN_INVALID"
   | "TOKEN_EXPIRED"
+  /** The submitted values do not satisfy the contract. */
+  | "VALIDATION_FAILED"
+  /** The identity backend has no usable email boundary, so no code can be delivered. */
+  | "EMAIL_DELIVERY_UNAVAILABLE"
   | "INVITATION_INVALID"
   | "UNKNOWN";
 
@@ -218,8 +222,18 @@ export interface PasswordResetCommand {
   nextPassword: string;
 }
 
+/**
+ * Email verification is a six-digit one-time code delivered to the address being
+ * verified. The retired token-based shape carried an opaque link credential; there is
+ * no verification link anywhere in this flow.
+ */
 export interface VerifyEmailCommand {
-  token: string;
+  email: string;
+  code: string;
+}
+
+export interface EmailVerificationRequestCommand {
+  email: string;
 }
 
 export interface AcceptInvitationCommand {
@@ -227,6 +241,16 @@ export interface AcceptInvitationCommand {
 }
 
 export interface PasswordResetRequestAccepted {
+  requestId: string;
+  acceptedAt: string;
+}
+
+/**
+ * Acceptance of a resend. The identifier is owner-assigned and carries no account
+ * identity, so nothing in this value may be read as evidence that an account exists,
+ * is still pending, or that a code was actually issued.
+ */
+export interface EmailVerificationRequestAccepted {
   requestId: string;
   acceptedAt: string;
 }

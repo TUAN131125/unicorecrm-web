@@ -313,7 +313,12 @@ function describeProvisioningFailure(error: unknown, vi: boolean): string {
       ? "Không kết nối được máy chủ UnicoreCRM. Kiểm tra ApiHost rồi thử lại."
       : "Cannot reach the UnicoreCRM server. Check that the ApiHost is running, then try again.";
   }
-  return error.userMessage ?? error.message;
+  // `userMessage` is contract copy the server wrote for a reader. `message` is the internal
+  // diagnostic, and falling through to it would put topology in front of the visitor, so the
+  // last resort is the same safe sentence the non-contract branch above uses.
+  return error.userMessage ?? (vi
+    ? "Không tạo được không gian làm việc. Vui lòng thử lại."
+    : "The workspace could not be created. Please try again.");
 }
 
 export default InitialSetupPage;

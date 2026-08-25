@@ -14,6 +14,8 @@ export {
   terminateAuthSession,
   registerAccount,
   verifyAccountEmail,
+  requestAccountEmailVerification,
+  developmentEmailVerificationCode,
   requestAccountPasswordReset,
   completeAccountPasswordReset,
   acceptWorkspaceInvitation,

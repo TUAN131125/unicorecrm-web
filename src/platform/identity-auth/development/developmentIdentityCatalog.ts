@@ -27,3 +27,10 @@ export const DEVELOPMENT_ACCOUNTS: readonly DevelopmentAccountDescriptor[] = [
 ] as const;
 
 export const DEVELOPMENT_MFA_CODE = "246810";
+
+/**
+ * Demo mode delivers no email, so the six-digit verification code is a fixed local
+ * value. It exists only so the demo runtime can exercise the same screen; the connected
+ * runtime never reads it and no code is ever produced in the browser there.
+ */
+export const DEVELOPMENT_EMAIL_VERIFICATION_CODE = "135791";

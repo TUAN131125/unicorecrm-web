@@ -145,9 +145,16 @@ assert.match(mainSource, /renderApplication\(\)\.catch\(renderApplicationBootstr
 assert.match(mainSource, /renderApplicationBootstrapFailure/u);
 assert.doesNotMatch(mainSource, /initializeApplicationComposition\(\{ mode: ["']demo["'] \}\)/u);
 
-const demoPlan = resolveApplicationBootstrapPlan({ DEV: true });
+// Connected is the default in every environment. Demo stays available, but a deployment has
+// to ask for it, so no runtime silently authenticates against browser-local state.
+const demoPlan = resolveApplicationBootstrapPlan({ DEV: true, VITE_RUNTIME_MODE: "demo" });
 assert.equal(demoPlan.mode, "demo");
 assert.deepEqual(demoPlan.composition, { mode: "demo" });
+assert.equal(
+  resolveApplicationBootstrapPlan({ DEV: true }).mode,
+  "connected",
+  "A development host must not fall back to demo authority on its own.",
+);
 
 let unauthorizedCalls = 0;
 let logoutCalls = 0;

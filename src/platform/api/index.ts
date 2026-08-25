@@ -1,6 +1,7 @@
 export * from "./client";
 export * from "./errors";
 export * from "./extensions/aiAdvisoryApi";
+export * from "./extensions/emailVerificationApi";
 export * from "./extensions/workspaceProvisioningApi";
 export * from "./runtime";
 export * from "./catalog";

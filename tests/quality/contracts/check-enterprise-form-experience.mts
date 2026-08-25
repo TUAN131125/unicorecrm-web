@@ -56,7 +56,21 @@ const unstyled = formFiles.filter((file) => {
 });
 assert.deepEqual(unstyled.map((file) => path.relative(root, file)), [], "Every form file must inherit the enterprise form surface, page archetype, or dedicated authentication form archetype.");
 
+// Named rather than counted, so a form that quietly loses the archetype is caught by which
+// screen went missing. Email verification belongs here: a six-digit one-time code is a
+// credential the visitor types, exactly like a password or an MFA code.
 const authForms = formFiles.filter((file) => read(path.relative(root, file)).includes("data-auth-form=\"true\""));
-assert.equal(authForms.length, 5, "The dedicated authentication form archetype must cover the five credential-entry forms.");
+assert.deepEqual(
+  authForms.map((file) => path.relative(root, file).split(path.sep).join("/")).sort(),
+  [
+    "src/features/auth/pages/ForgotPasswordPage.tsx",
+    "src/features/auth/pages/LoginPage.tsx",
+    "src/features/auth/pages/MfaVerificationPage.tsx",
+    "src/features/auth/pages/RegisterPage.tsx",
+    "src/features/auth/pages/ResetPasswordPage.tsx",
+    "src/features/auth/pages/VerifyEmailPage.tsx",
+  ],
+  "The dedicated authentication form archetype must cover every credential-entry form.",
+);
 
 console.log(`Enterprise form experience OK: ${formFiles.length} form files, including ${authForms.length} dedicated authentication forms, searchable entity selectors, standardized actions, and shipping handling fields.`);
