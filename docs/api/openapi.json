@@ -45623,7 +45623,7 @@
         "x-workspace-required": true,
         "x-actor-required": true,
         "x-idempotency-policy": "NOT_APPLICABLE",
-        "x-concurrency-policy": "NOT_APPLICABLE",
+        "x-concurrency-policy": "IF_MATCH_REQUIRED",
         "x-audit-requirement": "READ_AUDIT",
         "x-event-outbox-expectation": "NOT_APPLICABLE",
         "x-transaction-boundary": "READ_ONLY",
@@ -45802,7 +45802,7 @@
         "x-workspace-required": true,
         "x-actor-required": true,
         "x-idempotency-policy": "NOT_APPLICABLE",
-        "x-concurrency-policy": "NOT_APPLICABLE",
+        "x-concurrency-policy": "IF_MATCH_REQUIRED",
         "x-audit-requirement": "READ_AUDIT",
         "x-event-outbox-expectation": "NOT_APPLICABLE",
         "x-transaction-boundary": "READ_ONLY",
@@ -60523,9 +60523,7 @@
           "createdAt",
           "updatedAt",
           "slaStatus",
-          "resourceVersion",
-          "customerId",
-          "customerName"
+          "resourceVersion"
         ],
         "properties": {
           "id": {

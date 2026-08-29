@@ -1,10 +1,10 @@
 {
   "schemaVersion": 2,
-  "generatorVersion": 15,
+  "generatorVersion": 16,
   "openapiVersion": "3.1.0",
   "contractVersion": "0.23.20-contract.0",
   "specPath": "docs/api/openapi.json",
-  "specSha256": "8278547df0fd4be9a9af9b8a6d5f3e15ddad8d005d804c99a7c9248e0f402757",
+  "specSha256": "fd079b2f6e189ffe391d555cee1d2acaa735cf532346cc74a02070862bd78792",
   "ownershipPath": "scripts/api/openapi/client-ownership.json",
   "coverageLedgerPath": "docs/api/operation-coverage-ledger.json",
   "breakingBaselinePath": "docs/api/openapi-breaking-baseline.json",
@@ -1855,7 +1855,7 @@
       "generatedClientId": "commercial",
       "generatedMethod": "getProductAvailability",
       "idempotencyPolicy": "NOT_APPLICABLE",
-      "concurrencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "products.read"
@@ -1869,7 +1869,7 @@
       "generatedClientId": "commercial",
       "generatedMethod": "getProductPriceProjection",
       "idempotencyPolicy": "NOT_APPLICABLE",
-      "concurrencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "products.read"

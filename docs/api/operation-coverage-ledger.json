@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "generatorVersion": 11,
   "contractVersion": "0.23.20-contract.0",
-  "specSha256": "8278547df0fd4be9a9af9b8a6d5f3e15ddad8d005d804c99a7c9248e0f402757",
+  "specSha256": "fd079b2f6e189ffe391d555cee1d2acaa735cf532346cc74a02070862bd78792",
   "generatedAt": "DETERMINISTIC",
   "coveragePolicy": {
     "ownerModule": "REQUIRED",
@@ -4271,7 +4271,7 @@
         "quality.task-activity-api-boundary"
       ],
       "idempotencyPolicy": "NOT_APPLICABLE",
-      "concurrencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
       "requestBodySchema": null,
       "responseSchema": "ProductAvailabilityReadModel",
       "successStatus": "200",
@@ -4309,7 +4309,7 @@
         "quality.task-activity-api-boundary"
       ],
       "idempotencyPolicy": "NOT_APPLICABLE",
-      "concurrencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
       "requestBodySchema": null,
       "responseSchema": "ProductPriceProjectionReadModel",
       "successStatus": "200",
