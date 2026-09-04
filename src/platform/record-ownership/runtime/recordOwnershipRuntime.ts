@@ -2,7 +2,7 @@ import { getAuthSessionSnapshot } from "@/platform/identity-auth";
 import { listDevelopmentAccounts } from "@/platform/identity-auth";
 import { assertRuntimeCommandAccess, resolveEffectiveAccess, type Capability } from "@/platform/access-control";
 import { getWorkspaceContextSnapshot } from "@/platform/workspace-context";
-import { getCurrentMembershipForWorkspaceId, listWorkspaceMembershipDirectory } from "@/platform/workspace-membership";
+import { listWorkspaceMembershipDirectory } from "@/platform/workspace-membership";
 import { BrowserStorageAdapter } from "@/platform/persistence";
 import {
   assertReassignmentAllowed,
@@ -31,8 +31,8 @@ export function getRecordOwnershipContext(
 ): RecordOwnershipContext | null {
   const session = getAuthSessionSnapshot();
   if (!session) return null;
-  const workspaceId = getWorkspaceContextSnapshot().workspaceId;
-  const membership = getCurrentMembershipForWorkspaceId(workspaceId);
+  const membership = getWorkspaceContextSnapshot();
+  const workspaceId = membership.workspaceId;
   if (!membership?.memberId || membership.status !== "active") return null;
 
   const access = resolveEffectiveAccess(workspaceId);

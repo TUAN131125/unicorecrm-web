@@ -2,6 +2,7 @@ import {
   WorkspaceBootstrapApiClient,
   type WorkspaceMembershipSummary,
 } from "@/platform/api/generated/workspaceBootstrapApi";
+import { getAuthSessionSnapshot } from "@/platform/identity-auth";
 import type { WorkspaceBootstrapGateway } from "../application/WorkspaceBootstrapGateway";
 import type { WorkspaceMembership } from "@/platform/workspace-membership";
 import type { WorkspaceBootstrapContext, WorkspaceBootstrapQueryOptions } from "../domain/workspaceBootstrap.types";
@@ -34,8 +35,12 @@ export class WorkspaceBootstrapHttpAdapter implements WorkspaceBootstrapGateway 
 }
 
 function mapMembership(value: WorkspaceMembershipSummary): WorkspaceMembership {
+  const principal = getAuthSessionSnapshot()?.principal;
+  if (!principal) throw new Error("WORKSPACE_MEMBERSHIP_PRINCIPAL_REQUIRED");
   return {
     membershipId: value.membershipId,
+    accountId: principal.accountId,
+    memberId: principal.memberId,
     workspaceId: value.workspaceId,
     workspaceKey: value.workspaceKey,
     name: value.name,
