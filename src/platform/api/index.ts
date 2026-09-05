@@ -62,7 +62,7 @@ export type {
   CustomerList,
   DisqualifyLeadRequest,
   LeadDocument,
-  LeadList,
+  LeadListResponse,
   LeadMutationResponse,
   OrganizationDocument,
   OrganizationList,

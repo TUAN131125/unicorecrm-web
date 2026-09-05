@@ -18,8 +18,9 @@ export interface CreateSupportCaseInput {
   priority: SupportCase["priority"];
   category: SupportCase["category"];
   source: SupportCase["source"];
-  customerId: string;
-  customerName: string;
+  /** Optional Customer enrichment; absent until effective purchase evidence creates a Customer. */
+  customerId?: string;
+  customerName?: string;
   relationshipRef: RelationshipRef;
   contactId?: string;
   contactName?: string;
@@ -46,8 +47,10 @@ export function createSupportCase(
   const createdAt = now.toISOString();
   const caseNumber = generateSupportCaseNumber([...cases]);
   const isVietnamese = input.locale !== "en";
+  // relationshipRef is the canonical relationship identity and stays required. Customer
+  // enrichment does not: a Customer aggregate exists only once effective purchase evidence has
+  // been recorded, so a pre-purchase Support Case legitimately carries neither customer field.
   if (!input.relationshipRef?.id?.trim()) throw new Error("Support Case requires a canonical customer relationship.");
-  if (!input.customerId.trim()) throw new Error("Support Case requires a Customer profile reference.");
 
   return {
     id: `cs_${now.getTime()}`,

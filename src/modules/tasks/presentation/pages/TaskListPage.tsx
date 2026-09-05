@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { AuthoritativeQueryNotice } from "@/shared/operations";
+import { AuthoritativeQueryBoundary } from "@/shared/operations";
 import { useTasksAuthoritative } from "../hooks/useTasksAuthoritative";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { CalendarDays, CheckCircle2, Clock3, ListTodo, Plus, Archive, UserRound, XCircle } from "lucide-react";
@@ -63,7 +63,8 @@ export const TaskListPage: React.FC = () => {
   const [messageTone, setMessageTone] = useState<"success" | "error">("success");
   const [deleteTarget, setDeleteTarget] = useState<Task | null>(null);
 
-  const currentMemberId = getAuthSessionSnapshot()?.principal.memberId || access.memberId || access.accountId || "current-user";
+  const session = getAuthSessionSnapshot();
+  const currentMemberId = session?.principal.memberId || access.memberId || undefined;
   const allTasks = useMemo(() => queryTaskSnapshot({ search }), [snapshot, search]);
   const owners = useMemo(() => Array.from(new Set(snapshot.tasks.map((task) => task.assigneeId).filter(Boolean))).sort(), [snapshot.tasks]);
   const filteredTasks = useMemo(() => allTasks
@@ -71,7 +72,7 @@ export const TaskListPage: React.FC = () => {
     .filter((task) => assigneeFilter === "ALL" || task.assigneeId === assigneeFilter)
     .filter((task) => {
       if (view === "all") return true;
-      if (view === "my_open") return task.status === "OPEN" && task.assigneeId === currentMemberId;
+      if (view === "my_open") return Boolean(currentMemberId) && task.status === "OPEN" && task.assigneeId === currentMemberId;
       if (view === "today") return task.status === "OPEN" && isToday(task.dueAt);
       if (view === "overdue") return isOverdue(task);
       if (view === "high") return task.status === "OPEN" && ["HIGH", "URGENT"].includes(task.priority);
@@ -82,16 +83,15 @@ export const TaskListPage: React.FC = () => {
 
   const pagination = useListPagination(filteredTasks, 25);
 
-  const canCreate = access.canPerform("tasks", "create");
-  const canComplete = access.canPerform("tasks", "complete");
-  const canUpdate = access.canPerform("tasks", "update");
-  const actorId = currentMemberId;
+  const canCreate = Boolean(currentMemberId) && access.canPerform("tasks", "create");
+  const canComplete = Boolean(currentMemberId) && access.canPerform("tasks", "complete");
+  const canUpdate = Boolean(currentMemberId) && access.canPerform("tasks", "update");
 
   const savedViews = useMemo(() => {
     const open = snapshot.tasks.filter((task) => task.status === "OPEN");
     return [
       { key: "all", label: vi ? "Tất cả" : "All", count: snapshot.tasks.length, tone: "slate" as const },
-      { key: "my_open", label: vi ? "Của tôi" : "Mine", count: open.filter((task) => task.assigneeId === currentMemberId).length, tone: "sky" as const },
+      { key: "my_open", label: vi ? "Của tôi" : "Mine", count: currentMemberId ? open.filter((task) => task.assigneeId === currentMemberId).length : 0, tone: "sky" as const },
       { key: "today", label: vi ? "Hôm nay" : "Today", count: open.filter((task) => isToday(task.dueAt)).length, tone: "emerald" as const },
       { key: "overdue", label: vi ? "Quá hạn" : "Overdue", count: open.filter(isOverdue).length, tone: "rose" as const },
       { key: "high", label: vi ? "Ưu tiên cao" : "High priority", count: open.filter((task) => ["HIGH", "URGENT"].includes(task.priority)).length, tone: "amber" as const },
@@ -109,8 +109,13 @@ export const TaskListPage: React.FC = () => {
   };
 
   const complete = async (task: Task) => {
+    if (!currentMemberId) {
+      setMessageTone("error");
+      setMessage(vi ? "Không xác định được thành viên Workspace hiện tại." : "The current Workspace member could not be resolved.");
+      return;
+    }
     try {
-      await completeTaskCommand(task.id, { actorId, actorName: getAuthSessionSnapshot()?.principal.displayName || actorId, outcome: vi ? "Hoàn thành từ danh sách Công việc" : "Completed from Task workspace" });
+      await completeTaskCommand(task.id, { actorId: currentMemberId, actorName: session?.principal.displayName || currentMemberId, outcome: vi ? "Hoàn thành từ danh sách Công việc" : "Completed from Task workspace" });
       setMessageTone("success");
       setMessage(vi ? "Đã hoàn thành công việc." : "Task completed.");
     } catch (error) {
@@ -120,9 +125,9 @@ export const TaskListPage: React.FC = () => {
   };
 
   const remove = async () => {
-    if (!deleteTarget) return;
+    if (!deleteTarget || !currentMemberId) return;
     try {
-      await archiveTaskCommand(deleteTarget.id, { actorId, actorName: getAuthSessionSnapshot()?.principal.displayName || actorId, reason: vi ? "Lưu trữ từ danh sách Công việc." : "Archived from Task workspace." });
+      await archiveTaskCommand(deleteTarget.id, { actorId: currentMemberId, actorName: session?.principal.displayName || currentMemberId, reason: vi ? "Lưu trữ từ danh sách Công việc." : "Archived from Task workspace." });
       setMessageTone("success");
       setMessage(vi ? "Đã lưu trữ công việc; lịch sử vẫn được giữ lại." : "Task archived; history was retained.");
       setDeleteTarget(null);
@@ -133,8 +138,9 @@ export const TaskListPage: React.FC = () => {
   };
 
   const cancel = async (task: Task) => {
+    if (!currentMemberId) return;
     try {
-      await cancelTaskCommand(task.id, { actorId, actorName: getAuthSessionSnapshot()?.principal.displayName || actorId, reason: vi ? "Đã hủy từ danh sách Công việc" : "Cancelled from Task workspace" });
+      await cancelTaskCommand(task.id, { actorId: currentMemberId, actorName: session?.principal.displayName || currentMemberId, reason: vi ? "Đã hủy từ danh sách Công việc" : "Cancelled from Task workspace" });
       setMessageTone("success");
       setMessage(vi ? "Đã hủy công việc." : "Task cancelled.");
     } catch (error) {
@@ -174,7 +180,15 @@ export const TaskListPage: React.FC = () => {
   };
 
   return (
-    <><AuthoritativeQueryNotice connected={taskQuery.connected} loading={taskQuery.loading} refreshing={taskQuery.refreshing} stale={taskQuery.stale} loadedAt={taskQuery.loadedAt} error={taskQuery.error} onRefresh={() => void taskQuery.refresh()} compact /><ListPageFrame id="task-list-page">
+    <AuthoritativeQueryBoundary
+      query={taskQuery}
+      hasData={snapshot.tasks.length > 0}
+      loadingTitleVi="Đang tải danh sách công việc"
+      loadingTitleEn="Loading tasks"
+      errorTitleVi="Không thể tải danh sách công việc"
+      errorTitleEn="Tasks could not be loaded"
+    >
+    <ListPageFrame id="task-list-page">
       <ListPageHeader
         title={vi ? "Công việc" : "Tasks"}
         count={filteredTasks.length}
@@ -256,7 +270,7 @@ export const TaskListPage: React.FC = () => {
       <TaskCreateModal
         isOpen={showCreate}
         onClose={() => setShowCreate(false)}
-        defaults={{ assigneeId: actorId }}
+        defaults={{ assigneeId: currentMemberId }}
         onCreated={(task) => {
           changeView(task.assigneeId === currentMemberId ? "my_open" : "all");
           setMessageTone("success");
@@ -265,5 +279,6 @@ export const TaskListPage: React.FC = () => {
         onError={() => setMessageTone("error")}
       />
     </ListPageFrame>
-  </>);
+    </AuthoritativeQueryBoundary>
+  );
 };

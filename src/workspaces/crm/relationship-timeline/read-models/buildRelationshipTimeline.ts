@@ -39,9 +39,13 @@ function supportCaseMatches(
   accounts: readonly OrganizationAccount[],
   customers: readonly Customer[],
 ): boolean {
+  // The canonical relationship identity is the Support Case's own relationshipRef. Match it
+  // first: Customer enrichment is optional, so a case raised before any purchase evidence
+  // exists carries no customerId to match against a Customer alias.
+  if (supportCase.relationshipRef && matchesRef(supportCase.relationshipRef, relationshipRef)) return true;
   const customer = customers.find((item) => matchesRef(item.relationshipRef, relationshipRef));
   const aliases = new Set(customer ? [customer.id, customer.customerCode, ...(customer.legacyAliases ?? [])] : []);
-  if (aliases.has(supportCase.customerId)) return true;
+  if (supportCase.customerId && aliases.has(supportCase.customerId)) return true;
   if (relationshipRef.type === "CONTACT") return supportCase.contactId === relationshipRef.id;
   return contacts.some((contact) => contact.organizationAccountId === relationshipRef.id && supportCase.contactId === contact.id);
 }

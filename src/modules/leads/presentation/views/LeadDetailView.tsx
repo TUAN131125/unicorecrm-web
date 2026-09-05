@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
@@ -70,6 +70,7 @@ import type { useLeadDetailController } from "../hooks/useLeadDetailController";
 type Controller = NonNullable<ReturnType<typeof useLeadDetailController>>;
 
 export function LeadDetailView({ controller }: { controller: Controller }) {
+  const moreActionsAnchorRef = useRef<HTMLDivElement>(null);
   const {
     sources,
     campaigns,
@@ -337,7 +338,7 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
             )}
 
             {/* Dropdown for Status Management actions */}
-            <div className="relative">
+            <div ref={moreActionsAnchorRef} className="relative">
               <IconButton
                 id="header-more-actions-btn"
                 onClick={() => setShowMoreMenu(prev => !prev)}
@@ -351,6 +352,7 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
               <LeadDetailMoreMenu
                 lead={lead}
                 isOpen={showMoreMenu}
+                anchorEl={moreActionsAnchorRef.current}
                 canAssign={Boolean(ownership?.canAssign)}
                 onClose={() => setShowMoreMenu(false)}
                 onMarkContacted={() => {

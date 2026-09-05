@@ -25,6 +25,7 @@ import {
   type TaskStatus,
 } from "../../public/api";
 import { resolveTaskContextLabel } from "../model/taskContextPresentation";
+import { useEffectiveAccess } from "@/platform/access-control";
 
 type TaskDetailTab = "overview" | "activity" | "audit";
 
@@ -58,6 +59,7 @@ export const TaskDetailPage: React.FC = () => {
   const { locale } = useI18n();
   const vi = locale === "vi";
   const session = getAuthSessionSnapshot();
+  const access = useEffectiveAccess();
   const snapshot = useSubscribableSnapshot(getTaskActivitySnapshot, subscribeToTaskActivity);
   const contacts = useSubscribableSnapshot(getContactsSnapshot, subscribeToContacts);
   const organizations = useSubscribableSnapshot(getOrganizationAccountsSnapshot, subscribeToOrganizationAccounts);
@@ -72,8 +74,10 @@ export const TaskDetailPage: React.FC = () => {
 
   if (!task) return <div className="rounded-2xl border border-slate-200 bg-white p-8 text-sm text-slate-600">{vi ? "Không tìm thấy công việc." : "Task not found."}</div>;
 
-  const actorId = session?.principal.memberId || "current-user";
+  const actorId = session?.principal.memberId || access.memberId || undefined;
   const actorName = session?.principal.displayName || actorId;
+  const canComplete = Boolean(actorId) && access.canPerform("tasks", "complete");
+  const canUpdate = Boolean(actorId) && access.canPerform("tasks", "update");
   const members = listWorkspaceMemberDirectory();
   const contextLabel = resolveTaskContextLabel(task, contacts, organizations) || task.recordRef?.label;
   const route = relatedRoute(task.recordRef?.moduleKey, task.recordRef?.recordId);
@@ -85,6 +89,7 @@ export const TaskDetailPage: React.FC = () => {
   );
 
   const complete = async () => {
+    if (!actorId || !actorName) return;
     try {
       await completeTaskCommand(task.id, { actorId, actorName, outcome: outcome.trim() || (vi ? "Đã hoàn thành công việc." : "Task completed.") });
       setShowComplete(false);
@@ -93,6 +98,7 @@ export const TaskDetailPage: React.FC = () => {
   };
 
   const cancel = async () => {
+    if (!actorId || !actorName) return;
     try {
       await cancelTaskCommand(task.id, { actorId, actorName, reason: vi ? "Đã hủy từ trang chi tiết Công việc" : "Cancelled from Task detail" });
       setMessage(vi ? "Đã hủy công việc." : "Task cancelled.");
@@ -100,6 +106,7 @@ export const TaskDetailPage: React.FC = () => {
   };
 
   const reschedule = async () => {
+    if (!actorId || !actorName) return;
     try {
       await rescheduleTaskCommand(task.id, { actorId, actorName, dueAt: new Date(newDueAt).toISOString() });
       setShowReschedule(false);
@@ -108,7 +115,7 @@ export const TaskDetailPage: React.FC = () => {
   };
 
   const reassign = async (nextAssigneeId: string) => {
-    if (!nextAssigneeId || nextAssigneeId === task.assigneeId) return;
+    if (!actorId || !actorName || !nextAssigneeId || nextAssigneeId === task.assigneeId) return;
     try {
       await reassignTaskCommand(task.id, { assigneeId: nextAssigneeId, actorId, actorName });
       setMessage(vi ? "Đã chuyển người phụ trách." : "Task reassigned.");
@@ -215,16 +222,16 @@ export const TaskDetailPage: React.FC = () => {
             <div className="space-y-3 p-4">
               <Row label={vi ? "Người phụ trách" : "Assignee"} value={assigneeLabel || "—"} />
               <Row label={vi ? "Hạn" : "Due"} value={new Date(task.dueAt).toLocaleString(vi ? "vi-VN" : "en-US")} />
-              {task.status === "OPEN" && (
-                <SearchableSelect label={vi ? "Chuyển người phụ trách" : "Reassign"} value={task.assigneeId} onChange={(value) => void reassign(value)} clearable={false} placeholder={vi ? "Chọn nhân viên" : "Select member"} searchPlaceholder={vi ? "Tìm tên hoặc email..." : "Search name or email..."} options={members.map((member) => ({ value: member.memberId, label: member.displayName, description: member.email, keywords: member.email }))} />
-              )}
+                {task.status === "OPEN" && canUpdate && (
+                  <SearchableSelect label={vi ? "Chuyển người phụ trách" : "Reassign"} value={task.assigneeId} onChange={(value) => void reassign(value)} clearable={false} placeholder={vi ? "Chọn nhân viên" : "Select member"} searchPlaceholder={vi ? "Tìm tên hoặc email..." : "Search name or email..."} options={members.map((member) => ({ value: member.memberId, label: member.displayName, description: member.email, keywords: member.email }))} />
+                )}
               {overdue && <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2.5 text-xs font-semibold text-rose-700">{vi ? "Công việc đã quá hạn." : "Task is overdue."}</div>}
 
               {task.status === "OPEN" && (
                 <div className="grid gap-2 pt-1">
-                  <Button type="button" actionIntent="complete" size="sm" icon={<CheckCircle2 size={15} />} className="text-white [&_svg]:stroke-white" onClick={() => setShowComplete(true)}>{vi ? "Hoàn thành" : "Complete"}</Button>
-                  <Button type="button" actionIntent="retry" size="sm" icon={<RotateCcw size={15} />} onClick={() => setShowReschedule(true)}>{vi ? "Đổi lịch" : "Reschedule"}</Button>
-                  <Button type="button" actionIntent="destructive" size="sm" icon={<XCircle size={15} />} className="text-white [&_svg]:stroke-white" onClick={() => void cancel()}>{vi ? "Hủy công việc" : "Cancel task"}</Button>
+                  {canComplete && <Button type="button" actionIntent="complete" size="sm" icon={<CheckCircle2 size={15} />} className="text-white [&_svg]:stroke-white" onClick={() => setShowComplete(true)}>{vi ? "Hoàn thành" : "Complete"}</Button>}
+                  {canUpdate && <Button type="button" actionIntent="retry" size="sm" icon={<RotateCcw size={15} />} onClick={() => setShowReschedule(true)}>{vi ? "Đổi lịch" : "Reschedule"}</Button>}
+                  {canUpdate && <Button type="button" actionIntent="destructive" size="sm" icon={<XCircle size={15} />} className="text-white [&_svg]:stroke-white" onClick={() => void cancel()}>{vi ? "Hủy công việc" : "Cancel task"}</Button>}
                 </div>
               )}
             </div>

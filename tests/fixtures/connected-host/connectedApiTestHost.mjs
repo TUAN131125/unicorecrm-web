@@ -163,10 +163,29 @@ async function handleRequest(request, response, state) {
   }
 
   if (request.method === "GET" && !match.id) {
-    const items = [...records.values()].map((entry) => structuredClone(entry.data));
-    sendJson(response, 200, state.contractMode === "openapi" && match.resourcePath === "/leads"
-      ? items
-      : { items, pageInfo: { hasNextPage: false, totalCount: items.length } });
+    let items = [...records.values()].map((entry) => structuredClone(entry.data));
+    if (state.contractMode === "openapi" && match.resourcePath === "/leads") {
+      const search = url.searchParams.get("search")?.trim().toLowerCase();
+      const workState = url.searchParams.get("workState");
+      const ownerId = url.searchParams.get("ownerId");
+      if (search) items = items.filter((item) => `${item.id} ${item.displayName} ${item.phone ?? ""}`.toLowerCase().includes(search));
+      if (workState) items = items.filter((item) => item.leadWorkState === workState);
+      if (ownerId) items = items.filter((item) => item.ownerId === ownerId);
+      const offset = Number(url.searchParams.get("cursor")?.replace("offset:", "") ?? 0);
+      const limit = Math.max(1, Math.min(250, Number(url.searchParams.get("limit") ?? 50)));
+      const pageItems = items.slice(offset, offset + limit);
+      const hasNextPage = offset + limit < items.length;
+      sendJson(response, 200, {
+        items: pageItems,
+        pageInfo: {
+          hasNextPage,
+          ...(hasNextPage ? { nextCursor: `offset:${offset + limit}` } : {}),
+          totalCount: items.length,
+        },
+      });
+      return;
+    }
+    sendJson(response, 200, { items, pageInfo: { hasNextPage: false, totalCount: items.length } });
     return;
   }
   if (request.method === "GET" && match.id && !match.operation) {
@@ -338,7 +357,7 @@ async function handleOpenApiLeadMutation(request, response, state, workspaceId, 
     return;
   }
 
-  const validationError = validateLeadProfileBody(body);
+  const validationError = validateLeadProfileBody(body, request.method === "POST");
   if (validationError) {
     sendError(response, 422, "VALIDATION_FAILED", validationError.message, validationError.extras);
     return;
@@ -391,7 +410,7 @@ async function handleOpenApiLeadMutation(request, response, state, workspaceId, 
   const now = new Date().toISOString();
   const id = `fixture-lead-${randomUUID()}`;
   const document = {
-    ...leadProfileDocument(body),
+    ...leadProfileDocument(body, "connected-user"),
     id,
     leadWorkState: "NEW",
     score: 50,
@@ -408,19 +427,19 @@ async function handleOpenApiLeadMutation(request, response, state, workspaceId, 
   sendJson(response, 201, structuredClone(payload));
 }
 
-function validateLeadProfileBody(body) {
+function validateLeadProfileBody(body, interactiveCreate) {
   const fieldErrors = {};
   if (typeof body.displayName !== "string" || !body.displayName.trim()) fieldErrors.displayName = ["Display name is required."];
-  if (typeof body.source !== "string" || !body.source.trim()) fieldErrors.source = ["Source is required."];
-  if (typeof body.ownerId !== "string" || !body.ownerId.trim()) fieldErrors.ownerId = ["Owner ID is required."];
-  if (typeof body.estimatedValue?.amount !== "string" || typeof body.estimatedValue?.currency !== "string") fieldErrors.estimatedValue = ["Estimated value is required."];
+  if (interactiveCreate && ![body.phone, body.workPhone, body.otherPhone, body.email, body.personalEmail, body.zaloId, body.facebook]
+    .some((value) => typeof value === "string" && value.trim())) fieldErrors.contactChannel = ["A contact channel is required."];
+  if (!interactiveCreate && (typeof body.ownerId !== "string" || !body.ownerId.trim())) fieldErrors.ownerId = ["Owner ID is required."];
   return Object.keys(fieldErrors).length === 0 ? undefined : {
     message: "The Lead profile payload is invalid.",
     extras: { fieldErrors, businessBlockers: ["LEAD_PROFILE_REQUIRED_FIELDS"] },
   };
 }
 
-function leadProfileDocument(body) {
+function leadProfileDocument(body, defaultOwnerId) {
   const fields = [
     "salutation", "title", "department", "phone", "workPhone", "otherPhone", "email", "personalEmail", "zaloId", "facebook",
     "preferredChannel", "doNotCall", "doNotEmail", "companyName", "companySize", "industry", "businessType", "website", "taxCode",
@@ -429,9 +448,9 @@ function leadProfileDocument(body) {
   ];
   const result = {
     displayName: body.displayName.trim(),
-    source: body.source.trim(),
-    ownerId: body.ownerId.trim(),
-    estimatedValue: structuredClone(body.estimatedValue),
+    ...(typeof body.source === "string" && body.source.trim() ? { source: body.source.trim() } : {}),
+    ownerId: typeof body.ownerId === "string" && body.ownerId.trim() ? body.ownerId.trim() : defaultOwnerId,
+    ...(body.estimatedValue === undefined ? {} : { estimatedValue: structuredClone(body.estimatedValue) }),
     interestedProducts: Array.isArray(body.interestedProducts)
       ? body.interestedProducts.map((item) => ({
           id: `fixture-interest-${randomUUID()}`,

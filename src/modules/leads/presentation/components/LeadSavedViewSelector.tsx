@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useRef } from "react";
 import { ChevronDown, X } from "lucide-react";
 import { useI18n } from "@/i18n";
+import { RowActionPortal } from "@/shared/components/ui";
 
 interface LeadSavedViewOption {
   key: string;
@@ -35,6 +36,7 @@ export const LeadSavedViewSelector: React.FC<LeadSavedViewSelectorProps> = ({
   setIsAddViewOpen: _setIsAddViewOpen,
 }) => {
   const { t } = useI18n();
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   const translateOrFallback = (key: string, fallback: string) => {
     const value = t(key);
@@ -61,6 +63,7 @@ export const LeadSavedViewSelector: React.FC<LeadSavedViewSelectorProps> = ({
   return (
     <div className="relative min-w-0 max-w-full font-sans">
       <button
+        ref={triggerRef}
         id="misa-view-dropdown-trigger"
         type="button"
         onClick={() => setIsViewDropdownOpen(!isViewDropdownOpen)}
@@ -72,10 +75,15 @@ export const LeadSavedViewSelector: React.FC<LeadSavedViewSelectorProps> = ({
         <ChevronDown size={14} className="text-slate-400" />
       </button>
 
-      {isViewDropdownOpen && (
-        <>
-          <div className="fixed inset-0 z-40" onClick={() => setIsViewDropdownOpen(false)} />
-          <div className="absolute left-0 z-[3300] mt-2 max-h-[min(460px,calc(100vh-8rem))] w-[min(18rem,calc(100vw-2rem))] divide-y divide-slate-100 overflow-y-auto overflow-x-hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-xl crm-scroll-y">
+      <RowActionPortal
+        open={isViewDropdownOpen}
+        anchorEl={triggerRef.current}
+        onClose={() => setIsViewDropdownOpen(false)}
+        width={288}
+        align="start"
+        role="menu"
+        className="divide-y divide-slate-100 p-4 crm-scroll-y"
+      >
             
             {/* Category: Shared */}
             <div className="pb-3 text-left">
@@ -157,9 +165,7 @@ export const LeadSavedViewSelector: React.FC<LeadSavedViewSelectorProps> = ({
               </button>
             </div>
 
-          </div>
-        </>
-      )}
+      </RowActionPortal>
     </div>
   );
 };

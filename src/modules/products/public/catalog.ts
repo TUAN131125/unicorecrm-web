@@ -1,11 +1,38 @@
 import { createMutationMetadata, isBusinessOperationUnavailable, MutationCommandError, runBackendProjection, type MutationCommandMetadata, type MutationOutcome } from "@/shared/application";
-import type { ProductDraftInput, ProductMutationEvidence } from "../application/ports/ProductApiRuntime";
+import type { ProductAvailability, ProductDraftInput, ProductMutationEvidence, ProductPriceProjection } from "../application/ports/ProductApiRuntime";
 import type { Product } from "../domain/model/product.types";
 import { getProductApiRuntime, isProductConnectedApiRuntime, productCatalogExporter, productPreferences, productRepository, resetProductRepositoryToDemo } from "../application/composition/productApplicationServices";
 
 export function getProductCatalogSnapshot(): Product[] { return productRepository.list(); }
 export function replaceProductCatalog(products: Product[]): void { productRepository.replace(products); }
 export type ProductRetentionMutationMetadata = Partial<MutationCommandMetadata>;
+
+export async function loadProductDetail(productId: string, signal?: AbortSignal): Promise<Product> {
+  const product = await getProductApiRuntime().queries.get(productId, signal);
+  projectProduct(product);
+  return product;
+}
+
+export function loadProductAvailability(product: Product, signal?: AbortSignal): Promise<ProductAvailability> {
+  return getProductApiRuntime().queries.getAvailability(
+    product.id,
+    requireVersion(product.id, "availability projection"),
+    signal,
+  );
+}
+
+export function loadProductPriceProjection(
+  product: Product,
+  quantity: string,
+  signal?: AbortSignal,
+): Promise<ProductPriceProjection> {
+  return getProductApiRuntime().queries.getPriceProjection(
+    product.id,
+    quantity,
+    requireVersion(product.id, "price projection"),
+    signal,
+  );
+}
 
 export async function saveProductCommand(product: Product, metadata: ProductRetentionMutationMetadata = {}): Promise<MutationOutcome<Product>> {
   const current = product.id ? productRepository.list().find((item) => item.id === product.id) : undefined;

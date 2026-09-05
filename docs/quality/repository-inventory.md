@@ -17,9 +17,9 @@ Do not delete a dead, compatibility, deprecated or duplicate candidate based on 
 
 | Metric | Count |
 |---|---:|
-| Repository files | 2007 |
+| Repository files | 2009 |
 | Source files | 1358 |
-| Source lines | 205972 |
+| Source lines | 206236 |
 | Registered modules | 15 |
 | Route keys | 79 |
 | Loadable route modules | 63 |
@@ -37,7 +37,7 @@ Do not delete a dead, compatibility, deprecated or duplicate candidate based on 
 | Quality groups | 11 |
 | Verify gates | 332 |
 
-Inventory fingerprint: `01a5deaf365791bd538678a62fce43a0fdbc9298639f7ea715250c2bd17928e1`
+Inventory fingerprint: `1e7c7c41d6435da21dcfa01dbd79ab42a635c9984616420f0bd342ed03fe3758`
 
 
 ## Quality pipeline
@@ -61,8 +61,8 @@ Inventory fingerprint: `01a5deaf365791bd538678a62fce43a0fdbc9298639f7ea715250c2b
 | Classification | Count |
 |---|---:|
 | `active-runtime` | 1277 |
-| `active-script` | 63 |
-| `active-test` | 425 |
+| `active-script` | 64 |
+| `active-test` | 426 |
 | `compatibility` | 53 |
 | `documentation` | 184 |
 | `fixture` | 3 |
@@ -157,7 +157,7 @@ The journey table locks source evidence and executable command names. Actual com
 | `platform:workspace-config` | 4 |
 | `platform:workspace-context` | 1 |
 | `platform:workspace-membership` | 1 |
-| `products` | 4 |
+| `products` | 3 |
 | `quotes` | 5 |
 | `returns` | 8 |
 | `shared:app` | 11 |
@@ -165,6 +165,7 @@ The journey table locks source evidence and executable command names. Actual com
 | `shipping` | 3 |
 | `support` | 3 |
 | `tasks` | 2 |
+| `test` | 1 |
 | `workspace:people-access` | 39 |
 | `workspace:studio` | 1 |
 
@@ -175,7 +176,7 @@ The JSON manifest includes each detected key pattern, operation, path, line and 
 | File | Lines | Owner |
 |---|---:|---|
 | `src/platform/api/catalog/generatedApiOperationCatalog.ts` | 28982 | `platform:api` |
-| `src/platform/api/generated/commercialApi.ts` | 5434 | `platform:api` |
+| `src/platform/api/generated/commercialApi.ts` | 5436 | `platform:api` |
 | `src/i18n/translations/en.ts` | 4989 | `shared:i18n` |
 | `src/i18n/translations/vi.ts` | 4989 | `shared:i18n` |
 | `src/i18n/types.ts` | 2036 | `shared:i18n` |
@@ -197,8 +198,8 @@ The JSON manifest includes each detected key pattern, operation, path, line and 
 | `src/modules/orders/presentation/pages/OrderDetailPage.tsx` | 730 | `orders` |
 | `src/modules/leads/infrastructure/http/LeadHttpCommandAdapter.ts` | 703 | `leads` |
 | `src/guidance/content/crm/extendedScreens.ts` | 696 | `shared:guidance` |
+| `src/modules/products/presentation/pages/ProductDetailPage.tsx` | 689 | `products` |
 | `src/modules/organizations/presentation/pages/OrganizationAccountDetailPage.tsx` | 688 | `organizations` |
-| `src/modules/products/presentation/pages/ProductDetailPage.tsx` | 656 | `products` |
 | `src/modules/leads/presentation/hooks/useLeadFormController.tsx` | 650 | `leads` |
 | `src/modules/customers/presentation/pages/Customer360Page.tsx` | 638 | `customers` |
 | `src/modules/leads/presentation/hooks/useLeadDetailController.tsx` | 637 | `leads` |

@@ -4,7 +4,11 @@ import { repositoryRoot } from "../../quality/core/repo-context.mjs";
 import { buildApiOperationCatalog, buildOperationCoverageLedger } from "./normalize.mjs";
 import { getServerPath, refName, resolveRef } from "./validate.mjs";
 
-const generatorVersion = 15;
+const generatorVersion = 16;
+const productVersionBoundReadOperationIds = new Set([
+  "getProductAvailability",
+  "getProductPriceProjection",
+]);
 
 function schemaType(schema) {
   if (schema === true || !schema || Object.keys(schema).length === 0) return "unknown";
@@ -155,6 +159,9 @@ function renderFinancialMethod(document, operationRecord) {
   const queryName = queryTypeName(operationId);
   const defaultResponse = responseType(operation);
   const bodyType = requestBodyType(operation);
+  const requiresIfMatch = productVersionBoundReadOperationIds.has(operationId)
+    && operationHeaderParameters(document, operationRecord)
+      .some((parameter) => parameter.name === "If-Match" && parameter.required === true);
   const pathArguments = parameters.path.map((parameter) => {
     const schema = resolveRef(document, parameter.schema);
     return `${parameter.name}: ${schemaType(parameter.schema?.$ref ? parameter.schema : schema)}`;
@@ -181,7 +188,10 @@ function renderFinancialMethod(document, operationRecord) {
   const queryArgument = parameters.query.some((parameter) => parameter.required)
     ? `query: ${queryName}`
     : `query: ${queryName} = {}`;
-  const args = [...pathArguments, queryArgument, "signal?: AbortSignal"].join(", ");
+  const transportArgument = requiresIfMatch
+    ? "options: FinancialRequestOptions & { expectedVersion: number }"
+    : "signal?: AbortSignal";
+  const args = [...pathArguments, queryArgument, transportArgument].join(", ");
   return [
     `  ${operationId}<TResponse = ${defaultResponse}>(${args}): Promise<TResponse> {`,
     `    return this.http.request<TResponse>({`,
@@ -190,7 +200,12 @@ function renderFinancialMethod(document, operationRecord) {
     `      path: ${renderPathExpression(route, parameters.path)},`,
     ...renderTransportPolicyLines(document, operationRecord),
     ...(queryEntries.length ? ["      query: {", ...queryEntries, "      },"] : []),
-    "      ...(signal === undefined ? {} : { signal }),",
+    ...(requiresIfMatch
+      ? [
+          "      ...(options.signal === undefined ? {} : { signal: options.signal }),",
+          "      expectedVersion: options.expectedVersion,",
+        ]
+      : ["      ...(signal === undefined ? {} : { signal }),"]),
     "    });",
     "  }",
   ].join("\n");

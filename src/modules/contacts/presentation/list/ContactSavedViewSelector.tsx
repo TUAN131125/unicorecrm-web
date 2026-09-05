@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useRef } from "react";
 import {
   ChevronDown,
   Folder,
@@ -17,7 +17,7 @@ import {
   Archive,
 } from "lucide-react";
 import { useI18n } from "@/i18n";
-import { OVERLAY_Z } from "@/components/overlay/overlayLayers";
+import { RowActionPortal } from "@/shared/components/ui";
 
 export interface ContactSavedView {
   key: string;
@@ -46,6 +46,7 @@ export const ContactSavedViewSelector: React.FC<ContactSavedViewSelectorProps> =
   onAddViewClick,
 }) => {
   const { t } = useI18n();
+  const triggerRef = useRef<HTMLButtonElement>(null);
 
   const translateOrFallback = (key: string, fallback: string) => {
     const value = t(key);
@@ -100,6 +101,7 @@ export const ContactSavedViewSelector: React.FC<ContactSavedViewSelectorProps> =
   return (
     <div className="relative shrink-0 font-sans">
       <button
+        ref={triggerRef}
         id="contact-view-dropdown-trigger"
         type="button"
         onClick={() => setIsViewDropdownOpen(!isViewDropdownOpen)}
@@ -111,10 +113,15 @@ export const ContactSavedViewSelector: React.FC<ContactSavedViewSelectorProps> =
         <ChevronDown size={14} className="text-slate-400 shrink-0" />
       </button>
 
-      {isViewDropdownOpen && (
-        <>
-          <div className="fixed inset-0 z-[2999]" onClick={() => setIsViewDropdownOpen(false)} />
-          <div className={`absolute left-0 mt-2 w-[min(92vw,360px)] max-w-[calc(100vw-24px)] bg-white border border-slate-200 rounded-2xl shadow-xl p-4 ${OVERLAY_Z.dropdown} divide-y divide-slate-100 max-h-[460px] overflow-y-auto overflow-x-hidden crm-scroll-y`}>
+      <RowActionPortal
+        open={isViewDropdownOpen}
+        anchorEl={triggerRef.current}
+        onClose={() => setIsViewDropdownOpen(false)}
+        width={360}
+        align="start"
+        role="menu"
+        className="divide-y divide-slate-100 p-4 crm-scroll-y"
+      >
             <div className="pb-3 text-left">
               <p className="text-[10px] font-semibold text-slate-400 tracking-wider mb-2 uppercase">
                 {translateOrFallback("contactViews.shareWithMe", "CHIA SE VOI TOI")}
@@ -180,9 +187,7 @@ export const ContactSavedViewSelector: React.FC<ContactSavedViewSelectorProps> =
                 <span>{translateOrFallback("contactViews.addView", "+ Thêm giao diện")}</span>
               </button>
             </div>
-          </div>
-        </>
-      )}
+      </RowActionPortal>
     </div>
   );
 };

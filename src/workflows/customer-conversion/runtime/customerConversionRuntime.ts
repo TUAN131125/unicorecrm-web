@@ -52,7 +52,7 @@ export function reconcileCustomerConversionRuntime(now = new Date().toISOString(
   let linkedSupportCases = 0;
   const supportCases = getSupportCasesSnapshot().map((supportCase) => {
     const customer = resolveCustomerForRelationship(customerByRelationship, supportCase.relationshipRef)
-      ?? customerByAlias.get(supportCase.customerId);
+      ?? (supportCase.customerId ? customerByAlias.get(supportCase.customerId) : undefined);
     if (!customer) return supportCase;
     const relationshipMatches = supportCase.relationshipRef
       ? relationshipRefKey(supportCase.relationshipRef) === relationshipRefKey(customer.relationshipRef)

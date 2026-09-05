@@ -37,8 +37,9 @@ import { useSubscribableSnapshot } from "@/platform/react";
 interface ContactRecordHeaderProps {
   contact: Contact;
   ownerName: string;
+  canUpdateContact: boolean;
   onEditClick: () => void;
-  onCreateOpportunityClick: () => void;
+  onCreateOpportunityClick?: () => void;
   onAddNoteClick: () => void;
   onUploadAttachmentClick: () => void;
   onCreateQuoteClick: () => void;
@@ -54,6 +55,7 @@ interface ContactRecordHeaderProps {
 export const ContactRecordHeader: React.FC<ContactRecordHeaderProps> = ({
   contact,
   ownerName,
+  canUpdateContact,
   onEditClick,
   onCreateOpportunityClick,
   onAddNoteClick,
@@ -260,7 +262,7 @@ export const ContactRecordHeader: React.FC<ContactRecordHeaderProps> = ({
         {/* Right action segment */}
         <div className="flex flex-wrap items-center justify-start sm:justify-end gap-2 shrink-0 max-w-full" ref={menuRef}>
           {/* Edit button */}
-          <IconButton
+          {canUpdateContact && <IconButton
             id="edit-direct-btn"
             onClick={onEditClick}
             variant="secondary"
@@ -268,7 +270,7 @@ export const ContactRecordHeader: React.FC<ContactRecordHeaderProps> = ({
             title={tx("common.edit", "Sửa")}
           >
             <Edit3 size={14} />
-          </IconButton>
+          </IconButton>}
 
           {/* Right Panel Toggle Button (mobile/tablet only) */}
           {onToggleRightPanel && (
@@ -296,7 +298,7 @@ export const ContactRecordHeader: React.FC<ContactRecordHeaderProps> = ({
           )}
 
           {/* Primary CTA button: Sinh cơ hội */}
-          <Button
+          {onCreateOpportunityClick && <Button
             id="create-opp-btn"
             disabled={isArchived}
             onClick={onCreateOpportunityClick}
@@ -305,7 +307,7 @@ export const ContactRecordHeader: React.FC<ContactRecordHeaderProps> = ({
             icon={<Sparkles size={11} />}
           >
             {tx("contactDetail.actions.createOpportunityShort", "Sinh cơ hội")}
-          </Button>
+          </Button>}
 
           {/* More actions dropdown using MenuSection/MenuItemButton/MenuDivider matching LeadDetailPage closely */}
           <IconButton
@@ -343,7 +345,8 @@ export const ContactRecordHeader: React.FC<ContactRecordHeaderProps> = ({
               {/* GROUP A: Workflow / Business actions */}
               <MenuSection title={tx("contactDetail.section.businessActions", "Nghiệp vụ")} />
               {/* GROUP B: Management actions */}
-              <MenuSection title={tx("contactDetail.section.adminActions", "Quản trị & Quan hệ")} />
+              {canUpdateContact && <MenuSection title={tx("contactDetail.section.adminActions", "Quản trị & Quan hệ")} />}
+              {canUpdateContact && <>
               <MenuItemButton
                 onClick={() => {
                   showToast(tx("contactDetail.toast.setPrimaryContact", "Đã thiết lập liên hệ này làm đầu mối trao đổi chính."));
@@ -374,6 +377,7 @@ export const ContactRecordHeader: React.FC<ContactRecordHeaderProps> = ({
               >
                 <span>{tx("contactDetail.actions.manageTags", "Quản lý nhãn (Tags)")}</span>
               </MenuItemButton>
+              </>}
               <MenuItemButton
                 onClick={() => { handleShare(); setIsMoreMenuOpen(false); setMoreAnchorEl(null); }}
                 icon={<Share2 size={14} />}
@@ -402,6 +406,7 @@ export const ContactRecordHeader: React.FC<ContactRecordHeaderProps> = ({
                 <span>{tx("contactDetail.actions.export", "Xuất file Excel cá nhân")}</span>
               </MenuItemButton>
 
+              {canUpdateContact && <>
               <MenuDivider />
 
               {/* GROUP D: Safety & Danger */}
@@ -419,6 +424,7 @@ export const ContactRecordHeader: React.FC<ContactRecordHeaderProps> = ({
               >
                 <span className="text-rose-700 font-semibold">{tx("common.delete", "Xóa liên hệ")}</span>
               </MenuItemButton>
+              </>}
 
             </div>
           </RowActionPortal>

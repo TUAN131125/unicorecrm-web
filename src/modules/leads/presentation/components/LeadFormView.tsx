@@ -212,18 +212,6 @@ export function LeadFormView({ controller }: { controller: LeadFormViewControlle
               <Input id="lead-phone" label={tf("fields.mobilePhone")} placeholder={tf("placeholders.mobilePhone")} value={phone} inputMode="tel" onChange={(event) => setPhone(event.target.value)} error={errors.phone} />
               <Input id="lead-email" label={tf("fields.workEmail")} placeholder={tf("placeholders.workEmail")} type="email" value={email} onChange={(event) => setEmail(event.target.value)} error={errors.email} />
             </div>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <Select id="lead-source" label={tf("fields.source")} value={sourceId} onChange={(event) => setSourceId(event.target.value)} error={errors.source} required>
-                <option value="">{tf("placeholders.selectSource")}</option>
-                {sources.filter((source) => source.isActive).map((source) => <option key={source.id} value={source.id}>{source.name}</option>)}
-              </Select>
-              <Input id="lead-next-follow-up" label={tf("fields.nextFollowUpAt")} type="datetime-local" value={nextFollowUpAt} onChange={(event) => setNextFollowUpAt(event.target.value)} error={errors.nextFollowUpAt} required />
-            </div>
-            <div data-guidance-id="leads.form.owner">
-              <Select id="lead-owner" label={tf("fields.owner")} value={ownerId} onChange={(event) => setOwnerId(event.target.value)} disabled={!canAssignOwner} error={errors.ownerId} required>
-                {availableOwnerOptions.map((owner) => <option key={owner.memberId} value={owner.memberId}>{owner.displayName}</option>)}
-              </Select>
-            </div>
           </div>
         ) : (
           <>
@@ -616,6 +604,7 @@ export function LeadFormView({ controller }: { controller: LeadFormViewControlle
               value={priority}
               onChange={(e) => setPriority(e.target.value as any)}
             >
+              <option value="">—</option>
               <option value="low">{tf("options.priority.low")}</option>
               <option value="medium">{tf("options.priority.medium")}</option>
               <option value="high">{tf("options.priority.high")}</option>

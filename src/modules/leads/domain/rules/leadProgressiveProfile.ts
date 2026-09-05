@@ -33,8 +33,8 @@ export function getRequiredLeadProfileFields(
   mode: LeadCreateMode = "COMPLETE",
   policy: LeadProgressiveProfilePolicy = DEFAULT_LEAD_PROGRESSIVE_PROFILE_POLICY,
 ): LeadProfileField[] {
-  const required: LeadProfileField[] = ["name", "contactChannel", "ownerId"];
-  if (mode === "QUICK") required.push("source", "nextFollowUpAt");
+  const required: LeadProfileField[] = ["name", "contactChannel"];
+  void mode;
   required.push(...(policy.requiredFieldsByState[state] ?? []));
   return [...new Set(required)];
 }

@@ -123,8 +123,14 @@ export interface SupportCase {
   source: SupportCaseSource;
   channel?: SupportCaseChannel;
 
-  customerId: string;
-  customerName: string;
+  /**
+   * Optional Customer enrichment. A Customer aggregate exists only once effective purchase
+   * evidence has been recorded, so a valid SupportCase raised against a pre-purchase Contact
+   * or Organization Account has neither field. Never derive these from `relationshipRef`:
+   * Contact/Organization identity and Customer identity are distinct.
+   */
+  customerId?: string;
+  customerName?: string;
   /** Canonical relationship identity. customerId is retained only for route/display compatibility. */
   relationshipRef?: RelationshipRef;
 

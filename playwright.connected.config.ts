@@ -23,7 +23,7 @@ const backendServer = externalApiBaseUrl
 
 export default defineConfig({
   testDir: "./tests/e2e",
-  testMatch: "connected-backend.spec.ts",
+  testMatch: ["connected-backend.spec.ts", "lead-owner-connected.spec.ts"],
   fullyParallel: false,
   workers: 1,
   forbidOnly: Boolean(process.env.CI),

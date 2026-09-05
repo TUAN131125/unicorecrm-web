@@ -34,7 +34,7 @@ import { resolveWorkspaceMemberLabel } from "@/platform/member-directory";
 import { validateLeadContactData } from "../../domain/rules/leadContactData";
 import { useConfigurationRuntime, type RuntimeFormFieldPlacement } from "@/platform/configuration-runtime";
 import { useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
-import { addDurationAsDateTimeLocal, dateTimeLocalValueToIso, normalizeDateTimeInputValue } from "@/shared/lib/datetime/workspaceDateTime";
+import { dateTimeLocalValueToIso, normalizeDateTimeInputValue } from "@/shared/lib/datetime/workspaceDateTime";
 
 
 
@@ -94,6 +94,7 @@ export function useLeadFormController(props: LeadFormProps) {
   const workspaceConfiguration = useWorkspaceOperationalConfiguration();
   const workspaceTimeZone = workspaceConfiguration.localeRegion.timezone;
   const formContext = isEdit ? "EDIT" : "CREATE";
+  const isNewLead = !isEdit;
   const runtimeForm = React.useMemo(() => configurationRuntime.businessForms
     .filter((form) => form.objectType === "lead" && form.context === formContext && form.status === "EFFECTIVE")
     .sort((left, right) => right.version - left.version)[0], [configurationRuntime.businessForms, formContext]);
@@ -123,8 +124,7 @@ export function useLeadFormController(props: LeadFormProps) {
 
   const defaultNextFollowUp = React.useMemo(() => {
     if (initialLead?.nextFollowUpAt) return normalizeDateTimeInputValue(initialLead.nextFollowUpAt, workspaceTimeZone);
-    if (isEdit) return "";
-    return addDurationAsDateTimeLocal(new Date(), 24 * 60 * 60 * 1000, workspaceTimeZone);
+    return "";
   }, [initialLead?.nextFollowUpAt, isEdit, workspaceTimeZone]);
   const [showAdvanced, setShowAdvanced] = useState(defaultMode === "complete");
 
@@ -161,7 +161,7 @@ export function useLeadFormController(props: LeadFormProps) {
 
   // Regional address records
   const [companyAddress, setCompanyAddress] = useState(initialLead?.companyAddress || "");
-  const [country, setCountry] = useState(initialLead?.country || "Việt Nam");
+  const [country, setCountry] = useState(initialLead?.country || "");
   const [province, setProvince] = useState(initialLead?.province || "");
   const [district, setDistrict] = useState(initialLead?.district || "");
   const [ward, setWard] = useState(initialLead?.ward || "");
@@ -187,7 +187,7 @@ export function useLeadFormController(props: LeadFormProps) {
 
   // Sales & Qualification
   const [decisionRole, setDecisionRole] = useState(initialLead?.decisionRole || "");
-  const [priority, setPriority] = useState<"low" | "medium" | "high">(initialLead?.priority || "medium");
+  const [priority, setPriority] = useState<"" | "low" | "medium" | "high">(initialLead?.priority || "");
   const [interestedProducts, setInterestedProducts] = useState<string[]>(() => {
     if (!initialLead?.interestedProducts) return [];
     return (initialLead.interestedProducts as any[]).map((p: any) => typeof p === "string" ? p : p.productId);
@@ -206,9 +206,7 @@ export function useLeadFormController(props: LeadFormProps) {
   const [customFieldValues, setCustomFieldValues] = useState<Record<string, string | number | boolean | string[]>>(() => structuredClone(initialLead?.customFields ?? {}));
 
   // Zalo sync state
-  const isNewLead = !isEdit;
-  // If editing and zalo matches phone, or if new, sync is true by default
-  const [syncZalo, setSyncZalo] = useState(isNewLead ? true : (initialLead?.zaloId === initialLead?.phone));
+  const [syncZalo, setSyncZalo] = useState(Boolean(isEdit && initialLead?.zaloId && initialLead.zaloId === initialLead.phone));
 
   // Validation state
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -443,12 +441,12 @@ export function useLeadFormController(props: LeadFormProps) {
       ward: ward.trim() || undefined,
       contactAddress: contactAddress.trim() || undefined,
       address: contactAddress.trim() || undefined,
-      source: sources.find((source) => source.id === sourceId)?.name || sourceId || "",
+      ...(sourceId ? { source: sources.find((source) => source.id === sourceId)?.name || sourceId } : {}),
       campaignId: campaignId || undefined,
       ownerId: ownerId || undefined,
       assignedTeam: assignedTeam || undefined,
       decisionRole: decisionRole.trim() || undefined,
-      priority,
+      ...(priority ? { priority } : {}),
       interestedProducts: interestedProducts.map((productId) => {
         const existing = (initialLead?.interestedProducts || []).find((product) => typeof product === "string" ? product === productId : product.productId === productId);
         if (existing && typeof existing !== "string") return existing;
@@ -466,8 +464,10 @@ export function useLeadFormController(props: LeadFormProps) {
           createdAt: new Date().toISOString(),
         };
       }),
-      expectedValue: expectedValue ? Number(expectedValue) : 0,
-      estimatedValue: money(expectedValue || "0", workspaceConfiguration.localeRegion.currencies.baseCurrency),
+      ...(expectedValue ? {
+        expectedValue: Number(expectedValue),
+        estimatedValue: money(expectedValue, workspaceConfiguration.localeRegion.currencies.baseCurrency),
+      } : {}),
       budgetRange: budgetRange.trim() || undefined,
       purchaseTimeline: purchaseTimeline.trim() || undefined,
       painPoint: painPoint.trim() || undefined,
@@ -646,4 +646,3 @@ function normalizeLeadCustomFields(
   }
   return normalized;
 }
-

@@ -60,8 +60,6 @@ const DEFAULT_LEAD_SAVED_VIEW_SNAPSHOT: LeadListPresentationSnapshot = {
   layout: "table",
   ownershipScope: "ALLOWED",
 };
-const EMPTY_LEAD_SERVER_QUERY = {};
-
 interface LeadListPageProps {
   globalSearchTerm?: string;
   sources?: LeadSource[];
@@ -130,9 +128,27 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
   useEffect(() => {
     if (globalSearchTerm) filters.setSearchTerm(globalSearchTerm);
   }, [globalSearchTerm]);
-  // listLeads has no query parameters in the current production contract.
-  // Filtering and sorting therefore remain on the authoritative projection.
-  const leadServerQuery = EMPTY_LEAD_SERVER_QUERY;
+  const leadServerQuery = useMemo(() => {
+    const stateFromFilter = Object.values(LeadWorkState).includes(filters.filters.status as LeadWorkState)
+      ? filters.filters.status as LeadWorkState
+      : filters.filters.status ? LeadWorkState.CLOSED : undefined;
+    const stateFromView = savedViews.activeView === "new"
+      ? LeadWorkState.NEW
+      : savedViews.activeView === "contacted"
+        ? LeadWorkState.CONTACTING
+        : savedViews.activeView === "qualified"
+          ? LeadWorkState.VERIFYING
+          : undefined;
+    const ownerId = filters.filters.ownerId
+      || (savedViews.activeView === "my_leads" ? ownership?.memberId : undefined);
+    return {
+      ...(filters.searchTerm.trim() ? { search: filters.searchTerm.trim() } : {}),
+      ...((stateFromFilter ?? stateFromView) ? { filters: {
+        workState: stateFromFilter ?? stateFromView,
+        ...(ownerId ? { ownerId } : {}),
+      } } : ownerId ? { filters: { ownerId } } : {}),
+    };
+  }, [filters.filters.ownerId, filters.filters.status, filters.searchTerm, ownership?.memberId, savedViews.activeView]);
   const serverPagination = useLeadServerPagedCollection({
     scopeKey: workspace.workspaceId,
     enabled: viewMode === "table",

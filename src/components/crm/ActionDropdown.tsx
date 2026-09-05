@@ -1,7 +1,5 @@
-import React, { useEffect, useState, useCallback, useRef } from "react";
-import { createPortal } from "react-dom";
-import { OVERLAY_Z } from "../overlay/overlayLayers";
-import { inferButtonVariantFromAction, type ButtonVariant } from "@/shared/components/ui";
+import React, { useCallback } from "react";
+import { inferButtonVariantFromAction, RowActionPortal, type ButtonVariant } from "@/shared/components/ui";
 
 export type ActionDropdownItem = {
   id: string;
@@ -42,10 +40,6 @@ export const ActionDropdown: React.FC<ActionDropdownProps> = ({
   align = "end",
   className = ""
 }) => {
-  const [coords, setCoords] = useState({ top: 0, left: 0, openAbove: false });
-  const [windowHeight, setWindowHeight] = useState(typeof window !== "undefined" ? window.innerHeight : 800);
-  const menuRef = useRef<HTMLDivElement>(null);
-
   const getAnchorElement = useCallback((): HTMLElement | null => {
     if (!anchorRef) return null;
     if ("current" in anchorRef) {
@@ -61,56 +55,6 @@ export const ActionDropdown: React.FC<ActionDropdownProps> = ({
       window.requestAnimationFrame(() => anchorEl?.focus());
     }
   }, [getAnchorElement, onClose]);
-
-  const updatePosition = useCallback(() => {
-    const anchorEl = getAnchorElement();
-    if (!anchorEl) return;
-
-    const rect = anchorEl.getBoundingClientRect();
-    const menuWidth = width;
-    const viewportPadding = 12;
-
-    // Horizontal alignment
-    let left = 0;
-    if (align === "end") {
-      left = rect.right - menuWidth;
-    } else {
-      left = rect.left;
-    }
-
-    // Keep within boundaries
-    if (left + menuWidth > window.innerWidth - viewportPadding) {
-      left = window.innerWidth - menuWidth - viewportPadding;
-    }
-    if (left < viewportPadding) {
-      left = viewportPadding;
-    }
-
-    // Vertical positioning with smart collision detection
-    const estimatedHeight = 350; // generous safety guideline
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const openAbove = spaceBelow < estimatedHeight && rect.top > estimatedHeight;
-    const top = openAbove ? rect.top - 8 : rect.bottom + 8;
-
-    setCoords({
-      top,
-      left,
-      openAbove
-    });
-    setWindowHeight(window.innerHeight);
-  }, [getAnchorElement, width, align]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const frame = window.requestAnimationFrame(() => {
-      menuRef.current
-        ?.querySelector<HTMLElement>('[role="menuitem"]:not([disabled])')
-        ?.focus();
-    });
-
-    return () => window.cancelAnimationFrame(frame);
-  }, [isOpen]);
 
   const handleMenuKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
@@ -132,35 +76,7 @@ export const ActionDropdown: React.FC<ActionDropdownProps> = ({
     menuItems[nextIndex]?.focus();
   };
 
-  useEffect(() => {
-    if (!isOpen) return;
-
-    // Single run initially
-    updatePosition();
-
-    // Event listeners
-    window.addEventListener("resize", updatePosition);
-    // Listen to scrolling inside table scroll containers as well as page scroll
-    window.addEventListener("scroll", updatePosition, true);
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        closeMenu();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-
-    return () => {
-      window.removeEventListener("resize", updatePosition);
-      window.removeEventListener("scroll", updatePosition, true);
-      window.removeEventListener("keydown", handleKeyDown);
-    };
-  }, [isOpen, updatePosition, closeMenu]);
-
-  if (!isOpen) return null;
-
   const anchorEl = getAnchorElement();
-  if (!anchorEl) return null;
 
   // Filter out completely hidden items & empty sections
   const visibleSections = sections
@@ -185,42 +101,19 @@ export const ActionDropdown: React.FC<ActionDropdownProps> = ({
     }
   };
 
-  return createPortal(
-    <>
-      {/* Background click catcher */}
-      <div
-        className="fixed inset-0 z-[2999] bg-transparent"
-        onClick={(e) => {
-          e.stopPropagation();
-          closeMenu();
-        }}
-        onContextMenu={(e) => {
-          // Also close on right click outside
-          e.preventDefault();
-          closeMenu();
-        }}
-      />
-
-      {/* Styled dropdown menu */}
-      <div
-        ref={menuRef}
-        role="menu"
-        aria-orientation="vertical"
-        tabIndex={-1}
-        className={`fixed ${OVERLAY_Z.dropdown} bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden py-1.5 flex flex-col font-sans select-none ${className}`}
-        style={{
-          top: coords.openAbove ? "auto" : `${coords.top}px`,
-          bottom: coords.openAbove ? `${windowHeight - coords.top}px` : "auto",
-          left: `${coords.left}px`,
-          width: `${width}px`,
-          maxHeight: "calc(100vh - 24px)",
-          overflowY: "auto"
-        }}
-        onClick={(e) => {
-          e.stopPropagation();
-        }}
-        onKeyDown={handleMenuKeyDown}
-      >
+  return (
+    <RowActionPortal
+      open={isOpen}
+      anchorEl={anchorEl}
+      onClose={() => closeMenu()}
+      width={width}
+      align={align}
+      role="menu"
+      autoFocusFirstMenuItem
+      className={`bg-white rounded-2xl border border-slate-200 shadow-xl py-1.5 flex flex-col font-sans select-none ${className}`}
+      onKeyDown={handleMenuKeyDown}
+    >
+      <div aria-orientation="vertical">
         {visibleSections.map((section, sIndex) => (
           <React.Fragment key={section.id}>
             {sIndex > 0 && <div className="border-t border-slate-100 my-1 mx-2" />}
@@ -293,7 +186,6 @@ export const ActionDropdown: React.FC<ActionDropdownProps> = ({
           </React.Fragment>
         ))}
       </div>
-    </>,
-    document.body
+    </RowActionPortal>
   );
 };

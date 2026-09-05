@@ -24,6 +24,7 @@ import { normalizeApplicationError } from "@/shared/domain";
 import { buildCustomer360ReadModel, getOwnedProductDisplay } from "@/modules/customers";
 import { formatVnd } from "@/shared/lib/format/currency";
 import { getProductUsageSummary } from "../../application/usage/productUsage";
+import type { ProductAvailability, ProductPriceProjection } from "../../application/ports/ProductApiRuntime";
 import { Product } from "../../domain/model/product.types";
 import {
   calculateProductMarginPercent,
@@ -32,8 +33,7 @@ import {
   getProductStatusLabel,
   getProductTypeLabel,
 } from "../../domain/rules/product.helpers";
-import { calculateTaxAmount } from "../../domain/rules/productPricing";
-import { archiveProductsCommand, getProductCatalogSnapshot, replaceProductCatalog, restoreProductsCommand, saveProductCommand, subscribeToProductCatalog } from "../../public/catalog";
+import { archiveProductsCommand, getProductCatalogSnapshot, loadProductAvailability, loadProductDetail, loadProductPriceProjection, replaceProductCatalog, restoreProductsCommand, saveProductCommand, subscribeToProductCatalog } from "../../public/catalog";
 import { ProductFormModal } from "../components/ProductFormModal";
 import { ProductPriceBlock } from "../components/ProductPriceBlock";
 import { ProductStatusBadge } from "../components/ProductStatusBadge";
@@ -107,6 +107,9 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   const [activeFormProduct, setActiveFormProduct] = useState<Product | null>(null);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [toast, setToast] = useState<string>("");
+  const [availability, setAvailability] = useState<ProductAvailability>();
+  const [priceProjection, setPriceProjection] = useState<ProductPriceProjection>();
+  const [projectionError, setProjectionError] = useState<string>();
 
   const showToast = (message: string) => {
     setToast(message);
@@ -117,6 +120,31 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     () => products.find((item) => item.id === productId) ?? null,
     [productId, products],
   );
+
+  useEffect(() => {
+    if (!productId) return undefined;
+    const controller = new AbortController();
+    void loadProductDetail(productId, controller.signal).catch((error) => {
+      if (!controller.signal.aborted) setProjectionError(normalizeApplicationError(error).message);
+    });
+    return () => controller.abort();
+  }, [productId]);
+
+  useEffect(() => {
+    if (!product) return undefined;
+    const controller = new AbortController();
+    setProjectionError(undefined);
+    void Promise.all([
+      loadProductAvailability(product, controller.signal),
+      loadProductPriceProjection(product, "1", controller.signal),
+    ]).then(([nextAvailability, nextPriceProjection]) => {
+      setAvailability(nextAvailability);
+      setPriceProjection(nextPriceProjection);
+    }).catch((error) => {
+      if (!controller.signal.aborted) setProjectionError(normalizeApplicationError(error).message);
+    });
+    return () => controller.abort();
+  }, [product?.id, product?.resourceVersion]);
 
   const flattenedOrders = useMemo(() => Object.values(orders || {}).flat(), [orders]);
 
@@ -208,8 +236,12 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   const analyzedMargin = product.costPrice !== undefined
     ? calculateProductMarginPercent(product.listPrice, product.costPrice)
     : undefined;
-  const taxAmount = calculateTaxAmount(product.listPrice, product.taxRate || 0, product.taxMode || "none");
-  const totalWithTax = product.taxMode === "exclusive" ? product.listPrice + taxAmount : product.listPrice;
+  const authoritativeTaxAmount = priceProjection
+    ? `${priceProjection.taxAmount.amount} ${priceProjection.taxAmount.currency}`
+    : projectionError ?? "…";
+  const authoritativeTotal = priceProjection
+    ? `${priceProjection.total.amount} ${priceProjection.total.currency}`
+    : projectionError ?? "…";
 
   const handleEdit = () => {
     setActiveFormProduct(product);
@@ -367,6 +399,7 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                       <DetailField label={isVi ? "SKU" : "SKU"} value={product.sku} />
                       <DetailField label={isVi ? "Loại sản phẩm" : "Product type"} value={getProductTypeLabel(product.type, (key: string, fallback?: string) => fallback || key)} />
                       <DetailField label={isVi ? "Trạng thái" : "Status"} value={getProductStatusLabel(product.status, (key: string, fallback?: string) => fallback || key)} />
+                      <DetailField label={isVi ? "Khả dụng" : "Availability"} value={availability?.status ?? projectionError ?? "…"} />
                       <DetailField label={isVi ? "Ngành / nhóm" : "Category"} value={product.category} />
                       <DetailField label={isVi ? "Đơn vị" : "Unit"} value={product.unit} />
                       <DetailField label={isVi ? "Chu kỳ tính phí" : "Billing cycle"} value={formatBillingCycle(product.billingCycle, (key: string, fallback?: string) => fallback || key)} />
@@ -395,9 +428,9 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
                           <ProductPriceBlock product={product} size="lg" showTaxMode={true} />
                           <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
                             <DetailField label={isVi ? "Giá niêm yết" : "List price"} value={formatProductPrice(product.listPrice, product.currency, locale)} />
-                            <DetailField label={isVi ? "Tổng sau thuế" : "Total with tax"} value={formatVnd(totalWithTax, locale)} />
+                            <DetailField label={isVi ? "Tổng sau thuế" : "Total with tax"} value={authoritativeTotal} />
                             <DetailField label={isVi ? "Thuế" : "Tax"} value={`${product.taxRate}% (${product.taxMode})`} />
-                            <DetailField label={isVi ? "Số tiền thuế" : "Tax amount"} value={formatVnd(taxAmount, locale)} />
+                            <DetailField label={isVi ? "Số tiền thuế" : "Tax amount"} value={authoritativeTaxAmount} />
                           </div>
                         </div>
                         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
