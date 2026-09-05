@@ -1,14 +1,20 @@
 import React from "react";
-import { AuthoritativeQueryNotice } from "@/shared/operations";
+import { AuthoritativeQueryBoundary } from "@/shared/operations";
 import { useContactListController, type ContactListPageProps } from "../hooks/useContactListController";
 import { ContactListView } from "../views/ContactListView";
 
 export const ContactListPage: React.FC<ContactListPageProps> = (props) => {
   const controller = useContactListController(props);
   return (
-    <>
-      <AuthoritativeQueryNotice connected={controller.contactQuery.connected} loading={controller.contactQuery.loading} refreshing={controller.contactQuery.refreshing} stale={controller.contactQuery.stale} loadedAt={controller.contactQuery.loadedAt} error={controller.contactQuery.error} onRefresh={() => void controller.contactQuery.refresh()} compact />
+    <AuthoritativeQueryBoundary
+      query={controller.contactQuery}
+      hasData={controller.contacts.length > 0}
+      loadingTitleVi="Đang tải danh sách liên hệ"
+      loadingTitleEn="Loading contacts"
+      errorTitleVi="Không thể tải danh sách liên hệ"
+      errorTitleEn="Contacts could not be loaded"
+    >
       <ContactListView controller={controller} />
-    </>
+    </AuthoritativeQueryBoundary>
   );
 };

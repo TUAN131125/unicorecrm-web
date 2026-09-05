@@ -65,7 +65,7 @@ assert.deepEqual(requests[1]?.query, {
 const root = repositoryRoot;
 const expected = [
   ["src/shared/operations/useServerPagedCollection.ts", /cursorByPageRef/, /totalCount/, /options\.loadPage/, /limit:\s*pageSize/, /SERVER_PAGE_CURSOR_REQUIRED/],
-  ["src/modules/leads/presentation/pages/LeadListPage.tsx", /useLeadServerPagedCollection/, /EMPTY_LEAD_SERVER_QUERY/, /enabled:\s*viewMode\s*===\s*"table"/, /useLeads\(\{\s*loadAuthoritative:\s*viewMode\s*===\s*"kanban"\s*\}\)/],
+  ["src/modules/leads/presentation/pages/LeadListPage.tsx", /useLeadServerPagedCollection/, /search:\s*filters\.searchTerm\.trim\(\)/, /workState:/, /ownerId/, /enabled:\s*viewMode\s*===\s*"table"/, /useLeads\(\{\s*loadAuthoritative:\s*viewMode\s*===\s*"kanban"\s*\}\)/],
   ["src/modules/leads/presentation/hooks/useLeadServerPagedCollection.ts", /useServerPagedCollection/, /getLeadApiRuntime\(\)\.queries\.list/],
   ["src/modules/quotes/presentation/pages/QuoteListPage.tsx", /useServerPagedModuleCollection<Quote>/, /key:\s*"quotes"/, /useQuotes\(\{\s*loadAuthoritative:\s*false\s*\}\)/, /sourceDealId:\s*filterDeal/, /sortBy:\s*"updatedAt"/],
   ["src/modules/orders/presentation/hooks/useOrderListController.tsx", /useServerPagedModuleCollection<CustomerOrder>/, /key:\s*"orders"/, /enabled:\s*view\s*!==\s*"kanban"/, /useOrders\(\{\s*loadAuthoritative:\s*view\s*===\s*"kanban"\s*\}\)/, /filters:\s*\{\s*state:/],
@@ -80,4 +80,4 @@ const transitionalLoader = fs.readFileSync(path.join(root, "src/shared/applicati
 assert.match(transitionalLoader, /Transitional collection loader/, "The cursor-complete loader must remain explicitly transitional.");
 assert.match(transitionalLoader, /while \(pageCount < maxPages\)/, "Transitional full-projection surfaces must retain bounded cursor completion until their dedicated server query exists.");
 
-console.log("Server-side list query contract OK: Quote and Order use whitelisted backend pagination; Lead remains an unfiltered authoritative projection until listLeads gains query parameters; Deal Kanban keeps its dedicated stage-window contract.");
+console.log("Server-side list query contract OK: Lead, Quote, and Order use whitelisted backend search/filter/pagination; Deal Kanban keeps its dedicated stage-window contract.");

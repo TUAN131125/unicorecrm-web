@@ -1,5 +1,5 @@
 import { CheckCircle2, Phone, Printer, Tag, Trash2, Unlock, UserPlus, X } from "lucide-react";
-import { MenuDivider, MenuItemButton, MenuSection } from "@/shared/components/ui";
+import { MenuDivider, MenuItemButton, MenuSection, RowActionPortal } from "@/shared/components/ui";
 import { useI18n } from "@/i18n";
 import type { Lead } from "../../domain/model/lead.types";
 import { LeadWorkState, QualificationOutcome, isPositiveQualificationOutcome } from "../../domain/model/leadLifecycle.canonical";
@@ -7,6 +7,7 @@ import { LeadWorkState, QualificationOutcome, isPositiveQualificationOutcome } f
 interface LeadDetailMoreMenuProps {
   lead: Lead;
   isOpen: boolean;
+  anchorEl: HTMLElement | null;
   canAssign: boolean;
   onClose: () => void;
   onMarkContacted: () => void;
@@ -22,6 +23,7 @@ interface LeadDetailMoreMenuProps {
 export function LeadDetailMoreMenu({
   lead,
   isOpen,
+  anchorEl,
   canAssign,
   onClose,
   onMarkContacted,
@@ -34,12 +36,16 @@ export function LeadDetailMoreMenu({
   onDelete,
 }: LeadDetailMoreMenuProps) {
   const { t, locale } = useI18n();
-  if (!isOpen) return null;
-
   return (
-    <>
-      <button type="button" aria-label={locale === "vi" ? "Đóng menu thao tác" : "Close action menu"} className="fixed inset-0 z-40 cursor-default" onClick={onClose} />
-      <div role="menu" aria-label={locale === "vi" ? "Thao tác Lead" : "Lead actions"} className="absolute right-0 z-50 mt-1.5 w-60 space-y-0.5 rounded-xl border border-slate-200 bg-white p-1.5 py-1.5 text-left text-xs shadow-xl animate-fade-in font-sans">
+    <RowActionPortal
+      open={isOpen}
+      anchorEl={anchorEl}
+      onClose={onClose}
+      width={240}
+      role="menu"
+      ariaLabel={locale === "vi" ? "Thao tác Lead" : "Lead actions"}
+      className="space-y-0.5 p-1.5 py-1.5 text-left text-xs font-sans"
+    >
         {!isPositiveQualificationOutcome(lead.qualificationOutcome) && (
           <>
             <MenuSection title={t("leadDetail.actions.workflow")} />
@@ -78,7 +84,6 @@ export function LeadDetailMoreMenu({
         <MenuDivider />
         <MenuSection title={t("leadDetail.actions.danger")} />
         <MenuItemButton onClick={onDelete} variant="danger" icon={<Trash2 size={14} />}>{t("leadDetail.actions.delete")}</MenuItemButton>
-      </div>
-    </>
+    </RowActionPortal>
   );
 }

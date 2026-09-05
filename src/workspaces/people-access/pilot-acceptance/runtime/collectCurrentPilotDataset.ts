@@ -232,7 +232,7 @@ export function collectCurrentPilotDataset(
     support: support.map((item) => ({
       id: item.id,
       workspaceId,
-      relationshipKey: item.relationshipRef ? relationshipRefKey(item.relationshipRef) : customerRelationshipById.get(item.customerId),
+      relationshipKey: item.relationshipRef ? relationshipRefKey(item.relationshipRef) : (item.customerId ? customerRelationshipById.get(item.customerId) : undefined),
       orderId: item.relatedOrderId,
       ownerId: item.ownerId,
       status: String(item.status),

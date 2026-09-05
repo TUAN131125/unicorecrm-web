@@ -606,12 +606,12 @@
     },
     {
       "operationId": "getProductAvailability",
-      "policy": "NOT_APPLICABLE",
+      "policy": "IF_MATCH_REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
       "operationId": "getProductPriceProjection",
-      "policy": "NOT_APPLICABLE",
+      "policy": "IF_MATCH_REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {

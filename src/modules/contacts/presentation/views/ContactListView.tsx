@@ -23,6 +23,9 @@ type ContactListViewController = ReturnType<typeof useContactListController>;
 
 export function ContactListView({ controller }: { controller: ContactListViewController }) {
   const {
+    canCreateContact,
+    canUpdateContact,
+    contactOpportunityAvailable,
     customers,
     deals,
     setDeals,
@@ -180,6 +183,7 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
                 label: t("contactList.actions.import"),
                 onClick: () => showToast(t("common.comingSoon")),
                 variant: "secondary",
+                hidden: !canCreateContact,
               },
               {
                 id: "add-contact",
@@ -187,11 +191,14 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
                 icon: <Plus size={14} />,
                 onClick: () => setShowAddForm(true),
                 variant: "primary",
+                hidden: !canCreateContact,
               },
             ]}
             moreActions={
               <ContactTopActionMenu
                 selectedCount={selectedContactIds.length}
+                writesAvailable={canUpdateContact}
+                importsAvailable={canCreateContact}
                 onExportAll={() => {
                   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(contacts, null, 2));
                   const downloadAnchor = document.createElement('a');
@@ -340,7 +347,7 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
       />
 
       {/* Shared list-archetype bulk actions */}
-      <ListBulkActionBar
+      {canUpdateContact && <ListBulkActionBar
         selectedCount={selectedContactIds.length}
         label={tx("contactList.bulk.selected", "Đã chọn")}
         onClear={() => setSelectedContactIds([])}
@@ -393,7 +400,7 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
           <Archive size={11} />
           <span>{tx("contactList.bulk.delete", "Lưu trữ hàng loạt")}</span>
         </button>
-      </ListBulkActionBar>
+      </ListBulkActionBar>}
 
       {/* Saved view create/update modal */}
       <SavedViewNameModal
@@ -424,7 +431,7 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
         <ListStatePanel
           kind="empty"
           title={locale === "vi" ? "Không có Contact phù hợp" : "No matching contacts"}
-          action={<button type="button" onClick={() => setShowAddForm(true)} className="rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-indigo-700">{t("contactList.actions.addContact")}</button>}
+          action={canCreateContact ? <button type="button" onClick={() => setShowAddForm(true)} className="rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-indigo-700">{t("contactList.actions.addContact")}</button> : undefined}
         />
       ) : (
         <>
@@ -437,10 +444,10 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
           setOpenRowActionId={setOpenRowActionId}
           onCall={handleCall}
           onEmail={handleEmail}
-          onOpenOpportunityWizard={(c) => setSelectedContactForDeal(c)}
-          onOpenDeleteConfirm={handleArchiveContact}
+          onOpenOpportunityWizard={contactOpportunityAvailable ? (c) => setSelectedContactForDeal(c) : undefined}
+          onOpenDeleteConfirm={canUpdateContact ? handleArchiveContact : undefined}
           onViewDetails={(contactId) => navigate(`/contacts/${contactId}`)}
-          onArchive={handleToggleArchiveContact}
+          onArchive={canUpdateContact ? handleToggleArchiveContact : undefined}
         />
       </div>
 
@@ -458,10 +465,10 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
           setOpenRowActionId={setOpenRowActionId}
           onCall={handleCall}
           onEmail={handleEmail}
-          onOpenOpportunityWizard={(c) => setSelectedContactForDeal(c)}
-          onOpenDeleteConfirm={handleArchiveContact}
+          onOpenOpportunityWizard={contactOpportunityAvailable ? (c) => setSelectedContactForDeal(c) : undefined}
+          onOpenDeleteConfirm={canUpdateContact ? handleArchiveContact : undefined}
           onViewDetails={(contactId) => navigate(`/contacts/${contactId}`)}
-          onArchive={handleToggleArchiveContact}
+          onArchive={canUpdateContact ? handleToggleArchiveContact : undefined}
         />
       </div>
       <ListPaginationBar {...pagination} itemLabelVi="người liên hệ" itemLabelEn="contacts" />
@@ -479,26 +486,26 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
       />
 
 
-      <ContactBulkChangeOwnerModal
+      {canUpdateContact && <ContactBulkChangeOwnerModal
         show={showBulkReassignModal}
         onClose={() => setShowBulkReassignModal(false)}
         selectedCount={selectedContactIds.length}
         onConfirm={handleBulkChangeOwner}
-      />
+      />}
 
       {/* G. WIZARD MODAL 1: GENERATE SALES OPPORTUNITY */}
-      <ContactOpportunityModal
+      {contactOpportunityAvailable && <ContactOpportunityModal
         contact={selectedContactForDeal}
         onClose={() => setSelectedContactForDeal(null)}
         onConfirm={handleCommitOpportunity}
-      />
+      />}
 
       {/* C. Slide-out New Contact Create Modal */}
-      <ContactCreateModal
+      {canCreateContact && <ContactCreateModal
         show={showAddForm}
         onClose={() => setShowAddForm(false)}
         onSave={handleSaveContact}
-      />
+      />}
 
       {/* Contact Statistics Panel (Side Drawer / Aesthetic Panel) */}
       <ContactStatisticsPanel

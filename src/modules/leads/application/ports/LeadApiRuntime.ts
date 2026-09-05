@@ -41,14 +41,14 @@ export interface LeadProfileInput {
   district?: string;
   ward?: string;
   contactAddress?: string;
-  source: string;
+  source?: string;
   campaignId?: string;
-  ownerId: string;
+  ownerId?: string;
   assignedTeam?: string;
   decisionRole?: string;
   priority?: "low" | "medium" | "high";
   interestedProducts?: readonly LeadProfileInterestedProductInput[];
-  estimatedValue: MoneyDto;
+  estimatedValue?: MoneyDto;
   budgetRange?: string;
   purchaseTimeline?: string;
   painPoint?: string;
@@ -61,7 +61,7 @@ export interface LeadProfileInput {
 }
 
 export type CreateLeadInput = LeadProfileInput;
-export type ReplaceLeadProfileInput = LeadProfileInput;
+export type ReplaceLeadProfileInput = LeadProfileInput & { ownerId: string };
 
 export interface LeadCommandOptions {
   idempotencyKey: string;

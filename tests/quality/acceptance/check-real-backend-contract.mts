@@ -34,7 +34,7 @@ assertMutationOutcome(created); assertLeadDocument(created.result); assert.equal
 const replayed = await api.createLead<CreateLeadResponse>(request, { idempotencyKey });
 assert.equal(replayed.aggregateId, created.aggregateId); assert.equal(replayed.commandId, created.commandId);
 const detail = await api.getLead(created.aggregateId); assertLeadDocument(detail); assert.equal(detail.id, created.aggregateId);
-const replaced = await api.replaceLeadProfile<ReplaceLeadProfileResponse>(created.aggregateId, { ...request, displayName: `${request.displayName} updated` }, { idempotencyKey: `phase3-replace-${crypto.randomUUID()}`, expectedVersion: created.version });
+  const replaced = await api.replaceLeadProfile<ReplaceLeadProfileResponse>(created.aggregateId, { ...request, ownerId: created.result.ownerId, displayName: `${request.displayName} updated` }, { idempotencyKey: `phase3-replace-${crypto.randomUUID()}`, expectedVersion: created.version });
 assertMutationOutcome(replaced); assert.equal(replaced.version, created.version + 1); assert.equal(replaced.result.displayName, `${request.displayName} updated`);
 await assertApiError(() => api.createLead({ ...request, displayName: `${request.displayName} changed` }, { idempotencyKey }), { statuses: [409], codes: ["IDEMPOTENCY_KEY_REUSED", "IDEMPOTENCY_CONFLICT"] });
 await assertApiError(() => api.createLead({ ...request, displayName: "" }, { idempotencyKey: `p09-invalid-${crypto.randomUUID()}` }), { statuses: [-1], codes: ["CONTRACT_VIOLATION"] });

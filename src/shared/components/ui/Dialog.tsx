@@ -270,6 +270,12 @@ export type RowActionPortalProps = {
   onClose: () => void;
   children: React.ReactNode;
   width?: number;
+  align?: "start" | "end";
+  className?: string;
+  role?: React.AriaRole;
+  ariaLabel?: string;
+  onKeyDown?: React.KeyboardEventHandler<HTMLDivElement>;
+  autoFocusFirstMenuItem?: boolean;
 };
 
 export const RowActionPortal: React.FC<RowActionPortalProps> = ({
@@ -277,18 +283,26 @@ export const RowActionPortal: React.FC<RowActionPortalProps> = ({
   anchorEl,
   onClose,
   children,
-  width
+  width,
+  align = "end",
+  className,
+  role,
+  ariaLabel,
+  onKeyDown,
+  autoFocusFirstMenuItem = false,
 }) => {
   const overlayLayer = useOverlayLayer();
-  const [coords, setCoords] = React.useState({ top: 0, left: 0, width: width ?? 240, openAbove: false });
+  const menuRef = React.useRef<HTMLDivElement>(null);
+  const [coords, setCoords] = React.useState({ top: 12, left: 12, width: width ?? 240, openAbove: false });
 
   const updatePosition = React.useCallback(() => {
     if (!anchorEl) return;
     const rect = anchorEl.getBoundingClientRect();
-    const menuWidth = width ?? 240;
     const viewportPadding = 12;
+    const gap = 8;
+    const menuWidth = Math.min(width ?? 240, Math.max(0, window.innerWidth - (viewportPadding * 2)));
 
-    let left = rect.right - menuWidth;
+    let left = align === "start" ? rect.left : rect.right - menuWidth;
     if (left + menuWidth > window.innerWidth - viewportPadding) {
       left = window.innerWidth - menuWidth - viewportPadding;
     }
@@ -296,10 +310,16 @@ export const RowActionPortal: React.FC<RowActionPortalProps> = ({
       left = viewportPadding;
     }
 
-    const estimatedHeight = 320;
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const openAbove = spaceBelow < estimatedHeight && rect.top > estimatedHeight;
-    const top = openAbove ? rect.top - 8 : rect.bottom + 8;
+    const maxMenuHeight = Math.max(0, window.innerHeight - (viewportPadding * 2));
+    const measuredHeight = Math.min(menuRef.current?.scrollHeight ?? 320, maxMenuHeight);
+    const spaceBelow = window.innerHeight - rect.bottom - gap - viewportPadding;
+    const spaceAbove = rect.top - gap - viewportPadding;
+    const openAbove = spaceBelow < measuredHeight && spaceAbove > spaceBelow;
+    const preferredTop = openAbove ? rect.top - gap - measuredHeight : rect.bottom + gap;
+    const top = Math.min(
+      Math.max(viewportPadding, preferredTop),
+      Math.max(viewportPadding, window.innerHeight - viewportPadding - measuredHeight),
+    );
 
     setCoords({
       top,
@@ -307,9 +327,9 @@ export const RowActionPortal: React.FC<RowActionPortalProps> = ({
       width: menuWidth,
       openAbove
     });
-  }, [anchorEl, width]);
+  }, [align, anchorEl, width]);
 
-  React.useEffect(() => {
+  React.useLayoutEffect(() => {
     if (!open || !anchorEl) return;
 
     updatePosition();
@@ -331,6 +351,14 @@ export const RowActionPortal: React.FC<RowActionPortalProps> = ({
     };
   }, [open, anchorEl, updatePosition, onClose]);
 
+  React.useEffect(() => {
+    if (!open || !autoFocusFirstMenuItem) return;
+    const frame = window.requestAnimationFrame(() => {
+      menuRef.current?.querySelector<HTMLElement>('[role="menuitem"]:not([disabled])')?.focus();
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [autoFocusFirstMenuItem, open]);
+
   if (!open || !anchorEl) return null;
 
   return createPortal(
@@ -344,17 +372,26 @@ export const RowActionPortal: React.FC<RowActionPortalProps> = ({
         }} 
       />
       <div
-        className={`fixed overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_18px_48px_-18px_rgba(15,23,42,0.38)] ring-1 ring-slate-900/5 ${OVERLAY_Z.dropdown}`}
+        ref={menuRef}
+        data-floating-overlay="menu"
+        data-placement={coords.openAbove ? "top" : "bottom"}
+        role={role}
+        aria-label={ariaLabel}
+        className={cn(
+          `fixed overflow-y-auto overflow-x-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_18px_48px_-18px_rgba(15,23,42,0.38)] ring-1 ring-slate-900/5 ${OVERLAY_Z.dropdown}`,
+          className,
+        )}
         style={{
-          top: coords.openAbove ? "auto" : `${coords.top}px`,
-          bottom: coords.openAbove ? `${window.innerHeight - coords.top}px` : "auto",
+          top: `${coords.top}px`,
           left: `${coords.left}px`,
           width: `${coords.width}px`,
+          maxHeight: "calc(100vh - 24px)",
           zIndex: overlayLayer.baseZIndex + 20,
         }}
         onClick={(e) => {
           e.stopPropagation();
         }}
+        onKeyDown={onKeyDown}
       >
         {children}
       </div>

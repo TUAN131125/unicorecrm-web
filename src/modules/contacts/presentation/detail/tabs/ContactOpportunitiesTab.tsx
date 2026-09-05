@@ -17,7 +17,7 @@ interface OpportunityMocks {
 
 interface ContactOpportunitiesTabProps {
   opportunities: OpportunityMocks[];
-  onCreateOpportunityClick: () => void;
+  onCreateOpportunityClick?: () => void;
   onOpenModule: () => void;
   onCreateQuoteFromOpportunity?: (dealId: string) => void;
   onAdvanceOpportunityStage?: (dealId: string) => void;
@@ -42,14 +42,14 @@ export const ContactOpportunitiesTab: React.FC<ContactOpportunitiesTabProps> = (
     <div id="contact-opportunities-tab" className="space-y-4 animate-fade-in text-[11px] text-slate-700 text-left">
       <RelationshipWorkspaceHeader
         title={tx("contactDetail.opportunities.title", "Cơ hội bán hàng")}
-        actions={<RelationshipModuleActions secondaryLabel={locale === "vi" ? "Mở Cơ hội" : "Open Opportunities"} primaryLabel={!isArchived ? tx("contactDetail.opportunities.addCTA", "Thêm cơ hội kinh doanh") : undefined} onSecondary={onOpenModule} onPrimary={!isArchived ? onCreateOpportunityClick : undefined} />}
+        actions={<RelationshipModuleActions secondaryLabel={locale === "vi" ? "Mở Cơ hội" : "Open Opportunities"} primaryLabel={!isArchived && onCreateOpportunityClick ? tx("contactDetail.opportunities.addCTA", "Thêm cơ hội kinh doanh") : undefined} onSecondary={onOpenModule} onPrimary={!isArchived ? onCreateOpportunityClick : undefined} />}
       />
 
       {opportunities.length === 0 ? (
         <div className="flex min-h-[180px] w-full flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-xs text-slate-400">
           <Sparkles size={24} className="mb-2 text-slate-300" />
           <span className="font-semibold">{tx("contactDetail.empty.noOpportunities", "Không có cơ hội kinh doanh nào.")}</span>
-          {!isArchived && (
+          {!isArchived && onCreateOpportunityClick && (
             <DetailTabActionButton actionIntent="create" onClick={onCreateOpportunityClick} icon={<Plus size={14} />} className="mt-3">
               {tx("contactDetail.opportunities.addCTA", "Thêm cơ hội kinh doanh")}
             </DetailTabActionButton>

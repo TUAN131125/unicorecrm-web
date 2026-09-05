@@ -2,7 +2,7 @@ import { backendUnavailableMessage, formatOperationUnavailableError } from "@/sh
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Contact } from "../../domain/model/contact.types";
-import { archiveContactCommand, isContactConnectedMode, isContactRetentionUnavailable, restoreContactCommand, saveContactSnapshot } from "../../public/contacts";
+import { archiveContactCommand, isContactCreateAvailable, isContactRetentionUnavailable, isContactUpdateAvailable, restoreContactCommand, saveContactSnapshot } from "../../public/contacts";
 import { getOrganizationAccountsSnapshot } from "@/modules/organizations";
 import type { CustomerDisplay as Customer } from "@/modules/customers";
 import { createDealCommand, Deal, DealStage } from "@/modules/deals";
@@ -27,6 +27,7 @@ import { findCustomerForContact, getCustomerDisplayNameForContact } from "../mod
 import { normalizeContactCanonicalProfile } from "../../domain/model/contactCanonicalProfile";
 import { upsertContactOrganizationRelationshipWorkflow } from "@/workflows/contact-organization-relationship";
 import { getWorkspaceContextSnapshot } from "@/platform/workspace-context";
+import { useEffectiveAccess } from "@/platform/access-control";
 
 export interface ContactListPageProps {
   customers: Customer[];
@@ -41,6 +42,7 @@ export function useContactListController({
   crmConfig = DEFAULT_CRM_WORKSPACE_CONFIG
 }: ContactListPageProps) {
   const { t, tx, locale } = useI18n();
+  const access = useEffectiveAccess();
   const navigate = useNavigate();
   const { contacts, setContacts, query: contactQuery } = useContacts();
   const productCatalog = useSubscribableSnapshot(getProductCatalogSnapshot, subscribeToProductCatalog);
@@ -441,9 +443,14 @@ export function useContactListController({
    * connected mode they fail closed inside the contacts projection, so the action is
    * refused up front with a user-readable reason.
    */
-  const contactWritesUnavailable = isContactConnectedMode();
-  const refuseUnavailableContactWrite = (action: string): boolean => {
-    if (!contactWritesUnavailable) return false;
+  const contactCreateAvailable = isContactCreateAvailable();
+  const contactUpdateAvailable = isContactUpdateAvailable();
+  const canCreateContact = contactCreateAvailable && access.canPerform("contacts", "create");
+  const canUpdateContact = contactUpdateAvailable && access.canPerform("contacts", "update");
+  const contactOpportunityAvailable = !isContactOpportunityCreationUnavailable();
+  const contactWritesUnavailable = !contactUpdateAvailable;
+  const refuseUnavailableContactWrite = (action: string, unavailable = contactWritesUnavailable): boolean => {
+    if (!unavailable) return false;
     showToast(backendUnavailableMessage({ locale, action }));
     return true;
   };
@@ -461,7 +468,7 @@ export function useContactListController({
   };
   // 1. Core Logic: Add New Contact callback
   const handleSaveContact = (data: ContactCreateInput) => {
-    if (refuseUnavailableContactWrite(locale === "vi" ? "Tạo liên hệ" : "Creating a Contact")) return;
+    if (refuseUnavailableContactWrite(locale === "vi" ? "Tạo liên hệ" : "Creating a Contact", !contactCreateAvailable)) return;
     const code = data.contactCode.trim() || `CN${String(contacts.length + 1).padStart(4, "0")}`;
     const tagArray = data.tagsString.split(",").map((tag) => tag.trim()).filter(Boolean);
     const createdAt = new Date().toISOString();
@@ -1109,6 +1116,11 @@ export function useContactListController({
     };
   }, [contacts, deals, locale]);
   return {
+    contactCreateAvailable,
+    contactUpdateAvailable,
+    canCreateContact,
+    canUpdateContact,
+    contactOpportunityAvailable,
     contactQuery,
     customers,
     deals,

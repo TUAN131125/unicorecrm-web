@@ -85,7 +85,10 @@ const baseDocument = {
 const client: HttpClient = {
   async request<TResponse, TBody = unknown>(input: HttpRequest<TBody>): Promise<TResponse> {
     requests.push(input as HttpRequest);
-    if (input.operationId === "listLeads") return [baseDocument] as TResponse;
+    if (input.operationId === "listLeads") return {
+      items: [baseDocument],
+      pageInfo: { hasNextPage: true, nextCursor: "lead-cursor-2", totalCount: 51 },
+    } as TResponse;
     if (input.operationId === "getLead") return baseDocument as TResponse;
     if (input.operationId === "createLead") return mutationResponse(baseDocument, 3, "cmd-create") as TResponse;
     if (input.operationId === "replaceLeadProfile") {
@@ -110,10 +113,19 @@ const client: HttpClient = {
 
 const runtime = createLeadConnectedApiRuntime(client);
 assert.equal(runtime.mode, "connected");
-assert.equal((await runtime.queries.list({ limit: 25 })).items[0]?.id, "lead-1");
+const leadPage = await runtime.queries.list({ limit: 25, search: "Lead One", filters: { workState: "NEW", ownerId: "user-1" } });
+assert.equal(leadPage.items[0]?.id, "lead-1");
+assert.equal(leadPage.pageInfo.hasNextPage, true);
+assert.equal(leadPage.pageInfo.nextCursor, "lead-cursor-2");
+assert.equal(leadPage.pageInfo.totalCount, 51);
+assert.deepEqual(requests[0]?.query, { cursor: undefined, limit: 25, search: "Lead One", workState: "NEW", ownerId: "user-1" });
 assert.equal((await runtime.queries.get("lead-1")).resourceVersion, 3);
-await assert.rejects(() => runtime.queries.list({ search: "unsupported" }), (error: unknown) => hasCode(error, "CONNECTED_QUERY_CONTRACT_VIOLATION"));
+await assert.rejects(() => runtime.queries.list({ sortBy: "unsupported" }), (error: unknown) => hasCode(error, "CONNECTED_QUERY_CONTRACT_VIOLATION"));
 
+const minimalProfile = {
+  displayName: " Lead One ",
+  phone: " 0901234567 ",
+};
 const profile = {
   displayName: " Lead One ",
   email: " lead@example.test ",
@@ -123,22 +135,12 @@ const profile = {
   tags: [" priority ", ""],
   customFields: { segment: "enterprise", seats: 20, approved: true, channels: ["email", "phone"] },
 };
-const created = await runtime.commands.createLead(profile, { idempotencyKey: "lead-create-attempt-1" });
+const created = await runtime.commands.createLead(minimalProfile, { idempotencyKey: "lead-create-attempt-1" });
 assert.equal(created.evidence.authority, "backend");
 const createRequest = requests.find((request) => request.operationId === "createLead");
 assert.deepEqual(createRequest?.body, {
   displayName: "Lead One",
-  email: "lead@example.test",
-  source: "WEB",
-  ownerId: "user-1",
-  estimatedValue: { amount: "1200000", currency: "VND" },
-  tags: ["priority"],
-  customFields: [
-    { fieldKey: "approved", valueType: "BOOLEAN", booleanValue: true },
-    { fieldKey: "channels", valueType: "STRING_ARRAY", stringArrayValue: ["email", "phone"] },
-    { fieldKey: "seats", valueType: "DECIMAL", decimalValue: "20" },
-    { fieldKey: "segment", valueType: "STRING", stringValue: "enterprise" },
-  ],
+  phone: "0901234567",
 });
 assert.equal(createRequest?.idempotencyKey, "lead-create-attempt-1");
 assert.equal(createRequest?.retry, "idempotent");
@@ -168,7 +170,7 @@ const reopenRequest = requests.find((request) => request.operationId === "reopen
 assert.deepEqual(reopenRequest?.body, {});
 assert.equal(reopenRequest?.expectedVersion, 4);
 
-await assert.rejects(() => runtime.commands.createLead({ ...profile, source: "" }, { idempotencyKey: "key" }), (error: unknown) => hasCode(error, "CONNECTED_CONTRACT_VIOLATION"));
+await assert.rejects(() => runtime.commands.createLead({ displayName: "No contact" }, { idempotencyKey: "key" }), (error: unknown) => hasCode(error, "CONNECTED_CONTRACT_VIOLATION"));
 await assert.rejects(() => runtime.commands.replaceLeadProfile("lead-1", profile, { idempotencyKey: "key", expectedVersion: 0 }), (error: unknown) => hasCode(error, "CONNECTED_CONTRACT_VIOLATION"));
 await assert.rejects(() => runtime.commands.createLead(profile, { idempotencyKey: "" }), (error: unknown) => hasCode(error, "CONNECTED_CONTRACT_VIOLATION"));
 

@@ -32,7 +32,7 @@ interface ContactInsightPanelProps {
   onAddTask: () => void;
   onAddAppointment: () => void;
   onAddNote: () => void;
-  onCreateOpportunity: () => void;
+  onCreateOpportunity?: () => void;
   onCompleteTask: (id: string) => void;
   onLogCall?: () => void;
   onSendEmail?: () => void;
@@ -118,7 +118,7 @@ export const ContactInsightPanel: React.FC<ContactInsightPanelProps> = ({
       }
       return;
     }
-    if (actionId === "opportunity") { onCreateOpportunity(); return; }
+    if (actionId === "opportunity") { onCreateOpportunity?.(); return; }
     onAddNote();
   };
 
@@ -230,7 +230,7 @@ export const ContactInsightPanel: React.FC<ContactInsightPanelProps> = ({
           { id: "email", label: tx("contactDetail.activityPanel.quick.email", "Gửi Email"), icon: <Mail size={12} className="text-indigo-600" />, disabled: isArchived || isDoNotContact, disabledReason: isArchived ? tx("contactDetail.toast.archivedActionBlocked", "Hồ sơ đã lưu trữ.") : tx("contactDetail.toast.directOutreachRestricted", "Liên hệ đang hạn chế liên hệ trực tiếp.") },
           { id: "sms", label: tx("contactDetail.activityPanel.quick.sms", "Gửi SMS"), icon: <MessageCircle size={12} className="text-blue-600" />, disabled: isArchived || isDoNotContact, disabledReason: isArchived ? tx("contactDetail.toast.archivedActionBlocked", "Hồ sơ đã lưu trữ.") : tx("contactDetail.toast.directOutreachRestricted", "Liên hệ đang hạn chế liên hệ trực tiếp.") },
           { id: "note", label: tx("contactDetail.activityPanel.quick.note", "Ghi chú nhanh"), icon: <FileText size={12} className="text-slate-600" /> },
-          { id: "opportunity", label: tx("contactDetail.activityPanel.quick.opportunity", "Tạo cơ hội"), icon: <Sparkles size={12} className="text-purple-600" />, disabled: isArchived, disabledReason: tx("contactDetail.toast.archivedActionBlocked", "Hồ sơ đã lưu trữ.") },
+          ...(onCreateOpportunity ? [{ id: "opportunity" as const, label: tx("contactDetail.activityPanel.quick.opportunity", "Tạo cơ hội"), icon: <Sparkles size={12} className="text-purple-600" />, disabled: isArchived, disabledReason: tx("contactDetail.toast.archivedActionBlocked", "Hồ sơ đã lưu trữ.") }] : []),
         ] satisfies readonly RelationshipPanelAction<ContactPanelAction>[]}
         onAction={runQuickAction}
       />
@@ -326,4 +326,3 @@ export const ContactInsightPanel: React.FC<ContactInsightPanelProps> = ({
     </div>
   );
 };
-

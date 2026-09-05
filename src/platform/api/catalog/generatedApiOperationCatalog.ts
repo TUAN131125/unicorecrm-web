@@ -12956,7 +12956,7 @@ export const API_OPERATION_CATALOG = {
     },
     "delivery": {
       "idempotency": "NOT_APPLICABLE",
-      "concurrency": "NOT_APPLICABLE",
+      "concurrency": "IF_MATCH_REQUIRED",
       "audit": "READ_AUDIT",
       "transactionBoundary": "READ_ONLY"
     },
@@ -13078,7 +13078,7 @@ export const API_OPERATION_CATALOG = {
     },
     "delivery": {
       "idempotency": "NOT_APPLICABLE",
-      "concurrency": "NOT_APPLICABLE",
+      "concurrency": "IF_MATCH_REQUIRED",
       "audit": "READ_AUDIT",
       "transactionBoundary": "READ_ONLY"
     },
@@ -16179,11 +16179,66 @@ export const API_OPERATION_CATALOG = {
             "format": null,
             "pattern": null
           }
+        },
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": "CursorToken",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "integer",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "ownerId",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "search",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "workState",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": "LeadWorkState",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
         }
       ]
     },
     "response": {
-      "schema": "LeadList",
+      "schema": "LeadListResponse",
       "successStatus": "200"
     },
     "authorization": {

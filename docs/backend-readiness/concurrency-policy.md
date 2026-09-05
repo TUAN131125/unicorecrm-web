@@ -124,8 +124,8 @@ Contract version: `0.23.20-contract.0`. OpenAPI metadata is authoritative.
 | getPaymentMethodCatalog | NOT_APPLICABLE | READY |
 | getPaymentRecordDetail | NOT_APPLICABLE | READY |
 | getProduct | NOT_APPLICABLE | READY |
-| getProductAvailability | NOT_APPLICABLE | READY |
-| getProductPriceProjection | NOT_APPLICABLE | READY |
+| getProductAvailability | IF_MATCH_REQUIRED | READY |
+| getProductPriceProjection | IF_MATCH_REQUIRED | READY |
 | getQuote | NOT_APPLICABLE | READY |
 | getReceivablesAging | NOT_APPLICABLE | READY |
 | getReceivablesSummary | NOT_APPLICABLE | READY |

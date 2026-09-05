@@ -19,7 +19,7 @@ interface ContactOverviewTabProps {
   totalOrderValue: number;
   onSelectTab(tab: ContactTab, subTab?: string): void;
   onOpenCustomer?(): void;
-  onCreateOpportunity(): void;
+  onCreateOpportunity?(): void;
   onCreateTask(): void;
 }
 
@@ -46,7 +46,7 @@ export const ContactOverviewTab: React.FC<ContactOverviewTabProps> = ({
     ? { title: text("Hoàn thiện liên kết hồ sơ khách hàng", "Complete the customer profile link"), detail: text("Liên hệ chưa có Customer 360 làm nguồn điều phối giao dịch và dịch vụ.", "This contact has no Customer 360 profile coordinating transactions and service."), action: () => onSelectTab("relationship", "people"), label: text("Kiểm tra liên kết", "Review connections") }
     : activeTaskCount > 0
       ? { title: text("Xử lý công việc đang mở", "Work the open tasks"), detail: text(`Có ${activeTaskCount} công việc cần tiếp tục theo dõi.`, `${activeTaskCount} tasks still need follow-up.`), action: () => onSelectTab("work", "tasks"), label: text("Mở công việc", "Open work") }
-      : opportunityCount === 0
+      : opportunityCount === 0 && onCreateOpportunity
         ? { title: text("Đánh giá nhu cầu bán hàng tiếp theo", "Assess the next sales need"), detail: text("Chưa có cơ hội đang được điều phối cho người liên hệ này.", "No opportunity is currently coordinated for this contact."), action: onCreateOpportunity, label: text("Tạo cơ hội", "Create opportunity") }
         : supportCount > 0
           ? { title: text("Rà soát yêu cầu dịch vụ", "Review service requests"), detail: text(`Có ${supportCount} phiếu hỗ trợ liên quan cần theo dõi trong bối cảnh quan hệ.`, `${supportCount} related support cases should be reviewed in relationship context.`), action: () => onSelectTab("service", "support"), label: text("Mở dịch vụ", "Open service") }

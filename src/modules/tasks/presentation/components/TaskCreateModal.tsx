@@ -63,11 +63,11 @@ function toLocalDateTimeValue(value?: string): string {
   return new Date(date.getTime() - offset).toISOString().slice(0, 16);
 }
 
-function createDraft(defaults: TaskCreateDefaults | undefined, fallbackAssigneeId: string): TaskCreateDraft {
+function createDraft(defaults: TaskCreateDefaults | undefined, fallbackAssigneeId?: string): TaskCreateDraft {
   return {
     title: defaults?.title ?? "",
     description: defaults?.description ?? "",
-    assigneeId: defaults?.assigneeId || fallbackAssigneeId,
+    assigneeId: defaults?.assigneeId || fallbackAssigneeId || "",
     dueAt: toLocalDateTimeValue(defaults?.dueAt),
     priority: defaults?.priority ?? "NORMAL",
   };
@@ -95,7 +95,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
   const vi = locale === "vi";
   const access = useEffectiveAccess();
   const session = getAuthSessionSnapshot();
-  const currentMemberId = actorId || session?.principal.memberId || access.memberId || access.accountId || "current-user";
+  const currentMemberId = actorId || session?.principal.memberId || access.memberId || undefined;
   const currentActorName = actorName || session?.principal.displayName || currentMemberId;
   const directory = React.useMemo(() => listWorkspaceMemberDirectory(), [isOpen]);
   const [draft, setDraft] = React.useState<TaskCreateDraft>(() => createDraft(defaults, currentMemberId));
@@ -117,6 +117,10 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     if (submitting) return;
+    if (!currentMemberId || !currentActorName) {
+      setErrorMessage(vi ? "Không xác định được thành viên Workspace hiện tại." : "The current Workspace member could not be resolved.");
+      return;
+    }
     setErrorMessage("");
     const nextErrors: Record<string, string> = {};
     if (!draft.title.trim()) nextErrors.title = vi ? "Vui lòng nhập tên công việc." : "Enter a task title.";
@@ -164,7 +168,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
     }
   };
 
-  const canCreate = access.canPerform("tasks", "create");
+  const canCreate = Boolean(currentMemberId) && access.canPerform("tasks", "create");
 
   return (
     <Modal
@@ -243,7 +247,11 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
             {vi ? "Liên kết với" : "Linked to"}: {context.label}
           </p>
         ) : null}
-        {!canCreate ? (
+        {!currentMemberId ? (
+          <p className="sm:col-span-2 text-xs text-slate-600">
+            {vi ? "Không xác định được thành viên Workspace hiện tại." : "The current Workspace member could not be resolved."}
+          </p>
+        ) : !canCreate ? (
           <p className="sm:col-span-2 text-xs text-slate-600">
             {vi ? "Bạn không có quyền tạo công việc." : "You do not have permission to create tasks."}
           </p>

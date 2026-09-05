@@ -145,8 +145,9 @@ assert.match(savedViewNameModalSource, /vi \? "Hủy" : "Cancel"/, "Canonical sa
 assert.match(savedViewNameModalSource, /vi \? "Lưu giao diện" : "Save view"/, "Canonical saved-view modal must render the Save View action.");
 
 const contactSavedViewSelectorSource = readPresentationComposition("src/modules/contacts/presentation/list/ContactSavedViewSelector.tsx", "utf8");
-assert.match(contactSavedViewSelectorSource, /OVERLAY_Z\.dropdown/, "Saved View menu must use the shared dropdown overlay layer.");
-assert.match(contactSavedViewSelectorSource, /className="fixed inset-0 z-\[2999\]"/, "Saved View click-away layer must stay directly below the shared dropdown layer.");
+assert.match(contactSavedViewSelectorSource, /<RowActionPortal/, "Saved View menu must use the canonical portal overlay.");
+assert.match(contactSavedViewSelectorSource, /anchorEl=\{triggerRef\.current\}/, "Saved View menu must position from its trigger geometry.");
+assert.equal(contactSavedViewSelectorSource.includes('className="fixed inset-0 z-[2999]"'), false, "Saved View must not maintain a competing local click-away layer.");
 assert.match(contactSavedViewSelectorSource, /onClick=\{onAddViewClick\}/, "Add View button must call the parent create-view callback directly.");
 assert.equal(contactSavedViewSelectorSource.includes("event.preventDefault()"), false, "Add View must not rely on event suppression as a hit-testing workaround.");
 assert.equal(contactSavedViewSelectorSource.includes("event.stopPropagation()"), false, "Add View must not rely on propagation suppression as a hit-testing workaround.");
@@ -172,4 +173,3 @@ function createContact(
     activities: [],
   };
 }
-

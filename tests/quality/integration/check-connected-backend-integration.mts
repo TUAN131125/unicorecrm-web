@@ -46,7 +46,7 @@ try {
   );
   const api = new CommercialApiClient(client);
   const alphaPage = await api.listLeads();
-  assert.deepEqual(alphaPage.map((lead) => lead.displayName), ["OpenAPI Alpha Lead"]);
+  assert.deepEqual(alphaPage.items.map((lead) => lead.displayName), ["OpenAPI Alpha Lead"]);
   const alphaDetail = await api.getLead("openapi-alpha-lead");
   assert.equal(alphaDetail.leadWorkState, "NEW");
   const mappedAlphaPage = await registry.leads.queries.list<{ id: string; name: string; estimatedValue?: { amount: string; currency: string }; resourceVersion?: number }>({ limit: 25 });
@@ -59,17 +59,13 @@ try {
   await assertApiError(() => api.listLeads(), { status: 403, code: "WORKSPACE_ACCESS_DENIED" });
   token = "connected-fixture-token-beta";
   const betaPage = await api.listLeads();
-  assert.deepEqual(betaPage.map((lead) => lead.displayName), ["OpenAPI Beta Lead"]);
+  assert.deepEqual(betaPage.items.map((lead) => lead.displayName), ["OpenAPI Beta Lead"]);
 
   token = "connected-fixture-token-alpha";
   workspaceId = "workspace-alpha";
   const createRequest: CreateLeadRequest = {
     displayName: "Connected Created Lead",
-    email: "connected.created@example.test",
-    source: "WEB",
-    ownerId: "connected-user",
-    estimatedValue: { amount: "1000.00", currency: "VND" },
-    tags: ["phase3"],
+    phone: "0901234567",
   };
   const idempotencyKey = "lead-create-connected-1";
   const created = await api.createLead<CreateLeadResponse>(createRequest, { idempotencyKey });
@@ -87,6 +83,7 @@ try {
   const replaceRequest: ReplaceLeadProfileRequest = {
     ...createRequest,
     displayName: "Connected Updated Lead",
+    ownerId: created.result.ownerId,
     tags: ["phase3", "updated"],
   };
   const replaced = await api.replaceLeadProfile<ReplaceLeadProfileResponse>(created.aggregateId, replaceRequest, {
@@ -171,7 +168,7 @@ try {
   await assertApiError(() => api.listLeads(), { status: 401, code: "AUTHENTICATION_REQUIRED" });
   assert.equal(unauthorizedCalls, 1);
   token = "connected-fixture-token-alpha";
-  assert.equal((await api.listLeads()).length, 2);
+  assert.equal((await api.listLeads()).items.length, 2);
 
   const missingWorkspaceClient = new FetchHttpClient({
     baseUrl: address.baseUrl,

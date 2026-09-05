@@ -2,7 +2,6 @@ import React from "react";
 import { useParams } from "react-router-dom";
 import { useSubscribableSnapshot } from "@/platform/react";
 import { useWorkspaceContextSnapshot } from "@/platform/workspace-context";
-import { EFFECTIVE_RECORD_ACCESS_PROFILES, EffectiveRecordAccessBoundary } from "@/platform/access-control";
 import { AuthoritativeQueryBoundary, useModuleAuthoritativeResource } from "@/shared/operations";
 import { getProductDetailResource } from "./application/vertical-slice/productAuthoritativeQueries";
 import { getProductCatalogSnapshot, replaceProductCatalog, subscribeToProductCatalog } from "./public/catalog";
@@ -34,10 +33,5 @@ const ProductDetailContent: React.FC = () => {
 };
 
 export const ProductDetailRoutePage: React.FC = () => {
-  const { productId = "" } = useParams();
-  return (
-    <EffectiveRecordAccessBoundary resourceKey="products" recordId={productId} {...EFFECTIVE_RECORD_ACCESS_PROFILES.products}>
-      <ProductDetailContent />
-    </EffectiveRecordAccessBoundary>
-  );
+  return <ProductDetailContent />;
 };

@@ -12,7 +12,7 @@ import { useDealPipelineController } from "../hooks/useDealPipelineController";
 import { DealPipelineModals } from "../components/DealPipelineModals";
 import { DealActionMenu } from "../components/DealActionMenu";
 import { notifyProduct } from "@/components/feedback/ProductDialogService";
-import { AuthoritativeQueryNotice } from "@/shared/operations";
+import { AuthoritativeQueryBoundary } from "@/shared/operations";
 import { OwnershipScopeSelector } from "@/components/crm/OwnershipScopeSelector";
 import { ListFilterGrid, ListFilterPopover, ListToolbar } from "@/components/crm/list-archetype";
 import { DealPipelineHealthBadges } from "../components/DealPipelineHealth";
@@ -127,6 +127,14 @@ export const DealPipelinePage = () => {
   };
 
   return (
+    <AuthoritativeQueryBoundary
+      query={dealQuery}
+      hasData={deals.length > 0}
+      loadingTitleVi="Đang tải danh sách cơ hội"
+      loadingTitleEn="Loading deals"
+      errorTitleVi="Không thể tải danh sách cơ hội"
+      errorTitleEn="Deals could not be loaded"
+    >
     <ModulePageShell
       id="deal-pipeline-page"
       className={`relative ${
@@ -229,8 +237,6 @@ export const DealPipelinePage = () => {
           </div>
         }
       />
-
-      <AuthoritativeQueryNotice connected={dealQuery.connected} loading={dealQuery.loading} refreshing={dealQuery.refreshing} stale={dealQuery.stale} loadedAt={dealQuery.loadedAt} error={dealQuery.error} onRefresh={() => void dealQuery.refresh()} compact />
 
       <ListToolbar
         searchValue={searchTerm}
@@ -1221,5 +1227,6 @@ export const DealPipelinePage = () => {
 
       <DealPipelineModals controller={controller} />
     </ModulePageShell>
+    </AuthoritativeQueryBoundary>
   );
 };

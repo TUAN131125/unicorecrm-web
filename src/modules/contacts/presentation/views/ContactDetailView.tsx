@@ -73,6 +73,8 @@ type Controller = NonNullable<ReturnType<typeof useContactDetailController>>;
 
 export function ContactDetailView({ controller }: { controller: Controller }) {
   const {
+    canUpdateContact,
+    contactOpportunityAvailable,
     customers,
     deals,
     quotes,
@@ -181,6 +183,7 @@ export function ContactDetailView({ controller }: { controller: Controller }) {
     relationshipActivities,
     careTimelineItems,
   } = controller;
+  const openOpportunity = contactOpportunityAvailable ? () => setShowOpportunityModal(true) : undefined;
   return (
     <RecordDetailFrame id="contact-detail-page-workspace" className="min-w-0 space-y-4 rounded-2xl bg-slate-50 p-1 text-[11px] text-slate-700">
       
@@ -188,8 +191,9 @@ export function ContactDetailView({ controller }: { controller: Controller }) {
       <ContactRecordHeader
         contact={contact}
         ownerName={ownerName}
+        canUpdateContact={canUpdateContact}
         onEditClick={() => setShowEditModal(true)}
-        onCreateOpportunityClick={() => setShowOpportunityModal(true)}
+        onCreateOpportunityClick={openOpportunity}
         onAddNoteClick={() => setShowQuickNoteModal(true)}
         onUploadAttachmentClick={() => {
           setActiveTab("attachments");
@@ -245,7 +249,7 @@ export function ContactDetailView({ controller }: { controller: Controller }) {
                   totalOrderValue,
                   onSelectTab: setActiveTab,
                   onOpenCustomer: canonicalCustomer ? () => navigate(`/customers/${canonicalCustomer.id}`) : undefined,
-                  onCreateOpportunity: () => setShowOpportunityModal(true),
+                  onCreateOpportunity: openOpportunity,
                   onCreateTask: () => setShowTaskModal(true),
                 }}
                 detailInfo={{ contact, ownerName, totalQuotedAmount, totalOrderValue, latestDealStage }}
@@ -265,9 +269,9 @@ export function ContactDetailView({ controller }: { controller: Controller }) {
                   contactAttachments, onUploadAttachment: handleUploadAttachment, onDeleteAttachment: handleDeleteAttachment,
                   onDownloadAttachment: handleDownloadAttachment, isArchived: contact.status === "archived", onModalStateChange: handleModalStateChange,
                 }}
-                purchasedProducts={{ contact, purchasedProducts: displayPurchasedProducts, onCreateOpportunityClick: () => setShowOpportunityModal(true), onOpenModule: () => navigate("/products") }}
+                purchasedProducts={{ contact, purchasedProducts: displayPurchasedProducts, onCreateOpportunityClick: openOpportunity, onOpenModule: () => navigate("/products") }}
                 opportunities={{
-                  opportunities: affiliatedOpportunities, onCreateOpportunityClick: () => setShowOpportunityModal(true), onOpenModule: () => navigate("/deals"),
+                  opportunities: affiliatedOpportunities, onCreateOpportunityClick: openOpportunity, onOpenModule: () => navigate("/deals"),
                   onCreateQuoteFromOpportunity: handleCreateQuoteFromTab, onAdvanceOpportunityStage: handleAdvanceOpportunityStage,
                   isArchived: contact.status === "archived",
                   completedOrderDealIds: displayOrders.filter(o => o.order?.state === "COMPLETED").map(o => o.order.sourceDealId).filter((id): id is string => Boolean(id)),
@@ -283,7 +287,7 @@ export function ContactDetailView({ controller }: { controller: Controller }) {
                 }}
                 quotations={{
                   quotes: displayQuotes, hasOpportunity: affiliatedOpportunities.length > 0, opportunities: affiliatedOpportunities, onOpenModule: () => navigate("/quotes"),
-                  onCreateOpportunityClick: () => setShowOpportunityModal(true), onCreateQuoteClick: handleCreateQuoteFromTab,
+                  onCreateOpportunityClick: openOpportunity, onCreateQuoteClick: handleCreateQuoteFromTab,
                   onSendQuote: handleSendQuoteFromTab, onDeleteQuote: handleDeleteQuoteFromTab, isArchived: contact.status === "archived",
                   onModalStateChange: handleModalStateChange,
                 }}
@@ -381,7 +385,7 @@ export function ContactDetailView({ controller }: { controller: Controller }) {
                 onAddTask={() => setShowTaskModal(true)}
                 onAddAppointment={() => setShowMeetingModal(true)}
                 onAddNote={() => setShowQuickNoteModal(true)}
-                onCreateOpportunity={() => setShowOpportunityModal(true)}
+                onCreateOpportunity={openOpportunity}
                 onCompleteTask={handleCompleteTask}
                 onLogCall={() => setShowLogCallModal(true)}
                 onSendEmail={() => setShowSendEmailModal(true)}
@@ -415,7 +419,7 @@ export function ContactDetailView({ controller }: { controller: Controller }) {
           onSave: handleSaveContact,
         }}
         opportunity={{
-          isOpen: showOpportunityModal,
+          isOpen: contactOpportunityAvailable && showOpportunityModal,
           onClose: () => setShowOpportunityModal(false),
           contact,
           onSave: handleCreateOpportunity,

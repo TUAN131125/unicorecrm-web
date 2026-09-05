@@ -4,6 +4,7 @@ import { Button } from "@/shared/components/ui";
 import { useI18n } from "@/i18n";
 import type { ApplicationError } from "@/shared/domain";
 import { AuthoritativeQueryNotice } from "./AuthoritativeQueryNotice";
+import { formatApplicationError } from "./errorPresentation";
 
 export interface AuthoritativeQueryViewState {
   connected: boolean;
@@ -59,6 +60,10 @@ export const AuthoritativeQueryBoundary: React.FC<AuthoritativeQueryBoundaryProp
       <ListStatePanel
         kind="error"
         title={text(errorTitleVi, errorTitleEn)}
+        description={formatApplicationError(query.error, {
+          locale,
+          fallbackMessage: text("Không thể tải dữ liệu.", "The data could not be loaded."),
+        })}
         action={(
           <Button type="button" variant="secondary" size="sm" onClick={() => void query.refresh()}>
             {text("Thử lại", "Retry")}
@@ -69,7 +74,7 @@ export const AuthoritativeQueryBoundary: React.FC<AuthoritativeQueryBoundaryProp
   }
 
   return (
-    <>
+    <div className="min-w-0 space-y-3" data-authoritative-query-boundary>
       {showNotice && (
         <AuthoritativeQueryNotice
           connected={query.connected}
@@ -82,6 +87,6 @@ export const AuthoritativeQueryBoundary: React.FC<AuthoritativeQueryBoundaryProp
         />
       )}
       {children}
-    </>
+    </div>
   );
 };

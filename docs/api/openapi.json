@@ -9559,6 +9559,53 @@
           },
           {
             "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Opaque continuation cursor for deterministic Lead ordering.",
+            "schema": {
+              "$ref": "#/components/schemas/CursorToken"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum Leads returned.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 250,
+              "default": 50
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "description": "Workspace- and access-scoped search by Lead ID, display name, and readable primary phone.",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "workState",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/LeadWorkState"
+            }
+          },
+          {
+            "name": "ownerId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
           }
         ],
         "responses": {
@@ -9567,7 +9614,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/LeadList"
+                  "$ref": "#/components/schemas/LeadListResponse"
                 }
               }
             }
@@ -49991,10 +50038,7 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "displayName",
-          "source",
-          "ownerId",
-          "estimatedValue"
+          "displayName"
         ],
         "properties": {
           "displayName": {
@@ -50181,7 +50225,7 @@
             }
           }
         },
-        "x-profile-semantics": "Creates a NEW Lead. IDs, timestamps, score, lifecycle state, audit metadata and activity records are server-owned."
+        "x-profile-semantics": "Creates a NEW Lead from a display name and at least one contact channel. When ownerId is omitted for interactive creation, the backend derives the owner from the trusted authenticated Workspace member. Source, estimated value, follow-up and other enrichment remain optional. IDs, timestamps, score, lifecycle state, audit metadata and activity records are server-owned."
       },
       "CreateLeadResponse": {
         "type": "object",
@@ -53213,12 +53257,10 @@
         "required": [
           "id",
           "displayName",
-          "estimatedValue",
           "version",
           "createdAt",
           "updatedAt",
           "leadWorkState",
-          "source",
           "score",
           "ownerId",
           "interestedProducts",
@@ -54013,9 +54055,26 @@
         }
       },
       "LeadList": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/LeadDocument"
+        "$ref": "#/components/schemas/LeadListResponse",
+        "deprecated": true
+      },
+      "LeadListResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LeadDocument"
+            }
+          },
+          "pageInfo": {
+            "$ref": "#/components/schemas/PageInfo"
+          }
         }
       },
       "LeadMutationResponse": {
@@ -54109,7 +54168,7 @@
           "displayName": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 256
+            "maxLength": 200
           },
           "email": {
             "type": "string",
@@ -58500,9 +58559,7 @@
         "additionalProperties": false,
         "required": [
           "displayName",
-          "source",
-          "ownerId",
-          "estimatedValue"
+          "ownerId"
         ],
         "properties": {
           "displayName": {

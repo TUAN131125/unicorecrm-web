@@ -41,7 +41,7 @@ import { getAuthSessionSnapshot } from "@/platform/identity-auth";
 import { listWorkspaceMemberDirectory, resolveWorkspaceMemberName } from "@/platform/member-directory";
 import { getDisplayOrdersForContact } from "@/modules/orders";
 import { useContacts } from "../hooks/useContacts";
-import { archiveContactCommand, getContactPreference, isContactConnectedMode, isContactRetentionUnavailable, restoreContactCommand, setContactPreference } from "../../public/contacts";
+import { archiveContactCommand, getContactPreference, isContactUpdateAvailable, isContactRetentionUnavailable, restoreContactCommand, setContactPreference } from "../../public/contacts";
 import {
   createContactOpportunityCreationRuntime,
   executeContactOpportunityCreation,
@@ -50,6 +50,7 @@ import {
 
 import { findCustomerForContact, getCustomerDisplayNameForContact } from "../model/contactCustomerLookup";
 import { getDealNextActionTaskIntentKey } from "@/workflows/work-activation";
+import { useEffectiveAccess } from "@/platform/access-control";
 
 export interface ContactDetailPageProps {
   customers: Customer[];
@@ -88,6 +89,7 @@ export function useContactDetailController(props: ContactDetailPageProps) {
   careCases,
 } = props;
   const { tx, locale } = useI18n();
+  const access = useEffectiveAccess();
   const reduceMotion = useReducedMotion();
   const currentMemberId = getAuthSessionSnapshot()?.principal.memberId;
   const members = listWorkspaceMemberDirectory();
@@ -171,7 +173,10 @@ export function useContactDetailController(props: ContactDetailPageProps) {
    * inside the contacts projection, so the action is refused up front with a
    * user-readable reason instead of throwing out of the event handler.
    */
-  const contactWritesUnavailable = isContactConnectedMode();
+  const contactUpdateAvailable = isContactUpdateAvailable();
+  const canUpdateContact = contactUpdateAvailable && access.canPerform("contacts", "update");
+  const contactOpportunityAvailable = !isContactOpportunityCreationUnavailable();
+  const contactWritesUnavailable = !contactUpdateAvailable;
   const refuseUnavailableContactWrite = (action: string): boolean => {
     if (!contactWritesUnavailable) return false;
     showToast(backendUnavailableMessage({ locale, action }));
@@ -1178,6 +1183,9 @@ export function useContactDetailController(props: ContactDetailPageProps) {
     return dateB.localeCompare(dateA) || b.id.localeCompare(a.id);
   });
   return {
+    contactUpdateAvailable,
+    canUpdateContact,
+    contactOpportunityAvailable,
     contactQuery,
     customers,
     deals,

@@ -18,6 +18,8 @@ import { PageHeaderMoreButton } from "@/components/crm/PageHeaderActions";
 
 export type ContactTopActionMenuProps = {
   selectedCount: number;
+  writesAvailable: boolean;
+  importsAvailable: boolean;
   onExportAll: () => void;
   onPrintList: () => void;
   onBulkChangeOwner: () => void;
@@ -33,6 +35,8 @@ export type ContactTopActionMenuProps = {
 
 export const ContactTopActionMenu: React.FC<ContactTopActionMenuProps> = ({
   selectedCount,
+  writesAvailable,
+  importsAvailable,
   onExportAll,
   onPrintList,
   onBulkChangeOwner,
@@ -104,7 +108,7 @@ export const ContactTopActionMenu: React.FC<ContactTopActionMenuProps> = ({
             disabled: !hasSelected,
             onClick: onBulkDelete
           }
-        ]
+        ].map((item) => ({ ...item, hidden: !writesAvailable }))
       },
       {
         id: "config",
@@ -114,13 +118,15 @@ export const ContactTopActionMenu: React.FC<ContactTopActionMenuProps> = ({
             id: "sharing",
             label: t("contactList.actions.manageSharing"),
             icon: <Share2 size={13} />,
-            onClick: onManageSharing
+            onClick: onManageSharing,
+            hidden: !writesAvailable,
           },
           {
             id: "tags",
             label: t("contactList.actions.manageTags"),
             icon: <Tag size={13} />,
-            onClick: onManageTags
+            onClick: onManageTags,
+            hidden: !writesAvailable,
           },
           {
             id: "trash-archived",
@@ -144,7 +150,8 @@ export const ContactTopActionMenu: React.FC<ContactTopActionMenuProps> = ({
             id: "advanced-import",
             label: t("contactList.actions.advancedImport"),
             icon: <UploadCloud size={13} />,
-            onClick: onAdvancedImport
+            onClick: onAdvancedImport,
+            hidden: !importsAvailable,
           }
         ]
       }

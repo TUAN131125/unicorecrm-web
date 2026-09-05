@@ -21,7 +21,7 @@ export function mapLeadDocumentToApplication(dto: LeadDocument): Lead {
     companyName: dto.companyName ?? "",
     email: dto.email ?? "",
     phone: dto.phone ?? "",
-    source: dto.source,
+    source: dto.source ?? "",
     score: dto.score,
     leadWorkState: dto.leadWorkState,
     ...(dto.qualificationOutcome === undefined ? {} : { qualificationOutcome: dto.qualificationOutcome }),
@@ -121,8 +121,10 @@ export function mapLeadDocumentToApplication(dto: LeadDocument): Lead {
     ...(dto.disqualifiedBy === undefined ? {} : { disqualifiedBy: dto.disqualifiedBy }),
     ...(dto.disqualificationReason === undefined ? {} : { disqualificationReason: dto.disqualificationReason }),
     ...(dto.disqualificationNote === undefined ? {} : { disqualificationNote: dto.disqualificationNote }),
-    expectedValue: moneyToDisplayNumber(dto.estimatedValue),
-    estimatedValue: dto.estimatedValue,
+    ...(dto.estimatedValue === undefined ? {} : {
+      expectedValue: moneyToDisplayNumber(dto.estimatedValue),
+      estimatedValue: dto.estimatedValue,
+    }),
     resourceVersion: dto.version,
     activities: [],
     activitiesAuthority: "NOT_INCLUDED",
@@ -130,22 +132,31 @@ export function mapLeadDocumentToApplication(dto: LeadDocument): Lead {
 }
 
 export function mapCreateLeadInputToRequest(input: LeadProfileInput): CreateLeadRequest {
-  return mapLeadProfileInputToRequest(input, "createLead") as CreateLeadRequest;
+  return mapLeadProfileInputToRequest(input, "createLead", false, true) as CreateLeadRequest;
 }
 
 export function mapReplaceLeadProfileInputToRequest(input: LeadProfileInput): ReplaceLeadProfileRequest {
-  return mapLeadProfileInputToRequest(input, "replaceLeadProfile") as ReplaceLeadProfileRequest;
+  return mapLeadProfileInputToRequest(input, "replaceLeadProfile", true, false) as ReplaceLeadProfileRequest;
 }
 
-function mapLeadProfileInputToRequest(input: LeadProfileInput, operationId: string): CreateLeadRequest | ReplaceLeadProfileRequest {
+function mapLeadProfileInputToRequest(
+  input: LeadProfileInput,
+  operationId: string,
+  includeOwner: boolean,
+  requireContactChannel: boolean,
+): CreateLeadRequest | ReplaceLeadProfileRequest {
   const displayName = input.displayName.trim();
-  const source = input.source.trim();
-  const ownerId = input.ownerId.trim();
-  const currency = input.estimatedValue.currency.trim().toUpperCase();
+  const source = text(input.source);
+  const ownerId = text(input.ownerId);
+  const currency = input.estimatedValue?.currency.trim().toUpperCase();
   if (!displayName) throw requestViolation(operationId, "displayName", "Lead displayName is required.");
-  if (!source) throw requestViolation(operationId, "source", "Lead source is required.");
-  if (!ownerId) throw requestViolation(operationId, "ownerId", "Lead ownerId is required.");
-  if (!currency) throw requestViolation(operationId, "estimatedValue.currency", "Lead estimatedValue currency is required.");
+  if (requireContactChannel && ![input.phone, input.workPhone, input.otherPhone, input.email, input.personalEmail, input.zaloId, input.facebook].some((value) => text(value))) {
+    throw requestViolation(operationId, "contactChannel", "Lead requires at least one contact channel.");
+  }
+  if (includeOwner && !ownerId) throw requestViolation(operationId, "ownerId", "Lead ownerId is required when replacing a profile.");
+  if (input.estimatedValue !== undefined && !currency) {
+    throw requestViolation(operationId, "estimatedValue.currency", "Lead estimatedValue currency is required when a value is supplied.");
+  }
   return compact({
     displayName,
     salutation: text(input.salutation),
@@ -175,12 +186,14 @@ function mapLeadProfileInputToRequest(input: LeadProfileInput, operationId: stri
     contactAddress: text(input.contactAddress),
     source,
     campaignId: text(input.campaignId),
-    ownerId,
+    ownerId: includeOwner ? ownerId : undefined,
     assignedTeam: text(input.assignedTeam),
     decisionRole: text(input.decisionRole),
     priority: input.priority,
     interestedProducts: input.interestedProducts?.map((item) => mapInterestedProduct(item, currency)),
-    estimatedValue: { amount: normalizeDecimal(input.estimatedValue.amount), currency },
+    estimatedValue: input.estimatedValue === undefined
+      ? undefined
+      : { amount: normalizeDecimal(input.estimatedValue.amount), currency: currency! },
     budgetRange: text(input.budgetRange),
     purchaseTimeline: text(input.purchaseTimeline),
     painPoint: text(input.painPoint),
@@ -195,17 +208,21 @@ function mapLeadProfileInputToRequest(input: LeadProfileInput, operationId: stri
 
 function mapInterestedProduct(
   item: LeadProfileInput["interestedProducts"] extends readonly (infer T)[] | undefined ? T : never,
-  profileCurrency: string,
+  profileCurrency?: string,
 ): LeadInterestedProductInput {
   const productId = item.productId.trim();
   if (!productId) throw requestViolation("leadProfile", "interestedProducts.productId", "Lead interested product requires productId.");
+  const expectedBudgetCurrency = item.expectedBudget?.currency.trim().toUpperCase() || profileCurrency;
+  if (item.expectedBudget !== undefined && !expectedBudgetCurrency) {
+    throw requestViolation("leadProfile", "interestedProducts.expectedBudget.currency", "Expected budget currency is required.");
+  }
   return compact({
     productId,
     interestLevel: item.interestLevel,
     estimatedQuantity: item.estimatedQuantity,
     expectedBudget: item.expectedBudget === undefined ? undefined : {
       amount: normalizeDecimal(item.expectedBudget.amount),
-      currency: item.expectedBudget.currency.trim().toUpperCase() || profileCurrency,
+      currency: expectedBudgetCurrency!,
     },
     note: text(item.note),
   });

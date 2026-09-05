@@ -37,7 +37,7 @@ import type { LeadCsvImportPlan } from "../import/leadCsvImport";
 import { saveLead } from "./leadRepositoryCommands";
 
 export async function createLeadFromFormViaApi(input: Partial<Lead>): Promise<CreateLeadResult> {
-  const profile = toLeadProfileInput(input);
+  const profile = toLeadProfileInput(input, false);
   const result = await getLeadApiRuntime().commands.createLead(profile, {
     idempotencyKey: createAttemptKey("lead:create"),
   });
@@ -61,7 +61,7 @@ export async function replaceLeadProfileFromFormViaApi(
       details: { module: "leads", operationId: "replaceLeadProfile", leadId },
     });
   }
-  const profile = toLeadProfileInput({ ...current, ...input, id: leadId, resourceVersion: expectedVersion });
+  const profile = toLeadProfileInput({ ...current, ...input, id: leadId, resourceVersion: expectedVersion }, true);
   const result = await getLeadApiRuntime().commands.replaceLeadProfile(leadId, profile, {
     idempotencyKey: createAttemptKey(`lead:replace-profile:${leadId}`),
     expectedVersion,
@@ -414,17 +414,19 @@ function requireLeadVersion(leadId: string, operationId: string): number {
   return Number(version);
 }
 
-function toLeadProfileInput(input: Partial<Lead>): LeadProfileInput {
+function toLeadProfileInput(input: Partial<Lead>, requireOwner: false): LeadProfileInput;
+function toLeadProfileInput(input: Partial<Lead>, requireOwner: true): LeadProfileInput & { ownerId: string };
+function toLeadProfileInput(input: Partial<Lead>, requireOwner: boolean): LeadProfileInput {
   const displayName = input.name?.trim() ?? "";
-  const source = input.source?.trim() ?? "";
-  const ownerId = input.ownerId?.trim() ?? "";
-  if (!displayName || !source || !ownerId) {
-    throw profileViolation("displayName/source/ownerId", "Lead form must provide name, source and owner before calling the API.");
+  const source = input.source?.trim() || undefined;
+  const ownerId = input.ownerId?.trim() || undefined;
+  if (!displayName) throw profileViolation("displayName", "Lead form must provide a name before calling the API.");
+  if (requireOwner && !ownerId) throw profileViolation("ownerId", "Lead profile replacement requires an owner.");
+  if (!requireOwner && ![input.phone, input.workPhone, input.otherPhone, input.email, input.personalEmail, input.zaloId, input.facebook]
+    .some((value) => value?.trim())) {
+    throw profileViolation("contactChannel", "Lead form must provide at least one contact channel.");
   }
   const estimatedValue = input.estimatedValue;
-  if (!estimatedValue) {
-    throw profileViolation("estimatedValue", "Lead form must provide Money with workspace currency.");
-  }
   const preferredChannel = normalizePreferredChannel(input.preferredChannel);
   return compact({
     displayName,
@@ -464,7 +466,9 @@ function toLeadProfileInput(input: Partial<Lead>): LeadProfileInput {
       interestLevel: item.interestLevel,
       estimatedQuantity: item.estimatedQuantity,
       expectedBudget: item.expectedBudgetMoney
-        ?? (item.expectedBudget === undefined ? undefined : money(String(item.expectedBudget), estimatedValue.currency)),
+        ?? (item.expectedBudget === undefined || estimatedValue === undefined
+          ? undefined
+          : money(String(item.expectedBudget), estimatedValue.currency)),
       note: item.note,
     })),
     estimatedValue,

@@ -45,8 +45,11 @@ export function createSupportDemoApiRuntime(repository: SupportCaseRepository): 
           priority: input.priority,
           category: input.category,
           source: input.source,
-          customerId: input.customerId ?? input.relationshipRef.id,
-          customerName: input.customerName ?? input.relationshipRef.id,
+          // Customer enrichment is carried only when the caller supplies it. relationshipRef.id
+          // identifies a Contact or Organization Account, never a Customer, so it must not be
+          // substituted for either field.
+          ...(input.customerId !== undefined ? { customerId: input.customerId } : {}),
+          ...(input.customerName !== undefined ? { customerName: input.customerName } : {}),
           relationshipRef: input.relationshipRef,
           ...(input.contactId !== undefined ? { contactId: input.contactId } : {}),
           ...(input.contactName !== undefined ? { contactName: input.contactName } : {}),

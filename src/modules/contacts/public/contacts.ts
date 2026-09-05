@@ -1,4 +1,5 @@
-import { assertMutationCommandSupported, createMutationMetadata, executeMutationCommand, isMutationCommandUnavailable, type MutationCommandMetadata, type MutationOutcome } from "@/shared/application";
+import { assertMutationCommandSupported, createMutationMetadata, executeMutationCommand, isBusinessOperationUnavailable, isMutationCommandUnavailable, type MutationCommandMetadata, type MutationOutcome } from "@/shared/application";
+import { CONTACT_CREATE_OPERATION, CONTACT_UPDATE_OPERATION } from "../application/ports/ContactApiRuntime";
 import type { Contact } from "../domain/model/contact.types";
 import { contactPreferences, contactRepository, isContactConnectedApiRuntime } from "../application/composition/contactApplicationServices";
 import {
@@ -12,6 +13,8 @@ import {
 
 /** True when Contact data is served by the backend, where local Contact writes are refused. */
 export function isContactConnectedMode(): boolean { return isContactConnectedApiRuntime(); }
+export function isContactCreateAvailable(): boolean { return !isBusinessOperationUnavailable(CONTACT_CREATE_OPERATION); }
+export function isContactUpdateAvailable(): boolean { return !isBusinessOperationUnavailable(CONTACT_UPDATE_OPERATION); }
 /**
  * True when Contact retention (archive/restore/anonymize) cannot run in the active runtime.
  * `contact.archive`, `contact.restore` and `contact.anonymize` are BLOCKED in the canonical

@@ -77,6 +77,8 @@ export function createLeadDemoApiRuntime(repository: LeadRepository): LeadApiRun
       async createLead(input: CreateLeadInput, options: LeadCommandOptions): Promise<CreateLeadResult> {
         const now = new Date().toISOString();
         const id = `lead_demo_${Date.now()}`;
+        const ownerId = input.ownerId?.trim();
+        if (!ownerId) throw new Error("LEAD_DEMO_OWNER_CONTEXT_REQUIRED");
         const lead: Lead = applyProfile({
           id,
           name: input.displayName,
@@ -84,10 +86,10 @@ export function createLeadDemoApiRuntime(repository: LeadRepository): LeadApiRun
           companyName: "",
           email: "",
           phone: "",
-          source: input.source,
+          source: input.source ?? "",
           score: 0,
           leadWorkState: LeadWorkState.NEW,
-          ownerId: input.ownerId,
+          ownerId,
           interestedProducts: [],
           createdAt: now,
           updatedAt: now,
@@ -412,9 +414,9 @@ function applyProfile(base: Lead, input: LeadProfileInput, now: string): Lead {
     ward: input.ward,
     contactAddress: input.contactAddress,
     address: input.contactAddress,
-    source: input.source,
+    source: input.source ?? "",
     campaignId: input.campaignId,
-    ownerId: input.ownerId,
+    ownerId: input.ownerId ?? base.ownerId,
     assignedTeam: input.assignedTeam,
     decisionRole: input.decisionRole,
     priority: input.priority,
@@ -429,7 +431,7 @@ function applyProfile(base: Lead, input: LeadProfileInput, now: string): Lead {
       note: item.note,
       createdAt: now,
     })),
-    expectedValue: moneyToDisplayNumber(input.estimatedValue),
+    expectedValue: input.estimatedValue === undefined ? undefined : moneyToDisplayNumber(input.estimatedValue),
     estimatedValue: input.estimatedValue,
     budgetRange: input.budgetRange,
     purchaseTimeline: input.purchaseTimeline,

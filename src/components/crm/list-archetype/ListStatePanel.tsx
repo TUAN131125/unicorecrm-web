@@ -6,6 +6,7 @@ export type ListStateKind = "loading" | "empty" | "error" | "permission";
 interface ListStatePanelProps {
   kind: ListStateKind;
   title: string;
+  description?: string;
   action?: React.ReactNode;
 }
 
@@ -19,6 +20,7 @@ const icons: Record<ListStateKind, React.ReactNode> = {
 export const ListStatePanel: React.FC<ListStatePanelProps> = ({
   kind,
   title,
+  description,
   action,
 }) => (
   <div
@@ -29,6 +31,7 @@ export const ListStatePanel: React.FC<ListStatePanelProps> = ({
       {icons[kind]}
     </div>
     <h3 className="text-sm font-semibold text-slate-900">{title}</h3>
+    {description && <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600">{description}</p>}
     {action && <div className="mt-5">{action}</div>}
   </div>
 );
