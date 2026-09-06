@@ -6,11 +6,18 @@ import { walkAllFiles } from "../../../scripts/quality/core/filesystem.mjs";
 import { createLeadConnectedApiRuntime } from "../../../src/modules/leads/infrastructure/http/createLeadConnectedApiRuntime.ts";
 import { createLeadModuleDataAuthorityBridge } from "../../../src/modules/leads/infrastructure/http/LeadModuleDataAuthorityBridge.ts";
 import type { HttpClient, HttpRequest } from "../../../src/platform/api/client/HttpClient.ts";
+import { isLeadOperationAvailable, LEAD_OPERATION } from "../../../src/modules/leads/application/leadOperationAvailability.ts";
+import { InMemoryLeadRepository } from "../../../src/modules/leads/infrastructure/InMemoryLeadRepository.ts";
+import { saveLead } from "../../../src/modules/leads/application/commands/leadRepositoryCommands.ts";
+import { runBackendProjection } from "../../../src/shared/application/index.ts";
+import { BrowserEventBus } from "../../../src/platform/events/index.ts";
+import { LeadWorkState } from "../../../src/modules/leads/domain/model/leadLifecycle.canonical.ts";
 
 const root = repositoryRoot;
 const requiredFiles = [
   "src/modules/leads/application/ports/LeadApiRuntime.ts",
   "src/modules/leads/application/commands/leadApiCommands.ts",
+  "src/modules/leads/application/leadOperationAvailability.ts",
   "src/modules/leads/infrastructure/http/LeadApiMapper.ts",
   "src/modules/leads/infrastructure/http/LeadHttpQueryAdapter.ts",
   "src/modules/leads/infrastructure/http/LeadHttpCommandAdapter.ts",
@@ -107,12 +114,28 @@ const client: HttpClient = {
       const reopened = { ...baseDocument, leadWorkState: "CONTACTING", version: 5, updatedAt: "2026-07-25T04:00:00.000Z" };
       return mutationResponse(reopened, 5, "cmd-reopen") as TResponse;
     }
+    if (input.operationId === "archiveLead") {
+      const archived = { ...baseDocument, archivedAt: "2026-07-25T05:00:00.000Z", archiveReason: "Duplicate intake", version: 4, updatedAt: "2026-07-25T05:00:00.000Z" };
+      return mutationResponse(archived, 4, "cmd-archive") as TResponse;
+    }
+    if (input.operationId === "archiveLeadBatch") {
+      const leads = [
+        { ...baseDocument, archivedAt: "2026-07-25T06:00:00.000Z", archiveReason: "Campaign complete", version: 4, updatedAt: "2026-07-25T06:00:00.000Z" },
+        { ...baseDocument, id: "lead-2", displayName: "Lead Two", archivedAt: "2026-07-25T06:00:00.000Z", archiveReason: "Campaign complete", version: 8, updatedAt: "2026-07-25T06:00:00.000Z" },
+      ];
+      return { commandId: "cmd-archive-batch", correlationId: "corr-archive-batch", aggregateId: "lead-batch-1", aggregateType: "LEAD", version: 8, occurredAt: "2026-07-25T06:00:00.000Z", outcome: "COMMITTED", warnings: [], emittedEventIds: ["event-archive-batch"], auditEvidenceIds: ["audit-1", "audit-2"], result: { leads } } as TResponse;
+    }
     throw new Error(`Unexpected operation: ${input.operationId}`);
   },
 };
 
 const runtime = createLeadConnectedApiRuntime(client);
 assert.equal(runtime.mode, "connected");
+assert.equal(isLeadOperationAvailable(LEAD_OPERATION.ARCHIVE), true);
+assert.equal(isLeadOperationAvailable(LEAD_OPERATION.ARCHIVE_BATCH), true);
+for (const unavailable of [LEAD_OPERATION.ASSIGN_OWNER_BATCH, LEAD_OPERATION.IMPORT_BATCH, LEAD_OPERATION.REQUEST_EXPORT]) {
+  assert.equal(isLeadOperationAvailable(unavailable), false, `${unavailable} must be hidden independently of permission in connected mode.`);
+}
 const leadPage = await runtime.queries.list({ limit: 25, search: "Lead One", filters: { workState: "NEW", ownerId: "user-1" } });
 assert.equal(leadPage.items[0]?.id, "lead-1");
 assert.equal(leadPage.pageInfo.hasNextPage, true);
@@ -170,8 +193,60 @@ const reopenRequest = requests.find((request) => request.operationId === "reopen
 assert.deepEqual(reopenRequest?.body, {});
 assert.equal(reopenRequest?.expectedVersion, 4);
 
+const archived = await runtime.commands.archiveLead("lead-1", { reason: " Duplicate intake " }, { idempotencyKey: "lead-archive-attempt-1", expectedVersion: 3 });
+assert.equal(archived.lead.archivedAt, "2026-07-25T05:00:00.000Z");
+assert.equal(archived.lead.archiveReason, "Duplicate intake");
+assert.equal(archived.lead.resourceVersion, 4);
+const archiveRequest = requests.find((request) => request.operationId === "archiveLead");
+assert.equal(archiveRequest?.method, "POST");
+assert.equal(archiveRequest?.path, "/leads/lead-1/archive");
+assert.equal(archiveRequest?.expectedVersion, 3);
+assert.equal(archiveRequest?.idempotencyKey, "lead-archive-attempt-1");
+assert.deepEqual(archiveRequest?.body, { reason: "Duplicate intake" });
+
+const archivedBatch = await runtime.commands.archiveLeadBatch({
+  items: [{ leadId: "lead-1", expectedVersion: 3 }, { leadId: "lead-2", expectedVersion: 7 }],
+  reason: " Campaign complete ",
+}, { idempotencyKey: "lead-archive-batch-attempt-1" });
+assert.deepEqual(archivedBatch.leads.map((lead) => lead.id), ["lead-1", "lead-2"]);
+const archiveBatchRequest = requests.find((request) => request.operationId === "archiveLeadBatch");
+assert.equal(archiveBatchRequest?.path, "/leads/archive-batch");
+assert.equal(archiveBatchRequest?.idempotencyKey, "lead-archive-batch-attempt-1");
+assert.deepEqual(archiveBatchRequest?.body, {
+  reason: "Campaign complete",
+  items: [{ leadId: "lead-1", expectedVersion: 3 }, { leadId: "lead-2", expectedVersion: 7 }],
+});
+
+const cachedLead = {
+  id: "lead-projection",
+  name: "Projection Lead",
+  title: "",
+  companyName: "",
+  email: "projection@example.test",
+  phone: "0901234567",
+  source: "WEB",
+  score: 0,
+  leadWorkState: LeadWorkState.NEW,
+  ownerId: "user-1",
+  interestedProducts: [],
+  createdAt: "2026-07-25T00:00:00.000Z",
+  activities: [],
+  resourceVersion: 3,
+};
+const projectionRepository = new InMemoryLeadRepository([cachedLead], new BrowserEventBus());
+const committedDisqualification = {
+  ...cachedLead,
+  leadWorkState: LeadWorkState.CLOSED,
+  qualificationOutcome: "DISQUALIFIED" as const,
+  resourceVersion: 4,
+};
+assert.throws(() => saveLead(projectionRepository, committedDisqualification), /Lead lifecycle changes/u);
+runBackendProjection("leads", () => saveLead(projectionRepository, committedDisqualification));
+assert.equal(projectionRepository.getById(cachedLead.id)?.qualificationOutcome, "DISQUALIFIED");
+
 await assert.rejects(() => runtime.commands.createLead({ displayName: "No contact" }, { idempotencyKey: "key" }), (error: unknown) => hasCode(error, "CONNECTED_CONTRACT_VIOLATION"));
-await assert.rejects(() => runtime.commands.replaceLeadProfile("lead-1", profile, { idempotencyKey: "key", expectedVersion: 0 }), (error: unknown) => hasCode(error, "CONNECTED_CONTRACT_VIOLATION"));
+await runtime.commands.replaceLeadProfile("lead-1", profile, { idempotencyKey: "lead-version-zero", expectedVersion: 0 });
+await assert.rejects(() => runtime.commands.replaceLeadProfile("lead-1", profile, { idempotencyKey: "key", expectedVersion: -1 }), (error: unknown) => hasCode(error, "CONNECTED_CONTRACT_VIOLATION"));
 await assert.rejects(() => runtime.commands.createLead(profile, { idempotencyKey: "" }), (error: unknown) => hasCode(error, "CONNECTED_CONTRACT_VIOLATION"));
 
 const bridge = createLeadModuleDataAuthorityBridge(runtime);

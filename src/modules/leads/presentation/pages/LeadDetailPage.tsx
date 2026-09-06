@@ -15,15 +15,18 @@ export const LeadDetailPage: React.FC<LeadDetailPageProps> = (props) => {
   const { leadId = "" } = useParams();
   const workspace = useWorkspaceContextSnapshot();
   const detailQuery = useLeadAuthoritativeResource(getLeadDetailResource(leadId || "__missing__"), { enabled: Boolean(leadId), scopeKey: workspace.workspaceId, onScopeChange: () => replaceLeads([]) });
-  const controller = useLeadDetailController(props);
+  const controller = useLeadDetailController({
+    ...props,
+    ...(detailQuery.data === undefined ? {} : { authoritativeLead: detailQuery.data }),
+  });
   const navigate = useNavigate();
   const { t } = useI18n();
   return (
     <AuthoritativeQueryBoundary
       query={detailQuery}
       hasData={Boolean(controller)}
-      loadingTitleVi="Đang tải Lead từ backend"
-      loadingTitleEn="Loading Lead from backend"
+      loadingTitleVi="Đang tải thông tin Lead"
+      loadingTitleEn="Loading Lead details"
       errorTitleVi="Không thể tải Lead"
       errorTitleEn="Lead could not be loaded"
     >

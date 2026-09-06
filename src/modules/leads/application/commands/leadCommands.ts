@@ -161,7 +161,7 @@ export function disqualifyLead(
   leadId: string,
   input: {
     reason: string;
-    evidence: string;
+    evidence?: string;
     actorId?: string;
     activity?: CRMActivity;
   },
@@ -169,9 +169,8 @@ export function disqualifyLead(
   const current = repository.list().find((lead) => lead.id === leadId);
   assertRuntimeCommandAccess(CAPABILITIES.LEADS_QUALIFY, "leads", current);
   const reason = input.reason.trim();
-  const evidence = input.evidence.trim();
+  const evidence = input.evidence?.trim() || undefined;
   if (!reason) throw new Error("Disqualification requires a reason.");
-  if (!evidence) throw new Error("Disqualification requires evidence.");
 
   let updated: Lead | undefined;
   repository.replace(repository.list().map((lead) => {

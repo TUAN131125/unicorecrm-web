@@ -245,7 +245,7 @@ export function createLeadDemoApiRuntime(repository: LeadRepository): LeadApiRun
       async disqualifyLeadBatch(input: DisqualifyLeadBatchInput, options: LeadCommandOptions): Promise<DisqualifyLeadBatchResult> {
         return withRepositoryRollback(repository, () => {
           input.items.forEach((item) => assertVersion(repository, item.leadId, item.expectedVersion));
-          if (!input.reason.trim() || !input.evidence.trim()) throw new Error("LEAD_BATCH_DISQUALIFICATION_INPUT_REQUIRED");
+          if (!input.reason.trim()) throw new Error("LEAD_BATCH_DISQUALIFICATION_REASON_REQUIRED");
           const now = new Date().toISOString();
           const leads = input.items.map((item) => {
             const updated = disqualifyLead(repository, item.leadId, { reason: input.reason, evidence: input.evidence });

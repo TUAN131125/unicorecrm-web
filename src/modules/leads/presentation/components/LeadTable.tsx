@@ -464,6 +464,9 @@ export const LeadTable: React.FC<LeadTableProps> = ({
           setRowActionAnchorEl(null);
         }}
         width={240}
+        role="menu"
+        ariaLabel="Lead actions"
+        autoFocusFirstMenuItem
       >
         {activeLead && (
           <LeadActionMenu

@@ -5,7 +5,7 @@ import {
   type MutationCommandMetadata,
   type MutationOutcome,
 } from "@/shared/application";
-import { ApplicationError } from "@/shared/domain";
+import { ApplicationError, normalizeApplicationError } from "@/shared/domain";
 import { getLeadSnapshot } from "@/modules/leads";
 import { executeLeadDirectSale } from "../application/executeLeadDirectSale";
 import { executeLeadNurture } from "../application/executeLeadNurture";
@@ -42,8 +42,12 @@ export async function executeLeadNurtureCommand(
   const resolved = createMutationMetadata(`lead.qualify-nurture:${command.leadId}`, metadata);
   const api = getLeadQualificationApiRuntime();
   if (api.mode === "connected") {
-    const result = await api.commands.qualifyForNurture(command, requireConnectedOptions(command.leadId, "qualifyLeadForNurture", resolved));
-    return commitConnectedOutcome("lead.qualify-nurture", result, resolved.idempotencyKey, ["leads", "contacts", "organizations", "tasks"]);
+    const result = await runConnectedQualification(
+      command.leadId,
+      "lead.qualify-nurture",
+      () => api.commands.qualifyForNurture(command, requireConnectedOptions(command.leadId, "qualifyLeadForNurture", resolved)),
+    );
+    return commitConnectedOutcome("lead.qualify-nurture", result, resolved.idempotencyKey, ["leads", "contacts", "tasks"]);
   }
   return executeMutationCommand(
     { commandType: "lead.qualify-nurture", aggregateType: "lead", aggregateId: command.leadId, payload: command },
@@ -59,11 +63,15 @@ export async function executeLeadOpportunityCommand(
   const resolved = createMutationMetadata(`lead.qualify-opportunity:${command.leadId}`, metadata);
   const api = getLeadQualificationApiRuntime();
   if (api.mode === "connected") {
-    const result = await api.commands.qualifyForOpportunity(
-      command,
-      requireConnectedOptions(command.leadId, "qualifyLeadForOpportunity", resolved),
+    const result = await runConnectedQualification(
+      command.leadId,
+      "lead.qualify-opportunity",
+      () => api.commands.qualifyForOpportunity(
+        command,
+        requireConnectedOptions(command.leadId, "qualifyLeadForOpportunity", resolved),
+      ),
     );
-    return commitConnectedOutcome("lead.qualify-opportunity", result, resolved.idempotencyKey, ["leads", "contacts", "organizations", "tasks", "deals"]);
+    return commitConnectedOutcome("lead.qualify-opportunity", result, resolved.idempotencyKey, ["leads", "contacts", "tasks", "deals"]);
   }
   return executeMutationCommand(
     { commandType: "lead.qualify-opportunity", aggregateType: "lead", aggregateId: command.leadId, payload: command },
@@ -159,4 +167,25 @@ async function commitConnectedOutcome(
     emittedEvents: [...result.evidence.emittedEventIds],
     audit: { authority: "backend", evidenceIds: [...result.evidence.auditEvidenceIds] },
   };
+}
+
+async function runConnectedQualification(
+  leadId: string,
+  commandType: string,
+  execute: () => Promise<LeadQualificationApiResult>,
+): Promise<LeadQualificationApiResult> {
+  try {
+    return await execute();
+  } catch (caught) {
+    const error = normalizeApplicationError(caught);
+    if (error.code.includes("VERSION_CONFLICT") || error.code === "LEAD_QUALIFICATION_VERSION_REQUIRED") {
+      await invalidateModuleQueries({
+        moduleKeys: ["leads"],
+        commandType: `${commandType}.conflict-refresh`,
+        aggregateId: leadId,
+        occurredAt: new Date().toISOString(),
+      });
+    }
+    throw caught;
+  }
 }

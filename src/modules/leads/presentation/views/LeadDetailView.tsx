@@ -86,6 +86,10 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
     careCases,
     ownership,
     access,
+    canEdit,
+    canQualify,
+    canArchive,
+    canHandover,
     members,
     workspace,
     configurationRuntime,
@@ -134,6 +138,7 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
     setShowEditModal,
     showDeleteConfirm,
     setShowDeleteConfirm,
+    setArchiveReason,
     showHandoverModal,
     setShowHandoverModal,
     showTagsModal,
@@ -234,12 +239,17 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
                 <Badge variant={getLeadBadgeVariant(lead)} className="uppercase text-[9px] font-extrabold py-0.5 tracking-wider px-2">
                   {getLeadLifecycleLabel(lead, locale)}
                 </Badge>
+                {lead.archivedAt && (
+                  <Badge variant="secondary" className="uppercase text-[9px] font-extrabold py-0.5 tracking-wider px-2">
+                    {locale === "vi" ? "Đã lưu trữ" : "Archived"}
+                  </Badge>
+                )}
                 {lead.priority && (
                   <Badge variant={lead.priority === "high" ? "danger" : lead.priority === "medium" ? "warning" : "secondary"} className="text-[9px] py-0.5 font-bold uppercase">
                     {lead.priority === "high" ? (locale === "vi" ? "Ưu tiên cao" : "High Priority") : lead.priority === "medium" ? (locale === "vi" ? "Trung bình" : "Medium Priority") : (locale === "vi" ? "Thấp" : "Low Priority")}
                   </Badge>
                 )}
-                {ownership?.memberId && (
+                {canEdit && ownership?.memberId && (
                   <LeadConsentPanel
                     lead={lead}
                     actorId={ownership.memberId}
@@ -256,7 +266,7 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
               <div className="text-xs text-slate-500 font-medium flex flex-wrap items-center gap-x-3 gap-y-1">
                 <span className="font-bold text-slate-700">{lead.title || (locale === "vi" ? "Người liên lạc đại diện" : "Representative Contact")}</span>
                 <span className="text-slate-300">•</span>
-                <span className="text-slate-600 font-semibold">{lead.companyName || (locale === "vi" ? "Khách mua cá nhân" : "Individual buying client")}</span>
+                <span className="text-slate-600 font-semibold">{lead.companyName || "—"}</span>
                 {lead.phone && (
                   <>
                     <span className="text-slate-300">•</span>
@@ -278,25 +288,28 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
           </div>
 
           <div className="flex items-center gap-2 shrink-0 flex-wrap">
-            <IconButton
-              id="edit-direct-btn"
-              disabled={(Boolean(lead.qualificationOutcome) && lead.qualificationOutcome !== QualificationOutcome.DISQUALIFIED)}
-              onClick={() => {
-                if ((Boolean(lead.qualificationOutcome) && lead.qualificationOutcome !== QualificationOutcome.DISQUALIFIED)) {
-                  showToast(locale === "vi" ? "Lead đã đóng với qualification outcome, khóa chỉnh sửa trực tiếp." : "The Lead is closed with a qualification outcome and direct editing is locked.");
-                  return;
-                }
-                setShowEditModal(true);
-              }}
-              variant="secondary"
-              size="sm"
-              title={t("leadDetail.edit.title")}
-            >
-              <Edit3 size={14} />
-            </IconButton>
+            {canEdit && (
+              <IconButton
+                id="edit-direct-btn"
+                disabled={(Boolean(lead.qualificationOutcome) && lead.qualificationOutcome !== QualificationOutcome.DISQUALIFIED)}
+                onClick={() => {
+                  if ((Boolean(lead.qualificationOutcome) && lead.qualificationOutcome !== QualificationOutcome.DISQUALIFIED)) {
+                    showToast(locale === "vi" ? "Lead đã chốt kết quả nên không thể sửa trực tiếp." : "This Lead has a final outcome and cannot be edited directly.");
+                    return;
+                  }
+                  setShowEditModal(true);
+                }}
+                variant="secondary"
+                size="sm"
+                title={t("leadDetail.edit.title")}
+              >
+                <Edit3 size={14} />
+              </IconButton>
+            )}
 
             {/* Contextual lifecycle CTA: one clear next step for the current Lead state. */}
-            {lead.leadWorkState !== LeadWorkState.CLOSED && (
+            {lead.leadWorkState !== LeadWorkState.CLOSED
+              && (lead.leadWorkState === LeadWorkState.VERIFYING ? canQualify : canEdit) && (
               <Button
                 id="lead-primary-lifecycle-action"
                 onClick={() => {
@@ -337,6 +350,26 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
               </span>
             )}
 
+            {lead.relationshipRef?.type === "CONTACT" && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => navigate(toWorkspacePath(workspace.workspaceKey, "crm", `contacts/${lead.relationshipRef?.id}`))}
+              >
+                {locale === "vi" ? "Mở Contact" : "Open Contact"}
+              </Button>
+            )}
+
+            {lead.dealRef && (
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => navigate(toWorkspacePath(workspace.workspaceKey, "crm", `deals/${lead.dealRef}`))}
+              >
+                {locale === "vi" ? "Mở cơ hội" : "Open Deal"}
+              </Button>
+            )}
+
             {/* Dropdown for Status Management actions */}
             <div ref={moreActionsAnchorRef} className="relative">
               <IconButton
@@ -353,7 +386,10 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
                 lead={lead}
                 isOpen={showMoreMenu}
                 anchorEl={moreActionsAnchorRef.current}
-                canAssign={Boolean(ownership?.canAssign)}
+                canAssign={canHandover}
+                canUpdate={canEdit}
+                canQualify={canQualify}
+                canManageTags={canEdit}
                 onClose={() => setShowMoreMenu(false)}
                 onMarkContacted={() => {
                   updateWorkStateDirectly(
@@ -373,7 +409,7 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
                 onHandover={() => { setShowMoreMenu(false); setHandoverOwnerId(lead.ownerId); setShowHandoverModal(true); }}
                 onManageTags={() => { setShowMoreMenu(false); setShowTagsModal(true); }}
                 onPrint={() => { setShowMoreMenu(false); window.print(); }}
-                onDelete={() => { setShowMoreMenu(false); setShowDeleteConfirm(true); }}
+                onDelete={canArchive ? () => { setShowMoreMenu(false); setArchiveReason(""); setShowDeleteConfirm(true); } : undefined}
               />
             </div>
           </div>
@@ -1097,6 +1133,7 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
           handleSendEmailFromComposer,
           handleSendSMSFromComposer,
           members,
+          archiveListPath: toWorkspacePath(workspace.workspaceKey, "crm", "leads"),
         }}
       />
       </React.Suspense>

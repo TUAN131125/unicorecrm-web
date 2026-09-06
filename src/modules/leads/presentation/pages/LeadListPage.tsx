@@ -2,9 +2,9 @@ import { AuthoritativeQueryBoundary, formatApplicationError } from "@/shared/ope
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { Plus, Trash2, CheckCircle2, Target, ArrowUpRight, UserPlus, RefreshCw, Tag, Sliders, Printer, FileSpreadsheet } from "lucide-react";
-import type { CRMActivity } from "@/shared/domain";
+import { normalizeApplicationError, type CRMActivity } from "@/shared/domain";
 import type { Lead, LeadSource, LeadCampaign } from "../../domain/model/lead.types";
-import { replaceLeads } from "../../public/leads";
+import { getRetainedLeadsSnapshot, isLeadOperationAvailable, LEAD_OPERATION, replaceLeads } from "../../public/leads";
 import { LeadWorkState } from "../../domain/model/leadLifecycle.canonical";
 
 import { useI18n } from "@/i18n";
@@ -16,6 +16,7 @@ import { LeadColumnSettingsDrawer } from "../components/LeadColumnSettingsDrawer
 import { LeadFilterPopover } from "../components/LeadFilterPopover";
 import { LeadStatisticsModal } from "../components/LeadStatisticsModal";
 import { LeadDisqualifyModal } from "../components/LeadDisqualifyModal";
+import { LeadArchiveConfirmationModal } from "../components/LeadArchiveConfirmationModal";
 import { LeadFollowUpModal } from "../components/LeadFollowUpModal";
 import { LeadManageTagsModal } from "../components/LeadManageTagsModal";
 import { LeadAddViewModal } from "../components/LeadAddViewModal";
@@ -83,7 +84,8 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
   const canCreateLeads = access.can(CAPABILITIES.LEADS_CREATE);
   const canExportLeads = access.can(CAPABILITIES.LEADS_EXPORT);
   const canBulkLeads = access.can(CAPABILITIES.LEADS_BULK);
-  const canDeleteLeads = access.can(CAPABILITIES.LEADS_DELETE);
+  const canUpdateLeads = access.can(CAPABILITIES.LEADS_UPDATE);
+  const canQualifyLeads = access.can(CAPABILITIES.LEADS_QUALIFY);
   const ownership = useRecordOwnershipContext("leads", CAPABILITIES.LEADS_ASSIGN);
   const workspace = useWorkspaceContextSnapshot();
   // Record scope is selected through the saved-view menu (All / Mine / My team).
@@ -111,6 +113,8 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
   const [toast, setToast] = useState<{ message: string; actionLabel?: string; onAction?: () => void } | null>(null);
   const [verificationLeadId, setVerificationLeadId] = useState<string | null>(null);
   const [showStatistics, setShowStatistics] = useState(false);
+  const [archivePending, setArchivePending] = useState(false);
+  const archiveSubmittingRef = React.useRef(false);
   const showToast = (message: string) => {
     setToast({ message });
     window.setTimeout(() => setToast(null), 3500);
@@ -155,7 +159,30 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
     query: leadServerQuery,
     initialPageSize: 50,
     project: projectServerLeadPage,
+    evictProjection: clearLeadProjection,
   });
+  const canArchiveLeads = isLeadOperationAvailable(LEAD_OPERATION.ARCHIVE)
+    && access.can(CAPABILITIES.LEADS_DELETE);
+  const canAssignLeadBatch = Boolean(ownership?.canAssign)
+    && isLeadOperationAvailable(LEAD_OPERATION.ASSIGN_OWNER_BATCH);
+  const canAdvanceLeadBatch = canBulkLeads
+    && isLeadOperationAvailable(LEAD_OPERATION.ADVANCE_WORK_STATE_BATCH);
+  const canDisqualifyLeadBatch = canBulkLeads
+    && isLeadOperationAvailable(LEAD_OPERATION.DISQUALIFY_BATCH);
+  const canTagLeadBatch = canBulkLeads
+    && isLeadOperationAvailable(LEAD_OPERATION.APPLY_TAG_BATCH);
+  const canScheduleLeadBatch = canBulkLeads
+    && isLeadOperationAvailable(LEAD_OPERATION.SCHEDULE_FOLLOW_UP_BATCH);
+  const canArchiveLeadBatch = access.can(CAPABILITIES.LEADS_DELETE)
+    && isLeadOperationAvailable(LEAD_OPERATION.ARCHIVE_BATCH);
+  const serverPageLeadIds = useMemo(
+    () => new Set(serverPagination.items.map((lead) => lead.id)),
+    [serverPagination.items],
+  );
+  const serverPageItems = useMemo(
+    () => filters.filteredLeads.filter((lead) => serverPageLeadIds.has(lead.id)),
+    [filters.filteredLeads, serverPageLeadIds],
+  );
   const localPagination = useLeadPagination(filters.filteredLeads, 50);
   const pagination = serverPagination.connected && viewMode === "table"
     ? {
@@ -164,7 +191,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
         pageSize: serverPagination.pageSize,
         setPageSize: serverPagination.setPageSize,
         pageCount: serverPagination.pageCount,
-        pageItems: filters.filteredLeads,
+        pageItems: serverPageItems,
         rangeStart: serverPagination.rangeStart,
         rangeEnd: serverPagination.rangeEnd,
         totalItems: serverPagination.totalItems,
@@ -173,6 +200,14 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
       }
     : localPagination;
   const leadQuery = viewMode === "table" ? serverPagination : fullCollectionQuery;
+  const previousViewModeRef = React.useRef(viewMode);
+  useEffect(() => {
+    const previousViewMode = previousViewModeRef.current;
+    previousViewModeRef.current = viewMode;
+    if (previousViewMode !== "kanban" && viewMode === "kanban" && fullCollectionQuery.state !== "IDLE") {
+      void fullCollectionQuery.refresh();
+    }
+  }, [fullCollectionQuery.refresh, fullCollectionQuery.state, viewMode]);
 
   // 3. Selection Custom Hook
   const selection = useLeadSelection();
@@ -357,29 +392,36 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
     needRecontact: boolean;
     recontactDate?: string;
     recontactNote?: string;
-  }) => {
+  }): Promise<boolean> => {
     const targetIds = dialogs.disqualifyLeadId ? [dialogs.disqualifyLeadId] : selection.selectedLeadIds;
-    if (targetIds.length === 0) return;
+    if (targetIds.length === 0) return false;
 
     if (data.needRecontact) {
       showToast(locale === "vi" ? "Trường hợp cần tiếp tục chăm sóc phải chọn kết quả Chăm sóc, không chọn Không phù hợp." : "Future re-engagement belongs to NURTURE, not DISQUALIFIED.");
-      return;
+      return false;
     }
-    if (!data.note.trim()) {
-      showToast(locale === "vi" ? "Bằng chứng / ghi chú là bắt buộc khi đóng Không phù hợp." : "Evidence / notes are required for DISQUALIFIED.");
-      return;
-    }
+    const evidence = data.note.trim() || undefined;
 
-    if (targetIds.length === 1) {
-      await leadActions.disqualify(targetIds[0]!, { reason: data.reason, evidence: data.note });
-    } else {
-      await leadActions.disqualifyMany(targetIds, { reason: data.reason, evidence: data.note });
-    }
+    try {
+      if (targetIds.length === 1) {
+        await leadActions.disqualify(targetIds[0]!, { reason: data.reason, evidence });
+      } else {
+        await leadActions.disqualifyMany(targetIds, { reason: data.reason, evidence });
+      }
 
-    dialogs.setIsDisqualifyModalOpen(false);
-    dialogs.setDisqualifyLeadId(null);
-    selection.clearSelection();
-    showToast(t("leads.bulkDisqualifiedSuccess"));
+      dialogs.setIsDisqualifyModalOpen(false);
+      dialogs.setDisqualifyLeadId(null);
+      selection.clearSelection();
+      showToast(t("leads.bulkDisqualifiedSuccess"));
+      return true;
+    } catch (error) {
+      const applicationError = normalizeApplicationError(error);
+      if (applicationError.code === "VERSION_CONFLICT" || applicationError.code === "LEAD_BATCH_VERSION_CONFLICT") {
+        void leadQuery.refresh().catch(() => undefined);
+      }
+      showToast(formatApplicationError(applicationError, { locale }));
+      return false;
+    }
   };
 
   const handleFollowUpConfirm = async (data: {
@@ -442,7 +484,8 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
   // Manual creation delegates server-owned IDs, timestamps, lifecycle and audit evidence to the active Lead runtime.
   const handleCreateLeadFromForm = async (formData: Partial<Lead>) => {
     const saved = await leadActions.createFromForm(formData);
-    const ownerName = ownership?.visibleOwners.find((owner) => owner.memberId === saved.ownerId)?.displayName || saved.ownerId;
+    const ownerName = ownership?.visibleOwners.find((owner) => owner.memberId === saved.ownerId)?.displayName
+      || (locale === "vi" ? "người phụ trách hiện tại" : "the current owner");
     dialogs.setIsNewLeadOpen(false);
     showActionToast(
       locale === "vi" ? `Đã tạo Lead và giao cho ${ownerName}.` : `Lead created and assigned to ${ownerName}.`,
@@ -456,14 +499,14 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
       id: "bulk-actions",
       title: t("leads.actions.bulk"),
       items: [
-        ...(ownership?.canAssign ? [{
+        ...(canAssignLeadBatch ? [{
           id: "bulk-handover",
           label: `${t("leads.actions.handover")} ${selection.selectedLeadIds.length > 0 ? `(${selection.selectedLeadIds.length})` : ""}`,
           icon: <UserPlus size={14} />,
           disabled: selection.selectedLeadIds.length === 0,
           onClick: dialogs.handleBulkReassign,
         }] : []),
-        ...(canBulkLeads ? [
+        ...(canAdvanceLeadBatch ? [
           {
             id: "bulk-update",
             label: `${t("leads.actions.bulkUpdate")} ${selection.selectedLeadIds.length > 0 ? `(${selection.selectedLeadIds.length})` : ""}`,
@@ -482,15 +525,15 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
             disabled: selection.selectedLeadIds.length === 0,
             onClick: handleBulkAdvanceToVerifying,
           },
-          {
-            id: "manage-tags",
-            label: locale === "vi" ? "Gắn nhãn cho khách hàng tiềm năng đã chọn" : "Tag selected Leads",
-            icon: <Tag size={14} />,
-            disabled: selection.selectedLeadIds.length === 0,
-            onClick: () => dialogs.setIsManageTagsModalOpen(true),
-          },
         ] : []),
-        ...(canDeleteLeads ? [{
+        ...(canTagLeadBatch ? [{
+          id: "manage-tags",
+          label: locale === "vi" ? "Gắn nhãn cho khách hàng tiềm năng đã chọn" : "Tag selected Leads",
+          icon: <Tag size={14} />,
+          disabled: selection.selectedLeadIds.length === 0,
+          onClick: () => dialogs.setIsManageTagsModalOpen(true),
+        }] : []),
+        ...(canArchiveLeadBatch ? [{
           id: "bulk-archive",
           label: `${t("leads.actions.bulkArchive", "Lưu trữ")} ${selection.selectedLeadIds.length > 0 ? `(${selection.selectedLeadIds.length})` : ""}`,
           icon: <Trash2 size={14} />,
@@ -498,12 +541,13 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
           disabled: selection.selectedLeadIds.length === 0,
           onClick: () => {
             dialogs.setLeadToDelete(null);
+            dialogs.setArchiveReason("");
             dialogs.setShowDeleteConfirm(true);
           },
         }] : []),
       ],
     },
-    ...(canCreateLeads && canBulkLeads ? [{
+    ...(canCreateLeads && isLeadOperationAvailable(LEAD_OPERATION.IMPORT_BATCH) ? [{
       id: "import",
       title: locale === "vi" ? "Nhập dữ liệu" : "Import",
       items: [{
@@ -513,9 +557,9 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
         onClick: () => dialogs.setIsImportOpen(true),
       }],
     }] : []),
-    ...(canExportLeads ? [{
-      id: "export",
-      title: t("leads.actions.export"),
+    {
+      id: "presentation",
+      title: locale === "vi" ? "Trình bày" : "Presentation",
       items: [
         {
           id: "print-list",
@@ -523,14 +567,14 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
           icon: <Printer size={14} />,
           onClick: () => window.print(),
         },
-        {
+        ...(canExportLeads && isLeadOperationAvailable(LEAD_OPERATION.REQUEST_EXPORT) ? [{
           id: "export-all",
           label: t("leads.actions.exportAll"),
           icon: <FileSpreadsheet size={14} className="text-emerald-600" />,
           onClick: importExport.handleBulkExport,
-        },
+        }] : []),
       ],
-    }] : []),
+    },
   ];
 
   const runLifecycleAction = async (action: () => Promise<unknown>, successVi: string, successEn: string) => {
@@ -598,8 +642,8 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
     }
     if (target !== LeadWorkState.CONTACTING) {
       showToast(locale === "vi"
-        ? "Chưa có hợp đồng backend để đưa Lead về trạng thái trước đó."
-        : "Moving a Lead backward does not have a backend contract yet.");
+        ? "Không thể chuyển Lead về trạng thái trước đó."
+        : "This Lead cannot be moved to a previous state.");
       return;
     }
 
@@ -627,8 +671,56 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
   };
 
   const handleRefresh = () => {
-    filters.resetFilters();
-    showToast(locale === "vi" ? "Đã làm mới dữ liệu" : "Data refreshed");
+    void leadQuery.refresh();
+  };
+
+  const handleArchiveConfirm = async () => {
+    if (archiveSubmittingRef.current) return;
+    const reason = dialogs.archiveReason.trim();
+    if (!reason) {
+      showToast(locale === "vi" ? "Hãy nhập lý do lưu trữ." : "Enter an archive reason.");
+      return;
+    }
+
+    const targetIds = dialogs.leadToDelete ? [dialogs.leadToDelete] : selection.selectedLeadIds;
+    if (targetIds.length === 0) return;
+
+    archiveSubmittingRef.current = true;
+    setArchivePending(true);
+    try {
+      if (dialogs.leadToDelete) {
+        await leadActions.archive(dialogs.leadToDelete, reason);
+        showToast(t("leads.archive.success", "Đã lưu trữ Lead; hồ sơ và lịch sử vẫn được giữ lại."));
+      } else {
+        await leadActions.archiveMany(selection.selectedLeadIds, reason);
+        selection.clearSelection();
+        showToast(t("leads.bulkArchiveSuccess", "Đã lưu trữ các Lead đã chọn."));
+      }
+      dialogs.setShowDeleteConfirm(false);
+      dialogs.setLeadToDelete(null);
+      dialogs.setArchiveReason("");
+    } catch (error) {
+      const applicationError = normalizeApplicationError(error);
+      if (applicationError.code === "VERSION_CONFLICT" || applicationError.code === "LEAD_BATCH_VERSION_CONFLICT") {
+        void leadQuery.refresh().catch(() => undefined);
+      }
+      showToast(formatApplicationError(applicationError, { locale }));
+    } finally {
+      archiveSubmittingRef.current = false;
+      setArchivePending(false);
+    }
+  };
+
+  const closeArchiveModal = () => {
+    if (archiveSubmittingRef.current) return;
+    dialogs.setShowDeleteConfirm(false);
+    dialogs.setLeadToDelete(null);
+    dialogs.setArchiveReason("");
+  };
+
+  const closeDisqualifyModal = () => {
+    dialogs.setIsDisqualifyModalOpen(false);
+    dialogs.setDisqualifyLeadId(null);
   };
 
   const translateOrFallback = (key: string, fallback: string) => {
@@ -653,12 +745,12 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
       {/* PAGE HEADER */}
       <ListPageHeader
         title={t("sidebar.leads", "Leads")}
-        count={filters.filteredLeads.length}
+        count={serverPagination.connected && viewMode === "table" ? serverPagination.totalItems : filters.filteredLeads.length}
         context={locale === "vi" ? "Hàng đợi xác minh khách hàng tiềm năng" : "Lead qualification queue"}
         icon={<Target size={18} />}
         actions={
           <PageHeaderActions
-            actions={[
+            actions={canCreateLeads ? [
               {
                 id: "add-lead",
                 label: t("leads.addLead"),
@@ -666,7 +758,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
                 onClick: openNewLeadModal,
                 variant: "primary",
               },
-            ]}
+            ] : []}
             moreActions={
               <div>
                 <PageHeaderMoreButton
@@ -749,7 +841,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
             setFilterConverted={(val) => setFilterValue("converted", val)}
             filterDuplicate={filters.filters.duplicate}
             setFilterDuplicate={(val) => setFilterValue("duplicate", val)}
-            onResetAll={handleRefresh}
+            onResetAll={filters.resetFilters}
           />
         )}
         leftSlot={
@@ -796,30 +888,30 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
         label={t("common.selected", "Đã chọn")}
         onClear={() => selection.clearSelection()}
       >
-        <button
+        {canDisqualifyLeadBatch && <button
           id="bulk-status-unqualified-btn"
           type="button"
           onClick={() => dialogs.handleOpenDisqualify(null)}
           className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-[10px] font-medium text-rose-700 shadow-sm hover:bg-slate-100"
         >
           {t("leads.markDisqualified")}
-        </button>
-        <button
+        </button>}
+        {canScheduleLeadBatch && <button
           type="button"
           onClick={() => dialogs.handleOpenFollowUp(null)}
           className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-[10px] font-medium text-indigo-700 shadow-sm hover:bg-slate-100"
         >
           {t("leads.columnNextFollowUp", "Đặt lịch liên hệ lại")}
-        </button>
-        <button
+        </button>}
+        {canAdvanceLeadBatch && <button
           id="bulk-status-contacted-btn"
           type="button"
           onClick={handleBulkMarkContacted}
           className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-[10px] font-medium text-amber-700 shadow-sm hover:bg-slate-100"
         >
           {t("leads.markContacted")}
-        </button>
-        {ownership?.canAssign && (
+        </button>}
+        {canAssignLeadBatch && (
           <button
             id="bulk-assignall-btn"
             type="button"
@@ -830,18 +922,19 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
             <span>{t("leads.assignOwner")}</span>
           </button>
         )}
-        {canDeleteLeads && (
+        {canArchiveLeadBatch && (
           <button
             id="bulk-archive-btn"
             type="button"
             onClick={() => {
               dialogs.setLeadToDelete(null);
+              dialogs.setArchiveReason("");
               dialogs.setShowDeleteConfirm(true);
             }}
             className="inline-flex items-center gap-1 rounded-xl border border-red-200 bg-red-50 px-2.5 py-1.5 text-[10px] font-medium text-red-600 hover:bg-red-100"
           >
             <Trash2 size={11} />
-            <span>{t("leads.bulkArchive", "Lưu trữ")}</span>
+            <span>{locale === "vi" ? "Xóa" : "Delete"}</span>
           </button>
         )}
       </ListBulkActionBar>
@@ -849,9 +942,9 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
       {/* 4. LEAD RESULT WORKSPACE */}
       <AuthoritativeQueryBoundary
         query={leadQuery}
-        hasData={leads.length > 0}
-        loadingTitleVi="Đang tải Lead từ backend"
-        loadingTitleEn="Loading Leads from backend"
+        hasData={pagination.pageItems.length > 0}
+        loadingTitleVi="Đang tải danh sách Lead"
+        loadingTitleEn="Loading Leads"
         errorTitleVi="Không thể tải danh sách Lead"
         errorTitleEn="Lead list could not be loaded"
       >
@@ -866,7 +959,8 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
         campaigns={referenceData.campaigns}
         memberById={referenceData.memberById}
         productById={referenceData.productById}
-        canDelete={canDeleteLeads}
+        canDelete={canArchiveLeads}
+        canCreate={canCreateLeads}
         page={pagination.page}
         pageCount={pagination.pageCount}
         pageSize={pagination.pageSize}
@@ -884,14 +978,19 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
         getReturnToUrl={getReturnToUrl}
         onMoveLead={handleKanbanMove}
         onCall={handleLeadCall}
-        onMarkContacted={handleMarkContacted}
-        onQualify={handleStartVerifying}
-        onDisqualify={dialogs.handleOpenDisqualify}
-        onReopen={handleReopenLead}
-        onFollowUp={dialogs.handleOpenFollowUp}
-        onConvert={(leadId) => navigate(`/leads/${leadId}/qualify`)}
+        {...(canUpdateLeads ? {
+          onMarkContacted: handleMarkContacted,
+          onQualify: handleStartVerifying,
+          onReopen: handleReopenLead,
+          onFollowUp: dialogs.handleOpenFollowUp,
+        } : {})}
+        {...(canQualifyLeads ? {
+          onDisqualify: dialogs.handleOpenDisqualify,
+          onConvert: (leadId: string) => navigate(`/leads/${leadId}/qualify`),
+        } : {})}
         onDelete={(leadId) => {
           dialogs.setLeadToDelete(leadId);
+          dialogs.setArchiveReason("");
           dialogs.setShowDeleteConfirm(true);
         }}
         onViewDetails={(leadId) => navigate(`/leads/${leadId}`, { state: { returnTo: getReturnToUrl(viewMode), tab: "overview" } })}
@@ -957,7 +1056,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
       {/* 6. ADVANCED DISQUALIFICATION MODAL */}
       <LeadDisqualifyModal
         isOpen={dialogs.isDisqualifyModalOpen}
-        onClose={() => dialogs.setIsDisqualifyModalOpen(false)}
+        onClose={closeDisqualifyModal}
         onConfirm={handleDisqualifyConfirm}
       />
 
@@ -1024,27 +1123,16 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
         </div>
       )}
 
-      {/* 11. BULK ARCHIVE CONFIRMATION DIALOG */}
-      <ConfirmDialog
+      {/* 11. SINGLE / BULK ARCHIVE CONFIRMATION */}
+      <LeadArchiveConfirmationModal
         isOpen={dialogs.showDeleteConfirm}
-        onClose={() => dialogs.setShowDeleteConfirm(false)}
-        onConfirm={() => {
-          if (dialogs.leadToDelete) {
-            void leadActions.archive(dialogs.leadToDelete);
-            showToast(t("leads.archive.success", "Đã lưu trữ Lead; lịch sử vẫn được giữ lại."));
-          } else {
-            void leadActions.archiveMany(selection.selectedLeadIds);
-            selection.clearSelection();
-            showToast(t("leads.bulkArchiveSuccess", "Đã lưu trữ các Lead đã chọn."));
-          }
-          dialogs.setShowDeleteConfirm(false);
-          dialogs.setLeadToDelete(null);
-        }}
-        title={t("leads.archiveConfirm", "Xác nhận lưu trữ Lead")}
-        message={dialogs.leadToDelete ? "Lưu trữ Lead này? Hồ sơ và lịch sử sẽ được giữ lại." : "Lưu trữ các Lead đã chọn? Hồ sơ và lịch sử sẽ được giữ lại."}
-        confirmText={t("common.confirm")}
-        cancelText={t("common.cancel")}
-        type="danger"
+        bulk={!dialogs.leadToDelete}
+        selectedCount={dialogs.leadToDelete ? 1 : selection.selectedLeadIds.length}
+        reason={dialogs.archiveReason}
+        pending={archivePending}
+        onReasonChange={dialogs.setArchiveReason}
+        onClose={closeArchiveModal}
+        onConfirm={() => { void handleArchiveConfirm(); }}
       />
 
       {/* BULK REASSIGN OWNER MODAL */}
@@ -1096,5 +1184,11 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
 };
 
 function projectServerLeadPage(records: readonly Lead[]): void {
-  replaceLeads([...records]);
+  const byId = new Map(getRetainedLeadsSnapshot().map((lead) => [lead.id, lead]));
+  for (const lead of records) byId.set(lead.id, lead);
+  replaceLeads([...byId.values()]);
+}
+
+function clearLeadProjection(): void {
+  replaceLeads([]);
 }

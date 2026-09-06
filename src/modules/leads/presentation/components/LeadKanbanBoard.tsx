@@ -169,9 +169,9 @@ export const LeadKanbanBoard: React.FC<LeadKanbanBoardProps> = ({
                   {status === "POSITIVE_OUTCOME" && <span className="h-2 w-2 shrink-0 rounded-full bg-indigo-500" />}
                   {status === QualificationOutcome.NURTURE && <span className="h-2 w-2 shrink-0 rounded-full bg-teal-500" />}
                   {status === QualificationOutcome.DISQUALIFIED && <span className="h-2 w-2 shrink-0 rounded-full bg-red-400" />}
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-800">{title}</span>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-800">{title}</span>
                 </div>
-                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium text-slate-800">
+                <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-800">
                   {columnLeads.length}
                 </span>
               </div>
@@ -231,10 +231,10 @@ export const LeadKanbanBoard: React.FC<LeadKanbanBoardProps> = ({
                       <div className="flex items-start justify-between gap-1">
                         <div className="flex min-w-0 items-center gap-1.5">
                           {canDrag && <GripVertical size={13} className="shrink-0 text-slate-400" aria-hidden="true" />}
-                          <h5 className="crm-text-wrap text-xs font-medium text-slate-950">{lead.name}</h5>
+                          <h5 className="crm-text-wrap text-sm font-semibold text-slate-950">{lead.name}</h5>
                         </div>
                         <div className="flex shrink-0 items-center gap-1.5" onClick={(event) => event.stopPropagation()}>
-                          <Badge variant="neutral" className="border-slate-200 bg-slate-50 text-[9px] font-medium normal-case">
+                          <Badge variant="neutral" className="border-slate-200 bg-slate-50 text-[11px] font-medium normal-case">
                             {lead.source}
                           </Badge>
                           <div className="relative">
@@ -260,33 +260,33 @@ export const LeadKanbanBoard: React.FC<LeadKanbanBoardProps> = ({
                         </div>
                       </div>
 
-                      {lead.companyName && <p className="-mt-1 block text-[10px] font-medium text-slate-950">{lead.companyName}</p>}
-                      {lead.title && <p className="-mt-2 block text-[10px] text-slate-950">{localizeBusinessDescriptor(lead.title, locale)}</p>}
+                      {lead.companyName && <p className="-mt-1 block text-xs font-medium text-slate-950">{lead.companyName}</p>}
+                      {lead.title && <p className="-mt-2 block text-xs text-slate-700">{localizeBusinessDescriptor(lead.title, locale)}</p>}
 
                       {(lead.phone || lead.email) && (
-                        <div className="space-y-0.5 pt-1 text-[9px] text-slate-950">
+                        <div className="space-y-1 pt-1 text-xs text-slate-800">
                           {lead.phone && (
-                            <p className="flex items-center gap-1 font-mono font-normal text-slate-950">
-                              <Phone size={9} className="text-slate-500" />
+                            <p className="flex items-center gap-1.5 font-normal text-slate-800">
+                              <Phone size={12} className="text-slate-500" />
                               {formatPhone(lead.phone)}
                             </p>
                           )}
-                          {lead.email && <p className="flex items-center gap-1 crm-text-wrap"><Mail size={9} className="text-slate-500" />{lead.email}</p>}
+                          {lead.email && <p className="flex items-center gap-1.5 crm-text-wrap"><Mail size={12} className="text-slate-500" />{lead.email}</p>}
                         </div>
                       )}
 
-                      <div className="flex items-center justify-between border-t border-slate-100 pt-2.5 text-[9px] text-slate-950">
+                      <div className="flex items-center justify-between border-t border-slate-100 pt-2.5 text-[11px] text-slate-700">
                         <div className="flex min-w-0 items-center gap-1.5" title={`${locale === "vi" ? "Chủ sở hữu" : "Owner"}: ${ownerName}`}>
                           <Avatar name={ownerName} className="h-[18px] w-[18px]" />
-                          <span className="crm-text-wrap text-[10px] font-medium text-slate-950">{ownerName}</span>
+                          <span className="crm-text-wrap text-xs font-medium text-slate-800">{ownerName}</span>
                         </div>
-                        <span className="font-mono text-slate-950">{new Date(lead.createdAt).toLocaleDateString(locale === "vi" ? "vi-VN" : "en-US")}</span>
+                        <span className="text-[11px] text-slate-700">{new Date(lead.createdAt).toLocaleDateString(locale === "vi" ? "vi-VN" : "en-US")}</span>
                       </div>
                     </article>
                   );
                 })}
                 {columnLeads.length === 0 && (
-                  <div className={`rounded-xl border border-dashed py-10 text-center text-[10px] font-normal ${isDragOver ? "border-violet-300 bg-violet-50 text-slate-950" : "border-slate-200 bg-white/70 text-slate-950"}`}>
+                  <div className={`rounded-xl border border-dashed py-10 text-center text-xs font-normal ${isDragOver ? "border-violet-300 bg-violet-50 text-slate-950" : "border-slate-200 bg-white/70 text-slate-700"}`}>
                     {isDragOver
                       ? (locale === "vi" ? "Thả Lead vào đây" : "Drop Lead here")
                       : t("leads.queueEmpty", "Cột này trống")}
@@ -306,6 +306,9 @@ export const LeadKanbanBoard: React.FC<LeadKanbanBoardProps> = ({
         setRowActionAnchorEl(null);
       }}
       width={220}
+      role="menu"
+      ariaLabel="Lead actions"
+      autoFocusFirstMenuItem
     >
       {activeMenuLead && (
         <LeadActionMenu

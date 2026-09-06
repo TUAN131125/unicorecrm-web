@@ -148,7 +148,7 @@ function mapRelationship(
       mode: input.mode,
       selectedId,
       contact: compact({
-        displayName: contactName || "Existing relationship contact",
+        displayName: contactName,
         email: text(input.contact.email),
         phone: text(input.contact.phone),
         title: text(input.contact.title),
@@ -169,7 +169,7 @@ function mapRelationship(
       phone: text(input.contact.phone),
       title: text(input.contact.title),
     }),
-    organization: organization === undefined ? undefined : compact({
+    organization: input.kind !== "ORGANIZATION_ACCOUNT" || organization === undefined ? undefined : compact({
       displayName: requiredText(operationId, "relationship.organization.displayName", organization.displayName),
       legalName: text(organization.legalName),
       taxCode: text(organization.taxCode),

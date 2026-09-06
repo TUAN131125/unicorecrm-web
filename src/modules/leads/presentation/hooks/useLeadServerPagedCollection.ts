@@ -1,5 +1,5 @@
 import React from "react";
-import type { ModuleListQuery } from "@/shared/application";
+import { subscribeModuleQueryInvalidation, type ModuleListQuery } from "@/shared/application";
 import { useServerPagedCollection } from "@/shared/operations";
 import { getLeadApiRuntime, isLeadConnectedApiRuntime } from "../../application/composition/leadApplicationServices";
 import type { Lead } from "../../domain/model/lead.types";
@@ -10,6 +10,7 @@ export function useLeadServerPagedCollection(options: {
   enabled?: boolean;
   initialPageSize?: number;
   project(records: readonly Lead[]): void;
+  evictProjection?: () => void;
   onReset?: () => void;
 }) {
   const connected = isLeadConnectedApiRuntime();
@@ -17,15 +18,22 @@ export function useLeadServerPagedCollection(options: {
     getLeadApiRuntime().queries.list(query, signal)
   ), []);
 
-  return useServerPagedCollection({
+  const collection = useServerPagedCollection({
     connected,
     scopeKey: options.scopeKey,
     ...(options.query === undefined ? {} : { query: options.query }),
     ...(options.enabled === undefined ? {} : { enabled: options.enabled }),
     ...(options.initialPageSize === undefined ? {} : { initialPageSize: options.initialPageSize }),
     project: options.project,
+    ...(options.evictProjection === undefined ? {} : { evictProjection: options.evictProjection }),
     loadPage,
     errorCodePrefix: "LEADS",
     ...(options.onReset === undefined ? {} : { onReset: options.onReset }),
   });
+
+  React.useEffect(() => subscribeModuleQueryInvalidation("leads", async () => {
+    if (collection.enabled) await collection.refresh();
+  }), [collection.enabled, collection.refresh]);
+
+  return collection;
 }

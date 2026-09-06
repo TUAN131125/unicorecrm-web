@@ -12604,7 +12604,6 @@
           "RATE_LIMITED",
           "INTEGRATION_UNAVAILABLE",
           "INTERNAL_ERROR",
-          "LEAD_DISQUALIFICATION_EVIDENCE_REQUIRED",
           "LEAD_INVALID_TRANSITION"
         ],
         "x-request-projection": "LEAD_DISQUALIFY",
@@ -51639,8 +51638,7 @@
         "additionalProperties": false,
         "required": [
           "items",
-          "reason",
-          "evidence"
+          "reason"
         ],
         "properties": {
           "items": {
@@ -51667,8 +51665,7 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "reason",
-          "evidence"
+          "reason"
         ],
         "properties": {
           "reason": {

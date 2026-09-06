@@ -160,3 +160,4 @@ export { advanceLeadWorkStateBatchViaApi, advanceLeadWorkStateViaApi, anonymizeL
 export type { AdvanceLeadWorkStateInput, AdvanceLeadWorkStateResult, AnonymizeLeadResult, ArchiveLeadBatchResult, ArchiveLeadResult, ConfirmLeadDuplicatesDistinctResult, CreateLeadInput, CreateLeadResult, DisqualifyLeadInput, DisqualifyLeadResult, LeadApiRuntime, LeadCommandOptions, LeadCommandPort, LeadProgressionTarget, LeadQueryPort, LeadVersionedCommandOptions, MergeLeadDuplicatesResult, RecordLeadConsentInput, RecordLeadConsentResult, ReopenDisqualifiedLeadResult } from "../application/ports/LeadApiRuntime";
 
 export { logLeadActivityViaApi } from "../application/commands/leadActivityCommands";
+export { isLeadOperationAvailable, LEAD_OPERATION } from "../application/leadOperationAvailability";

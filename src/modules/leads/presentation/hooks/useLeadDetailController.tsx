@@ -9,7 +9,7 @@ import {
   ChevronDown, Unlock, UserPlus, Tag, Printer, X, MoreHorizontal, Copy, Sparkles
 } from "lucide-react";
 import { RecordAttachmentsTab, RecordDetailFrame } from "@/components/crm/detail-archetype";
-import type { CRMActivity } from "@/shared/domain";
+import { normalizeApplicationError, type CRMActivity } from "@/shared/domain";
 import type { Lead, LeadSource, LeadCampaign, LeadInterestedProduct } from "../../domain/model/lead.types";
 import { LeadWorkState, QualificationOutcome } from "../../domain/model/leadLifecycle.canonical";
 import type { CrmWorkspaceConfig } from "@/platform/workspace-config";
@@ -59,6 +59,8 @@ import { useWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import { useConfigurationRuntime } from "@/platform/configuration-runtime";
 import { toWorkspacePath } from "@/platform/navigation";
 import { useLeadReferenceData } from "../hooks/useLeadReferenceData";
+import { isLeadOperationAvailable, LEAD_OPERATION } from "../../application/leadOperationAvailability";
+import { getLeadDetailResource } from "../../application/vertical-slice/leadAuthoritativeQueries";
 
 
 
@@ -69,12 +71,14 @@ export interface LeadDetailPageProps {
   sources?: LeadSource[];
   campaigns?: LeadCampaign[];
   crmConfig?: CrmWorkspaceConfig;
+  authoritativeLead?: Lead;
 }
 export function useLeadDetailController(props: LeadDetailPageProps) {
   const {
   sources = [],
   campaigns = [],
-  crmConfig = DEFAULT_CRM_WORKSPACE_CONFIG
+  crmConfig = DEFAULT_CRM_WORKSPACE_CONFIG,
+  authoritativeLead,
 } = props;
   const { leadId } = useParams();
   const navigate = useNavigate();
@@ -86,11 +90,23 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
   const careCases = useSubscribableSnapshot(getSupportCasesSnapshot, subscribeToSupportCases);
   const ownership = useRecordOwnershipContext("leads", CAPABILITIES.LEADS_ASSIGN);
   const access = useEffectiveAccess();
+  const canUpdatePermission = access.can(CAPABILITIES.LEADS_UPDATE);
+  const canQualifyPermission = access.can(CAPABILITIES.LEADS_QUALIFY);
   const members = ownership?.assignableOwners || [];
   const workspace = useWorkspaceContextSnapshot();
   const configurationRuntime = useConfigurationRuntime();
   const lt = (viText: string, enText: string) => (locale === "vi" ? viText : enText);
-  const lead = leads.find(l => l.id === leadId);
+  const lead = authoritativeLead?.id === leadId
+    ? authoritativeLead
+    : leads.find(l => l.id === leadId);
+  const canEdit = canUpdatePermission && !lead?.archivedAt;
+  const canQualify = canQualifyPermission && !lead?.archivedAt;
+  const canArchive = isLeadOperationAvailable(LEAD_OPERATION.ARCHIVE)
+    && access.can(CAPABILITIES.LEADS_DELETE)
+    && !lead?.archivedAt;
+  const canHandover = Boolean(ownership?.canAssign)
+    && isLeadOperationAvailable(LEAD_OPERATION.HANDOVER_WITH_TASKS)
+    && !lead?.archivedAt;
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showVerificationReadiness, setShowVerificationReadiness] = useState(false);
@@ -123,6 +139,7 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
     disqualifyReasonText, setDisqualifyReasonText,
     showEditModal, setShowEditModal,
     showDeleteConfirm, setShowDeleteConfirm,
+    archiveReason, setArchiveReason,
     showHandoverModal, setShowHandoverModal,
     showTagsModal, setShowTagsModal,
     handoverOwnerId, setHandoverOwnerId,
@@ -140,7 +157,8 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
   if (!lead) return null;
 
 
-  const ownerName = resolveWorkspaceMemberName(lead.ownerId);
+  const ownerName = ownership?.visibleOwners.find((owner) => owner.memberId === lead.ownerId)?.displayName
+    || resolveWorkspaceMemberName(lead.ownerId);
   const activeCampaign = referenceData.campaigns.find((campaign) => campaign.id === lead.campaignId);
   const campaignName = activeCampaign ? activeCampaign.name : "Không thuộc chiến dịch";
 
@@ -239,22 +257,30 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
   const detailSections = [...getLeadDetailSections(locale), ...(customDetailFields.length > 0 ? [customSectionLabel] : [])];
 
   const handleSaveEditFromForm = async (formData: Partial<Lead>) => {
-    const { ownerId: _ownerId, ...editableData } = formData;
-    const saved = await leadActions.replaceProfileFromForm(lead.id, {
-      ...lead,
-      ...editableData,
-      ownerId: lead.ownerId,
-      resourceVersion: lead.resourceVersion,
-    });
-    if (saved.activitiesAuthority === "LOCAL_COMPLETE") {
-      addTimelineActivity(
-        "system",
-        locale === "vi" ? "Lead đã được cập nhật" : "Lead was updated",
-        locale === "vi" ? "Thông tin chi tiết của tiềm năng vừa được cập nhật bởi nhân viên." : "Detail profile of the lead was updated by staff.",
-      );
+    try {
+      const { ownerId: _ownerId, ...editableData } = formData;
+      const saved = await leadActions.replaceProfileFromForm(lead.id, {
+        ...lead,
+        ...editableData,
+        ownerId: lead.ownerId,
+        resourceVersion: lead.resourceVersion,
+      });
+      if (saved.activitiesAuthority === "LOCAL_COMPLETE") {
+        addTimelineActivity(
+          "system",
+          locale === "vi" ? "Lead đã được cập nhật" : "Lead was updated",
+          locale === "vi" ? "Thông tin chi tiết của tiềm năng vừa được cập nhật bởi nhân viên." : "Detail profile of the lead was updated by staff.",
+        );
+      }
+      setShowEditModal(false);
+      showToast(locale === "vi" ? "Lưu bản sửa đổi thành công!" : "Lead updated successfully");
+    } catch (error: unknown) {
+      const applicationError = normalizeApplicationError(error);
+      if (applicationError.code === "VERSION_CONFLICT") {
+        await getLeadDetailResource(lead.id).refresh();
+      }
+      showToast(formatApplicationError(applicationError, { locale }));
     }
-    setShowEditModal(false);
-    showToast(locale === "vi" ? "Lưu bản sửa đổi thành công!" : "Lead updated successfully");
   };
 
   // Disqualification handler
@@ -526,6 +552,10 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
     careCases,
     ownership,
     access,
+    canEdit,
+    canQualify,
+    canArchive,
+    canHandover,
     members,
     workspace,
     configurationRuntime,
@@ -574,6 +604,8 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
     setShowEditModal,
     showDeleteConfirm,
     setShowDeleteConfirm,
+    archiveReason,
+    setArchiveReason,
     showHandoverModal,
     setShowHandoverModal,
     showTagsModal,

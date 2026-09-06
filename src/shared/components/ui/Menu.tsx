@@ -49,6 +49,7 @@ export const MenuItemButton: React.FC<MenuItemButtonProps> = ({
   return (
     <button
       type="button"
+      role={props.role ?? "menuitem"}
       className={cn(
         "w-full text-left px-3 py-1.5 text-xs md:text-[13px] font-medium flex items-center justify-between transition-all rounded-lg select-none outline-none focus:ring-1 focus:ring-slate-100 min-h-[32px] md:min-h-[34px] cursor-pointer",
         disabled ? disabledClasses : variantClasses[resolvedVariant],

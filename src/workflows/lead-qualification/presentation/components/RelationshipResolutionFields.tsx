@@ -12,9 +12,10 @@ interface Props {
   organizations: OrganizationAccount[];
   locale: string;
   errors?: LeadQualificationFieldErrors;
+  organizationAvailable?: boolean;
 }
 
-export function RelationshipResolutionFields({ value, onChange, contacts, organizations, locale, errors = {} }: Props) {
+export function RelationshipResolutionFields({ value, onChange, contacts, organizations, locale, errors = {}, organizationAvailable = true }: Props) {
   const vi = locale === "vi";
   const patch = (next: Partial<LeadRelationshipInput>) => onChange({ ...value, ...next });
   const patchContact = (next: Partial<LeadRelationshipInput["contact"]>) => onChange({ ...value, contact: { ...value.contact, ...next } });
@@ -30,13 +31,19 @@ export function RelationshipResolutionFields({ value, onChange, contacts, organi
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Select id="qualification-relationship-kind" label={vi ? "Loại quan hệ" : "Relationship type"} value={value.kind} onChange={(event) => patch({ kind: event.target.value as LeadRelationshipInput["kind"], selectedId: undefined })}>
           <option value="CONTACT">{vi ? "Cá nhân / Contact" : "Contact"}</option>
-          <option value="ORGANIZATION_ACCOUNT">{vi ? "Tổ chức / Organization Account" : "Organization Account"}</option>
+          {organizationAvailable && <option value="ORGANIZATION_ACCOUNT">{vi ? "Tổ chức / Organization Account" : "Organization Account"}</option>}
         </Select>
         <Select id="qualification-relationship-mode" label={vi ? "Cách xử lý" : "Resolution mode"} value={value.mode} onChange={(event) => patch({ mode: event.target.value as LeadRelationshipInput["mode"], selectedId: undefined })}>
           <option value="NEW">{vi ? "Tạo relationship mới" : "Create new relationship"}</option>
           <option value="EXISTING">{vi ? "Liên kết relationship hiện có" : "Link existing relationship"}</option>
         </Select>
       </div>
+
+      {!organizationAvailable && (
+        <p className="text-[11px] leading-5 text-slate-500">
+          {vi ? "Chế độ kết nối hiện chỉ hỗ trợ qualification theo Contact; chuyển đổi Organization Account chưa khả dụng." : "Connected mode currently supports Contact qualification only; Organization Account conversion is unavailable."}
+        </p>
+      )}
 
       {value.mode === "EXISTING" ? (
         <Select

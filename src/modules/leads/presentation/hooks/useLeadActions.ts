@@ -31,11 +31,11 @@ export function useLeadActions() {
     update: (leadId: string, transform: (lead: Lead) => Lead) => replaceLeadViaTransformViaApi(leadId, transform).then((result) => result.lead),
     applyTagMany: (leadIds: readonly string[], tag: string) => applyLeadTagBatchViaApi(leadIds, tag).then((result) => result.leads),
     scheduleFollowUpMany: (leadIds: readonly string[], input: { followUpAt: string; note: string }) => scheduleLeadFollowUpBatchViaApi(leadIds, input).then((result) => result.leads),
-    disqualifyMany: (leadIds: readonly string[], input: { reason: string; evidence: string }) => disqualifyLeadBatchViaApi(leadIds, input).then((result) => result.leads),
+    disqualifyMany: (leadIds: readonly string[], input: { reason: string; evidence?: string }) => disqualifyLeadBatchViaApi(leadIds, input).then((result) => result.leads),
     reassignMany: (leadIds: readonly string[], input: { ownerId: string; reason: string }) => assignLeadOwnerBatchViaApi(leadIds, input).then((result) => result.leads),
     claimFromQueue: (leadId: string, reason: string) => claimLeadFromQueueViaApi(leadId, reason).then((result) => result.lead),
-    archive: (leadId: string) => archiveLeadViaApi(leadId, "Archived from Lead workspace.").then((result) => result.lead),
-    archiveMany: (leadIds: readonly string[]) => archiveLeadsViaApi(leadIds, "Bulk archived from Lead workspace.").then((result) => result.leads),
+    archive: (leadId: string, reason: string) => archiveLeadViaApi(leadId, reason).then((result) => result.lead),
+    archiveMany: (leadIds: readonly string[], reason: string) => archiveLeadsViaApi(leadIds, reason).then((result) => result.leads),
     advanceNewToContacting: (leadIds: readonly string[]) => advanceLeadWorkStateBatchViaApi(leadIds, "CONTACTING"),
     advanceEligibleToVerifying: (leadIds: readonly string[]) => advanceLeadWorkStateBatchViaApi(leadIds, "VERIFYING"),
     changeWorkState: (leadId: string, leadWorkState: Exclude<LeadWorkState, "NEW" | "CLOSED">, _activity?: CRMActivity) =>
@@ -55,7 +55,7 @@ export function useLeadActions() {
         },
       }),
     }).then((result) => result.lead),
-    disqualify: (leadId: string, input: { reason: string; evidence: string; actorId?: string; activity?: CRMActivity }) =>
+    disqualify: (leadId: string, input: { reason: string; evidence?: string; actorId?: string; activity?: CRMActivity }) =>
       disqualifyLeadViaApi(leadId, { reason: input.reason, evidence: input.evidence }).then((result) => result.lead),
     reopen: (leadId: string, _activity?: CRMActivity) =>
       reopenDisqualifiedLeadViaApi(leadId).then((result) => result.lead),

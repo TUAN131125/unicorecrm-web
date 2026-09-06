@@ -295,6 +295,12 @@ export const RowActionPortal: React.FC<RowActionPortalProps> = ({
   const menuRef = React.useRef<HTMLDivElement>(null);
   const [coords, setCoords] = React.useState({ top: 12, left: 12, width: width ?? 240, openAbove: false });
 
+  const closeAndRestoreFocus = React.useCallback(() => {
+    const trigger = anchorEl;
+    onClose();
+    if (trigger?.isConnected) trigger.focus({ preventScroll: true });
+  }, [anchorEl, onClose]);
+
   const updatePosition = React.useCallback(() => {
     if (!anchorEl) return;
     const rect = anchorEl.getBoundingClientRect();
@@ -339,7 +345,7 @@ export const RowActionPortal: React.FC<RowActionPortalProps> = ({
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
-        onClose();
+        closeAndRestoreFocus();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -349,7 +355,7 @@ export const RowActionPortal: React.FC<RowActionPortalProps> = ({
       window.removeEventListener("scroll", updatePosition, true);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [open, anchorEl, updatePosition, onClose]);
+  }, [open, anchorEl, updatePosition, closeAndRestoreFocus]);
 
   React.useEffect(() => {
     if (!open || !autoFocusFirstMenuItem) return;
@@ -368,7 +374,7 @@ export const RowActionPortal: React.FC<RowActionPortalProps> = ({
         style={{ zIndex: overlayLayer.baseZIndex + 10 }}
         onClick={(e) => {
           e.stopPropagation();
-          onClose();
+          closeAndRestoreFocus();
         }} 
       />
       <div

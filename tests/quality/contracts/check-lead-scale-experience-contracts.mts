@@ -88,9 +88,73 @@ assert.ok(filterPopover.includes("owners.map"), "Lead filters must consume runti
 assert.ok(filterPopover.includes("sources.map"), "Lead filters must consume runtime source options.");
 
 const referenceData = read("src/modules/leads/presentation/hooks/useLeadReferenceData.ts");
-for (const marker of ["getProductCatalogSnapshot", "listWorkspaceMemberDirectoryFor", "Member not found (${memberId})"]) {
+for (const marker of ["getProductCatalogSnapshot", "listWorkspaceMemberDirectoryFor", "Owner information unavailable"]) {
   assert.ok(referenceData.includes(marker), `Lead reference data contract missing: ${marker}`);
 }
+assert.equal(referenceData.includes("Member not found (${memberId})"), false, "Lead owner fallbacks must not expose raw member IDs.");
+
+const leadRepositoryCommands = read("src/modules/leads/application/commands/leadRepositoryCommands.ts");
+assert.ok(leadRepositoryCommands.includes('isBackendProjectionActive("leads")'), "Authoritative Lead reads must bypass local business-mutation semantics.");
+
+for (const marker of ["getRetainedLeadsSnapshot", "replaceLeads([...byId.values()])", "void leadQuery.refresh()"] ) {
+  assert.ok(leadListPage.includes(marker), `Lead List/Kanban reconciliation contract missing: ${marker}`);
+}
+
+for (const marker of [
+  "isLeadOperationAvailable(LEAD_OPERATION.ARCHIVE)",
+  "canArchiveLeadBatch",
+  "<LeadArchiveConfirmationModal",
+  "archiveSubmittingRef.current",
+  "await leadActions.archive(dialogs.leadToDelete, reason)",
+  "await leadActions.archiveMany(selection.selectedLeadIds, reason)",
+]) {
+  assert.ok(leadListPage.includes(marker), `Lead archive action contract missing: ${marker}`);
+}
+assert.ok(leadListPage.includes("canDisqualifyLeadBatch &&"), "Unsupported connected bulk actions must be hidden by operation availability.");
+
+const connectedRuntime = read("src/modules/leads/infrastructure/http/createLeadConnectedApiRuntime.ts");
+assert.ok(connectedRuntime.includes("adapter.archiveLead(leadId, input, options)"), "Connected archive must call the generated HTTP adapter.");
+assert.ok(connectedRuntime.includes("adapter.archiveLeadBatch(input, options)"), "Connected bulk archive must call the generated HTTP adapter once.");
+assert.ok(connectedRuntime.includes("declareUnavailableBusinessOperation(operationId)"), "Connected unavailable operations must be declared before presentation evaluates permission.");
+
+const archiveModal = read("src/modules/leads/presentation/components/LeadArchiveConfirmationModal.tsx");
+for (const marker of ["Lý do lưu trữ *", "selectedCount", "pending || !reason.trim()", "Hồ sơ và lịch sử vẫn được giữ lại"]) {
+  assert.ok(archiveModal.includes(marker), `Bulk Archive modal contract missing: ${marker}`);
+}
+const disqualifyModal = read("src/modules/leads/presentation/components/LeadDisqualifyModal.tsx");
+for (const marker of ["Xác nhận Lead không phù hợp", "submittingRef.current", "disabled={pending", "Promise<boolean>"]) {
+  assert.ok(disqualifyModal.includes(marker), `Disqualify modal lifecycle contract missing: ${marker}`);
+}
+assert.ok(leadRepositoryCommands.includes('isBackendProjectionActive("leads")'), "Committed Lead projection must bypass local command and lifecycle guards.");
+
+const rowMenu = read("src/modules/leads/presentation/components/LeadActionMenu.tsx");
+const detailMenu = read("src/modules/leads/presentation/components/LeadDetailMoreMenu.tsx");
+for (const menu of [rowMenu, detailMenu]) {
+  assert.ok(menu.includes("Lưu trữ Lead"), "Lead menus must use soft-archive terminology.");
+}
+assert.ok(detailMenu.includes("canManageTags") && detailMenu.includes("canQualify"), "Detail actions must combine operation, authorization and lifecycle checks.");
+
+const detailController = read("src/modules/leads/presentation/hooks/useLeadDetailController.tsx");
+const detailFields = read("src/modules/leads/presentation/detail/buildLeadDetailFields.tsx");
+const detailView = read("src/modules/leads/presentation/views/LeadDetailView.tsx");
+for (const marker of ["authoritativeLead?.id === leadId", "archiveReason, setArchiveReason", "!lead?.archivedAt"]) {
+  assert.ok(detailController.includes(marker), `Archived Lead detail controller contract missing: ${marker}`);
+}
+assert.ok(detailPage.includes("authoritativeLead: detailQuery.data"), "Archived Lead detail must render from the authoritative GET-by-id result instead of the active-list projection.");
+for (const marker of ['id: "archivedAt"', 'id: "archiveReason"']) {
+  assert.ok(detailFields.includes(marker), `Archived Lead detail metadata missing: ${marker}`);
+}
+for (const marker of ["lead.archivedAt &&", "canEdit && ownership?.memberId", "lead.leadWorkState === LeadWorkState.VERIFYING ? canQualify : canEdit"]) {
+  assert.ok(detailView.includes(marker), `Archived Lead detail action guard missing: ${marker}`);
+}
+
+const rowActionPortal = read("src/shared/components/ui/Dialog.tsx");
+for (const marker of ["createPortal", "openAbove", "window.innerWidth", "closeAndRestoreFocus", 'addEventListener("scroll"']) {
+  assert.ok(rowActionPortal.includes(marker), `Dropdown portal behavior missing: ${marker}`);
+}
+
+const serverPaging = read("src/shared/operations/useServerPagedCollection.ts");
+assert.ok(serverPaging.includes("page > authoritativePageCount"), "Archiving the last record on a page must return to a valid authoritative page.");
 
 const tagModal = read("src/modules/leads/presentation/components/LeadManageTagsModal.tsx");
 assert.ok(tagModal.includes("onApply"), "Bulk tag modal must commit through a real callback.");

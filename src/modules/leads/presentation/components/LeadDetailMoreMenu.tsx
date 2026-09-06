@@ -9,6 +9,9 @@ interface LeadDetailMoreMenuProps {
   isOpen: boolean;
   anchorEl: HTMLElement | null;
   canAssign: boolean;
+  canUpdate: boolean;
+  canQualify: boolean;
+  canManageTags: boolean;
   onClose: () => void;
   onMarkContacted: () => void;
   onStartVerifying: () => void;
@@ -17,7 +20,7 @@ interface LeadDetailMoreMenuProps {
   onHandover: () => void;
   onManageTags: () => void;
   onPrint: () => void;
-  onDelete: () => void;
+  onDelete?: () => void;
 }
 
 export function LeadDetailMoreMenu({
@@ -25,6 +28,9 @@ export function LeadDetailMoreMenu({
   isOpen,
   anchorEl,
   canAssign,
+  canUpdate,
+  canQualify,
+  canManageTags,
   onClose,
   onMarkContacted,
   onStartVerifying,
@@ -44,27 +50,28 @@ export function LeadDetailMoreMenu({
       width={240}
       role="menu"
       ariaLabel={locale === "vi" ? "Thao tác Lead" : "Lead actions"}
+      autoFocusFirstMenuItem
       className="space-y-0.5 p-1.5 py-1.5 text-left text-xs font-sans"
     >
-        {!isPositiveQualificationOutcome(lead.qualificationOutcome) && (
+        {!isPositiveQualificationOutcome(lead.qualificationOutcome) && (canUpdate || canQualify) && (
           <>
             <MenuSection title={t("leadDetail.actions.workflow")} />
-            {lead.leadWorkState === LeadWorkState.NEW && (
+            {canUpdate && lead.leadWorkState === LeadWorkState.NEW && (
               <MenuItemButton onClick={onMarkContacted} icon={<Phone size={14} className="shrink-0 text-teal-600" />}>
                 {t("leadDetail.actions.markContacted")}
               </MenuItemButton>
             )}
-            {lead.leadWorkState === LeadWorkState.CONTACTING && (
+            {canUpdate && lead.leadWorkState === LeadWorkState.CONTACTING && (
               <MenuItemButton onClick={onStartVerifying} icon={<CheckCircle2 size={14} className="shrink-0 text-emerald-500" />} variant="primary">
                 {locale === "vi" ? "Đạt chất lượng" : "Qualify"}
               </MenuItemButton>
             )}
-            {lead.leadWorkState !== LeadWorkState.CLOSED && (
+            {canQualify && lead.leadWorkState !== LeadWorkState.CLOSED && (
               <MenuItemButton onClick={onDisqualify} icon={<X size={14} className="shrink-0 text-rose-500" />}>
                 {t("leadDetail.actions.disqualify")}
               </MenuItemButton>
             )}
-            {lead.qualificationOutcome === QualificationOutcome.DISQUALIFIED && (
+            {canUpdate && lead.qualificationOutcome === QualificationOutcome.DISQUALIFIED && (
               <MenuItemButton onClick={onReopen} icon={<Unlock size={14} className="shrink-0 text-indigo-500" />} variant="primary">
                 {t("leadDetail.actions.reopen")}
               </MenuItemButton>
@@ -73,17 +80,24 @@ export function LeadDetailMoreMenu({
           </>
         )}
 
-        <MenuSection title={t("leadDetail.actions.work")} />
-        {canAssign && <MenuItemButton onClick={onHandover} icon={<UserPlus size={14} />}>{t("leadDetail.actions.handover")}</MenuItemButton>}
-        <MenuItemButton onClick={onManageTags} icon={<Tag size={14} />}>{t("leadDetail.actions.manageTags")}</MenuItemButton>
-
-        <MenuDivider />
+        {(canAssign || canManageTags) && (
+          <>
+            <MenuSection title={t("leadDetail.actions.work")} />
+            {canAssign && <MenuItemButton onClick={onHandover} icon={<UserPlus size={14} />}>{t("leadDetail.actions.handover")}</MenuItemButton>}
+            {canManageTags && <MenuItemButton onClick={onManageTags} icon={<Tag size={14} />}>{t("leadDetail.actions.manageTags")}</MenuItemButton>}
+            <MenuDivider />
+          </>
+        )}
         <MenuSection title={t("leadDetail.actions.record")} />
         <MenuItemButton onClick={onPrint} icon={<Printer size={14} />}>{t("leadDetail.actions.print")}</MenuItemButton>
 
-        <MenuDivider />
-        <MenuSection title={t("leadDetail.actions.danger")} />
-        <MenuItemButton onClick={onDelete} variant="danger" icon={<Trash2 size={14} />}>{t("leadDetail.actions.delete")}</MenuItemButton>
+        {onDelete && (
+          <>
+            <MenuDivider />
+            <MenuSection title={t("leadDetail.actions.danger")} />
+            <MenuItemButton onClick={onDelete} variant="danger" icon={<Trash2 size={14} />}>{locale === "vi" ? "Lưu trữ Lead" : "Archive Lead"}</MenuItemButton>
+          </>
+        )}
     </RowActionPortal>
   );
 }

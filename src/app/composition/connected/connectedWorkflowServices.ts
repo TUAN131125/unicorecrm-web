@@ -10,7 +10,10 @@ import { WORK_ACTIVATION_OPERATION } from "@/workflows/work-activation/applicati
 import { CUSTOMER_CONVERSION_OPERATION } from "@/workflows/customer-conversion/application/customerConversionAvailability";
 import { DEAL_RECYCLE_OPERATION } from "@/workflows/deal-recycle/application/dealRecycleAvailability";
 import { ORDER_CLOSING_OPERATION } from "@/workflows/order-closing/application/orderClosingAvailability";
-import { LEAD_POSITIVE_QUALIFICATION_OPERATION } from "@/workflows/lead-qualification/application/leadQualificationAvailability";
+import {
+  LEAD_DIRECT_SALE_QUALIFICATION_OPERATION,
+  LEAD_ORGANIZATION_QUALIFICATION_OPERATION,
+} from "@/workflows/lead-qualification/application/leadQualificationAvailability";
 
 export function createConnectedWorkflowServices(
   modules: ApplicationModuleServiceBundle,
@@ -24,10 +27,11 @@ export function createConnectedWorkflowServices(
   // WF-21 work-activation: same shape. `deal.create`, `deal.update-next-action` and
   // `task.create` are all READY, so only WF-21's own ownership can contain the sequence.
   declareUnavailableConnectedWorkflow(WORK_ACTIVATION_OPERATION);
-  // The historical frontend OpenAPI contains positive qualification workflow contracts,
-  // but the current verified backend does not compose those routes. Runtime implementation
-  // is authoritative in connected mode, so the workflow remains visibly unavailable.
-  declareUnavailableConnectedWorkflow(LEAD_POSITIVE_QUALIFICATION_OPERATION);
+  // Connected Lead qualification admits NURTURE and OPPORTUNITY through their backend workflow
+  // routes. Direct Sale and Organization Account conversion remain truthful, separately declared
+  // unavailable instead of being conflated with authorization for the admitted operations.
+  declareUnavailableConnectedWorkflow(LEAD_DIRECT_SALE_QUALIFICATION_OPERATION);
+  declareUnavailableConnectedWorkflow(LEAD_ORGANIZATION_QUALIFICATION_OPERATION);
   return {
     // WF-01 is BLOCKED with `connectedFrontendCoordinatorAllowed: false` and has no backend
     // workflow operation. Declaring the workflow itself unavailable — rather than only its

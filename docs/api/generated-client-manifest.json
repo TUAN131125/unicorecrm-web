@@ -4,7 +4,7 @@
   "openapiVersion": "3.1.0",
   "contractVersion": "0.23.20-contract.0",
   "specPath": "docs/api/openapi.json",
-  "specSha256": "c50f58c9830b7e07c27f743cf56cc62668e8ebfab96015f581511e093cd85f7b",
+  "specSha256": "d0ba55e23bda0fd97eae833ac4a65e27df5458f6c8492b5cec87889aca1b6d08",
   "ownershipPath": "scripts/api/openapi/client-ownership.json",
   "coverageLedgerPath": "docs/api/operation-coverage-ledger.json",
   "breakingBaselinePath": "docs/api/openapi-breaking-baseline.json",

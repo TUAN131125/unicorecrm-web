@@ -15,18 +15,55 @@ import {
 import { useWorkspaceConfigSnapshot, useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
 import { useI18n } from "@/i18n";
 import { formatApplicationError } from "@/shared/operations";
+import { normalizeApplicationError } from "@/shared/domain";
 import { executeLeadNurtureCommand, executeLeadOpportunityCommand } from "../../public/leadQualification";
-import type { LeadRelationshipInput } from "../../domain/leadQualification.types";
+import type { LeadQualificationResult, LeadRelationshipInput } from "../../domain/leadQualification.types";
 import { RelationshipResolutionFields } from "../components/RelationshipResolutionFields";
 import { LeadQualificationValidationError, type LeadQualificationFieldErrors } from "../../domain/leadQualification.rules";
+import {
+  isLeadDirectSaleQualificationUnavailable,
+  isLeadOrganizationQualificationUnavailable,
+} from "../../application/leadQualificationAvailability";
 
-function createRelationshipInput(lead: Lead): LeadRelationshipInput {
+function createRelationshipInput(lead: Lead, organizationAvailable: boolean): LeadRelationshipInput {
   return {
-    kind: lead.companyName?.trim() ? "ORGANIZATION_ACCOUNT" : "CONTACT",
+    kind: organizationAvailable && lead.companyName?.trim() ? "ORGANIZATION_ACCOUNT" : "CONTACT",
     mode: "NEW",
     contact: { name: lead.name, email: lead.email, phone: lead.phone, title: lead.title },
     organization: { displayName: lead.companyName || "", phone: lead.companyPhone, address: lead.address, industry: lead.industry },
   };
+}
+
+const BACKEND_FIELD_KEYS: Record<string, keyof LeadQualificationFieldErrors> = {
+  "relationship.selectedId": "relationship.selectedId",
+  "relationship.contact.displayName": "relationship.contact.name",
+  "relationship.contact.email": "relationship.contact.email",
+  "relationship.contact.phone": "relationship.contact.phone",
+  "deal.name": "deal.name",
+  "deal.ownerId": "deal.ownerId",
+  "deal.expectedCloseDate": "deal.expectedCloseDate",
+  "deal.estimatedValue.amount": "deal.estimatedValue",
+  "deal.interestedProductIds": "deal.interestedProducts",
+  "deal.followUpTask.title": "deal.followUpTaskTitle",
+  "deal.followUpTask.dueAt": "deal.followUpTaskDueAt",
+  revisitAt: "nurture.revisitAt",
+  reason: "nurture.reason",
+};
+
+function mapBackendFieldErrors(fieldErrors: Record<string, string[]> | undefined): LeadQualificationFieldErrors {
+  const mapped: LeadQualificationFieldErrors = {};
+  for (const [field, messages] of Object.entries(fieldErrors ?? {})) {
+    const message = messages[0];
+    if (!message) continue;
+    if (field === "deal") {
+      mapped["deal.needSummary"] = message;
+      mapped["deal.interestedProducts"] = message;
+      continue;
+    }
+    const key = BACKEND_FIELD_KEYS[field];
+    if (key) mapped[key] = message;
+  }
+  return mapped;
 }
 
 function leadInterestedProductIds(lead: Lead): string[] {
@@ -117,18 +154,20 @@ export const LeadQualificationPage: React.FC = () => {
   const vi = locale === "vi";
   const crmConfig = useWorkspaceConfigSnapshot();
   const operationalConfiguration = useWorkspaceOperationalConfiguration();
+  const organizationAvailable = !isLeadOrganizationQualificationUnavailable();
+  const directSaleAvailable = !isLeadDirectSaleQualificationUnavailable();
   const [lead, setLead] = useState<Lead | undefined>(() => leadId ? getLeadSnapshot(leadId) : undefined);
   const [contacts, setContacts] = useState<Contact[]>(() => getContactsSnapshot());
   const [organizations, setOrganizations] = useState<OrganizationAccount[]>(() => getOrganizationAccountsSnapshot());
   const [products, setProducts] = useState<Product[]>(() => getProductCatalogSnapshot());
   const [selectedOutcome, setSelectedOutcome] = useState<"DISQUALIFIED" | "NURTURE" | "OPPORTUNITY" | null>(null);
-  const [relationship, setRelationship] = useState<LeadRelationshipInput | null>(() => lead ? createRelationshipInput(lead) : null);
+  const [relationship, setRelationship] = useState<LeadRelationshipInput | null>(() => lead ? createRelationshipInput(lead, organizationAvailable) : null);
   const [reason, setReason] = useState("");
   const [evidence, setEvidence] = useState("");
   const [revisitAt, setRevisitAt] = useState("");
   const [dealName, setDealName] = useState("");
   const [needSummary, setNeedSummary] = useState("");
-  const [estimatedValue, setEstimatedValue] = useState(0);
+  const [estimatedValue, setEstimatedValue] = useState("");
   const [expectedCloseDate, setExpectedCloseDate] = useState("");
   const [createFollowUpTask, setCreateFollowUpTask] = useState(false);
   const [followUpTaskTitle, setFollowUpTaskTitle] = useState("");
@@ -138,6 +177,10 @@ export const LeadQualificationPage: React.FC = () => {
   const [operationError, setOperationError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<LeadQualificationFieldErrors>({});
   const [submitting, setSubmitting] = useState(false);
+  const [completion, setCompletion] = useState<{
+    result: LeadQualificationResult;
+    outcome?: "COMMITTED" | "REPLAYED" | "DEMO_COMMITTED";
+  } | null>(null);
 
   useEffect(() => subscribeToLeads(() => setLead(leadId ? getLeadSnapshot(leadId) : undefined)), [leadId]);
   useEffect(() => subscribeToContacts(setContacts), []);
@@ -145,12 +188,12 @@ export const LeadQualificationPage: React.FC = () => {
   useEffect(() => subscribeToProductCatalog(setProducts), []);
   useEffect(() => {
     if (!lead) return;
-    setRelationship((current) => current ?? createRelationshipInput(lead));
+    setRelationship((current) => current ?? createRelationshipInput(lead, organizationAvailable));
     setDealName((current) => current || `${vi ? "Cơ hội" : "Opportunity"} - ${lead.companyName || lead.name}`);
     setNeedSummary((current) => current || lead.painPoint || lead.qualificationNotes || "");
-    setEstimatedValue((current) => current || lead.expectedValue || 0);
+    setEstimatedValue((current) => current || (lead.expectedValue === undefined ? "" : String(lead.expectedValue)));
     setInterestedProductIds((current) => current.length > 0 ? current : leadInterestedProductIds(lead));
-  }, [lead, vi]);
+  }, [lead, organizationAvailable, vi]);
 
   const dealEnabled = crmConfig.modules.deals && crmConfig.workflow.dealUsageMode !== "DISABLED";
   const eligible = lead?.leadWorkState === LeadWorkState.VERIFYING;
@@ -195,7 +238,8 @@ export const LeadQualificationPage: React.FC = () => {
         localErrors["deal.interestedProducts"] = message;
       }
       if (expectedCloseDate && Number.isNaN(new Date(expectedCloseDate).getTime())) localErrors["deal.expectedCloseDate"] = vi ? "Ngày dự kiến chốt không hợp lệ." : "Expected close date is invalid.";
-      if (!Number.isFinite(estimatedValue) || estimatedValue < 0) localErrors["deal.estimatedValue"] = vi ? "Giá trị ước tính phải là số không âm." : "Estimated value must be non-negative.";
+      const numericEstimatedValue = estimatedValue === "" ? undefined : Number(estimatedValue);
+      if (numericEstimatedValue !== undefined && (!Number.isFinite(numericEstimatedValue) || numericEstimatedValue < 0)) localErrors["deal.estimatedValue"] = vi ? "Giá trị ước tính phải là số không âm." : "Estimated value must be non-negative.";
       if (createFollowUpTask) {
         if (!followUpTaskTitle.trim()) localErrors["deal.followUpTaskTitle"] = vi ? "Nhập tên công việc." : "Enter the task title.";
         if (!followUpTaskDueAt || Number.isNaN(new Date(followUpTaskDueAt).getTime())) localErrors["deal.followUpTaskDueAt"] = vi ? "Chọn hạn công việc hợp lệ." : "Choose a valid task due date.";
@@ -212,12 +256,15 @@ export const LeadQualificationPage: React.FC = () => {
       if (!eligible) { setOperationError(vi ? "Tiềm năng phải ở bước Đang xác minh." : "Lead must be in Verifying."); return; }
       if (selectedOutcome === "DISQUALIFIED") {
         await disqualifyLeadViaApi(lead.id, { reason, evidence });
+        navigate(`/leads/${lead.id}`);
       } else if (selectedOutcome === "NURTURE") {
         if (!relationship) { setOperationError(vi ? "Thiếu thông tin quan hệ khách hàng." : "Relationship input is missing."); return; }
-        await executeLeadNurtureCommand({ leadId: lead.id, relationship, revisitAt, reason, note: evidence, ownerId: lead.ownerId });
+        const outcome = await executeLeadNurtureCommand({ leadId: lead.id, relationship, revisitAt, reason, note: evidence, ownerId: lead.ownerId });
+        setCompletion({ result: outcome.data, ...(outcome.outcome === undefined ? {} : { outcome: outcome.outcome }) });
+        setSelectedOutcome(null);
       } else if (selectedOutcome === "OPPORTUNITY") {
         if (!relationship) { setOperationError(vi ? "Thiếu thông tin quan hệ khách hàng." : "Relationship input is missing."); return; }
-        await executeLeadOpportunityCommand({
+        const outcome = await executeLeadOpportunityCommand({
           leadId: lead.id,
           relationship,
           dealsEnabled: dealEnabled,
@@ -227,7 +274,7 @@ export const LeadQualificationPage: React.FC = () => {
             needSummary,
             ownerId: lead.ownerId,
             expectedCloseDate,
-            estimatedValue,
+            estimatedValue: estimatedValue === "" ? undefined : Number(estimatedValue),
             interestedProductIds,
             followUpTask: createFollowUpTask ? {
               title: followUpTaskTitle,
@@ -236,17 +283,25 @@ export const LeadQualificationPage: React.FC = () => {
             } : undefined,
           },
         });
+        setCompletion({ result: outcome.data, ...(outcome.outcome === undefined ? {} : { outcome: outcome.outcome }) });
+        setSelectedOutcome(null);
       } else {
         setOperationError(vi ? "Chọn một kết quả xử lý." : "Choose a qualification outcome.");
         return;
       }
-      navigate(`/leads/${lead.id}`);
     } catch (caught) {
       if (caught instanceof LeadQualificationValidationError) {
         const localizedErrors = localizeQualificationErrors(caught.fieldErrors, vi);
         setFieldErrors(localizedErrors);
         focusFirstInvalidField(localizedErrors);
       } else {
+        const normalized = normalizeApplicationError(caught);
+        const backendErrors = mapBackendFieldErrors(normalized.fieldErrors);
+        if (Object.keys(backendErrors).length > 0) {
+          const localizedErrors = localizeQualificationErrors(backendErrors, vi);
+          setFieldErrors(localizedErrors);
+          focusFirstInvalidField(localizedErrors);
+        }
         // MA-08: an authoritative refusal carries an internal diagnostic (workflow ids,
         // command classifications). The central formatter owns what a user may see.
         setOperationError(formatApplicationError(caught, { locale }));
@@ -268,6 +323,22 @@ export const LeadQualificationPage: React.FC = () => {
 
       {!eligible && <p className="text-sm text-slate-600">{vi ? "Tiềm năng phải ở bước Đang xác minh trước khi chốt kết quả." : "The lead must be in Verifying before an outcome can be committed."}</p>}
 
+      {completion && (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-5 text-sm text-emerald-950">
+          <p className="font-semibold">
+            {completion.outcome === "REPLAYED"
+              ? (vi ? "Qualification đã hoàn tất trước đó; kết quả authoritative đã được tải lại." : "Qualification was already completed; the authoritative result has been reloaded.")
+              : (vi ? "Qualification đã được backend hoàn tất và Lead đã được tải lại." : "The backend completed qualification and the Lead has been refreshed.")}
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Button type="button" variant="secondary" size="sm" onClick={() => navigate(`/leads/${completion.result.leadId}`)}>{vi ? "Mở Lead" : "Open Lead"}</Button>
+            {completion.result.contactId && <Button type="button" variant="secondary" size="sm" onClick={() => navigate(`/contacts/${completion.result.contactId}`)}>{vi ? "Mở Contact" : "Open Contact"}</Button>}
+            {completion.result.taskId && <Button type="button" variant="secondary" size="sm" onClick={() => navigate(`/tasks/${completion.result.taskId}`)}>{vi ? "Mở công việc" : "Open Task"}</Button>}
+            {completion.result.dealId && <Button type="button" variant="secondary" size="sm" onClick={() => navigate(`/deals/${completion.result.dealId}`)}>{vi ? "Mở cơ hội" : "Open Deal"}</Button>}
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
         {outcomeCards.map((card) => {
           const unavailable = card.key === "OPPORTUNITY" && !dealEnabled;
@@ -286,10 +357,11 @@ export const LeadQualificationPage: React.FC = () => {
             </button>
           );
         })}
-        <button type="button" onClick={() => navigate(`/leads/${lead.id}/sell-now`)} className="rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:border-emerald-300">
+        <button type="button" disabled={!directSaleAvailable} onClick={() => navigate(`/leads/${lead.id}/sell-now`)} className="rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:border-emerald-300 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-60">
           <ShoppingCart size={18} className="text-emerald-600" />
           <div className="mt-3 font-semibold text-slate-900">{vi ? "Bán ngay" : "Sell now"}</div>
           <div className="mt-1 text-[11px] leading-relaxed text-slate-500">{vi ? "Tạo báo giá hoặc đơn hàng mà không tạo cơ hội ngầm." : "Create a quote or order without a hidden opportunity."}</div>
+          {!directSaleAvailable && <div className="mt-2 text-[10px] text-slate-500">{vi ? "Direct Sale chưa khả dụng trong chế độ kết nối." : "Direct Sale is unavailable in connected mode."}</div>}
         </button>
       </div>
 
@@ -322,6 +394,7 @@ export const LeadQualificationPage: React.FC = () => {
               organizations={organizations}
               locale={locale}
               errors={fieldErrors}
+              organizationAvailable={organizationAvailable}
             />
           )}
 
@@ -336,7 +409,7 @@ export const LeadQualificationPage: React.FC = () => {
           {selectedOutcome === "OPPORTUNITY" && (
             <div className="grid grid-cols-1 gap-4 border-t border-slate-100 pt-5 md:grid-cols-2">
               <Input id="qualification-deal-name" label={vi ? "Tên cơ hội" : "Opportunity name"} value={dealName} onChange={(event) => { setDealName(event.target.value); clearFieldError("deal.name"); }} error={fieldErrors["deal.name"]} required />
-              <Input id="qualification-estimated-value" label={vi ? "Giá trị ước tính" : "Estimated value"} type="number" min="0" value={estimatedValue} onChange={(event) => { setEstimatedValue(event.target.value === "" ? 0 : Number(event.target.value)); clearFieldError("deal.estimatedValue"); }} error={fieldErrors["deal.estimatedValue"]} />
+              <Input id="qualification-estimated-value" label={vi ? "Giá trị ước tính" : "Estimated value"} type="number" min="0" value={estimatedValue} onChange={(event) => { setEstimatedValue(event.target.value); clearFieldError("deal.estimatedValue"); }} error={fieldErrors["deal.estimatedValue"]} />
               <div className="md:col-span-2">
                 <Textarea
                   id="qualification-need-summary"

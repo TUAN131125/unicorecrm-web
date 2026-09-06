@@ -6,7 +6,7 @@ import { CAPABILITIES, assertRuntimeCommandAccess, assertRuntimeCapability } fro
 import { appendRecordOwnershipAudit, enforceCreateOwner, getRecordOwnershipContext } from "@/platform/record-ownership";
 import { assertValidLeadContactData } from "../../domain/rules/leadContactData";
 import { getLeadProgressiveProfilePolicy } from "../policies/leadProgressiveProfilePolicyRuntime";
-import { anonymizedRecordLabel, assertDestructiveActionAllowed, isWorkspaceScopeResetActive, redactEmailForRetention } from "@/shared/application";
+import { anonymizedRecordLabel, assertDestructiveActionAllowed, isBackendProjectionActive, isWorkspaceScopeResetActive, redactEmailForRetention } from "@/shared/application";
 
 export type LeadCollectionUpdater = Lead[] | ((current: Lead[]) => Lead[]);
 
@@ -18,7 +18,7 @@ export function updateLeadCollection(
   // projection eviction, not a business update, so it is not gated on leads.update:
   // every reader can switch workspace, and no lead is being changed. All other
   // callers keep the full authorization, ownership and lifecycle checks below.
-  if (isWorkspaceScopeResetActive()) {
+  if (isWorkspaceScopeResetActive() || isBackendProjectionActive("leads")) {
     const evicted = typeof updater === "function" ? updater(repository.list()) : updater;
     repository.replace(evicted);
     return evicted;
@@ -45,6 +45,18 @@ export function updateLeadCollection(
 }
 
 export function saveLead(repository: LeadRepository, lead: Lead): Lead {
+  if (isBackendProjectionActive("leads")) {
+    const projected = structuredClone(lead);
+    const current = repository.list();
+    const exists = current.some((item) => item.id === projected.id);
+    repository.replace(
+      exists
+        ? current.map((item) => item.id === projected.id ? projected : item)
+        : [projected, ...current],
+    );
+    return structuredClone(projected);
+  }
+
   assertValidLeadContactData(lead);
   const current = repository.list();
   const previous = current.find((item) => item.id === lead.id);

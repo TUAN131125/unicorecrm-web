@@ -17,6 +17,7 @@ export interface UseServerPagedModuleCollectionOptions<T> {
   enabled?: boolean;
   initialPageSize?: number;
   project(records: readonly T[]): void;
+  evictProjection?: () => void;
   onReset?: () => void;
 }
 
@@ -37,6 +38,7 @@ export function useServerPagedModuleCollection<T>(
     ...(options.enabled === undefined ? {} : { enabled: options.enabled }),
     ...(options.initialPageSize === undefined ? {} : { initialPageSize: options.initialPageSize }),
     project: options.project,
+    ...(options.evictProjection === undefined ? {} : { evictProjection: options.evictProjection }),
     loadPage,
     errorCodePrefix: options.key.toUpperCase(),
     ...(options.onReset === undefined ? {} : { onReset: options.onReset }),

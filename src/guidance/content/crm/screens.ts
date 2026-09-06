@@ -39,13 +39,13 @@ export const CRM_SCREEN_GUIDANCE: ScreenGuidance[] = [
     id: "crm.leads.list",
     routeKey: "LEADS",
     productSpace: "crm",
-    version: 4,
+    version: 5,
     title: { vi: "Khách hàng tiềm năng", en: "Leads" },
     purpose: { vi: "Tiếp nhận, phân công, xác minh nhu cầu và quyết định bước bán hàng tiếp theo cho khách hàng tiềm năng.", en: "Capture, assign, verify, and determine the next selling outcome for leads." },
     prerequisites: [{ vi: "Có quyền xem khách hàng tiềm năng; quyền tạo, sửa, giao hoặc chốt kết quả được kiểm tra riêng.", en: "Lead read permission is required; create, update, assign, and qualification permissions are checked separately." }],
     primaryTasks: [
       { id: "create", text: { vi: "Dùng Tạo nhanh để lưu tên và ít nhất một kênh liên hệ; bổ sung nguồn, giá trị dự kiến và lịch chăm sóc khi đã biết.", en: "Use Quick Create to save a name and at least one contact channel; add source, estimated value, and follow-up when known." }, requiredCapabilities: [CAPABILITIES.LEADS_CREATE] },
-      { id: "qualify", text: { vi: "Xác minh và chốt kết quả phù hợp: tạo quan hệ, tạo cơ hội hoặc bán trực tiếp.", en: "Verify and resolve the appropriate outcome: relationship, opportunity, or direct sale." }, requiredCapabilities: [CAPABILITIES.LEADS_QUALIFY] },
+      { id: "qualify", text: { vi: "Đưa Lead tới Đang xác minh rồi chốt kết quả khả dụng: chăm sóc thêm với Contact hoặc tạo Contact và cơ hội.", en: "Advance the Lead to Verifying, then resolve an available outcome: nurture with a Contact or create a Contact and opportunity." }, requiredCapabilities: [CAPABILITIES.LEADS_QUALIFY] },
       { id: "assign", text: { vi: "Phân công người phụ trách theo phạm vi dữ liệu được phép.", en: "Assign an owner within the permitted data scope." }, requiredCapabilities: [CAPABILITIES.LEADS_ASSIGN] },
     ],
     commonMistakes: [

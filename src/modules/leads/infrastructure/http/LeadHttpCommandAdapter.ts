@@ -170,9 +170,8 @@ export class LeadHttpCommandAdapter implements LeadCommandPort {
   ): Promise<DisqualifyLeadResult> {
     const aggregateId = requireLeadId("disqualifyLead", leadId);
     const reason = requireReason("disqualifyLead", input.reason);
-    const evidence = input.evidence.trim();
-    if (!evidence) throw contractViolation("disqualifyLead", "evidence", "disqualifyLead requires verification evidence.");
-    const body: DisqualifyLeadRequest = { reason, evidence };
+    const evidence = input.evidence?.trim() || undefined;
+    const body: DisqualifyLeadRequest = compact({ reason, evidence });
     const response = await this.api.disqualifyLead<LeadMutationResponse>(aggregateId, body, versionedOptions("disqualifyLead", options));
     return requireTargetLead("disqualifyLead", aggregateId, response);
   }
@@ -354,12 +353,11 @@ export class LeadHttpCommandAdapter implements LeadCommandPort {
     options: LeadCommandOptions,
   ): Promise<DisqualifyLeadBatchResult> {
     const reason = requireReason("disqualifyLeadBatch", input.reason);
-    const evidence = input.evidence.trim();
-    if (!evidence) throw contractViolation("disqualifyLeadBatch", "evidence", "disqualifyLeadBatch requires evidence.");
+    const evidence = input.evidence?.trim() || undefined;
     const body: DisqualifyLeadBatchRequest = {
       items: normalizeTargets("disqualifyLeadBatch", input.items),
       reason,
-      evidence,
+      ...(evidence === undefined ? {} : { evidence }),
     };
     const response = await this.api.disqualifyLeadBatch<LeadBatchMutationResponse>(body, commandOptions("disqualifyLeadBatch", options));
     return mapBatchMutation("disqualifyLeadBatch", response, body.items.map((item) => item.leadId));
@@ -535,8 +533,8 @@ function commandOptions(operationId: string, options: LeadCommandOptions) {
 }
 
 function versionedOptions(operationId: LeadMutationOperationId, options: LeadVersionedCommandOptions) {
-  if (!Number.isInteger(options.expectedVersion) || options.expectedVersion < 1) {
-    throw contractViolation(operationId, "expectedVersion", `${operationId} requires a positive integer optimistic concurrency version.`);
+  if (!Number.isInteger(options.expectedVersion) || options.expectedVersion < 0) {
+    throw contractViolation(operationId, "expectedVersion", `${operationId} requires a non-negative integer optimistic concurrency version.`);
   }
   return { ...commandOptions(operationId, options), expectedVersion: options.expectedVersion };
 }

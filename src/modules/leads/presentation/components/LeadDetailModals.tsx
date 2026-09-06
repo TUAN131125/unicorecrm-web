@@ -2,6 +2,8 @@ import React from "react";
 import type { NavigateFunction } from "react-router-dom";
 import { Button, ConfirmDialog, Input, Modal, Select, Textarea } from "@/shared/components/ui";
 import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
+import { formatApplicationError } from "@/shared/operations";
+import { normalizeApplicationError } from "@/shared/domain";
 import type { useI18n } from "@/i18n";
 import type { Lead, LeadCampaign, LeadSource } from "../../domain/model/lead.types";
 import type { Product } from "@/modules/products";
@@ -18,6 +20,7 @@ import {
 } from "@/modules/tasks";
 import type { LeadDetailDialogs } from "../hooks/useLeadDetailDialogs";
 import type { useLeadActions } from "../hooks/useLeadActions";
+import { getLeadDetailResource } from "../../application/vertical-slice/leadAuthoritativeQueries";
 
 const LeadForm = React.lazy(() => import("@/components/LeadForm").then((module) => ({ default: module.LeadForm })));
 
@@ -43,6 +46,7 @@ export interface LeadDetailModalScreen {
   handleSendEmailFromComposer: (draft: EmailActivityDraft) => void;
   handleSendSMSFromComposer: (draft: SmsActivityDraft) => void;
   members: Array<{ memberId: string; displayName: string }>;
+  archiveListPath: string;
 }
 
 interface LeadDetailModalsProps {
@@ -54,13 +58,13 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
     dialogs, lead, locale, t, sources, campaigns, products, showToast, navigate, leadActions,
     handleConfirmDisqualify, handleConfirmHandover, handleSaveEditFromForm,
     handleSavePhoneCall, handleSaveMeeting,
-    handleSendEmailFromComposer, handleSendSMSFromComposer, members,
+    handleSendEmailFromComposer, handleSendSMSFromComposer, members, archiveListPath,
   } = screen;
 
   const {
     showDisqualifyModal, setShowDisqualifyModal, disqualifyCategory, setDisqualifyCategory,
     disqualifyReasonText, setDisqualifyReasonText, showEditModal, setShowEditModal,
-    showDeleteConfirm, setShowDeleteConfirm, showHandoverModal, setShowHandoverModal,
+    showDeleteConfirm, setShowDeleteConfirm, archiveReason, setArchiveReason, showHandoverModal, setShowHandoverModal,
     showTagsModal, setShowTagsModal,
     handoverOwnerId, setHandoverOwnerId, handoverReason, setHandoverReason, showCallModal, setShowCallModal,
     showTaskModal, setShowTaskModal, showMeetingModal, setShowMeetingModal,
@@ -72,6 +76,7 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
   const closeEditModal = React.useCallback(() => setShowEditModal(false), [setShowEditModal]);
   const editUnsavedChanges = useUnsavedChangesGuard(closeEditModal);
   const [tagDraft, setTagDraft] = React.useState("");
+  const [archivePending, setArchivePending] = React.useState(false);
   React.useEffect(() => {
     if (!showEditModal) {
       editUnsavedChanges.setIsDirty(false);
@@ -131,20 +136,38 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
       {/* CONFIRM MODAL: ARCHIVE CONFIRMATION */}
       <Modal
         isOpen={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
+        onClose={() => {
+          if (archivePending) return;
+          setShowDeleteConfirm(false);
+          setArchiveReason("");
+        }}
         title={locale === "vi" ? "Xác nhận lưu trữ tiềm năng" : "Confirm Archive Lead"}
         size="sm"
         footer={(
           <>
-            <Button onClick={() => setShowDeleteConfirm(false)} variant="secondary" size="sm">{t("common.cancel")}</Button>
+            <Button onClick={() => { setShowDeleteConfirm(false); setArchiveReason(""); }} disabled={archivePending} variant="secondary" size="sm">{t("common.cancel")}</Button>
             <Button
               onClick={() => {
-                setShowDeleteConfirm(false);
-                void leadActions.archive(lead.id).then(() => {
+                const reason = archiveReason.trim();
+                if (!reason) {
+                  showToast(locale === "vi" ? "Hãy nhập lý do lưu trữ." : "Enter an archive reason.");
+                  return;
+                }
+                setArchivePending(true);
+                void leadActions.archive(lead.id, reason).then(() => {
+                  setShowDeleteConfirm(false);
+                  setArchiveReason("");
                   showToast(locale === "vi" ? `Đã lưu trữ tiềm năng ${lead.name}.` : `Archived lead ${lead.name}.`);
-                  navigate("/leads");
-                });
+                  navigate(archiveListPath);
+                }).catch(async (error: unknown) => {
+                  const applicationError = normalizeApplicationError(error);
+                  if (applicationError.code === "VERSION_CONFLICT") {
+                    await getLeadDetailResource(lead.id).refresh();
+                  }
+                  showToast(formatApplicationError(applicationError, { locale }));
+                }).finally(() => setArchivePending(false));
               }}
+              disabled={archivePending || !archiveReason.trim()}
               variant="danger"
               size="sm"
             >
@@ -153,11 +176,20 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
           </>
         )}
       >
-        <p className="text-left text-sm font-medium leading-6 text-slate-600">
-          {locale === "vi"
-            ? "Lưu trữ hồ sơ Tiềm năng này? Hồ sơ và toàn bộ lịch sử tương tác vẫn được giữ lại."
-            : "Archive this Lead record? The record and its complete activity history will be retained."}
-        </p>
+        <div className="space-y-4 text-left">
+          <p className="text-sm font-medium leading-6 text-slate-600">
+            {locale === "vi"
+              ? "Lead sẽ được ẩn khỏi danh sách đang hoạt động. Hồ sơ và toàn bộ lịch sử tương tác vẫn được giữ lại."
+              : "The Lead will be hidden from active lists. Its record and complete activity history will be retained."}
+          </p>
+          <Textarea
+            label={locale === "vi" ? "Lý do lưu trữ *" : "Archive reason *"}
+            value={archiveReason}
+            maxLength={2000}
+            onChange={(event) => setArchiveReason(event.target.value)}
+            placeholder={locale === "vi" ? "Nhập lý do để lưu trong lịch sử hồ sơ" : "Enter a reason for the record history"}
+          />
+        </div>
       </Modal>
 
       {/* HANDOVER ASSIGNMENT MODAL */}

@@ -17,6 +17,7 @@ export interface UseServerPagedCollectionOptions<T> {
   enabled?: boolean;
   initialPageSize?: number;
   project(records: readonly T[]): void;
+  evictProjection?: () => void;
   loadPage(query: ModuleListQuery, signal: AbortSignal): Promise<AuthoritativePage<T>>;
   errorCodePrefix: string;
   onReset?: () => void;
@@ -61,29 +62,43 @@ export function useServerPagedCollection<T>(
   const queryKey = React.useMemo(() => stableQueryKey(options.query), [options.query]);
   const resetKey = `${options.scopeKey}\u0000${queryKey}\u0000${pageSize}`;
   const previousResetKeyRef = React.useRef(resetKey);
+  const previousScopeKeyRef = React.useRef(options.scopeKey);
   const previousEnabledRef = React.useRef(enabled);
 
-  const reset = React.useCallback(() => {
+  const reset = React.useCallback((evictProjection: boolean) => {
     requestVersionRef.current += 1;
     controllerRef.current?.abort();
     controllerRef.current = undefined;
     cursorByPageRef.current = new Map([[1, undefined]]);
     setPageState(1);
-    setSnapshot({ state: "IDLE" });
-    options.project([]);
+    setSnapshot((current) => evictProjection
+      ? { state: "IDLE" }
+      : current.page === undefined
+        ? { state: "IDLE" }
+        : {
+            state: "IDLE",
+            page: current.page,
+            ...(current.loadedAt === undefined ? {} : { loadedAt: current.loadedAt }),
+          });
+    if (evictProjection) {
+      if (options.evictProjection) options.evictProjection();
+      else options.project([]);
+    }
     options.onReset?.();
-  }, [options.project, options.onReset]);
+  }, [options.evictProjection, options.project, options.onReset]);
 
   React.useLayoutEffect(() => {
     if (previousResetKeyRef.current === resetKey) return;
+    const scopeChanged = previousScopeKeyRef.current !== options.scopeKey;
     previousResetKeyRef.current = resetKey;
-    reset();
-  }, [reset, resetKey]);
+    previousScopeKeyRef.current = options.scopeKey;
+    reset(scopeChanged);
+  }, [options.scopeKey, reset, resetKey]);
 
   React.useLayoutEffect(() => {
     const wasEnabled = previousEnabledRef.current;
     previousEnabledRef.current = enabled;
-    if (!wasEnabled && enabled) reset();
+    if (!wasEnabled && enabled) reset(false);
   }, [enabled, reset]);
 
   React.useEffect(() => () => {
@@ -121,6 +136,15 @@ export function useServerPagedCollection<T>(
         ...(cursor === undefined ? {} : { cursor }),
       }, controller.signal);
       if (controller.signal.aborted || requestVersion !== requestVersionRef.current) return;
+
+      const authoritativePageCount = Math.max(1, Math.ceil(result.pageInfo.totalCount / pageSize));
+      if (page > authoritativePageCount) {
+        setPageState(authoritativePageCount);
+        setSnapshot((current) => current.page === undefined
+          ? { state: "IDLE" }
+          : { state: "IDLE", page: current.page, ...(current.loadedAt === undefined ? {} : { loadedAt: current.loadedAt }) });
+        return;
+      }
 
       if (result.pageInfo.hasNextPage) {
         const nextCursor = result.pageInfo.nextCursor?.trim();
@@ -174,10 +198,15 @@ export function useServerPagedCollection<T>(
     requestVersionRef.current += 1;
     controllerRef.current?.abort();
     controllerRef.current = undefined;
-    options.project([]);
     setPageState(normalized);
-    setSnapshot({ state: "IDLE" });
-  }, [options.project, page]);
+    setSnapshot((current) => current.page === undefined
+      ? { state: "IDLE" }
+      : {
+          state: "IDLE",
+          page: current.page,
+          ...(current.loadedAt === undefined ? {} : { loadedAt: current.loadedAt }),
+        });
+  }, [page]);
 
   const setPageSize = React.useCallback((nextSize: number) => {
     setPageSizeState(normalizePageSize(nextSize));

@@ -23,6 +23,7 @@ interface LeadListResultsProps {
   memberById: ReadonlyMap<string, WorkspaceMemberDirectoryEntry>;
   productById: ReadonlyMap<string, Product>;
   canDelete: boolean;
+  canCreate: boolean;
   page: number;
   pageCount: number;
   pageSize: number;
@@ -40,12 +41,12 @@ interface LeadListResultsProps {
   getReturnToUrl: (mode: "table" | "kanban") => string;
   onMoveLead: (leadId: string, target: LeadKanbanDropTarget) => void;
   onCall: (lead: Lead) => void;
-  onMarkContacted: (leadId: string) => void;
-  onQualify: (leadId: string) => void;
-  onDisqualify: (leadId: string) => void;
-  onReopen: (leadId: string) => void;
-  onFollowUp: (leadId: string) => void;
-  onConvert: (leadId: string) => void;
+  onMarkContacted?: (leadId: string) => void;
+  onQualify?: (leadId: string) => void;
+  onDisqualify?: (leadId: string) => void;
+  onReopen?: (leadId: string) => void;
+  onFollowUp?: (leadId: string) => void;
+  onConvert?: (leadId: string) => void;
   onDelete: (leadId: string) => void;
   onViewDetails: (leadId: string) => void;
 }
@@ -62,6 +63,7 @@ export function LeadListResults({
   memberById,
   productById,
   canDelete,
+  canCreate,
   page,
   pageCount,
   pageSize,
@@ -96,11 +98,11 @@ export function LeadListResults({
         <ListStatePanel
           kind="empty"
           title={locale === "vi" ? "Không có Lead phù hợp" : "No matching Leads"}
-          action={(
+          action={canCreate ? (
             <button type="button" onClick={onOpenCreate} className="rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-indigo-700">
               {t("leads.addLead")}
             </button>
-          )}
+          ) : undefined}
         />
       </div>
     );
@@ -108,12 +110,12 @@ export function LeadListResults({
 
   const sharedActions = {
     onCall,
-    onMarkContacted,
-    onQualify,
-    onDisqualify,
-    onReopen,
-    onFollowUp,
-    onConvert,
+    ...(onMarkContacted ? { onMarkContacted } : {}),
+    ...(onQualify ? { onQualify } : {}),
+    ...(onDisqualify ? { onDisqualify } : {}),
+    ...(onReopen ? { onReopen } : {}),
+    ...(onFollowUp ? { onFollowUp } : {}),
+    ...(onConvert ? { onConvert } : {}),
     onDelete: canDelete ? onDelete : undefined,
     onViewDetails,
   };

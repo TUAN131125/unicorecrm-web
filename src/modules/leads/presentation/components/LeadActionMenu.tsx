@@ -177,7 +177,7 @@ export const LeadActionMenu: React.FC<LeadActionMenuProps> = ({
           }}
           icon={<Trash2 size={14} />}
         >
-          {tx("leads.actionMenu.delete", "Xóa")}
+          {locale === "vi" ? "Lưu trữ Lead" : "Archive Lead"}
         </MenuItemButton>
       )}
     </div>

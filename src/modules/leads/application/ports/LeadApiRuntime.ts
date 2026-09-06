@@ -88,7 +88,7 @@ export interface AdvanceLeadWorkStateInput {
 
 export interface DisqualifyLeadInput {
   reason: string;
-  evidence: string;
+  evidence?: string;
 }
 
 export interface ArchiveLeadInput {
@@ -154,7 +154,7 @@ export interface AssignLeadOwnerBatchInput {
 export interface DisqualifyLeadBatchInput {
   items: readonly LeadVersionedTargetInput[];
   reason: string;
-  evidence: string;
+  evidence?: string;
 }
 
 export interface ApplyLeadTagBatchInput {

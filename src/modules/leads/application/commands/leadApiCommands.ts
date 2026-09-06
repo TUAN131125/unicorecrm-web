@@ -142,7 +142,7 @@ export async function assignLeadOwnerBatchViaApi(
 
 export async function disqualifyLeadBatchViaApi(
   leadIds: readonly string[],
-  input: { reason: string; evidence: string },
+  input: { reason: string; evidence?: string },
 ): Promise<DisqualifyLeadBatchResult> {
   const items = versionedLeadTargets(leadIds, "disqualifyLeadBatch");
   const result = await getLeadApiRuntime().commands.disqualifyLeadBatch({ items, reason: input.reason, evidence: input.evidence }, {
@@ -401,7 +401,7 @@ function uniqueLeadIds(values: readonly string[]): string[] {
 
 function requireLeadVersion(leadId: string, operationId: string): number {
   const version = leadRepository.getById(leadId)?.resourceVersion;
-  if (!Number.isInteger(version) || Number(version) < 1) {
+  if (!Number.isInteger(version) || Number(version) < 0) {
     throw new ApplicationError({
       code: "LEAD_LIFECYCLE_VERSION_REQUIRED",
       message: `${operationId} requires the authoritative Lead resource version.`,
