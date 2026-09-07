@@ -271,10 +271,10 @@ export const InvoiceDetailPage: React.FC = () => {
   };
 
   const canEdit = invoice.lifecycleState === "DRAFT" && access.can(CAPABILITIES.INVOICES_UPDATE_DRAFT);
-  const canIssue = ["DRAFT", "ISSUE_FAILED"].includes(invoice.lifecycleState) && access.can(invoice.lifecycleState === "ISSUE_FAILED" ? CAPABILITIES.INVOICES_RETRY_ISSUE : CAPABILITIES.INVOICES_ISSUE);
+  const canIssue = ["DRAFT", "ISSUE_FAILED"].includes(invoice.lifecycleState) && access.can(CAPABILITIES.INVOICES_ISSUE);
   const canSend = invoice.lifecycleState === "ISSUED" && access.can(CAPABILITIES.INVOICES_SEND);
   const canCredit = invoice.lifecycleState === "ISSUED" && access.can(CAPABILITIES.INVOICES_CREATE_CREDIT_NOTE) && Boolean(receivable && compareMoney(receivable.outstandingAmount, money("0", invoice.currency)) > 0);
-  const canDiscard = invoice.lifecycleState === "DRAFT" && access.can(CAPABILITIES.INVOICES_DISCARD_DRAFT);
+  const canDiscard = invoice.lifecycleState === "DRAFT" && access.can(CAPABILITIES.INVOICES_EDIT);
   const canVoid = invoice.lifecycleState === "ISSUED" && access.can(CAPABILITIES.INVOICES_VOID);
 
   const primaryActionId = canIssue ? "issue" : canSend ? "send" : canEdit ? "edit" : canCredit ? "credit" : undefined;

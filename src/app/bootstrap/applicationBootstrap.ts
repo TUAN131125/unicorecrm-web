@@ -6,6 +6,7 @@ import {
 import { EmailVerificationApiClient, FetchHttpClient, type AccessTokenProvider } from "@/platform/api";
 import { IdentityApiClient } from "@/platform/api/generated/identityApi";
 import { WorkspaceBootstrapApiClient } from "@/platform/api/generated/workspaceBootstrapApi";
+import { WorkspaceProvisioningApiClient } from "@/platform/api/extensions/workspaceProvisioningApi";
 import { IdentityAuthHttpAdapter } from "@/platform/identity-auth/infrastructure/IdentityAuthHttpAdapter";
 import {
   bootstrapAuthSession,
@@ -134,7 +135,10 @@ export async function bootstrapApplicationComposition(
       defaultTimeoutMs: parseTimeout(environment.VITE_API_TIMEOUT_MS),
       onUnauthorized: createUnauthorizedHandler(bindings),
     });
-    configureConnectedWorkspaceBootstrapGateway(new WorkspaceBootstrapHttpAdapter(new WorkspaceBootstrapApiClient(workspaceHttp)));
+    configureConnectedWorkspaceBootstrapGateway(new WorkspaceBootstrapHttpAdapter(
+      new WorkspaceBootstrapApiClient(workspaceHttp),
+      new WorkspaceProvisioningApiClient(workspaceHttp),
+    ));
   }
 
   const plan = resolveApplicationBootstrapPlan(environment, bindings);

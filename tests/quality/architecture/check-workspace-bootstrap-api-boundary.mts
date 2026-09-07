@@ -36,11 +36,15 @@ for (const id of ["listMyWorkspaces", "getWorkspaceBootstrap"]) assert.match(gen
 assert.match(generated, /workspace: "none"/u);
 
 const bootstrap = read("src/app/bootstrap/applicationBootstrap.ts");
-assert.match(bootstrap, /new WorkspaceBootstrapHttpAdapter\(new WorkspaceBootstrapApiClient\(workspaceHttp\)\)/u);
+assert.match(bootstrap, /new WorkspaceBootstrapHttpAdapter\(/u);
+assert.match(bootstrap, /new WorkspaceBootstrapApiClient\(workspaceHttp\)/u);
+assert.match(bootstrap, /new WorkspaceProvisioningApiClient\(workspaceHttp\)/u);
 assert.match(bootstrap, /getWorkspaceId: \(\) =>[\s\S]*getActiveWorkspaceId\(\)/u);
 const selection = read("src/features/auth/pages/WorkspaceSelectionPage.tsx");
 assert.match(selection, /await loadWorkspaceMemberships/u);
 assert.match(selection, /await switchWorkspaceContext/u);
+assert.match(selection, /resolveCanonicalWorkspaceContext/u);
+assert.doesNotMatch(selection, /INITIAL_SETUP/u);
 assert.doesNotMatch(selection, /listWorkspaceMembershipsForAccount/u);
 const runtime = read("src/platform/workspace-context/runtime/connectedWorkspaceContextRuntime.ts");
 assert.match(runtime, /window\.sessionStorage/u);
@@ -49,6 +53,12 @@ assert.match(runtime, /assertContextMatchesMembership/u);
 const guard = read("src/app/router/guards/RequireWorkspaceContext.tsx");
 assert.match(guard, /restoreSelectedWorkspaceContext/u);
 assert.match(guard, /switchWorkspaceContext/u);
+assert.match(guard, /resolveCanonicalWorkspaceContext/u);
+assert.doesNotMatch(guard, /INITIAL_SETUP/u);
+const app = read("src/App.tsx");
+assert.doesNotMatch(app, /InitialSetupPage/u);
+assert.match(app, /path=\{ROUTE_KEYS\.INITIAL_SETUP\}[\s\S]*Navigate to=\{ROUTE_KEYS\.WORKSPACE_SELECTION\}/u);
+assert.equal(fs.existsSync(path.join(root, "src/features/workspace-setup/pages/InitialSetupPage.tsx")), false);
 
 const violations: string[] = [];
 for (const file of walkAllFiles(path.join(root, "src")).filter((file) => /\.(?:ts|tsx)$/u.test(file))) {

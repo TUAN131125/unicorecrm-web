@@ -24,9 +24,9 @@ export interface RecordAttachmentUploadData {
 interface RecordAttachmentsTabProps {
   idPrefix: string;
   attachments: RecordAttachmentItem[];
-  onUploadAttachment(data: RecordAttachmentUploadData): void;
-  onDeleteAttachment(id: string): void;
-  onDownloadAttachment(id: string): void;
+  onUploadAttachment?(data: RecordAttachmentUploadData): void;
+  onDeleteAttachment?(id: string): void;
+  onDownloadAttachment?(id: string): void;
   isArchived?: boolean;
   onModalStateChange?(open: boolean): void;
   title?: string;
@@ -57,6 +57,7 @@ export const RecordAttachmentsTab: React.FC<RecordAttachmentsTabProps> = ({
   const [category, setCategory] = useState<RecordAttachmentUploadData["category"]>("proposal");
   const [description, setDescription] = useState("");
   const [validationMessage, setValidationMessage] = useState("");
+  const canUpload = !isArchived && onUploadAttachment !== undefined;
 
   React.useEffect(() => {
     onModalStateChange?.(showModal);
@@ -66,11 +67,11 @@ export const RecordAttachmentsTab: React.FC<RecordAttachmentsTabProps> = ({
   }, [showModal, onModalStateChange]);
 
   const requestFile = () => {
-    if (!isArchived) fileInputRef.current?.click();
+    if (canUpload) fileInputRef.current?.click();
   };
 
   const prepareFile = (file?: File) => {
-    if (!file || isArchived) return;
+    if (!file || !canUpload) return;
     if (file.size > MAX_FILE_SIZE) {
       setValidationMessage(tx("contactDetail.attachments.fileTooLarge", "Tệp vượt quá giới hạn 25 MB. Vui lòng chọn tệp nhỏ hơn."));
       return;
@@ -91,7 +92,7 @@ export const RecordAttachmentsTab: React.FC<RecordAttachmentsTabProps> = ({
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    if (!selectedFile || isArchived) {
+    if (!selectedFile || !canUpload || !onUploadAttachment) {
       setValidationMessage(tx("contactDetail.attachments.selectFileRequired", "Vui lòng chọn một tệp để tải lên."));
       return;
     }
@@ -128,14 +129,14 @@ export const RecordAttachmentsTab: React.FC<RecordAttachmentsTabProps> = ({
           <h4 className="text-xs font-bold text-slate-900">{title ?? tx("contactDetail.attachments.tabTitle", "Tài liệu đính kèm")}</h4>
           <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-600">{attachments.length}</span>
         </div>
-        {!isArchived && (
+        {canUpload && (
           <DetailTabActionButton actionIntent="create" onClick={requestFile} icon={<Plus size={14} />}>
             {tx("contactDetail.attachments.uploadBtn", "Tải tài liệu lên")}
           </DetailTabActionButton>
         )}
       </div>
 
-      {!isArchived && (
+      {canUpload && (
         <div
           role="button"
           tabIndex={0}
@@ -167,15 +168,15 @@ export const RecordAttachmentsTab: React.FC<RecordAttachmentsTabProps> = ({
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-2">
-              <Button type="button" variant="ghost" size="xs" icon={<Download size={13} />} onClick={() => onDownloadAttachment(attachment.id)}>{tx("common.download", "Tải về")}</Button>
-              <Button type="button" variant="ghost" size="xs" actionIntent="destructive" disabled={isArchived} aria-label={tx("contactDetail.attachments.delete", "Xóa tài liệu")} onClick={() => onDeleteAttachment(attachment.id)}><Trash2 size={13} /></Button>
+              {onDownloadAttachment && <Button type="button" variant="ghost" size="xs" icon={<Download size={13} />} onClick={() => onDownloadAttachment(attachment.id)}>{tx("common.download", "Tải về")}</Button>}
+              {onDeleteAttachment && !isArchived && <Button type="button" variant="ghost" size="xs" actionIntent="destructive" aria-label={tx("contactDetail.attachments.delete", "Xóa tài liệu")} onClick={() => onDeleteAttachment(attachment.id)}><Trash2 size={13} /></Button>}
             </div>
           </div>
         )) : (
           <div className="flex min-h-[160px] flex-col items-center justify-center px-4 py-8 text-center text-xs text-slate-500">
             <Paperclip size={24} className="mb-2 text-slate-300" />
             <span className="font-semibold">{tx("contactDetail.empty.noAttachments", "Chưa có tài liệu đính kèm.")}</span>
-            {!isArchived && <Button type="button" variant="ghost" size="sm" className="mt-2" onClick={requestFile}>{tx("contactDetail.attachments.emptyCTA", "Chọn tài liệu đầu tiên")}</Button>}
+            {canUpload && <Button type="button" variant="ghost" size="sm" className="mt-2" onClick={requestFile}>{tx("contactDetail.attachments.emptyCTA", "Chọn tài liệu đầu tiên")}</Button>}
           </div>
         )}
       </div>

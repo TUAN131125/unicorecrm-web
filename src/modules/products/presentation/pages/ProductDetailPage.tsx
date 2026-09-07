@@ -20,6 +20,7 @@ import { RecordDetailFrame, RecordDetailHeader, RecordDetailSection } from "@/co
 import { Button, ConfirmDialog, RecordTabTransition, ResponsiveTabs } from "@/shared/components/ui";
 import { useI18n } from "@/i18n";
 import { getAuthSessionSnapshot } from "@/platform/identity-auth";
+import { CAPABILITIES, useEffectiveAccess } from "@/platform/access-control";
 import { normalizeApplicationError } from "@/shared/domain";
 import { buildCustomer360ReadModel, getOwnedProductDisplay } from "@/modules/customers";
 import { formatVnd } from "@/shared/lib/format/currency";
@@ -96,6 +97,11 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
   const { locale } = useI18n();
   const isVi = locale === "vi";
   const session = getAuthSessionSnapshot();
+  const access = useEffectiveAccess();
+  const canCreateProduct = access.can(CAPABILITIES.PRODUCTS_CREATE);
+  const canEditProduct = access.can(CAPABILITIES.PRODUCTS_EDIT);
+  const canArchiveProduct = access.can(CAPABILITIES.PRODUCTS_DELETE);
+  const canRestoreProduct = access.can(CAPABILITIES.PRODUCTS_EDIT);
   const actorId = session?.principal.memberId ?? session?.principal.email ?? "system";
   const actorName = session?.principal.displayName ?? session?.principal.email ?? "CRM User";
 
@@ -335,18 +341,18 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
         )}
         actions={(
           <div className="flex flex-wrap items-center justify-end gap-2">
-            <Button size="sm" variant="secondary" icon={<Edit2 size={13} />} onClick={handleEdit}>
+            {canEditProduct && <Button size="sm" variant="secondary" icon={<Edit2 size={13} />} onClick={handleEdit}>
               {isVi ? "Chỉnh sửa" : "Edit"}
-            </Button>
-            <Button size="sm" variant="secondary" icon={<Copy size={13} />} onClick={handleDuplicate}>
+            </Button>}
+            {canCreateProduct && <Button size="sm" variant="secondary" icon={<Copy size={13} />} onClick={handleDuplicate}>
               {isVi ? "Nhân bản" : "Duplicate"}
-            </Button>
-            <Button size="sm" variant="secondary" icon={<Archive size={13} />} onClick={handleArchiveToggle}>
+            </Button>}
+            {((product.status === "archived" && canRestoreProduct) || (product.status !== "archived" && canArchiveProduct)) && <Button size="sm" variant="secondary" icon={<Archive size={13} />} onClick={handleArchiveToggle}>
               {product.status === "archived" ? (isVi ? "Bỏ lưu trữ" : "Restore") : (isVi ? "Lưu trữ" : "Archive")}
-            </Button>
-            <Button size="sm" variant="danger" icon={<Archive size={13} />} onClick={() => setIsDeleteOpen(true)}>
+            </Button>}
+            {canArchiveProduct && <Button size="sm" variant="danger" icon={<Archive size={13} />} onClick={() => setIsDeleteOpen(true)}>
               {isVi ? "Lưu trữ" : "Archive"}
-            </Button>
+            </Button>}
           </div>
         )}
       />

@@ -1,4 +1,4 @@
-import { ALL_CAPABILITIES, CAPABILITIES } from "./capabilityCatalog";
+import { CAPABILITIES, SERVER_ADMITTED_WORKSPACE_CAPABILITIES } from "./capabilityCatalog";
 import type { Capability, RoleTemplate } from "./accessControl.types";
 
 const CRM_READ: Capability[] = [
@@ -23,7 +23,7 @@ const CRM_READ: Capability[] = [
 
 const SALES_MANAGER_CAPABILITIES: Capability[] = [
   ...CRM_READ,
-  CAPABILITIES.LEADS_CREATE, CAPABILITIES.LEADS_UPDATE, CAPABILITIES.LEADS_EXPORT, CAPABILITIES.LEADS_BULK, CAPABILITIES.LEADS_ASSIGN, CAPABILITIES.LEADS_QUALIFY,
+  CAPABILITIES.LEADS_CREATE, CAPABILITIES.LEADS_UPDATE, CAPABILITIES.LEADS_DELETE, CAPABILITIES.LEADS_EXPORT, CAPABILITIES.LEADS_BULK, CAPABILITIES.LEADS_ASSIGN, CAPABILITIES.LEADS_QUALIFY,
   CAPABILITIES.CONTACTS_CREATE, CAPABILITIES.CONTACTS_UPDATE, CAPABILITIES.CONTACTS_EXPORT, CAPABILITIES.CONTACTS_BULK, CAPABILITIES.CONTACTS_ASSIGN,
   CAPABILITIES.ORGANIZATIONS_CREATE, CAPABILITIES.ORGANIZATIONS_UPDATE,
   CAPABILITIES.TASKS_CREATE, CAPABILITIES.TASKS_UPDATE, CAPABILITIES.TASKS_ASSIGN, CAPABILITIES.TASKS_COMPLETE,
@@ -42,7 +42,7 @@ const SALES_MANAGER_CAPABILITIES: Capability[] = [
 
 const SALES_REP_CAPABILITIES: Capability[] = [
   ...CRM_READ,
-  CAPABILITIES.LEADS_CREATE, CAPABILITIES.LEADS_UPDATE, CAPABILITIES.LEADS_QUALIFY,
+  CAPABILITIES.LEADS_CREATE, CAPABILITIES.LEADS_UPDATE, CAPABILITIES.LEADS_DELETE, CAPABILITIES.LEADS_QUALIFY,
   CAPABILITIES.CONTACTS_CREATE, CAPABILITIES.CONTACTS_UPDATE,
   CAPABILITIES.ORGANIZATIONS_CREATE, CAPABILITIES.ORGANIZATIONS_UPDATE,
   CAPABILITIES.TASKS_CREATE, CAPABILITIES.TASKS_UPDATE, CAPABILITIES.TASKS_ASSIGN, CAPABILITIES.TASKS_COMPLETE,
@@ -99,15 +99,19 @@ const SUPPORT_CAPABILITIES: Capability[] = [
   CAPABILITIES.RETURNS_READ, CAPABILITIES.RETURNS_CREATE, CAPABILITIES.RETURNS_UPDATE,
 ];
 
+const SERVER_ADMITTED_CAPABILITY_SET = new Set<Capability>(SERVER_ADMITTED_WORKSPACE_CAPABILITIES);
+const admitted = (capabilities: readonly Capability[]): Capability[] =>
+  [...new Set(capabilities.filter((capability) => SERVER_ADMITTED_CAPABILITY_SET.has(capability)))];
+
 export const ROLE_TEMPLATES: readonly RoleTemplate[] = [
-  { templateId: "workspace-administrator", name: "Workspace Administrator", description: "Full workspace administration. Keep at least one active assignment with access.configure.", capabilities: [...ALL_CAPABILITIES], defaultScope: "WORKSPACE" },
-  { templateId: "sales-manager", name: "Sales Manager", description: "Manage a sales team, pipeline, quotes, orders, and reporting.", capabilities: [...new Set(SALES_MANAGER_CAPABILITIES)], defaultScope: "TEAM" },
-  { templateId: "sales-representative", name: "Sales Representative", description: "Work assigned leads, contacts, deals, quotes, and orders.", capabilities: [...new Set(SALES_REP_CAPABILITIES)], defaultScope: "OWN" },
-  { templateId: "finance", name: "Finance", description: "Manage payment records, reconciliation, refunds, and financial reporting.", capabilities: [...new Set(FINANCE_CAPABILITIES)], defaultScope: "WORKSPACE" },
-  { templateId: "operations", name: "Operations", description: "Manage confirmed orders, shipping, delivery exceptions, and returns.", capabilities: [...new Set(OPERATIONS_CAPABILITIES)], defaultScope: "TEAM" },
-  { templateId: "customer-success", name: "Customer Success", description: "Manage customer relationships, care cases, tasks, and returns.", capabilities: [...new Set(CUSTOMER_SUCCESS_CAPABILITIES)], defaultScope: "TEAM" },
-  { templateId: "support", name: "Support", description: "Handle care cases, tasks, and return intake.", capabilities: [...new Set(SUPPORT_CAPABILITIES)], defaultScope: "TEAM" },
-  { templateId: "viewer", name: "Viewer", description: "Read-only CRM access. Narrow data scope before assigning broadly.", capabilities: [...new Set(CRM_READ)], defaultScope: "OWN" },
+  { templateId: "workspace-administrator", name: "Workspace Administrator", description: "Full workspace administration. Keep at least one active assignment with access.configure.", capabilities: [...SERVER_ADMITTED_WORKSPACE_CAPABILITIES], defaultScope: "WORKSPACE" },
+  { templateId: "sales-manager", name: "Sales Manager", description: "Manage a sales team, pipeline, quotes, orders, and reporting.", capabilities: admitted(SALES_MANAGER_CAPABILITIES), defaultScope: "TEAM" },
+  { templateId: "sales-representative", name: "Sales Representative", description: "Work assigned leads, contacts, deals, quotes, and orders.", capabilities: admitted(SALES_REP_CAPABILITIES), defaultScope: "OWN" },
+  { templateId: "finance", name: "Finance", description: "Manage payment records, reconciliation, refunds, and financial reporting.", capabilities: admitted(FINANCE_CAPABILITIES), defaultScope: "WORKSPACE" },
+  { templateId: "operations", name: "Operations", description: "Manage confirmed orders, shipping, delivery exceptions, and returns.", capabilities: admitted(OPERATIONS_CAPABILITIES), defaultScope: "TEAM" },
+  { templateId: "customer-success", name: "Customer Success", description: "Manage customer relationships, care cases, tasks, and returns.", capabilities: admitted(CUSTOMER_SUCCESS_CAPABILITIES), defaultScope: "TEAM" },
+  { templateId: "support", name: "Support", description: "Handle care cases, tasks, and return intake.", capabilities: admitted(SUPPORT_CAPABILITIES), defaultScope: "TEAM" },
+  { templateId: "viewer", name: "Viewer", description: "Read-only CRM access. Narrow data scope before assigning broadly.", capabilities: admitted(CRM_READ), defaultScope: "OWN" },
 ] as const;
 
 export function getRoleTemplate(templateId: string): RoleTemplate | undefined {

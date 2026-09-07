@@ -1,4 +1,4 @@
-import { ALL_CAPABILITIES, CAPABILITIES } from "../domain/capabilityCatalog";
+import { CAPABILITIES, SERVER_ADMITTED_WORKSPACE_CAPABILITIES } from "../domain/capabilityCatalog";
 import { getRoleTemplate } from "../domain/roleTemplates";
 import type { AccessControlSnapshot, Capability, DataScopePolicy, RoleDefinition } from "../domain/accessControl.types";
 import { createDefaultAccessControlSnapshot } from "./accessControlSeed";
@@ -13,16 +13,9 @@ const RESOURCE_KEYS = ["leads", "contacts", "organizations", "tasks", "customers
 
 function inferTemplateId(role: RoleDefinition): string | undefined {
   if (role.sourceTemplateId) return role.sourceTemplateId;
-  const identity = `${role.roleId} ${role.name}`.toLowerCase();
-  if (identity.includes("owner") || identity.includes("workspace administrator")) return "workspace-administrator";
-  if (identity.includes("sales_manager") || identity.includes("sales manager")) return "sales-manager";
-  if (identity.includes("sales_rep") || identity.includes("sales representative")) return "sales-representative";
-  if (identity.includes("finance") || identity.includes("tài chính")) return "finance";
-  if (identity.includes("operations") || identity.includes("vận hành")) return "operations";
-  if (identity.includes("csm") || identity.includes("customer success")) return "customer-success";
-  if (identity.includes("support")) return "support";
-  if (identity.includes("viewer")) return "viewer";
-  return undefined;
+  const seededRoleId = role.roleId.toLowerCase();
+  return ["workspace-administrator", "sales-manager", "sales-representative", "finance", "operations", "customer-success", "support", "viewer"]
+    .find((templateId) => seededRoleId.startsWith(`role_${templateId.replaceAll("-", "_")}_`));
 }
 
 type StoredRoleDefinition = RoleDefinition & { isSystem?: boolean };
@@ -32,7 +25,7 @@ function migrateRole(role: StoredRoleDefinition): RoleDefinition {
   const template = sourceTemplateId ? getRoleTemplate(sourceTemplateId) : undefined;
   const migratedCapabilities = role.capabilities.map((capability) => LEGACY_CUSTOMER_CAPABILITY_MAP[capability] ?? capability);
   const capabilities = sourceTemplateId === "workspace-administrator"
-    ? [...ALL_CAPABILITIES]
+    ? [...SERVER_ADMITTED_WORKSPACE_CAPABILITIES]
     : [...new Set([...(template?.capabilities ?? []), ...migratedCapabilities])];
   const { isSystem: _legacyIsSystem, ...canonicalRole } = role;
   return {
@@ -83,7 +76,7 @@ export function migrateStoredAccessControlSnapshot(stored: AccessControlSnapshot
   if (!administratorRole) {
     const seededAdministrator = defaults.roles.find((role) => role.sourceTemplateId === "workspace-administrator");
     if (seededAdministrator) {
-      administratorRole = { ...seededAdministrator, capabilities: [...ALL_CAPABILITIES] };
+      administratorRole = { ...seededAdministrator, capabilities: [...SERVER_ADMITTED_WORKSPACE_CAPABILITIES] };
       roles.push(administratorRole);
     }
   }

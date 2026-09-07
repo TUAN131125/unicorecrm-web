@@ -4,4 +4,5 @@ import type { WorkspaceBootstrapContext, WorkspaceBootstrapQueryOptions } from "
 export interface WorkspaceBootstrapGateway {
   listMyWorkspaces(options?: WorkspaceBootstrapQueryOptions): Promise<WorkspaceMembership[]>;
   getWorkspaceBootstrap(workspaceId: string, options?: WorkspaceBootstrapQueryOptions): Promise<WorkspaceBootstrapContext>;
+  ensureInitialWorkspace(options?: WorkspaceBootstrapQueryOptions): Promise<"PROVISIONED" | "REPLAYED" | "EXISTING_MEMBERSHIP">;
 }

@@ -39,7 +39,10 @@ interface ProductTableProps {
   onDuplicate: (product: Product) => void;
   onArchiveToggle: (product: Product) => void;
   onDelete: (product: Product) => void;
-  allowManage?: boolean;
+  canEdit?: boolean;
+  canDuplicate?: boolean;
+  canArchive?: boolean;
+  canRestore?: boolean;
   visibleColumns: string[];
 }
 
@@ -84,7 +87,10 @@ export const ProductTable: React.FC<ProductTableProps> = ({
   onDuplicate,
   onArchiveToggle,
   onDelete,
-  allowManage = true,
+  canEdit = false,
+  canDuplicate = false,
+  canArchive = false,
+  canRestore = false,
   visibleColumns,
 }) => {
   const navigate = useNavigate();
@@ -253,9 +259,9 @@ export const ProductTable: React.FC<ProductTableProps> = ({
               {isVi ? "Xem chi tiết" : "View details"}
             </MenuItemButton>
 
-            {allowManage ? (
+            {canEdit || canDuplicate || canArchive || canRestore ? (
               <>
-                <MenuItemButton
+                {canEdit && <MenuItemButton
                   id="product-action-edit"
                   icon={<Edit2 size={13} className="text-slate-500" />}
                   onClick={() => {
@@ -265,8 +271,8 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                   }}
                 >
                   {isVi ? "Chỉnh sửa" : "Edit"}
-                </MenuItemButton>
-                <MenuItemButton
+                </MenuItemButton>}
+                {canDuplicate && <MenuItemButton
                   id="product-action-duplicate"
                   icon={<Copy size={13} className="text-slate-500" />}
                   onClick={() => {
@@ -276,8 +282,8 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                   }}
                 >
                   {isVi ? "Nhân bản" : "Duplicate"}
-                </MenuItemButton>
-                <MenuItemButton
+                </MenuItemButton>}
+                {((activeProduct.status === "archived" && canRestore) || (activeProduct.status !== "archived" && canArchive)) && <MenuItemButton
                   id="product-action-archive"
                   icon={<Archive size={13} className="text-slate-500" />}
                   onClick={() => {
@@ -289,9 +295,9 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                   {activeProduct.status === "archived"
                     ? (isVi ? "Bỏ lưu trữ" : "Restore")
                     : (isVi ? "Lưu trữ" : "Archive")}
-                </MenuItemButton>
-                <div className="my-1 border-t border-slate-100" />
-                <MenuItemButton
+                </MenuItemButton>}
+                {canArchive && <div className="my-1 border-t border-slate-100" />}
+                {canArchive && <MenuItemButton
                   id="product-action-delete"
                   danger
                   icon={<Archive size={13} className="text-rose-500" />}
@@ -302,7 +308,7 @@ export const ProductTable: React.FC<ProductTableProps> = ({
                   }}
                 >
                   {isVi ? "Lưu trữ sản phẩm" : "Archive product"}
-                </MenuItemButton>
+                </MenuItemButton>}
               </>
             ) : null}
           </div>

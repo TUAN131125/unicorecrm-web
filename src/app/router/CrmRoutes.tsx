@@ -33,7 +33,6 @@ export const CrmRoutes: React.FC = () => {
         path: "/w/:workspaceKey/studio",
         element: <CanonicalProductSpaceGuard productSpace="studio" />,
         children: [
-          { index: true, element: <CanonicalSpaceIndexRedirect productSpace="studio" /> },
           ...createStudioWorkspaceRoutes(),
         ],
       },

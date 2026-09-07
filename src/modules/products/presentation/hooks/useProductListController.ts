@@ -6,7 +6,7 @@ import { useWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import { useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
 import { getProductCollectionResource } from "../../application/vertical-slice/productAuthoritativeQueries";
 import { normalizeApplicationError } from "@/shared/domain";
-import { useEffectiveAccess } from "@/platform/access-control";
+import { CAPABILITIES, useEffectiveAccess } from "@/platform/access-control";
 import { getAuthSessionSnapshot } from "@/platform/identity-auth";
 import { parseProductsCsv } from "../../application/import-export/productCsv";
 import {
@@ -64,8 +64,11 @@ export function useProductListController({
   });
   const { toast, triggerToast } = useTransientToast();
   const access = useEffectiveAccess();
-  const canCreateProduct = access.canPerform("products", "create");
-  const canManageProduct = ["create", "edit", "delete"].some((action) => access.canPerform("products", action));
+  const canCreateProduct = access.can(CAPABILITIES.PRODUCTS_CREATE);
+  const canEditProduct = access.can(CAPABILITIES.PRODUCTS_EDIT);
+  const canArchiveProduct = access.can(CAPABILITIES.PRODUCTS_DELETE);
+  const canRestoreProduct = access.can(CAPABILITIES.PRODUCTS_EDIT);
+  const canManageProduct = canCreateProduct || canEditProduct || canArchiveProduct;
   const session = getAuthSessionSnapshot();
   const actorId = session?.principal.memberId ?? session?.principal.email ?? "system";
   const actorName = session?.principal.displayName ?? session?.principal.email ?? "CRM User";
@@ -373,6 +376,9 @@ export function useProductListController({
     productQuery,
     tx,
     canCreateProduct,
+    canEditProduct,
+    canArchiveProduct,
+    canRestoreProduct,
     canManage,
     visibleColumns,
     isColumnSettingsOpen,

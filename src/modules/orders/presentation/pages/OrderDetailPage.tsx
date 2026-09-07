@@ -264,7 +264,7 @@ export const OrderDetailPage: React.FC<OrderDetailPageProps> = ({ contacts = [],
     canConfirm: access.canPerform("orders", "confirm") && access.canAccessRecord("orders", order) && serverAllows("order.confirm"),
     canComplete: access.canPerform("orders", "complete") && serverAllows("order.complete"),
     canCreateShipping: access.canPerform("shipping", "create") && serverAllows("shipping.create"),
-    canRecordPayment: access.canPerform("payments", "record") && serverAllows("payments.record"),
+    canRecordPayment: access.can(CAPABILITIES.PAYMENTS_RECORD_MANUAL) && serverAllows("payments.record"),
     canCreateInvoice: access.canPerform("invoices", "create") && serverAllows("invoices.create"),
   };
   const canCreateShippingNow = permissions.canCreateShipping
@@ -629,7 +629,7 @@ export const OrderDetailPage: React.FC<OrderDetailPageProps> = ({ contacts = [],
             </section>}
 
             {activeTab === "RETURNS" && <section className={sectionClassName} data-order-detail-section="returns-summary">
-              <SectionHeader title={locale === "vi" ? "Đổi / Trả hàng" : "Returns / Replacements"} icon={<RotateCcw size={14} />} actions={deliveredBookingRecords[0] && access.can(CAPABILITIES.RETURNS_CREATE) ? <Button size="xs" actionIntent="create" onClick={() => navigate(`/returns/new?orderId=${order.id}&shippingBookingId=${deliveredBookingRecords[0].id}`)}>{locale === "vi" ? "Tạo yêu cầu đổi/trả" : "Create return request"}</Button> : undefined} />
+              <SectionHeader title={locale === "vi" ? "Đổi / Trả hàng" : "Returns / Replacements"} icon={<RotateCcw size={14} />} actions={deliveredBookingRecords[0] && access.can(CAPABILITIES.RETURNS_UPDATE) ? <Button size="xs" actionIntent="create" onClick={() => navigate(`/returns/new?orderId=${order.id}&shippingBookingId=${deliveredBookingRecords[0].id}`)}>{locale === "vi" ? "Tạo yêu cầu đổi/trả" : "Create return request"}</Button> : undefined} />
               {relatedReturns.length === 0 ? <div className="rounded-xl border border-dashed border-slate-300 p-8 text-center"><div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-50 text-amber-700"><RotateCcw size={20} /></div><div className="mt-3 text-sm font-semibold text-slate-800">Chưa có hồ sơ đổi / trả</div><div className="mt-1 text-xs text-slate-500">Return chỉ được tạo khi có delivery evidence và quantity eligible.</div></div> : <div className="grid gap-3 md:grid-cols-2">{relatedReturns.map((request) => <Link key={request.id} to={`/returns/${request.id}`} className="rounded-2xl border border-slate-200 bg-slate-50/60 p-4 transition hover:-translate-y-0.5 hover:border-violet-200 hover:bg-white hover:shadow-sm"><div className="flex items-center justify-between gap-3"><div><div className="font-semibold text-slate-800">{request.code}</div><div className="mt-1 text-xs text-slate-500">{request.requestedResolution || "—"}</div></div><Badge variant={request.status === "CLOSED" || request.status === "RESOLVED" ? "success" : request.status === "REJECTED" ? "danger" : "info"} size="xs" className="whitespace-nowrap">{request.status}</Badge></div></Link>)}</div>}
             </section>}
 

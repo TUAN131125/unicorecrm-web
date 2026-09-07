@@ -22,8 +22,8 @@ const visualContent = {
     en: ["Start with clarity.", "Grow in your own way."],
   },
   neutral: {
-    vi: ["Tiếp tục công việc.", "Không bị gián đoạn."],
-    en: ["Keep work moving.", "Without the noise."],
+    vi: ["Mọi thứ sẵn sàng.", "Bắt đầu ngay."],
+    en: ["Everything is ready.", "Start right away."],
   },
 } as const;
 

@@ -124,7 +124,7 @@ export async function createShippingBooking(repository: ShippingRepository, prov
 
 export async function cancelShippingBooking(repository: ShippingRepository, providers: ShippingProviderRegistry, bookingId: string, input: { reason: string; actorId: string; actorName?: string; now?: string }): Promise<ShippingBooking> {
   const current = repository.findById(bookingId); if (!current) throw new Error(`Shipping booking ${bookingId} not found.`);
-  assertRuntimeCommandAccess(CAPABILITIES.SHIPPING_CANCEL, "shipping", current);
+  assertRuntimeCommandAccess(CAPABILITIES.SHIPPING_CREATE, "shipping", current);
   if (!["PENDING", "BOOKED", "FAILED"].includes(current.bookingStatus)) throw new Error("Only active or failed bookings can be cancelled.");
   if (!input.reason.trim()) throw new Error("Cancellation reason is required.");
   const provider = providers.get(current.providerId);
@@ -137,7 +137,7 @@ export async function cancelShippingBooking(repository: ShippingRepository, prov
 
 export async function syncShippingBooking(repository: ShippingRepository, providers: ShippingProviderRegistry, bookingId: string, input: { actorId: string; actorName?: string; now?: string }): Promise<ShippingBooking> {
   const current = repository.findById(bookingId); if (!current) throw new Error(`Shipping booking ${bookingId} not found.`);
-  assertRuntimeCommandAccess(CAPABILITIES.SHIPPING_SYNC, "shipping", current);
+  assertRuntimeCommandAccess(CAPABILITIES.SHIPPING_CREATE, "shipping", current);
   if (!current.externalBookingId) throw new Error("Booking has no external reference to sync.");
   const provider = providers.get(current.providerId); if (!provider?.syncBooking) throw new Error("Provider does not support sync.");
   const snapshot = await provider.syncBooking(current.externalBookingId);
@@ -149,7 +149,7 @@ export async function syncShippingBooking(repository: ShippingRepository, provid
 
 export async function retryShippingBooking(repository: ShippingRepository, providers: ShippingProviderRegistry, bookingId: string, input: { id: string; code: string; providerId?: string; actorId: string; actorName?: string; now?: string }): Promise<ShippingBooking> {
   const current = repository.findById(bookingId); if (!current) throw new Error(`Shipping booking ${bookingId} not found.`);
-  assertRuntimeCommandAccess(CAPABILITIES.SHIPPING_RETRY, "shipping", current);
+  assertRuntimeCommandAccess(CAPABILITIES.SHIPPING_CREATE, "shipping", current);
   if (current.bookingStatus !== "FAILED") throw new Error("Only failed bookings can be retried.");
   const shipmentGroupId = current.shipmentGroupId?.trim();
   if (!shipmentGroupId) throw new Error("Shipping booking has no authoritative shipment group and cannot be retried.");
@@ -159,7 +159,7 @@ export async function retryShippingBooking(repository: ShippingRepository, provi
 
 export async function changeShippingProvider(repository: ShippingRepository, providers: ShippingProviderRegistry, bookingId: string, input: { id: string; code: string; providerId: string; actorId: string; actorName?: string; now?: string }): Promise<ShippingBooking> {
   const current = repository.findById(bookingId); if (!current) throw new Error(`Shipping booking ${bookingId} not found.`);
-  assertRuntimeCommandAccess(CAPABILITIES.SHIPPING_RETRY, "shipping", current);
+  assertRuntimeCommandAccess(CAPABILITIES.SHIPPING_CREATE, "shipping", current);
   if (current.bookingStatus === "BOOKED") throw new Error("Booked shipping cannot change provider in place. Cancel first when policy allows, then create a new booking.");
   const shipmentGroupId = current.shipmentGroupId?.trim();
   if (!shipmentGroupId) throw new Error("Shipping booking has no authoritative shipment group and cannot change provider.");

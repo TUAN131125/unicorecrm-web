@@ -21,6 +21,7 @@ import {
 import type { LeadDetailDialogs } from "../hooks/useLeadDetailDialogs";
 import type { useLeadActions } from "../hooks/useLeadActions";
 import { getLeadDetailResource } from "../../application/vertical-slice/leadAuthoritativeQueries";
+import { LeadArchiveConfirmationModal } from "./LeadArchiveConfirmationModal";
 
 const LeadForm = React.lazy(() => import("@/components/LeadForm").then((module) => ({ default: module.LeadForm })));
 
@@ -64,7 +65,7 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
   const {
     showDisqualifyModal, setShowDisqualifyModal, disqualifyCategory, setDisqualifyCategory,
     disqualifyReasonText, setDisqualifyReasonText, showEditModal, setShowEditModal,
-    showDeleteConfirm, setShowDeleteConfirm, archiveReason, setArchiveReason, showHandoverModal, setShowHandoverModal,
+    showArchiveConfirm, setShowArchiveConfirm, showHandoverModal, setShowHandoverModal,
     showTagsModal, setShowTagsModal,
     handoverOwnerId, setHandoverOwnerId, handoverReason, setHandoverReason, showCallModal, setShowCallModal,
     showTaskModal, setShowTaskModal, showMeetingModal, setShowMeetingModal,
@@ -134,63 +135,30 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
       </Modal>
 
       {/* CONFIRM MODAL: ARCHIVE CONFIRMATION */}
-      <Modal
-        isOpen={showDeleteConfirm}
+      <LeadArchiveConfirmationModal
+        isOpen={showArchiveConfirm}
+        bulk={false}
+        selectedCount={1}
+        pending={archivePending}
         onClose={() => {
-          if (archivePending) return;
-          setShowDeleteConfirm(false);
-          setArchiveReason("");
+          if (!archivePending) setShowArchiveConfirm(false);
         }}
-        title={locale === "vi" ? "Xác nhận lưu trữ tiềm năng" : "Confirm Archive Lead"}
-        size="sm"
-        footer={(
-          <>
-            <Button onClick={() => { setShowDeleteConfirm(false); setArchiveReason(""); }} disabled={archivePending} variant="secondary" size="sm">{t("common.cancel")}</Button>
-            <Button
-              onClick={() => {
-                const reason = archiveReason.trim();
-                if (!reason) {
-                  showToast(locale === "vi" ? "Hãy nhập lý do lưu trữ." : "Enter an archive reason.");
-                  return;
-                }
-                setArchivePending(true);
-                void leadActions.archive(lead.id, reason).then(() => {
-                  setShowDeleteConfirm(false);
-                  setArchiveReason("");
-                  showToast(locale === "vi" ? `Đã lưu trữ tiềm năng ${lead.name}.` : `Archived lead ${lead.name}.`);
-                  navigate(archiveListPath);
-                }).catch(async (error: unknown) => {
-                  const applicationError = normalizeApplicationError(error);
-                  if (applicationError.code === "VERSION_CONFLICT") {
-                    await getLeadDetailResource(lead.id).refresh();
-                  }
-                  showToast(formatApplicationError(applicationError, { locale }));
-                }).finally(() => setArchivePending(false));
-              }}
-              disabled={archivePending || !archiveReason.trim()}
-              variant="danger"
-              size="sm"
-            >
-              {locale === "vi" ? "Lưu trữ" : "Archive"}
-            </Button>
-          </>
-        )}
-      >
-        <div className="space-y-4 text-left">
-          <p className="text-sm font-medium leading-6 text-slate-600">
-            {locale === "vi"
-              ? "Lead sẽ được ẩn khỏi danh sách đang hoạt động. Hồ sơ và toàn bộ lịch sử tương tác vẫn được giữ lại."
-              : "The Lead will be hidden from active lists. Its record and complete activity history will be retained."}
-          </p>
-          <Textarea
-            label={locale === "vi" ? "Lý do lưu trữ *" : "Archive reason *"}
-            value={archiveReason}
-            maxLength={2000}
-            onChange={(event) => setArchiveReason(event.target.value)}
-            placeholder={locale === "vi" ? "Nhập lý do để lưu trong lịch sử hồ sơ" : "Enter a reason for the record history"}
-          />
-        </div>
-      </Modal>
+        onConfirm={() => {
+          if (archivePending) return;
+          setArchivePending(true);
+          void leadActions.archive(lead.id).then(() => {
+            setShowArchiveConfirm(false);
+            showToast(locale === "vi" ? `Đã lưu trữ tiềm năng ${lead.name}.` : `Archived lead ${lead.name}.`);
+            navigate(archiveListPath);
+          }).catch(async (error: unknown) => {
+            const applicationError = normalizeApplicationError(error);
+            if (applicationError.code === "VERSION_CONFLICT") {
+              await getLeadDetailResource(lead.id).refresh();
+            }
+            showToast(formatApplicationError(applicationError, { locale }));
+          }).finally(() => setArchivePending(false));
+        }}
+      />
 
       {/* HANDOVER ASSIGNMENT MODAL */}
       <Modal

@@ -26,6 +26,9 @@ export const ProductListPage: React.FC<ProductListPageProps> = (props) => {
     productQuery,
     tx,
     canCreateProduct,
+    canEditProduct,
+    canArchiveProduct,
+    canRestoreProduct,
     canManage,
     visibleColumns,
     isColumnSettingsOpen,
@@ -222,19 +225,25 @@ export const ProductListPage: React.FC<ProductListPageProps> = (props) => {
           label={isVi ? "Đã chọn" : "Selected"}
           onClear={() => setSelectedProductIds([])}
         >
-          <Button size="sm" variant="secondary" icon={<Archive size={13} />} onClick={handleBulkArchive}>
-            {isVi ? "Lưu trữ" : "Archive"}
-          </Button>
-          <Button size="sm" variant="secondary" icon={<RefreshCw size={13} />} onClick={handleBulkUnarchive}>
-            {isVi ? "Mở lại" : "Restore"}
-          </Button>
-          <Button
-            size="sm"
-            variant="danger"
-            onClick={() => setDeleteDialog({ isOpen: true, product: null, isBulk: true })}
-          >
-            {isVi ? "Lưu trữ" : "Archive"}
-          </Button>
+          {canArchiveProduct && (
+            <Button size="sm" variant="secondary" icon={<Archive size={13} />} onClick={handleBulkArchive}>
+              {isVi ? "Lưu trữ" : "Archive"}
+            </Button>
+          )}
+          {canRestoreProduct && (
+            <Button size="sm" variant="secondary" icon={<RefreshCw size={13} />} onClick={handleBulkUnarchive}>
+              {isVi ? "Mở lại" : "Restore"}
+            </Button>
+          )}
+          {canArchiveProduct && (
+            <Button
+              size="sm"
+              variant="danger"
+              onClick={() => setDeleteDialog({ isOpen: true, product: null, isBulk: true })}
+            >
+              {isVi ? "Lưu trữ" : "Archive"}
+            </Button>
+          )}
         </ListBulkActionBar>
 
         {filteredProducts.length === 0 ? (
@@ -284,7 +293,10 @@ export const ProductListPage: React.FC<ProductListPageProps> = (props) => {
                 onDuplicate={handleDuplicateProduct}
                 onArchiveToggle={handleArchiveToggle}
                 onDelete={handleDeleteTrigger}
-                allowManage={canManage}
+                canEdit={canEditProduct}
+                canDuplicate={canCreateProduct}
+                canArchive={canArchiveProduct}
+                canRestore={canRestoreProduct}
               />
             </div>
 
@@ -305,7 +317,10 @@ export const ProductListPage: React.FC<ProductListPageProps> = (props) => {
                 onDuplicate={handleDuplicateProduct}
                 onArchiveToggle={handleArchiveToggle}
                 onDelete={handleDeleteTrigger}
-                allowManage={canManage}
+                canEdit={canEditProduct}
+                canDuplicate={canCreateProduct}
+                canArchive={canArchiveProduct}
+                canRestore={canRestoreProduct}
                 visibleColumns={visibleColumns}
               />
             </div>

@@ -164,7 +164,7 @@ export function createCrmWorkspaceRoutes(crmConfig: CrmWorkspaceConfig): RouteOb
 
 
     { path: relativeRoutePath(ROUTE_KEYS.RETURNS), element: moduleRoute("returns", returnsEnabled, <ReturnListPage />) },
-    { path: relativeRoutePath(ROUTE_KEYS.RETURN_NEW), element: moduleActionRoute(canWrite("returns"), CAPABILITIES.RETURNS_CREATE, <ReturnFormPage />) },
+    { path: relativeRoutePath(ROUTE_KEYS.RETURN_NEW), element: moduleActionRoute(canWrite("returns"), CAPABILITIES.RETURNS_UPDATE, <ReturnFormPage />) },
     { path: relativeRoutePath(ROUTE_KEYS.RETURN_DETAIL), element: moduleRoute("returns", returnsEnabled, <ReturnDetailPage />) },
 
     { path: relativeRoutePath(ROUTE_KEYS.CONTACTS), element: moduleRoute("contacts", canRead("contacts"), <ContactListPage />) },

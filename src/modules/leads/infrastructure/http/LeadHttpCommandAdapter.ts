@@ -35,6 +35,7 @@ import type {
   AdvanceLeadWorkStateBatchResult,
   AdvanceLeadWorkStateInput,
   AdvanceLeadWorkStateResult,
+  AnonymizeLeadInput,
   AnonymizeLeadResult,
   ApplyLeadTagBatchInput,
   ApplyLeadTagBatchResult,
@@ -192,7 +193,8 @@ export class LeadHttpCommandAdapter implements LeadCommandPort {
     options: LeadVersionedCommandOptions,
   ): Promise<ArchiveLeadResult> {
     const aggregateId = requireLeadId("archiveLead", leadId);
-    const body: ArchiveLeadRequest = { reason: requireReason("archiveLead", input.reason) };
+    const reason = input.reason?.trim() || undefined;
+    const body: ArchiveLeadRequest = compact({ reason });
     const response = await this.api.archiveLead<LeadMutationResponse>(aggregateId, body, versionedOptions("archiveLead", options));
     return requireTargetLead("archiveLead", aggregateId, response);
   }
@@ -300,8 +302,8 @@ export class LeadHttpCommandAdapter implements LeadCommandPort {
     options: LeadCommandOptions,
   ): Promise<ArchiveLeadBatchResult> {
     const body: ArchiveLeadBatchRequest = {
-      reason: requireReason("archiveLeadBatch", input.reason),
       items: normalizeTargets("archiveLeadBatch", input.items),
+      ...(input.reason?.trim() ? { reason: input.reason.trim() } : {}),
     };
     const response = await this.api.archiveLeadBatch<LeadBatchArchiveResponse>(body, commandOptions("archiveLeadBatch", options));
     assertEnvelope("archiveLeadBatch", response);
@@ -437,7 +439,7 @@ export class LeadHttpCommandAdapter implements LeadCommandPort {
 
   async anonymizeLead(
     leadId: string,
-    input: ArchiveLeadInput,
+    input: AnonymizeLeadInput,
     options: LeadVersionedCommandOptions,
   ): Promise<AnonymizeLeadResult> {
     const aggregateId = requireLeadId("anonymizeLead", leadId);

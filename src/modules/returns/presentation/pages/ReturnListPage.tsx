@@ -13,7 +13,7 @@ import { Button, ConfirmDialog, Modal } from "@/shared/components/ui";
 import { getOrderListSnapshot, subscribeToOrderList } from "@/modules/orders";
 import type { ReturnRequest } from "../../domain/model/return.types";
 import { closeReturnCommand, getReturnStatsSnapshot, getReturnsSnapshot, queryReturnSnapshot, subscribeToReturns } from "../../public/api";
-import { useEffectiveAccess } from "@/platform/access-control";
+import { CAPABILITIES, useEffectiveAccess } from "@/platform/access-control";
 import { getAuthSessionSnapshot } from "@/platform/identity-auth";
 import { useSubscribableSnapshot } from "@/platform/react";
 import { ReturnStatusBadge } from "../components/ReturnStatusBadge";
@@ -87,10 +87,10 @@ export const ReturnListPage: React.FC = () => {
   const actorId = access.memberId || access.accountId || "current-user";
   const actorName = getAuthSessionSnapshot()?.principal.displayName || actorId;
   const permissions = {
-    canView: access.canPerform("returns", "read"),
-    canApprove: access.canPerform("returns", "approve"),
-    canUpdate: access.canPerform("returns", "update"),
-    canResolve: access.canPerform("returns", "resolve"),
+    canView: access.can(CAPABILITIES.RETURNS_READ),
+    canApprove: access.can(CAPABILITIES.RETURNS_UPDATE),
+    canUpdate: access.can(CAPABILITIES.RETURNS_UPDATE),
+    canResolve: access.can(CAPABILITIES.RETURNS_RESOLVE),
   };
   const activeFilterCount = Number(reason !== "ALL") + Number(resolution !== "ALL");
 
@@ -139,7 +139,7 @@ export const ReturnListPage: React.FC = () => {
         count={records.length}
         context="Không gian xử lý eligibility, approval, thu hồi, inspection và resolution evidence"
         icon={<PackageOpen size={20} />}
-        actions={access.canPerform("returns", "create") ? <Button type="button" actionIntent="create" size="sm" icon={<Plus size={14} />} className="h-9 rounded-xl" onClick={() => navigate("new")}>Tạo yêu cầu</Button> : undefined}
+        actions={access.can(CAPABILITIES.RETURNS_UPDATE) ? <Button type="button" actionIntent="create" size="sm" icon={<Plus size={14} />} className="h-9 rounded-xl" onClick={() => navigate("new")}>Tạo yêu cầu</Button> : undefined}
       />
 
       <AnimatePresence>{message && <motion.div initial={reduceMotion ? false : { opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex items-center gap-2 rounded-xl border border-violet-100 bg-violet-50 px-4 py-3 text-xs font-medium text-violet-800"><Sparkles size={14} />{message}</motion.div>}</AnimatePresence>

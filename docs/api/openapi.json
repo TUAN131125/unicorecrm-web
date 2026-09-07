@@ -10433,7 +10433,6 @@
           "RATE_LIMITED",
           "INTEGRATION_UNAVAILABLE",
           "INTERNAL_ERROR",
-          "LEAD_RETENTION_REASON_REQUIRED",
           "LEAD_BATCH_EMPTY",
           "LEAD_ALREADY_ARCHIVED",
           "LEAD_BATCH_VERSION_CONFLICT"
@@ -12043,7 +12042,6 @@
           "RATE_LIMITED",
           "INTEGRATION_UNAVAILABLE",
           "INTERNAL_ERROR",
-          "LEAD_RETENTION_REASON_REQUIRED",
           "LEAD_ALREADY_ARCHIVED"
         ],
         "x-aggregate-id-policy": "MUST_MATCH_TARGET",
@@ -48301,8 +48299,7 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "items",
-          "reason"
+          "items"
         ],
         "properties": {
           "items": {
@@ -48323,9 +48320,7 @@
       "ArchiveLeadRequest": {
         "type": "object",
         "additionalProperties": false,
-        "required": [
-          "reason"
-        ],
+        "required": [],
         "properties": {
           "reason": {
             "type": "string",

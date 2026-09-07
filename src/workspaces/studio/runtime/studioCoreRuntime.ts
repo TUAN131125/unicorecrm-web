@@ -314,6 +314,9 @@ export function resetStudioCoreRuntime(): void {
 }
 
 export const isConnectedStudioCoreRuntime = (): boolean => runtime.mode === "connected";
+export const loadStudioConfiguration = async (signal?: AbortSignal): Promise<void> => {
+  await runtime.loadConfiguration(signal);
+};
 export const loadStudioCoreRuntime = async (signal?: AbortSignal): Promise<void> => {
   await Promise.all([runtime.loadConfiguration(signal), runtime.loadQuickSetup(signal)]);
 };

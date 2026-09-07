@@ -5,8 +5,8 @@ import { ApiClientError } from "../errors/ApiClientError";
  * Initial Workspace Provisioning.
  *
  * POST /workspaces/initial-provisioning is a single authenticated intent owned by the
- * backend durable workflow. Every value is optional: omitting all of them is the
- * documented Skip path and selects the server-owned defaults. The caller can never
+ * backend durable workflow. The automatic bootstrap omits every optional value and
+ * therefore selects the server-owned defaults. The caller can never
  * supply an account, member, membership status, workspace key, aggregate identifier,
  * role, capability, enabled module or product space, so no such field exists here.
  *
@@ -67,16 +67,6 @@ export class WorkspaceProvisioningApiClient {
     });
     return validateProvisioningResponse(payload);
   }
-}
-
-/** Drops every omitted value so Skip and a fully blank Finish reach the same server default. */
-export function toProvisioningRequest(draft: ProvisionInitialWorkspaceRequest): ProvisionInitialWorkspaceRequest {
-  const request: ProvisionInitialWorkspaceRequest = {};
-  for (const key of ["name", "logoText", "locale", "timeZone", "baseCurrency"] as const) {
-    const value = draft[key]?.trim();
-    if (value) request[key] = value;
-  }
-  return request;
 }
 
 export function createProvisioningIdempotencyKey(): string {

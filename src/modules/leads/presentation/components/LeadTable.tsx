@@ -40,7 +40,7 @@ interface LeadTableProps {
   onReopen?: (leadId: string) => void;
   onFollowUp?: (leadId: string) => void;
   onConvert?: (leadId: string) => void;
-  onDelete?: (leadId: string) => void;
+  onArchive?: (leadId: string) => void;
   onViewDetails?: (leadId: string) => void;
 }
 
@@ -66,7 +66,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
   onReopen,
   onFollowUp,
   onConvert,
-  onDelete,
+  onArchive,
   onViewDetails
 }) => {
   const { t, tx, locale } = useI18n();
@@ -482,7 +482,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
             onReopen={onReopen}
             onFollowUp={onFollowUp}
             onConvert={onConvert}
-            onDelete={onDelete}
+            onArchive={onArchive}
             onViewDetails={onViewDetails}
           />
         )}

@@ -16,6 +16,7 @@ export {
   listWorkspaceMemberships,
   loadWorkspaceMemberships,
   findWorkspaceMembership,
+  resolveCanonicalWorkspaceContext,
   restoreSelectedWorkspaceContext,
   switchWorkspaceContext,
   resetWorkspaceContextSelection,

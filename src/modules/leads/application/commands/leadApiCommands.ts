@@ -284,9 +284,9 @@ export async function importLeadCsvPlanViaApi(
   return result;
 }
 
-export async function archiveLeadViaApi(leadId: string, reason: string): Promise<ArchiveLeadResult> {
+export async function archiveLeadViaApi(leadId: string): Promise<ArchiveLeadResult> {
   const expectedVersion = requireLeadVersion(leadId, "archiveLead");
-  const result = await getLeadApiRuntime().commands.archiveLead(leadId, { reason }, {
+  const result = await getLeadApiRuntime().commands.archiveLead(leadId, {}, {
     idempotencyKey: createAttemptKey(`lead:archive:${leadId}`),
     expectedVersion,
   });
@@ -294,9 +294,9 @@ export async function archiveLeadViaApi(leadId: string, reason: string): Promise
   return result;
 }
 
-export async function archiveLeadsViaApi(leadIds: readonly string[], reason: string): Promise<ArchiveLeadBatchResult> {
+export async function archiveLeadsViaApi(leadIds: readonly string[]): Promise<ArchiveLeadBatchResult> {
   const items = uniqueLeadIds(leadIds).map((leadId) => ({ leadId, expectedVersion: requireLeadVersion(leadId, "archiveLeadBatch") }));
-  const result = await getLeadApiRuntime().commands.archiveLeadBatch({ items, reason }, {
+  const result = await getLeadApiRuntime().commands.archiveLeadBatch({ items }, {
     idempotencyKey: createAttemptKey(`lead:archive-batch:${items.map((item) => item.leadId).sort().join(",")}`),
   });
   await projectManyAndInvalidate(result.leads, result.evidence.occurredAt, "lead.archive-many", result.evidence.aggregateId);

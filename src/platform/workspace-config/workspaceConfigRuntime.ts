@@ -1,6 +1,6 @@
 import { BrowserStorageAdapter } from "@/platform/persistence";
 import { createWorkspaceScopedRepository, registerWorkspaceScopeDisposer, WorkspaceScopedStorageAdapter } from "@/platform/workspace-scope";
-import type { CrmWorkspaceConfig } from "./workspaceConfig.types";
+import type { CrmModuleVisibilityConfig, CrmWorkspaceConfig } from "./workspaceConfig.types";
 import type { WorkspaceConfigRepository } from "./WorkspaceConfigRepository";
 import { BrowserWorkspaceConfigRepository } from "./BrowserWorkspaceConfigRepository";
 
@@ -48,6 +48,36 @@ export const subscribeToWorkspaceConfig = (listener: (config: CrmWorkspaceConfig
 export function replaceConnectedWorkspaceConfigProjection(config: CrmWorkspaceConfig): void {
   connectedProjection = structuredClone(config);
   emit(connectedProjection);
+}
+
+export function replaceConnectedWorkspaceModuleProjection(
+  workspaceId: string,
+  workspaceName: string,
+  enabledModuleKeys: readonly string[],
+): void {
+  const enabled = new Set(enabledModuleKeys);
+  const current = getWorkspaceConfigSnapshot();
+  const modules: CrmModuleVisibilityConfig = {
+    leads: enabled.has("leads"),
+    customers: enabled.has("customers"),
+    contacts: enabled.has("contacts"),
+    deals: enabled.has("deals"),
+    quotes: enabled.has("quotes"),
+    orders: enabled.has("orders"),
+    support: enabled.has("support"),
+    organizations: enabled.has("organizations"),
+    tasks: enabled.has("tasks"),
+    payments: enabled.has("payments"),
+    invoices: enabled.has("invoices"),
+    shipping: enabled.has("shipping"),
+    returns: enabled.has("returns"),
+  };
+  replaceConnectedWorkspaceConfigProjection({
+    ...current,
+    workspaceId,
+    name: workspaceName,
+    modules,
+  });
 }
 
 export function clearConnectedWorkspaceConfigProjection(): void {

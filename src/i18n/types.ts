@@ -382,8 +382,8 @@ export interface Translations {
     notesLabel: string;
     notesPlaceholder: string;
     reassignedAlert: string;
-    deleteConfirm: string;
-    bulkDeleteSuccess: string;
+    archiveConfirm: string;
+    bulkArchiveSuccess: string;
     validationRequiredFields: string;
     queueEmpty: string;
     otherProduct: string;

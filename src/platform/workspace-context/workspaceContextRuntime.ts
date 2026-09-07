@@ -15,7 +15,11 @@ let connectedRuntime: ConnectedWorkspaceContextRuntime | undefined;
  * application composition root, which keeps this module free of a dependency on
  * the access-control module.
  */
-export type WorkspaceRuntimeParticipant = (workspaceId: string, signal?: AbortSignal) => Promise<void>;
+export type WorkspaceRuntimeActivation = () => void;
+export type WorkspaceRuntimeParticipant = (
+  context: WorkspaceBootstrapContext,
+  signal?: AbortSignal,
+) => Promise<WorkspaceRuntimeActivation | void>;
 
 let workspaceRuntimeParticipant: WorkspaceRuntimeParticipant | undefined;
 
@@ -39,13 +43,44 @@ export const loadWorkspaceMemberships = (signal?: AbortSignal) => connectedRunti
 export const findWorkspaceMembership = (workspaceKey: string) => listWorkspaceMemberships().find((membership) => membership.workspaceKey === workspaceKey);
 
 /**
+ * Resolves the canonical connected Workspace entry after authentication.
+ * Membership listing is authoritative. Only a confirmed empty list invokes the
+ * server-owned initial provisioning workflow; its response is followed by another
+ * authoritative list read before Workspace bootstrap and AccessControl are loaded.
+ */
+export async function resolveCanonicalWorkspaceContext(signal?: AbortSignal): Promise<WorkspaceBootstrapContext> {
+  if (!connectedRuntime) throw new Error("WORKSPACE_RUNTIME_NOT_CONNECTED");
+  const active = connectedRuntime.getActiveContext();
+  if (active) return active;
+
+  let authoritativeMemberships = await connectedRuntime.loadMemberships(signal);
+  let memberships = authoritativeMemberships.filter((membership) => membership.status === "active");
+  if (memberships.length === 0 && authoritativeMemberships.length !== 0) {
+    throw new Error("WORKSPACE_MEMBERSHIP_INACTIVE");
+  }
+  if (memberships.length === 0) {
+    await connectedRuntime.ensureInitialWorkspace(signal);
+    authoritativeMemberships = await connectedRuntime.loadMemberships(signal);
+    memberships = authoritativeMemberships.filter((membership) => membership.status === "active");
+  }
+  if (memberships.length === 0) throw new Error("INITIAL_WORKSPACE_NOT_AVAILABLE");
+
+  const selectedKey = connectedRuntime.getSelectedWorkspaceKey();
+  const target = memberships.find((membership) => membership.workspaceKey === selectedKey)
+    ?? memberships[0];
+  if (!target) throw new Error("INITIAL_WORKSPACE_NOT_AVAILABLE");
+  return enterWorkspace(target.workspaceId, signal);
+}
+
+/**
  * The single canonical workspace-entry function.
  *
  * 1. clear the workspace-scoped runtime of the workspace being left;
  * 2. record the requested workspace as the transport scope;
  * 3. GET /workspaces/{workspaceId}/bootstrap;
  * 4. resolve the workspace-scoped runtime participants (AccessControl context);
- * 5. commit the frontend workspace runtime only after both succeeded.
+ * 5. commit the frontend workspace runtime only after both succeeded;
+ * 6. activate projections prepared from the authoritative bootstrap.
  *
  * Frontend selection is never authority. Every workspace-scoped request still
  * carries X-Workspace-Id and the backend re-validates membership.
@@ -53,13 +88,16 @@ export const findWorkspaceMembership = (workspaceKey: string) => listWorkspaceMe
 export async function enterWorkspace(workspaceId: string, signal?: AbortSignal): Promise<WorkspaceBootstrapContext> {
   if (!connectedRuntime) throw new Error("WORKSPACE_RUNTIME_NOT_CONNECTED");
   const context = await connectedRuntime.prepareEntry(workspaceId, signal);
+  let activate: WorkspaceRuntimeActivation | void;
   try {
-    await workspaceRuntimeParticipant?.(workspaceId, signal);
+    activate = await workspaceRuntimeParticipant?.(context, signal);
   } catch (error) {
     connectedRuntime.abortEntry();
     throw error;
   }
-  return connectedRuntime.commitEntry(context);
+  const committed = connectedRuntime.commitEntry(context);
+  activate?.();
+  return committed;
 }
 
 /** Canonical entry addressed by the workspace key used in canonical routes. */

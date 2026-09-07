@@ -1,7 +1,7 @@
 import { AuthoritativeQueryBoundary, formatApplicationError } from "@/shared/operations";
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
-import { Plus, Trash2, CheckCircle2, Target, ArrowUpRight, UserPlus, RefreshCw, Tag, Sliders, Printer, FileSpreadsheet } from "lucide-react";
+import { Archive, Plus, CheckCircle2, Target, ArrowUpRight, UserPlus, RefreshCw, Tag, Sliders, Printer, FileSpreadsheet } from "lucide-react";
 import { normalizeApplicationError, type CRMActivity } from "@/shared/domain";
 import type { Lead, LeadSource, LeadCampaign } from "../../domain/model/lead.types";
 import { getRetainedLeadsSnapshot, isLeadOperationAvailable, LEAD_OPERATION, replaceLeads } from "../../public/leads";
@@ -536,13 +536,12 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
         ...(canArchiveLeadBatch ? [{
           id: "bulk-archive",
           label: `${t("leads.actions.bulkArchive", "Lưu trữ")} ${selection.selectedLeadIds.length > 0 ? `(${selection.selectedLeadIds.length})` : ""}`,
-          icon: <Trash2 size={14} />,
+          icon: <Archive size={14} />,
           destructive: true,
           disabled: selection.selectedLeadIds.length === 0,
           onClick: () => {
-            dialogs.setLeadToDelete(null);
-            dialogs.setArchiveReason("");
-            dialogs.setShowDeleteConfirm(true);
+            dialogs.setLeadToArchive(null);
+            dialogs.setShowArchiveConfirm(true);
           },
         }] : []),
       ],
@@ -676,29 +675,22 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
 
   const handleArchiveConfirm = async () => {
     if (archiveSubmittingRef.current) return;
-    const reason = dialogs.archiveReason.trim();
-    if (!reason) {
-      showToast(locale === "vi" ? "Hãy nhập lý do lưu trữ." : "Enter an archive reason.");
-      return;
-    }
-
-    const targetIds = dialogs.leadToDelete ? [dialogs.leadToDelete] : selection.selectedLeadIds;
+    const targetIds = dialogs.leadToArchive ? [dialogs.leadToArchive] : selection.selectedLeadIds;
     if (targetIds.length === 0) return;
 
     archiveSubmittingRef.current = true;
     setArchivePending(true);
     try {
-      if (dialogs.leadToDelete) {
-        await leadActions.archive(dialogs.leadToDelete, reason);
+      if (dialogs.leadToArchive) {
+        await leadActions.archive(dialogs.leadToArchive);
         showToast(t("leads.archive.success", "Đã lưu trữ Lead; hồ sơ và lịch sử vẫn được giữ lại."));
       } else {
-        await leadActions.archiveMany(selection.selectedLeadIds, reason);
+        await leadActions.archiveMany(selection.selectedLeadIds);
         selection.clearSelection();
         showToast(t("leads.bulkArchiveSuccess", "Đã lưu trữ các Lead đã chọn."));
       }
-      dialogs.setShowDeleteConfirm(false);
-      dialogs.setLeadToDelete(null);
-      dialogs.setArchiveReason("");
+      dialogs.setShowArchiveConfirm(false);
+      dialogs.setLeadToArchive(null);
     } catch (error) {
       const applicationError = normalizeApplicationError(error);
       if (applicationError.code === "VERSION_CONFLICT" || applicationError.code === "LEAD_BATCH_VERSION_CONFLICT") {
@@ -713,9 +705,8 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
 
   const closeArchiveModal = () => {
     if (archiveSubmittingRef.current) return;
-    dialogs.setShowDeleteConfirm(false);
-    dialogs.setLeadToDelete(null);
-    dialogs.setArchiveReason("");
+    dialogs.setShowArchiveConfirm(false);
+    dialogs.setLeadToArchive(null);
   };
 
   const closeDisqualifyModal = () => {
@@ -927,14 +918,13 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
             id="bulk-archive-btn"
             type="button"
             onClick={() => {
-              dialogs.setLeadToDelete(null);
-              dialogs.setArchiveReason("");
-              dialogs.setShowDeleteConfirm(true);
+              dialogs.setLeadToArchive(null);
+              dialogs.setShowArchiveConfirm(true);
             }}
             className="inline-flex items-center gap-1 rounded-xl border border-red-200 bg-red-50 px-2.5 py-1.5 text-[10px] font-medium text-red-600 hover:bg-red-100"
           >
-            <Trash2 size={11} />
-            <span>{locale === "vi" ? "Xóa" : "Delete"}</span>
+            <Archive size={11} />
+            <span>{locale === "vi" ? "Lưu trữ" : "Archive"}</span>
           </button>
         )}
       </ListBulkActionBar>
@@ -959,7 +949,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
         campaigns={referenceData.campaigns}
         memberById={referenceData.memberById}
         productById={referenceData.productById}
-        canDelete={canArchiveLeads}
+        canArchive={canArchiveLeads}
         canCreate={canCreateLeads}
         page={pagination.page}
         pageCount={pagination.pageCount}
@@ -988,10 +978,9 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
           onDisqualify: dialogs.handleOpenDisqualify,
           onConvert: (leadId: string) => navigate(`/leads/${leadId}/qualify`),
         } : {})}
-        onDelete={(leadId) => {
-          dialogs.setLeadToDelete(leadId);
-          dialogs.setArchiveReason("");
-          dialogs.setShowDeleteConfirm(true);
+        onArchive={(leadId) => {
+          dialogs.setLeadToArchive(leadId);
+          dialogs.setShowArchiveConfirm(true);
         }}
         onViewDetails={(leadId) => navigate(`/leads/${leadId}`, { state: { returnTo: getReturnToUrl(viewMode), tab: "overview" } })}
       />
@@ -1125,12 +1114,10 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
 
       {/* 11. SINGLE / BULK ARCHIVE CONFIRMATION */}
       <LeadArchiveConfirmationModal
-        isOpen={dialogs.showDeleteConfirm}
-        bulk={!dialogs.leadToDelete}
-        selectedCount={dialogs.leadToDelete ? 1 : selection.selectedLeadIds.length}
-        reason={dialogs.archiveReason}
+        isOpen={dialogs.showArchiveConfirm}
+        bulk={!dialogs.leadToArchive}
+        selectedCount={dialogs.leadToArchive ? 1 : selection.selectedLeadIds.length}
         pending={archivePending}
-        onReasonChange={dialogs.setArchiveReason}
         onClose={closeArchiveModal}
         onConfirm={() => { void handleArchiveConfirm(); }}
       />

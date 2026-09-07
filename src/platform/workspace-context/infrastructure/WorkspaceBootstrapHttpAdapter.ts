@@ -2,13 +2,21 @@ import {
   WorkspaceBootstrapApiClient,
   type WorkspaceMembershipSummary,
 } from "@/platform/api/generated/workspaceBootstrapApi";
+import { ApiClientError } from "@/platform/api/errors/ApiClientError";
+import {
+  createProvisioningIdempotencyKey,
+  WorkspaceProvisioningApiClient,
+} from "@/platform/api/extensions/workspaceProvisioningApi";
 import { getAuthSessionSnapshot } from "@/platform/identity-auth";
 import type { WorkspaceBootstrapGateway } from "../application/WorkspaceBootstrapGateway";
 import type { WorkspaceMembership } from "@/platform/workspace-membership";
 import type { WorkspaceBootstrapContext, WorkspaceBootstrapQueryOptions } from "../domain/workspaceBootstrap.types";
 
 export class WorkspaceBootstrapHttpAdapter implements WorkspaceBootstrapGateway {
-  constructor(private readonly api: WorkspaceBootstrapApiClient) {}
+  constructor(
+    private readonly api: WorkspaceBootstrapApiClient,
+    private readonly provisioningApi: WorkspaceProvisioningApiClient,
+  ) {}
 
   async listMyWorkspaces(options: WorkspaceBootstrapQueryOptions = {}): Promise<WorkspaceMembership[]> {
     const response = await this.api.listMyWorkspaces({}, options.signal);
@@ -31,6 +39,25 @@ export class WorkspaceBootstrapHttpAdapter implements WorkspaceBootstrapGateway 
       },
       resolvedAt: response.resolvedAt,
     };
+  }
+
+  async ensureInitialWorkspace(options: WorkspaceBootstrapQueryOptions = {}): Promise<"PROVISIONED" | "REPLAYED" | "EXISTING_MEMBERSHIP"> {
+    try {
+      const response = await this.provisioningApi.provisionInitialWorkspace({}, {
+        idempotencyKey: createProvisioningIdempotencyKey(),
+        ...(options.signal === undefined ? {} : { signal: options.signal }),
+      });
+      return response.outcome;
+    } catch (error) {
+      // A membership committed after the authoritative list read wins. The caller
+      // refetches memberships and enters it; this path never promotes that member.
+      if (error instanceof ApiClientError
+        && error.status === 409
+        && error.code === "WORKSPACE_ALREADY_PROVISIONED") {
+        return "EXISTING_MEMBERSHIP";
+      }
+      throw error;
+    }
   }
 }
 

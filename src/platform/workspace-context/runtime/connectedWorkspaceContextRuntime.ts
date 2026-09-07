@@ -84,10 +84,14 @@ export class ConnectedWorkspaceContextRuntime {
   }
 
   async loadMemberships(signal?: AbortSignal): Promise<WorkspaceMembership[]> {
-    const values = (await this.gateway.listMyWorkspaces({ signal })).filter((membership) => membership.status === "active");
+    const values = await this.gateway.listMyWorkspaces({ signal });
     this.memberships = values.map(cloneMembership);
-    if (this.activeContext && !this.memberships.some((membership) => membership.workspaceId === this.activeContext?.workspace.workspaceId)) this.clear();
+    if (this.activeContext && !this.memberships.some((membership) => membership.status === "active" && membership.workspaceId === this.activeContext?.workspace.workspaceId)) this.clear();
     return this.listMemberships();
+  }
+
+  async ensureInitialWorkspace(signal?: AbortSignal): Promise<void> {
+    await this.gateway.ensureInitialWorkspace(signal === undefined ? {} : { signal });
   }
 
   clear(): void {

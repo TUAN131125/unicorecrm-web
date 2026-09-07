@@ -11,7 +11,7 @@ import type {
   FieldAccess,
   RoleDefinition,
 } from "../domain/accessControl.types";
-import { ALL_CAPABILITIES, CAPABILITIES } from "../domain/capabilityCatalog";
+import { CAPABILITIES, SERVER_ADMITTED_WORKSPACE_CAPABILITIES } from "../domain/capabilityCatalog";
 import { ROLE_TEMPLATES, getRoleTemplate } from "../domain/roleTemplates";
 import { buildDeniedAccess, evaluateEffectiveAccess } from "../domain/evaluateEffectiveAccess";
 import { getAuthoritativeEffectiveAccess, isAccessGovernanceRuntimeConfigured } from "../application/accessGovernanceBinding";
@@ -19,7 +19,7 @@ import { projectRecordWithAccess } from "../domain/projectRecordWithAccess";
 import { createDefaultAccessControlSnapshot } from "./accessControlSeed";
 import { migrateStoredAccessControlSnapshot } from "./accessControlMigration";
 
-const VALID_CAPABILITIES = new Set<Capability>(ALL_CAPABILITIES);
+const VALID_CAPABILITIES = new Set<Capability>(SERVER_ADMITTED_WORKSPACE_CAPABILITIES);
 type AccessListener = (snapshot: AccessControlSnapshot) => void;
 interface AccessAuditEvent {
   action: string;

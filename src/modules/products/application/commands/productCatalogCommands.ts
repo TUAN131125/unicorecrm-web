@@ -15,7 +15,7 @@ export function saveProduct(
   now = new Date().toISOString(),
 ): SaveProductResult {
   if (activeProduct?.id) {
-    assertRuntimeCommandAccess(CAPABILITIES.PRODUCTS_UPDATE, "products", activeProduct);
+    assertRuntimeCommandAccess(CAPABILITIES.PRODUCTS_EDIT, "products", activeProduct);
     const updatedProduct = {
       ...activeProduct,
       ...data,
@@ -70,7 +70,11 @@ export function toggleProductArchived(
   now = new Date().toISOString(),
 ): { products: Product[]; status: ProductStatus } {
   const target = products.find((product) => product.id === productId);
-  assertRuntimeCommandAccess(CAPABILITIES.PRODUCTS_UPDATE, "products", target);
+  assertRuntimeCommandAccess(
+    target?.status === "archived" ? CAPABILITIES.PRODUCTS_EDIT : CAPABILITIES.PRODUCTS_DELETE,
+    "products",
+    target,
+  );
   const status: ProductStatus = target?.status === "archived" ? "active" : "archived";
 
   return {
@@ -87,7 +91,7 @@ export function setProductsStatus(
   status: ProductStatus,
   now = new Date().toISOString(),
 ): Product[] {
-  assertRuntimeCapability(CAPABILITIES.PRODUCTS_UPDATE);
+  assertRuntimeCapability(status === "archived" ? CAPABILITIES.PRODUCTS_DELETE : CAPABILITIES.PRODUCTS_EDIT);
   const ids = new Set(productIds);
   return products.map((product) =>
     ids.has(product.id) ? { ...product, status, updatedAt: now } : product,
@@ -106,7 +110,7 @@ export function archiveProducts(
   productIds: readonly string[],
   input: ProductRetentionCommandInput,
 ): Product[] {
-  assertRuntimeCapability(CAPABILITIES.PRODUCTS_UPDATE);
+  assertRuntimeCapability(CAPABILITIES.PRODUCTS_DELETE);
   assertDestructiveActionAllowed({
     recordType: "Product",
     retentionClass: "MASTER",
@@ -129,7 +133,7 @@ export function restoreProducts(
   productIds: readonly string[],
   now = new Date().toISOString(),
 ): Product[] {
-  assertRuntimeCapability(CAPABILITIES.PRODUCTS_UPDATE);
+  assertRuntimeCapability(CAPABILITIES.PRODUCTS_EDIT);
   const ids = new Set(productIds);
   return products.map((product) => ids.has(product.id) ? {
     ...product,

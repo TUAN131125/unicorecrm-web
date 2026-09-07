@@ -32,7 +32,7 @@ export function issueInvoice(repository: InvoiceRepository, invoiceId: string, i
 }
 
 export function retryInvoiceIssue(repository: InvoiceRepository, invoiceId: string, input: { expectedVersion: number; invoiceNumber: string; issueDate: string; issuedAt: string }): Invoice {
-  assertRuntimeCapability(CAPABILITIES.INVOICES_RETRY_ISSUE);
+  assertRuntimeCapability(CAPABILITIES.INVOICES_ISSUE);
   const current = repository.listInvoices().find((item) => item.id === invoiceId);
   if (!current) throw new Error(`Invoice ${invoiceId} not found.`);
   if (current.lifecycleState !== "ISSUE_FAILED") throw new Error("Only ISSUE_FAILED Invoice can be retried.");
@@ -51,7 +51,7 @@ export function recordInvoiceIssueFailure(repository: InvoiceRepository, invoice
 }
 
 export function discardInvoiceDraft(repository: InvoiceRepository, invoiceId: string, input: { expectedVersion: number; now: string }): Invoice {
-  assertRuntimeCapability(CAPABILITIES.INVOICES_DISCARD_DRAFT);
+  assertRuntimeCapability(CAPABILITIES.INVOICES_EDIT);
   const current = repository.listInvoices().find((item) => item.id === invoiceId);
   if (!current) throw new Error(`Invoice ${invoiceId} not found.`);
   assertInvoiceMutable(current);

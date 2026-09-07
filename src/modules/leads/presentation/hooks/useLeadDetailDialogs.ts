@@ -11,8 +11,7 @@ export function useLeadDetailDialogs(lead?: Lead) {
   const [disqualifyReasonText, setDisqualifyReasonText] = useState("");
 
   const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [archiveReason, setArchiveReason] = useState("");
+  const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
   const [showHandoverModal, setShowHandoverModal] = useState(false);
   const [showTagsModal, setShowTagsModal] = useState(false);
   const [handoverOwnerId, setHandoverOwnerId] = useState("");
@@ -70,8 +69,7 @@ export function useLeadDetailDialogs(lead?: Lead) {
     disqualifyCategory, setDisqualifyCategory,
     disqualifyReasonText, setDisqualifyReasonText,
     showEditModal, setShowEditModal,
-    showDeleteConfirm, setShowDeleteConfirm,
-    archiveReason, setArchiveReason,
+    showArchiveConfirm, setShowArchiveConfirm,
     showHandoverModal, setShowHandoverModal,
     showTagsModal, setShowTagsModal,
     handoverOwnerId, setHandoverOwnerId,

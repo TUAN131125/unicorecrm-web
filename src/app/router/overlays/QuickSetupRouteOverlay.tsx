@@ -3,6 +3,7 @@ import { useLocation, type Location } from "react-router-dom";
 import { PermissionRouteGuard } from "@/components/PermissionRouteGuard";
 import { parseCanonicalRoute, ROUTE_KEYS, toWorkspacePath } from "@/platform/navigation";
 import { lazyRouteComponent, RouteScreenBoundary } from "@/app/router/runtime";
+import { StudioCoreRuntimeBoundary } from "../workspaces/studioWorkspaceRoutes";
 
 const QuickSetupOverlay = lazyRouteComponent(
   "StudioQuickSetupOverlay",
@@ -51,7 +52,7 @@ export const QuickSetupRouteOverlay: React.FC = () => {
   return (
     <RouteScreenBoundary routeId="studio-quick-setup-overlay">
       <PermissionRouteGuard capability="studio.read">
-        <QuickSetupOverlay />
+        <StudioCoreRuntimeBoundary includeQuickSetup><QuickSetupOverlay /></StudioCoreRuntimeBoundary>
       </PermissionRouteGuard>
     </RouteScreenBoundary>
   );

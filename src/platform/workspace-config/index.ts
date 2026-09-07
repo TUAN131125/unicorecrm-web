@@ -10,6 +10,7 @@ export {
   subscribeToWorkspaceConfig,
   updateWorkspaceConfig,
   replaceConnectedWorkspaceConfigProjection,
+  replaceConnectedWorkspaceModuleProjection,
   clearConnectedWorkspaceConfigProjection,
   isConnectedWorkspaceConfigProjection,
 } from "./workspaceConfigRuntime";

@@ -150,7 +150,18 @@ export interface LeadRetentionCommandInput {
   now?: string;
 }
 
-function retentionActivity(input: LeadRetentionCommandInput, title: string, description: string): import("@/shared/domain").CRMActivity {
+export interface LeadArchiveCommandInput {
+  reason?: string;
+  actorId: string;
+  actorName?: string;
+  now?: string;
+}
+
+function retentionActivity(
+  input: { actorId: string; actorName?: string; now?: string },
+  title: string,
+  description: string,
+): import("@/shared/domain").CRMActivity {
   return {
     id: `lead-retention-${crypto.randomUUID()}`,
     icon: "Archive",
@@ -162,27 +173,41 @@ function retentionActivity(input: LeadRetentionCommandInput, title: string, desc
   };
 }
 
-export function archiveLead(repository: LeadRepository, leadId: string, input: LeadRetentionCommandInput): Lead {
+export function archiveLead(repository: LeadRepository, leadId: string, input: LeadArchiveCommandInput): Lead {
   const target = repository.getById(leadId);
   if (!target) throw new Error(`Lead ${leadId} not found.`);
   assertRuntimeCommandAccess(CAPABILITIES.LEADS_DELETE, "leads", target);
-  assertDestructiveActionAllowed({ recordType: "Lead", retentionClass: "OPERATIONAL", action: "ARCHIVE", reason: input.reason });
   const now = input.now ?? new Date().toISOString();
-  const next: Lead = { ...target, archivedAt: now, archiveReason: input.reason.trim(), updatedAt: now, updatedBy: input.actorId, activities: [retentionActivity(input, "LEAD ARCHIVED", input.reason.trim()), ...target.activities] };
+  const reason = input.reason?.trim() || undefined;
+  const next: Lead = {
+    ...target,
+    archivedAt: now,
+    archiveReason: reason,
+    updatedAt: now,
+    updatedBy: input.actorId,
+    activities: [retentionActivity(input, "LEAD ARCHIVED", reason ?? "Lead moved to archived state."), ...target.activities],
+  };
   repository.replace(repository.list().map((lead) => lead.id === leadId ? next : lead));
   return structuredClone(next);
 }
 
-export function archiveLeads(repository: LeadRepository, leadIds: readonly string[], input: LeadRetentionCommandInput): Lead[] {
+export function archiveLeads(repository: LeadRepository, leadIds: readonly string[], input: LeadArchiveCommandInput): Lead[] {
   assertRuntimeCapability(CAPABILITIES.LEADS_DELETE);
   const ids = new Set(leadIds);
   const archived: Lead[] = [];
   const next = repository.list().map((lead) => {
     if (!ids.has(lead.id)) return lead;
     assertRuntimeCommandAccess(CAPABILITIES.LEADS_DELETE, "leads", lead);
-    assertDestructiveActionAllowed({ recordType: "Lead", retentionClass: "OPERATIONAL", action: "ARCHIVE", reason: input.reason });
     const now = input.now ?? new Date().toISOString();
-    const value: Lead = { ...lead, archivedAt: now, archiveReason: input.reason.trim(), updatedAt: now, updatedBy: input.actorId, activities: [retentionActivity(input, "LEAD ARCHIVED", input.reason.trim()), ...lead.activities] };
+    const reason = input.reason?.trim() || undefined;
+    const value: Lead = {
+      ...lead,
+      archivedAt: now,
+      archiveReason: reason,
+      updatedAt: now,
+      updatedBy: input.actorId,
+      activities: [retentionActivity(input, "LEAD ARCHIVED", reason ?? "Lead moved to archived state."), ...lead.activities],
+    };
     archived.push(value);
     return value;
   });

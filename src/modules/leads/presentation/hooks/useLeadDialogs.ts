@@ -17,9 +17,8 @@ export const useLeadDialogs = (
   const [bulkUpdateStatus, setBulkUpdateStatus] = useState("");
   const [bulkUpdateOwner, setBulkUpdateOwner] = useState("");
   const [isManageTagsModalOpen, setIsManageTagsModalOpen] = useState(false);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [leadToDelete, setLeadToDelete] = useState<string | null>(null);
-  const [archiveReason, setArchiveReason] = useState("");
+  const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
+  const [leadToArchive, setLeadToArchive] = useState<string | null>(null);
   const [isReassignModalOpen, setIsReassignModalOpen] = useState(false);
   const [selectedReassignOwnerId, setSelectedReassignOwnerId] = useState("");
   const [reassignReason, setReassignReason] = useState("");
@@ -86,13 +85,11 @@ export const useLeadDialogs = (
     isManageTagsModalOpen,
     setIsManageTagsModalOpen,
 
-    // Delete confirmation
-    showDeleteConfirm,
-    setShowDeleteConfirm,
-    leadToDelete,
-    setLeadToDelete,
-    archiveReason,
-    setArchiveReason,
+    // Archive confirmation
+    showArchiveConfirm,
+    setShowArchiveConfirm,
+    leadToArchive,
+    setLeadToArchive,
 
     // Reassign
     isReassignModalOpen,

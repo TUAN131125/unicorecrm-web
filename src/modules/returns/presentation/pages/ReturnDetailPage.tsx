@@ -35,7 +35,7 @@ import {
 } from "@/modules/shipping";
 import type { ReturnItem, ReturnMethod, ReturnResolution, ReturnResolutionIntent } from "../../domain/model/return.types";
 import { approveReturnCommand, closeReturnCommand, completeReturnResolutionCommand, configureReturnMethodCommand, confirmReturnedItemsReceivedCommand, getReturnsSnapshot, rejectReturnCommand, subscribeToReturns } from "../../public/api";
-import { useEffectiveAccess } from "@/platform/access-control";
+import { CAPABILITIES, useEffectiveAccess } from "@/platform/access-control";
 import { getAuthSessionSnapshot } from "@/platform/identity-auth";
 import { AuditTrailViewer } from "@/platform/audit";
 import { useSubscribableSnapshot } from "@/platform/react";
@@ -95,10 +95,10 @@ export const ReturnDetailPage: React.FC = () => {
   const actorName = getAuthSessionSnapshot()?.principal.displayName || actorId;
   if (!request) return <div className="rounded-2xl border border-slate-200 bg-white p-8 text-sm text-slate-600">Không tìm thấy Return.</div>;
   const permissions = {
-    canView: access.canPerform("returns", "read"),
-    canApprove: access.canPerform("returns", "approve"),
-    canUpdate: access.canPerform("returns", "update"),
-    canResolve: access.canPerform("returns", "resolve"),
+    canView: access.can(CAPABILITIES.RETURNS_READ),
+    canApprove: access.can(CAPABILITIES.RETURNS_UPDATE),
+    canUpdate: access.can(CAPABILITIES.RETURNS_UPDATE),
+    canResolve: access.can(CAPABILITIES.RETURNS_RESOLVE),
   };
   const actionIds = resolveReturnHeaderActionIds(request, permissions);
   const getBusinessPickup = () => {

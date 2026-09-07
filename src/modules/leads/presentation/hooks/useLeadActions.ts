@@ -34,8 +34,8 @@ export function useLeadActions() {
     disqualifyMany: (leadIds: readonly string[], input: { reason: string; evidence?: string }) => disqualifyLeadBatchViaApi(leadIds, input).then((result) => result.leads),
     reassignMany: (leadIds: readonly string[], input: { ownerId: string; reason: string }) => assignLeadOwnerBatchViaApi(leadIds, input).then((result) => result.leads),
     claimFromQueue: (leadId: string, reason: string) => claimLeadFromQueueViaApi(leadId, reason).then((result) => result.lead),
-    archive: (leadId: string, reason: string) => archiveLeadViaApi(leadId, reason).then((result) => result.lead),
-    archiveMany: (leadIds: readonly string[], reason: string) => archiveLeadsViaApi(leadIds, reason).then((result) => result.leads),
+    archive: (leadId: string) => archiveLeadViaApi(leadId).then((result) => result.lead),
+    archiveMany: (leadIds: readonly string[]) => archiveLeadsViaApi(leadIds).then((result) => result.leads),
     advanceNewToContacting: (leadIds: readonly string[]) => advanceLeadWorkStateBatchViaApi(leadIds, "CONTACTING"),
     advanceEligibleToVerifying: (leadIds: readonly string[]) => advanceLeadWorkStateBatchViaApi(leadIds, "VERIFYING"),
     changeWorkState: (leadId: string, leadWorkState: Exclude<LeadWorkState, "NEW" | "CLOSED">, _activity?: CRMActivity) =>

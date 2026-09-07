@@ -114,8 +114,11 @@ for (const capability of [CAPABILITIES.ORGANIZATIONS_READ, CAPABILITIES.TASKS_RE
 
 const salesManager = migrated.roles.find((role) => role.sourceTemplateId === "sales-manager");
 assert.ok(salesManager, "Sales Manager role must exist after migration.");
-for (const capability of [CAPABILITIES.ORGANIZATIONS_READ, CAPABILITIES.TASKS_READ, CAPABILITIES.SHIPPING_READ, CAPABILITIES.RETURNS_READ, CAPABILITIES.CUSTOMERS_VIEW, CAPABILITIES.CUSTOMERS_EDIT, CAPABILITIES.CUSTOMERS_ASSIGN, CAPABILITIES.CUSTOMERS_ARCHIVE]) {
+for (const capability of [CAPABILITIES.ORGANIZATIONS_READ, CAPABILITIES.TASKS_READ, CAPABILITIES.SHIPPING_READ, CAPABILITIES.RETURNS_READ, CAPABILITIES.CUSTOMERS_VIEW]) {
   assert.ok(salesManager.capabilities.includes(capability), `Sales Manager must receive the intended ${capability} capability.`);
+}
+for (const capability of [CAPABILITIES.CUSTOMERS_EDIT, CAPABILITIES.CUSTOMERS_ASSIGN, CAPABILITIES.CUSTOMERS_ARCHIVE]) {
+  assert.equal(salesManager.capabilities.includes(capability), false, `Sales Manager must not receive unsupported ${capability} capability.`);
 }
 
 const customRole = migrated.roles.find((role) => role.roleId === "role_custom_ws_default");

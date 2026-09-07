@@ -92,6 +92,10 @@ export interface DisqualifyLeadInput {
 }
 
 export interface ArchiveLeadInput {
+  reason?: string;
+}
+
+export interface AnonymizeLeadInput {
   reason: string;
 }
 
@@ -137,7 +141,7 @@ export interface LeadVersionedTargetInput {
 
 export interface ArchiveLeadBatchInput {
   items: readonly LeadVersionedTargetInput[];
-  reason: string;
+  reason?: string;
 }
 
 export interface AdvanceLeadWorkStateBatchInput {
@@ -353,7 +357,7 @@ export interface LeadCommandPort {
   ): Promise<RequestLeadExportResult>;
   anonymizeLead(
     leadId: string,
-    input: ArchiveLeadInput,
+    input: AnonymizeLeadInput,
     options: LeadVersionedCommandOptions,
   ): Promise<AnonymizeLeadResult>;
   recordLeadConsent(

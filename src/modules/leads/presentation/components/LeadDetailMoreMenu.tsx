@@ -1,4 +1,4 @@
-import { CheckCircle2, Phone, Printer, Tag, Trash2, Unlock, UserPlus, X } from "lucide-react";
+import { Archive, CheckCircle2, Phone, Printer, Tag, Unlock, UserPlus, X } from "lucide-react";
 import { MenuDivider, MenuItemButton, MenuSection, RowActionPortal } from "@/shared/components/ui";
 import { useI18n } from "@/i18n";
 import type { Lead } from "../../domain/model/lead.types";
@@ -20,7 +20,7 @@ interface LeadDetailMoreMenuProps {
   onHandover: () => void;
   onManageTags: () => void;
   onPrint: () => void;
-  onDelete?: () => void;
+  onArchive?: () => void;
 }
 
 export function LeadDetailMoreMenu({
@@ -39,7 +39,7 @@ export function LeadDetailMoreMenu({
   onHandover,
   onManageTags,
   onPrint,
-  onDelete,
+  onArchive,
 }: LeadDetailMoreMenuProps) {
   const { t, locale } = useI18n();
   return (
@@ -91,11 +91,11 @@ export function LeadDetailMoreMenu({
         <MenuSection title={t("leadDetail.actions.record")} />
         <MenuItemButton onClick={onPrint} icon={<Printer size={14} />}>{t("leadDetail.actions.print")}</MenuItemButton>
 
-        {onDelete && (
+        {onArchive && (
           <>
             <MenuDivider />
             <MenuSection title={t("leadDetail.actions.danger")} />
-            <MenuItemButton onClick={onDelete} variant="danger" icon={<Trash2 size={14} />}>{locale === "vi" ? "Lưu trữ Lead" : "Archive Lead"}</MenuItemButton>
+            <MenuItemButton onClick={onArchive} variant="danger" icon={<Archive size={14} />}>{locale === "vi" ? "Lưu trữ Lead" : "Archive Lead"}</MenuItemButton>
           </>
         )}
     </RowActionPortal>

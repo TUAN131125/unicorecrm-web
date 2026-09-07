@@ -35,7 +35,7 @@ interface LeadKanbanBoardProps {
   onReopen?: (leadId: string) => void;
   onFollowUp?: (leadId: string) => void;
   onConvert?: (leadId: string) => void;
-  onDelete?: (leadId: string) => void;
+  onArchive?: (leadId: string) => void;
   onViewDetails?: (leadId: string) => void;
 }
 
@@ -66,7 +66,7 @@ export const LeadKanbanBoard: React.FC<LeadKanbanBoardProps> = ({
   onReopen,
   onFollowUp,
   onConvert,
-  onDelete,
+  onArchive,
   onViewDetails,
 }) => {
   const { t, locale } = useI18n();
@@ -324,7 +324,7 @@ export const LeadKanbanBoard: React.FC<LeadKanbanBoardProps> = ({
           onReopen={onReopen}
           onFollowUp={onFollowUp}
           onConvert={onConvert}
-          onDelete={onDelete}
+          onArchive={onArchive}
           onViewDetails={onViewDetails}
         />
       )}

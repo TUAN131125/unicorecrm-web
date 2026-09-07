@@ -93,7 +93,7 @@ export const PILOT_STEP_DEFINITIONS: readonly PilotStepDefinition[] = [
     purpose: { vi: "Xác nhận lịch thanh toán, giao dịch, phân bổ và đối soát theo đúng đơn hàng.", en: "Verify payment schedule, transactions, allocations, and reconciliation for the order." },
     actorRoles: ["FINANCE"],
     routeKey: "PAYMENT_DETAIL",
-    requiredCapabilities: [CAPABILITIES.PAYMENTS_READ, CAPABILITIES.PAYMENTS_RECORD, CAPABILITIES.PAYMENTS_RECONCILE],
+    requiredCapabilities: [CAPABILITIES.PAYMENTS_READ, CAPABILITIES.PAYMENTS_RECORD_MANUAL, CAPABILITIES.PAYMENTS_RECONCILE],
     manualEvidenceRequired: true,
     expectedEvidence: [
       { vi: "Tổng nghĩa vụ, tiền đã thu và còn phải thu đối chiếu được.", en: "Obligations, collected amount, and outstanding amount reconcile." },
@@ -107,7 +107,7 @@ export const PILOT_STEP_DEFINITIONS: readonly PilotStepDefinition[] = [
     purpose: { vi: "Xác nhận booking, retry và delivered evidence thuộc đúng Order.", en: "Verify booking, retry, and delivery evidence belong to the correct order." },
     actorRoles: ["OPERATIONS"],
     routeKey: "SHIPPING_DETAIL",
-    requiredCapabilities: [CAPABILITIES.SHIPPING_CREATE, CAPABILITIES.SHIPPING_SYNC],
+    requiredCapabilities: [CAPABILITIES.SHIPPING_CREATE],
     manualEvidenceRequired: true,
     expectedEvidence: [
       { vi: "Vận đơn có provider lifecycle và deliveredAt hợp lệ.", en: "The shipment has a provider lifecycle and valid deliveredAt evidence." },
@@ -121,7 +121,7 @@ export const PILOT_STEP_DEFINITIONS: readonly PilotStepDefinition[] = [
     purpose: { vi: "Xác nhận nhận hàng thực tế trước khi hoàn tiền hoặc giao thay thế.", en: "Verify actual receipt before refund or replacement fulfillment." },
     actorRoles: ["OPERATIONS", "FINANCE"],
     routeKey: "RETURN_DETAIL",
-    requiredCapabilities: [CAPABILITIES.RETURNS_CREATE, CAPABILITIES.RETURNS_RESOLVE],
+    requiredCapabilities: [CAPABILITIES.RETURNS_UPDATE, CAPABILITIES.RETURNS_RESOLVE],
     manualEvidenceRequired: true,
     expectedEvidence: [
       { vi: "Return có receivedAt và kiểm tra hàng trả.", en: "The return has receivedAt and returned-item inspection." },

@@ -46,6 +46,7 @@ import {
   configureWorkspaceRuntimeParticipant,
   resetWorkspaceRuntimeParticipant,
 } from "@/platform/workspace-context";
+import { replaceConnectedWorkspaceModuleProjection } from "@/platform/workspace-config";
 import { createPeopleAccessDemoRuntime } from "@/workspaces/people-access/runtime/createPeopleAccessDemoRuntime";
 import {
   configureModuleDataAuthorityRegistry,
@@ -178,10 +179,15 @@ export async function initializeApplicationComposition(
   // commits a workspace. Registering it here keeps workspace-context free of an
   // access-control dependency while making the check unavoidable.
   if (mode === "connected") {
-    configureWorkspaceRuntimeParticipant(async (workspaceId, signal) => {
-      const state = await loadAccessGovernance(workspaceId, signal);
+    configureWorkspaceRuntimeParticipant(async (context, signal) => {
+      const state = await loadAccessGovernance(context.workspace.workspaceId, signal);
       if (signal?.aborted) return;
       if (!state.snapshot) throw new Error(state.error ?? "ACCESS_CONTEXT_UNAVAILABLE");
+      return () => replaceConnectedWorkspaceModuleProjection(
+        context.workspace.workspaceId,
+        context.workspace.name,
+        context.configuration.enabledModuleKeys,
+      );
     });
   } else {
     resetWorkspaceRuntimeParticipant();

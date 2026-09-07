@@ -22,7 +22,7 @@ interface LeadListResultsProps {
   campaigns: LeadCampaign[];
   memberById: ReadonlyMap<string, WorkspaceMemberDirectoryEntry>;
   productById: ReadonlyMap<string, Product>;
-  canDelete: boolean;
+  canArchive: boolean;
   canCreate: boolean;
   page: number;
   pageCount: number;
@@ -47,7 +47,7 @@ interface LeadListResultsProps {
   onReopen?: (leadId: string) => void;
   onFollowUp?: (leadId: string) => void;
   onConvert?: (leadId: string) => void;
-  onDelete: (leadId: string) => void;
+  onArchive: (leadId: string) => void;
   onViewDetails: (leadId: string) => void;
 }
 
@@ -62,7 +62,7 @@ export function LeadListResults({
   campaigns,
   memberById,
   productById,
-  canDelete,
+  canArchive,
   canCreate,
   page,
   pageCount,
@@ -87,7 +87,7 @@ export function LeadListResults({
   onReopen,
   onFollowUp,
   onConvert,
-  onDelete,
+  onArchive,
   onViewDetails,
 }: LeadListResultsProps) {
   const { t, locale } = useI18n();
@@ -116,7 +116,7 @@ export function LeadListResults({
     ...(onReopen ? { onReopen } : {}),
     ...(onFollowUp ? { onFollowUp } : {}),
     ...(onConvert ? { onConvert } : {}),
-    onDelete: canDelete ? onDelete : undefined,
+    onArchive: canArchive ? onArchive : undefined,
     onViewDetails,
   };
 

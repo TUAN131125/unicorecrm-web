@@ -136,12 +136,12 @@ export function QuickSetupView() {
   const openedRef = React.useRef(false);
 
   React.useEffect(() => {
-    if (openedRef.current) return;
+    if (!canConfigure || openedRef.current) return;
     openedRef.current = true;
     void openQuickSetup().catch(() => {
       openedRef.current = false;
     });
-  }, []);
+  }, [canConfigure]);
 
   React.useEffect(() => {
     if (state.status === "COMPLETED") {
@@ -189,7 +189,7 @@ export function QuickSetupView() {
   const backgroundLocation = routeState?.backgroundLocation;
 
   const leaveSheet = React.useCallback(async () => {
-    await dismissQuickSetupAutoOpen();
+    if (canConfigure) await dismissQuickSetupAutoOpen();
     if (backgroundLocation && routeState?.returnToPrevious) {
       navigate(-1);
       return;
@@ -198,7 +198,7 @@ export function QuickSetupView() {
       replace: true,
       state: backgroundLocation?.state,
     });
-  }, [backgroundLocation, fallbackPath, navigate, routeState?.returnToPrevious]);
+  }, [backgroundLocation, canConfigure, fallbackPath, navigate, routeState?.returnToPrevious]);
 
   const exit = React.useCallback(async () => {
     if (hasDirtyEditor) {

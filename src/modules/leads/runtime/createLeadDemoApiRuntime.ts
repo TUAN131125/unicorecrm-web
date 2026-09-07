@@ -5,6 +5,7 @@ import type {
   AdvanceLeadWorkStateBatchResult,
   AdvanceLeadWorkStateInput,
   AdvanceLeadWorkStateResult,
+  AnonymizeLeadInput,
   AnonymizeLeadResult,
   ApplyLeadTagBatchInput,
   ApplyLeadTagBatchResult,
@@ -142,7 +143,11 @@ export function createLeadDemoApiRuntime(repository: LeadRepository): LeadApiRun
       async archiveLead(leadId: string, input: ArchiveLeadInput, options: LeadVersionedCommandOptions): Promise<ArchiveLeadResult> {
         assertVersion(repository, leadId, options.expectedVersion);
         const now = new Date().toISOString();
-        const updated = archiveLead(repository, leadId, { reason: input.reason, actorId: "demo-actor", now });
+        const updated = archiveLead(repository, leadId, {
+          actorId: "demo-actor",
+          now,
+          ...(input.reason == null ? {} : { reason: input.reason }),
+        });
         const versioned = bumpLeadVersion(updated, options.expectedVersion, now);
         replaceProjectedLeads(repository, [versioned]);
         return mutationResult(versioned, options, now, "demo");
@@ -206,7 +211,11 @@ export function createLeadDemoApiRuntime(repository: LeadRepository): LeadApiRun
       async archiveLeadBatch(input: ArchiveLeadBatchInput, options: LeadCommandOptions): Promise<ArchiveLeadBatchResult> {
         input.items.forEach((item) => assertVersion(repository, item.leadId, item.expectedVersion));
         const now = new Date().toISOString();
-        const archived = archiveLeads(repository, input.items.map((item) => item.leadId), { reason: input.reason, actorId: "demo-actor", now });
+        const archived = archiveLeads(repository, input.items.map((item) => item.leadId), {
+          actorId: "demo-actor",
+          now,
+          ...(input.reason == null ? {} : { reason: input.reason }),
+        });
         const expected = new Map(input.items.map((item) => [item.leadId, item.expectedVersion]));
         const versioned = archived.map((lead) => bumpLeadVersion(lead, expected.get(lead.id) ?? 1, now));
         replaceProjectedLeads(repository, versioned);
@@ -330,7 +339,7 @@ export function createLeadDemoApiRuntime(repository: LeadRepository): LeadApiRun
           evidence: batchEvidence(leads, options, now, exportId),
         };
       },
-      async anonymizeLead(leadId: string, input: ArchiveLeadInput, options: LeadVersionedCommandOptions): Promise<AnonymizeLeadResult> {
+      async anonymizeLead(leadId: string, input: AnonymizeLeadInput, options: LeadVersionedCommandOptions): Promise<AnonymizeLeadResult> {
         assertVersion(repository, leadId, options.expectedVersion);
         const now = new Date().toISOString();
         const updated = anonymizeLead(repository, leadId, { reason: input.reason, actorId: "demo-actor", now });

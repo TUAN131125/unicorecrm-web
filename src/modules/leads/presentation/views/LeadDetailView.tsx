@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "motion/react";
 import {
   ArrowLeft, Phone, Mail, FileText, CheckSquare, Calendar, Edit3, MessageCircle, AlertCircle,
   Clock, User, Check, Trash2, ArrowRightLeft, Building2, Layers, ShoppingBag,
-  Paperclip, Plus, Download, Search, Filter, HelpCircle, CheckCircle2,
+  Paperclip, Plus, Search, Filter, HelpCircle, CheckCircle2,
   ChevronDown, Unlock, UserPlus, Tag, Printer, X, MoreHorizontal, Copy, Sparkles
 } from "lucide-react";
 import { RecordAttachmentsTab, RecordDetailFrame } from "@/components/crm/detail-archetype";
@@ -125,8 +125,6 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
     setIsFilterExpanded,
     timelineFilter,
     setTimelineFilter,
-    attachments,
-    setAttachments,
     dialogs,
     showDisqualifyModal,
     setShowDisqualifyModal,
@@ -136,9 +134,7 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
     setDisqualifyReasonText,
     showEditModal,
     setShowEditModal,
-    showDeleteConfirm,
-    setShowDeleteConfirm,
-    setArchiveReason,
+    setShowArchiveConfirm,
     showHandoverModal,
     setShowHandoverModal,
     showTagsModal,
@@ -409,7 +405,7 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
                 onHandover={() => { setShowMoreMenu(false); setHandoverOwnerId(lead.ownerId); setShowHandoverModal(true); }}
                 onManageTags={() => { setShowMoreMenu(false); setShowTagsModal(true); }}
                 onPrint={() => { setShowMoreMenu(false); window.print(); }}
-                onDelete={canArchive ? () => { setShowMoreMenu(false); setArchiveReason(""); setShowDeleteConfirm(true); } : undefined}
+                onArchive={canArchive ? () => { setShowMoreMenu(false); setShowArchiveConfirm(true); } : undefined}
               />
             </div>
           </div>
@@ -611,64 +607,7 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
               {activeTab === "attachments" && (
                 <RecordAttachmentsTab
                   idPrefix="lead"
-                  attachments={attachments.map((attachment) => ({
-                    id: attachment.id,
-                    name: attachment.name,
-                    size: attachment.size,
-                    date: attachment.createdAt,
-                    category: attachment.category ?? attachment.type?.toLowerCase(),
-                    description: attachment.description,
-                    file: attachment.file,
-                  }))}
-                  onUploadAttachment={(data) => {
-                    const createdAt = new Date().toLocaleDateString(locale === "vi" ? "vi-VN" : "en-US");
-                    setAttachments((current) => [
-                      {
-                        id: `lead_attachment_${Date.now()}`,
-                        name: data.name,
-                        type: data.category,
-                        size: data.size || "—",
-                        createdAt,
-                        category: data.category,
-                        description: data.description,
-                        file: data.file,
-                      },
-                      ...current,
-                    ]);
-                    addTimelineActivity(
-                      "system",
-                      locale === "vi" ? "Đã thêm tài liệu đính kèm" : "Attachment added",
-                      data.name,
-                    );
-                    showToast(locale === "vi" ? "Tài liệu đã được tải lên." : "Attachment uploaded.");
-                  }}
-                  onDeleteAttachment={(id) => {
-                    const attachment = attachments.find((item) => item.id === id);
-                    setAttachments((current) => current.filter((item) => item.id !== id));
-                    if (attachment) {
-                      addTimelineActivity(
-                        "system",
-                        locale === "vi" ? "Đã xóa tài liệu đính kèm" : "Attachment removed",
-                        attachment.name,
-                      );
-                    }
-                    showToast(locale === "vi" ? "Tài liệu đã được xóa." : "Attachment removed.");
-                  }}
-                  onDownloadAttachment={(id) => {
-                    const attachment = attachments.find((item) => item.id === id);
-                    if (!attachment?.file) {
-                      showToast(locale === "vi" ? "Tệp này chưa có dữ liệu tải xuống trên thiết bị hiện tại." : "This file is not available on the current device.");
-                      return;
-                    }
-                    const url = URL.createObjectURL(attachment.file);
-                    const anchor = document.createElement("a");
-                    anchor.href = url;
-                    anchor.download = attachment.name;
-                    document.body.appendChild(anchor);
-                    anchor.click();
-                    anchor.remove();
-                    window.setTimeout(() => URL.revokeObjectURL(url), 0);
-                  }}
+                  attachments={[]}
                 />
               )}
 

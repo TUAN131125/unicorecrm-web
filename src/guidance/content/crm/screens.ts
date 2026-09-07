@@ -188,7 +188,7 @@ export const CRM_SCREEN_GUIDANCE: ScreenGuidance[] = [
     primaryTasks: [
       { id: "review-due", text: { vi: "Mở Cần thu để xem các khoản đến hạn theo đơn hàng.", en: "Open Collection queue to review amounts due by order." }, requiredCapabilities: [CAPABILITIES.PAYMENTS_READ] },
       { id: "request", text: { vi: "Gửi yêu cầu thanh toán khi khách cần liên kết hoặc hướng dẫn thanh toán.", en: "Send a payment request when the customer needs a checkout link or payment instructions." }, requiredCapabilities: [CAPABILITIES.PAYMENTS_INTENT_CREATE] },
-      { id: "record", text: { vi: "Ghi nhận tiền đã thu bằng đúng phương thức và chứng từ đối chiếu.", en: "Record collected funds with the correct method and reconciliation evidence." }, requiredCapabilities: [CAPABILITIES.PAYMENTS_RECORD] },
+      { id: "record", text: { vi: "Ghi nhận tiền đã thu bằng đúng phương thức và chứng từ đối chiếu.", en: "Record collected funds with the correct method and reconciliation evidence." }, requiredCapabilities: [CAPABILITIES.PAYMENTS_RECORD_MANUAL] },
       { id: "reconcile", text: { vi: "Đối soát và phân bổ khoản thu vào hóa đơn phù hợp.", en: "Reconcile and allocate collected funds to the appropriate invoice." }, requiredCapabilities: [CAPABILITIES.PAYMENTS_RECONCILE] },
       { id: "refund", text: { vi: "Thực hiện hoàn tiền khi kết quả đổi hoặc trả hàng đã đủ điều kiện.", en: "Issue a refund when an eligible return resolution requires it." }, requiredCapabilities: [CAPABILITIES.PAYMENTS_REFUND] },
     ],
@@ -218,8 +218,8 @@ export const CRM_SCREEN_GUIDANCE: ScreenGuidance[] = [
     prerequisites: [{ vi: "Đơn hàng phải Đã xác nhận và có đủ người nhận, số điện thoại, địa chỉ cùng điểm lấy hàng khi chính sách yêu cầu.", en: "The order must be Confirmed and include recipient, phone, address, and pickup location when required." }],
     primaryTasks: [
       { id: "create", text: { vi: "Tạo vận đơn từ đơn hàng đủ điều kiện.", en: "Create a shipping booking from an eligible order." }, route: "shipping/new", requiredCapabilities: [CAPABILITIES.SHIPPING_CREATE] },
-      { id: "sync", text: { vi: "Đồng bộ trạng thái từ nhà vận chuyển.", en: "Synchronize status from the shipping provider." }, requiredCapabilities: [CAPABILITIES.SHIPPING_SYNC] },
-      { id: "retry", text: { vi: "Thử lại hoặc đổi nhà vận chuyển khi tạo vận đơn thất bại.", en: "Retry or change provider when booking creation fails." }, requiredCapabilities: [CAPABILITIES.SHIPPING_RETRY] },
+      { id: "sync", text: { vi: "Đồng bộ trạng thái từ nhà vận chuyển.", en: "Synchronize status from the shipping provider." }, requiredCapabilities: [CAPABILITIES.SHIPPING_CREATE] },
+      { id: "retry", text: { vi: "Thử lại hoặc đổi nhà vận chuyển khi tạo vận đơn thất bại.", en: "Retry or change provider when booking creation fails." }, requiredCapabilities: [CAPABILITIES.SHIPPING_CREATE] },
     ],
     commonMistakes: [{ vi: "Không suy diễn đã giao hàng chỉ từ trạng thái nội bộ; cần bằng chứng giao thành công và thời điểm giao.", en: "Do not infer delivery from the booking status alone; successful delivery evidence and delivery time are required." }],
     relatedWorkflowIds: ["workflow.order-to-shipping", "workflow.order-return-resolution"],
@@ -236,8 +236,8 @@ export const CRM_SCREEN_GUIDANCE: ScreenGuidance[] = [
     purpose: { vi: "Tiếp nhận yêu cầu theo từng dòng hàng, kiểm tra điều kiện, phê duyệt, nhận hàng và hoàn tất phương án xử lý.", en: "Receive line-level requests, evaluate eligibility, approve, receive items, and complete the resolution." },
     prerequisites: [{ vi: "Yêu cầu phải liên kết đơn hàng và số lượng đã mua; điều kiện hợp lệ và quyết định phê duyệt là hai bước riêng.", en: "The request must link to an order and purchased quantities; eligibility and approval are separate decisions." }],
     primaryTasks: [
-      { id: "create", text: { vi: "Tạo yêu cầu đổi/trả theo từng sản phẩm và số lượng.", en: "Create a return request by product line and quantity." }, route: "returns/new", requiredCapabilities: [CAPABILITIES.RETURNS_CREATE] },
-      { id: "approve", text: { vi: "Phê duyệt hoặc từ chối sau khi xem kết quả kiểm tra điều kiện.", en: "Approve or reject after reviewing eligibility." }, requiredCapabilities: [CAPABILITIES.RETURNS_APPROVE] },
+      { id: "create", text: { vi: "Tạo yêu cầu đổi/trả theo từng sản phẩm và số lượng.", en: "Create a return request by product line and quantity." }, route: "returns/new", requiredCapabilities: [CAPABILITIES.RETURNS_UPDATE] },
+      { id: "approve", text: { vi: "Phê duyệt hoặc từ chối sau khi xem kết quả kiểm tra điều kiện.", en: "Approve or reject after reviewing eligibility." }, requiredCapabilities: [CAPABILITIES.RETURNS_UPDATE] },
       { id: "receive", text: { vi: "Xác nhận hàng thực nhận và kết quả kiểm tra.", en: "Confirm actual receipt and inspection results." }, requiredCapabilities: [CAPABILITIES.RETURNS_UPDATE] },
       { id: "resolve", text: { vi: "Hoàn tất bằng hoàn tiền hoặc gửi hàng thay thế khi bằng chứng liên quan đã thành công.", en: "Resolve by refund or replacement shipment after the required evidence succeeds." }, requiredCapabilities: [CAPABILITIES.RETURNS_RESOLVE] },
     ],

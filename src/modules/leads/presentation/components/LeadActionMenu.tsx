@@ -1,5 +1,5 @@
 import React from "react";
-import { Eye, Phone, CheckSquare, Clock, CheckCircle2, ArrowUpRight, Unlock, X, Trash2 } from "lucide-react";
+import { Archive, Eye, Phone, CheckSquare, Clock, CheckCircle2, ArrowUpRight, Unlock, X } from "lucide-react";
 import type { Lead } from "../../domain/model/lead.types";
 import { LeadWorkState, QualificationOutcome } from "../../domain/model/leadLifecycle.canonical";
 
@@ -17,7 +17,7 @@ interface LeadActionMenuProps {
   onReopen?: (leadId: string) => void;
   onFollowUp?: (leadId: string) => void;
   onConvert?: (leadId: string) => void;
-  onDelete?: (leadId: string) => void;
+  onArchive?: (leadId: string) => void;
   onViewDetails?: (leadId: string) => void;
 }
 
@@ -31,7 +31,7 @@ export const LeadActionMenu: React.FC<LeadActionMenuProps> = ({
   onReopen,
   onFollowUp,
   onConvert,
-  onDelete,
+  onArchive,
   onViewDetails
 }) => {
   const { tx, locale } = useI18n();
@@ -167,15 +167,15 @@ export const LeadActionMenu: React.FC<LeadActionMenuProps> = ({
         </MenuItemButton>
       )}
 
-      {(!lead.qualificationOutcome || lead.qualificationOutcome === QualificationOutcome.DISQUALIFIED) && onDelete && (
+      {(!lead.qualificationOutcome || lead.qualificationOutcome === QualificationOutcome.DISQUALIFIED) && onArchive && (
         <MenuItemButton 
           variant="danger"
           onClick={(e) => {
             e.stopPropagation();
             onClose();
-            onDelete(lead.id);
+            onArchive(lead.id);
           }}
-          icon={<Trash2 size={14} />}
+          icon={<Archive size={14} />}
         >
           {locale === "vi" ? "Lưu trữ Lead" : "Archive Lead"}
         </MenuItemButton>

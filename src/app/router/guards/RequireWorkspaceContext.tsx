@@ -1,7 +1,7 @@
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { RouteLoadingExperience } from "@/components/loading";
-import { ROUTE_KEYS } from "@/platform/navigation";
+import { productSpaceHome, ROUTE_KEYS } from "@/platform/navigation";
 import { useI18n } from "@/i18n";
 import { loadAccessGovernance } from "@/platform/access-control/governance";
 import {
@@ -10,6 +10,7 @@ import {
   getWorkspaceContextSnapshot,
   isConnectedWorkspaceRuntime,
   loadWorkspaceMemberships,
+  resolveCanonicalWorkspaceContext,
   restoreSelectedWorkspaceContext,
   switchWorkspaceContext,
 } from "@/platform/workspace-context";
@@ -17,8 +18,7 @@ import {
 type GateState =
   | { status: "loading" }
   | { status: "ready" }
-  | { status: "select" }
-  | { status: "onboard" }
+  | { status: "redirect"; to: string }
   | { status: "failed"; message: string };
 
 /**
@@ -57,6 +57,15 @@ export const RequireWorkspaceContext: React.FC<React.PropsWithChildren> = ({ chi
         const active = getWorkspaceBootstrapSnapshot();
         if (routeWorkspaceKey) {
           if (active?.workspace.workspaceKey !== routeWorkspaceKey) {
+            const memberships = (await loadWorkspaceMemberships(controller.signal))
+              .filter((membership) => membership.status === "active");
+            if (memberships.length === 0) {
+              const context = await resolveCanonicalWorkspaceContext(controller.signal);
+              if (!controller.signal.aborted) {
+                setState({ status: "redirect", to: productSpaceHome(context.workspace.workspaceKey, "crm") });
+              }
+              return;
+            }
             await enterWorkspaceByKey(routeWorkspaceKey, controller.signal);
           }
           if (!controller.signal.aborted) setState({ status: "ready" });
@@ -68,10 +77,9 @@ export const RequireWorkspaceContext: React.FC<React.PropsWithChildren> = ({ chi
           return;
         }
 
-        const memberships = (await loadWorkspaceMemberships(controller.signal))
-          .filter((membership) => membership.status === "active");
+        await resolveCanonicalWorkspaceContext(controller.signal);
         if (controller.signal.aborted) return;
-        setState({ status: memberships.length === 0 ? "onboard" : "select" });
+        setState({ status: "ready" });
       } catch (error) {
         if (controller.signal.aborted) return;
         setState({ status: "failed", message: describeGateFailure(error, vi) });
@@ -81,8 +89,7 @@ export const RequireWorkspaceContext: React.FC<React.PropsWithChildren> = ({ chi
   }, [routeWorkspaceKey, attempt, vi]);
 
   if (state.status === "loading") return <RouteLoadingExperience fullScreen />;
-  if (state.status === "onboard") return <Navigate to={ROUTE_KEYS.INITIAL_SETUP} replace />;
-  if (state.status === "select") return <Navigate to={ROUTE_KEYS.WORKSPACE_SELECTION} replace />;
+  if (state.status === "redirect") return <Navigate to={state.to} replace />;
   if (state.status === "failed") {
     return (
       <WorkspaceRuntimeFailure

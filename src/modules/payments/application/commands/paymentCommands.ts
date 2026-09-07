@@ -104,7 +104,7 @@ function deriveFulfillmentGateFromTerm(term: PaymentTerm): PaymentFulfillmentGat
 }
 
 export function savePaymentPlan(repository: PaymentRepository, command: SavePaymentPlanCommand): PaymentObligation[] {
-  assertRuntimeCapability(CAPABILITIES.PAYMENTS_RECORD);
+  assertRuntimeCapability(CAPABILITIES.PAYMENTS_PLAN_UPDATE_DRAFT);
   if (!command.orderId) throw new Error("Payment plan requires an Order.");
   if (!command.buyerRef?.id) throw new Error("Payment plan requires a canonical buyerRef.");
   const hasCod = command.lines.some((line) => line.method === "COD");
@@ -243,7 +243,7 @@ function applySucceededAllocations(repository: PaymentRepository, transaction: P
 }
 
 export function recordSucceededPayment(repository: PaymentRepository, command: RecordPaymentCommand): PaymentTransaction {
-  assertRuntimeCapability(CAPABILITIES.PAYMENTS_RECORD);
+  assertRuntimeCapability(CAPABILITIES.PAYMENTS_RECORD_MANUAL);
   validatePayment(command);
   const replay = findReplay(repository, command.idempotencyKey);
   if (replay) return replay;
@@ -280,7 +280,7 @@ export function recordSucceededPayment(repository: PaymentRepository, command: R
 }
 
 export function recordFailedPayment(repository: PaymentRepository, command: RecordPaymentCommand & { failureReason: string }): PaymentTransaction {
-  assertRuntimeCapability(CAPABILITIES.PAYMENTS_RECORD);
+  assertRuntimeCapability(CAPABILITIES.PAYMENTS_RECORD_MANUAL);
   validatePayment(command);
   if (!command.failureReason.trim()) throw new Error("Failed Payment requires a reason.");
   const existing = findReplay(repository, command.idempotencyKey);
@@ -319,7 +319,7 @@ export function recordSucceededRefund(repository: PaymentRepository, command: Re
 }
 
 export function retryFailedPayment(repository: PaymentRepository, failedTransactionId: string, command: RecordPaymentCommand): PaymentTransaction {
-  assertRuntimeCapability(CAPABILITIES.PAYMENTS_RECORD);
+  assertRuntimeCapability(CAPABILITIES.PAYMENTS_RECORD_MANUAL);
   const failed = repository.listTransactions().find((transaction) => transaction.id === failedTransactionId);
   if (!failed || failed.kind !== "PAYMENT" || failed.status !== "FAILED") throw new Error("Payment retry requires a failed payment transaction.");
   if (failed.orderId !== command.orderId) throw new Error("Payment retry must remain on the same Order.");

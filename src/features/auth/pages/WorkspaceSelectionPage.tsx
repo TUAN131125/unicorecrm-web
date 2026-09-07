@@ -1,6 +1,6 @@
 import React from "react";
 import { Building2, ChevronRight } from "lucide-react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { productSpaceHome, ROUTE_KEYS } from "@/platform/navigation";
 import { useI18n } from "@/i18n";
 import { terminateAuthSession } from "@/platform/identity-auth";
@@ -9,6 +9,7 @@ import {
   isConnectedWorkspaceRuntime,
   loadWorkspaceMemberships,
   resetWorkspaceContextSelection,
+  resolveCanonicalWorkspaceContext,
   switchWorkspaceContext,
   type WorkspaceMembership,
 } from "@/platform/workspace-context";
@@ -18,26 +19,30 @@ export const WorkspaceSelectionPage: React.FC = () => {
   const { locale } = useI18n();
   const vi = locale === "vi";
   const navigate = useNavigate();
+  const connected = isConnectedWorkspaceRuntime();
   const [memberships, setMemberships] = React.useState<WorkspaceMembership[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [selectingKey, setSelectingKey] = React.useState<string>();
   const [error, setError] = React.useState<string>();
-  const [onboardingRequired, setOnboardingRequired] = React.useState(false);
 
-  // GET /workspaces is the only authority for whether onboarding applies. No
-  // first-login flag, stored value, CRM record count or 404 participates.
+  // Connected entry always resolves the authoritative membership list first. An
+  // empty result is handled by the backend provisioning workflow, never by local state.
   const load = React.useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     setError(undefined);
     try {
+      if (isConnectedWorkspaceRuntime()) {
+        const context = await resolveCanonicalWorkspaceContext(signal);
+        if (!signal?.aborted) navigate(productSpaceHome(context.workspace.workspaceKey, "crm"), { replace: true });
+        return;
+      }
       const active = (await loadWorkspaceMemberships(signal)).filter((membership) => membership.status === "active");
       if (signal?.aborted) return;
       setMemberships(active);
-      setOnboardingRequired(active.length === 0 && isConnectedWorkspaceRuntime());
     }
-    catch { if (!signal?.aborted) setError(vi ? "Không thể tải danh sách không gian làm việc." : "Unable to load workspaces."); }
+    catch { if (!signal?.aborted) setError(vi ? "Không thể tạo hoặc mở không gian làm việc. Vui lòng thử lại." : "Unable to create or open your workspace. Please try again."); }
     finally { if (!signal?.aborted) setLoading(false); }
-  }, [vi]);
+  }, [navigate, vi]);
 
   React.useEffect(() => {
     const controller = new AbortController();
@@ -61,8 +66,6 @@ export const WorkspaceSelectionPage: React.FC = () => {
     } finally { setSelectingKey(undefined); }
   };
 
-  if (onboardingRequired) return <Navigate to={ROUTE_KEYS.INITIAL_SETUP} replace />;
-
   const switchAccount = async () => {
     resetWorkspaceContextSelection();
     await terminateAuthSession("SWITCH_ACCOUNT");
@@ -70,11 +73,21 @@ export const WorkspaceSelectionPage: React.FC = () => {
   };
 
   return (
-    <AuthShell visualMode="neutral" title={vi ? "Chọn không gian làm việc" : "Choose a workspace"}>
+    <AuthShell
+      visualMode="neutral"
+      title={connected
+        ? (vi ? "Đang mở không gian làm việc" : "Opening your workspace")
+        : (vi ? "Chọn không gian làm việc" : "Choose a workspace")}
+    >
       <div className="space-y-3">
         {loading && <AuthNotice tone="info">{vi ? "Đang tải không gian làm việc..." : "Loading workspaces..."}</AuthNotice>}
         {error && <AuthNotice tone="warning">{error}</AuthNotice>}
-        {!loading && memberships.length === 0 && <AuthNotice tone="warning">{vi ? "Chưa có không gian làm việc khả dụng." : "No workspace is available."}</AuthNotice>}
+        {error && (
+          <button type="button" onClick={() => { void load(); }} className="w-full rounded-2xl bg-indigo-600 px-4 py-3 text-xs font-semibold text-white transition hover:bg-indigo-700">
+            {vi ? "Thử lại" : "Try again"}
+          </button>
+        )}
+        {!isConnectedWorkspaceRuntime() && !loading && memberships.length === 0 && <AuthNotice tone="warning">{vi ? "Chưa có không gian làm việc khả dụng." : "No workspace is available."}</AuthNotice>}
         {memberships.map((membership) => (
           <button
             key={membership.membershipId ?? membership.workspaceId}

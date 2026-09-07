@@ -14,7 +14,6 @@ const ForgotPasswordPage = React.lazy(() => import("./features/auth/pages/Forgot
 const ResetPasswordPage = React.lazy(() => import("./features/auth/pages/ResetPasswordPage").then((module) => ({ default: module.ResetPasswordPage })));
 const InvitationAcceptancePage = React.lazy(() => import("./features/auth/pages/InvitationAcceptancePage").then((module) => ({ default: module.InvitationAcceptancePage })));
 const WorkspaceSelectionPage = React.lazy(() => import("./features/auth/pages/WorkspaceSelectionPage").then((module) => ({ default: module.WorkspaceSelectionPage })));
-const InitialSetupPage = React.lazy(() => import("./features/workspace-setup/pages/InitialSetupPage").then((module) => ({ default: module.InitialSetupPage })));
 const ProtectedCrmApp = React.lazy(() => import("./ProtectedCrmApp").then((module) => ({ default: module.ProtectedCrmApp })));
 const SessionExpiredPage = React.lazy(() => import("./features/auth/pages/AuthStatusPages").then((module) => ({ default: module.SessionExpiredPage })));
 const AccessDeniedPage = React.lazy(() => import("./features/auth/pages/AuthStatusPages").then((module) => ({ default: module.AccessDeniedPage })));
@@ -55,7 +54,7 @@ export const App: React.FC = () => (
         path={ROUTE_KEYS.INITIAL_SETUP}
         element={
           <RequireAuth>
-            <InitialSetupPage />
+            <Navigate to={ROUTE_KEYS.WORKSPACE_SELECTION} replace />
           </RequireAuth>
         }
       />

@@ -4,7 +4,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
   ArrowLeft, Phone, Mail, FileText, CheckSquare, Calendar, Edit3, MessageCircle, AlertCircle,
-  Clock, User, Check, Trash2, ArrowRightLeft, Building2, Layers, ShoppingBag,
+  Clock, User, Check, ArrowRightLeft, Building2, Layers, ShoppingBag,
   Paperclip, Plus, Download, Search, Filter, HelpCircle, CheckCircle2,
   ChevronDown, Unlock, UserPlus, Tag, Printer, X, MoreHorizontal, Copy, Sparkles
 } from "lucide-react";
@@ -129,7 +129,6 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
     selectedActivity, setSelectedActivity,
     isFilterExpanded, setIsFilterExpanded,
     timelineFilter, setTimelineFilter,
-    attachments, setAttachments,
   } = viewState;
 
   const dialogs = useLeadDetailDialogs(lead);
@@ -138,8 +137,7 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
     disqualifyCategory, setDisqualifyCategory,
     disqualifyReasonText, setDisqualifyReasonText,
     showEditModal, setShowEditModal,
-    showDeleteConfirm, setShowDeleteConfirm,
-    archiveReason, setArchiveReason,
+    showArchiveConfirm, setShowArchiveConfirm,
     showHandoverModal, setShowHandoverModal,
     showTagsModal, setShowTagsModal,
     handoverOwnerId, setHandoverOwnerId,
@@ -591,8 +589,6 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
     setIsFilterExpanded,
     timelineFilter,
     setTimelineFilter,
-    attachments,
-    setAttachments,
     dialogs,
     showDisqualifyModal,
     setShowDisqualifyModal,
@@ -602,10 +598,8 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
     setDisqualifyReasonText,
     showEditModal,
     setShowEditModal,
-    showDeleteConfirm,
-    setShowDeleteConfirm,
-    archiveReason,
-    setArchiveReason,
+    showArchiveConfirm,
+    setShowArchiveConfirm,
     showHandoverModal,
     setShowHandoverModal,
     showTagsModal,

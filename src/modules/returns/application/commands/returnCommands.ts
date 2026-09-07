@@ -46,7 +46,7 @@ export function evaluateReturnEligibility(repository: ReturnRepository, command:
 
 export function createReturnRequest(repository: ReturnRepository, command: CreateReturnRequestCommand): ReturnRequest {
   assertRuntimeWorkspaceAccess(command.workspaceId);
-  assertRuntimeCapability(CAPABILITIES.RETURNS_CREATE);
+  assertRuntimeCapability(CAPABILITIES.RETURNS_UPDATE);
   if (!command.orderId) throw new Error("Return bắt buộc tham chiếu Order.");
   if (!command.buyerRef?.id) throw new Error("Return requires buyerRef.");
   if (!command.items.length) throw new Error("Return phải có ít nhất một order line.");
@@ -96,12 +96,12 @@ export function approveReturn(repository: ReturnRepository, returnId: string, in
     return { ...item, approvedQuantity, approvalReason: decision?.approvalReason };
   });
   if (!items.some((item) => (item.approvedQuantity ?? 0) > 0)) throw new Error("Approval must approve at least one unit.");
-  return transition(repository, returnId, "APPROVED", input, CAPABILITIES.RETURNS_APPROVE, { items, decision: { outcome: "APPROVED", reason: input.reason.trim(), decidedAt: input.now ?? new Date().toISOString(), decidedBy: input.actorId, override: !current.eligibilityResult.eligible, overrideReason: input.overrideReason?.trim() } });
+  return transition(repository, returnId, "APPROVED", input, CAPABILITIES.RETURNS_UPDATE, { items, decision: { outcome: "APPROVED", reason: input.reason.trim(), decidedAt: input.now ?? new Date().toISOString(), decidedBy: input.actorId, override: !current.eligibilityResult.eligible, overrideReason: input.overrideReason?.trim() } });
 }
 
 export function rejectReturn(repository: ReturnRepository, returnId: string, input: ActorInput & { reason: string }): ReturnRequest {
   if (!input.reason.trim()) throw new Error("Rejection requires a reason.");
-  return transition(repository, returnId, "REJECTED", input, CAPABILITIES.RETURNS_APPROVE, { decision: { outcome: "REJECTED", reason: input.reason.trim(), decidedAt: input.now ?? new Date().toISOString(), decidedBy: input.actorId } });
+  return transition(repository, returnId, "REJECTED", input, CAPABILITIES.RETURNS_UPDATE, { decision: { outcome: "REJECTED", reason: input.reason.trim(), decidedAt: input.now ?? new Date().toISOString(), decidedBy: input.actorId } });
 }
 
 export function configureReturnMethod(repository: ReturnRepository, returnId: string, input: ActorInput & { method: ReturnMethod; shippingBookingId?: string; carrier?: string; trackingCode?: string; dropOffLocation?: string; returnByDate?: string }): ReturnRequest {

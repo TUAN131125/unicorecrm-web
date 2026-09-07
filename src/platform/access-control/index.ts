@@ -1,5 +1,5 @@
 export type * from "./domain/accessControl.types";
-export { CAPABILITIES, ALL_CAPABILITIES, readCapabilityForModule, capabilityForAction } from "./domain/capabilityCatalog";
+export { CAPABILITIES, ALL_CAPABILITIES, SERVER_ADMITTED_WORKSPACE_CAPABILITIES, readCapabilityForModule, capabilityForAction } from "./domain/capabilityCatalog";
 export { evaluateEffectiveAccess, buildDeniedAccess } from "./domain/evaluateEffectiveAccess";
 export { ROLE_TEMPLATES, getRoleTemplate } from "./domain/roleTemplates";
 export { projectRecordWithAccess } from "./domain/projectRecordWithAccess";

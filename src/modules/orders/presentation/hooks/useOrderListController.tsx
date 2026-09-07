@@ -11,7 +11,7 @@ import { useI18n } from "@/i18n";
 import { evaluateOrderClosingPolicy, executeOrderClosingCommand, isOrderClosingUnavailable } from "@/workflows/order-closing";
 import { executeOrderConfirmationCommand } from "@/workflows/order-confirmation";
 import { executeOrderCancellationCommand } from "@/workflows/order-cancellation";
-import { useEffectiveAccess } from "@/platform/access-control";
+import { CAPABILITIES, useEffectiveAccess } from "@/platform/access-control";
 import { usePlatformState } from "@/platform/application-state";
 import { toWorkspacePath } from "@/platform/navigation";
 import { useCustomerSnapshots } from "../hooks/useCustomerSnapshots";
@@ -91,7 +91,7 @@ export function useOrderListController({
     canConfirm: canConfirmOrder,
     canComplete: canCompleteOrder,
     canCreateShipping: access.canPerform("shipping", "create"),
-    canRecordPayment: access.canPerform("payments", "record"),
+    canRecordPayment: access.can(CAPABILITIES.PAYMENTS_RECORD_MANUAL),
     canCreateInvoice: access.canPerform("invoices", "create"),
   };
 

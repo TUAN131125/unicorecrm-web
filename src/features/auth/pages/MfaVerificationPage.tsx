@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { productSpaceHome } from "@/platform/navigation";
 import { ROUTE_KEYS } from "@/platform/navigation";
 import { useI18n } from "@/i18n";
-import { developmentMfaCodeHint, isDevelopmentAuthAdapter, verifyMfaAuthentication } from "@/platform/identity-auth";
+import { developmentMfaCodeHint, isConnectedAuthRuntime, isDevelopmentAuthAdapter, verifyMfaAuthentication } from "@/platform/identity-auth";
 import { listWorkspaceMembershipsForAccount } from "@/platform/workspace-membership";
 import { AuthCodeField, AuthNotice, AuthPrimaryButton, AuthShell } from "../components";
 import { resolveSafePostLoginRedirect } from "../routing/postLoginRedirect";
@@ -21,6 +21,7 @@ export const MfaVerificationPage: React.FC = () => {
   const developmentHint = useMemo(() => isDevelopmentAuthAdapter() ? developmentMfaCodeHint(challengeId) : undefined, [challengeId]);
 
   const resolvePostLoginDestination = (accountId: string) => {
+    if (isConnectedAuthRuntime()) return ROUTE_KEYS.WORKSPACE_SELECTION;
     if (redirect) return redirect;
     const memberships = listWorkspaceMembershipsForAccount(accountId).filter((membership) => membership.status === "active");
     if (memberships.length === 1) return productSpaceHome(memberships[0].workspaceKey, "crm");

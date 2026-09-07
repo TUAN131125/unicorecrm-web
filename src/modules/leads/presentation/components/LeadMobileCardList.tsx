@@ -29,7 +29,7 @@ interface LeadMobileCardListProps {
   onReopen?: (leadId: string) => void;
   onFollowUp?: (leadId: string) => void;
   onConvert?: (leadId: string) => void;
-  onDelete?: (leadId: string) => void;
+  onArchive?: (leadId: string) => void;
   onViewDetails?: (leadId: string) => void;
 }
 
@@ -49,7 +49,7 @@ export const LeadMobileCardList: React.FC<LeadMobileCardListProps> = ({
   onReopen,
   onFollowUp,
   onConvert,
-  onDelete,
+  onArchive,
   onViewDetails
 }) => {
   const { t, locale } = useI18n();
@@ -122,7 +122,7 @@ export const LeadMobileCardList: React.FC<LeadMobileCardListProps> = ({
                       onReopen={onReopen}
                       onFollowUp={onFollowUp}
                       onConvert={onConvert}
-                      onDelete={onDelete}
+                      onArchive={onArchive}
                       onViewDetails={onViewDetails}
                     />
                   )}

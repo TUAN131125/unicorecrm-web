@@ -15,7 +15,10 @@ interface ProductCardGridProps {
   onDuplicate: (product: Product) => void;
   onArchiveToggle: (product: Product) => void;
   onDelete: (product: Product) => void;
-  allowManage?: boolean;
+  canEdit?: boolean;
+  canDuplicate?: boolean;
+  canArchive?: boolean;
+  canRestore?: boolean;
 }
 
 export const ProductCardGrid: React.FC<ProductCardGridProps> = ({
@@ -25,7 +28,10 @@ export const ProductCardGrid: React.FC<ProductCardGridProps> = ({
   onDuplicate,
   onArchiveToggle,
   onDelete,
-  allowManage = true,
+  canEdit = false,
+  canDuplicate = false,
+  canArchive = false,
+  canRestore = false,
 }) => {
   const { tx } = useI18n();
   const navigate = useNavigate();
@@ -139,9 +145,9 @@ export const ProductCardGrid: React.FC<ProductCardGridProps> = ({
               {tx("products.actions.viewDetail", "Xem chi tiết")}
             </MenuItemButton>
 
-            {allowManage && (
+            {(canEdit || canDuplicate || canArchive || canRestore) && (
               <>
-                <MenuItemButton
+                {canEdit && <MenuItemButton
                   id="grid-action-edit"
                   icon={<Edit2 size={13} className="text-slate-500" />}
                   onClick={() => {
@@ -151,9 +157,9 @@ export const ProductCardGrid: React.FC<ProductCardGridProps> = ({
                   }}
                 >
                   {tx("products.actions.edit", "Chỉnh sửa")}
-                </MenuItemButton>
+                </MenuItemButton>}
 
-                <MenuItemButton
+                {canDuplicate && <MenuItemButton
                   id="grid-action-duplicate"
                   icon={<Copy size={13} className="text-slate-500" />}
                   onClick={() => {
@@ -163,9 +169,9 @@ export const ProductCardGrid: React.FC<ProductCardGridProps> = ({
                   }}
                 >
                   {tx("products.actions.duplicate", "Nhân bản")}
-                </MenuItemButton>
+                </MenuItemButton>}
 
-                <MenuItemButton
+                {((activeProduct.status === "archived" && canRestore) || (activeProduct.status !== "archived" && canArchive)) && <MenuItemButton
                   id="grid-action-archive"
                   icon={<Archive size={13} className="text-slate-500" />}
                   onClick={() => {
@@ -177,11 +183,11 @@ export const ProductCardGrid: React.FC<ProductCardGridProps> = ({
                   {activeProduct.status === "archived"
                     ? tx("products.actions.unarchive", "Hủy lưu trữ")
                     : tx("products.actions.archive", "Lưu trữ")}
-                </MenuItemButton>
+                </MenuItemButton>}
 
-                <div className="border-t border-slate-100 my-1" />
+                {canArchive && <div className="border-t border-slate-100 my-1" />}
 
-                <MenuItemButton
+                {canArchive && <MenuItemButton
                   id="grid-action-delete"
                   icon={<Archive size={13} className="text-rose-500" />}
                   danger
@@ -192,7 +198,7 @@ export const ProductCardGrid: React.FC<ProductCardGridProps> = ({
                   }}
                 >
                   {tx("products.actions.delete", "Lưu trữ sản phẩm")}
-                </MenuItemButton>
+                </MenuItemButton>}
               </>
             )}
           </div>

@@ -34,7 +34,7 @@ import {
   OperationLifecycleRail,
 } from "@/components/crm/operations";
 import { cancelShippingBookingCommandBoundary, changeShippingProviderCommandBoundary, getShippingSnapshot, getShippingProviderSnapshot, listShippingProviders, retryShippingBookingCommandBoundary, subscribeToShipping } from "../../public/api";
-import { useEffectiveAccess } from "@/platform/access-control";
+import { CAPABILITIES, useEffectiveAccess } from "@/platform/access-control";
 import { getAuthSessionSnapshot } from "@/platform/identity-auth";
 import { getOrderListSnapshot, subscribeToOrderList } from "@/modules/orders";
 import { getReturnsSnapshot, subscribeToReturns } from "@/modules/returns";
@@ -90,10 +90,10 @@ export const ShippingBookingDetailPage: React.FC = () => {
     : returnsSnapshot.requests.find((request) => request.id === record.sourceId)?.code ?? text("Yêu cầu đổi / trả liên quan", "Related return request");
   const sourceTypeLabel = record.sourceType === "ORDER" ? text("Đơn hàng", "Order") : text("Đổi / Trả hàng", "Return");
   const permissions = {
-    canView: access.canPerform("shipping", "read"),
-    canSync: access.canPerform("shipping", "sync"),
-    canRetry: access.canPerform("shipping", "retry"),
-    canCancel: access.canPerform("shipping", "cancel"),
+    canView: access.can(CAPABILITIES.SHIPPING_READ),
+    canSync: access.can(CAPABILITIES.SHIPPING_CREATE),
+    canRetry: access.can(CAPABILITIES.SHIPPING_CREATE),
+    canCancel: access.can(CAPABILITIES.SHIPPING_CREATE),
   };
   const configuredProvider = getShippingProviderSnapshot(record.providerId);
   const actionIds = resolveShippingHeaderActionIds(record, permissions, configuredProvider);
@@ -133,7 +133,7 @@ export const ShippingBookingDetailPage: React.FC = () => {
     if (actionId === "cancel") return <Button key={actionId} type="button" actionIntent="destructive" size="sm" icon={<XCircle size={13} />} className={recordDetailHeaderActionButtonClassName} onClick={() => setCancelOpen(true)}>Hủy booking</Button>;
     return null;
   });
-  if (record.sourceType === "ORDER" && record.externalStatus === "DELIVERED" && record.deliveredAt && access.canPerform("returns", "create")) {
+  if (record.sourceType === "ORDER" && record.externalStatus === "DELIVERED" && record.deliveredAt && access.can(CAPABILITIES.RETURNS_UPDATE)) {
     actions.push(<Button key="create-return" type="button" actionIntent="create" size="sm" icon={<RotateCcw size={13} />} className={recordDetailHeaderActionButtonClassName} onClick={() => navigate(`/returns/new?orderId=${record.sourceId}&shippingBookingId=${record.id}`)}>{text("Tạo yêu cầu đổi/trả", "Create return request")}</Button>);
   }
 

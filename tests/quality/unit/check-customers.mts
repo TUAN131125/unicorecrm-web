@@ -105,7 +105,7 @@ const stale = {
 };
 const migrated = migrateStoredAccessControlSnapshot(stale, "ws_default");
 assert.ok(migrated.roles[0].capabilities.includes(CAPABILITIES.CUSTOMERS_VIEW), "System-role legacy Customer View read permission must migrate to customers.view.");
-assert.ok(migrated.roles[0].capabilities.includes(CAPABILITIES.CUSTOMERS_EDIT), "Canonical system roles must regain intended Customer capabilities.");
+assert.equal(migrated.roles[0].capabilities.includes(CAPABILITIES.CUSTOMERS_EDIT), false, "System roles must not regain Customer write capabilities that are not backend-admitted.");
 assert.deepEqual(migrated.roles.find((role) => role.roleId === "custom")?.capabilities, [CAPABILITIES.CUSTOMERS_VIEW], "Custom roles may migrate legacy read access but must not gain write capabilities.");
 assert.ok(migrated.dataScopes.some((scope) => scope.resourceKey === "customers"), "Persisted Customer View data scopes must migrate to customers.");
 

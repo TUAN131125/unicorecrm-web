@@ -13,7 +13,7 @@ import { OperationFilterPopover, OperationFilterGroup, OperationMetricGrid, Oper
 import { Button, ConfirmDialog, Modal } from "@/shared/components/ui";
 import type { ShippingBooking } from "../../domain/model/shipping.types";
 import { cancelShippingBookingCommandBoundary, getShippingKpisSnapshot, getShippingSnapshot, getShippingProviderSnapshot, listShippingProviders, queryShippingSnapshot, retryShippingBookingCommandBoundary, subscribeToShipping } from "../../public/api";
-import { useEffectiveAccess } from "@/platform/access-control";
+import { CAPABILITIES, useEffectiveAccess } from "@/platform/access-control";
 import { getAuthSessionSnapshot } from "@/platform/identity-auth";
 import { getOrderListSnapshot, subscribeToOrderList } from "@/modules/orders";
 import { getReturnsSnapshot, subscribeToReturns } from "@/modules/returns";
@@ -93,10 +93,10 @@ export const ShippingBookingListPage: React.FC = () => {
   })), [snapshot, locale]);
 
   const permissions = {
-    canView: access.canPerform("shipping", "read"),
-    canSync: access.canPerform("shipping", "sync"),
-    canRetry: access.canPerform("shipping", "retry"),
-    canCancel: access.canPerform("shipping", "cancel"),
+    canView: access.can(CAPABILITIES.SHIPPING_READ),
+    canSync: access.can(CAPABILITIES.SHIPPING_CREATE),
+    canRetry: access.can(CAPABILITIES.SHIPPING_CREATE),
+    canCancel: access.can(CAPABILITIES.SHIPPING_CREATE),
   };
 
   const runAction = async (record: ShippingBooking, action: string) => {
@@ -147,7 +147,7 @@ export const ShippingBookingListPage: React.FC = () => {
         count={records.length}
         context={text("Hàng đợi tạo vận đơn, giao nhận, bằng chứng COD và các lần thử lại", "Booking, delivery, COD evidence, and retry work queue")}
         icon={<Truck size={20} />}
-        actions={access.canPerform("shipping", "create") ? <Button type="button" actionIntent="create" size="sm" icon={<Plus size={14} />} className="h-9 rounded-xl" onClick={() => navigate("/shipping/new")}>{text("Tạo vận đơn", "Create shipment")}</Button> : undefined}
+        actions={access.can(CAPABILITIES.SHIPPING_CREATE) ? <Button type="button" actionIntent="create" size="sm" icon={<Plus size={14} />} className="h-9 rounded-xl" onClick={() => navigate("/shipping/new")}>{text("Tạo vận đơn", "Create shipment")}</Button> : undefined}
       />
 
       <AnimatePresence>{message && <motion.div initial={reduceMotion ? false : { opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="flex items-center gap-2 rounded-xl border border-sky-100 bg-sky-50 px-4 py-3 text-xs font-medium text-sky-800"><Sparkles size={14} />{message}</motion.div>}</AnimatePresence>
