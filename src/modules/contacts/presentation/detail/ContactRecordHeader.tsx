@@ -14,7 +14,6 @@ import {
   Calendar,
   AlertTriangle,
   Bookmark,
-  Trash2,
   Share2,
   Copy,
   Printer,
@@ -38,6 +37,7 @@ interface ContactRecordHeaderProps {
   contact: Contact;
   ownerName: string;
   canUpdateContact: boolean;
+  canArchiveContact: boolean;
   onEditClick: () => void;
   onCreateOpportunityClick?: () => void;
   onAddNoteClick: () => void;
@@ -45,7 +45,6 @@ interface ContactRecordHeaderProps {
   onCreateQuoteClick: () => void;
   onAddAppointmentClick: () => void;
   onAddTaskClick: () => void;
-  onArchiveToggle: () => void;
   onDeleteClick: () => void;
   showToast: (msg: string) => void;
   isRightPanelVisible?: boolean;
@@ -56,6 +55,7 @@ export const ContactRecordHeader: React.FC<ContactRecordHeaderProps> = ({
   contact,
   ownerName,
   canUpdateContact,
+  canArchiveContact,
   onEditClick,
   onCreateOpportunityClick,
   onAddNoteClick,
@@ -63,7 +63,6 @@ export const ContactRecordHeader: React.FC<ContactRecordHeaderProps> = ({
   onCreateQuoteClick,
   onAddAppointmentClick,
   onAddTaskClick,
-  onArchiveToggle,
   onDeleteClick,
   showToast,
   isRightPanelVisible = true,
@@ -346,7 +345,7 @@ export const ContactRecordHeader: React.FC<ContactRecordHeaderProps> = ({
               <MenuSection title={tx("contactDetail.section.businessActions", "Nghiệp vụ")} />
               {/* GROUP B: Management actions */}
               {canUpdateContact && <MenuSection title={tx("contactDetail.section.adminActions", "Quản trị & Quan hệ")} />}
-              {canUpdateContact && <>
+              {canArchiveContact && <>
               <MenuItemButton
                 onClick={() => {
                   showToast(tx("contactDetail.toast.setPrimaryContact", "Đã thiết lập liên hệ này làm đầu mối trao đổi chính."));
@@ -411,19 +410,12 @@ export const ContactRecordHeader: React.FC<ContactRecordHeaderProps> = ({
 
               {/* GROUP D: Safety & Danger */}
               <MenuSection title={tx("contactDetail.actions.lifecycle", "Hành động an toàn")} />
-              <MenuItemButton
-                onClick={() => { onArchiveToggle(); setIsMoreMenuOpen(false); setMoreAnchorEl(null); }}
+              {canArchiveContact && !isArchived && <MenuItemButton
+                onClick={() => { onDeleteClick(); setIsMoreMenuOpen(false); setMoreAnchorEl(null); }}
                 icon={<Archive size={14} className="text-amber-500" />}
               >
-                <span className="text-amber-700">{isArchived ? tx("contactDetail.actions.unarchive", "Khôi phục lưu trữ") : tx("contactDetail.actions.archive", "Lưu trữ hồ sơ")}</span>
-              </MenuItemButton>
-              <MenuItemButton
-                onClick={() => { onDeleteClick(); setIsMoreMenuOpen(false); setMoreAnchorEl(null); }}
-                icon={<Trash2 size={14} className="text-rose-500" />}
-                variant="danger"
-              >
-                <span className="text-rose-700 font-semibold">{tx("common.delete", "Xóa liên hệ")}</span>
-              </MenuItemButton>
+                <span className="text-amber-700">{tx("contactDetail.actions.archive", "Lưu trữ hồ sơ")}</span>
+              </MenuItemButton>}
               </>}
 
             </div>

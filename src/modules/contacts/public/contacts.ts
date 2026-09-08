@@ -2,6 +2,8 @@ import { assertMutationCommandSupported, createMutationMetadata, executeMutation
 import { CONTACT_CREATE_OPERATION, CONTACT_UPDATE_OPERATION } from "../application/ports/ContactApiRuntime";
 import type { Contact } from "../domain/model/contact.types";
 import { contactPreferences, contactRepository, isContactConnectedApiRuntime } from "../application/composition/contactApplicationServices";
+import { getContactApiRuntime } from "../application/composition/contactApplicationServices";
+import { archiveContactViaApi, createContactViaApi, updateContactViaApi } from "../application/commands/contactApiCommands";
 import {
   anonymizeContact,
   archiveContact,
@@ -13,8 +15,8 @@ import {
 
 /** True when Contact data is served by the backend, where local Contact writes are refused. */
 export function isContactConnectedMode(): boolean { return isContactConnectedApiRuntime(); }
-export function isContactCreateAvailable(): boolean { return !isBusinessOperationUnavailable(CONTACT_CREATE_OPERATION); }
-export function isContactUpdateAvailable(): boolean { return !isBusinessOperationUnavailable(CONTACT_UPDATE_OPERATION); }
+export function isContactCreateAvailable(): boolean { return Boolean(getContactApiRuntime().commands) || !isBusinessOperationUnavailable(CONTACT_CREATE_OPERATION); }
+export function isContactUpdateAvailable(): boolean { return Boolean(getContactApiRuntime().commands) || !isBusinessOperationUnavailable(CONTACT_UPDATE_OPERATION); }
 /**
  * True when Contact retention (archive/restore/anonymize) cannot run in the active runtime.
  * `contact.archive`, `contact.restore` and `contact.anonymize` are BLOCKED in the canonical
@@ -22,8 +24,10 @@ export function isContactUpdateAvailable(): boolean { return !isBusinessOperatio
  * that the boundary would reject.
  */
 export function isContactRetentionUnavailable(): boolean {
-  return isMutationCommandUnavailable("contact.archive");
+  return !getContactApiRuntime().commands && isMutationCommandUnavailable("contact.archive");
 }
+
+export { createContactViaApi, updateContactViaApi, archiveContactViaApi };
 
 export function getContactsSnapshot(): Contact[] {
   return contactRepository.list();

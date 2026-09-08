@@ -2,7 +2,7 @@ import { backendUnavailableMessage, formatOperationUnavailableError } from "@/sh
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Contact } from "../../domain/model/contact.types";
-import { archiveContactCommand, isContactCreateAvailable, isContactRetentionUnavailable, isContactUpdateAvailable, restoreContactCommand, saveContactSnapshot } from "../../public/contacts";
+import { archiveContactViaApi, createContactViaApi, isContactCreateAvailable, isContactRetentionUnavailable, isContactUpdateAvailable, restoreContactCommand } from "../../public/contacts";
 import { getOrganizationAccountsSnapshot } from "@/modules/organizations";
 import type { CustomerDisplay as Customer } from "@/modules/customers";
 import { createDealCommand, Deal, DealStage } from "@/modules/deals";
@@ -25,7 +25,6 @@ import { useContactListViewSettings } from "../hooks/useContactListViewSettings"
 import { createContactPresentationSnapshot, resolveContactPresentationSnapshot, type ContactListPresentationSnapshot } from "../model/contactSavedViewPreferences";
 import { findCustomerForContact, getCustomerDisplayNameForContact } from "../model/contactCustomerLookup";
 import { normalizeContactCanonicalProfile } from "../../domain/model/contactCanonicalProfile";
-import { upsertContactOrganizationRelationshipWorkflow } from "@/workflows/contact-organization-relationship";
 import { getWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import { useEffectiveAccess } from "@/platform/access-control";
 
@@ -293,6 +292,8 @@ export function useContactListController({
     message: "",
     onConfirm: () => {},
   });
+  const [isConfirming, setIsConfirming] = useState(false);
+  const confirmInFlightRef = useRef(false);
   const [promptModal, setPromptModal] = useState<{
     isOpen: boolean;
     title: string;
@@ -312,7 +313,16 @@ export function useContactListController({
       title,
       message,
       onConfirm: () => {
-        void Promise.resolve(onConfirm()).finally(() => setConfirmModal((prev) => ({ ...prev, isOpen: false })));
+        if (confirmInFlightRef.current) return;
+        confirmInFlightRef.current = true;
+        setIsConfirming(true);
+        void Promise.resolve(onConfirm())
+          .then(() => setConfirmModal((prev) => ({ ...prev, isOpen: false })))
+          .catch((error: unknown) => showToast(formatOperationUnavailableError(error, { locale })))
+          .finally(() => {
+            confirmInFlightRef.current = false;
+            setIsConfirming(false);
+          });
       },
     });
   };
@@ -447,6 +457,7 @@ export function useContactListController({
   const contactUpdateAvailable = isContactUpdateAvailable();
   const canCreateContact = contactCreateAvailable && access.canPerform("contacts", "create");
   const canUpdateContact = contactUpdateAvailable && access.canPerform("contacts", "update");
+  const canArchiveContact = !isContactRetentionUnavailable() && access.canPerform("contacts", "delete");
   const contactOpportunityAvailable = !isContactOpportunityCreationUnavailable();
   const contactWritesUnavailable = !contactUpdateAvailable;
   const refuseUnavailableContactWrite = (action: string, unavailable = contactWritesUnavailable): boolean => {
@@ -467,7 +478,7 @@ export function useContactListController({
     return true;
   };
   // 1. Core Logic: Add New Contact callback
-  const handleSaveContact = (data: ContactCreateInput) => {
+  const handleSaveContact = async (data: ContactCreateInput) => {
     if (refuseUnavailableContactWrite(locale === "vi" ? "Tạo liên hệ" : "Creating a Contact", !contactCreateAvailable)) return;
     const code = data.contactCode.trim() || `CN${String(contacts.length + 1).padStart(4, "0")}`;
     const tagArray = data.tagsString.split(",").map((tag) => tag.trim()).filter(Boolean);
@@ -542,31 +553,11 @@ export function useContactListController({
         type: "system",
       }],
     }, { workspaceId: getWorkspaceContextSnapshot().workspaceId, now: createdAt });
-    const createdContact = saveContactSnapshot(newContactObj);
-    const linkedContact = organization
-      ? upsertContactOrganizationRelationshipWorkflow({
-          contactId: createdContact.id,
-          relationship: {
-            organizationAccountId: organization.id,
-            role: data.decisionRole === "decision_maker" ? "decision_maker"
-              : data.decisionRole === "buyer" ? "buyer"
-              : data.decisionRole === "finance" ? "finance"
-              : data.decisionRole === "technical" ? "technical"
-              : "employee",
-            roleTitle: data.title || undefined,
-            department: data.department || undefined,
-            decisionRole: data.decisionRole || undefined,
-            isPrimaryRepresentative: data.isPrimaryContact,
-            effectiveFrom: createdAt,
-          },
-          actorId: data.ownerId || "system",
-          now: createdAt,
-        }).contact
-      : createdContact;
+    const createdContact = await createContactViaApi(newContactObj);
     setShowAddForm(false);
     notifyProduct(t("contactList.quickCreate.created", { name: data.name }), "success", {
       actionLabel: t("contactList.quickCreate.openRecord"),
-      onAction: () => navigate(`/contacts/${linkedContact.id}`),
+      onAction: () => navigate(`/contacts/${createdContact.id}`),
       durationMs: 6000,
     });
   };
@@ -825,12 +816,7 @@ export function useContactListController({
       tx("contactList.confirm.archiveContactTitle", "Lưu trữ liên hệ"),
       tx("contactList.confirm.archiveContact", `Lưu trữ liên hệ "${contact.name}"? Hồ sơ và lịch sử vẫn được giữ lại.`, { name: contact.name }),
       async () => {
-        const actorId = contact.ownerId || "current-user";
-        await archiveContactCommand(contact.id, {
-          reason: locale === "vi" ? "Lưu trữ từ danh sách Liên hệ." : "Archived from Contact list.",
-          actorId,
-          actorName: resolveWorkspaceMemberName(actorId),
-        });
+        await archiveContactViaApi(contact.id);
         setSelectedContactIds(prev => prev.filter(id => id !== contact.id));
         showToast(tx("contactList.toast.contactArchived", "Đã lưu trữ liên hệ; hồ sơ và lịch sử vẫn được giữ lại."));
       }
@@ -847,7 +833,7 @@ export function useContactListController({
       showToast(tx("contactList.toastMessage.restored", "Đã khôi phục liên hệ thành công"));
       return;
     }
-    await archiveContactCommand(contact.id, { reason: locale === "vi" ? "Lưu trữ từ danh sách Liên hệ." : "Archived from Contact list.", actorId, actorName: resolveWorkspaceMemberName(actorId) });
+    await archiveContactViaApi(contact.id);
     showToast(tx("contactList.toastMessage.archived", "Đã chuyển liên hệ vào danh sách lưu trữ"));
   };
   const handleBulkExport = () => {
@@ -1120,6 +1106,7 @@ export function useContactListController({
     contactUpdateAvailable,
     canCreateContact,
     canUpdateContact,
+    canArchiveContact,
     contactOpportunityAvailable,
     contactQuery,
     customers,
@@ -1220,6 +1207,7 @@ export function useContactListController({
     handleBulkChangeOwner,
     handleBulkChangeStatus,
     confirmModal,
+    isConfirming,
     setConfirmModal,
     promptModal,
     setPromptModal,

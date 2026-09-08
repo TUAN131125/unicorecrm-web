@@ -26,9 +26,9 @@ assert.equal(OPENAPI_CONTRACT_VERSION, packageJson.version);
 assert.equal(OPENAPI_SPEC_SHA256, artifacts.sha256);
 assert.equal(manifest.specSha256, artifacts.sha256);
 assert.equal(manifest.contractVersion, packageJson.version);
-assert.equal(coverage.summary.operations, 270);
-assert.equal(coverage.summary.productionReadyOperations, 236);
-assert.equal(coverage.summary.blockedOperations, 34);
+assert.equal(coverage.summary.operations, 271);
+assert.equal(coverage.summary.productionReadyOperations, 239);
+assert.equal(coverage.summary.blockedOperations, 32);
 
 for (const [relativePath, expected] of [
   ["docs/api/openapi.sha256", artifacts.checksum],
@@ -41,8 +41,8 @@ for (const [relativePath, expected] of [
 ] as const) assert.equal(read(relativePath), expected, `${relativePath} drifted from OpenAPI generation.`);
 
 const operations = collectOperations(spec);
-assert.equal(operations.length, 270);
-assert.equal(new Set(operations.map((operation) => operation.operationId)).size, 270);
+assert.equal(operations.length, 271);
+assert.equal(new Set(operations.map((operation) => operation.operationId)).size, 271);
 assert.deepEqual(manifest.operations.map((operation) => operation.operationId).sort(), operations.map((operation) => operation.operationId).sort());
 assert.deepEqual(coverage.operations.map((operation) => operation.operationId).sort(), operations.map((operation) => operation.operationId).sort());
 
@@ -120,7 +120,7 @@ assert.ok(findBreakingChanges(baseline, removedOperation).some((finding) => find
 
 assert.equal(packageJson.scripts["api:generate"], "node scripts/api/generate-openapi-client.mjs");
 assert.equal(packageJson.scripts["api:check"], "node scripts/quality/run-quality-pipeline.mjs --gate quality.api-contract");
-console.log(`OpenAPI/API contract: PASS (${operations.length} operations; 236 ready; 34 explicitly blocked; ${artifacts.sha256}).`);
+console.log(`OpenAPI/API contract: PASS (${operations.length} operations; 239 ready; 32 explicitly blocked; ${artifacts.sha256}).`);
 
 function collectOperations(document: OpenApiDocument): OperationRecord[] {
   const result: OperationRecord[] = [];

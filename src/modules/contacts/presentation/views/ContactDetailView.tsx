@@ -74,6 +74,7 @@ type Controller = NonNullable<ReturnType<typeof useContactDetailController>>;
 export function ContactDetailView({ controller }: { controller: Controller }) {
   const {
     canUpdateContact,
+    canArchiveContact,
     contactOpportunityAvailable,
     customers,
     deals,
@@ -156,7 +157,6 @@ export function ContactDetailView({ controller }: { controller: Controller }) {
     handleSaveContact,
     handleCreateOpportunity,
     confirmDeleteContact,
-    handleArchiveToggle,
     latestDealStage,
     handleRequestCreateQuote,
     handleCompleteTask,
@@ -192,6 +192,7 @@ export function ContactDetailView({ controller }: { controller: Controller }) {
         contact={contact}
         ownerName={ownerName}
         canUpdateContact={canUpdateContact}
+        canArchiveContact={canArchiveContact}
         onEditClick={() => setShowEditModal(true)}
         onCreateOpportunityClick={openOpportunity}
         onAddNoteClick={() => setShowQuickNoteModal(true)}
@@ -202,7 +203,6 @@ export function ContactDetailView({ controller }: { controller: Controller }) {
         onCreateQuoteClick={handleRequestCreateQuote}
         onAddAppointmentClick={() => setShowMeetingModal(true)}
         onAddTaskClick={() => setShowTaskModal(true)}
-        onArchiveToggle={handleArchiveToggle}
         onDeleteClick={() => setShowDeleteModal(true)}
         showToast={showToast}
       />

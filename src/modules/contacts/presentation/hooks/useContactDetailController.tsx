@@ -41,7 +41,7 @@ import { getAuthSessionSnapshot } from "@/platform/identity-auth";
 import { listWorkspaceMemberDirectory, resolveWorkspaceMemberName } from "@/platform/member-directory";
 import { getDisplayOrdersForContact } from "@/modules/orders";
 import { useContacts } from "../hooks/useContacts";
-import { archiveContactCommand, getContactPreference, isContactUpdateAvailable, isContactRetentionUnavailable, restoreContactCommand, setContactPreference } from "../../public/contacts";
+import { archiveContactViaApi, getContactPreference, isContactUpdateAvailable, isContactRetentionUnavailable, restoreContactCommand, setContactPreference, updateContactViaApi } from "../../public/contacts";
 import {
   createContactOpportunityCreationRuntime,
   executeContactOpportunityCreation,
@@ -175,6 +175,7 @@ export function useContactDetailController(props: ContactDetailPageProps) {
    */
   const contactUpdateAvailable = isContactUpdateAvailable();
   const canUpdateContact = contactUpdateAvailable && access.canPerform("contacts", "update");
+  const canArchiveContact = !isContactRetentionUnavailable() && access.canPerform("contacts", "delete");
   const contactOpportunityAvailable = !isContactOpportunityCreationUnavailable();
   const contactWritesUnavailable = !contactUpdateAvailable;
   const refuseUnavailableContactWrite = (action: string): boolean => {
@@ -325,26 +326,9 @@ export function useContactDetailController(props: ContactDetailPageProps) {
   const displayPurchasedProducts = getPurchasedProductsForContact(contact, customers);
 
   // Saving edited fields
-  const handleSaveContact = (updatedContact: Contact) => {
+  const handleSaveContact = async (updatedContact: Contact) => {
     if (refuseUnavailableContactWrite(locale === "vi" ? "Cập nhật hồ sơ Liên hệ" : "Updating the Contact profile")) return;
-    setContacts(prev => prev.map(c => {
-      if (c.id === contact.id) {
-        const currentActivities = c.activities || [];
-        const newActivity = {
-          id: `act_${Date.now()}`,
-          type: "Updated",
-          title: tx("contactDetail.activity.updatedTitle", "Liên hệ được cập nhật"),
-          description: tx("contactDetail.activity.updatedDescription", "Thông tin đã được cập nhật thành công."),
-          createdAt: new Date().toISOString(),
-          author: tx("common.system", "Hệ thống")
-        };
-        return {
-          ...updatedContact,
-          activities: [newActivity, ...currentActivities]
-        };
-      }
-      return c;
-    }));
+    await updateContactViaApi(updatedContact);
     setShowEditModal(false);
     showToast(tx("common.updatedSuccessfully", "Đã lưu cập nhật thành công."));
   };
@@ -540,12 +524,7 @@ export function useContactDetailController(props: ContactDetailPageProps) {
 
   const confirmDeleteContact = async () => {
     if (refuseUnavailableContactRetention(locale === "vi" ? "Lưu trữ liên hệ" : "Archiving a Contact")) return;
-    const actorId = currentMemberId || contact.ownerId || "current-user";
-    await archiveContactCommand(contact.id, {
-      reason: locale === "vi" ? "Lưu trữ từ trang chi tiết Liên hệ." : "Archived from Contact detail.",
-      actorId,
-      actorName: resolveWorkspaceMemberName(actorId),
-    });
+    await archiveContactViaApi(contact.id);
     setShowDeleteModal(false);
     navigate("/contacts");
   };
@@ -560,7 +539,7 @@ export function useContactDetailController(props: ContactDetailPageProps) {
       showToast(tx("contactDetail.toast.unarchived", "Đã khôi phục hồ sơ liên hệ."));
       return;
     }
-    await archiveContactCommand(contact.id, { reason: locale === "vi" ? "Lưu trữ từ trang chi tiết Liên hệ." : "Archived from Contact detail.", actorId, actorName: resolveWorkspaceMemberName(actorId) });
+    await archiveContactViaApi(contact.id);
     showToast(tx("contactDetail.toast.archived", "Đã di chuyển hồ sơ vào mục lưu trữ thành công."));
   };
 
@@ -1185,6 +1164,7 @@ export function useContactDetailController(props: ContactDetailPageProps) {
   return {
     contactUpdateAvailable,
     canUpdateContact,
+    canArchiveContact,
     contactOpportunityAvailable,
     contactQuery,
     customers,

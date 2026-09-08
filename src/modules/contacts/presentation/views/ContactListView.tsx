@@ -1,9 +1,9 @@
 import { AnimatePresence } from "motion/react";
-import { User, Sparkles, Trash2, Pencil, Plus, UserPlus, RefreshCw, Archive } from "lucide-react";
+import { User, Sparkles, Trash2, Pencil, Plus, RefreshCw } from "lucide-react";
 import { Button, ConfirmDialog, IconButton, Modal } from "@/shared/components/ui";
 import { PageHeaderActions } from "@/components/crm/PageHeaderActions";
 import { SavedViewNameModal } from "@/components/crm/SavedViewNameModal";
-import { ListBulkActionBar, ListPageFrame, ListPageHeader, ListPaginationBar, ListStatePanel, ListToolbar, useListPagination } from "@/components/crm/list-archetype";
+import { ListPageFrame, ListPageHeader, ListPaginationBar, ListStatePanel, ListToolbar, useListPagination } from "@/components/crm/list-archetype";
 import { ContactStatisticsPanel } from "../list/ContactStatisticsPanel";
 import { ContactTable } from "../list/ContactTable";
 import { ContactCardList } from "../list/ContactCardList";
@@ -25,6 +25,7 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
   const {
     canCreateContact,
     canUpdateContact,
+    canArchiveContact,
     contactOpportunityAvailable,
     customers,
     deals,
@@ -124,6 +125,7 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
     handleBulkChangeOwner,
     handleBulkChangeStatus,
     confirmModal,
+    isConfirming,
     setConfirmModal,
     promptModal,
     setPromptModal,
@@ -150,7 +152,6 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
     handleEmail,
     handleCommitOpportunity,
     handleArchiveContact,
-    handleToggleArchiveContact,
     handleBulkExport,
     handleDownloadTemplate,
     filteredContacts,
@@ -197,8 +198,8 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
             moreActions={
               <ContactTopActionMenu
                 selectedCount={selectedContactIds.length}
-                writesAvailable={canUpdateContact}
-                importsAvailable={canCreateContact}
+                writesAvailable={false}
+                importsAvailable={false}
                 onExportAll={() => {
                   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(contacts, null, 2));
                   const downloadAnchor = document.createElement('a');
@@ -212,21 +213,11 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
                 onPrintList={() => {
                   window.print();
                 }}
-                onBulkChangeOwner={() => {
-                  setShowBulkReassignModal(true);
-                }}
-                onBulkAddTags={handleBulkAddTags}
-                onBulkArchive={handleBulkArchive}
-                onBulkDelete={handleBulkDelete}
                 onManageSharing={() => {
                   showToast(tx("contactList.toastMessage.sharingInit", "Đang mở bảng quản lý phân quyền chia sẻ..."));
                 }}
                 onManageTags={() => {
                   showToast(tx("contactList.toastMessage.tagsInit", "Tính năng quản lý danh mục thẻ đang khởi tạo!"));
-                }}
-                onOpenTrash={() => {
-                  setStatusFilter("archived");
-                  showToast(tx("contactList.toastMessage.displayArchived", "Đang hiển thị danh sách lưu trữ"));
                 }}
                 onDownloadImportTemplate={handleDownloadTemplate}
                 onAdvancedImport={() => {
@@ -346,62 +337,6 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
         }
       />
 
-      {/* Shared list-archetype bulk actions */}
-      {canUpdateContact && <ListBulkActionBar
-        selectedCount={selectedContactIds.length}
-        label={tx("contactList.bulk.selected", "Đã chọn")}
-        onClear={() => setSelectedContactIds([])}
-      >
-        <button
-          type="button"
-          onClick={() => handleBulkChangeStatus("needs_follow_up")}
-          className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-[10px] font-medium text-amber-700 shadow-sm hover:bg-slate-100"
-          title={tx("contactList.bulk.markNeedsFollowUp", "Đánh dấu Cần theo dõi")}
-        >
-          {tx("contactList.bulk.markNeedsFollowUp", "Cần liên hệ")}
-        </button>
-        <button
-          type="button"
-          onClick={handleBulkDoNotContact}
-          className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-[10px] font-medium text-rose-700 shadow-sm hover:bg-slate-100"
-          title={tx("contactList.bulk.setDoNotContact", "Đặt Chặn liên hệ")}
-        >
-          {tx("contactList.bulk.setDoNotContact", "Chặn")}
-        </button>
-        <button
-          type="button"
-          onClick={handleBulkAddTags}
-          className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-[10px] font-medium text-blue-700 shadow-sm hover:bg-slate-100"
-          title={tx("contactList.bulk.addTags", "Gán thẻ hàng loạt")}
-        >
-          {tx("contactList.bulk.addTags", "Gán thẻ")}
-        </button>
-        <button
-          type="button"
-          onClick={handleBulkArchive}
-          className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-[10px] font-medium text-slate-700 shadow-sm hover:bg-slate-100"
-          title={tx("contactList.bulk.archive", "Lưu trữ hàng loạt")}
-        >
-          {tx("contactList.bulk.archive", "Lưu trữ")}
-        </button>
-        <button
-          type="button"
-          onClick={() => setShowBulkReassignModal(true)}
-          className="inline-flex items-center gap-1 rounded-xl bg-indigo-600 px-2.5 py-1.5 text-[10px] font-medium text-white shadow-sm hover:bg-indigo-700"
-        >
-          <UserPlus size={11} />
-          <span>{tx("contactList.bulk.assignOwner", "Đổi người phụ trách")}</span>
-        </button>
-        <button
-          type="button"
-          onClick={handleBulkDelete}
-          className="inline-flex items-center gap-1 rounded-xl border border-red-200 bg-red-50 px-2.5 py-1.5 text-[10px] font-medium text-red-600 hover:bg-red-100"
-        >
-          <Archive size={11} />
-          <span>{tx("contactList.bulk.delete", "Lưu trữ hàng loạt")}</span>
-        </button>
-      </ListBulkActionBar>}
-
       {/* Saved view create/update modal */}
       <SavedViewNameModal
         isOpen={savedViewDialog !== null}
@@ -445,9 +380,8 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
           onCall={handleCall}
           onEmail={handleEmail}
           onOpenOpportunityWizard={contactOpportunityAvailable ? (c) => setSelectedContactForDeal(c) : undefined}
-          onOpenDeleteConfirm={canUpdateContact ? handleArchiveContact : undefined}
+          onOpenDeleteConfirm={canArchiveContact ? handleArchiveContact : undefined}
           onViewDetails={(contactId) => navigate(`/contacts/${contactId}`)}
-          onArchive={canUpdateContact ? handleToggleArchiveContact : undefined}
         />
       </div>
 
@@ -466,9 +400,8 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
           onCall={handleCall}
           onEmail={handleEmail}
           onOpenOpportunityWizard={contactOpportunityAvailable ? (c) => setSelectedContactForDeal(c) : undefined}
-          onOpenDeleteConfirm={canUpdateContact ? handleArchiveContact : undefined}
+          onOpenDeleteConfirm={canArchiveContact ? handleArchiveContact : undefined}
           onViewDetails={(contactId) => navigate(`/contacts/${contactId}`)}
-          onArchive={canUpdateContact ? handleToggleArchiveContact : undefined}
         />
       </div>
       <ListPaginationBar {...pagination} itemLabelVi="người liên hệ" itemLabelEn="contacts" />
@@ -527,7 +460,7 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
       {/* Custom Confirmation Dialog */}
       <Modal
         isOpen={confirmModal.isOpen}
-        onClose={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
+        onClose={() => { if (!isConfirming) setConfirmModal((prev) => ({ ...prev, isOpen: false })); }}
         title={confirmModal.title}
         size="sm"
       >
@@ -537,6 +470,7 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
             <Button
               variant="outline"
               onClick={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
+              disabled={isConfirming}
             >
               Hủy
             </Button>
@@ -544,6 +478,7 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
               variant="primary"
               className="bg-indigo-600 text-white font-medium px-4 py-1.5 rounded-lg hover:bg-indigo-700 text-xs transition-all"
               onClick={confirmModal.onConfirm}
+              disabled={isConfirming}
             >
               Xác nhận
             </Button>

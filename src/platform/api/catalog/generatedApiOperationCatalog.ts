@@ -1965,6 +1965,128 @@ export const API_OPERATION_CATALOG = {
       "quality.write-boundary-authorization"
     ]
   },
+  "archiveContact": {
+    "operationId": "archiveContact",
+    "moduleId": "contacts",
+    "boundedContext": "Contacts",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/contacts/{contactId}/archive",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "archiveContact"
+    },
+    "adapter": {
+      "file": "src/modules/contacts/infrastructure/http/ContactHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "ArchiveContactRequest",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "IdempotencyKey",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "If-Match",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "contactId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "ContactMutationResponse",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "contacts.delete",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "IF_MATCH_REQUIRED",
+      "audit": "IMMUTABLE_COMMAND_AUDIT",
+      "transactionBoundary": "SINGLE_CONTACT_AGGREGATE_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
   "archiveDealCommand": {
     "operationId": "archiveDealCommand",
     "moduleId": "deals",
@@ -6868,8 +6990,8 @@ export const API_OPERATION_CATALOG = {
     "kind": "COMMAND",
     "method": "POST",
     "path": "/contacts",
-    "contractStatus": "BLOCKED",
-    "blockingDecisionId": "DEC-MUTATION-RESULT-PROJECTION",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
     "generatedClient": {
       "id": "commercial",
       "file": "src/platform/api/generated/commercialApi.ts",
@@ -6878,10 +7000,10 @@ export const API_OPERATION_CATALOG = {
     },
     "adapter": {
       "file": "src/modules/contacts/infrastructure/http/ContactHttpApiAdapter.ts",
-      "status": "BLOCKED_BY_CONTRACT"
+      "status": "CONNECTED_BOUNDARY_DECLARED"
     },
     "request": {
-      "schema": null,
+      "schema": "CreateContactRequest",
       "parameters": [
         {
           "name": "Idempotency-Key",
@@ -6930,8 +7052,8 @@ export const API_OPERATION_CATALOG = {
       ]
     },
     "response": {
-      "schema": null,
-      "successStatus": null
+      "schema": "ContactMutationResponse",
+      "successStatus": "201"
     },
     "authorization": {
       "auth": "REQUIRED",
@@ -6941,10 +7063,10 @@ export const API_OPERATION_CATALOG = {
       "dataScope": "WORKSPACE"
     },
     "delivery": {
-      "idempotency": "UNRESOLVED_BLOCKED",
-      "concurrency": "UNRESOLVED_BLOCKED",
+      "idempotency": "REQUIRED",
+      "concurrency": "BACKEND_SERIALIZED",
       "audit": "IMMUTABLE_COMMAND_AUDIT",
-      "transactionBoundary": "UNRESOLVED_BLOCKED"
+      "transactionBoundary": "SINGLE_CONTACT_AGGREGATE_TRANSACTION"
     },
     "testGateIds": [
       "quality.api-contract",
@@ -26800,8 +26922,8 @@ export const API_OPERATION_CATALOG = {
     "kind": "COMMAND",
     "method": "PATCH",
     "path": "/contacts/{contactId}",
-    "contractStatus": "BLOCKED",
-    "blockingDecisionId": "DEC-MUTATION-RESULT-PROJECTION",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
     "generatedClient": {
       "id": "commercial",
       "file": "src/platform/api/generated/commercialApi.ts",
@@ -26810,10 +26932,10 @@ export const API_OPERATION_CATALOG = {
     },
     "adapter": {
       "file": "src/modules/contacts/infrastructure/http/ContactHttpApiAdapter.ts",
-      "status": "BLOCKED_BY_CONTRACT"
+      "status": "CONNECTED_BOUNDARY_DECLARED"
     },
     "request": {
-      "schema": null,
+      "schema": "UpdateContactRequest",
       "parameters": [
         {
           "name": "Idempotency-Key",
@@ -26884,8 +27006,8 @@ export const API_OPERATION_CATALOG = {
       ]
     },
     "response": {
-      "schema": null,
-      "successStatus": null
+      "schema": "ContactMutationResponse",
+      "successStatus": "200"
     },
     "authorization": {
       "auth": "REQUIRED",
@@ -26895,10 +27017,10 @@ export const API_OPERATION_CATALOG = {
       "dataScope": "WORKSPACE"
     },
     "delivery": {
-      "idempotency": "UNRESOLVED_BLOCKED",
-      "concurrency": "UNRESOLVED_BLOCKED",
+      "idempotency": "REQUIRED",
+      "concurrency": "IF_MATCH_REQUIRED",
       "audit": "IMMUTABLE_COMMAND_AUDIT",
-      "transactionBoundary": "UNRESOLVED_BLOCKED"
+      "transactionBoundary": "SINGLE_CONTACT_AGGREGATE_TRANSACTION"
     },
     "testGateIds": [
       "quality.api-contract",

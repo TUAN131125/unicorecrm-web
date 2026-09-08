@@ -875,7 +875,27 @@
             "$ref": "#/components/parameters/IdempotencyKeyHeader"
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateContactRequest"
+              }
+            }
+          }
+        },
         "responses": {
+          "201": {
+            "description": "Authoritative Contact outcome",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactMutationResponse"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Problem Details",
             "content": {
@@ -987,22 +1007,28 @@
             }
           }
         },
-        "x-contract-status": "BLOCKED",
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
         "x-module-owner": "contacts",
         "x-required-capability": "contacts.create",
         "x-resource-scope": "WORKSPACE",
         "x-data-scope": "WORKSPACE",
         "x-workspace-required": true,
         "x-actor-required": true,
-        "x-idempotency-policy": "UNRESOLVED_BLOCKED",
-        "x-concurrency-policy": "UNRESOLVED_BLOCKED",
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "BACKEND_SERIALIZED",
         "x-audit-requirement": "IMMUTABLE_COMMAND_AUDIT",
-        "x-event-outbox-expectation": "UNRESOLVED_BLOCKED",
-        "x-transaction-boundary": "UNRESOLVED_BLOCKED",
+        "x-event-outbox-expectation": "CONTACT_CREATED",
+        "x-transaction-boundary": "SINGLE_CONTACT_AGGREGATE_TRANSACTION",
         "x-error-codes": [
-          "CONTRACT_OPERATION_BLOCKED"
-        ],
-        "x-blocking-decision-id": "DEC-MUTATION-RESULT-PROJECTION"
+          "AUTHENTICATION_REQUIRED",
+          "ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "RATE_LIMITED",
+          "INTERNAL_ERROR"
+        ]
       }
     },
     "/contacts/{contactId}": {
@@ -1197,7 +1223,27 @@
             "$ref": "#/components/parameters/IfMatchHeader"
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateContactRequest"
+              }
+            }
+          }
+        },
         "responses": {
+          "200": {
+            "description": "Authoritative Contact outcome",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactMutationResponse"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Problem Details",
             "content": {
@@ -1309,22 +1355,93 @@
             }
           }
         },
-        "x-contract-status": "BLOCKED",
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
         "x-module-owner": "contacts",
         "x-required-capability": "contacts.update",
         "x-resource-scope": "RESOURCE",
         "x-data-scope": "WORKSPACE",
         "x-workspace-required": true,
         "x-actor-required": true,
-        "x-idempotency-policy": "UNRESOLVED_BLOCKED",
-        "x-concurrency-policy": "UNRESOLVED_BLOCKED",
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "IF_MATCH_REQUIRED",
         "x-audit-requirement": "IMMUTABLE_COMMAND_AUDIT",
-        "x-event-outbox-expectation": "UNRESOLVED_BLOCKED",
-        "x-transaction-boundary": "UNRESOLVED_BLOCKED",
+        "x-event-outbox-expectation": "CONTACT_UPDATED",
+        "x-transaction-boundary": "SINGLE_CONTACT_AGGREGATE_TRANSACTION",
         "x-error-codes": [
-          "CONTRACT_OPERATION_BLOCKED"
+          "AUTHENTICATION_REQUIRED",
+          "ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "RESOURCE_VERSION_CONFLICT",
+          "IDEMPOTENCY_KEY_REUSED",
+          "CONTACT_ALREADY_ARCHIVED",
+          "RATE_LIMITED",
+          "INTERNAL_ERROR"
+        ]
+      }
+    },
+    "/contacts/{contactId}/archive": {
+      "post": {
+        "operationId": "archiveContact",
+        "tags": ["Contacts"],
+        "summary": "Archive contact",
+        "parameters": [
+          { "$ref": "#/components/parameters/WorkspaceIdHeader" },
+          { "$ref": "#/components/parameters/RequestIdHeader" },
+          { "$ref": "#/components/parameters/CorrelationIdHeader" },
+          { "$ref": "#/components/parameters/IdempotencyKeyHeader" },
+          { "$ref": "#/components/parameters/IfMatchHeader" },
+          {
+            "name": "contactId",
+            "in": "path",
+            "required": true,
+            "schema": { "$ref": "#/components/schemas/EntityId" }
+          }
         ],
-        "x-blocking-decision-id": "DEC-MUTATION-RESULT-PROJECTION"
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ArchiveContactRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Authoritative Contact outcome",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ContactMutationResponse" }
+              }
+            }
+          },
+          "400": { "description": "Problem Details", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetails" } } } },
+          "401": { "description": "Problem Details", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetails" } } } },
+          "403": { "description": "Problem Details", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetails" } } } },
+          "404": { "description": "Problem Details", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetails" } } } },
+          "409": { "description": "Problem Details", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetails" } } } },
+          "422": { "description": "Problem Details", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetails" } } } },
+          "429": { "description": "Problem Details", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetails" } } } },
+          "500": { "description": "Problem Details", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetails" } } } }
+        },
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "contacts",
+        "x-required-capability": "contacts.delete",
+        "x-resource-scope": "RESOURCE",
+        "x-data-scope": "WORKSPACE",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "IF_MATCH_REQUIRED",
+        "x-audit-requirement": "IMMUTABLE_COMMAND_AUDIT",
+        "x-event-outbox-expectation": "CONTACT_ARCHIVED",
+        "x-transaction-boundary": "SINGLE_CONTACT_AGGREGATE_TRANSACTION",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED", "ACCESS_DENIED", "WORKSPACE_MISMATCH", "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED", "RESOURCE_VERSION_CONFLICT", "IDEMPOTENCY_KEY_REUSED",
+          "CONTACT_ALREADY_ARCHIVED", "RATE_LIMITED", "INTERNAL_ERROR"
+        ]
       }
     },
     "/credit-notes": {
@@ -49288,6 +49405,40 @@
           }
         }
       },
+      "ArchiveContactRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {}
+      },
+      "ContactMutationResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["contact"],
+        "properties": {
+          "contact": { "$ref": "#/components/schemas/ContactDocument" }
+        }
+      },
+      "ContactMutationResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "commandId", "correlationId", "aggregateId", "aggregateType", "version",
+          "occurredAt", "outcome", "result", "warnings", "emittedEventIds", "auditEvidenceIds"
+        ],
+        "properties": {
+          "commandId": { "type": "string", "minLength": 1, "maxLength": 160 },
+          "correlationId": { "$ref": "#/components/schemas/CorrelationId" },
+          "aggregateId": { "$ref": "#/components/schemas/EntityId" },
+          "aggregateType": { "type": "string", "const": "CONTACT" },
+          "version": { "$ref": "#/components/schemas/ResourceVersion" },
+          "occurredAt": { "$ref": "#/components/schemas/UtcDateTime" },
+          "outcome": { "type": "string", "enum": ["COMMITTED", "REPLAYED"] },
+          "result": { "$ref": "#/components/schemas/ContactMutationResult" },
+          "warnings": { "type": "array", "items": { "type": "string", "maxLength": 500 } },
+          "emittedEventIds": { "type": "array", "items": { "$ref": "#/components/schemas/EntityId" } },
+          "auditEvidenceIds": { "type": "array", "items": { "$ref": "#/components/schemas/EntityId" } }
+        }
+      },
       "ContactDocument": {
         "type": "object",
         "additionalProperties": true,
@@ -49451,6 +49602,9 @@
             "$ref": "#/components/schemas/UtcDateTime"
           },
           "updatedAt": {
+            "$ref": "#/components/schemas/UtcDateTime"
+          },
+          "archivedAt": {
             "$ref": "#/components/schemas/UtcDateTime"
           },
           "fullName": {
@@ -61033,7 +61187,9 @@
       "UpdateContactRequest": {
         "type": "object",
         "additionalProperties": false,
-        "required": [],
+        "required": [
+          "fullName"
+        ],
         "properties": {
           "salutation": {
             "type": "string",

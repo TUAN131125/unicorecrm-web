@@ -49,7 +49,7 @@ export interface ContactFormModalProps {
   onClose(): void;
   mode: ContactFormMode;
   contact?: Contact;
-  onSubmit(draft: ContactFormDraft): void;
+  onSubmit(draft: ContactFormDraft): void | Promise<void>;
 }
 
 function localDateTimeInput(value: Date): string {
@@ -134,6 +134,7 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit }: C
   const [draft, setDraft] = React.useState<ContactFormDraft>(draftFactory);
   const [showAdvanced, setShowAdvanced] = React.useState(mode === "edit");
   const [errors, setErrors] = React.useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
   const wasOpen = React.useRef(false);
 
   React.useEffect(() => {
@@ -167,16 +168,13 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit }: C
     });
   }, [mode]);
 
-  const submit = (event: React.FormEvent) => {
+  const submit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (isSubmitting) return;
     const nextErrors: Record<string, string> = {};
     if (!draft.name.trim()) nextErrors.name = t("contact.edit.validationNameRequired");
     if (draft.email && !/\S+@\S+\.\S+/.test(draft.email)) nextErrors.email = t("contact.edit.validationEmail");
-    if (!draft.email.trim() && !draft.phone.trim() && !draft.zaloId.trim()) {
-      nextErrors.phone = t("contact.edit.validationPhoneOrEmail");
-    }
-
-    if (mode === "create") {
+    if (mode === "create" && showAdvanced) {
       const missing = validateContactProgressiveProfile({
         fullName: draft.name,
         name: draft.name,
@@ -187,7 +185,7 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit }: C
         status: draft.status,
         nextFollowUpAt: draft.nextFollowUpAt,
         organizationName: draft.organizationName,
-      }, draft.status, showAdvanced ? "COMPLETE" : "QUICK");
+      }, draft.status, "COMPLETE");
       for (const field of missing) {
         if (field === "fullName") nextErrors.name ||= t("contact.edit.validationNameRequired");
         if (field === "contactChannel") nextErrors.phone ||= t("contact.edit.validationPhoneOrEmail");
@@ -203,23 +201,28 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit }: C
       return;
     }
 
-    onSubmit({
-      ...draft,
-      name: draft.name.trim(),
-      contactCode: draft.contactCode.trim(),
-      title: draft.title.trim(),
-      department: draft.department.trim(),
-      email: draft.email.trim(),
-      phone: draft.phone.trim(),
-      zaloId: draft.zaloId.trim(),
-      address: draft.address.trim(),
-      organizationName: draft.organizationName.trim(),
-      relationshipType: draft.relationshipType.trim(),
-      source: draft.source.trim(),
-      tagsString: draft.tagsString.trim(),
-      notes: draft.notes.trim(),
-      internalNotes: draft.internalNotes.trim(),
-    });
+    setIsSubmitting(true);
+    try {
+      await onSubmit({
+        ...draft,
+        name: draft.name.trim(),
+        contactCode: draft.contactCode.trim(),
+        title: draft.title.trim(),
+        department: draft.department.trim(),
+        email: draft.email.trim(),
+        phone: draft.phone.trim(),
+        zaloId: draft.zaloId.trim(),
+        address: draft.address.trim(),
+        organizationName: draft.organizationName.trim(),
+        relationshipType: draft.relationshipType.trim(),
+        source: draft.source.trim(),
+        tagsString: draft.tagsString.trim(),
+        notes: draft.notes.trim(),
+        internalNotes: draft.internalNotes.trim(),
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const showComplete = mode === "edit" || showAdvanced;
@@ -347,8 +350,8 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit }: C
         ) : null}
 
         <div className="crm-form-action-bar sticky bottom-0 z-10 flex justify-end gap-2 border-t border-slate-100 bg-white pt-4">
-          <Button variant="secondary" onClick={onClose} type="button">{t("common.cancel")}</Button>
-          <Button variant="primary" type="submit">{mode === "create" ? t("contactList.form.btnSave", "Lưu liên hệ") : t("common.save")}</Button>
+          <Button variant="secondary" onClick={onClose} type="button" disabled={isSubmitting}>{t("common.cancel")}</Button>
+          <Button variant="primary" type="submit" disabled={isSubmitting}>{mode === "create" ? t("contactList.form.btnSave", "Lưu liên hệ") : t("common.save")}</Button>
         </div>
       </form>
     </Modal>

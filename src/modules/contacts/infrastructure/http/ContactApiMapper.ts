@@ -66,6 +66,7 @@ export function mapContactDocument(value: ContactDocument): Contact {
     status: value.status,
     createdAt: value.createdAt,
     updatedAt: value.updatedAt,
+    archivedAt: value.archivedAt,
     resourceVersion: value.version,
   });
 }

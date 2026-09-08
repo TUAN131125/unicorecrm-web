@@ -4,7 +4,7 @@
   "openapiVersion": "3.1.0",
   "contractVersion": "0.23.20-contract.0",
   "specPath": "docs/api/openapi.json",
-  "specSha256": "854b4fe4ad0a67a32f6c9867fe9483d7deb033bc0bfca295064b9425f8e120f7",
+  "specSha256": "5fdb408b986cad455e09a4b385cf8666c9cbefa09af25f91119adb8a039bff22",
   "ownershipPath": "scripts/api/openapi/client-ownership.json",
   "coverageLedgerPath": "docs/api/operation-coverage-ledger.json",
   "breakingBaselinePath": "docs/api/openapi-breaking-baseline.json",
@@ -102,7 +102,7 @@
       "output": "src/platform/api/generated/commercialApi.ts",
       "className": "CommercialApiClient",
       "requestOptionsName": "CommercialRequestOptions",
-      "operationCount": 152
+      "operationCount": 153
     },
     {
       "id": "workspace-configuration",
@@ -403,6 +403,20 @@
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "access.configure"
+    },
+    {
+      "operationId": "archiveContact",
+      "method": "POST",
+      "path": "/contacts/{contactId}/archive",
+      "boundedContext": "Contacts",
+      "ownerModule": "contacts",
+      "generatedClientId": "commercial",
+      "generatedMethod": "archiveContact",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "contacts.delete"
     },
     {
       "operationId": "archiveDealCommand",
@@ -1000,10 +1014,10 @@
       "ownerModule": "contacts",
       "generatedClientId": "commercial",
       "generatedMethod": "createContact",
-      "idempotencyPolicy": "UNRESOLVED_BLOCKED",
-      "concurrencyPolicy": "UNRESOLVED_BLOCKED",
-      "contractStatus": "BLOCKED",
-      "blockingDecisionId": "DEC-MUTATION-RESULT-PROJECTION",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "BACKEND_SERIALIZED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
       "requiredCapability": "contacts.create"
     },
     {
@@ -3660,10 +3674,10 @@
       "ownerModule": "contacts",
       "generatedClientId": "commercial",
       "generatedMethod": "updateContact",
-      "idempotencyPolicy": "UNRESOLVED_BLOCKED",
-      "concurrencyPolicy": "UNRESOLVED_BLOCKED",
-      "contractStatus": "BLOCKED",
-      "blockingDecisionId": "DEC-MUTATION-RESULT-PROJECTION",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
       "requiredCapability": "contacts.update"
     },
     {

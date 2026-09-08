@@ -122,6 +122,13 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "archiveContact",
+      "method": "POST",
+      "path": "/contacts/{contactId}/archive",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "archiveDealCommand",
       "method": "POST",
       "path": "/deals/{dealId}/archive",
@@ -419,8 +426,8 @@
       "operationId": "createContact",
       "method": "POST",
       "path": "/contacts",
-      "status": "BLOCKED",
-      "blockingDecisionId": "DEC-MUTATION-RESULT-PROJECTION"
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
     },
     {
       "operationId": "createCrmObjectField",
@@ -1749,8 +1756,8 @@
       "operationId": "updateContact",
       "method": "PATCH",
       "path": "/contacts/{contactId}",
-      "status": "BLOCKED",
-      "blockingDecisionId": "DEC-MUTATION-RESULT-PROJECTION"
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
     },
     {
       "operationId": "updateCrmObjectField",
