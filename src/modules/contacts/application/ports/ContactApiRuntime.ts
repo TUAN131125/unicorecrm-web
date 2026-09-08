@@ -3,8 +3,9 @@ import type { Contact } from "../../domain/model/contact.types";
 
 export type ContactApiRuntimeMode = "demo" | "connected" | "test";
 
-export const CONTACT_CREATE_OPERATION = "contact.create";
-export const CONTACT_UPDATE_OPERATION = "contact.update";
+export const CONTACT_CREATE_OPERATION = "createContact";
+export const CONTACT_UPDATE_OPERATION = "updateContact";
+export const CONTACT_ARCHIVE_OPERATION = "archiveContact";
 
 export interface ContactRelationshipLinkedCounts {
   tasks: number;

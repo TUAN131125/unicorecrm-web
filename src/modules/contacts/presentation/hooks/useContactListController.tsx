@@ -448,8 +448,8 @@ export function useContactListController({
   };
 
   /**
-   * Contact record writes have no production contract yet (`createContact` /
-   * `updateContact` are BLOCKED, and no bulk Contact operation exists at all). In
+   * Contact Create has a production contract; `updateContact` remains BLOCKED and no
+   * bulk Contact operation exists. In
    * connected mode they fail closed inside the contacts projection, so the action is
    * refused up front with a user-readable reason.
    */

@@ -224,7 +224,6 @@ const blockedPresentationMutations: Record<string, readonly { symbol: string; bl
     { symbol: "updateContacts", blockedBy: "DEC-COMMAND-SEMANTICS / updateContact" },
   ],
   "src/modules/contacts/presentation/hooks/useContactListController.tsx": [
-    { symbol: "saveContactSnapshot", blockedBy: "DEC-COMMAND-SEMANTICS / createContact" },
     { symbol: "upsertContactOrganizationRelationshipWorkflow", blockedBy: "DEC-WORKFLOW-CONTACT-ORGANIZATION-RELATIONSHIP (WF-02)" },
   ],
   "src/modules/contacts/presentation/hooks/useContactDetailController.tsx": [
@@ -279,7 +278,7 @@ for (const item of Object.values(openApiDocument.paths)) {
     }
   }
 }
-for (const operationId of ["createContact", "updateContact", "createOrganization", "updateOrganization", "onboardExistingCustomer", "updateCustomerLifecycle", "completeCustomerOnboarding"]) {
+for (const operationId of ["updateContact", "createOrganization", "updateOrganization", "onboardExistingCustomer", "updateCustomerLifecycle", "completeCustomerOnboarding"]) {
   assert.equal(
     readyOperationIds.has(operationId),
     false,

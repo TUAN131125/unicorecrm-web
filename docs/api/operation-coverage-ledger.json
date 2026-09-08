@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "generatorVersion": 11,
   "contractVersion": "0.23.20-contract.0",
-  "specSha256": "5fdb408b986cad455e09a4b385cf8666c9cbefa09af25f91119adb8a039bff22",
+  "specSha256": "2e1c4887cc158e806d05c49e9e109ae3034d7db1b57a6f0d6ffc1fe7d15e886d",
   "generatedAt": "DETERMINISTIC",
   "coveragePolicy": {
     "ownerModule": "REQUIRED",
@@ -16,10 +16,10 @@
     "operations": 271,
     "ownedOperations": 271,
     "generatedClientMappings": 271,
-    "productionReadyOperations": 239,
-    "blockedOperations": 32,
-    "declaredConnectedBoundaries": 239,
-    "blockedByContract": 32,
+    "productionReadyOperations": 237,
+    "blockedOperations": 34,
+    "declaredConnectedBoundaries": 237,
+    "blockedByContract": 34,
     "pendingConnectedAdapters": 0
   },
   "operations": [
@@ -633,7 +633,7 @@
         "method": "archiveContact"
       },
       "httpAdapter": "src/modules/contacts/infrastructure/http/ContactHttpApiAdapter.ts",
-      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "adapterStatus": "BLOCKED_BY_CONTRACT",
       "testGateIds": [
         "quality.api-contract",
         "quality.application-composition",
@@ -648,13 +648,13 @@
         "quality.support-api-boundary",
         "quality.task-activity-api-boundary"
       ],
-      "idempotencyPolicy": "REQUIRED",
-      "concurrencyPolicy": "IF_MATCH_REQUIRED",
-      "requestBodySchema": "ArchiveContactRequest",
-      "responseSchema": "ContactMutationResponse",
-      "successStatus": "200",
-      "contractStatus": "PRODUCTION_CONTRACT_READY",
-      "blockingDecisionId": null,
+      "idempotencyPolicy": "UNRESOLVED_BLOCKED",
+      "concurrencyPolicy": "UNRESOLVED_BLOCKED",
+      "requestBodySchema": null,
+      "responseSchema": null,
+      "successStatus": null,
+      "contractStatus": "BLOCKED",
+      "blockingDecisionId": "DEC-C4-001",
       "requiredCapability": "contacts.delete",
       "resourceScope": "RESOURCE",
       "dataScope": "WORKSPACE"
@@ -8629,7 +8629,7 @@
         "method": "updateContact"
       },
       "httpAdapter": "src/modules/contacts/infrastructure/http/ContactHttpApiAdapter.ts",
-      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "adapterStatus": "BLOCKED_BY_CONTRACT",
       "testGateIds": [
         "quality.api-contract",
         "quality.application-composition",
@@ -8644,13 +8644,13 @@
         "quality.support-api-boundary",
         "quality.task-activity-api-boundary"
       ],
-      "idempotencyPolicy": "REQUIRED",
-      "concurrencyPolicy": "IF_MATCH_REQUIRED",
-      "requestBodySchema": "UpdateContactRequest",
-      "responseSchema": "ContactMutationResponse",
-      "successStatus": "200",
-      "contractStatus": "PRODUCTION_CONTRACT_READY",
-      "blockingDecisionId": null,
+      "idempotencyPolicy": "UNRESOLVED_BLOCKED",
+      "concurrencyPolicy": "UNRESOLVED_BLOCKED",
+      "requestBodySchema": null,
+      "responseSchema": null,
+      "successStatus": null,
+      "contractStatus": "BLOCKED",
+      "blockingDecisionId": "DEC-MUTATION-RESULT-PROJECTION",
       "requiredCapability": "contacts.update",
       "resourceScope": "RESOURCE",
       "dataScope": "WORKSPACE"

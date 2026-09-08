@@ -125,8 +125,8 @@
       "operationId": "archiveContact",
       "method": "POST",
       "path": "/contacts/{contactId}/archive",
-      "status": "PRODUCTION_CONTRACT_READY",
-      "blockingDecisionId": null
+      "status": "BLOCKED",
+      "blockingDecisionId": "DEC-C4-001"
     },
     {
       "operationId": "archiveDealCommand",
@@ -1756,8 +1756,8 @@
       "operationId": "updateContact",
       "method": "PATCH",
       "path": "/contacts/{contactId}",
-      "status": "PRODUCTION_CONTRACT_READY",
-      "blockingDecisionId": null
+      "status": "BLOCKED",
+      "blockingDecisionId": "DEC-MUTATION-RESULT-PROJECTION"
     },
     {
       "operationId": "updateCrmObjectField",

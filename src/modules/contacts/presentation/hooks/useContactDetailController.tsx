@@ -167,8 +167,8 @@ export function useContactDetailController(props: ContactDetailPageProps) {
 
   /**
    * Contact record writes (profile edits, timeline/activity projections, opportunity
-   * creation) have no production contract yet: `createContact`/`updateContact` are
-   * BLOCKED and WF-01 contact-opportunity-creation is blocked with
+   * creation) remain unavailable: `updateContact` is BLOCKED and WF-01
+   * contact-opportunity-creation is blocked with
    * `connectedFrontendCoordinatorAllowed: false`. In connected mode these fail closed
    * inside the contacts projection, so the action is refused up front with a
    * user-readable reason instead of throwing out of the event handler.

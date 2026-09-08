@@ -27,8 +27,8 @@ assert.equal(OPENAPI_SPEC_SHA256, artifacts.sha256);
 assert.equal(manifest.specSha256, artifacts.sha256);
 assert.equal(manifest.contractVersion, packageJson.version);
 assert.equal(coverage.summary.operations, 271);
-assert.equal(coverage.summary.productionReadyOperations, 239);
-assert.equal(coverage.summary.blockedOperations, 32);
+assert.equal(coverage.summary.productionReadyOperations, 237);
+assert.equal(coverage.summary.blockedOperations, 34);
 
 for (const [relativePath, expected] of [
   ["docs/api/openapi.sha256", artifacts.checksum],
@@ -120,7 +120,7 @@ assert.ok(findBreakingChanges(baseline, removedOperation).some((finding) => find
 
 assert.equal(packageJson.scripts["api:generate"], "node scripts/api/generate-openapi-client.mjs");
 assert.equal(packageJson.scripts["api:check"], "node scripts/quality/run-quality-pipeline.mjs --gate quality.api-contract");
-console.log(`OpenAPI/API contract: PASS (${operations.length} operations; 239 ready; 32 explicitly blocked; ${artifacts.sha256}).`);
+console.log(`OpenAPI/API contract: PASS (${operations.length} operations; ${coverage.summary.productionReadyOperations} ready; ${coverage.summary.blockedOperations} explicitly blocked; ${artifacts.sha256}).`);
 
 function collectOperations(document: OpenApiDocument): OperationRecord[] {
   const result: OperationRecord[] = [];
