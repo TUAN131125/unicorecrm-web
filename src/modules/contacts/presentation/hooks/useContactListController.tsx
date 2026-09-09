@@ -2,7 +2,7 @@ import { backendUnavailableMessage, formatOperationUnavailableError } from "@/sh
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Contact } from "../../domain/model/contact.types";
-import { archiveContactViaApi, createContactViaApi, isContactCreateAvailable, isContactRetentionUnavailable, isContactUpdateAvailable, restoreContactCommand } from "../../public/contacts";
+import { archiveContactViaApi, createContactViaApi, isContactCreateAvailable, isContactRetentionUnavailable, isContactUpdateAvailable } from "../../public/contacts";
 import type { CustomerDisplay as Customer } from "@/modules/customers";
 import { createDealCommand, Deal, DealStage } from "@/modules/deals";
 import { createTaskCommand } from "@/modules/tasks";
@@ -755,25 +755,13 @@ export function useContactListController({
       tx("contactList.confirm.archiveContactTitle", "Lưu trữ liên hệ"),
       tx("contactList.confirm.archiveContact", `Lưu trữ liên hệ "${contact.name}"? Hồ sơ và lịch sử vẫn được giữ lại.`, { name: contact.name }),
       async () => {
-        await archiveContactViaApi(contact.id);
+        if (contact.resourceVersion === undefined) throw new Error("CONTACT_RESOURCE_VERSION_REQUIRED");
+        await archiveContactViaApi({ contactId: contact.id, expectedVersion: contact.resourceVersion });
         setSelectedContactIds(prev => prev.filter(id => id !== contact.id));
         showToast(tx("contactList.toast.contactArchived", "Đã lưu trữ liên hệ; hồ sơ và lịch sử vẫn được giữ lại."));
       }
     );
     setActiveMenuContactId(null);
-  };
-  const handleToggleArchiveContact = async (contact: Contact) => {
-    if (refuseUnavailableContactRetention(contact.status === "archived"
-      ? (locale === "vi" ? "Khôi phục liên hệ" : "Restoring a Contact")
-      : (locale === "vi" ? "Lưu trữ liên hệ" : "Archiving a Contact"))) return;
-    const actorId = contact.ownerId || "current-user";
-    if (contact.status === "archived") {
-      await restoreContactCommand(contact.id, { actorId, actorName: resolveWorkspaceMemberName(actorId), reason: locale === "vi" ? "Khôi phục từ danh sách lưu trữ." : "Restored from archive." });
-      showToast(tx("contactList.toastMessage.restored", "Đã khôi phục liên hệ thành công"));
-      return;
-    }
-    await archiveContactViaApi(contact.id);
-    showToast(tx("contactList.toastMessage.archived", "Đã chuyển liên hệ vào danh sách lưu trữ"));
   };
   const handleBulkExport = () => {
     setIsHeaderMoreOpen(false);
@@ -1173,7 +1161,6 @@ export function useContactListController({
     handleEmail,
     handleCommitOpportunity,
     handleArchiveContact,
-    handleToggleArchiveContact,
     handleBulkExport,
     handleDownloadTemplate,
     filteredContacts,

@@ -41,7 +41,7 @@ import { getAuthSessionSnapshot } from "@/platform/identity-auth";
 import { listWorkspaceMemberDirectory, resolveWorkspaceMemberName } from "@/platform/member-directory";
 import { getDisplayOrdersForContact } from "@/modules/orders";
 import { useContacts } from "../hooks/useContacts";
-import { archiveContactViaApi, getContactPreference, isContactUpdateAvailable, isContactRetentionUnavailable, restoreContactCommand, setContactPreference, updateContactViaApi } from "../../public/contacts";
+import { archiveContactViaApi, getContactPreference, isContactUpdateAvailable, isContactRetentionUnavailable, setContactPreference, updateContactViaApi } from "../../public/contacts";
 import {
   createContactOpportunityCreationRuntime,
   executeContactOpportunityCreation,
@@ -174,7 +174,7 @@ export function useContactDetailController(props: ContactDetailPageProps) {
    * user-readable reason instead of throwing out of the event handler.
    */
   const contactUpdateAvailable = isContactUpdateAvailable();
-  const canUpdateContact = contactUpdateAvailable && access.canPerform("contacts", "update");
+  const canUpdateContact = contactUpdateAvailable && contact.status !== "archived" && access.canPerform("contacts", "update");
   const canArchiveContact = !isContactRetentionUnavailable() && access.canPerform("contacts", "delete");
   const contactOpportunityAvailable = !isContactOpportunityCreationUnavailable();
   const contactWritesUnavailable = !contactUpdateAvailable;
@@ -524,24 +524,16 @@ export function useContactDetailController(props: ContactDetailPageProps) {
 
   const confirmDeleteContact = async () => {
     if (refuseUnavailableContactRetention(locale === "vi" ? "Lưu trữ liên hệ" : "Archiving a Contact")) return;
-    await archiveContactViaApi(contact.id);
-    setShowDeleteModal(false);
-    navigate("/contacts");
+    try {
+      await archiveContactViaApi({ contactId: contact.id, expectedVersion: requireContactVersion(contact) });
+      setShowDeleteModal(false);
+      navigate("/contacts");
+    } catch (error) {
+      showToast(formatOperationUnavailableError(error, { locale }));
+      throw error;
+    }
   };
 
-  const handleArchiveToggle = async () => {
-    if (refuseUnavailableContactRetention(contact.status === "archived"
-      ? (locale === "vi" ? "Khôi phục liên hệ" : "Restoring a Contact")
-      : (locale === "vi" ? "Lưu trữ liên hệ" : "Archiving a Contact"))) return;
-    const actorId = currentMemberId || contact.ownerId || "current-user";
-    if (contact.status === "archived") {
-      await restoreContactCommand(contact.id, { actorId, actorName: resolveWorkspaceMemberName(actorId), reason: locale === "vi" ? "Khôi phục từ lưu trữ." : "Restored from archive." });
-      showToast(tx("contactDetail.toast.unarchived", "Đã khôi phục hồ sơ liên hệ."));
-      return;
-    }
-    await archiveContactViaApi(contact.id);
-    showToast(tx("contactDetail.toast.archived", "Đã di chuyển hồ sơ vào mục lưu trữ thành công."));
-  };
 
   // Quote actions operate on canonical Quote records linked to the same relationship.
   const latestDealStage = [...affiliatedOpportunities]
@@ -1248,7 +1240,6 @@ export function useContactDetailController(props: ContactDetailPageProps) {
     handleSaveContact,
     handleCreateOpportunity,
     confirmDeleteContact,
-    handleArchiveToggle,
     latestDealStage,
     handleRequestCreateQuote,
     handleCompleteTask,
@@ -1275,4 +1266,9 @@ export function useContactDetailController(props: ContactDetailPageProps) {
     relationshipActivities,
     careTimelineItems,
   };
+}
+
+function requireContactVersion(contact: Contact): number {
+  if (contact.resourceVersion === undefined) throw new Error("CONTACT_RESOURCE_VERSION_REQUIRED");
+  return contact.resourceVersion;
 }

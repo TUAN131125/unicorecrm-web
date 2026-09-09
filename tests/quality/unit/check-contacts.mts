@@ -19,7 +19,7 @@ import {
 import type { Contact } from "@/modules/contacts";
 import { InMemoryContactRepository } from "@/modules/contacts/infrastructure/InMemoryContactRepository";
 import { configureContactApplication, resetContactApplication } from "@/modules/contacts/application/composition/contactApplicationServices";
-import { createContactViaApi, updateContactViaApi } from "@/modules/contacts/application/commands/contactApiCommands";
+import { archiveContactViaApi, createContactViaApi, updateContactViaApi } from "@/modules/contacts/application/commands/contactApiCommands";
 import { ApplicationError } from "@/shared/domain";
 import { mapContactDocument } from "@/modules/contacts/infrastructure/http/ContactApiMapper";
 import { CONTACT_MODULE_MANIFEST } from "@/modules/contacts/manifest";
@@ -60,6 +60,7 @@ const createRepository = new InMemoryContactRepository([], {
 const authoritativeCreated = { ...createContact("backend-contact-1", "Authoritative Person", "active", "member-1", "0901000099"), resourceVersion: 7 };
 let capturedCreate: unknown;
 let capturedUpdate: unknown;
+let capturedArchive: unknown;
 configureContactApplication({
   repository: createRepository,
   preferences: { get: (_key, fallback) => fallback, set: () => undefined, remove: () => undefined },
@@ -70,7 +71,11 @@ configureContactApplication({
       async get() { return authoritativeCreated; },
       async getRelationshipSummary() { throw new Error("NOT_USED"); },
     },
-    commands: { async create(input) { capturedCreate = input; return authoritativeCreated; }, async update(input) { capturedUpdate = input; return { ...authoritativeCreated, name: "Updated Authoritative Person", fullName: "Updated Authoritative Person", resourceVersion: 8 }; } },
+    commands: {
+      async create(input) { capturedCreate = input; return authoritativeCreated; },
+      async update(input) { capturedUpdate = input; return { ...authoritativeCreated, name: "Updated Authoritative Person", fullName: "Updated Authoritative Person", resourceVersion: 8 }; },
+      async archive(input) { capturedArchive = input; return { ...authoritativeCreated, status: "archived", archivedAt: "2026-09-09T02:00:00.000Z", resourceVersion: 9 }; },
+    },
   },
 });
 const projectedCreate = await createContactViaApi({ fullName: "  Authoritative Person  ", ownerId: "member-1", mobilePhone: "0901000099" });
@@ -84,6 +89,10 @@ assert.deepEqual(capturedUpdate, { contactId: "backend-contact-1", expectedVersi
 assert.equal(projectedUpdate.resourceVersion, 8, "Update must preserve the backend version.");
 assert.equal(createRepository.list().length, 1, "Update must project the authoritative Contact exactly once without duplication.");
 assert.equal(createRepository.getById("backend-contact-1")?.fullName, "Updated Authoritative Person");
+const projectedArchive = await archiveContactViaApi({ contactId: "backend-contact-1", expectedVersion: 8 });
+assert.deepEqual(capturedArchive, { contactId: "backend-contact-1", expectedVersion: 8 });
+assert.equal(projectedArchive.resourceVersion, 9, "Archive must preserve the backend version.");
+assert.equal(createRepository.getById("backend-contact-1")?.status, "archived", "Archive must project the authoritative lifecycle exactly once.");
 resetContactApplication();
 
 const mappedRead = mapContactDocument({
@@ -110,7 +119,7 @@ configureContactApplication({
       async get() { throw new Error("NOT_USED"); },
       async getRelationshipSummary() { throw new Error("NOT_USED"); },
     },
-    commands: { async create() { throw new ApplicationError({ code: "ACCESS_DENIED", message: "denied", status: 403 }); }, async update() { throw new Error("NOT_USED"); } },
+    commands: { async create() { throw new ApplicationError({ code: "ACCESS_DENIED", message: "denied", status: 403 }); }, async update() { throw new Error("NOT_USED"); }, async archive() { throw new Error("NOT_USED"); } },
   },
 });
 await assert.rejects(() => createContactViaApi({ fullName: "Retry Person" }), (error: unknown) => error instanceof ApplicationError && error.code === "ACCESS_DENIED");

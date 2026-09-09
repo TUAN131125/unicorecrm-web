@@ -4,7 +4,7 @@
   "openapiVersion": "3.1.0",
   "contractVersion": "0.23.20-contract.0",
   "specPath": "docs/api/openapi.json",
-  "specSha256": "ce861b542f357e0ef45b81f342f584650de888718891d58a52b00f9674c481d2",
+  "specSha256": "d118bb2b3629bcd5ddd7f04e6d3c60da409847df76bd3ad28f74e6826535ec43",
   "ownershipPath": "scripts/api/openapi/client-ownership.json",
   "coverageLedgerPath": "docs/api/operation-coverage-ledger.json",
   "breakingBaselinePath": "docs/api/openapi-breaking-baseline.json",
@@ -412,10 +412,10 @@
       "ownerModule": "contacts",
       "generatedClientId": "commercial",
       "generatedMethod": "archiveContact",
-      "idempotencyPolicy": "UNRESOLVED_BLOCKED",
-      "concurrencyPolicy": "UNRESOLVED_BLOCKED",
-      "contractStatus": "BLOCKED",
-      "blockingDecisionId": "DEC-C4-001",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
       "requiredCapability": "contacts.delete"
     },
     {

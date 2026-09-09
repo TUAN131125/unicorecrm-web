@@ -1,9 +1,9 @@
-import type { CommercialApiClient, ContactMutationResponse, CreateContactRequest, UpdateContactRequest } from "@/platform/api/generated/commercialApi";
-import type { ContactCreateCommand, ContactCreateCommandPort, ContactUpdateCommand } from "../../application/ports/ContactApiRuntime";
+import type { ArchiveContactRequest, CommercialApiClient, ContactMutationResponse, CreateContactRequest, UpdateContactRequest } from "@/platform/api/generated/commercialApi";
+import type { ContactArchiveCommand, ContactCommandPort, ContactCreateCommand, ContactUpdateCommand } from "../../application/ports/ContactApiRuntime";
 import type { Contact } from "../../domain/model/contact.types";
 import { mapContactDocument } from "./ContactApiMapper";
 
-export class ContactHttpCommandAdapter implements ContactCreateCommandPort {
+export class ContactHttpCommandAdapter implements ContactCommandPort {
   constructor(private readonly api: CommercialApiClient) {}
 
   async create(input: ContactCreateCommand): Promise<Contact> {
@@ -13,6 +13,11 @@ export class ContactHttpCommandAdapter implements ContactCreateCommandPort {
 
   async update(input: ContactUpdateCommand): Promise<Contact> {
     const response = await this.api.updateContact<ContactMutationResponse>(input.contactId, toRequest(input) satisfies UpdateContactRequest, options(input.expectedVersion));
+    return result(response);
+  }
+
+  async archive(input: ContactArchiveCommand): Promise<Contact> {
+    const response = await this.api.archiveContact<ContactMutationResponse>(input.contactId, {} satisfies ArchiveContactRequest, options(input.expectedVersion));
     return result(response);
   }
 

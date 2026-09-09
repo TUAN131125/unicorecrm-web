@@ -1,6 +1,6 @@
 import { invalidateModuleQueries, runBackendProjection } from "@/shared/application";
 import type { Contact } from "../../domain/model/contact.types";
-import type { ContactCreateCommand, ContactUpdateCommand } from "../ports/ContactApiRuntime";
+import type { ContactArchiveCommand, ContactCreateCommand, ContactUpdateCommand } from "../ports/ContactApiRuntime";
 import { getContactApiRuntime, contactRepository } from "../composition/contactApplicationServices";
 import { saveContact } from "./contactRepositoryCommands";
 
@@ -16,9 +16,10 @@ export async function updateContactViaApi(input: ContactUpdateCommand): Promise<
   return updated;
 }
 
-export async function archiveContactViaApi(contactId: string): Promise<Contact> {
-  void contactId;
-  throw new Error("CONTACT_COMMANDS_UNAVAILABLE");
+export async function archiveContactViaApi(input: ContactArchiveCommand): Promise<Contact> {
+  const archived = await requireCommands().archive(input);
+  await project(archived, "contact.archive");
+  return archived;
 }
 
 function requireCommands() {

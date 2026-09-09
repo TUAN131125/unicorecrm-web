@@ -27,8 +27,8 @@ assert.equal(OPENAPI_SPEC_SHA256, artifacts.sha256);
 assert.equal(manifest.specSha256, artifacts.sha256);
 assert.equal(manifest.contractVersion, packageJson.version);
 assert.equal(coverage.summary.operations, 271);
-assert.equal(coverage.summary.productionReadyOperations, 238);
-assert.equal(coverage.summary.blockedOperations, 33);
+assert.equal(coverage.summary.productionReadyOperations, 239);
+assert.equal(coverage.summary.blockedOperations, 32);
 
 for (const [relativePath, expected] of [
   ["docs/api/openapi.sha256", artifacts.checksum],

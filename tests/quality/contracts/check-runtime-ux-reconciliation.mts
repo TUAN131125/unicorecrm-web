@@ -32,11 +32,12 @@ assert.match(connectedContacts, /commands: new ContactHttpCommandAdapter\(api\)/
 const contactCommandAdapter = read("src/modules/contacts/infrastructure/http/ContactHttpCommandAdapter.ts");
 assert.match(contactCommandAdapter, /api\.createContact/u, "The connected Contact command boundary must retain admitted Create.");
 assert.match(contactCommandAdapter, /api\.updateContact/u, "The connected Contact command boundary must expose admitted Update.");
-assert.doesNotMatch(contactCommandAdapter, /ArchiveContactRequest|api\.archiveContact/u, "The connected Contact command boundary must not compile against blocked Archive.");
+assert.match(contactCommandAdapter, /api\.archiveContact/u, "The connected Contact command boundary must expose admitted Archive.");
+assert.match(contactCommandAdapter, /options\(input\.expectedVersion\)/u, "Contact Archive must send the authoritative resource version.");
 const contactPublicApi = read("src/modules/contacts/public/contacts.ts");
 assert.match(contactPublicApi, /isContactOperationReady\(CONTACT_CREATE_OPERATION\)[\s\S]*Boolean\(getContactApiRuntime\(\)\.commands\)/u, "Contact Create availability must require both canonical admission and runtime support.");
 assert.match(contactPublicApi, /isContactOperationReady\(CONTACT_UPDATE_OPERATION\)/u, "Contact Update availability must remain independently authority-gated.");
-assert.match(contactPublicApi, /!isContactOperationReady\(CONTACT_ARCHIVE_OPERATION\)/u, "Contact Archive availability must fail closed when canonical authority is blocked.");
+assert.match(contactPublicApi, /!isContactOperationReady\(CONTACT_ARCHIVE_OPERATION\)/u, "Contact Archive availability must remain independently authority-gated.");
 const contactOpenApi = JSON.parse(read("docs/api/openapi.json")) as { paths: Record<string, Record<string, { operationId?: string; "x-contract-status"?: string }>> };
 const contactStatuses = new Map<string, string>();
 for (const pathItem of Object.values(contactOpenApi.paths)) {
@@ -46,7 +47,11 @@ for (const pathItem of Object.values(contactOpenApi.paths)) {
 }
 assert.equal(contactStatuses.get("createContact"), "PRODUCTION_CONTRACT_READY");
 assert.equal(contactStatuses.get("updateContact"), "PRODUCTION_CONTRACT_READY");
-assert.equal(contactStatuses.get("archiveContact"), "BLOCKED");
+assert.equal(contactStatuses.get("archiveContact"), "PRODUCTION_CONTRACT_READY");
+const contactDetailController = read("src/modules/contacts/presentation/hooks/useContactDetailController.tsx");
+const contactListController = read("src/modules/contacts/presentation/hooks/useContactListController.tsx");
+assert.doesNotMatch(`${contactDetailController}\n${contactListController}`, /restoreContactCommand/u, "C4 must not expose blocked Contact Restore.");
+assert.match(contactDetailController, /access\.canPerform\("contacts", "delete"\)/u, "Contact Archive authorization must require contacts.delete.");
 const contactList = read("src/modules/contacts/presentation/views/ContactListView.tsx");
 assert.match(contactList, /hidden: !canCreateContact/u, "Unavailable Contact create/import actions must not render.");
 assert.match(contactList, /canUpdateContact && <ContactBulkChangeOwnerModal/u, "Unavailable Contact update must not expose its bulk owner mutation.");
