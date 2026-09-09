@@ -49,5 +49,15 @@ assert.equal(contactStatuses.get("archiveContact"), "BLOCKED");
 const contactList = read("src/modules/contacts/presentation/views/ContactListView.tsx");
 assert.match(contactList, /hidden: !canCreateContact/u, "Unavailable Contact create/import actions must not render.");
 assert.match(contactList, /canUpdateContact && <ContactBulkChangeOwnerModal/u, "Unavailable Contact update must not expose its bulk owner mutation.");
+const contactDetailPage = read("src/modules/contacts/presentation/pages/ContactDetailPage.tsx");
+assert.match(contactDetailPage, /getContactDetailResource\(contactId/u, "Contact Detail must load the authoritative detail operation instead of relying on list cache.");
+assert.match(contactDetailPage, /failure\?\.category === "AUTHORIZATION"/u, "Contact Detail must distinguish access denial from not-found.");
+assert.match(contactDetailPage, /failure\?\.category === "NOT_FOUND"/u, "Contact Detail must expose deterministic not-found state.");
+assert.match(contactDetailPage, /detailQuery\.refresh\(\)/u, "Retryable Contact Detail failures must expose refresh.");
+const contactCollectionHook = read("src/modules/contacts/presentation/hooks/useContacts.ts");
+assert.match(contactCollectionHook, /query\.error\?\.category === "AUTHORIZATION"[\s\S]*replaceContacts\(\[\]\)/u, "A denied connected list read must not expose stale cached Contacts as successful data.");
+const contactReadAdapter = read("src/modules/contacts/infrastructure/http/ContactHttpApiAdapter.ts");
+assert.match(contactReadAdapter, /listContacts<ContactList>\(\{\}, signal\)/u, "Contact list must serialize only the currently admitted empty query contract.");
+assert.doesNotMatch(contactReadAdapter, /search:|sort:|cursor:|limit:/u, "Contact list must not simulate unsupported authoritative query semantics.");
 
 console.log("Connected runtime UX reconciliation: PASS");

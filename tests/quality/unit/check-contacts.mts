@@ -21,6 +21,7 @@ import { InMemoryContactRepository } from "@/modules/contacts/infrastructure/InM
 import { configureContactApplication, resetContactApplication } from "@/modules/contacts/application/composition/contactApplicationServices";
 import { createContactViaApi } from "@/modules/contacts/application/commands/contactApiCommands";
 import { ApplicationError } from "@/shared/domain";
+import { mapContactDocument } from "@/modules/contacts/infrastructure/http/ContactApiMapper";
 import { CONTACT_MODULE_MANIFEST } from "@/modules/contacts/manifest";
 import {
   createContactPresentationSnapshot,
@@ -78,6 +79,19 @@ assert.equal(createRepository.list().length, 1, "Create must project the backend
 assert.equal(createRepository.getById("backend-contact-1")?.resourceVersion, 7);
 assert.deepEqual(capturedCreate, { fullName: "  Authoritative Person  ", ownerId: "member-1", mobilePhone: "0901000099" });
 resetContactApplication();
+
+const mappedRead = mapContactDocument({
+  id: "backend-read-1",
+  workspaceId: "workspace-read",
+  fullName: "Backend Read",
+  status: "active",
+  version: 11,
+  createdAt: "2026-09-09T00:00:00.000Z",
+  updatedAt: "2026-09-09T01:00:00.000Z",
+});
+assert.equal(mappedRead.id, "backend-read-1", "Read mapping must preserve backend identity.");
+assert.equal(mappedRead.resourceVersion, 11, "Read mapping must preserve backend resourceVersion.");
+assert.equal(mappedRead.workspaceId, "workspace-read");
 
 const failedRepository = new InMemoryContactRepository([], { publish: () => undefined, subscribe: () => () => undefined });
 configureContactApplication({

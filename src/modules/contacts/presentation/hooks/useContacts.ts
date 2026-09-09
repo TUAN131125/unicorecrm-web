@@ -17,9 +17,14 @@ export function useContacts(options: { loadAuthoritative?: boolean } = {}) {
 
   useEffect(() => subscribeToContacts(setContactsState), []);
 
+  const accessDenied = query.error?.category === "AUTHORIZATION";
+  useEffect(() => {
+    if (accessDenied) replaceContacts([]);
+  }, [accessDenied]);
+
   const setContacts = (updater: ContactCollectionUpdater) => {
     updateContacts(updater);
   };
 
-  return { contacts, setContacts, query };
+  return { contacts: accessDenied ? [] : contacts, setContacts, query };
 }

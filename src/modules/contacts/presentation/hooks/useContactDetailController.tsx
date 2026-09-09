@@ -99,7 +99,7 @@ export function useContactDetailController(props: ContactDetailPageProps) {
   const shippingSnapshot = useSubscribableSnapshot(getShippingSnapshot, subscribeToShipping);
   const returnSnapshot = useSubscribableSnapshot(getReturnsSnapshot, subscribeToReturns);
   const navigate = useNavigate();
-  const { contacts, setContacts, query: contactQuery } = useContacts();
+  const { contacts, setContacts, query: contactQuery } = useContacts({ loadAuthoritative: false });
   const location = useLocation();
   const { contactId } = useParams<{ contactId: string }>();
 
