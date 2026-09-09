@@ -26,7 +26,6 @@ interface ContactActionMenuProps {
   onPrint?: (contact: Contact) => void;
   onExport?: (contact: Contact) => void;
   onOpenDeleteConfirm?: (contact: Contact) => void;
-  onArchive?: (contact: Contact) => void;
 }
 
 export const ContactActionMenu: React.FC<ContactActionMenuProps> = ({
@@ -47,8 +46,7 @@ export const ContactActionMenu: React.FC<ContactActionMenuProps> = ({
   onDuplicate,
   onPrint,
   onExport,
-  onOpenDeleteConfirm,
-  onArchive
+  onOpenDeleteConfirm
 }) => {
   const { t, tx } = useI18n();
   const [showConfirmCall, setShowConfirmCall] = useState(false);
@@ -232,16 +230,7 @@ export const ContactActionMenu: React.FC<ContactActionMenuProps> = ({
       {/* 3. Archival / Destructive actions */}
       <div className="border-t border-slate-100 my-1" />
 
-      {onArchive && (
-        <MenuItemButton 
-          onClick={(e) => handleActionClick(e, onArchive)}
-          icon={<Archive size={13} className="text-amber-500" />}
-        >
-          {isArchived ? tx("contactActions.unarchive", "Mở khóa lưu trữ liên hệ") : tx("contactActions.archive", "Đưa vào lưu trữ")}
-        </MenuItemButton>
-      )}
-
-      {onOpenDeleteConfirm && (
+      {!isArchived && onOpenDeleteConfirm && (
         <MenuItemButton 
           variant="danger"
           onClick={(e) => handleActionClick(e, onOpenDeleteConfirm)}

@@ -14,12 +14,9 @@ interface ContactCardListProps {
   onSelectRow: (id: string, checked: boolean) => void;
   openRowActionId: string | null;
   setOpenRowActionId: (id: string | null) => void;
-  onCall: (contact: Contact) => void;
-  onEmail: (contact: Contact) => void;
   onOpenOpportunityWizard?: (contact: Contact) => void;
   onOpenDeleteConfirm?: (contact: Contact) => void;
   onViewDetails: (contactId: string) => void;
-  onArchive?: (contact: Contact) => void;
 }
 
 export const ContactCardList: React.FC<ContactCardListProps> = ({
@@ -28,12 +25,9 @@ export const ContactCardList: React.FC<ContactCardListProps> = ({
   onSelectRow,
   openRowActionId,
   setOpenRowActionId,
-  onCall,
-  onEmail,
   onOpenOpportunityWizard,
   onOpenDeleteConfirm,
-  onViewDetails,
-  onArchive
+  onViewDetails
 }) => {
   const { t, tx, locale } = useI18n();
   const [rowActionAnchorEl, setRowActionAnchorEl] = React.useState<HTMLElement | null>(null);
@@ -204,11 +198,8 @@ export const ContactCardList: React.FC<ContactCardListProps> = ({
               setRowActionAnchorEl(null);
             }}
             onViewDetails={onViewDetails}
-            onCall={onCall}
-            onEmail={onEmail}
             onOpenOpportunityWizard={onOpenOpportunityWizard}
             onOpenDeleteConfirm={onOpenDeleteConfirm}
-            onArchive={onArchive}
           />
         )}
       </RowActionPortal>

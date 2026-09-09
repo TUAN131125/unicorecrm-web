@@ -1,6 +1,6 @@
 import { AnimatePresence } from "motion/react";
 import { User, Sparkles, Trash2, Pencil, Plus, RefreshCw } from "lucide-react";
-import { Button, ConfirmDialog, IconButton, Modal } from "@/shared/components/ui";
+import { ConfirmDialog, IconButton } from "@/shared/components/ui";
 import { PageHeaderActions } from "@/components/crm/PageHeaderActions";
 import { SavedViewNameModal } from "@/components/crm/SavedViewNameModal";
 import { ListPageFrame, ListPageHeader, ListPaginationBar, ListStatePanel, ListToolbar, useListPagination } from "@/components/crm/list-archetype";
@@ -15,7 +15,6 @@ import { CONTACT_COLUMNS_METADATA } from "../model/contactColumns";
 import { ContactSavedViewSelector } from "../list/ContactSavedViewSelector";
 import { ContactColumnSettingsDrawer } from "../list/ContactColumnSettingsDrawer";
 import { ContactFilterPopover } from "../list/ContactFilterPopover";
-import { ContactBulkChangeOwnerModal } from "../list/ContactBulkChangeOwnerModal";
 import { ContactTopActionMenu } from "../list/ContactTopActionMenu";
 import type { useContactListController } from "../hooks/useContactListController";
 
@@ -24,8 +23,9 @@ type ContactListViewController = ReturnType<typeof useContactListController>;
 export function ContactListView({ controller }: { controller: ContactListViewController }) {
   const {
     canCreateContact,
-    canUpdateContact,
     canArchiveContact,
+    canReadContacts,
+    contactQuery,
     contactOpportunityAvailable,
     customers,
     deals,
@@ -104,8 +104,6 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
     setSelectedContactIds,
     openRowActionId,
     setOpenRowActionId,
-    showBulkReassignModal,
-    setShowBulkReassignModal,
     getCurrentViewSnapshot,
     applySavedPresentationState,
     getActiveCustomView,
@@ -122,38 +120,17 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
     handleColumnReset,
     handleSelectRow,
     handleSelectAll,
-    handleBulkChangeOwner,
-    handleBulkChangeStatus,
-    confirmModal,
-    isConfirming,
-    setConfirmModal,
-    promptModal,
-    setPromptModal,
-    requestConfirmation,
-    requestPrompt,
-    handleBulkDelete,
-    handleBulkArchive,
-    handleBulkAddTags,
-    handleBulkDoNotContact,
-    activeMenuContactId,
-    setActiveMenuContactId,
     toastMessage,
     setToastMessage,
     dropdownRef,
     showAddForm,
     setShowAddForm,
-    isHeaderMenuOpen,
-    setIsHeaderMenuOpen,
     selectedContactForDeal,
     setSelectedContactForDeal,
     showToast,
     handleSaveContact,
-    handleCall,
-    handleEmail,
     handleCommitOpportunity,
     handleArchiveContact,
-    handleBulkExport,
-    handleDownloadTemplate,
     filteredContacts,
     sortedContacts,
     statsSummary,
@@ -180,13 +157,6 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
           <PageHeaderActions
             actions={[
               {
-                id: "import-contact",
-                label: t("contactList.actions.import"),
-                onClick: () => showToast(t("common.comingSoon")),
-                variant: "secondary",
-                hidden: !canCreateContact,
-              },
-              {
                 id: "add-contact",
                 label: t("contactList.actions.addContact"),
                 icon: <Plus size={14} />,
@@ -197,36 +167,9 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
             ]}
             moreActions={
               <ContactTopActionMenu
-                selectedCount={selectedContactIds.length}
-                writesAvailable={false}
-                importsAvailable={false}
-                onBulkChangeOwner={() => setShowBulkReassignModal(true)}
-                onBulkAddTags={handleBulkAddTags}
-                onBulkArchive={handleBulkArchive}
-                onBulkDelete={handleBulkDelete}
-                onExportAll={() => {
-                  const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(contacts, null, 2));
-                  const downloadAnchor = document.createElement('a');
-                  downloadAnchor.setAttribute("href", dataStr);
-                  downloadAnchor.setAttribute("download", `UnicoreCRM-All-Contacts-Export-${new Date().toISOString().substring(0, 10)}.json`);
-                  document.body.appendChild(downloadAnchor);
-                  downloadAnchor.click();
-                  downloadAnchor.remove();
-                  showToast(tx("contactList.toastMessage.exportedAll", "Đã xuất dữ liệu toàn bộ thành công!"));
-                }}
+                canReadContacts={canReadContacts}
                 onPrintList={() => {
                   window.print();
-                }}
-                onManageSharing={() => {
-                  showToast(tx("contactList.toastMessage.sharingInit", "Đang mở bảng quản lý phân quyền chia sẻ..."));
-                }}
-                onManageTags={() => {
-                  showToast(tx("contactList.toastMessage.tagsInit", "Tính năng quản lý danh mục thẻ đang khởi tạo!"));
-                }}
-                onOpenTrash={() => showToast(t("common.comingSoon"))}
-                onDownloadImportTemplate={handleDownloadTemplate}
-                onAdvancedImport={() => {
-                  showToast(tx("contactList.toastMessage.importInit", "Tính năng nhập liệu đang được khởi tạo!"));
                 }}
               />
             }
@@ -331,13 +274,13 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
         rightSlot={
           <button
             type="button"
-            onClick={() => {
-              showToast(tx("contactList.toastMessage.refreshed", "Đã làm mới dữ liệu"));
-            }}
+            onClick={() => void contactQuery.refresh()}
+            disabled={contactQuery.refreshing}
+            aria-label={tx("contactList.toolbar.refresh", "Làm mới")}
             className="p-2.5 text-slate-600 hover:text-violet-700 bg-white hover:bg-slate-50 rounded-xl border border-slate-200 shadow-xs transition-all flex items-center justify-center h-10 w-10 cursor-pointer"
             title={tx("contactList.toolbar.refresh", "Làm mới")}
           >
-            <RefreshCw size={14} />
+            <RefreshCw size={14} className={contactQuery.refreshing ? "animate-spin" : undefined} />
           </button>
         }
       />
@@ -382,8 +325,6 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
           onSelectRow={handleSelectRow}
           openRowActionId={openRowActionId}
           setOpenRowActionId={setOpenRowActionId}
-          onCall={handleCall}
-          onEmail={handleEmail}
           onOpenOpportunityWizard={contactOpportunityAvailable ? (c) => setSelectedContactForDeal(c) : undefined}
           onOpenDeleteConfirm={canArchiveContact ? handleArchiveContact : undefined}
           onViewDetails={(contactId) => navigate(`/contacts/${contactId}`)}
@@ -402,8 +343,6 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
           onColumnReset={handleColumnReset}
           openRowActionId={openRowActionId}
           setOpenRowActionId={setOpenRowActionId}
-          onCall={handleCall}
-          onEmail={handleEmail}
           onOpenOpportunityWizard={contactOpportunityAvailable ? (c) => setSelectedContactForDeal(c) : undefined}
           onOpenDeleteConfirm={canArchiveContact ? handleArchiveContact : undefined}
           onViewDetails={(contactId) => navigate(`/contacts/${contactId}`)}
@@ -423,13 +362,6 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
         onResetDefault={handleResetColumnSettings}
       />
 
-
-      {canUpdateContact && <ContactBulkChangeOwnerModal
-        show={showBulkReassignModal}
-        onClose={() => setShowBulkReassignModal(false)}
-        selectedCount={selectedContactIds.length}
-        onConfirm={handleBulkChangeOwner}
-      />}
 
       {/* G. WIZARD MODAL 1: GENERATE SALES OPPORTUNITY */}
       {contactOpportunityAvailable && <ContactOpportunityModal
@@ -461,69 +393,6 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
           </div>
         )}
       </AnimatePresence>
-
-      {/* Custom Confirmation Dialog */}
-      <Modal
-        isOpen={confirmModal.isOpen}
-        onClose={() => { if (!isConfirming) setConfirmModal((prev) => ({ ...prev, isOpen: false })); }}
-        title={confirmModal.title}
-        size="sm"
-      >
-        <div className="space-y-4 text-slate-700 text-sm py-2 text-left font-sans">
-          <p className="text-slate-600 font-medium leading-relaxed">{confirmModal.message}</p>
-          <div className="flex justify-end gap-2 border-t border-slate-100 pt-3 mt-4">
-            <Button
-              variant="outline"
-              onClick={() => setConfirmModal((prev) => ({ ...prev, isOpen: false }))}
-              disabled={isConfirming}
-            >
-              Hủy
-            </Button>
-            <Button
-              variant="primary"
-              className="bg-indigo-600 text-white font-medium px-4 py-1.5 rounded-lg hover:bg-indigo-700 text-xs transition-all"
-              onClick={confirmModal.onConfirm}
-              disabled={isConfirming}
-            >
-              Xác nhận
-            </Button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* Custom Prompt Dialog */}
-      <Modal variant="form"
-        isOpen={promptModal.isOpen}
-        onClose={() => setPromptModal((prev) => ({ ...prev, isOpen: false }))}
-        title={promptModal.title}
-        size="sm"
-      >
-        <div className="space-y-4 text-slate-700 text-sm py-2 text-left font-sans">
-          <p className="text-slate-600 font-medium leading-relaxed">{promptModal.message}</p>
-          <input
-            type="text"
-            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500"
-            value={promptModal.value}
-            onChange={(e) => setPromptModal((prev) => ({ ...prev, value: e.target.value }))}
-            placeholder="..."
-          />
-          <div className="flex justify-end gap-2 border-t border-slate-100 pt-3 mt-4">
-            <Button
-              variant="outline"
-              onClick={() => setPromptModal((prev) => ({ ...prev, isOpen: false }))}
-            >
-              Hủy
-            </Button>
-            <Button
-              variant="primary"
-              className="bg-indigo-600 text-white font-medium px-4 py-1.5 rounded-lg hover:bg-indigo-700 text-xs transition-all"
-              onClick={() => promptModal.onConfirm(promptModal.value)}
-            >
-              Xác nhận
-            </Button>
-          </div>
-        </div>
-      </Modal>
 
     </ListPageFrame>
   );

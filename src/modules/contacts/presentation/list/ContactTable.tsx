@@ -22,12 +22,9 @@ interface ContactTableProps {
   onColumnReset: (colKey: string) => void;
   openRowActionId: string | null;
   setOpenRowActionId: (id: string | null) => void;
-  onCall: (c: Contact) => void;
-  onEmail: (c: Contact) => void;
   onOpenOpportunityWizard?: (c: Contact) => void;
   onOpenDeleteConfirm?: (c: Contact) => void;
   onViewDetails: (contactId: string) => void;
-  onArchive?: (contact: Contact) => void;
 }
 
 export const ContactTable: React.FC<ContactTableProps> = ({
@@ -41,12 +38,9 @@ export const ContactTable: React.FC<ContactTableProps> = ({
   onColumnReset,
   openRowActionId,
   setOpenRowActionId,
-  onCall,
-  onEmail,
   onOpenOpportunityWizard,
   onOpenDeleteConfirm,
-  onViewDetails,
-  onArchive
+  onViewDetails
 }) => {
   const { t, tx, locale } = useI18n();
   const [rowActionAnchorEl, setRowActionAnchorEl] = React.useState<HTMLElement | null>(null);
@@ -226,13 +220,13 @@ export const ContactTable: React.FC<ContactTableProps> = ({
                       case "workPhone": {
                         const ph = colKey === "mobilePhone" ? contact.mobilePhone || contact.phone : contact.workPhone;
                         content = ph ? (
-                          <button
-                            onClick={() => onCall(contact)}
+                          <a
+                            href={`tel:${ph}`}
                             className="font-mono font-medium text-slate-700 hover:text-indigo-600 whitespace-nowrap hover:underline cursor-pointer flex items-center gap-1 focus:outline-none"
                           >
                             <Phone size={11} className="text-slate-400" />
                             <span>{ph}</span>
-                          </button>
+                          </a>
                         ) : "-";
                         break;
                       }
@@ -241,12 +235,12 @@ export const ContactTable: React.FC<ContactTableProps> = ({
                       case "personalEmail": {
                         const em = colKey === "workEmail" ? contact.workEmail || contact.email : contact.personalEmail;
                         content = em ? (
-                          <button
-                            onClick={() => onEmail(contact)}
+                          <a
+                            href={`mailto:${em}`}
                             className="font-mono text-xs text-indigo-600 hover:text-indigo-800 hover:underline crm-text-wrap block text-left w-full focus:outline-none"
                           >
                             {em}
-                          </button>
+                          </a>
                         ) : "-";
                         break;
                       }
@@ -410,11 +404,8 @@ export const ContactTable: React.FC<ContactTableProps> = ({
               setRowActionAnchorEl(null);
             }}
             onViewDetails={onViewDetails}
-            onCall={onCall}
-            onEmail={onEmail}
             onOpenOpportunityWizard={onOpenOpportunityWizard}
             onOpenDeleteConfirm={onOpenDeleteConfirm}
-            onArchive={onArchive}
           />
         )}
       </RowActionPortal>

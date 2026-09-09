@@ -6,22 +6,13 @@ import {
   Edit3,
   Sparkles,
   MoreHorizontal,
-  MessageSquare,
-  Paperclip,
-  FileText,
   Phone,
   Mail,
   Calendar,
   AlertTriangle,
-  Bookmark,
-  Share2,
-  Copy,
   Printer,
-  Download,
   Archive,
   ShieldAlert,
-  Tags,
-  CheckSquare,
   Clock
 } from "lucide-react";
 import { Contact } from "../../domain/model/contact.types";
@@ -150,16 +141,6 @@ export const ContactRecordHeader: React.FC<ContactRecordHeaderProps> = ({
     .join("")
     .substring(0, 2)
     .toUpperCase();
-
-  const handleShare = () => {
-    navigator.clipboard.writeText(window.location.href);
-    showToast(tx("contactDetail.toast.shared", "Đã sao chép liên kết hồ sơ vào khay nhớ tạm."));
-  };
-
-  const handleCopy = () => {
-    navigator.clipboard.writeText(`${contact.fullName || contact.name} - ${contact.phone || ""} - ${contact.email || ""}`);
-    showToast(tx("contactDetail.toast.copied", "Đã sao chép thông tin liên hệ nhanh."));
-  };
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 p-5 space-y-4 shadow-sm text-left">
@@ -341,52 +322,7 @@ export const ContactRecordHeader: React.FC<ContactRecordHeaderProps> = ({
           >
             <div className="w-full max-h-[calc(100vh-96px)] overflow-y-auto crm-scroll-y rounded-xl border border-slate-200 bg-white p-1.5 text-left text-xs shadow-2xl space-y-0.5 font-sans animate-fade-in block">
                   
-              {/* GROUP A: Workflow / Business actions */}
-              <MenuSection title={tx("contactDetail.section.businessActions", "Nghiệp vụ")} />
-              {/* GROUP B: Management actions */}
-              {canUpdateContact && <MenuSection title={tx("contactDetail.section.adminActions", "Quản trị & Quan hệ")} />}
-              {canArchiveContact && <>
-              <MenuItemButton
-                onClick={() => {
-                  showToast(tx("contactDetail.toast.setPrimaryContact", "Đã thiết lập liên hệ này làm đầu mối trao đổi chính."));
-                  setIsMoreMenuOpen(false);
-                  setMoreAnchorEl(null);
-                }}
-                icon={<Bookmark size={14} />}
-              >
-                <span>{tx("contactDetail.actions.setPrimary", "Đặt làm liên hệ chính")}</span>
-              </MenuItemButton>
-              <MenuItemButton
-                onClick={() => {
-                  showToast(tx("contactDetail.toast.changeOwnerPrompt", "Hệ thống chuyển nhượng tài khoản người bán."));
-                  setIsMoreMenuOpen(false);
-                  setMoreAnchorEl(null);
-                }}
-                icon={<ArrowLeft size={14} className="rotate-180" />}
-              >
-                <span>{tx("contactDetail.actions.changeOwner", "Chuyển giao phụ trách")}</span>
-              </MenuItemButton>
-              <MenuItemButton
-                onClick={() => {
-                  showToast(tx("contactDetail.toast.manageTagsPrompt", "Hệ thống hiển thị bảng gán nhãn tags phân loại liên hệ."));
-                  setIsMoreMenuOpen(false);
-                  setMoreAnchorEl(null);
-                }}
-                icon={<Tags size={14} />}
-              >
-                <span>{tx("contactDetail.actions.manageTags", "Quản lý nhãn (Tags)")}</span>
-              </MenuItemButton>
-              </>}
-              <MenuItemButton
-                onClick={() => { handleShare(); setIsMoreMenuOpen(false); setMoreAnchorEl(null); }}
-                icon={<Share2 size={14} />}
-              >
-                <span>{tx("contactDetail.actions.share", "Chia sẻ hồ sơ")}</span>
-              </MenuItemButton>
-
-              <MenuDivider />
-
-              {/* GROUP C: Record output */}
+              {/* Read-only presentation action; server-backed writes are gated separately below. */}
               <MenuSection title={tx("contactDetail.actions.recordGroup", "Báo cáo & Kết xuất")} />
               <MenuItemButton
                 onClick={() => { window.print(); setIsMoreMenuOpen(false); setMoreAnchorEl(null); }}
@@ -394,28 +330,15 @@ export const ContactRecordHeader: React.FC<ContactRecordHeaderProps> = ({
               >
                 <span>{tx("contactDetail.actions.print", "In hồ sơ lý lịch")}</span>
               </MenuItemButton>
-              <MenuItemButton
-                onClick={() => {
-                  showToast(tx("contactDetail.toast.exportStarted", "Đang kết xuất báo cáo Excel cho dòng thông tin liên hệ..."));
-                  setIsMoreMenuOpen(false);
-                  setMoreAnchorEl(null);
-                }}
-                icon={<Download size={14} />}
-              >
-                <span>{tx("contactDetail.actions.export", "Xuất file Excel cá nhân")}</span>
-              </MenuItemButton>
-
-              {canUpdateContact && <>
+              {canArchiveContact && <>
               <MenuDivider />
-
-              {/* GROUP D: Safety & Danger */}
               <MenuSection title={tx("contactDetail.actions.lifecycle", "Hành động an toàn")} />
-              {canArchiveContact && !isArchived && <MenuItemButton
+              <MenuItemButton
                 onClick={() => { onDeleteClick(); setIsMoreMenuOpen(false); setMoreAnchorEl(null); }}
                 icon={<Archive size={14} className="text-amber-500" />}
               >
                 <span className="text-amber-700">{tx("contactDetail.actions.archive", "Lưu trữ hồ sơ")}</span>
-              </MenuItemButton>}
+              </MenuItemButton>
               </>}
 
             </div>

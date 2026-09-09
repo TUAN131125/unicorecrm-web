@@ -19,5 +19,4 @@ export const CONTACT_SAVED_VIEWS: ContactSavedView[] = [
   { key: "doNotContact", labelKey: "contactViews.doNotContact", icon: "shield" },
   { key: "inactiveLongTime", labelKey: "contactViews.inactiveLongTime", icon: "pause" },
   { key: "duplicates", labelKey: "contactViews.duplicates", icon: "copy" },
-  { key: "archived", labelKey: "contactViews.archived", icon: "archive" },
 ];

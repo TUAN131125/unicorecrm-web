@@ -167,15 +167,12 @@ export function useContactDetailController(props: ContactDetailPageProps) {
 
   /**
    * Contact record writes (profile edits, timeline/activity projections, opportunity
-   * creation) remain unavailable: `updateContact` is BLOCKED and WF-01
-   * contact-opportunity-creation is blocked with
-   * `connectedFrontendCoordinatorAllowed: false`. In connected mode these fail closed
-   * inside the contacts projection, so the action is refused up front with a
-   * user-readable reason instead of throwing out of the event handler.
+   * Update is admitted but remains lifecycle- and capability-gated. WF-01 Contact
+   * opportunity creation is independently blocked and must continue to fail closed.
    */
   const contactUpdateAvailable = isContactUpdateAvailable();
-  const canUpdateContact = contactUpdateAvailable && contact.status !== "archived" && access.canPerform("contacts", "update");
-  const canArchiveContact = !isContactRetentionUnavailable() && access.canPerform("contacts", "delete");
+  const canUpdateContact = Boolean(contact && contactUpdateAvailable && contact.status !== "archived" && access.canPerform("contacts", "update"));
+  const canArchiveContact = Boolean(contact && contact.status !== "archived" && !isContactRetentionUnavailable() && access.canPerform("contacts", "delete"));
   const contactOpportunityAvailable = !isContactOpportunityCreationUnavailable();
   const contactWritesUnavailable = !contactUpdateAvailable;
   const refuseUnavailableContactWrite = (action: string): boolean => {
@@ -514,8 +511,8 @@ export function useContactDetailController(props: ContactDetailPageProps) {
     setActiveTab("sales", "opportunities");
   };
 
-  // `contact.archive` / `contact.restore` are BLOCKED canonical commands, so the action is
-  // refused before any mutation is started rather than failing inside the command boundary.
+  // Archive is admitted; Restore remains unavailable. Keep the runtime-readiness check
+  // at the action boundary so a disconnected command cannot produce local success.
   const refuseUnavailableContactRetention = (action: string): boolean => {
     if (!isContactRetentionUnavailable()) return false;
     showToast(backendUnavailableMessage({ locale, action }));

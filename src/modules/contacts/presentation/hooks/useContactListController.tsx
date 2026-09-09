@@ -91,6 +91,14 @@ export function useContactListController({
   const [selectedContactIds, setSelectedContactIds] = useState<string[]>([]);
   const [openRowActionId, setOpenRowActionId] = useState<string | null>(null);
   const [showBulkReassignModal, setShowBulkReassignModal] = useState(false);
+  useEffect(() => {
+    const activeIds = new Set(contacts.map((contact) => contact.id));
+    setSelectedContactIds((current) => {
+      const retained = current.filter((id) => activeIds.has(id));
+      return retained.length === current.length ? current : retained;
+    });
+    setOpenRowActionId((current) => current && !activeIds.has(current) ? null : current);
+  }, [contacts]);
   const getCurrentViewSnapshot = (): ContactListPresentationSnapshot => createContactPresentationSnapshot({
     visibleColumns,
     columnWidths,
@@ -444,13 +452,12 @@ export function useContactListController({
   };
 
   /**
-   * Contact Create has a production contract; `updateContact` remains BLOCKED and no
-   * bulk Contact operation exists. In
-   * connected mode they fail closed inside the contacts projection, so the action is
-   * refused up front with a user-readable reason.
+   * Contact Create and Update are admitted independently. No bulk Contact operation
+   * exists, so bulk paths remain unavailable instead of being simulated locally.
    */
   const contactCreateAvailable = isContactCreateAvailable();
   const contactUpdateAvailable = isContactUpdateAvailable();
+  const canReadContacts = access.canPerform("contacts", "read");
   const canCreateContact = contactCreateAvailable && access.canPerform("contacts", "create");
   const canUpdateContact = contactUpdateAvailable && access.canPerform("contacts", "update");
   const canArchiveContact = !isContactRetentionUnavailable() && access.canPerform("contacts", "delete");
@@ -1031,6 +1038,7 @@ export function useContactListController({
   return {
     contactCreateAvailable,
     contactUpdateAvailable,
+    canReadContacts,
     canCreateContact,
     canUpdateContact,
     canArchiveContact,

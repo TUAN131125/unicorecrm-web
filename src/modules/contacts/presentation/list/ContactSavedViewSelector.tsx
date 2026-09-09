@@ -14,7 +14,6 @@ import {
   Ban,
   Moon,
   Copy,
-  Archive,
 } from "lucide-react";
 import { useI18n } from "@/i18n";
 import { RowActionPortal } from "@/shared/components/ui";
@@ -89,8 +88,6 @@ export const ContactSavedViewSelector: React.FC<ContactSavedViewSelectorProps> =
         return <Moon size={14} className="text-slate-400 shrink-0" />;
       case "duplicates":
         return <Copy size={14} className="text-indigo-400 shrink-0" />;
-      case "archived":
-        return <Archive size={14} className="text-slate-400 shrink-0" />;
       default:
         return <Folder size={14} className="text-slate-400 shrink-0" />;
     }

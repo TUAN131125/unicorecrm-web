@@ -231,7 +231,7 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit }: C
       isOpen={isOpen}
       onClose={onClose}
       title={mode === "create" ? t("contactList.actions.addContact") : t("contact.edit.title")}
-      size="lg"
+      size="md"
     >
       <form id={`contact-${mode}-form`} onSubmit={submit} className="crm-form-surface space-y-5" data-guidance-id="contacts.form.canonical">
         {mode === "create" ? (

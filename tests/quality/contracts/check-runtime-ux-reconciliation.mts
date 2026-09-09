@@ -53,8 +53,15 @@ const contactListController = read("src/modules/contacts/presentation/hooks/useC
 assert.doesNotMatch(`${contactDetailController}\n${contactListController}`, /restoreContactCommand/u, "C4 must not expose blocked Contact Restore.");
 assert.match(contactDetailController, /access\.canPerform\("contacts", "delete"\)/u, "Contact Archive authorization must require contacts.delete.");
 const contactList = read("src/modules/contacts/presentation/views/ContactListView.tsx");
-assert.match(contactList, /hidden: !canCreateContact/u, "Unavailable Contact create/import actions must not render.");
-assert.match(contactList, /canUpdateContact && <ContactBulkChangeOwnerModal/u, "Unavailable Contact update must not expose its bulk owner mutation.");
+assert.match(contactList, /hidden: !canCreateContact/u, "Contact Create must remain independently operation/capability gated.");
+assert.doesNotMatch(contactList, /id: "import-contact"|ContactBulkChangeOwnerModal|onBulkArchive=|onBulkDelete=/u, "Non-admitted Contact import and bulk mutations must not render.");
+assert.match(contactList, /onClick=\{\(\) => void contactQuery\.refresh\(\)\}/u, "Contact Refresh must invoke the authoritative collection resource.");
+const contactTopActions = read("src/modules/contacts/presentation/list/ContactTopActionMenu.tsx");
+assert.match(contactTopActions, /canReadContacts/u, "Contact list presentation actions must retain an explicit read-capability source.");
+assert.doesNotMatch(contactTopActions, /id: "(?:export|import|bulk|trash|delete)|on(?:Export|Import|Bulk|Delete)/u, "Non-admitted Contact import/export/bulk/trash actions must stay absent.");
+const contactRecordHeader = read("src/modules/contacts/presentation/detail/ContactRecordHeader.tsx");
+assert.match(contactRecordHeader, /\{canArchiveContact && <>[\s\S]*?onDeleteClick/u, "Contact Archive must not incorrectly depend on Contact Update permission.");
+assert.doesNotMatch(contactRecordHeader, /contactDetail\.actions\.(setPrimary|changeOwner|manageTags|export)/u, "Unsupported Contact detail mutations/export must not masquerade as available actions.");
 const contactDetailPage = read("src/modules/contacts/presentation/pages/ContactDetailPage.tsx");
 assert.match(contactDetailPage, /getContactDetailResource\(contactId/u, "Contact Detail must load the authoritative detail operation instead of relying on list cache.");
 assert.match(contactDetailPage, /failure\?\.category === "AUTHORIZATION"/u, "Contact Detail must distinguish access denial from not-found.");

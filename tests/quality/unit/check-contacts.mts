@@ -206,12 +206,18 @@ const contactCreateControllerSource = readPresentationComposition("src/modules/c
 assert.doesNotMatch(contactCreateControllerSource, /id: `contact_\$\{crypto\.randomUUID\(\)\}`/, "Connected Create must not manufacture a local Contact identity.");
 assert.match(contactCreateControllerSource, /const createdContact = await createContactViaApi\(\{[\s\S]*?fullName: data\.name/, "Create must submit an authoritative request DTO and await the backend Contact.");
 assert.match(contactCreateControllerSource, /const createdContact = await createContactViaApi[\s\S]*?setShowAddForm\(false\)/, "The modal may close only after backend Create succeeds.");
+assert.match(contactCreateControllerSource, /const activeIds = new Set\(contacts\.map[\s\S]*?setSelectedContactIds[\s\S]*?activeIds\.has/, "Authoritative refresh/archive must prune stale Contact selection state.");
 const contactFormSource = readPresentationComposition("src/modules/contacts/presentation/components/ContactFormModal.tsx", "utf8");
 assert.match(contactFormSource, /loading=\{isSubmitting\}/, "Create must expose submitting progress and block repeat submission.");
 assert.match(contactFormSource, /catch \(error\)[\s\S]*?setFormError/, "Create failure must remain in the modal with safe retry feedback.");
 for (const unsupportedUpdateField of ["organizationName", "contactCode", "avatarColor", "communicationConsent", "relationshipType", "influenceLevel", "nextFollowUpAt", "status", "priority", "internalNotes"]) {
   assert.doesNotMatch(contactFormSource.slice(contactFormSource.indexOf("return (")), new RegExp(`update\\(\\"${unsupportedUpdateField}\\"`), `${unsupportedUpdateField} must not be presented as an authoritative Contact Update field.`);
 }
+const contactDetailControllerSource = readPresentationComposition("src/modules/contacts/presentation/hooks/useContactDetailController.tsx", "utf8");
+assert.match(contactDetailControllerSource, /contact && contact\.status !== "archived"[\s\S]*access\.canPerform\("contacts", "delete"\)/, "Archived Contacts must not expose Archive again.");
+const contactActionMenuSource = readPresentationComposition("src/modules/contacts/presentation/list/ContactActionMenu.tsx", "utf8");
+assert.match(contactActionMenuSource, /!isArchived && onOpenDeleteConfirm/, "Row/card Archive must be limited to active Contacts.");
+assert.doesNotMatch(contactActionMenuSource, /unarchive|onArchive/u, "Contact actions must not introduce blocked Restore semantics.");
 
 const contactViewSettingsSource = readPresentationComposition("src/modules/contacts/presentation/hooks/useContactListViewSettings.ts", "utf8");
 assert.match(contactViewSettingsSource, /createContactCustomSavedView\(customViews, name, presentation\)/, "Custom saved views must store the submitted presentation snapshot through the model owner.");
@@ -244,6 +250,8 @@ assert.equal(contactSavedViewSelectorSource.includes('className="fixed inset-0 z
 assert.match(contactSavedViewSelectorSource, /onClick=\{onAddViewClick\}/, "Add View button must call the parent create-view callback directly.");
 assert.equal(contactSavedViewSelectorSource.includes("event.preventDefault()"), false, "Add View must not rely on event suppression as a hit-testing workaround.");
 assert.equal(contactSavedViewSelectorSource.includes("event.stopPropagation()"), false, "Add View must not rely on propagation suppression as a hit-testing workaround.");
+const contactViewsSource = readPresentationComposition("src/modules/contacts/presentation/model/contactViews.ts", "utf8");
+assert.doesNotMatch(contactViewsSource, /key: "archived"/, "The active-only authoritative list must not advertise a client-only archived collection.");
 
 console.log("Contact module checks: OK");
 
