@@ -1,9 +1,10 @@
 import { invalidateModuleQueries, runBackendProjection } from "@/shared/application";
 import type { Contact } from "../../domain/model/contact.types";
+import type { ContactCreateCommand } from "../ports/ContactApiRuntime";
 import { getContactApiRuntime, contactRepository } from "../composition/contactApplicationServices";
 import { saveContact } from "./contactRepositoryCommands";
 
-export async function createContactViaApi(input: Contact): Promise<Contact> {
+export async function createContactViaApi(input: ContactCreateCommand): Promise<Contact> {
   const created = await requireCommands().create(input);
   await project(created, "contact.create");
   return created;

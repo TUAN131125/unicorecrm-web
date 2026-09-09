@@ -1,5 +1,5 @@
 import type { AuthoritativePage, ModuleListQuery } from "@/shared/application";
-import type { Contact } from "../../domain/model/contact.types";
+import type { Contact, ContactDecisionRole } from "../../domain/model/contact.types";
 
 export type ContactApiRuntimeMode = "demo" | "connected" | "test";
 
@@ -38,7 +38,23 @@ export interface ContactQueryPort {
 }
 
 export interface ContactCreateCommandPort {
-  create(input: Contact): Promise<Contact>;
+  create(input: ContactCreateCommand): Promise<Contact>;
+}
+
+export interface ContactCreateCommand {
+  fullName: string;
+  ownerId?: string;
+  jobTitle?: string;
+  department?: string;
+  workEmail?: string;
+  mobilePhone?: string;
+  zaloId?: string;
+  preferredContactChannel?: "phone" | "email" | "zalo" | "facebook" | "sms";
+  address?: string;
+  source?: string;
+  decisionRole?: ContactDecisionRole;
+  notes?: string;
+  tags?: string[];
 }
 
 export interface ContactApiRuntime {

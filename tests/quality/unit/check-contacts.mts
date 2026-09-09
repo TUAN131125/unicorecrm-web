@@ -18,6 +18,9 @@ import {
 } from "@/modules/contacts/application/queries/contactQueries";
 import type { Contact } from "@/modules/contacts";
 import { InMemoryContactRepository } from "@/modules/contacts/infrastructure/InMemoryContactRepository";
+import { configureContactApplication, resetContactApplication } from "@/modules/contacts/application/composition/contactApplicationServices";
+import { createContactViaApi } from "@/modules/contacts/application/commands/contactApiCommands";
+import { ApplicationError } from "@/shared/domain";
 import { CONTACT_MODULE_MANIFEST } from "@/modules/contacts/manifest";
 import {
   createContactPresentationSnapshot,
@@ -43,6 +46,56 @@ const repository = new InMemoryContactRepository(seed, {
     return () => bucket.delete(listener as (payload: unknown) => void);
   },
 });
+
+const createRepository = new InMemoryContactRepository([], {
+  publish: (eventName, payload) => listeners.get(eventName)?.forEach((listener) => listener(payload)),
+  subscribe: (eventName, listener) => {
+    const bucket = listeners.get(eventName) ?? new Set();
+    bucket.add(listener as (payload: unknown) => void);
+    listeners.set(eventName, bucket);
+    return () => bucket.delete(listener as (payload: unknown) => void);
+  },
+});
+const authoritativeCreated = { ...createContact("backend-contact-1", "Authoritative Person", "active", "member-1", "0901000099"), resourceVersion: 7 };
+let capturedCreate: unknown;
+configureContactApplication({
+  repository: createRepository,
+  preferences: { get: (_key, fallback) => fallback, set: () => undefined, remove: () => undefined },
+  api: {
+    mode: "test",
+    queries: {
+      async list() { return { items: [], pageInfo: { hasNextPage: false, totalCount: 0 }, authority: "demo", loadedAt: "2026-09-09T00:00:00.000Z" }; },
+      async get() { return authoritativeCreated; },
+      async getRelationshipSummary() { throw new Error("NOT_USED"); },
+    },
+    commands: { async create(input) { capturedCreate = input; return authoritativeCreated; } },
+  },
+});
+const projectedCreate = await createContactViaApi({ fullName: "  Authoritative Person  ", ownerId: "member-1", mobilePhone: "0901000099" });
+assert.equal(projectedCreate.id, "backend-contact-1", "Create must return the backend aggregate identity.");
+assert.equal(projectedCreate.resourceVersion, 7, "Create must preserve backend resourceVersion.");
+assert.equal(createRepository.list().length, 1, "Create must project the backend Contact exactly once.");
+assert.equal(createRepository.getById("backend-contact-1")?.resourceVersion, 7);
+assert.deepEqual(capturedCreate, { fullName: "  Authoritative Person  ", ownerId: "member-1", mobilePhone: "0901000099" });
+resetContactApplication();
+
+const failedRepository = new InMemoryContactRepository([], { publish: () => undefined, subscribe: () => () => undefined });
+configureContactApplication({
+  repository: failedRepository,
+  preferences: { get: (_key, fallback) => fallback, set: () => undefined, remove: () => undefined },
+  api: {
+    mode: "test",
+    queries: {
+      async list() { return { items: [], pageInfo: { hasNextPage: false, totalCount: 0 }, authority: "demo", loadedAt: "2026-09-09T00:00:00.000Z" }; },
+      async get() { throw new Error("NOT_USED"); },
+      async getRelationshipSummary() { throw new Error("NOT_USED"); },
+    },
+    commands: { async create() { throw new ApplicationError({ code: "ACCESS_DENIED", message: "denied", status: 403 }); } },
+  },
+});
+await assert.rejects(() => createContactViaApi({ fullName: "Retry Person" }), (error: unknown) => error instanceof ApplicationError && error.code === "ACCESS_DENIED");
+assert.equal(failedRepository.list().length, 0, "A failed backend Create must not insert a local Contact.");
+resetContactApplication();
 
 let observedCount = 0;
 const unsubscribe = repository.subscribe((contacts) => { observedCount = contacts.length; });
@@ -119,6 +172,20 @@ for (const file of walkAllFiles(presentationRoot)) {
 const contactRuntimeSource = readPresentationComposition("src/modules/contacts/runtime/contactModuleRuntime.ts", "utf8");
 assert.match(contactRuntimeSource, /WorkspaceScopedStorageAdapter/, "Contact presentation preferences must be workspace-scoped.");
 assert.match(contactRuntimeSource, /contacts/, "Contact preferences must stay scoped to the Contact list context.");
+
+const contactCreateControllerSource = readPresentationComposition("src/modules/contacts/presentation/hooks/useContactListController.tsx", "utf8");
+assert.doesNotMatch(contactCreateControllerSource, /id: `contact_\$\{crypto\.randomUUID\(\)\}`/, "Connected Create must not manufacture a local Contact identity.");
+assert.match(contactCreateControllerSource, /const createdContact = await createContactViaApi\(\{[\s\S]*?fullName: data\.name/, "Create must submit an authoritative request DTO and await the backend Contact.");
+assert.match(contactCreateControllerSource, /const createdContact = await createContactViaApi[\s\S]*?setShowAddForm\(false\)/, "The modal may close only after backend Create succeeds.");
+const contactFormSource = readPresentationComposition("src/modules/contacts/presentation/components/ContactFormModal.tsx", "utf8");
+assert.match(contactFormSource, /loading=\{isSubmitting\}/, "Create must expose submitting progress and block repeat submission.");
+assert.match(contactFormSource, /catch \(error\)[\s\S]*?setFormError/, "Create failure must remain in the modal with safe retry feedback.");
+assert.match(contactFormSource, /mode === "edit" \? <Input[^\n]*organizationName/u, "Organization name must not imply relationship persistence during Create.");
+assert.match(contactFormSource, /mode === "edit" \? <Input[^\n]*contactCode/u, "Local Contact code must remain edit-only.");
+assert.match(contactFormSource, /mode === "edit" \? \([\s\S]*?avatarColor/u, "Avatar color must remain edit-only.");
+assert.match(contactFormSource, /mode === "edit" \? <div[^\n]*communicationConsent/u, "Consent shorthand must remain edit-only.");
+assert.match(contactFormSource, /mode === "edit" \? \([\s\S]*?relationshipType[\s\S]*?influenceLevel/u, "Deferred relationship context must remain edit-only.");
+assert.match(contactFormSource, /mode === "edit" \? <Input[^\n]*nextFollowUpAt/u, "Follow-up scheduling must remain edit-only.");
 
 const contactViewSettingsSource = readPresentationComposition("src/modules/contacts/presentation/hooks/useContactListViewSettings.ts", "utf8");
 assert.match(contactViewSettingsSource, /createContactCustomSavedView\(customViews, name, presentation\)/, "Custom saved views must store the submitted presentation snapshot through the model owner.");

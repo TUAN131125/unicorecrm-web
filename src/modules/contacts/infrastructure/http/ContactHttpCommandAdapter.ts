@@ -1,40 +1,31 @@
 import type { CommercialApiClient, ContactMutationResponse, CreateContactRequest } from "@/platform/api/generated/commercialApi";
-import type { ContactCreateCommandPort } from "../../application/ports/ContactApiRuntime";
+import type { ContactCreateCommand, ContactCreateCommandPort } from "../../application/ports/ContactApiRuntime";
 import type { Contact } from "../../domain/model/contact.types";
 import { mapContactDocument } from "./ContactApiMapper";
 
 export class ContactHttpCommandAdapter implements ContactCreateCommandPort {
   constructor(private readonly api: CommercialApiClient) {}
 
-  async create(input: Contact): Promise<Contact> {
+  async create(input: ContactCreateCommand): Promise<Contact> {
     const response = await this.api.createContact<ContactMutationResponse>(toRequest(input), options());
     return result(response);
   }
 
 }
 
-function toRequest(contact: Contact): CreateContactRequest {
+function toRequest(contact: ContactCreateCommand): CreateContactRequest {
   return compact({
     fullName: contact.fullName.trim(),
     ownerId: contact.ownerId?.trim() || undefined,
-    salutation: contact.salutation?.trim() || undefined,
-    jobTitle: (contact.roleTitle ?? contact.title)?.trim() || undefined,
+    jobTitle: contact.jobTitle?.trim() || undefined,
     department: contact.department?.trim() || undefined,
-    roleAtCompany: contact.roleAtCompany?.trim() || undefined,
-    workEmail: (contact.workEmail ?? contact.email)?.trim() || undefined,
-    personalEmail: contact.personalEmail?.trim() || undefined,
-    mobilePhone: (contact.mobilePhone ?? contact.phone)?.trim() || undefined,
-    workPhone: contact.workPhone?.trim() || undefined,
-    otherPhone: contact.otherPhone?.trim() || undefined,
-    zaloId: (contact.zaloId ?? contact.zalo)?.trim() || undefined,
-    facebook: contact.facebook?.trim() || undefined,
+    workEmail: contact.workEmail?.trim() || undefined,
+    mobilePhone: contact.mobilePhone?.trim() || undefined,
+    zaloId: contact.zaloId?.trim() || undefined,
     preferredContactChannel: contact.preferredContactChannel,
     address: contact.address?.trim() || undefined,
     source: contact.source?.trim() || undefined,
     decisionRole: contact.decisionRole,
-    relationshipLevel: contact.relationshipLevel,
-    painPoint: contact.painPoint?.trim() || undefined,
-    needSummary: contact.needSummary?.trim() || undefined,
     notes: contact.notes?.trim() || undefined,
     tags: contact.tags?.map((tag) => tag.trim()).filter(Boolean),
   });

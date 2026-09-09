@@ -2,14 +2,16 @@ import React from "react";
 import { ChevronDown, ChevronUp, Zap } from "lucide-react";
 import { Button, Checkbox, Input, Modal, Select, Textarea } from "@/shared/components/ui";
 import { useI18n } from "@/i18n";
+import { normalizeApplicationError } from "@/shared/domain";
+import { formatOperationUnavailableError } from "@/shared/operations";
 import { CAPABILITIES } from "@/platform/access-control";
 import { useRecordOwnershipContext } from "@/platform/record-ownership";
 import type {
   Contact,
   ContactDecisionRole,
+  PreferredContactChannel,
   ContactStatus,
 } from "../../domain/model/contact.types";
-import { validateContactProgressiveProfile } from "../../domain/rules/contactProgressiveProfile";
 import { getTranslatedSource } from "../list/contactList.helpers";
 
 export type ContactFormMode = "create" | "edit";
@@ -27,7 +29,7 @@ export interface ContactFormDraft {
   phone: string;
   zaloId: string;
   address: string;
-  preferredChannel: string;
+  preferredChannel: PreferredContactChannel | "";
   communicationConsent: boolean;
   organizationName: string;
   relationshipType: string;
@@ -107,7 +109,7 @@ function createDraft(contact: Contact | undefined, defaultOwnerId: string): Cont
     phone: contact.phone || contact.mobilePhone || "",
     zaloId: contact.zaloId || contact.zalo || "",
     address: contact.address || "",
-    preferredChannel: contact.preferredChannel || contact.preferredContactChannel || "",
+    preferredChannel: contact.preferredContactChannel || "",
     communicationConsent: contact.communicationConsent || false,
     organizationName: contact.organizationName || contact.companyName || "",
     relationshipType: contact.relationshipType || "",
@@ -134,6 +136,7 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit }: C
   const [draft, setDraft] = React.useState<ContactFormDraft>(draftFactory);
   const [showAdvanced, setShowAdvanced] = React.useState(mode === "edit");
   const [errors, setErrors] = React.useState<Record<string, string>>({});
+  const [formError, setFormError] = React.useState("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const wasOpen = React.useRef(false);
 
@@ -142,6 +145,7 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit }: C
       setDraft(draftFactory());
       setShowAdvanced(mode === "edit");
       setErrors({});
+      setFormError("");
     }
     wasOpen.current = isOpen;
   }, [draftFactory, isOpen, mode]);
@@ -149,6 +153,7 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit }: C
   const update = React.useCallback(<K extends keyof ContactFormDraft>(field: K, value: ContactFormDraft[K]) => {
     setDraft((current) => ({ ...current, [field]: value }));
     setErrors((current) => ({ ...current, [field]: "" }));
+    setFormError("");
   }, []);
 
   const ownerOptions = React.useMemo(() => {
@@ -158,7 +163,7 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit }: C
   }, [draft.ownerId, ownership?.assignableOwners]);
 
   const focusFirstInvalidField = React.useCallback((nextErrors: Record<string, string>) => {
-    const fieldOrder = ["name", "organizationName", "phone", "email", "ownerId", "nextFollowUpAt"];
+    const fieldOrder = ["name", "phone", "email", "ownerId"];
     const firstField = fieldOrder.find((field) => Boolean(nextErrors[field]));
     if (!firstField) return;
     requestAnimationFrame(() => {
@@ -173,27 +178,10 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit }: C
     if (isSubmitting) return;
     const nextErrors: Record<string, string> = {};
     if (!draft.name.trim()) nextErrors.name = t("contact.edit.validationNameRequired");
+    if (draft.name.trim().length > 200) nextErrors.name = vi ? "Họ tên không được vượt quá 200 ký tự." : "Full name must not exceed 200 characters.";
     if (draft.email && !/\S+@\S+\.\S+/.test(draft.email)) nextErrors.email = t("contact.edit.validationEmail");
-    if (mode === "create" && showAdvanced) {
-      const missing = validateContactProgressiveProfile({
-        fullName: draft.name,
-        name: draft.name,
-        phone: draft.phone,
-        email: draft.email,
-        zaloId: draft.zaloId,
-        ownerId: draft.ownerId,
-        status: draft.status,
-        nextFollowUpAt: draft.nextFollowUpAt,
-        organizationName: draft.organizationName,
-      }, draft.status, "COMPLETE");
-      for (const field of missing) {
-        if (field === "fullName") nextErrors.name ||= t("contact.edit.validationNameRequired");
-        if (field === "contactChannel") nextErrors.phone ||= t("contact.edit.validationPhoneOrEmail");
-        if (field === "ownerId") nextErrors.ownerId ||= vi ? "Vui lòng chọn người phụ trách." : "Select an owner.";
-        if (field === "nextFollowUpAt") nextErrors.nextFollowUpAt ||= vi ? "Vui lòng chọn thời điểm theo dõi tiếp theo." : "Select the next follow-up time.";
-        if (field === "organizationName") nextErrors.organizationName ||= vi ? "Vui lòng nhập tổ chức khi liên hệ có cơ hội đang mở." : "Enter an organization for a contact with an open opportunity.";
-      }
-    }
+    if (draft.email.trim().length > 320) nextErrors.email = vi ? "Email không được vượt quá 320 ký tự." : "Email must not exceed 320 characters.";
+    if (draft.phone.trim().length > 50) nextErrors.phone = vi ? "Số điện thoại không được vượt quá 50 ký tự." : "Phone must not exceed 50 characters.";
 
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
@@ -202,6 +190,7 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit }: C
     }
 
     setIsSubmitting(true);
+    setFormError("");
     try {
       await onSubmit({
         ...draft,
@@ -220,6 +209,16 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit }: C
         notes: draft.notes.trim(),
         internalNotes: draft.internalNotes.trim(),
       });
+    } catch (error) {
+      const normalized = normalizeApplicationError(error);
+      const serverErrors: Record<string, string> = {};
+      for (const [field, messages] of Object.entries(normalized.fieldErrors ?? {})) {
+        const localField = field === "fullName" ? "name" : field === "workEmail" ? "email" : field === "mobilePhone" ? "phone" : field;
+        serverErrors[localField] = messages.join(" ");
+      }
+      setErrors((current) => ({ ...current, ...serverErrors }));
+      setFormError(formatOperationUnavailableError(normalized, { locale }));
+      focusFirstInvalidField(serverErrors);
     } finally {
       setIsSubmitting(false);
     }
@@ -254,8 +253,8 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit }: C
           <h4 className="border-b border-indigo-50 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-indigo-700">{t("contact.edit.basicIdentity")}</h4>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Input id={`contact-${mode}-name`} label={`${t("contactList.form.fullName")} *`} required value={draft.name} onChange={(event) => update("name", event.target.value)} error={errors.name} />
-            <Input id={`contact-${mode}-organizationName`} label={t("contactList.quickCreate.organization")} value={draft.organizationName} onChange={(event) => update("organizationName", event.target.value)} error={errors.organizationName} />
-            {showComplete ? <Input label={t("contactList.form.contactCode")} value={draft.contactCode} onChange={(event) => update("contactCode", event.target.value)} /> : null}
+            {mode === "edit" ? <Input id={`contact-${mode}-organizationName`} label={t("contactList.quickCreate.organization")} value={draft.organizationName} onChange={(event) => update("organizationName", event.target.value)} error={errors.organizationName} /> : null}
+            {mode === "edit" ? <Input label={t("contactList.form.contactCode")} value={draft.contactCode} onChange={(event) => update("contactCode", event.target.value)} /> : null}
             {showComplete ? <Input label={t("contact.edit.jobTitle")} value={draft.title} onChange={(event) => update("title", event.target.value)} /> : null}
             {showComplete ? <Input label={t("contact.edit.department")} value={draft.department} onChange={(event) => update("department", event.target.value)} /> : null}
             {showComplete ? (
@@ -270,7 +269,7 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit }: C
                 <option value="other">{vi ? "Khác" : "Other"}</option>
               </Select>
             ) : null}
-            {showComplete ? (
+            {mode === "edit" ? (
               <Select label={t("contact.edit.avatarColor")} value={draft.avatarColor} onChange={(event) => update("avatarColor", event.target.value)}>
                 <option value="">{t("common.notSet")}</option>
                 <option value="indigo">Indigo</option><option value="emerald">Emerald</option><option value="violet">Violet</option><option value="amber">Amber</option><option value="rose">Rose</option><option value="cyan">Cyan</option>
@@ -286,17 +285,17 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit }: C
             <Input id={`contact-${mode}-email`} label={t("contact.edit.email")} type="email" value={draft.email} onChange={(event) => update("email", event.target.value)} error={errors.email} />
             {showComplete ? <Input label={t("contact.edit.zaloId")} value={draft.zaloId} onChange={(event) => update("zaloId", event.target.value)} /> : null}
             {showComplete ? (
-              <Select label={t("contact.edit.preferredChannel")} value={draft.preferredChannel} onChange={(event) => update("preferredChannel", event.target.value)}>
+              <Select label={t("contact.edit.preferredChannel")} value={draft.preferredChannel} onChange={(event) => update("preferredChannel", event.target.value as PreferredContactChannel | "")}>
                 <option value="">{t("common.notSet")}</option>
-                <option value="EMAIL">Email</option><option value="PHONE">Phone</option><option value="ZALO">Zalo</option><option value="MEETING">Meeting</option>
+                <option value="email">Email</option><option value="phone">Phone</option><option value="zalo">Zalo</option><option value="facebook">Facebook</option><option value="sms">SMS</option>
               </Select>
             ) : null}
             {showComplete ? <div className="md:col-span-2"><Input label={t("contact.edit.address")} value={draft.address} onChange={(event) => update("address", event.target.value)} /></div> : null}
-            {showComplete ? <div className="md:col-span-2"><Checkbox id={`contact-${mode}-consent`} label={t("contact.edit.communicationConsent")} checked={draft.communicationConsent} onChange={(event) => update("communicationConsent", event.target.checked)} /></div> : null}
+            {mode === "edit" ? <div className="md:col-span-2"><Checkbox id={`contact-${mode}-consent`} label={t("contact.edit.communicationConsent")} checked={draft.communicationConsent} onChange={(event) => update("communicationConsent", event.target.checked)} /></div> : null}
           </div>
         </section>
 
-        {showComplete ? (
+        {mode === "edit" ? (
           <section className="space-y-3">
             <h4 className="border-b border-indigo-50 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-indigo-700">{t("contact.edit.relationshipContext")}</h4>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
@@ -312,8 +311,8 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit }: C
         <section className="space-y-3">
           <h4 className="border-b border-indigo-50 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-indigo-700">{t("contact.edit.salesContext")}</h4>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <Input id={`contact-${mode}-nextFollowUpAt`} label={t("contact.edit.nextFollowUpAt")} type="datetime-local" value={draft.nextFollowUpAt} onChange={(event) => update("nextFollowUpAt", event.target.value)} required={mode === "create"} error={errors.nextFollowUpAt} />
-            <Select id={`contact-${mode}-ownerId`} label={t("contact.edit.ownerId")} value={draft.ownerId} onChange={(event) => update("ownerId", event.target.value)} disabled={!ownership?.canAssign} required error={errors.ownerId}>
+            {mode === "edit" ? <Input id={`contact-${mode}-nextFollowUpAt`} label={t("contact.edit.nextFollowUpAt")} type="datetime-local" value={draft.nextFollowUpAt} onChange={(event) => update("nextFollowUpAt", event.target.value)} error={errors.nextFollowUpAt} /> : null}
+            <Select id={`contact-${mode}-ownerId`} label={t("contact.edit.ownerId")} value={draft.ownerId} onChange={(event) => update("ownerId", event.target.value)} disabled={!ownership?.canAssign} error={errors.ownerId}>
               {ownerOptions.map((owner) => <option key={owner.memberId} value={owner.memberId}>{owner.displayName}</option>)}
             </Select>
             {showComplete ? (
@@ -324,19 +323,19 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit }: C
                 <option value="Facebook">Facebook</option><option value="Google Search">Google Search</option><option value="Direct">Direct</option>
               </Select>
             ) : null}
-            {showComplete ? (
+            {mode === "edit" ? (
               <Select label={t("contactList.filters.status")} value={draft.status} onChange={(event) => update("status", event.target.value as ContactStatus)}>
                 <option value="active">{t("contactStatus.active")}</option><option value="needs_follow_up">{t("contactStatus.needs_follow_up")}</option><option value="in_consulting">{t("contactStatus.in_consulting")}</option><option value="has_open_opportunity">{t("contactStatus.has_open_opportunity")}</option><option value="inactive">{t("contactStatus.inactive")}</option>
                 {mode === "edit" ? <option value="do_not_contact">{t("contactStatus.do_not_contact")}</option> : null}
                 {mode === "edit" ? <option value="archived">{t("contactStatus.archived")}</option> : null}
               </Select>
             ) : null}
-            {showComplete ? (
+            {mode === "edit" ? (
               <Select label={t("contact.edit.priority")} value={draft.priority} onChange={(event) => update("priority", event.target.value as ContactPriority)}>
                 <option value="LOW">{t("contactList.priority.low")}</option><option value="MEDIUM">{t("contactList.priority.medium")}</option><option value="HIGH">{t("contactList.priority.high")}</option><option value="URGENT">{t("contactList.priority.urgent")}</option>
               </Select>
             ) : null}
-            {showComplete ? <Input label={t("contact.edit.lastContactedAt")} type="datetime-local" value={draft.lastContactedAt} onChange={(event) => update("lastContactedAt", event.target.value)} /> : null}
+            {mode === "edit" ? <Input label={t("contact.edit.lastContactedAt")} type="datetime-local" value={draft.lastContactedAt} onChange={(event) => update("lastContactedAt", event.target.value)} /> : null}
             {showComplete ? <div className="md:col-span-2"><Input label={t("contact.edit.tags")} value={draft.tagsString} onChange={(event) => update("tagsString", event.target.value)} /></div> : null}
           </div>
         </section>
@@ -350,8 +349,9 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit }: C
         ) : null}
 
         <div className="crm-form-action-bar sticky bottom-0 z-10 flex justify-end gap-2 border-t border-slate-100 bg-white pt-4">
+          {formError ? <p role="alert" className="mr-auto text-sm font-medium text-rose-700">{formError}</p> : null}
           <Button variant="secondary" onClick={onClose} type="button" disabled={isSubmitting}>{t("common.cancel")}</Button>
-          <Button variant="primary" type="submit" disabled={isSubmitting}>{mode === "create" ? t("contactList.form.btnSave", "Lưu liên hệ") : t("common.save")}</Button>
+          <Button variant="primary" type="submit" loading={isSubmitting} disabled={isSubmitting}>{mode === "create" ? t("contactList.form.btnSave", "Lưu liên hệ") : t("common.save")}</Button>
         </div>
       </form>
     </Modal>

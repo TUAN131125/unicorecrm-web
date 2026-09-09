@@ -21,7 +21,8 @@ for (const token of [
   'export type ContactFormMode = "create" | "edit"',
   'id={`contact-${mode}-form`}',
   'data-guidance-id="contacts.form.canonical"',
-  "validateContactProgressiveProfile",
+  "loading={isSubmitting}",
+  "setFormError",
 ]) {
   assertContains(contactCanonical, token, `${contactCanonicalPath} must retain ${token}.`);
 }

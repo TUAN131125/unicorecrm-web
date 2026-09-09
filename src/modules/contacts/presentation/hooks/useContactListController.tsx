@@ -3,7 +3,6 @@ import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Contact } from "../../domain/model/contact.types";
 import { archiveContactViaApi, createContactViaApi, isContactCreateAvailable, isContactRetentionUnavailable, isContactUpdateAvailable, restoreContactCommand } from "../../public/contacts";
-import { getOrganizationAccountsSnapshot } from "@/modules/organizations";
 import type { CustomerDisplay as Customer } from "@/modules/customers";
 import { createDealCommand, Deal, DealStage } from "@/modules/deals";
 import { createTaskCommand } from "@/modules/tasks";
@@ -17,15 +16,12 @@ import { useI18n } from "@/i18n";
 import { notifyProduct } from "@/components/feedback/ProductDialogService";
 import { resolveWorkspaceMemberName, getWorkspaceMemberOptions } from "@/platform/member-directory";
 import { useSubscribableSnapshot } from "@/platform/react";
-import { getContactStatusLabel } from "../list/contactList.helpers";
 import type { ContactCreateInput } from "../list/ContactCreateModal";
 import { useContacts } from "../hooks/useContacts";
 import { useContactListFilters } from "../hooks/useContactListFilters";
 import { useContactListViewSettings } from "../hooks/useContactListViewSettings";
 import { createContactPresentationSnapshot, resolveContactPresentationSnapshot, type ContactListPresentationSnapshot } from "../model/contactSavedViewPreferences";
 import { findCustomerForContact, getCustomerDisplayNameForContact } from "../model/contactCustomerLookup";
-import { normalizeContactCanonicalProfile } from "../../domain/model/contactCanonicalProfile";
-import { getWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import { useEffectiveAccess } from "@/platform/access-control";
 
 export interface ContactListPageProps {
@@ -480,80 +476,23 @@ export function useContactListController({
   // 1. Core Logic: Add New Contact callback
   const handleSaveContact = async (data: ContactCreateInput) => {
     if (refuseUnavailableContactWrite(locale === "vi" ? "Tạo liên hệ" : "Creating a Contact", !contactCreateAvailable)) return;
-    const code = data.contactCode.trim() || `CN${String(contacts.length + 1).padStart(4, "0")}`;
     const tagArray = data.tagsString.split(",").map((tag) => tag.trim()).filter(Boolean);
-    const createdAt = new Date().toISOString();
-    const normalizedOrganizationName = data.organizationName.trim().toLowerCase();
-    const organization = normalizedOrganizationName
-      ? getOrganizationAccountsSnapshot().find((account) =>
-          [account.displayName, account.legalName].some((name) => name?.trim().toLowerCase() === normalizedOrganizationName),
-        )
-      : undefined;
-    const preferredChannel = data.preferredChannel.toLowerCase() as Contact["preferredContactChannel"];
-    const newContactObj = normalizeContactCanonicalProfile({
-      id: `contact_${crypto.randomUUID()}`,
-      workspaceId: getWorkspaceContextSnapshot().workspaceId,
-      contactCode: code,
-      code,
-      name: data.name,
+    const preferredContactChannel = data.preferredChannel || undefined;
+    const createdContact = await createContactViaApi({
       fullName: data.name,
-      title: data.title || undefined,
-      roleTitle: data.title || undefined,
-      roleAtCompany: data.title || undefined,
+      jobTitle: data.title || undefined,
       department: data.department || undefined,
       decisionRole: data.decisionRole || undefined,
-      avatarColor: data.avatarColor || undefined,
-      email: data.email || undefined,
       workEmail: data.email || undefined,
-      phone: data.phone || undefined,
       mobilePhone: data.phone || undefined,
       zaloId: data.zaloId || undefined,
-      zalo: data.zaloId || undefined,
       address: data.address || undefined,
-      preferredChannel: data.preferredChannel || undefined,
-      preferredContactChannel: preferredChannel || undefined,
-      communicationConsent: data.communicationConsent,
-      consent: {
-        current: {
-          CALL: data.communicationConsent ? "GRANTED" : "UNKNOWN",
-          EMAIL: data.communicationConsent ? "GRANTED" : "UNKNOWN",
-          SMS: data.communicationConsent ? "GRANTED" : "UNKNOWN",
-          ZALO: data.communicationConsent ? "GRANTED" : "UNKNOWN",
-        },
-        ledger: [],
-        lawfulBasis: data.communicationConsent ? "MANUAL_CONTACT_CREATE" : undefined,
-        updatedAt: createdAt,
-      },
-      organizationName: organization?.displayName || data.organizationName || undefined,
-      companyName: organization?.displayName || data.organizationName || undefined,
-      relationshipType: data.relationshipType || undefined,
-      isPrimaryContact: data.isPrimaryContact,
-      influenceLevel: data.influenceLevel,
+      preferredContactChannel,
       source: data.source || undefined,
-      priority: data.priority,
-      status: data.status,
       ownerId: data.ownerId || undefined,
-      nextFollowUpAt: data.nextFollowUpAt ? new Date(data.nextFollowUpAt).toISOString() : undefined,
-      lastContactedAt: data.lastContactedAt ? new Date(data.lastContactedAt).toISOString() : undefined,
-      tags: tagArray.length > 0 ? tagArray : [t("contactList.activity.newContactTag")],
+      tags: tagArray.length > 0 ? tagArray : undefined,
       notes: data.notes || undefined,
-      internalNotes: data.internalNotes || undefined,
-      createdAt,
-      updatedAt: createdAt,
-      createdBy: data.ownerId || undefined,
-      updatedBy: data.ownerId || undefined,
-      createdFrom: "manual",
-      activities: [{
-        id: `act_init_${crypto.randomUUID()}`,
-        icon: "User",
-        title: t("contactList.activity.createdContactProfile"),
-        description: t("contactList.activity.initializedProfileDescription", { status: getContactStatusLabel(data.status, t) }),
-        createdAt,
-        author: t("contactList.activity.systemAuthor"),
-        type: "system",
-      }],
-    }, { workspaceId: getWorkspaceContextSnapshot().workspaceId, now: createdAt });
-    const createdContact = await createContactViaApi(newContactObj);
+    });
     setShowAddForm(false);
     notifyProduct(t("contactList.quickCreate.created", { name: data.name }), "success", {
       actionLabel: t("contactList.quickCreate.openRecord"),

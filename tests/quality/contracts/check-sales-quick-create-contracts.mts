@@ -119,8 +119,8 @@ for (const [name, fileSource, targets] of [
 ] as const) {
   for (const target of targets) assert.match(fileSource, new RegExp(`data-guidance-id=["']${target}["']`), `${name} Quick Create must retain ${target}.`);
 }
-assert.match(contactList, /saveContactSnapshot/, "Contact Quick Create must save through the Contact command boundary.");
-assert.match(contactList, /upsertContactOrganizationRelationshipWorkflow[\s\S]*organizationAccountId:\s*organization\.id/, "Contact Quick Create must preserve a canonical organization relationship when a known organization is selected.");
+assert.match(contactList, /createContactViaApi\(\{[\s\S]*fullName: data\.name/, "Contact Quick Create must submit the admitted backend Create contract.");
+assert.doesNotMatch(contactList, /id: `contact_\$\{crypto\.randomUUID\(\)\}`/, "Contact Quick Create must not manufacture a local aggregate identity.");
 assert.match(dealController, /validateDealProgressiveProfile/, "Deal create and edit commands must enforce lifecycle requirements outside HTML attributes.");
 assert.match(dealController, /updateDealForecastCommand/, "Deal forecast edits must use the typed forecast command boundary.");
 assert.match(dealCommands, /forecastHistory/, "Deal commands must persist forecast history.");
