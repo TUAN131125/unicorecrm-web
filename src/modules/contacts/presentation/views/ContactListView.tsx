@@ -200,6 +200,10 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
                 selectedCount={selectedContactIds.length}
                 writesAvailable={false}
                 importsAvailable={false}
+                onBulkChangeOwner={() => setShowBulkReassignModal(true)}
+                onBulkAddTags={handleBulkAddTags}
+                onBulkArchive={handleBulkArchive}
+                onBulkDelete={handleBulkDelete}
                 onExportAll={() => {
                   const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(contacts, null, 2));
                   const downloadAnchor = document.createElement('a');
@@ -219,6 +223,7 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
                 onManageTags={() => {
                   showToast(tx("contactList.toastMessage.tagsInit", "Tính năng quản lý danh mục thẻ đang khởi tạo!"));
                 }}
+                onOpenTrash={() => showToast(t("common.comingSoon"))}
                 onDownloadImportTemplate={handleDownloadTemplate}
                 onAdvancedImport={() => {
                   showToast(tx("contactList.toastMessage.importInit", "Tính năng nhập liệu đang được khởi tạo!"));

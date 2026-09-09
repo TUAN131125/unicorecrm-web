@@ -16,8 +16,8 @@ interface ContactCardListProps {
   setOpenRowActionId: (id: string | null) => void;
   onCall: (contact: Contact) => void;
   onEmail: (contact: Contact) => void;
-  onOpenOpportunityWizard: (contact: Contact) => void;
-  onOpenDeleteConfirm: (contact: Contact) => void;
+  onOpenOpportunityWizard?: (contact: Contact) => void;
+  onOpenDeleteConfirm?: (contact: Contact) => void;
   onViewDetails: (contactId: string) => void;
   onArchive?: (contact: Contact) => void;
 }

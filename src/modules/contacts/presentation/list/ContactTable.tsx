@@ -24,8 +24,8 @@ interface ContactTableProps {
   setOpenRowActionId: (id: string | null) => void;
   onCall: (c: Contact) => void;
   onEmail: (c: Contact) => void;
-  onOpenOpportunityWizard: (c: Contact) => void;
-  onOpenDeleteConfirm: (c: Contact) => void;
+  onOpenOpportunityWizard?: (c: Contact) => void;
+  onOpenDeleteConfirm?: (c: Contact) => void;
   onViewDetails: (contactId: string) => void;
   onArchive?: (contact: Contact) => void;
 }
