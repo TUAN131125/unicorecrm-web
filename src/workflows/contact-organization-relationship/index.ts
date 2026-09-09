@@ -18,6 +18,13 @@ import {
 } from "@/modules/organizations";
 import { replaceContacts } from "@/modules/contacts";
 import { assertMutationCommandSupported, createMutationMetadata, executeMutationCommand, isMutationCommandUnavailable, type MutationCommandMetadata, type MutationOutcome } from "@/shared/application";
+import { isContactConnectedApiRuntime } from "@/modules/contacts/application/composition/contactApplicationServices";
+
+function assertLegacyRelationshipWriteMode(): void {
+  if (isContactConnectedApiRuntime()) {
+    throw new Error("CONTACT_ORGANIZATION_LEGACY_WRITE_DISABLED_IN_CONNECTED_MODE");
+  }
+}
 
 export interface UpsertContactOrganizationRelationshipCommand {
   contactId: string;
@@ -50,6 +57,7 @@ export interface ContactOrganizationRelationshipResult {
 export function upsertContactOrganizationRelationshipWorkflow(
   command: UpsertContactOrganizationRelationshipCommand,
 ): ContactOrganizationRelationshipResult {
+  assertLegacyRelationshipWriteMode();
   const contact = requireContact(command.contactId);
   const organization = requireOrganization(command.relationship.organizationAccountId);
   const contactsBefore = getContactsSnapshot();
@@ -94,6 +102,7 @@ export function upsertContactOrganizationRelationshipWorkflow(
 export function endContactOrganizationRelationshipWorkflow(
   command: EndContactOrganizationRelationshipCommand,
 ): ContactOrganizationRelationshipResult {
+  assertLegacyRelationshipWriteMode();
   const contact = requireContact(command.contactId);
   const organization = requireOrganization(command.organizationAccountId);
   const contactsBefore = getContactsSnapshot();
@@ -122,6 +131,7 @@ export function endContactOrganizationRelationshipWorkflow(
 export function setPrimaryOrganizationRepresentativeWorkflow(
   command: SetPrimaryOrganizationRepresentativeCommand,
 ): ContactOrganizationRelationshipResult {
+  assertLegacyRelationshipWriteMode();
   const organization = requireOrganization(command.organizationAccountId);
   const target = requireContact(command.contactId);
   const contactsBefore = getContactsSnapshot();
@@ -173,6 +183,7 @@ export interface CreateOrganizationWithRepresentativeCommand {
 export function createOrganizationWithRepresentativeWorkflow(
   command: CreateOrganizationWithRepresentativeCommand,
 ): ContactOrganizationRelationshipResult {
+  assertLegacyRelationshipWriteMode();
   const contactsBefore = getContactsSnapshot();
   const organizationsBefore = getOrganizationAccountsSnapshot();
   const now = command.now ?? new Date().toISOString();
@@ -219,6 +230,7 @@ export interface CreateOrganizationRepresentativeCommand {
 export function createOrganizationRepresentativeWorkflow(
   command: CreateOrganizationRepresentativeCommand,
 ): ContactOrganizationRelationshipResult {
+  assertLegacyRelationshipWriteMode();
   const contactsBefore = getContactsSnapshot();
   const organizationsBefore = getOrganizationAccountsSnapshot();
   const now = command.now ?? new Date().toISOString();
@@ -254,7 +266,8 @@ export function createOrganizationRepresentativeWorkflow(
  * can refuse before starting a mutation the boundary would reject.
  */
 export function isContactOrganizationRelationshipUnavailable(): boolean {
-  return isMutationCommandUnavailable("contact-organization.upsert-relationship");
+  return isContactConnectedApiRuntime()
+    || isMutationCommandUnavailable("contact-organization.upsert-relationship");
 }
 
 export function upsertContactOrganizationRelationshipCommand(

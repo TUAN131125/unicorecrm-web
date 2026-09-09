@@ -1,5 +1,5 @@
 import type { AuthoritativePage, ModuleListQuery } from "@/shared/application";
-import type { Contact, ContactDecisionRole } from "../../domain/model/contact.types";
+import type { Contact, ContactCustomerRelationship, ContactCustomerRelationshipRole, ContactDecisionRole, ContactOrganizationRelationship, ContactOrganizationRelationshipRole } from "../../domain/model/contact.types";
 
 export type ContactApiRuntimeMode = "demo" | "connected" | "test";
 
@@ -29,6 +29,8 @@ export interface ContactRelationshipSummary {
   allowedActions: string[];
   projectionVersion: number;
   generatedAt: string;
+  organizationRelationships: ContactOrganizationRelationship[];
+  customerRelationships: ContactCustomerRelationship[];
 }
 
 export interface ContactQueryPort {
@@ -41,6 +43,12 @@ export interface ContactCommandPort {
   create(input: ContactCreateCommand): Promise<Contact>;
   update(input: ContactUpdateCommand): Promise<Contact>;
   archive(input: ContactArchiveCommand): Promise<Contact>;
+  createOrganizationRelationship(input: CreateContactOrganizationRelationshipCommand): Promise<Contact>;
+  updateOrganizationRelationship(input: UpdateContactOrganizationRelationshipCommand): Promise<Contact>;
+  endOrganizationRelationship(input: EndContactOrganizationRelationshipCommand): Promise<Contact>;
+  createCustomerRelationship(input: CreateContactCustomerRelationshipCommand): Promise<Contact>;
+  updateCustomerRelationship(input: UpdateContactCustomerRelationshipCommand): Promise<Contact>;
+  endCustomerRelationship(input: EndContactCustomerRelationshipCommand): Promise<Contact>;
 }
 
 export interface ContactCreateCommand {
@@ -68,6 +76,13 @@ export interface ContactArchiveCommand {
   contactId: string;
   expectedVersion: number;
 }
+
+export interface CreateContactOrganizationRelationshipCommand { contactId: string; expectedVersion: number; organizationId: string; role: ContactOrganizationRelationshipRole; isPrimaryAffiliation: boolean; effectiveFrom?: string }
+export interface UpdateContactOrganizationRelationshipCommand { contactId: string; relationshipId: string; expectedVersion: number; role?: ContactOrganizationRelationshipRole; isPrimaryAffiliation?: boolean }
+export interface EndContactOrganizationRelationshipCommand { contactId: string; relationshipId: string; expectedVersion: number; endedReason: string; effectiveTo?: string }
+export interface CreateContactCustomerRelationshipCommand { contactId: string; expectedVersion: number; customerId: string; role: ContactCustomerRelationshipRole; effectiveFrom?: string }
+export interface UpdateContactCustomerRelationshipCommand { contactId: string; relationshipId: string; expectedVersion: number; role: ContactCustomerRelationshipRole }
+export interface EndContactCustomerRelationshipCommand { contactId: string; relationshipId: string; expectedVersion: number; endedReason: string; effectiveTo?: string }
 
 export interface ContactApiRuntime {
   mode: ContactApiRuntimeMode;

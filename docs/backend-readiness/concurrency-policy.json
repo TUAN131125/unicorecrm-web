@@ -90,6 +90,11 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "archiveContact",
+      "policy": "IF_MATCH_REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "archiveDealCommand",
       "policy": "IF_MATCH_REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -301,8 +306,18 @@
     },
     {
       "operationId": "createContact",
-      "policy": "UNRESOLVED_BLOCKED",
-      "status": "BLOCKED"
+      "policy": "BACKEND_SERIALIZED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "createContactCustomerRelationship",
+      "policy": "IF_MATCH_REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "createContactOrganizationRelationship",
+      "policy": "IF_MATCH_REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
     },
     {
       "operationId": "createCrmObjectField",
@@ -456,6 +471,16 @@
     },
     {
       "operationId": "duplicateOrderDraft",
+      "policy": "IF_MATCH_REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "endContactCustomerRelationship",
+      "policy": "IF_MATCH_REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "endContactOrganizationRelationship",
       "policy": "IF_MATCH_REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
     },
@@ -703,11 +728,6 @@
       "operationId": "issueInvoice",
       "policy": "IF_MATCH_REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
-    },
-    {
-      "operationId": "linkContactToOrganization",
-      "policy": "UNRESOLVED_BLOCKED",
-      "status": "BLOCKED"
     },
     {
       "operationId": "listActivities",
@@ -1251,8 +1271,18 @@
     },
     {
       "operationId": "updateContact",
-      "policy": "UNRESOLVED_BLOCKED",
-      "status": "BLOCKED"
+      "policy": "IF_MATCH_REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "updateContactCustomerRelationship",
+      "policy": "IF_MATCH_REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "updateContactOrganizationRelationship",
+      "policy": "IF_MATCH_REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
     },
     {
       "operationId": "updateCrmObjectField",

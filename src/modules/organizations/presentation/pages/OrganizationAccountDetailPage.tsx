@@ -117,7 +117,9 @@ export const OrganizationAccountDetailPage: React.FC = () => {
   const linkedCustomer = account ? findCustomerByRelationshipRefSnapshot({ type: "ORGANIZATION_ACCOUNT", id: account.id }) : undefined;
   const actorId = access.memberId || access.accountId || "current-user";
   const canEdit = access.canPerform("organizations", "update");
-  const canAddRepresentative = access.canPerform("organizations", "update") && access.canPerform("contacts", "create");
+  const canAddRepresentative = access.canPerform("organizations", "update")
+    && access.canPerform("contacts", "create")
+    && !isContactOrganizationRelationshipUnavailable();
 
   const related = useMemo(() => {
     if (!account) return emptyRelated();
@@ -386,7 +388,7 @@ export const OrganizationAccountDetailPage: React.FC = () => {
                         contacts={related.representatives}
                         organizationAccountId={account.id}
                         primaryContactId={primaryContact?.id}
-                        canEdit={canEdit}
+                        canEdit={canEdit && !isContactOrganizationRelationshipUnavailable()}
                         onOpenContact={(id) => navigate(`/contacts/${id}`)}
                         onSetPrimary={setPrimaryRepresentative}
                         onEndRelationship={requestEndRepresentativeRelationship}
@@ -512,7 +514,7 @@ export const OrganizationAccountDetailPage: React.FC = () => {
       </div>
 
       <OrganizationEditModal isOpen={showEdit} onClose={() => setShowEdit(false)} account={account} representatives={related.representatives} actorId={actorId} onSaved={(next) => setMessage(text(`Đã cập nhật ${next.displayName}.`, `${next.displayName} updated.`))} />
-      <OrganizationRepresentativeModal isOpen={showAddRepresentative} onClose={() => setShowAddRepresentative(false)} account={account} actorId={actorId} onCreated={(contact) => { setMessage(text(`Đã liên kết ${contact.fullName || contact.name} làm cá nhân đại diện.`, `${contact.fullName || contact.name} linked as a representative.`)); setActiveTab("relationship"); setRelationshipView("people"); }} />
+      {!isContactOrganizationRelationshipUnavailable() && <OrganizationRepresentativeModal isOpen={showAddRepresentative} onClose={() => setShowAddRepresentative(false)} account={account} actorId={actorId} onCreated={(contact) => { setMessage(text(`Đã liên kết ${contact.fullName || contact.name} làm cá nhân đại diện.`, `${contact.fullName || contact.name} linked as a representative.`)); setActiveTab("relationship"); setRelationshipView("people"); }} />}
       <OrganizationQuickActivityModal action={quickAction} email={communicationEmail} phone={communicationPhone} onClose={() => setQuickAction(null)} onSave={saveQuickActivity} />
       <ConfirmDialog
         isOpen={Boolean(endRepresentativeContactId)}

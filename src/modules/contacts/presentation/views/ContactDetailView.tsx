@@ -258,6 +258,7 @@ export function ContactDetailView({ controller }: { controller: Controller }) {
                   customer: canonicalCustomer,
                   customerName: getCustomerDisplayNameForContact(contact),
                   onOpenCustomer: canonicalCustomer ? () => navigate(`/customers/${canonicalCustomer.id}`) : undefined,
+                  onOpenCustomerRelationship: (customerId: string) => navigate(`/customers/${customerId}`),
                   onOpenOrganization: (organizationId) => navigate(`/organizations/${organizationId}`),
                   onOpenCustomerDirectory: () => navigate("/customers"),
                 }}

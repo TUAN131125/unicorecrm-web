@@ -18,14 +18,14 @@
       "workflowId": "WF-02",
       "name": "contact-organization-relationship",
       "sourcePath": "src/workflows/contact-organization-relationship",
-      "ownershipDecision": "BACKEND_ORCHESTRATED",
+      "ownershipDecision": "CONTACTS_OWNER_LOCAL",
       "connectedFrontendCoordinatorAllowed": false,
       "demoSnapshotRollbackAllowed": true,
-      "idempotencyBoundary": "BACKEND_WORKFLOW_COMMAND",
-      "compensationOwner": "BACKEND",
-      "decisionId": null,
-      "contractReadiness": "BLOCKED",
-      "blockingDecisionId": "DEC-WORKFLOW-CONTACT-ORGANIZATION-RELATIONSHIP"
+      "idempotencyBoundary": "PER_CONTACT_RELATIONSHIP_COMMAND",
+      "compensationOwner": "NOT_APPLICABLE",
+      "decisionId": "DEC-C6-001",
+      "contractReadiness": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
     },
     {
       "workflowId": "WF-03",

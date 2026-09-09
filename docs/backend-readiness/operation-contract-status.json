@@ -430,6 +430,20 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "createContactCustomerRelationship",
+      "method": "POST",
+      "path": "/contacts/{contactId}/customer-relationships",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "createContactOrganizationRelationship",
+      "method": "POST",
+      "path": "/contacts/{contactId}/organization-relationships",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "createCrmObjectField",
       "method": "POST",
       "path": "/crm-configuration/object-schemas/{objectKey}/fields",
@@ -643,6 +657,20 @@
       "operationId": "duplicateOrderDraft",
       "method": "POST",
       "path": "/orders/{orderId}/duplicate-draft",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "endContactCustomerRelationship",
+      "method": "POST",
+      "path": "/contacts/{contactId}/customer-relationships/{relationshipId}/end",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "endContactOrganizationRelationship",
+      "method": "POST",
+      "path": "/contacts/{contactId}/organization-relationships/{relationshipId}/end",
       "status": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null
     },
@@ -988,13 +1016,6 @@
       "path": "/invoices/{invoiceId}/issue",
       "status": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null
-    },
-    {
-      "operationId": "linkContactToOrganization",
-      "method": "PUT",
-      "path": "/organizations/{organizationId}/contacts/{contactId}",
-      "status": "BLOCKED",
-      "blockingDecisionId": "DEC-MUTATION-RESULT-PROJECTION"
     },
     {
       "operationId": "listActivities",
@@ -1756,6 +1777,20 @@
       "operationId": "updateContact",
       "method": "PATCH",
       "path": "/contacts/{contactId}",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "updateContactCustomerRelationship",
+      "method": "PATCH",
+      "path": "/contacts/{contactId}/customer-relationships/{relationshipId}",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "updateContactOrganizationRelationship",
+      "method": "PATCH",
+      "path": "/contacts/{contactId}/organization-relationships/{relationshipId}",
       "status": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null
     },

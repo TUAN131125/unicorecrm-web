@@ -102,7 +102,7 @@ const checks = {
   "openapi-syntax": () => {
     assert(spec.openapi === "3.1.0", "OpenAPI must be 3.1.0");
     assert(spec["x-contract-authority"] === "OPENAPI", "OpenAPI authority marker missing");
-    assert(operations.length === 270, `Expected 270 operations, found ${operations.length}`);
+    assert(operations.length === 276, `Expected 276 operations, found ${operations.length}`);
   },
   "openapi-lint": () => {
     for (const op of operations) {
@@ -198,13 +198,13 @@ const checks = {
   },
   "authorization-matrix": () => {
     const rows = json("docs/backend-readiness/operation-authorization-matrix.json").operations;
-    assert(rows.length === 270, "Authorization matrix incomplete");
+    assert(rows.length === 276, "Authorization matrix incomplete");
     const ids = new Set(rows.map((x) => x.operationId));
     for (const op of operations) { assert(ids.has(op.operationId), `${op.operationId}: auth row missing`); assert(op["x-required-capability"] !== "UNRESOLVED", `${op.operationId}: capability unresolved`); if (op.tags?.includes("Identity")) assert(op["x-workspace-required"] === false && op["x-data-scope"] === "GLOBAL_IDENTITY", `${op.operationId}: identity scope invalid`); else if (op.tags?.includes("WorkspaceBootstrap")) assert(op["x-workspace-required"] === false && ["GLOBAL_IDENTITY", "SELECTED_WORKSPACE"].includes(op["x-data-scope"]), `${op.operationId}: workspace bootstrap scope invalid`); else assert(op["x-workspace-required"] === true, `${op.operationId}: workspace boundary missing`); }
   },
   "idempotency-policy": () => {
     const rows = json("docs/backend-readiness/idempotency-policy.json").operations;
-    assert(rows.length === 270, "Idempotency matrix incomplete");
+    assert(rows.length === 276, "Idempotency matrix incomplete");
     for (const op of operations.filter((x) => x["x-contract-status"] === "PRODUCTION_CONTRACT_READY" && x.method !== "GET")) {
       assert(["REQUIRED", "OPTIONAL", "NOT_APPLICABLE"].includes(op["x-idempotency-policy"]), `${op.operationId}: invalid idempotency policy`);
       if (op["x-idempotency-policy"] === "REQUIRED") assert(parameters(op).some((p) => p.in === "header" && p.name === "Idempotency-Key" && p.required), `${op.operationId}: required header missing`);
@@ -212,7 +212,7 @@ const checks = {
   },
   "concurrency-policy": () => {
     const rows = json("docs/backend-readiness/concurrency-policy.json").operations;
-    assert(rows.length === 270, "Concurrency matrix incomplete");
+    assert(rows.length === 276, "Concurrency matrix incomplete");
     for (const op of operations.filter((x) => x["x-contract-status"] === "PRODUCTION_CONTRACT_READY")) {
       assert(op["x-concurrency-policy"], `${op.operationId}: concurrency policy missing`);
       if (op["x-concurrency-policy"] === "IF_MATCH_REQUIRED") assert(parameters(op).some((p) => p.in === "header" && p.name === "If-Match" && p.required), `${op.operationId}: If-Match missing`);
@@ -954,7 +954,7 @@ const checks = {
   },
   "inventory-integrity": () => {
     const d = json("docs/backend-readiness/contract-inventory.json");
-    assert(d.modules.length === 15 && d.routeCount === 78 && d.commands === 173 && d.queries === 162 && d.workflows === 27 && d.openApiOperations === 270, "Contract inventory drift");
+    assert(d.modules.length === 15 && d.routeCount === 78 && d.commands === 173 && d.queries === 162 && d.workflows === 27 && d.openApiOperations === 276, "Contract inventory drift");
     assert(d.genericProductionMutationRequestOperations === 0 && d.genericProductionMutationResponseOperations === 0, "Generic mutation inventory non-zero");
     // Artifact hygiene is a property of the release ARTIFACT, not of the working tree.
     // node_modules is required to run this pipeline at all, dist is produced by

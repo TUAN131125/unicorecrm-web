@@ -4,7 +4,7 @@
   "openapiVersion": "3.1.0",
   "contractVersion": "0.23.20-contract.0",
   "specPath": "docs/api/openapi.json",
-  "specSha256": "d118bb2b3629bcd5ddd7f04e6d3c60da409847df76bd3ad28f74e6826535ec43",
+  "specSha256": "55015771fd7d96468272530d15266287f4bd907e33b01226e1e3583c2c0b5d84",
   "ownershipPath": "scripts/api/openapi/client-ownership.json",
   "coverageLedgerPath": "docs/api/operation-coverage-ledger.json",
   "breakingBaselinePath": "docs/api/openapi-breaking-baseline.json",
@@ -102,7 +102,7 @@
       "output": "src/platform/api/generated/commercialApi.ts",
       "className": "CommercialApiClient",
       "requestOptionsName": "CommercialRequestOptions",
-      "operationCount": 153
+      "operationCount": 158
     },
     {
       "id": "workspace-configuration",
@@ -1021,6 +1021,34 @@
       "requiredCapability": "contacts.create"
     },
     {
+      "operationId": "createContactCustomerRelationship",
+      "method": "POST",
+      "path": "/contacts/{contactId}/customer-relationships",
+      "boundedContext": "Contacts",
+      "ownerModule": "contacts",
+      "generatedClientId": "commercial",
+      "generatedMethod": "createContactCustomerRelationship",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "contacts.update"
+    },
+    {
+      "operationId": "createContactOrganizationRelationship",
+      "method": "POST",
+      "path": "/contacts/{contactId}/organization-relationships",
+      "boundedContext": "Contacts",
+      "ownerModule": "contacts",
+      "generatedClientId": "commercial",
+      "generatedMethod": "createContactOrganizationRelationship",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "contacts.update"
+    },
+    {
       "operationId": "createCrmObjectField",
       "method": "POST",
       "path": "/crm-configuration/object-schemas/{objectKey}/fields",
@@ -1453,6 +1481,34 @@
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "orders.create"
+    },
+    {
+      "operationId": "endContactCustomerRelationship",
+      "method": "POST",
+      "path": "/contacts/{contactId}/customer-relationships/{relationshipId}/end",
+      "boundedContext": "Contacts",
+      "ownerModule": "contacts",
+      "generatedClientId": "commercial",
+      "generatedMethod": "endContactCustomerRelationship",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "contacts.update"
+    },
+    {
+      "operationId": "endContactOrganizationRelationship",
+      "method": "POST",
+      "path": "/contacts/{contactId}/organization-relationships/{relationshipId}/end",
+      "boundedContext": "Contacts",
+      "ownerModule": "contacts",
+      "generatedClientId": "commercial",
+      "generatedMethod": "endContactOrganizationRelationship",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "contacts.update"
     },
     {
       "operationId": "evaluateEffectiveRecordAccess",
@@ -2139,20 +2195,6 @@
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "invoices.issue"
-    },
-    {
-      "operationId": "linkContactToOrganization",
-      "method": "PUT",
-      "path": "/organizations/{organizationId}/contacts/{contactId}",
-      "boundedContext": "Organizations",
-      "ownerModule": "organizations",
-      "generatedClientId": "commercial",
-      "generatedMethod": "linkContactToOrganization",
-      "idempotencyPolicy": "UNRESOLVED_BLOCKED",
-      "concurrencyPolicy": "UNRESOLVED_BLOCKED",
-      "contractStatus": "BLOCKED",
-      "blockingDecisionId": "DEC-MUTATION-RESULT-PROJECTION",
-      "requiredCapability": "organizations.update"
     },
     {
       "operationId": "listActivities",
@@ -3674,6 +3716,34 @@
       "ownerModule": "contacts",
       "generatedClientId": "commercial",
       "generatedMethod": "updateContact",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "contacts.update"
+    },
+    {
+      "operationId": "updateContactCustomerRelationship",
+      "method": "PATCH",
+      "path": "/contacts/{contactId}/customer-relationships/{relationshipId}",
+      "boundedContext": "Contacts",
+      "ownerModule": "contacts",
+      "generatedClientId": "commercial",
+      "generatedMethod": "updateContactCustomerRelationship",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "contacts.update"
+    },
+    {
+      "operationId": "updateContactOrganizationRelationship",
+      "method": "PATCH",
+      "path": "/contacts/{contactId}/organization-relationships/{relationshipId}",
+      "boundedContext": "Contacts",
+      "ownerModule": "contacts",
+      "generatedClientId": "commercial",
+      "generatedMethod": "updateContactOrganizationRelationship",
       "idempotencyPolicy": "REQUIRED",
       "concurrencyPolicy": "IF_MATCH_REQUIRED",
       "contractStatus": "PRODUCTION_CONTRACT_READY",

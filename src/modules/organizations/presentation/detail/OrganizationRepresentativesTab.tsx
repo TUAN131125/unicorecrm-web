@@ -19,7 +19,7 @@ export const OrganizationRepresentativesTab: React.FC<OrganizationRepresentative
   const vi = locale === "vi";
   const text = (vn: string, en: string) => vi ? vn : en;
   if (contacts.length === 0) {
-    return <div className="rounded-2xl border border-dashed border-amber-200 bg-amber-50 p-8 text-center"><UsersRound size={28} className="mx-auto text-amber-500" /><h3 className="mt-3 text-sm font-semibold text-amber-900">{text("Tổ chức chưa có cá nhân đại diện", "No organization representative")}</h3><p className="mx-auto mt-2 max-w-lg text-[11px] leading-5 text-amber-700">{text("Thêm hoặc liên kết Contact để quản lý vai trò và thời gian hiệu lực.", "Add or link a Contact to manage role and effective dates.")}</p><button type="button" onClick={onAddRepresentative} className="mt-4 rounded-xl bg-violet-600 px-4 py-2.5 text-[10px] font-semibold text-white hover:bg-violet-700">{text("Thêm cá nhân đại diện", "Add representative")}</button></div>;
+    return <div className="rounded-2xl border border-dashed border-amber-200 bg-amber-50 p-8 text-center"><UsersRound size={28} className="mx-auto text-amber-500" /><h3 className="mt-3 text-sm font-semibold text-amber-900">{text("Tổ chức chưa có cá nhân đại diện", "No organization representative")}</h3><p className="mx-auto mt-2 max-w-lg text-[11px] leading-5 text-amber-700">{text("Thêm hoặc liên kết Contact để quản lý vai trò và thời gian hiệu lực.", "Add or link a Contact to manage role and effective dates.")}</p>{canEdit && <button type="button" onClick={onAddRepresentative} className="mt-4 rounded-xl bg-violet-600 px-4 py-2.5 text-[10px] font-semibold text-white hover:bg-violet-700">{text("Thêm cá nhân đại diện", "Add representative")}</button>}</div>;
   }
 
   return (

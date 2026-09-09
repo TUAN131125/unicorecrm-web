@@ -4,7 +4,7 @@ OpenAPI `docs/api/openapi.json` is the sole production HTTP authority for `0.23.
 
 - Commands: **173** (**152 ready, 17 blocked, 4 deprecated**).
 - Queries: **162** (**0 unresolved**; 63 production API, 66 composed read model, 27 frontend-local, 5 demo-only, 1 BFF candidate).
-- OpenAPI operations: **270** (**236 ready, 34 blocked**).
+- OpenAPI operations: **276** (**245 ready, 31 blocked**).
 - Error codes: **210**.
 - Workflow contract registry: **27 entries**; source inventory: **22 cross-module workflow directories**.
 - Provider contract packs: **26**, containing **516 scenarios**.

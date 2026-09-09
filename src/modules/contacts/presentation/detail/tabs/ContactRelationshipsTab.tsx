@@ -10,12 +10,14 @@ import type { Contact } from "../../../domain/model/contact.types";
 import type { Customer } from "@/modules/customers";
 import { getActiveContactOrganizationRelationships } from "../../../domain/model/contactOrganizationRelationships";
 import { ContactOrganizationRelationshipsPanel } from "../ContactOrganizationRelationshipsPanel";
+import { ContactCustomerRelationshipsPanel } from "../ContactCustomerRelationshipsPanel";
 
 interface ContactRelationshipsTabProps {
   contact: Contact;
   customer?: Customer;
   customerName?: string;
   onOpenCustomer?(): void;
+  onOpenCustomerRelationship?(customerId: string): void;
   onOpenOrganization?(organizationId: string): void;
   onOpenCustomerDirectory(): void;
 }
@@ -25,6 +27,7 @@ export const ContactRelationshipsTab: React.FC<ContactRelationshipsTabProps> = (
   customer,
   customerName,
   onOpenCustomer,
+  onOpenCustomerRelationship,
   onOpenOrganization,
   onOpenCustomerDirectory,
 }) => {
@@ -61,7 +64,7 @@ export const ContactRelationshipsTab: React.FC<ContactRelationshipsTabProps> = (
             <span className="min-w-0 flex-1">
               <span className="block crm-text-wrap text-xs font-semibold text-slate-900">{customerName || customer.customerCode}</span>
               <span className="mt-1 block crm-text-wrap text-[10px] text-slate-500">
-                {text("Hồ sơ Customer 360 điều phối giao dịch và dịch vụ", "Customer 360 coordinating transactions and service")}
+                {text("Chủ thể tài khoản Customer (tách biệt với vai trò stakeholder)", "Customer account subject (separate from stakeholder roles)")}
               </span>
             </span>
           </button>
@@ -71,6 +74,9 @@ export const ContactRelationshipsTab: React.FC<ContactRelationshipsTabProps> = (
             <ContactOrganizationRelationshipsPanel contact={contact} onOpenOrganization={onOpenOrganization} />
           </div>
         ) : null}
+        <div className="sm:col-span-2">
+          <ContactCustomerRelationshipsPanel contact={contact} onOpenCustomer={onOpenCustomerRelationship} />
+        </div>
         {!customer && !hasOrganization && !onOpenOrganization ? (
           <div className="flex min-h-[180px] flex-col items-center justify-center rounded-xl border border-dashed border-slate-200 bg-slate-50/60 px-6 py-8 text-center sm:col-span-2">
             <ContactRound size={22} className="text-slate-300" />

@@ -21,6 +21,7 @@ Contract version: `0.23.20-contract.0`. OpenAPI metadata is authoritative.
 | approveQuoteCommand | IF_MATCH_REQUIRED | READY |
 | approveReturnCommand | IF_MATCH_REQUIRED | READY |
 | archiveAccessRole | IF_MATCH_REQUIRED | READY |
+| archiveContact | IF_MATCH_REQUIRED | READY |
 | archiveDealCommand | IF_MATCH_REQUIRED | READY |
 | archiveDealsBatch | BACKEND_SERIALIZED | READY |
 | archiveLead | IF_MATCH_REQUIRED | READY |
@@ -63,7 +64,9 @@ Contract version: `0.23.20-contract.0`. OpenAPI metadata is authoritative.
 | confirmOrderWithPaymentPlan | IF_MATCH_REQUIRED | READY |
 | convertAcceptedQuoteToOrderDraft | IF_MATCH_REQUIRED | READY |
 | createAccessRole | BACKEND_SERIALIZED | READY |
-| createContact | UNRESOLVED_BLOCKED | BLOCKED |
+| createContact | BACKEND_SERIALIZED | READY |
+| createContactCustomerRelationship | IF_MATCH_REQUIRED | READY |
+| createContactOrganizationRelationship | IF_MATCH_REQUIRED | READY |
 | createCrmObjectField | UNRESOLVED_BLOCKED | BLOCKED |
 | createCrmPipeline | UNRESOLVED_BLOCKED | BLOCKED |
 | createCrmPipelineStage | UNRESOLVED_BLOCKED | BLOCKED |
@@ -95,6 +98,8 @@ Contract version: `0.23.20-contract.0`. OpenAPI metadata is authoritative.
 | disqualifyLead | IF_MATCH_REQUIRED | READY |
 | disqualifyLeadBatch | EXPECTED_VERSIONS_IN_BODY | READY |
 | duplicateOrderDraft | IF_MATCH_REQUIRED | READY |
+| endContactCustomerRelationship | IF_MATCH_REQUIRED | READY |
+| endContactOrganizationRelationship | IF_MATCH_REQUIRED | READY |
 | evaluateEffectiveRecordAccess | BACKEND_SERIALIZED | READY |
 | expireQuoteCommand | IF_MATCH_REQUIRED | READY |
 | expireQuotesBatch | ITEMS_CARRY_EXPECTED_VERSION | READY |
@@ -144,7 +149,6 @@ Contract version: `0.23.20-contract.0`. OpenAPI metadata is authoritative.
 | importLeadBatch | BACKEND_SERIALIZED | READY |
 | inviteWorkspaceMember | BACKEND_SERIALIZED | READY |
 | issueInvoice | IF_MATCH_REQUIRED | READY |
-| linkContactToOrganization | UNRESOLVED_BLOCKED | BLOCKED |
 | listActivities | NOT_APPLICABLE | READY |
 | listContacts | NOT_APPLICABLE | READY |
 | listCreditNotes | NOT_APPLICABLE | READY |
@@ -253,7 +257,9 @@ Contract version: `0.23.20-contract.0`. OpenAPI metadata is authoritative.
 | skipStudioQuickSetupStep | IF_MATCH_REQUIRED | READY |
 | syncShippingBookingCommand | IF_MATCH_REQUIRED | READY |
 | transitionSupportCase | IF_MATCH_REQUIRED | READY |
-| updateContact | UNRESOLVED_BLOCKED | BLOCKED |
+| updateContact | IF_MATCH_REQUIRED | READY |
+| updateContactCustomerRelationship | IF_MATCH_REQUIRED | READY |
+| updateContactOrganizationRelationship | IF_MATCH_REQUIRED | READY |
 | updateCrmObjectField | UNRESOLVED_BLOCKED | BLOCKED |
 | updateCrmPipeline | UNRESOLVED_BLOCKED | BLOCKED |
 | updateCrmPipelineStage | UNRESOLVED_BLOCKED | BLOCKED |

@@ -122,7 +122,8 @@ for (const removedPath of [
 ]) assert.equal(fs.existsSync(path.join(root, removedPath)), false, `${removedPath} must not remain an active parallel Customer implementation.`);
 
 const contactTypeSource = read("src/modules/contacts/domain/model/contact.types.ts");
-for (const forbidden of ["customerId", "customerName", "legacyCustomerId", "won_to_customer"]) assert.equal(contactTypeSource.includes(forbidden), false, `Active Contact model must not own ${forbidden}.`);
+const activeContactType = contactTypeSource.match(/export interface Contact \{[\s\S]*?\n\}/u)?.[0] ?? "";
+for (const forbidden of ["customerId", "customerName", "legacyCustomerId", "won_to_customer"]) assert.equal(activeContactType.includes(forbidden), false, `Active Contact identity must not own ${forbidden}; Contact-owned stakeholder relationship records remain distinct.`);
 const customerPageSource = read("src/modules/customers/presentation/pages/Customer360Page.tsx");
 assert.equal(customerPageSource.includes("setCareTasks"), false, "Customer Care must not use local task state.");
 assert.doesNotMatch(customerPageSource, /createCustomerCareCardWithTask|careOpen|careDraft/, "Customer 360 must not restore a duplicate Care Plan workflow.");

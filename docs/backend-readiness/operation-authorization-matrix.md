@@ -21,6 +21,7 @@ Contract version: `0.23.20-contract.0`. OpenAPI metadata is authoritative.
 | approveQuoteCommand | POST | /quotes/{quoteId}/approve | quotes | quotes.approve | RESOURCE | WORKSPACE | READY |
 | approveReturnCommand | POST | /returns/{returnId}/approve | returns | returns.update | RESOURCE | WORKSPACE | READY |
 | archiveAccessRole | POST | /access/roles/{roleId}/archive | platform/access-control | access.configure | WORKSPACE_ROLE | SELECTED_WORKSPACE | READY |
+| archiveContact | POST | /contacts/{contactId}/archive | contacts | contacts.delete | RESOURCE | WORKSPACE | READY |
 | archiveDealCommand | POST | /deals/{dealId}/archive | deals | deals.delete | RESOURCE | WORKSPACE | READY |
 | archiveDealsBatch | POST | /deals/archive-batch | deals | deals.bulk | WORKSPACE | WORKSPACE | READY |
 | archiveLead | POST | /leads/{leadId}/archive | leads | leads.delete | RESOURCE | WORKSPACE | READY |
@@ -63,7 +64,9 @@ Contract version: `0.23.20-contract.0`. OpenAPI metadata is authoritative.
 | confirmOrderWithPaymentPlan | POST | /workflows/order-confirmation/{orderId}/confirm-with-payment-plan | orders | orders.confirm | RESOURCE | WORKSPACE | READY |
 | convertAcceptedQuoteToOrderDraft | POST | /order-drafts/from-accepted-quote | orders | orders.create | RESOURCE | WORKSPACE | READY |
 | createAccessRole | POST | /access/roles | platform/access-control | access.configure | WORKSPACE_ROLE | SELECTED_WORKSPACE | READY |
-| createContact | POST | /contacts | contacts | contacts.create | WORKSPACE | WORKSPACE | BLOCKED |
+| createContact | POST | /contacts | contacts | contacts.create | WORKSPACE | WORKSPACE | READY |
+| createContactCustomerRelationship | POST | /contacts/{contactId}/customer-relationships | contacts | contacts.update | RESOURCE | WORKSPACE | READY |
+| createContactOrganizationRelationship | POST | /contacts/{contactId}/organization-relationships | contacts | contacts.update | RESOURCE | WORKSPACE | READY |
 | createCrmObjectField | POST | /crm-configuration/object-schemas/{objectKey}/fields | platform/workspace-config | studio.configure | RESOURCE | WORKSPACE | BLOCKED |
 | createCrmPipeline | POST | /crm-configuration/pipelines | platform/workspace-config | studio.configure | SYSTEM_CONFIGURATION | WORKSPACE | BLOCKED |
 | createCrmPipelineStage | POST | /crm-configuration/pipelines/{pipelineId}/stages | platform/workspace-config | studio.configure | RESOURCE | WORKSPACE | BLOCKED |
@@ -95,6 +98,8 @@ Contract version: `0.23.20-contract.0`. OpenAPI metadata is authoritative.
 | disqualifyLead | POST | /leads/{leadId}/disqualify | leads | leads.qualify | RESOURCE | WORKSPACE | READY |
 | disqualifyLeadBatch | POST | /leads/disqualify-batch | leads | leads.bulk | WORKSPACE | WORKSPACE | READY |
 | duplicateOrderDraft | POST | /orders/{orderId}/duplicate-draft | orders | orders.create | RESOURCE | WORKSPACE | READY |
+| endContactCustomerRelationship | POST | /contacts/{contactId}/customer-relationships/{relationshipId}/end | contacts | contacts.update | RESOURCE | WORKSPACE | READY |
+| endContactOrganizationRelationship | POST | /contacts/{contactId}/organization-relationships/{relationshipId}/end | contacts | contacts.update | RESOURCE | WORKSPACE | READY |
 | evaluateEffectiveRecordAccess | POST | /access/records/evaluate | platform/access-control | workspace.context.resolve | REQUESTED_RESOURCE | SELECTED_WORKSPACE | READY |
 | expireQuoteCommand | POST | /quotes/{quoteId}/expire | quotes | quotes.update | RESOURCE | WORKSPACE | READY |
 | expireQuotesBatch | POST | /quotes/expire-batch | quotes | quotes.update | WORKSPACE | WORKSPACE | READY |
@@ -144,7 +149,6 @@ Contract version: `0.23.20-contract.0`. OpenAPI metadata is authoritative.
 | importLeadBatch | POST | /leads/import-batch | leads | leads.bulk | WORKSPACE | WORKSPACE | READY |
 | inviteWorkspaceMember | POST | /access/invitations | platform/access-control | access.configure | WORKSPACE_MEMBERSHIP | SELECTED_WORKSPACE | READY |
 | issueInvoice | POST | /invoices/{invoiceId}/issue | invoices | invoices.issue | RESOURCE | WORKSPACE | READY |
-| linkContactToOrganization | PUT | /organizations/{organizationId}/contacts/{contactId} | organizations | organizations.update | RESOURCE | WORKSPACE | BLOCKED |
 | listActivities | GET | /activities | tasks | tasks.read | WORKSPACE | WORKSPACE | READY |
 | listContacts | GET | /contacts | contacts | contacts.read | WORKSPACE | WORKSPACE | READY |
 | listCreditNotes | GET | /credit-notes | invoices | invoices.read | WORKSPACE | WORKSPACE | READY |
@@ -253,7 +257,9 @@ Contract version: `0.23.20-contract.0`. OpenAPI metadata is authoritative.
 | skipStudioQuickSetupStep | POST | /studio/quick-setup/steps/{stepId}/skip | workspaces/studio | studio.configure | STUDIO_QUICK_SETUP | SELECTED_WORKSPACE | READY |
 | syncShippingBookingCommand | POST | /shipping/{bookingId}/sync-booking | shipping | shipping.create | RESOURCE | WORKSPACE | READY |
 | transitionSupportCase | POST | /support/cases/{caseId}/transition | support | support.update | RESOURCE | WORKSPACE | READY |
-| updateContact | PATCH | /contacts/{contactId} | contacts | contacts.update | RESOURCE | WORKSPACE | BLOCKED |
+| updateContact | PATCH | /contacts/{contactId} | contacts | contacts.update | RESOURCE | WORKSPACE | READY |
+| updateContactCustomerRelationship | PATCH | /contacts/{contactId}/customer-relationships/{relationshipId} | contacts | contacts.update | RESOURCE | WORKSPACE | READY |
+| updateContactOrganizationRelationship | PATCH | /contacts/{contactId}/organization-relationships/{relationshipId} | contacts | contacts.update | RESOURCE | WORKSPACE | READY |
 | updateCrmObjectField | PATCH | /crm-configuration/object-schemas/{objectKey}/fields/{fieldId} | platform/workspace-config | studio.configure | RESOURCE | WORKSPACE | BLOCKED |
 | updateCrmPipeline | PATCH | /crm-configuration/pipelines/{pipelineId} | platform/workspace-config | studio.configure | RESOURCE | WORKSPACE | BLOCKED |
 | updateCrmPipelineStage | PATCH | /crm-configuration/pipelines/{pipelineId}/stages/{stageId} | platform/workspace-config | studio.configure | RESOURCE | WORKSPACE | BLOCKED |

@@ -75,6 +75,12 @@ configureContactApplication({
       async create(input) { capturedCreate = input; return authoritativeCreated; },
       async update(input) { capturedUpdate = input; return { ...authoritativeCreated, name: "Updated Authoritative Person", fullName: "Updated Authoritative Person", resourceVersion: 8 }; },
       async archive(input) { capturedArchive = input; return { ...authoritativeCreated, status: "archived", archivedAt: "2026-09-09T02:00:00.000Z", resourceVersion: 9 }; },
+      async createOrganizationRelationship() { throw new Error("NOT_USED"); },
+      async updateOrganizationRelationship() { throw new Error("NOT_USED"); },
+      async endOrganizationRelationship() { throw new Error("NOT_USED"); },
+      async createCustomerRelationship() { throw new Error("NOT_USED"); },
+      async updateCustomerRelationship() { throw new Error("NOT_USED"); },
+      async endCustomerRelationship() { throw new Error("NOT_USED"); },
     },
   },
 });
@@ -119,7 +125,12 @@ configureContactApplication({
       async get() { throw new Error("NOT_USED"); },
       async getRelationshipSummary() { throw new Error("NOT_USED"); },
     },
-    commands: { async create() { throw new ApplicationError({ code: "ACCESS_DENIED", message: "denied", status: 403 }); }, async update() { throw new Error("NOT_USED"); }, async archive() { throw new Error("NOT_USED"); } },
+    commands: {
+      async create() { throw new ApplicationError({ code: "ACCESS_DENIED", message: "denied", status: 403 }); },
+      async update() { throw new Error("NOT_USED"); }, async archive() { throw new Error("NOT_USED"); },
+      async createOrganizationRelationship() { throw new Error("NOT_USED"); }, async updateOrganizationRelationship() { throw new Error("NOT_USED"); }, async endOrganizationRelationship() { throw new Error("NOT_USED"); },
+      async createCustomerRelationship() { throw new Error("NOT_USED"); }, async updateCustomerRelationship() { throw new Error("NOT_USED"); }, async endCustomerRelationship() { throw new Error("NOT_USED"); },
+    },
   },
 });
 await assert.rejects(() => createContactViaApi({ fullName: "Retry Person" }), (error: unknown) => error instanceof ApplicationError && error.code === "ACCESS_DENIED");

@@ -41,10 +41,14 @@ export type ContactOrganizationRelationshipRole =
 export interface ContactOrganizationRelationship {
   id: string;
   organizationAccountId: string;
+  organizationLabel?: string;
   role: ContactOrganizationRelationshipRole;
   roleTitle?: string;
   department?: string;
   decisionRole?: ContactDecisionRole;
+  /** Authoritative Contact-side primary affiliation. */
+  isPrimaryAffiliation?: boolean;
+  /** @deprecated Compatibility-only Organization primary representative flag. */
   isPrimaryRepresentative: boolean;
   effectiveFrom: string;
   effectiveTo?: string;
@@ -53,6 +57,21 @@ export interface ContactOrganizationRelationship {
   updatedAt?: string;
   updatedBy?: string;
   endedReason?: string;
+}
+
+export type ContactCustomerRelationshipRole = "primary_contact" | "billing" | "decision_maker" | "end_user" | "technical" | "support" | "other";
+export interface ContactCustomerRelationship {
+  id: string;
+  customerId: string;
+  customerLabel?: string;
+  role: ContactCustomerRelationshipRole;
+  effectiveFrom: string;
+  effectiveTo?: string;
+  endedReason?: string;
+  createdAt: string;
+  createdBy?: string;
+  updatedAt?: string;
+  updatedBy?: string;
 }
 
 
@@ -170,4 +189,3 @@ export interface Contact {
   /** Authoritative optimistic-concurrency version from the backend projection. */
   resourceVersion?: number;
 }
-

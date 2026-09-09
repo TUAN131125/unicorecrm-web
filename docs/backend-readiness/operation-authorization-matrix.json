@@ -224,6 +224,19 @@
       "backendEnforcement": "REQUIRED"
     },
     {
+      "operationId": "archiveContact",
+      "method": "POST",
+      "path": "/contacts/{contactId}/archive",
+      "moduleOwner": "contacts",
+      "capability": "contacts.delete",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
       "operationId": "archiveDealCommand",
       "method": "POST",
       "path": "/deals/{dealId}/archive",
@@ -777,10 +790,36 @@
       "capability": "contacts.create",
       "resourceScope": "WORKSPACE",
       "dataScope": "WORKSPACE",
-      "status": "BLOCKED",
+      "status": "PRODUCTION_CONTRACT_READY",
       "workspaceRequired": true,
       "actorRequired": true,
-      "backendEnforcement": "BLOCKED_BY_DECISION"
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "createContactCustomerRelationship",
+      "method": "POST",
+      "path": "/contacts/{contactId}/customer-relationships",
+      "moduleOwner": "contacts",
+      "capability": "contacts.update",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "createContactOrganizationRelationship",
+      "method": "POST",
+      "path": "/contacts/{contactId}/organization-relationships",
+      "moduleOwner": "contacts",
+      "capability": "contacts.update",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
     },
     {
       "operationId": "createCrmObjectField",
@@ -1178,6 +1217,32 @@
       "path": "/orders/{orderId}/duplicate-draft",
       "moduleOwner": "orders",
       "capability": "orders.create",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "endContactCustomerRelationship",
+      "method": "POST",
+      "path": "/contacts/{contactId}/customer-relationships/{relationshipId}/end",
+      "moduleOwner": "contacts",
+      "capability": "contacts.update",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "endContactOrganizationRelationship",
+      "method": "POST",
+      "path": "/contacts/{contactId}/organization-relationships/{relationshipId}/end",
+      "moduleOwner": "contacts",
+      "capability": "contacts.update",
       "resourceScope": "RESOURCE",
       "dataScope": "WORKSPACE",
       "status": "PRODUCTION_CONTRACT_READY",
@@ -1821,19 +1886,6 @@
       "workspaceRequired": true,
       "actorRequired": true,
       "backendEnforcement": "REQUIRED"
-    },
-    {
-      "operationId": "linkContactToOrganization",
-      "method": "PUT",
-      "path": "/organizations/{organizationId}/contacts/{contactId}",
-      "moduleOwner": "organizations",
-      "capability": "organizations.update",
-      "resourceScope": "RESOURCE",
-      "dataScope": "WORKSPACE",
-      "status": "BLOCKED",
-      "workspaceRequired": true,
-      "actorRequired": true,
-      "backendEnforcement": "BLOCKED_BY_DECISION"
     },
     {
       "operationId": "listActivities",
@@ -3247,10 +3299,36 @@
       "capability": "contacts.update",
       "resourceScope": "RESOURCE",
       "dataScope": "WORKSPACE",
-      "status": "BLOCKED",
+      "status": "PRODUCTION_CONTRACT_READY",
       "workspaceRequired": true,
       "actorRequired": true,
-      "backendEnforcement": "BLOCKED_BY_DECISION"
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "updateContactCustomerRelationship",
+      "method": "PATCH",
+      "path": "/contacts/{contactId}/customer-relationships/{relationshipId}",
+      "moduleOwner": "contacts",
+      "capability": "contacts.update",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "updateContactOrganizationRelationship",
+      "method": "PATCH",
+      "path": "/contacts/{contactId}/organization-relationships/{relationshipId}",
+      "moduleOwner": "contacts",
+      "capability": "contacts.update",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
     },
     {
       "operationId": "updateCrmObjectField",

@@ -16243,176 +16243,6 @@
         "x-blocking-decision-id": "DEC-MUTATION-RESULT-PROJECTION"
       }
     },
-    "/organizations/{organizationId}/contacts/{contactId}": {
-      "put": {
-        "operationId": "linkContactToOrganization",
-        "tags": [
-          "Organizations"
-        ],
-        "summary": "Link contact to organization",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/WorkspaceIdHeader"
-          },
-          {
-            "$ref": "#/components/parameters/RequestIdHeader"
-          },
-          {
-            "$ref": "#/components/parameters/CorrelationIdHeader"
-          },
-          {
-            "$ref": "#/components/parameters/IdempotencyKeyHeader"
-          },
-          {
-            "name": "organizationId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/EntityId"
-            }
-          },
-          {
-            "name": "contactId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "$ref": "#/components/schemas/EntityId"
-            }
-          },
-          {
-            "$ref": "#/components/parameters/IfMatchHeader"
-          }
-        ],
-        "responses": {
-          "400": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "404": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "412": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "429": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "501": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "503": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          }
-        },
-        "x-contract-status": "BLOCKED",
-        "x-module-owner": "organizations",
-        "x-required-capability": "organizations.update",
-        "x-resource-scope": "RESOURCE",
-        "x-data-scope": "WORKSPACE",
-        "x-workspace-required": true,
-        "x-actor-required": true,
-        "x-idempotency-policy": "UNRESOLVED_BLOCKED",
-        "x-concurrency-policy": "UNRESOLVED_BLOCKED",
-        "x-audit-requirement": "IMMUTABLE_COMMAND_AUDIT",
-        "x-event-outbox-expectation": "UNRESOLVED_BLOCKED",
-        "x-transaction-boundary": "UNRESOLVED_BLOCKED",
-        "x-error-codes": [
-          "CONTRACT_OPERATION_BLOCKED"
-        ],
-        "x-blocking-decision-id": "DEC-MUTATION-RESULT-PROJECTION"
-      }
-    },
     "/payment-allocations": {
       "get": {
         "operationId": "listPaymentAllocations",
@@ -47491,6 +47321,1094 @@
         "x-request-projection": "ORDER_CREATE_OUTBOUND_SHIPPING",
         "x-aggregate-id-policy": "MUST_MATCH_TARGET"
       }
+    },
+    "/contacts/{contactId}/organization-relationships": {
+      "post": {
+        "operationId": "createContactOrganizationRelationship",
+        "tags": [
+          "Contacts"
+        ],
+        "summary": "Link Contact to an existing Organization",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "name": "contactId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateContactOrganizationRelationshipRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Link Contact to an existing Organization",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactMutationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "contacts",
+        "x-required-capability": "contacts.update",
+        "x-additional-capabilities": [
+          "organizations.read"
+        ],
+        "x-resource-scope": "RESOURCE",
+        "x-data-scope": "WORKSPACE",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "IF_MATCH_REQUIRED",
+        "x-aggregate-id-policy": "MUST_MATCH_TARGET",
+        "x-audit-requirement": "IMMUTABLE_COMMAND_AUDIT",
+        "x-event-outbox-expectation": "CONTACT_ORGANIZATION_RELATIONSHIP_CREATED",
+        "x-transaction-boundary": "SINGLE_CONTACT_AGGREGATE_TRANSACTION",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "RESOURCE_VERSION_CONFLICT",
+          "CONTACT_ALREADY_ARCHIVED",
+          "RELATIONSHIP_CONFLICT",
+          "RATE_LIMITED",
+          "INTERNAL_ERROR"
+        ],
+        "x-decision-id": "DEC-C6-001"
+      }
+    },
+    "/contacts/{contactId}/organization-relationships/{relationshipId}": {
+      "patch": {
+        "operationId": "updateContactOrganizationRelationship",
+        "tags": [
+          "Contacts"
+        ],
+        "summary": "Update an active Contact Organization relationship",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "name": "contactId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          },
+          {
+            "name": "relationshipId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateContactOrganizationRelationshipRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Update an active Contact Organization relationship",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactMutationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "contacts",
+        "x-required-capability": "contacts.update",
+        "x-additional-capabilities": [
+          "organizations.read"
+        ],
+        "x-resource-scope": "RESOURCE",
+        "x-data-scope": "WORKSPACE",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "IF_MATCH_REQUIRED",
+        "x-aggregate-id-policy": "MUST_MATCH_TARGET",
+        "x-audit-requirement": "IMMUTABLE_COMMAND_AUDIT",
+        "x-event-outbox-expectation": "CONTACT_ORGANIZATION_RELATIONSHIP_UPDATED",
+        "x-transaction-boundary": "SINGLE_CONTACT_AGGREGATE_TRANSACTION",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "RESOURCE_VERSION_CONFLICT",
+          "CONTACT_ALREADY_ARCHIVED",
+          "RELATIONSHIP_CONFLICT",
+          "RATE_LIMITED",
+          "INTERNAL_ERROR"
+        ],
+        "x-decision-id": "DEC-C6-001"
+      }
+    },
+    "/contacts/{contactId}/organization-relationships/{relationshipId}/end": {
+      "post": {
+        "operationId": "endContactOrganizationRelationship",
+        "tags": [
+          "Contacts"
+        ],
+        "summary": "End a Contact Organization relationship while retaining history",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "name": "contactId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          },
+          {
+            "name": "relationshipId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EndContactRelationshipRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "End a Contact Organization relationship while retaining history",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactMutationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "contacts",
+        "x-required-capability": "contacts.update",
+        "x-additional-capabilities": [
+          "organizations.read"
+        ],
+        "x-resource-scope": "RESOURCE",
+        "x-data-scope": "WORKSPACE",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "IF_MATCH_REQUIRED",
+        "x-aggregate-id-policy": "MUST_MATCH_TARGET",
+        "x-audit-requirement": "IMMUTABLE_COMMAND_AUDIT",
+        "x-event-outbox-expectation": "CONTACT_ORGANIZATION_RELATIONSHIP_ENDED",
+        "x-transaction-boundary": "SINGLE_CONTACT_AGGREGATE_TRANSACTION",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "RESOURCE_VERSION_CONFLICT",
+          "CONTACT_ALREADY_ARCHIVED",
+          "RELATIONSHIP_CONFLICT",
+          "RATE_LIMITED",
+          "INTERNAL_ERROR"
+        ],
+        "x-decision-id": "DEC-C6-001"
+      }
+    },
+    "/contacts/{contactId}/customer-relationships": {
+      "post": {
+        "operationId": "createContactCustomerRelationship",
+        "tags": [
+          "Contacts"
+        ],
+        "summary": "Link Contact as a stakeholder of an existing Customer",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "name": "contactId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateContactCustomerRelationshipRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Link Contact as a stakeholder of an existing Customer",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactMutationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "contacts",
+        "x-required-capability": "contacts.update",
+        "x-additional-capabilities": [
+          "customers.view"
+        ],
+        "x-resource-scope": "RESOURCE",
+        "x-data-scope": "WORKSPACE",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "IF_MATCH_REQUIRED",
+        "x-aggregate-id-policy": "MUST_MATCH_TARGET",
+        "x-audit-requirement": "IMMUTABLE_COMMAND_AUDIT",
+        "x-event-outbox-expectation": "CONTACT_CUSTOMER_RELATIONSHIP_CREATED",
+        "x-transaction-boundary": "SINGLE_CONTACT_AGGREGATE_TRANSACTION",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "RESOURCE_VERSION_CONFLICT",
+          "CONTACT_ALREADY_ARCHIVED",
+          "RELATIONSHIP_CONFLICT",
+          "RATE_LIMITED",
+          "INTERNAL_ERROR"
+        ],
+        "x-decision-id": "DEC-C6-002"
+      }
+    },
+    "/contacts/{contactId}/customer-relationships/{relationshipId}": {
+      "patch": {
+        "operationId": "updateContactCustomerRelationship",
+        "tags": [
+          "Contacts"
+        ],
+        "summary": "Update an active Contact Customer stakeholder relationship",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "name": "contactId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          },
+          {
+            "name": "relationshipId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateContactCustomerRelationshipRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Update an active Contact Customer stakeholder relationship",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactMutationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "contacts",
+        "x-required-capability": "contacts.update",
+        "x-additional-capabilities": [
+          "customers.view"
+        ],
+        "x-resource-scope": "RESOURCE",
+        "x-data-scope": "WORKSPACE",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "IF_MATCH_REQUIRED",
+        "x-aggregate-id-policy": "MUST_MATCH_TARGET",
+        "x-audit-requirement": "IMMUTABLE_COMMAND_AUDIT",
+        "x-event-outbox-expectation": "CONTACT_CUSTOMER_RELATIONSHIP_UPDATED",
+        "x-transaction-boundary": "SINGLE_CONTACT_AGGREGATE_TRANSACTION",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "RESOURCE_VERSION_CONFLICT",
+          "CONTACT_ALREADY_ARCHIVED",
+          "RELATIONSHIP_CONFLICT",
+          "RATE_LIMITED",
+          "INTERNAL_ERROR"
+        ],
+        "x-decision-id": "DEC-C6-002"
+      }
+    },
+    "/contacts/{contactId}/customer-relationships/{relationshipId}/end": {
+      "post": {
+        "operationId": "endContactCustomerRelationship",
+        "tags": [
+          "Contacts"
+        ],
+        "summary": "End a Contact Customer stakeholder relationship while retaining history",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "name": "contactId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          },
+          {
+            "name": "relationshipId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EndContactRelationshipRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "End a Contact Customer stakeholder relationship while retaining history",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactMutationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "contacts",
+        "x-required-capability": "contacts.update",
+        "x-additional-capabilities": [
+          "customers.view"
+        ],
+        "x-resource-scope": "RESOURCE",
+        "x-data-scope": "WORKSPACE",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "IF_MATCH_REQUIRED",
+        "x-aggregate-id-policy": "MUST_MATCH_TARGET",
+        "x-audit-requirement": "IMMUTABLE_COMMAND_AUDIT",
+        "x-event-outbox-expectation": "CONTACT_CUSTOMER_RELATIONSHIP_ENDED",
+        "x-transaction-boundary": "SINGLE_CONTACT_AGGREGATE_TRANSACTION",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "RESOURCE_VERSION_CONFLICT",
+          "CONTACT_ALREADY_ARCHIVED",
+          "RELATIONSHIP_CONFLICT",
+          "RATE_LIMITED",
+          "INTERNAL_ERROR"
+        ],
+        "x-decision-id": "DEC-C6-002"
+      }
     }
   },
   "components": {
@@ -49516,6 +50434,12 @@
         "properties": {
           "contact": {
             "$ref": "#/components/schemas/ContactDocument"
+          },
+          "organizationRelationship": {
+            "$ref": "#/components/schemas/ContactOrganizationRelationshipSummary"
+          },
+          "customerRelationship": {
+            "$ref": "#/components/schemas/ContactCustomerRelationshipSummary"
           }
         }
       },
@@ -52001,6 +52925,7 @@
           "COD_COLLECTION_EVIDENCE_REQUIRED",
           "COD_COLLECTION_REQUIRED_BEFORE_REMITTANCE",
           "COD_EVIDENCE_INVALID",
+          "CONTACT_ALREADY_ARCHIVED",
           "CONTRACT_OPERATION_BLOCKED",
           "CONTRACT_VIOLATION",
           "CREDIT_APPROVAL_ALREADY_CONSUMED",
@@ -52166,10 +53091,12 @@
           "REFUND_PROVIDER_REFERENCE_CONFLICT",
           "REFUND_RECOVERY_MANUAL_REVIEW_REQUIRED",
           "REFUND_RETRY_NOT_ALLOWED",
+          "RELATIONSHIP_CONFLICT",
           "REQUEST_CANCELLED",
           "REQUEST_TIMEOUT",
           "RESOURCE_NOT_FOUND",
           "RESOURCE_SCOPE_DENIED",
+          "RESOURCE_VERSION_CONFLICT",
           "RETURN_CREDIT_EXCEEDS_ISSUED_INVOICE_VALUE",
           "RETURN_CUSTOMER_CREDIT_ALLOCATION_MANUAL_REVIEW_REQUIRED",
           "RETURN_CUSTOMER_CREDIT_POLICY_REQUIRED",
@@ -64692,7 +65619,9 @@
           "linkedRecordCounts",
           "allowedActions",
           "projectionVersion",
-          "generatedAt"
+          "generatedAt",
+          "organizationRelationships",
+          "customerRelationships"
         ],
         "properties": {
           "contact": {
@@ -64730,6 +65659,18 @@
           },
           "generatedAt": {
             "$ref": "#/components/schemas/UtcDateTime"
+          },
+          "organizationRelationships": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContactOrganizationRelationshipSummary"
+            }
+          },
+          "customerRelationships": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContactCustomerRelationshipSummary"
+            }
           }
         },
         "description": "Permission-filtered relationship projection owned by the Contacts backend boundary."
@@ -70015,6 +70956,258 @@
           },
           "result": {
             "$ref": "#/components/schemas/ReturnReadModel"
+          }
+        }
+      },
+      "ContactOrganizationRelationshipSummary": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "relationshipId",
+          "target",
+          "role",
+          "isPrimaryAffiliation",
+          "status",
+          "effectiveFrom",
+          "createdAt"
+        ],
+        "properties": {
+          "relationshipId": {
+            "$ref": "#/components/schemas/EntityId"
+          },
+          "target": {
+            "$ref": "#/components/schemas/RecordReference"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "employee",
+              "executive",
+              "decision_maker",
+              "buyer",
+              "finance",
+              "technical",
+              "advisor",
+              "partner",
+              "other"
+            ]
+          },
+          "isPrimaryAffiliation": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "ended"
+            ]
+          },
+          "effectiveFrom": {
+            "$ref": "#/components/schemas/UtcDateTime"
+          },
+          "effectiveTo": {
+            "$ref": "#/components/schemas/UtcDateTime"
+          },
+          "endedReason": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "createdAt": {
+            "$ref": "#/components/schemas/UtcDateTime"
+          },
+          "createdBy": {
+            "$ref": "#/components/schemas/EntityId"
+          },
+          "updatedAt": {
+            "$ref": "#/components/schemas/UtcDateTime"
+          },
+          "updatedBy": {
+            "$ref": "#/components/schemas/EntityId"
+          }
+        }
+      },
+      "ContactCustomerRelationshipSummary": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "relationshipId",
+          "target",
+          "role",
+          "status",
+          "effectiveFrom",
+          "createdAt"
+        ],
+        "properties": {
+          "relationshipId": {
+            "$ref": "#/components/schemas/EntityId"
+          },
+          "target": {
+            "$ref": "#/components/schemas/RecordReference"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "primary_contact",
+              "billing",
+              "decision_maker",
+              "end_user",
+              "technical",
+              "support",
+              "other"
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "active",
+              "ended"
+            ]
+          },
+          "effectiveFrom": {
+            "$ref": "#/components/schemas/UtcDateTime"
+          },
+          "effectiveTo": {
+            "$ref": "#/components/schemas/UtcDateTime"
+          },
+          "endedReason": {
+            "type": "string",
+            "maxLength": 1000
+          },
+          "createdAt": {
+            "$ref": "#/components/schemas/UtcDateTime"
+          },
+          "createdBy": {
+            "$ref": "#/components/schemas/EntityId"
+          },
+          "updatedAt": {
+            "$ref": "#/components/schemas/UtcDateTime"
+          },
+          "updatedBy": {
+            "$ref": "#/components/schemas/EntityId"
+          }
+        }
+      },
+      "CreateContactOrganizationRelationshipRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "organizationId",
+          "role"
+        ],
+        "properties": {
+          "organizationId": {
+            "$ref": "#/components/schemas/EntityId"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "employee",
+              "executive",
+              "decision_maker",
+              "buyer",
+              "finance",
+              "technical",
+              "advisor",
+              "partner",
+              "other"
+            ]
+          },
+          "isPrimaryAffiliation": {
+            "type": "boolean",
+            "default": false
+          },
+          "effectiveFrom": {
+            "$ref": "#/components/schemas/UtcDateTime"
+          }
+        }
+      },
+      "UpdateContactOrganizationRelationshipRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "minProperties": 1,
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "employee",
+              "executive",
+              "decision_maker",
+              "buyer",
+              "finance",
+              "technical",
+              "advisor",
+              "partner",
+              "other"
+            ]
+          },
+          "isPrimaryAffiliation": {
+            "type": "boolean"
+          }
+        }
+      },
+      "EndContactRelationshipRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "endedReason"
+        ],
+        "properties": {
+          "endedReason": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 1000
+          },
+          "effectiveTo": {
+            "$ref": "#/components/schemas/UtcDateTime"
+          }
+        }
+      },
+      "CreateContactCustomerRelationshipRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "customerId",
+          "role"
+        ],
+        "properties": {
+          "customerId": {
+            "$ref": "#/components/schemas/EntityId"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "primary_contact",
+              "billing",
+              "decision_maker",
+              "end_user",
+              "technical",
+              "support",
+              "other"
+            ]
+          },
+          "effectiveFrom": {
+            "$ref": "#/components/schemas/UtcDateTime"
+          }
+        }
+      },
+      "UpdateContactCustomerRelationshipRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "role"
+        ],
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "primary_contact",
+              "billing",
+              "decision_maker",
+              "end_user",
+              "technical",
+              "support",
+              "other"
+            ]
           }
         }
       }

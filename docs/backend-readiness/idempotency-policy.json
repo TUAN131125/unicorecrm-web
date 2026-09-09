@@ -9,7 +9,7 @@
   "operations": [
     {
       "operationId": "acceptQuote",
-      "policy": "REQUIRED",
+      "policy": "UNRESOLVED_BLOCKED",
       "status": "BLOCKED"
     },
     {
@@ -49,12 +49,12 @@
     },
     {
       "operationId": "allocateCustomerCredit",
-      "policy": "REQUIRED",
+      "policy": "UNRESOLVED_BLOCKED",
       "status": "BLOCKED"
     },
     {
       "operationId": "allocatePayment",
-      "policy": "REQUIRED",
+      "policy": "UNRESOLVED_BLOCKED",
       "status": "BLOCKED"
     },
     {
@@ -89,6 +89,11 @@
     },
     {
       "operationId": "archiveAccessRole",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "archiveContact",
       "policy": "REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
     },
@@ -219,7 +224,7 @@
     },
     {
       "operationId": "changeQuoteStatusCommand",
-      "policy": "REQUIRED",
+      "policy": "UNRESOLVED_BLOCKED",
       "status": "BLOCKED"
     },
     {
@@ -304,22 +309,32 @@
     },
     {
       "operationId": "createContact",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "createContactCustomerRelationship",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "createContactOrganizationRelationship",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "createCrmObjectField",
       "policy": "UNRESOLVED_BLOCKED",
       "status": "BLOCKED"
     },
     {
-      "operationId": "createCrmObjectField",
-      "policy": "REQUIRED",
-      "status": "BLOCKED"
-    },
-    {
       "operationId": "createCrmPipeline",
-      "policy": "REQUIRED",
+      "policy": "UNRESOLVED_BLOCKED",
       "status": "BLOCKED"
     },
     {
       "operationId": "createCrmPipelineStage",
-      "policy": "REQUIRED",
+      "policy": "UNRESOLVED_BLOCKED",
       "status": "BLOCKED"
     },
     {
@@ -329,7 +344,7 @@
     },
     {
       "operationId": "createIntegrationConnection",
-      "policy": "REQUIRED",
+      "policy": "UNRESOLVED_BLOCKED",
       "status": "BLOCKED"
     },
     {
@@ -374,7 +389,7 @@
     },
     {
       "operationId": "createProductConfigurationType",
-      "policy": "REQUIRED",
+      "policy": "UNRESOLVED_BLOCKED",
       "status": "BLOCKED"
     },
     {
@@ -414,22 +429,22 @@
     },
     {
       "operationId": "deleteCrmObjectField",
-      "policy": "REQUIRED",
+      "policy": "UNRESOLVED_BLOCKED",
       "status": "BLOCKED"
     },
     {
       "operationId": "deleteCrmPipeline",
-      "policy": "REQUIRED",
+      "policy": "UNRESOLVED_BLOCKED",
       "status": "BLOCKED"
     },
     {
       "operationId": "deleteCrmPipelineStage",
-      "policy": "REQUIRED",
+      "policy": "UNRESOLVED_BLOCKED",
       "status": "BLOCKED"
     },
     {
       "operationId": "deleteProductConfigurationType",
-      "policy": "REQUIRED",
+      "policy": "UNRESOLVED_BLOCKED",
       "status": "BLOCKED"
     },
     {
@@ -439,7 +454,7 @@
     },
     {
       "operationId": "disconnectIntegrationConnection",
-      "policy": "REQUIRED",
+      "policy": "UNRESOLVED_BLOCKED",
       "status": "BLOCKED"
     },
     {
@@ -459,6 +474,16 @@
     },
     {
       "operationId": "duplicateOrderDraft",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "endContactCustomerRelationship",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "endContactOrganizationRelationship",
       "policy": "REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
     },
@@ -708,11 +733,6 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
-      "operationId": "linkContactToOrganization",
-      "policy": "UNRESOLVED_BLOCKED",
-      "status": "BLOCKED"
-    },
-    {
       "operationId": "listActivities",
       "policy": "NOT_APPLICABLE",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -904,7 +924,7 @@
     },
     {
       "operationId": "markDealLostAndPlanRecycle",
-      "policy": "REQUIRED",
+      "policy": "UNRESOLVED_BLOCKED",
       "status": "BLOCKED"
     },
     {
@@ -949,12 +969,12 @@
     },
     {
       "operationId": "putWorkspaceExchangeRate",
-      "policy": "REQUIRED",
+      "policy": "UNRESOLVED_BLOCKED",
       "status": "BLOCKED"
     },
     {
       "operationId": "qualifyLead",
-      "policy": "REQUIRED",
+      "policy": "UNRESOLVED_BLOCKED",
       "status": "BLOCKED"
     },
     {
@@ -1054,7 +1074,7 @@
     },
     {
       "operationId": "replaceInvoiceSellerInformationConfiguration",
-      "policy": "REQUIRED",
+      "policy": "UNRESOLVED_BLOCKED",
       "status": "BLOCKED"
     },
     {
@@ -1064,7 +1084,7 @@
     },
     {
       "operationId": "replacePaymentReceivingAccounts",
-      "policy": "REQUIRED",
+      "policy": "UNRESOLVED_BLOCKED",
       "status": "BLOCKED"
     },
     {
@@ -1079,7 +1099,7 @@
     },
     {
       "operationId": "replaceWorkspaceCurrencies",
-      "policy": "REQUIRED",
+      "policy": "UNRESOLVED_BLOCKED",
       "status": "BLOCKED"
     },
     {
@@ -1254,22 +1274,32 @@
     },
     {
       "operationId": "updateContact",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "updateContactCustomerRelationship",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "updateContactOrganizationRelationship",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "updateCrmObjectField",
       "policy": "UNRESOLVED_BLOCKED",
       "status": "BLOCKED"
     },
     {
-      "operationId": "updateCrmObjectField",
-      "policy": "REQUIRED",
-      "status": "BLOCKED"
-    },
-    {
       "operationId": "updateCrmPipeline",
-      "policy": "REQUIRED",
+      "policy": "UNRESOLVED_BLOCKED",
       "status": "BLOCKED"
     },
     {
       "operationId": "updateCrmPipelineStage",
-      "policy": "REQUIRED",
+      "policy": "UNRESOLVED_BLOCKED",
       "status": "BLOCKED"
     },
     {
@@ -1294,7 +1324,7 @@
     },
     {
       "operationId": "updateIntegrationConnection",
-      "policy": "REQUIRED",
+      "policy": "UNRESOLVED_BLOCKED",
       "status": "BLOCKED"
     },
     {
@@ -1309,7 +1339,7 @@
     },
     {
       "operationId": "updateProductConfigurationType",
-      "policy": "REQUIRED",
+      "policy": "UNRESOLVED_BLOCKED",
       "status": "BLOCKED"
     },
     {
@@ -1344,7 +1374,7 @@
     },
     {
       "operationId": "verifyIntegrationConnection",
-      "policy": "REQUIRED",
+      "policy": "UNRESOLVED_BLOCKED",
       "status": "BLOCKED"
     },
     {

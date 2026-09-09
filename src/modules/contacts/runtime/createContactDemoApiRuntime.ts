@@ -41,6 +41,8 @@ export function createContactDemoApiRuntime(repository: ContactRepository): Cont
             .filter((relationship) => !relationship.effectiveTo)
             .map((relationship) => relationship.organizationAccountId),
           customerIds: [],
+          organizationRelationships: contact.organizationRelationships ?? [],
+          customerRelationships: [],
           linkedRecords: [],
           linkedRecordCounts: { ...ZERO_COUNTS, activities: contact.activities?.length ?? 0 },
           allowedActions: [],

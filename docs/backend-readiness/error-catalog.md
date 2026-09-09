@@ -2,19 +2,20 @@
 
 Contract version: `0.23.20-contract.0`. Media type: `application/problem+json`.
 
-Inventory: **210 stable error codes**.
+Inventory: **213 stable error codes**.
 
 | Code | HTTP | Category | Retryable | Owner | Operations |
 | --- | ---: | --- | --- | --- | ---: |
-| `ACCESS_DENIED` | 403 | AUTHORIZATION | FALSE | identity-access | 210 |
+| `ACCESS_DENIED` | 403 | AUTHORIZATION | FALSE | identity-access | 217 |
 | `ACCOUNT_ALREADY_EXISTS` | 409 | — | FALSE | undefined | 0 |
 | `ACCOUNT_SUSPENDED` | 403 | AUTHORIZATION | FALSE | identity-auth | 1 |
 | `ALLOCATION_RESIDUAL_CONFLICT` | 409 | CONFLICT | FALSE | payments | 2 |
-| `AUTHENTICATION_REQUIRED` | 401 | AUTHENTICATION | FALSE | identity-access | 210 |
+| `AUTHENTICATION_REQUIRED` | 401 | AUTHENTICATION | FALSE | identity-access | 217 |
 | `COD_COLLECTION_EVIDENCE_REQUIRED` | 422 | BUSINESS_RULE | FALSE | payments | 1 |
 | `COD_COLLECTION_REQUIRED_BEFORE_REMITTANCE` | 409 | BUSINESS_RULE | FALSE | payments | 1 |
 | `COD_EVIDENCE_INVALID` | 422 | VALIDATION | FALSE | payments | 2 |
-| `CONTRACT_OPERATION_BLOCKED` | 501 | CONTRACT | FALSE | platform-api | 58 |
+| `CONTACT_ALREADY_ARCHIVED` | 409 | BUSINESS_RULE | FALSE | contacts | 7 |
+| `CONTRACT_OPERATION_BLOCKED` | 501 | CONTRACT | FALSE | platform-api | 56 |
 | `CONTRACT_VIOLATION` | 500 | CONTRACT | FALSE | platform-api | 0 |
 | `CREDIT_APPROVAL_ALREADY_CONSUMED` | 409 | CONFLICT | FALSE | orders | 5 |
 | `CREDIT_APPROVAL_BINDING_MISMATCH` | 409 | CONFLICT | FALSE | orders | 5 |
@@ -42,10 +43,10 @@ Inventory: **210 stable error codes**.
 | `EMAIL_NOT_VERIFIED` | 403 | AUTHORIZATION | FALSE | identity-auth | 1 |
 | `FIELD_VALIDATION_FAILED` | 422 | VALIDATION | FALSE | platform-api | 71 |
 | `FULFILLMENT_EVIDENCE_REQUIRED` | 422 | VALIDATION | FALSE | orders | 1 |
-| `IDEMPOTENCY_KEY_REUSED` | 409 | CONFLICT | FALSE | platform-api | 137 |
+| `IDEMPOTENCY_KEY_REUSED` | 409 | CONFLICT | FALSE | platform-api | 144 |
 | `IDEMPOTENCY_REQUEST_IN_PROGRESS` | 409 | CONFLICT | TRUE | platform-api | 59 |
 | `INTEGRATION_UNAVAILABLE` | 503 | INTEGRATION | TRUE | platform-api | 168 |
-| `INTERNAL_ERROR` | 500 | SYSTEM | FALSE | platform-api | 217 |
+| `INTERNAL_ERROR` | 500 | SYSTEM | FALSE | platform-api | 224 |
 | `INVALID_CREDENTIALS` | 401 | AUTHENTICATION | FALSE | identity-auth | 1 |
 | `INVITATION_ALREADY_PENDING` | 409 | CONFLICT | FALSE | access-control | 9 |
 | `INVITATION_INVALID` | 422 | AUTHENTICATION | FALSE | identity-auth | 1 |
@@ -166,7 +167,7 @@ Inventory: **210 stable error codes**.
 | `QUOTE_REJECTION_BLOCKED` | 409 | CONFLICT | FALSE | quotes | 1 |
 | `QUOTE_REVISION_BLOCKED` | 409 | CONFLICT | FALSE | quotes | 1 |
 | `QUOTE_SEND_BLOCKED` | 409 | CONFLICT | FALSE | quotes | 1 |
-| `RATE_LIMITED` | 429 | SYSTEM | TRUE | platform-api | 217 |
+| `RATE_LIMITED` | 429 | SYSTEM | TRUE | platform-api | 224 |
 | `RECONCILIATION_BLOCKED` | 409 | CONFLICT | FALSE | payments | 0 |
 | `REFUND_AMOUNT_EXCEEDS_AVAILABLE` | 422 | BUSINESS_RULE | FALSE | payments | 1 |
 | `REFUND_ATTEMPT_NOT_FOUND` | 404 | NOT_FOUND | FALSE | payments | 2 |
@@ -179,10 +180,12 @@ Inventory: **210 stable error codes**.
 | `REFUND_PROVIDER_REFERENCE_CONFLICT` | 409 | INTEGRATION | FALSE | payments | 2 |
 | `REFUND_RECOVERY_MANUAL_REVIEW_REQUIRED` | 409 | BUSINESS_RULE | FALSE | payments | 2 |
 | `REFUND_RETRY_NOT_ALLOWED` | 409 | BUSINESS_RULE | FALSE | payments | 2 |
+| `RELATIONSHIP_CONFLICT` | 409 | BUSINESS_RULE | FALSE | contacts | 6 |
 | `REQUEST_CANCELLED` | 408 | SYSTEM | FALSE | platform-api | 0 |
 | `REQUEST_TIMEOUT` | 408 | SYSTEM | TRUE | platform-api | 0 |
-| `RESOURCE_NOT_FOUND` | 404 | SYSTEM | FALSE | platform-api | 203 |
+| `RESOURCE_NOT_FOUND` | 404 | SYSTEM | FALSE | platform-api | 210 |
 | `RESOURCE_SCOPE_DENIED` | 403 | AUTHORIZATION | FALSE | identity-access | 126 |
+| `RESOURCE_VERSION_CONFLICT` | 409 | CONFLICT | FALSE | contacts | 7 |
 | `RETURN_CREDIT_EXCEEDS_ISSUED_INVOICE_VALUE` | 422 | BUSINESS_RULE | FALSE | returns | 1 |
 | `RETURN_CUSTOMER_CREDIT_ALLOCATION_MANUAL_REVIEW_REQUIRED` | 409 | BUSINESS_RULE | FALSE | returns | 1 |
 | `RETURN_CUSTOMER_CREDIT_POLICY_REQUIRED` | 409 | BUSINESS_RULE | FALSE | returns | 0 |
@@ -213,6 +216,6 @@ Inventory: **210 stable error codes**.
 | `TOKEN_EXPIRED` | 401 | AUTHENTICATION | FALSE | identity-auth | 5 |
 | `TOKEN_INVALID` | 401 | AUTHENTICATION | FALSE | identity-auth | 4 |
 | `UNKNOWN_BUSINESS_STATUS` | 422 | VALIDATION | FALSE | platform-api | 0 |
-| `VALIDATION_FAILED` | 422 | VALIDATION | FALSE | platform-api | 207 |
+| `VALIDATION_FAILED` | 422 | VALIDATION | FALSE | platform-api | 214 |
 | `VERSION_CONFLICT` | 412 | CONFLICT | FALSE | platform-api | 125 |
-| `WORKSPACE_MISMATCH` | 403 | AUTHORIZATION | FALSE | identity-access | 207 |
+| `WORKSPACE_MISMATCH` | 403 | AUTHORIZATION | FALSE | identity-access | 214 |

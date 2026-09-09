@@ -84,7 +84,7 @@
       "remediationStatus": "CLOSED",
       "owner": "Module/Platform Owner",
       "notes": "Reproduced from current source and OpenAPI. P0 closure status recorded after source remediation.",
-      "closureEvidence": "docs/backend-readiness/operation-authorization-matrix.json; all 270 operations declare capability, module, resource scope, data scope, workspace and actor policies.",
+      "closureEvidence": "docs/backend-readiness/operation-authorization-matrix.json; all 276 operations declare capability, module, resource scope, data scope, workspace and actor policies.",
       "remainingRisk": "Resource predicates and live cross-workspace enforcement still require backend provider execution."
     },
     {
@@ -266,7 +266,7 @@
       "remediationStatus": "CLOSED",
       "owner": "Module/Platform Owner",
       "notes": "Reproduced from current source and OpenAPI. P0 closure status recorded after source remediation.",
-      "closureEvidence": "docs/api/operation-coverage-ledger.json distinguishes 236 ready and 34 blocked operations instead of equating generated mapping with implementation.",
+      "closureEvidence": "docs/api/operation-coverage-ledger.json distinguishes 245 ready and 31 blocked operations instead of equating generated mapping with implementation.",
       "remainingRisk": "Live provider/runtime coverage remains separate and BLOCKED_EXTERNAL."
     },
     {
@@ -336,7 +336,7 @@
       "remediationStatus": "CLOSED",
       "owner": "API Contract Architecture",
       "notes": "Reproduced from current source and OpenAPI. P0 closure status recorded after source remediation.",
-      "closureEvidence": "All 270 operations declare request/correlation/workspace policy, ProblemDetails errors, capability and operational metadata.",
+      "closureEvidence": "All 276 operations declare request/correlation/workspace policy, ProblemDetails errors, capability and operational metadata.",
       "remainingRisk": "Rate-limit and production observability behavior still needs backend provider tests."
     },
     {

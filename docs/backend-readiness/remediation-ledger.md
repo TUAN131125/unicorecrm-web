@@ -4,7 +4,7 @@ Current contract: `0.23.20-contract.0`. Original audit source SHA-256: `655a4d9b
 
 - Commands: 173 total; 152 ready; 17 blocked; 4 deprecated.
 - Queries: 162 total; 0 unresolved.
-- OpenAPI: 270 operations; 236 ready; 34 blocked.
+- OpenAPI: 276 operations; 245 ready; 31 blocked.
 - Provider conformance: 26 packs; 516 scenarios defined; the Shipping/Returns live pack is `BLOCKED_EXTERNAL`.
 - Quality pipeline: 310 deterministic gates across 11 groups.
 

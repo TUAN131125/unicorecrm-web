@@ -1,210 +1,81 @@
 import React from "react";
-import { Building2, CalendarDays, Crown, History, Link2, Pencil, Unlink } from "lucide-react";
+import { Building2, Crown, Link2, Pencil, Unlink } from "lucide-react";
 import { Button, Input, Modal } from "@/shared/components/ui";
+import { useAuthoritativeResource, formatApplicationError } from "@/shared/operations";
 import { useI18n } from "@/i18n";
+import { getOrganizationAccountCollectionResource } from "@/modules/organizations/application/vertical-slice/organizationAuthoritativeQueries";
+import { getContactRelationshipSummaryResource } from "../../application/vertical-slice/contactAuthoritativeQueries";
+import { getContactApiRuntime } from "../../application/composition/contactApplicationServices";
 import type { Contact, ContactOrganizationRelationship, ContactOrganizationRelationshipRole } from "../../domain/model/contact.types";
-import { getContactOrganizationRelationships, isContactOrganizationRelationshipActive } from "../../domain/model/contactOrganizationRelationships";
-import {
-  getOrganizationAccountsSnapshot,
-  subscribeToOrganizationAccounts,
-} from "@/modules/organizations";
-import { getAuthSessionSnapshot } from "@/platform/identity-auth";
-import { useSubscribableSnapshot } from "@/platform/react";
-import { backendUnavailableMessage, formatApplicationError } from "@/shared/operations";
-import {
-  endContactOrganizationRelationshipCommand,
-  isContactOrganizationRelationshipUnavailable,
-  upsertContactOrganizationRelationshipCommand,
-} from "@/workflows/contact-organization-relationship";
 
-interface Props {
-  contact: Contact;
-  onOpenOrganization(organizationId: string): void;
-}
-
-type EditDraft = {
-  organizationAccountId: string;
-  role: ContactOrganizationRelationshipRole;
-  roleTitle: string;
-  department: string;
-  decisionRole: NonNullable<Contact["decisionRole"]>;
-  effectiveFrom: string;
-  isPrimaryRepresentative: boolean;
-};
-
-const EMPTY_DRAFT: EditDraft = {
-  organizationAccountId: "",
-  role: "employee",
-  roleTitle: "",
-  department: "",
-  decisionRole: "influencer",
-  effectiveFrom: new Date().toISOString().slice(0, 10),
-  isPrimaryRepresentative: false,
-};
+interface Props { contact: Contact; onOpenOrganization(organizationId: string): void }
+type Draft = { organizationId: string; role: ContactOrganizationRelationshipRole; isPrimaryAffiliation: boolean; effectiveFrom: string };
+const emptyDraft = (): Draft => ({ organizationId: "", role: "employee", isPrimaryAffiliation: false, effectiveFrom: formatDateInput(new Date().toISOString()) });
 
 export function ContactOrganizationRelationshipsPanel({ contact, onOpenOrganization }: Props) {
   const { locale } = useI18n();
-  const vi = locale === "vi";
-  const text = (vn: string, en: string) => vi ? vn : en;
-  const organizations = useSubscribableSnapshot(getOrganizationAccountsSnapshot, subscribeToOrganizationAccounts);
-  const relationships = getContactOrganizationRelationships(contact);
-  const active = relationships.filter((item) => isContactOrganizationRelationshipActive(item));
-  const historical = relationships.filter((item) => !isContactOrganizationRelationshipActive(item));
-  const actorId = getAuthSessionSnapshot()?.principal.memberId ?? "current-user";
-  const [draft, setDraft] = React.useState<EditDraft>(EMPTY_DRAFT);
-  const [editing, setEditing] = React.useState<ContactOrganizationRelationship | null>(null);
-  const [editOpen, setEditOpen] = React.useState(false);
-  const [endTarget, setEndTarget] = React.useState<ContactOrganizationRelationship | null>(null);
+  const text = (vi: string, en: string) => locale === "vi" ? vi : en;
+  const summary = useAuthoritativeResource(React.useMemo(() => getContactRelationshipSummaryResource(contact.id), [contact.id]));
+  const directory = useAuthoritativeResource(React.useMemo(() => getOrganizationAccountCollectionResource(), []));
+  const relationships = summary.data?.organizationRelationships ?? [];
+  const active = relationships.filter((item) => !item.effectiveTo);
+  const history = relationships.filter((item) => item.effectiveTo);
+  const actions = new Set(summary.data?.allowedActions ?? []);
+  const [draft, setDraft] = React.useState<Draft>(emptyDraft);
+  const [editing, setEditing] = React.useState<ContactOrganizationRelationship>();
+  const [endTarget, setEndTarget] = React.useState<ContactOrganizationRelationship>();
   const [endReason, setEndReason] = React.useState("");
-  const [error, setError] = React.useState<string | null>(null);
+  const [open, setOpen] = React.useState(false);
   const [saving, setSaving] = React.useState(false);
-
-  const openCreate = () => {
-    setEditing(null);
-    setDraft({ ...EMPTY_DRAFT, effectiveFrom: new Date().toISOString().slice(0, 10) });
-    setEditOpen(true);
-    setError(null);
-  };
-
-  const openEdit = (relationship: ContactOrganizationRelationship) => {
-    setEditing(relationship);
-    setDraft({
-      organizationAccountId: relationship.organizationAccountId,
-      role: relationship.role,
-      roleTitle: relationship.roleTitle ?? "",
-      department: relationship.department ?? "",
-      decisionRole: relationship.decisionRole ?? "influencer",
-      effectiveFrom: relationship.effectiveFrom.slice(0, 10),
-      isPrimaryRepresentative: relationship.isPrimaryRepresentative,
-    });
-    setEditOpen(true);
-    setError(null);
-  };
-
-  const closeEdit = () => {
-    setEditing(null);
-    setDraft(EMPTY_DRAFT);
-    setEditOpen(false);
-    setError(null);
-  };
+  const [error, setError] = React.useState<string>();
+  const version = summary.data?.projectionVersion ?? contact.resourceVersion;
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (!draft.organizationAccountId) return setError(text("Chọn tổ chức cần liên kết.", "Select an organization."));
-    // The three contact-organization relationship commands are BLOCKED canonical commands:
-    // refuse before the mutation is started rather than failing inside the command boundary.
-    if (isContactOrganizationRelationshipUnavailable()) {
-      return setError(backendUnavailableMessage({ locale, action: text("Liên kết tổ chức", "Linking an organization") }));
-    }
-    setSaving(true);
-    setError(null);
+    if (version === undefined) return setError(text("Cần tải lại phiên bản Liên hệ.", "Refresh the Contact version before saving."));
+    setSaving(true); setError(undefined);
     try {
-      await upsertContactOrganizationRelationshipCommand({
-        contactId: contact.id,
-        relationship: {
-          organizationAccountId: draft.organizationAccountId,
-          role: draft.role,
-          roleTitle: draft.roleTitle,
-          department: draft.department,
-          decisionRole: draft.decisionRole,
-          effectiveFrom: new Date(`${draft.effectiveFrom}T00:00:00`).toISOString(),
-          isPrimaryRepresentative: draft.isPrimaryRepresentative,
-        },
-        actorId,
-      });
-      closeEdit();
-    } catch (caught) {
-      setError(formatApplicationError(caught, { locale }));
-    } finally {
-      setSaving(false);
-    }
+      const commands = getContactApiRuntime().commands;
+      if (!commands) throw new Error("CONTACT_RELATIONSHIP_COMMAND_UNAVAILABLE");
+      if (editing) await commands.updateOrganizationRelationship({ contactId: contact.id, relationshipId: editing.id, expectedVersion: version, role: draft.role, isPrimaryAffiliation: draft.isPrimaryAffiliation });
+      else await commands.createOrganizationRelationship({ contactId: contact.id, expectedVersion: version, organizationId: draft.organizationId, role: draft.role, isPrimaryAffiliation: draft.isPrimaryAffiliation, effectiveFrom: new Date(`${draft.effectiveFrom}T00:00:00`).toISOString() });
+      await summary.refresh(); setOpen(false); setEditing(undefined); setDraft(emptyDraft());
+    } catch (caught) { await summary.refresh(); setError(formatApplicationError(caught, { locale })); }
+    finally { setSaving(false); }
   };
 
-  const endRelationship = async () => {
-    if (!endTarget || !endReason.trim()) return;
-    if (isContactOrganizationRelationshipUnavailable()) {
-      return setError(backendUnavailableMessage({ locale, action: text("Kết thúc quan hệ", "Ending a relationship") }));
-    }
-    setSaving(true);
-    setError(null);
+  const end = async () => {
+    if (!endTarget || !endReason.trim() || version === undefined) return;
+    setSaving(true); setError(undefined);
     try {
-      await endContactOrganizationRelationshipCommand({
-        contactId: contact.id,
-        organizationAccountId: endTarget.organizationAccountId,
-        actorId,
-        reason: endReason,
-      });
-      setEndTarget(null);
-      setEndReason("");
-    } catch (caught) {
-      setError(formatApplicationError(caught, { locale }));
-    } finally {
-      setSaving(false);
-    }
+      const commands = getContactApiRuntime().commands;
+      if (!commands) throw new Error("CONTACT_RELATIONSHIP_COMMAND_UNAVAILABLE");
+      await commands.endOrganizationRelationship({ contactId: contact.id, relationshipId: endTarget.id, expectedVersion: version, endedReason: endReason.trim() });
+      await summary.refresh(); setEndTarget(undefined); setEndReason("");
+    } catch (caught) { await summary.refresh(); setError(formatApplicationError(caught, { locale })); }
+    finally { setSaving(false); }
   };
 
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h3 className="text-xs font-semibold text-slate-900">{text("Quan hệ với tổ chức", "Organization relationships")}</h3>
-          <p className="mt-1 text-[10px] text-slate-500">{text("Một Contact có thể giữ nhiều vai trò tại nhiều tổ chức theo từng thời kỳ.", "A contact can hold multiple roles across organizations over time.")}</p>
-        </div>
-        <Button size="sm" variant="secondary" onClick={openCreate}><Link2 size={13} />{text("Liên kết tổ chức", "Link organization")}</Button>
-      </div>
-
-      {active.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-5 text-center text-[10px] text-slate-500">{text("Chưa có quan hệ tổ chức đang hiệu lực.", "No active organization relationship.")}</div>
-      ) : (
-        <div className="grid gap-3 sm:grid-cols-2">
-          {active.map((relationship) => (
-            <RelationshipCard key={relationship.id} relationship={relationship} organizationName={organizations.find((item) => item.id === relationship.organizationAccountId)?.displayName} onOpen={() => onOpenOrganization(relationship.organizationAccountId)} onEdit={() => openEdit(relationship)} onEnd={() => { setEndTarget(relationship); setError(null); }} vi={vi} />
-          ))}
-        </div>
-      )}
-
-      {historical.length > 0 && (
-        <details className="rounded-xl border border-slate-200 bg-white p-4">
-          <summary className="cursor-pointer text-[10px] font-semibold text-slate-600">{text(`Lịch sử quan hệ (${historical.length})`, `Relationship history (${historical.length})`)}</summary>
-          <div className="mt-3 space-y-2">
-            {historical.map((relationship) => (
-              <div key={relationship.id} className="flex min-w-0 items-center gap-3 rounded-lg bg-slate-50 px-3 py-2 text-[10px] text-slate-600"><History size={12} className="shrink-0" /><span className="crm-text-wrap flex-1">{organizations.find((item) => item.id === relationship.organizationAccountId)?.displayName ?? relationship.organizationAccountId} · {relationship.roleTitle || roleLabel(relationship.role, vi)}</span><span>{dateLabel(relationship.effectiveFrom)}–{relationship.effectiveTo ? dateLabel(relationship.effectiveTo) : ""}</span></div>
-            ))}
-          </div>
-        </details>
-      )}
-
-      <Modal variant="form" isOpen={editOpen} onClose={closeEdit} size="md" title={editing ? text("Cập nhật quan hệ tổ chức", "Update organization relationship") : text("Liên kết tổ chức", "Link organization")}>
-        <form onSubmit={submit} className="crm-form-surface space-y-4 text-left">
-          <Field label={text("Tổ chức", "Organization")}><select required disabled={Boolean(editing)} value={draft.organizationAccountId} onChange={(event) => setDraft((current) => ({ ...current, organizationAccountId: event.target.value }))} className={INPUT}><option value="">{text("Chọn tổ chức", "Select organization")}</option>{organizations.filter((item) => !active.some((relationship) => relationship.organizationAccountId === item.id) || item.id === editing?.organizationAccountId).map((item) => <option key={item.id} value={item.id}>{item.displayName}</option>)}</select></Field>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <Field label={text("Loại vai trò", "Relationship role")}><select value={draft.role} onChange={(event) => setDraft((current) => ({ ...current, role: event.target.value as ContactOrganizationRelationshipRole }))} className={INPUT}>{ROLE_OPTIONS.map((role) => <option key={role} value={role}>{roleLabel(role, vi)}</option>)}</select></Field>
-            <Field label={text("Chức danh", "Job title")}><input value={draft.roleTitle} onChange={(event) => setDraft((current) => ({ ...current, roleTitle: event.target.value }))} className={INPUT} /></Field>
-            <Field label={text("Phòng ban", "Department")}><input value={draft.department} onChange={(event) => setDraft((current) => ({ ...current, department: event.target.value }))} className={INPUT} /></Field>
-            <Field label={text("Vai trò quyết định", "Decision role")}><select value={draft.decisionRole} onChange={(event) => setDraft((current) => ({ ...current, decisionRole: event.target.value as EditDraft["decisionRole"] }))} className={INPUT}>{DECISION_OPTIONS.map((role) => <option key={role} value={role}>{decisionLabel(role, vi)}</option>)}</select></Field>
-            <Field label={text("Hiệu lực từ", "Effective from")}><Input type="date" value={draft.effectiveFrom} onChange={(event) => setDraft((current) => ({ ...current, effectiveFrom: event.target.value }))} className={INPUT} /></Field>
-          </div>
-          <label className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 p-3"><input type="checkbox" checked={draft.isPrimaryRepresentative} onChange={(event) => setDraft((current) => ({ ...current, isPrimaryRepresentative: event.target.checked }))} className="mt-0.5 h-4 w-4 rounded border-amber-300" /><span className="text-[10px] text-amber-800"><strong className="flex items-center gap-1"><Crown size={12} />{text("Đại diện chính của tổ chức", "Primary organization representative")}</strong><span className="mt-1 block">{text("Mỗi tổ chức chỉ có một đại diện chính đang hiệu lực.", "Each organization has only one active primary representative.")}</span></span></label>
-          {error && <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-[10px] font-semibold text-rose-700">{error}</div>}
-          <div className="crm-form-action-bar flex justify-end gap-2 border-t border-slate-100 pt-4"><Button type="button" variant="secondary" onClick={closeEdit}>{text("Hủy", "Cancel")}</Button><Button type="submit" variant="primary" disabled={saving}>{saving ? text("Đang lưu...", "Saving...") : text("Lưu quan hệ", "Save relationship")}</Button></div>
-        </form>
-      </Modal>
-
-      <Modal variant="form" isOpen={Boolean(endTarget)} onClose={() => { setEndTarget(null); setEndReason(""); setError(null); }} size="sm" title={text("Kết thúc quan hệ", "End relationship")}>
-        <div className="crm-form-surface space-y-4 text-left"><p className="text-xs text-slate-600">{text("Quan hệ sẽ được giữ trong lịch sử và không bị xóa.", "The relationship remains in history and is not deleted.")}</p><Field label={text("Lý do", "Reason")}><textarea value={endReason} onChange={(event) => setEndReason(event.target.value)} className={`${INPUT} min-h-[96px]`} /></Field>{error && <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-[10px] font-semibold text-rose-700">{error}</div>}<div className="crm-form-action-bar flex justify-end gap-2 border-t border-slate-100 pt-4"><Button variant="secondary" onClick={() => setEndTarget(null)}>{text("Hủy", "Cancel")}</Button><Button variant="danger" disabled={!endReason.trim() || saving} onClick={endRelationship}><Unlink size={13} />{text("Kết thúc", "End")}</Button></div></div>
-      </Modal>
-    </div>
-  );
+  return <section className="space-y-4">
+    <div className="flex items-center justify-between gap-3"><div><h3 className="text-xs font-semibold text-slate-900">{text("Quan hệ với tổ chức", "Organization affiliations")}</h3><p className="mt-1 text-[10px] text-slate-500">{text("Quan hệ có lịch sử, do Liên hệ sở hữu.", "Effective-dated relationships owned by Contact.")}</p></div>{actions.has("createContactOrganizationRelationship") && <Button size="sm" variant="secondary" onClick={() => { setEditing(undefined); setDraft(emptyDraft()); setError(undefined); setOpen(true); }}><Link2 size={13}/>{text("Liên kết", "Link")}</Button>}</div>
+    {summary.loading && <p className="text-[10px] text-slate-500">{text("Đang tải...", "Loading...")}</p>}
+    {summary.error && <div className="rounded-lg bg-rose-50 p-3 text-[10px] text-rose-700">{formatApplicationError(summary.error, { locale })}</div>}
+    {directory.error && <div className="rounded-lg bg-rose-50 p-3 text-[10px] text-rose-700">{formatApplicationError(directory.error, { locale })}</div>}
+    <div className="grid gap-3 sm:grid-cols-2">{active.map((item) => <article key={item.id} className="rounded-xl border border-slate-200 bg-white p-4"><div className="flex gap-3"><Building2 size={16}/><button className="text-xs font-semibold" onClick={() => onOpenOrganization(item.organizationAccountId)}>{item.organizationLabel ?? item.organizationAccountId}</button>{item.isPrimaryAffiliation && <span className="ml-auto inline-flex items-center gap-1 text-[9px] text-amber-700"><Crown size={10}/>{text("Chính", "Primary")}</span>}</div><p className="mt-2 text-[10px] text-slate-500">{roleLabel(item.role)} · {formatDate(item.effectiveFrom)}</p><div className="mt-3 flex justify-end gap-3">{actions.has("updateContactOrganizationRelationship") && <button className="text-[10px] font-semibold text-violet-700" onClick={() => { setEditing(item); setDraft({ organizationId: item.organizationAccountId, role: item.role, isPrimaryAffiliation: Boolean(item.isPrimaryAffiliation), effectiveFrom: formatDateInput(item.effectiveFrom) }); setError(undefined); setOpen(true); }}><Pencil size={11} className="inline"/> {text("Sửa", "Edit")}</button>}{actions.has("endContactOrganizationRelationship") && <button className="text-[10px] font-semibold text-rose-600" onClick={() => { setEndTarget(item); setError(undefined); }}><Unlink size={11} className="inline"/> {text("Kết thúc", "End")}</button>}</div></article>)}</div>
+    {!summary.loading && active.length === 0 && <div className="rounded-xl border border-dashed p-4 text-center text-[10px] text-slate-500">{text("Chưa có quan hệ đang hiệu lực.", "No active affiliation.")}</div>}
+    {history.length > 0 && <details className="rounded-xl border border-slate-200 p-4"><summary className="text-[10px] font-semibold">{text("Lịch sử", "History")} ({history.length})</summary><div className="mt-3 space-y-2">{history.map((item) => <p key={item.id} className="text-[10px] text-slate-600">{item.organizationLabel ?? item.organizationAccountId} · {roleLabel(item.role)} · {formatDate(item.effectiveFrom)}–{item.effectiveTo ? formatDate(item.effectiveTo) : ""}</p>)}</div></details>}
+    <Modal variant="form" isOpen={open} onClose={() => setOpen(false)} size="md" title={editing ? text("Cập nhật quan hệ", "Update affiliation") : text("Liên kết tổ chức", "Link organization")}><form className="space-y-4" onSubmit={submit}><Field label={text("Tổ chức", "Organization")}><select required disabled={Boolean(editing)} value={draft.organizationId} onChange={(e) => setDraft((v) => ({...v, organizationId:e.target.value}))} className={INPUT}><option value="">{text("Chọn tổ chức", "Select organization")}</option>{directory.data?.items.filter((org) => editing?.organizationAccountId === org.id || !active.some((rel) => rel.organizationAccountId === org.id)).map((org) => <option key={org.id} value={org.id}>{org.displayName}</option>)}</select></Field><Field label={text("Vai trò", "Role")}><select value={draft.role} onChange={(e) => setDraft((v) => ({...v, role:e.target.value as ContactOrganizationRelationshipRole}))} className={INPUT}>{ROLES.map((role) => <option key={role} value={role}>{roleLabel(role)}</option>)}</select></Field>{!editing && <Field label={text("Hiệu lực từ", "Effective from")}><Input type="date" value={draft.effectiveFrom} onChange={(e) => setDraft((v) => ({...v,effectiveFrom:e.target.value}))}/></Field>}<label className="flex gap-2 text-xs"><input type="checkbox" checked={draft.isPrimaryAffiliation} onChange={(e) => setDraft((v) => ({...v,isPrimaryAffiliation:e.target.checked}))}/>{text("Quan hệ chính của Liên hệ", "Contact's primary affiliation")}</label>{error && <p className="text-[10px] text-rose-700">{error}</p>}<div className="flex justify-end gap-2"><Button type="button" variant="secondary" onClick={() => setOpen(false)}>{text("Hủy", "Cancel")}</Button><Button type="submit" disabled={saving || !draft.organizationId}>{text("Lưu", "Save")}</Button></div></form></Modal>
+    <Modal variant="form" isOpen={Boolean(endTarget)} onClose={() => setEndTarget(undefined)} size="sm" title={text("Kết thúc quan hệ", "End affiliation")}><div className="space-y-4"><Field label={text("Lý do", "Reason")}><textarea className={INPUT} value={endReason} onChange={(e) => setEndReason(e.target.value)}/></Field>{error && <p className="text-[10px] text-rose-700">{error}</p>}<div className="flex justify-end gap-2"><Button variant="secondary" onClick={() => setEndTarget(undefined)}>{text("Hủy", "Cancel")}</Button><Button variant="danger" disabled={saving || !endReason.trim()} onClick={end}>{text("Kết thúc", "End")}</Button></div></div></Modal>
+  </section>;
 }
 
-function RelationshipCard({ relationship, organizationName, onOpen, onEdit, onEnd, vi }: { relationship: ContactOrganizationRelationship; organizationName?: string; onOpen(): void; onEdit(): void; onEnd(): void; vi: boolean }) {
-  return <article className={`rounded-xl border bg-white p-4 ${relationship.isPrimaryRepresentative ? "border-amber-200 ring-1 ring-amber-100" : "border-slate-200"}`}><div className="flex items-start gap-3"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600"><Building2 size={15} /></span><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><button type="button" onClick={onOpen} className="crm-text-wrap text-left text-xs font-semibold text-slate-900 hover:text-violet-700">{organizationName ?? relationship.organizationAccountId}</button>{relationship.isPrimaryRepresentative && <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-[9px] font-semibold text-amber-700"><Crown size={9} />{vi ? "Đại diện chính" : "Primary"}</span>}</div><p className="mt-1 crm-text-wrap text-[10px] text-slate-500">{relationship.roleTitle || roleLabel(relationship.role, vi)}{relationship.department ? ` · ${relationship.department}` : ""}</p></div></div><div className="mt-3 flex items-center gap-2 text-[9px] text-slate-500"><CalendarDays size={11} />{vi ? "Từ" : "From"} {dateLabel(relationship.effectiveFrom)}</div><div className="mt-3 flex justify-end gap-2 border-t border-slate-100 pt-3"><button type="button" onClick={onEdit} className="inline-flex items-center gap-1 text-[10px] font-semibold text-violet-700"><Pencil size={11} />{vi ? "Sửa" : "Edit"}</button><button type="button" onClick={onEnd} className="inline-flex items-center gap-1 text-[10px] font-semibold text-rose-600"><Unlink size={11} />{vi ? "Kết thúc" : "End"}</button></div></article>;
-}
-
-const ROLE_OPTIONS: ContactOrganizationRelationshipRole[] = ["employee", "executive", "decision_maker", "buyer", "finance", "technical", "advisor", "partner", "other"];
-const DECISION_OPTIONS: Array<NonNullable<Contact["decisionRole"]>> = ["decision_maker", "influencer", "buyer", "technical", "finance", "user", "other"];
-const INPUT = "min-h-[42px] w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs text-slate-800 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-500/15";
-const Field = ({ label, children }: { label: string; children: React.ReactNode }) => <label className="block space-y-1.5"><span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">{label}</span>{children}</label>;
-function roleLabel(role: ContactOrganizationRelationshipRole, vi: boolean): string { const labels: Record<ContactOrganizationRelationshipRole, [string, string]> = { employee: ["Nhân sự", "Employee"], executive: ["Lãnh đạo", "Executive"], decision_maker: ["Người quyết định", "Decision maker"], buyer: ["Người mua", "Buyer"], finance: ["Tài chính", "Finance"], technical: ["Kỹ thuật", "Technical"], advisor: ["Cố vấn", "Advisor"], partner: ["Đối tác", "Partner"], other: ["Khác", "Other"] }; return labels[role][vi ? 0 : 1]; }
-function decisionLabel(role: NonNullable<Contact["decisionRole"]>, vi: boolean): string { const labels: Record<NonNullable<Contact["decisionRole"]>, [string, string]> = { decision_maker: ["Người quyết định", "Decision maker"], influencer: ["Người ảnh hưởng", "Influencer"], user: ["Người sử dụng", "User"], buyer: ["Người mua", "Buyer"], technical: ["Kỹ thuật", "Technical"], finance: ["Tài chính", "Finance"], other: ["Khác", "Other"] }; return labels[role][vi ? 0 : 1]; }
-function dateLabel(value: string): string { const date = new Date(value); return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString(); }
+const ROLES: ContactOrganizationRelationshipRole[] = ["employee","executive","decision_maker","buyer","finance","technical","advisor","partner","other"];
+const INPUT = "min-h-[42px] w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs";
+const Field = ({label,children}:{label:string;children:React.ReactNode}) => <label className="block space-y-1"><span className="text-[10px] font-semibold text-slate-500">{label}</span>{children}</label>;
+const roleLabel = (role: ContactOrganizationRelationshipRole) => role.replaceAll("_", " ");
+const formatDate = (value: string) => new Date(value).toLocaleDateString();
+const formatDateInput = (value: string) => {
+  const date = new Date(value);
+  const local = new Date(date.getTime() - date.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 10);
+};

@@ -54,7 +54,7 @@ A `BLOCKED` operation can be an intentionally retired generic surface whose repl
 | DEC-DELETEPRODUCTCONFIGURATIONTYPE | BLOCKED | Approve, redesign or retire OpenAPI operation deleteProductConfigurationType. | products | deleteProductConfigurationType |
 | DEC-DISCONNECTINTEGRATIONCONNECTION | BLOCKED | Approve, redesign or retire OpenAPI operation disconnectIntegrationConnection. | platform/integrations | disconnectIntegrationConnection |
 | DEC-MARKDEALLOSTANDPLANRECYCLE | BLOCKED | Approve, redesign or retire OpenAPI operation markDealLostAndPlanRecycle. | deals | markDealLostAndPlanRecycle |
-| DEC-MUTATION-RESULT-PROJECTION | BLOCKED | Approve, redesign or retire OpenAPI operation createContact. | contacts | completeCustomerOnboarding, createContact, createOrganization, linkContactToOrganization … |
+| DEC-MUTATION-RESULT-PROJECTION | BLOCKED | Approve, redesign or retire OpenAPI operation createContact. | contacts | completeCustomerOnboarding, createContact, createOrganization, onboardExistingCustomer … |
 | DEC-P15-TYPED-QUOTE-LIFECYCLE | BLOCKED | Retain ambiguous generic Quote lifecycle operations as blocked and use typed Quote commands. | quotes | acceptQuote, changeQuoteStatusCommand |
 | DEC-PHASE5-GENERIC-LEAD-QUALIFICATION-RETIRED | BLOCKED | Retain generic Lead qualification as blocked and use the three typed qualification workflows. | leads + owning downstream workflow modules | qualifyLead |
 | DEC-PUTWORKSPACEEXCHANGERATE | BLOCKED | Approve, redesign or retire OpenAPI operation putWorkspaceExchangeRate. | platform/workspace-config | putWorkspaceExchangeRate |

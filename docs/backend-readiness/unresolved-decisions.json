@@ -586,7 +586,6 @@
         "completeCustomerOnboarding",
         "createContact",
         "createOrganization",
-        "linkContactToOrganization",
         "onboardExistingCustomer",
         "updateContact",
         "updateCustomerLifecycle",
@@ -601,8 +600,7 @@
         "PATCH /customers/{customerId}",
         "POST /customers/{customerId}/complete-onboarding",
         "POST /organizations",
-        "PATCH /organizations/{organizationId}",
-        "PUT /organizations/{organizationId}/contacts/{contactId}"
+        "PATCH /organizations/{organizationId}"
       ]
     },
     {
