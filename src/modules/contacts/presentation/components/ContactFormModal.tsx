@@ -253,8 +253,6 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit }: C
           <h4 className="border-b border-indigo-50 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-indigo-700">{t("contact.edit.basicIdentity")}</h4>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Input id={`contact-${mode}-name`} label={`${t("contactList.form.fullName")} *`} required value={draft.name} onChange={(event) => update("name", event.target.value)} error={errors.name} />
-            {mode === "edit" ? <Input id={`contact-${mode}-organizationName`} label={t("contactList.quickCreate.organization")} value={draft.organizationName} onChange={(event) => update("organizationName", event.target.value)} error={errors.organizationName} /> : null}
-            {mode === "edit" ? <Input label={t("contactList.form.contactCode")} value={draft.contactCode} onChange={(event) => update("contactCode", event.target.value)} /> : null}
             {showComplete ? <Input label={t("contact.edit.jobTitle")} value={draft.title} onChange={(event) => update("title", event.target.value)} /> : null}
             {showComplete ? <Input label={t("contact.edit.department")} value={draft.department} onChange={(event) => update("department", event.target.value)} /> : null}
             {showComplete ? (
@@ -267,12 +265,6 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit }: C
                 <option value="technical">{vi ? "Kỹ thuật" : "Technical"}</option>
                 <option value="finance">{vi ? "Tài chính" : "Finance"}</option>
                 <option value="other">{vi ? "Khác" : "Other"}</option>
-              </Select>
-            ) : null}
-            {mode === "edit" ? (
-              <Select label={t("contact.edit.avatarColor")} value={draft.avatarColor} onChange={(event) => update("avatarColor", event.target.value)}>
-                <option value="">{t("common.notSet")}</option>
-                <option value="indigo">Indigo</option><option value="emerald">Emerald</option><option value="violet">Violet</option><option value="amber">Amber</option><option value="rose">Rose</option><option value="cyan">Cyan</option>
               </Select>
             ) : null}
           </div>
@@ -291,27 +283,12 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit }: C
               </Select>
             ) : null}
             {showComplete ? <div className="md:col-span-2"><Input label={t("contact.edit.address")} value={draft.address} onChange={(event) => update("address", event.target.value)} /></div> : null}
-            {mode === "edit" ? <div className="md:col-span-2"><Checkbox id={`contact-${mode}-consent`} label={t("contact.edit.communicationConsent")} checked={draft.communicationConsent} onChange={(event) => update("communicationConsent", event.target.checked)} /></div> : null}
           </div>
         </section>
-
-        {mode === "edit" ? (
-          <section className="space-y-3">
-            <h4 className="border-b border-indigo-50 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-indigo-700">{t("contact.edit.relationshipContext")}</h4>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-              <Input label={t("contact.edit.relationshipType")} value={draft.relationshipType} onChange={(event) => update("relationshipType", event.target.value)} />
-              <Select label={t("contact.edit.influenceLevel")} value={draft.influenceLevel} onChange={(event) => update("influenceLevel", event.target.value as InfluenceLevel)}>
-                <option value="low">{vi ? "Thấp" : "Low"}</option><option value="medium">{vi ? "Trung bình" : "Medium"}</option><option value="high">{vi ? "Cao" : "High"}</option>
-              </Select>
-              <Checkbox id={`contact-${mode}-primary`} label={t("contact.edit.isPrimaryContact")} checked={draft.isPrimaryContact} onChange={(event) => update("isPrimaryContact", event.target.checked)} />
-            </div>
-          </section>
-        ) : null}
 
         <section className="space-y-3">
           <h4 className="border-b border-indigo-50 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-indigo-700">{t("contact.edit.salesContext")}</h4>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            {mode === "edit" ? <Input id={`contact-${mode}-nextFollowUpAt`} label={t("contact.edit.nextFollowUpAt")} type="datetime-local" value={draft.nextFollowUpAt} onChange={(event) => update("nextFollowUpAt", event.target.value)} error={errors.nextFollowUpAt} /> : null}
             <Select id={`contact-${mode}-ownerId`} label={t("contact.edit.ownerId")} value={draft.ownerId} onChange={(event) => update("ownerId", event.target.value)} disabled={!ownership?.canAssign} error={errors.ownerId}>
               {ownerOptions.map((owner) => <option key={owner.memberId} value={owner.memberId}>{owner.displayName}</option>)}
             </Select>
@@ -323,19 +300,6 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit }: C
                 <option value="Facebook">Facebook</option><option value="Google Search">Google Search</option><option value="Direct">Direct</option>
               </Select>
             ) : null}
-            {mode === "edit" ? (
-              <Select label={t("contactList.filters.status")} value={draft.status} onChange={(event) => update("status", event.target.value as ContactStatus)}>
-                <option value="active">{t("contactStatus.active")}</option><option value="needs_follow_up">{t("contactStatus.needs_follow_up")}</option><option value="in_consulting">{t("contactStatus.in_consulting")}</option><option value="has_open_opportunity">{t("contactStatus.has_open_opportunity")}</option><option value="inactive">{t("contactStatus.inactive")}</option>
-                {mode === "edit" ? <option value="do_not_contact">{t("contactStatus.do_not_contact")}</option> : null}
-                {mode === "edit" ? <option value="archived">{t("contactStatus.archived")}</option> : null}
-              </Select>
-            ) : null}
-            {mode === "edit" ? (
-              <Select label={t("contact.edit.priority")} value={draft.priority} onChange={(event) => update("priority", event.target.value as ContactPriority)}>
-                <option value="LOW">{t("contactList.priority.low")}</option><option value="MEDIUM">{t("contactList.priority.medium")}</option><option value="HIGH">{t("contactList.priority.high")}</option><option value="URGENT">{t("contactList.priority.urgent")}</option>
-              </Select>
-            ) : null}
-            {mode === "edit" ? <Input label={t("contact.edit.lastContactedAt")} type="datetime-local" value={draft.lastContactedAt} onChange={(event) => update("lastContactedAt", event.target.value)} /> : null}
             {showComplete ? <div className="md:col-span-2"><Input label={t("contact.edit.tags")} value={draft.tagsString} onChange={(event) => update("tagsString", event.target.value)} /></div> : null}
           </div>
         </section>
@@ -344,7 +308,6 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit }: C
           <section className="space-y-3">
             <h4 className="border-b border-indigo-50 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-indigo-700">{t("contact.edit.notesSection")}</h4>
             <Textarea label={t("contact.edit.notes")} value={draft.notes} onChange={(event) => update("notes", event.target.value)} />
-            {mode === "edit" ? <Textarea label={t("contact.edit.internalNotes")} value={draft.internalNotes} onChange={(event) => update("internalNotes", event.target.value)} /> : null}
           </section>
         ) : null}
 

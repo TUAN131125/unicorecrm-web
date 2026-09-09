@@ -1224,6 +1224,16 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "Authoritative Contact update outcome",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactMutationResponse"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Problem Details",
             "content": {
@@ -1335,22 +1345,40 @@
             }
           }
         },
-        "x-contract-status": "BLOCKED",
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
         "x-module-owner": "contacts",
         "x-required-capability": "contacts.update",
         "x-resource-scope": "RESOURCE",
         "x-data-scope": "WORKSPACE",
         "x-workspace-required": true,
         "x-actor-required": true,
-        "x-idempotency-policy": "UNRESOLVED_BLOCKED",
-        "x-concurrency-policy": "UNRESOLVED_BLOCKED",
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "IF_MATCH_REQUIRED",
         "x-audit-requirement": "IMMUTABLE_COMMAND_AUDIT",
-        "x-event-outbox-expectation": "UNRESOLVED_BLOCKED",
-        "x-transaction-boundary": "UNRESOLVED_BLOCKED",
+        "x-event-outbox-expectation": "CONTACT_UPDATED",
+        "x-transaction-boundary": "SINGLE_CONTACT_AGGREGATE_TRANSACTION",
         "x-error-codes": [
-          "CONTRACT_OPERATION_BLOCKED"
+          "AUTHENTICATION_REQUIRED",
+          "ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "RESOURCE_VERSION_CONFLICT",
+          "CONTACT_ALREADY_ARCHIVED",
+          "RATE_LIMITED",
+          "INTERNAL_ERROR"
         ],
-        "x-blocking-decision-id": "DEC-MUTATION-RESULT-PROJECTION"
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateContactRequest"
+              }
+            }
+          }
+        }
       }
     },
     "/contacts/{contactId}/archive": {
@@ -61284,6 +61312,14 @@
           "fullName"
         ],
         "properties": {
+          "fullName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200
+          },
+          "ownerId": {
+            "$ref": "#/components/schemas/EntityId"
+          },
           "salutation": {
             "type": "string",
             "maxLength": 40
@@ -61344,37 +61380,9 @@
             "type": "string",
             "maxLength": 700
           },
-          "addressDetails": {
-            "$ref": "#/components/schemas/PostalAddress"
-          },
           "source": {
             "type": "string",
             "maxLength": 160
-          },
-          "ownerId": {
-            "$ref": "#/components/schemas/EntityId"
-          },
-          "consent": {
-            "$ref": "#/components/schemas/CommunicationConsentProfile"
-          },
-          "doNotCall": {
-            "type": "boolean"
-          },
-          "doNotEmail": {
-            "type": "boolean"
-          },
-          "doNotSms": {
-            "type": "boolean"
-          },
-          "doNotZalo": {
-            "type": "boolean"
-          },
-          "doNotContact": {
-            "type": "boolean"
-          },
-          "doNotContactReason": {
-            "type": "string",
-            "maxLength": 1000
           },
           "decisionRole": {
             "type": "string",
@@ -61402,29 +61410,6 @@
               "type": "string",
               "maxLength": 100
             }
-          },
-          "organizationRelationships": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ContactOrganizationRelationshipDocument"
-            }
-          },
-          "fullName": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 200
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "active",
-              "needs_follow_up",
-              "in_consulting",
-              "has_open_opportunity",
-              "inactive",
-              "do_not_contact",
-              "archived"
-            ]
           }
         }
       },

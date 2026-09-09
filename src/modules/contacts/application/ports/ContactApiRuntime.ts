@@ -39,6 +39,7 @@ export interface ContactQueryPort {
 
 export interface ContactCreateCommandPort {
   create(input: ContactCreateCommand): Promise<Contact>;
+  update(input: ContactUpdateCommand): Promise<Contact>;
 }
 
 export interface ContactCreateCommand {
@@ -55,6 +56,11 @@ export interface ContactCreateCommand {
   decisionRole?: ContactDecisionRole;
   notes?: string;
   tags?: string[];
+}
+
+export interface ContactUpdateCommand extends ContactCreateCommand {
+  contactId: string;
+  expectedVersion: number;
 }
 
 export interface ContactApiRuntime {

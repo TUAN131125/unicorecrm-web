@@ -326,8 +326,8 @@ export function useContactDetailController(props: ContactDetailPageProps) {
   const displayPurchasedProducts = getPurchasedProductsForContact(contact, customers);
 
   // Saving edited fields
-  const handleSaveContact = async (updatedContact: Contact) => {
-    if (refuseUnavailableContactWrite(locale === "vi" ? "Cập nhật hồ sơ Liên hệ" : "Updating the Contact profile")) return;
+  const handleSaveContact = async (updatedContact: Parameters<typeof updateContactViaApi>[0]) => {
+    if (refuseUnavailableContactWrite(locale === "vi" ? "Cập nhật hồ sơ Liên hệ" : "Updating the Contact profile")) throw new Error("CONTACT_UPDATE_UNAVAILABLE");
     await updateContactViaApi(updatedContact);
     setShowEditModal(false);
     showToast(tx("common.updatedSuccessfully", "Đã lưu cập nhật thành công."));

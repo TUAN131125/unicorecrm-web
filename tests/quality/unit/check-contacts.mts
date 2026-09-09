@@ -19,7 +19,7 @@ import {
 import type { Contact } from "@/modules/contacts";
 import { InMemoryContactRepository } from "@/modules/contacts/infrastructure/InMemoryContactRepository";
 import { configureContactApplication, resetContactApplication } from "@/modules/contacts/application/composition/contactApplicationServices";
-import { createContactViaApi } from "@/modules/contacts/application/commands/contactApiCommands";
+import { createContactViaApi, updateContactViaApi } from "@/modules/contacts/application/commands/contactApiCommands";
 import { ApplicationError } from "@/shared/domain";
 import { mapContactDocument } from "@/modules/contacts/infrastructure/http/ContactApiMapper";
 import { CONTACT_MODULE_MANIFEST } from "@/modules/contacts/manifest";
@@ -59,6 +59,7 @@ const createRepository = new InMemoryContactRepository([], {
 });
 const authoritativeCreated = { ...createContact("backend-contact-1", "Authoritative Person", "active", "member-1", "0901000099"), resourceVersion: 7 };
 let capturedCreate: unknown;
+let capturedUpdate: unknown;
 configureContactApplication({
   repository: createRepository,
   preferences: { get: (_key, fallback) => fallback, set: () => undefined, remove: () => undefined },
@@ -69,7 +70,7 @@ configureContactApplication({
       async get() { return authoritativeCreated; },
       async getRelationshipSummary() { throw new Error("NOT_USED"); },
     },
-    commands: { async create(input) { capturedCreate = input; return authoritativeCreated; } },
+    commands: { async create(input) { capturedCreate = input; return authoritativeCreated; }, async update(input) { capturedUpdate = input; return { ...authoritativeCreated, name: "Updated Authoritative Person", fullName: "Updated Authoritative Person", resourceVersion: 8 }; } },
   },
 });
 const projectedCreate = await createContactViaApi({ fullName: "  Authoritative Person  ", ownerId: "member-1", mobilePhone: "0901000099" });
@@ -78,6 +79,11 @@ assert.equal(projectedCreate.resourceVersion, 7, "Create must preserve backend r
 assert.equal(createRepository.list().length, 1, "Create must project the backend Contact exactly once.");
 assert.equal(createRepository.getById("backend-contact-1")?.resourceVersion, 7);
 assert.deepEqual(capturedCreate, { fullName: "  Authoritative Person  ", ownerId: "member-1", mobilePhone: "0901000099" });
+const projectedUpdate = await updateContactViaApi({ contactId: "backend-contact-1", expectedVersion: 7, fullName: "Updated Authoritative Person" });
+assert.deepEqual(capturedUpdate, { contactId: "backend-contact-1", expectedVersion: 7, fullName: "Updated Authoritative Person" });
+assert.equal(projectedUpdate.resourceVersion, 8, "Update must preserve the backend version.");
+assert.equal(createRepository.list().length, 1, "Update must project the authoritative Contact exactly once without duplication.");
+assert.equal(createRepository.getById("backend-contact-1")?.fullName, "Updated Authoritative Person");
 resetContactApplication();
 
 const mappedRead = mapContactDocument({
@@ -104,7 +110,7 @@ configureContactApplication({
       async get() { throw new Error("NOT_USED"); },
       async getRelationshipSummary() { throw new Error("NOT_USED"); },
     },
-    commands: { async create() { throw new ApplicationError({ code: "ACCESS_DENIED", message: "denied", status: 403 }); } },
+    commands: { async create() { throw new ApplicationError({ code: "ACCESS_DENIED", message: "denied", status: 403 }); }, async update() { throw new Error("NOT_USED"); } },
   },
 });
 await assert.rejects(() => createContactViaApi({ fullName: "Retry Person" }), (error: unknown) => error instanceof ApplicationError && error.code === "ACCESS_DENIED");
@@ -194,12 +200,9 @@ assert.match(contactCreateControllerSource, /const createdContact = await create
 const contactFormSource = readPresentationComposition("src/modules/contacts/presentation/components/ContactFormModal.tsx", "utf8");
 assert.match(contactFormSource, /loading=\{isSubmitting\}/, "Create must expose submitting progress and block repeat submission.");
 assert.match(contactFormSource, /catch \(error\)[\s\S]*?setFormError/, "Create failure must remain in the modal with safe retry feedback.");
-assert.match(contactFormSource, /mode === "edit" \? <Input[^\n]*organizationName/u, "Organization name must not imply relationship persistence during Create.");
-assert.match(contactFormSource, /mode === "edit" \? <Input[^\n]*contactCode/u, "Local Contact code must remain edit-only.");
-assert.match(contactFormSource, /mode === "edit" \? \([\s\S]*?avatarColor/u, "Avatar color must remain edit-only.");
-assert.match(contactFormSource, /mode === "edit" \? <div[^\n]*communicationConsent/u, "Consent shorthand must remain edit-only.");
-assert.match(contactFormSource, /mode === "edit" \? \([\s\S]*?relationshipType[\s\S]*?influenceLevel/u, "Deferred relationship context must remain edit-only.");
-assert.match(contactFormSource, /mode === "edit" \? <Input[^\n]*nextFollowUpAt/u, "Follow-up scheduling must remain edit-only.");
+for (const unsupportedUpdateField of ["organizationName", "contactCode", "avatarColor", "communicationConsent", "relationshipType", "influenceLevel", "nextFollowUpAt", "status", "priority", "internalNotes"]) {
+  assert.doesNotMatch(contactFormSource.slice(contactFormSource.indexOf("return (")), new RegExp(`update\\(\\"${unsupportedUpdateField}\\"`), `${unsupportedUpdateField} must not be presented as an authoritative Contact Update field.`);
+}
 
 const contactViewSettingsSource = readPresentationComposition("src/modules/contacts/presentation/hooks/useContactListViewSettings.ts", "utf8");
 assert.match(contactViewSettingsSource, /createContactCustomSavedView\(customViews, name, presentation\)/, "Custom saved views must store the submitted presentation snapshot through the model owner.");

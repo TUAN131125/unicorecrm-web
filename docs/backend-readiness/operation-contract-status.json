@@ -1756,8 +1756,8 @@
       "operationId": "updateContact",
       "method": "PATCH",
       "path": "/contacts/{contactId}",
-      "status": "BLOCKED",
-      "blockingDecisionId": "DEC-MUTATION-RESULT-PROJECTION"
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
     },
     {
       "operationId": "updateCrmObjectField",

@@ -1,5 +1,5 @@
-import type { CommercialApiClient, ContactMutationResponse, CreateContactRequest } from "@/platform/api/generated/commercialApi";
-import type { ContactCreateCommand, ContactCreateCommandPort } from "../../application/ports/ContactApiRuntime";
+import type { CommercialApiClient, ContactMutationResponse, CreateContactRequest, UpdateContactRequest } from "@/platform/api/generated/commercialApi";
+import type { ContactCreateCommand, ContactCreateCommandPort, ContactUpdateCommand } from "../../application/ports/ContactApiRuntime";
 import type { Contact } from "../../domain/model/contact.types";
 import { mapContactDocument } from "./ContactApiMapper";
 
@@ -8,6 +8,11 @@ export class ContactHttpCommandAdapter implements ContactCreateCommandPort {
 
   async create(input: ContactCreateCommand): Promise<Contact> {
     const response = await this.api.createContact<ContactMutationResponse>(toRequest(input), options());
+    return result(response);
+  }
+
+  async update(input: ContactUpdateCommand): Promise<Contact> {
+    const response = await this.api.updateContact<ContactMutationResponse>(input.contactId, toRequest(input) satisfies UpdateContactRequest, options(input.expectedVersion));
     return result(response);
   }
 
@@ -38,10 +43,11 @@ function result(response: ContactMutationResponse): Contact {
   return mapContactDocument(response.result.contact);
 }
 
-function options() {
+function options(expectedVersion?: number) {
   return {
     idempotencyKey: `contact-${crypto.randomUUID()}`,
     retry: "idempotent" as const,
+    ...(expectedVersion === undefined ? {} : { expectedVersion }),
   };
 }
 
