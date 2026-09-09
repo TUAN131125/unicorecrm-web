@@ -37,14 +37,12 @@ export interface ContactQueryPort {
   getRelationshipSummary(contactId: string, signal?: AbortSignal): Promise<ContactRelationshipSummary>;
 }
 
-export interface ContactCommandPort {
+export interface ContactCreateCommandPort {
   create(input: Contact): Promise<Contact>;
-  update(contactId: string, input: Contact, expectedVersion: number): Promise<Contact>;
-  archive(contactId: string, expectedVersion: number): Promise<Contact>;
 }
 
 export interface ContactApiRuntime {
   mode: ContactApiRuntimeMode;
   queries: ContactQueryPort;
-  commands?: ContactCommandPort;
+  commands?: ContactCreateCommandPort;
 }

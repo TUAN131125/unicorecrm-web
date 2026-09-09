@@ -10,30 +10,19 @@ export async function createContactViaApi(input: Contact): Promise<Contact> {
 }
 
 export async function updateContactViaApi(input: Contact): Promise<Contact> {
-  const version = requireVersion(input, "updateContact");
-  const updated = await requireCommands().update(input.id, input, version);
-  await project(updated, "contact.update");
-  return updated;
+  void input;
+  throw new Error("CONTACT_COMMANDS_UNAVAILABLE");
 }
 
 export async function archiveContactViaApi(contactId: string): Promise<Contact> {
-  const current = contactRepository.getById(contactId);
-  if (!current) throw new Error(`CONTACT_NOT_FOUND:${contactId}`);
-  const archived = await requireCommands().archive(contactId, requireVersion(current, "archiveContact"));
-  runBackendProjection("contacts", () => contactRepository.replace(contactRepository.list().filter((item) => item.id !== contactId)));
-  await invalidateModuleQueries({ moduleKeys: ["contacts"], commandType: "contact.archive", aggregateId: contactId, occurredAt: archived.updatedAt ?? new Date().toISOString() });
-  return archived;
+  void contactId;
+  throw new Error("CONTACT_COMMANDS_UNAVAILABLE");
 }
 
 function requireCommands() {
   const commands = getContactApiRuntime().commands;
   if (!commands) throw new Error("CONTACT_COMMANDS_UNAVAILABLE");
   return commands;
-}
-
-function requireVersion(contact: Contact, operation: string): number {
-  if (!Number.isInteger(contact.resourceVersion) || Number(contact.resourceVersion) < 0) throw new Error(`${operation}:CONTACT_VERSION_REQUIRED`);
-  return Number(contact.resourceVersion);
 }
 
 async function project(contact: Contact, commandType: string): Promise<void> {

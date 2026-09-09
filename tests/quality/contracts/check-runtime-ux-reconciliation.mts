@@ -29,6 +29,9 @@ assert.doesNotMatch(taskIdentity, /access\.accountId|"current-user"/u, "Task bus
 
 const connectedContacts = read("src/modules/contacts/infrastructure/http/createContactConnectedApiRuntime.ts");
 assert.match(connectedContacts, /commands: new ContactHttpCommandAdapter\(api\)/u, "Connected Contact Create must use the authoritative command adapter.");
+const contactCommandAdapter = read("src/modules/contacts/infrastructure/http/ContactHttpCommandAdapter.ts");
+assert.match(contactCommandAdapter, /api\.createContact/u, "The connected Contact command boundary must retain admitted Create.");
+assert.doesNotMatch(contactCommandAdapter, /UpdateContactRequest|ArchiveContactRequest|api\.updateContact|api\.archiveContact/u, "The connected Contact command boundary must not compile against blocked Update or Archive operations.");
 const contactPublicApi = read("src/modules/contacts/public/contacts.ts");
 assert.match(contactPublicApi, /isContactOperationReady\(CONTACT_CREATE_OPERATION\)[\s\S]*Boolean\(getContactApiRuntime\(\)\.commands\)/u, "Contact Create availability must require both canonical admission and runtime support.");
 assert.match(contactPublicApi, /isContactOperationReady\(CONTACT_UPDATE_OPERATION\)/u, "Contact Update availability must remain independently authority-gated.");

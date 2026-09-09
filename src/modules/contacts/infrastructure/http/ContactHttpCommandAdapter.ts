@@ -1,29 +1,19 @@
-import type { ArchiveContactRequest, CommercialApiClient, ContactMutationResponse, CreateContactRequest, UpdateContactRequest } from "@/platform/api/generated/commercialApi";
-import type { ContactCommandPort } from "../../application/ports/ContactApiRuntime";
+import type { CommercialApiClient, ContactMutationResponse, CreateContactRequest } from "@/platform/api/generated/commercialApi";
+import type { ContactCreateCommandPort } from "../../application/ports/ContactApiRuntime";
 import type { Contact } from "../../domain/model/contact.types";
 import { mapContactDocument } from "./ContactApiMapper";
 
-export class ContactHttpCommandAdapter implements ContactCommandPort {
+export class ContactHttpCommandAdapter implements ContactCreateCommandPort {
   constructor(private readonly api: CommercialApiClient) {}
 
   async create(input: Contact): Promise<Contact> {
     const response = await this.api.createContact<ContactMutationResponse>(toRequest(input), options());
-    return result(response, undefined);
+    return result(response);
   }
 
-  async update(contactId: string, input: Contact, expectedVersion: number): Promise<Contact> {
-    const response = await this.api.updateContact<ContactMutationResponse, UpdateContactRequest>(contactId, toRequest(input), options(expectedVersion));
-    return result(response, contactId);
-  }
-
-  async archive(contactId: string, expectedVersion: number): Promise<Contact> {
-    const body: ArchiveContactRequest = {};
-    const response = await this.api.archiveContact<ContactMutationResponse>(contactId, body, options(expectedVersion));
-    return result(response, contactId);
-  }
 }
 
-function toRequest(contact: Contact): CreateContactRequest & UpdateContactRequest {
+function toRequest(contact: Contact): CreateContactRequest {
   return compact({
     fullName: contact.fullName.trim(),
     ownerId: contact.ownerId?.trim() || undefined,
@@ -50,17 +40,16 @@ function toRequest(contact: Contact): CreateContactRequest & UpdateContactReques
   });
 }
 
-function result(response: ContactMutationResponse, expectedId?: string): Contact {
-  if (!response.result?.contact || response.aggregateId !== response.result.contact.id || (expectedId && response.aggregateId !== expectedId)) {
+function result(response: ContactMutationResponse): Contact {
+  if (!response.result?.contact || response.aggregateId !== response.result.contact.id) {
     throw new Error("CONTACT_MUTATION_CONTRACT_VIOLATION");
   }
   return mapContactDocument(response.result.contact);
 }
 
-function options(expectedVersion?: number) {
+function options() {
   return {
     idempotencyKey: `contact-${crypto.randomUUID()}`,
-    ...(expectedVersion === undefined ? {} : { expectedVersion }),
     retry: "idempotent" as const,
   };
 }
