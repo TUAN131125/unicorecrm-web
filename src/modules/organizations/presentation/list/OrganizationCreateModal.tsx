@@ -3,6 +3,7 @@ import { formatApplicationError } from "@/shared/operations";
 import { recordOperationalAudit } from "@/platform/operational-audit";
 import { useWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import { createPostalAddressFromLine } from "@/platform/identity";
+import { type Contact } from "@/modules/contacts";
 import { createOrganizationViaApi, isOrganizationConnectedMode, type OrganizationAccount } from "../../public/api";
 import { createOrganizationWithRepresentativeWorkflow } from "@/workflows/contact-organization-relationship";
 import {
