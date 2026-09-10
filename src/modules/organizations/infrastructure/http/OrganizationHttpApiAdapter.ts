@@ -1,7 +1,7 @@
 import type {
   CommercialApiClient,
   OrganizationDocument,
-  OrganizationList,
+  OrganizationListResponse,
   OrganizationOverviewReadModel,
 } from "@/platform/api/generated/commercialApi";
 import type { AuthoritativePage, ModuleListQuery } from "@/shared/application";
@@ -16,11 +16,11 @@ export class OrganizationHttpApiAdapter implements OrganizationQueryPort {
   constructor(private readonly client: CommercialApiClient) {}
 
   async list(_query: ModuleListQuery = {}, signal?: AbortSignal): Promise<AuthoritativePage<OrganizationAccount>> {
-    const response = await this.client.listOrganizations<OrganizationList>({}, signal);
-    const items = response.map(mapOrganizationDocument);
+    const response = await this.client.listOrganizations<OrganizationListResponse>({}, signal);
+    const items = response.items.map(mapOrganizationDocument);
     return {
       items,
-      pageInfo: { hasNextPage: false, totalCount: items.length },
+      pageInfo: { ...response.pageInfo },
       authority: "backend",
       loadedAt: new Date().toISOString(),
     };

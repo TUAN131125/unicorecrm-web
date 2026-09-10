@@ -9,6 +9,7 @@ import {
   Phone,
   Plus,
   UsersRound,
+  Archive,
 } from "lucide-react";
 import { Button, IconButton, MenuItemButton, MenuSection, RowActionPortal } from "@/shared/components/ui";
 import { useI18n } from "@/i18n";
@@ -31,6 +32,7 @@ interface OrganizationRecordHeaderProps {
   onAddRepresentative: () => void;
   canEdit: boolean;
   canAddRepresentative: boolean;
+  onArchive?: () => void;
 }
 
 export const OrganizationRecordHeader: React.FC<OrganizationRecordHeaderProps> = ({
@@ -44,6 +46,7 @@ export const OrganizationRecordHeader: React.FC<OrganizationRecordHeaderProps> =
   onAddRepresentative,
   canEdit,
   canAddRepresentative,
+  onArchive,
 }) => {
   const { locale } = useI18n();
   const isVi = locale === "vi";
@@ -164,6 +167,7 @@ export const OrganizationRecordHeader: React.FC<OrganizationRecordHeaderProps> =
                   {text("Gửi email", "Send email")}
                 </MenuItemButton>
               ) : null}
+              {onArchive ? <MenuItemButton onClick={() => { onArchive(); closeMenu(); }} icon={<Archive size={14} />}>{text("Lưu trữ tổ chức", "Archive organization")}</MenuItemButton> : null}
             </div>
           </RowActionPortal>
         </div>

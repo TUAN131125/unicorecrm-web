@@ -137,7 +137,7 @@ export function useServerPagedCollection<T>(
       }, controller.signal);
       if (controller.signal.aborted || requestVersion !== requestVersionRef.current) return;
 
-      const authoritativePageCount = Math.max(1, Math.ceil(result.pageInfo.totalCount / pageSize));
+      const authoritativePageCount = Math.max(1, Math.ceil((result.pageInfo.totalCount ?? result.items.length) / pageSize));
       if (page > authoritativePageCount) {
         setPageState(authoritativePageCount);
         setSnapshot((current) => current.page === undefined

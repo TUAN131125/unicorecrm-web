@@ -61,7 +61,9 @@ import {
   getPrimaryOrganizationContact,
 } from "../model/organizationAccountView";
 import {
+  archiveOrganizationViaApi,
   getOrganizationAccountsSnapshot,
+  isOrganizationConnectedMode,
   subscribeToOrganizationAccounts,
   type OrganizationAccount,
 } from "../../public/api";
@@ -112,6 +114,7 @@ export const OrganizationAccountDetailPage: React.FC = () => {
   const [savingActivity, setSavingActivity] = useState(false);
   const [endRepresentativeContactId, setEndRepresentativeContactId] = useState<string | null>(null);
   const [endRepresentativeReason, setEndRepresentativeReason] = useState("");
+  const [archiveOpen, setArchiveOpen] = useState(false);
 
   const account = accounts.find((item) => item.id === organizationId);
   const linkedCustomer = account ? findCustomerByRelationshipRefSnapshot({ type: "ORGANIZATION_ACCOUNT", id: account.id }) : undefined;
@@ -322,6 +325,7 @@ export const OrganizationAccountDetailPage: React.FC = () => {
         onAddRepresentative={() => setShowAddRepresentative(true)}
         canEdit={canEdit}
         canAddRepresentative={canAddRepresentative}
+        onArchive={isOrganizationConnectedMode() && account.status !== "archived" && canEdit ? () => setArchiveOpen(true) : undefined}
       />
 
       {message && <div className="rounded-xl border border-violet-100 bg-violet-50 px-4 py-3 text-xs font-semibold text-violet-800">{message}</div>}
@@ -514,6 +518,7 @@ export const OrganizationAccountDetailPage: React.FC = () => {
       </div>
 
       <OrganizationEditModal isOpen={showEdit} onClose={() => setShowEdit(false)} account={account} representatives={related.representatives} actorId={actorId} onSaved={(next) => setMessage(text(`Đã cập nhật ${next.displayName}.`, `${next.displayName} updated.`))} />
+      <ConfirmDialog isOpen={archiveOpen} onClose={() => setArchiveOpen(false)} title={text("Lưu trữ tổ chức", "Archive organization")} message={text("Tổ chức sẽ được lưu trữ trên backend.", "The organization will be archived by the backend.")} confirmText={text("Lưu trữ", "Archive")} variant="danger" onConfirm={async () => { try { if (account.resourceVersion === undefined) throw new Error("ORGANIZATION_VERSION_REQUIRED"); await archiveOrganizationViaApi({ organizationId: account.id, expectedVersion: account.resourceVersion }); setArchiveOpen(false); setMessage(text("Đã lưu trữ tổ chức.", "Organization archived.")); } catch (caught) { setMessage(formatApplicationError(caught, { locale })); } }} />
       {!isContactOrganizationRelationshipUnavailable() && <OrganizationRepresentativeModal isOpen={showAddRepresentative} onClose={() => setShowAddRepresentative(false)} account={account} actorId={actorId} onCreated={(contact) => { setMessage(text(`Đã liên kết ${contact.fullName || contact.name} làm cá nhân đại diện.`, `${contact.fullName || contact.name} linked as a representative.`)); setActiveTab("relationship"); setRelationshipView("people"); }} />}
       <OrganizationQuickActivityModal action={quickAction} email={communicationEmail} phone={communicationPhone} onClose={() => setQuickAction(null)} onSave={saveQuickActivity} />
       <ConfirmDialog

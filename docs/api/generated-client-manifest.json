@@ -4,7 +4,7 @@
   "openapiVersion": "3.1.0",
   "contractVersion": "0.23.20-contract.0",
   "specPath": "docs/api/openapi.json",
-  "specSha256": "55015771fd7d96468272530d15266287f4bd907e33b01226e1e3583c2c0b5d84",
+  "specSha256": "20ca5a04c5c991c4c91d2ffe927219590cf6a858c9b424bbe6a289a07401b094",
   "ownershipPath": "scripts/api/openapi/client-ownership.json",
   "coverageLedgerPath": "docs/api/operation-coverage-ledger.json",
   "breakingBaselinePath": "docs/api/openapi-breaking-baseline.json",
@@ -102,7 +102,7 @@
       "output": "src/platform/api/generated/commercialApi.ts",
       "className": "CommercialApiClient",
       "requestOptionsName": "CommercialRequestOptions",
-      "operationCount": 158
+      "operationCount": 159
     },
     {
       "id": "workspace-configuration",
@@ -501,6 +501,20 @@
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "orders.delete"
+    },
+    {
+      "operationId": "archiveOrganization",
+      "method": "POST",
+      "path": "/organizations/{organizationId}/archive",
+      "boundedContext": "Organizations",
+      "ownerModule": "organizations",
+      "generatedClientId": "commercial",
+      "generatedMethod": "archiveOrganization",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "organizations.delete"
     },
     {
       "operationId": "archiveProduct",
@@ -1196,10 +1210,10 @@
       "ownerModule": "organizations",
       "generatedClientId": "commercial",
       "generatedMethod": "createOrganization",
-      "idempotencyPolicy": "UNRESOLVED_BLOCKED",
-      "concurrencyPolicy": "UNRESOLVED_BLOCKED",
-      "contractStatus": "BLOCKED",
-      "blockingDecisionId": "DEC-MUTATION-RESULT-PROJECTION",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "BACKEND_SERIALIZED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
       "requiredCapability": "organizations.create"
     },
     {
@@ -3884,10 +3898,10 @@
       "ownerModule": "organizations",
       "generatedClientId": "commercial",
       "generatedMethod": "updateOrganization",
-      "idempotencyPolicy": "UNRESOLVED_BLOCKED",
-      "concurrencyPolicy": "UNRESOLVED_BLOCKED",
-      "contractStatus": "BLOCKED",
-      "blockingDecisionId": "DEC-MUTATION-RESULT-PROJECTION",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
       "requiredCapability": "organizations.update"
     },
     {

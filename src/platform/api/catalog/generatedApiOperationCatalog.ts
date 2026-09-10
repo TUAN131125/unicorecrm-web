@@ -2753,6 +2753,128 @@ export const API_OPERATION_CATALOG = {
       "quality.task-activity-api-boundary"
     ]
   },
+  "archiveOrganization": {
+    "operationId": "archiveOrganization",
+    "moduleId": "organizations",
+    "boundedContext": "Organizations",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/organizations/{organizationId}/archive",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "archiveOrganization"
+    },
+    "adapter": {
+      "file": "src/modules/organizations/infrastructure/http/OrganizationHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "ArchiveOrganizationRequest",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "IdempotencyKey",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "If-Match",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "organizationId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "ArchiveOrganizationResponse",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "organizations.delete",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "IF_MATCH_REQUIRED",
+      "audit": "IMMUTABLE_COMMAND_AUDIT",
+      "transactionBoundary": "SINGLE_ORGANIZATION_AGGREGATE_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
   "archiveProduct": {
     "operationId": "archiveProduct",
     "moduleId": "products",
@@ -8300,8 +8422,8 @@ export const API_OPERATION_CATALOG = {
     "kind": "COMMAND",
     "method": "POST",
     "path": "/organizations",
-    "contractStatus": "BLOCKED",
-    "blockingDecisionId": "DEC-MUTATION-RESULT-PROJECTION",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
     "generatedClient": {
       "id": "commercial",
       "file": "src/platform/api/generated/commercialApi.ts",
@@ -8310,10 +8432,10 @@ export const API_OPERATION_CATALOG = {
     },
     "adapter": {
       "file": "src/modules/organizations/infrastructure/http/OrganizationHttpApiAdapter.ts",
-      "status": "BLOCKED_BY_CONTRACT"
+      "status": "CONNECTED_BOUNDARY_DECLARED"
     },
     "request": {
-      "schema": null,
+      "schema": "CreateOrganizationRequest",
       "parameters": [
         {
           "name": "Idempotency-Key",
@@ -8362,8 +8484,8 @@ export const API_OPERATION_CATALOG = {
       ]
     },
     "response": {
-      "schema": null,
-      "successStatus": null
+      "schema": "CreateOrganizationResponse",
+      "successStatus": "200"
     },
     "authorization": {
       "auth": "REQUIRED",
@@ -8373,10 +8495,10 @@ export const API_OPERATION_CATALOG = {
       "dataScope": "WORKSPACE"
     },
     "delivery": {
-      "idempotency": "UNRESOLVED_BLOCKED",
-      "concurrency": "UNRESOLVED_BLOCKED",
+      "idempotency": "REQUIRED",
+      "concurrency": "BACKEND_SERIALIZED",
       "audit": "IMMUTABLE_COMMAND_AUDIT",
-      "transactionBoundary": "UNRESOLVED_BLOCKED"
+      "transactionBoundary": "SINGLE_ORGANIZATION_AGGREGATE_TRANSACTION"
     },
     "testGateIds": [
       "quality.api-contract",
@@ -17090,11 +17212,88 @@ export const API_OPERATION_CATALOG = {
             "format": null,
             "pattern": null
           }
+        },
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": "CursorToken",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "industry",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "integer",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "ownerId",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "q",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "sizeBand",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "status",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
         }
       ]
     },
     "response": {
-      "schema": "OrganizationList",
+      "schema": "OrganizationListResponse",
       "successStatus": "200"
     },
     "authorization": {
@@ -28679,8 +28878,8 @@ export const API_OPERATION_CATALOG = {
     "kind": "COMMAND",
     "method": "PATCH",
     "path": "/organizations/{organizationId}",
-    "contractStatus": "BLOCKED",
-    "blockingDecisionId": "DEC-MUTATION-RESULT-PROJECTION",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
     "generatedClient": {
       "id": "commercial",
       "file": "src/platform/api/generated/commercialApi.ts",
@@ -28689,10 +28888,10 @@ export const API_OPERATION_CATALOG = {
     },
     "adapter": {
       "file": "src/modules/organizations/infrastructure/http/OrganizationHttpApiAdapter.ts",
-      "status": "BLOCKED_BY_CONTRACT"
+      "status": "CONNECTED_BOUNDARY_DECLARED"
     },
     "request": {
-      "schema": null,
+      "schema": "UpdateOrganizationRequest",
       "parameters": [
         {
           "name": "Idempotency-Key",
@@ -28763,8 +28962,8 @@ export const API_OPERATION_CATALOG = {
       ]
     },
     "response": {
-      "schema": null,
-      "successStatus": null
+      "schema": "UpdateOrganizationResponse",
+      "successStatus": "200"
     },
     "authorization": {
       "auth": "REQUIRED",
@@ -28774,10 +28973,10 @@ export const API_OPERATION_CATALOG = {
       "dataScope": "WORKSPACE"
     },
     "delivery": {
-      "idempotency": "UNRESOLVED_BLOCKED",
-      "concurrency": "UNRESOLVED_BLOCKED",
+      "idempotency": "REQUIRED",
+      "concurrency": "IF_MATCH_REQUIRED",
       "audit": "IMMUTABLE_COMMAND_AUDIT",
-      "transactionBoundary": "UNRESOLVED_BLOCKED"
+      "transactionBoundary": "SINGLE_ORGANIZATION_AGGREGATE_TRANSACTION"
     },
     "testGateIds": [
       "quality.api-contract",

@@ -5,6 +5,7 @@ import type {
   AdvanceLeadWorkStateInput,
   AdvanceLeadWorkStateResult,
   AnonymizeLeadResult,
+  AnonymizeLeadInput,
   ApplyLeadTagBatchInput,
   ApplyLeadTagBatchResult,
   ArchiveLeadBatchInput,
@@ -141,7 +142,7 @@ export class LeadHttpApiAdapter implements LeadQueryPort, LeadCommandPort {
     return this.commands.requestLeadExport(input, options);
   }
 
-  anonymizeLead(leadId: string, input: ArchiveLeadInput, options: LeadVersionedCommandOptions): Promise<AnonymizeLeadResult> {
+  anonymizeLead(leadId: string, input: AnonymizeLeadInput, options: LeadVersionedCommandOptions): Promise<AnonymizeLeadResult> {
     return this.commands.anonymizeLead(leadId, input, options);
   }
 
@@ -157,4 +158,3 @@ export class LeadHttpApiAdapter implements LeadQueryPort, LeadCommandPort {
     return this.commands.confirmLeadDuplicatesDistinct(input, options);
   }
 }
-

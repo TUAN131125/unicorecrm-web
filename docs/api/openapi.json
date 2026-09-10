@@ -15634,6 +15634,75 @@
           },
           {
             "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 240
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "prospect",
+                "active",
+                "strategic",
+                "inactive",
+                "archived"
+              ]
+            }
+          },
+          {
+            "name": "industry",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 160
+            }
+          },
+          {
+            "name": "sizeBand",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 80
+            }
+          },
+          {
+            "name": "ownerId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/CursorToken"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 250,
+              "default": 50
+            }
           }
         ],
         "responses": {
@@ -15642,7 +15711,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/OrganizationList"
+                  "$ref": "#/components/schemas/OrganizationListResponse"
                 }
               }
             }
@@ -15769,14 +15838,15 @@
           "RATE_LIMITED",
           "INTEGRATION_UNAVAILABLE",
           "INTERNAL_ERROR"
-        ]
+        ],
+        "x-decision-id": "DEC-O-001"
       },
       "post": {
         "operationId": "createOrganization",
         "tags": [
           "Organizations"
         ],
-        "summary": "Create organization",
+        "summary": "createOrganization",
         "parameters": [
           {
             "$ref": "#/components/parameters/WorkspaceIdHeader"
@@ -15791,7 +15861,27 @@
             "$ref": "#/components/parameters/IdempotencyKeyHeader"
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOrganizationRequest"
+              }
+            }
+          }
+        },
         "responses": {
+          "200": {
+            "description": "createOrganization committed or replayed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateOrganizationResponse"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Problem Details",
             "content": {
@@ -15882,16 +15972,6 @@
               }
             }
           },
-          "501": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
           "503": {
             "description": "Problem Details",
             "content": {
@@ -15903,22 +15983,32 @@
             }
           }
         },
-        "x-contract-status": "BLOCKED",
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
         "x-module-owner": "organizations",
         "x-required-capability": "organizations.create",
         "x-resource-scope": "WORKSPACE",
         "x-data-scope": "WORKSPACE",
         "x-workspace-required": true,
         "x-actor-required": true,
-        "x-idempotency-policy": "UNRESOLVED_BLOCKED",
-        "x-concurrency-policy": "UNRESOLVED_BLOCKED",
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "BACKEND_SERIALIZED",
+        "x-aggregate-id-policy": "SERVER_ASSIGNED",
         "x-audit-requirement": "IMMUTABLE_COMMAND_AUDIT",
-        "x-event-outbox-expectation": "UNRESOLVED_BLOCKED",
-        "x-transaction-boundary": "UNRESOLVED_BLOCKED",
+        "x-event-outbox-expectation": "ORGANIZATION_CREATED",
+        "x-transaction-boundary": "SINGLE_ORGANIZATION_AGGREGATE_TRANSACTION",
         "x-error-codes": [
-          "CONTRACT_OPERATION_BLOCKED"
+          "AUTHENTICATION_REQUIRED",
+          "ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "RESOURCE_VERSION_CONFLICT",
+          "ORGANIZATION_ALREADY_ARCHIVED",
+          "RATE_LIMITED",
+          "INTERNAL_ERROR"
         ],
-        "x-blocking-decision-id": "DEC-MUTATION-RESULT-PROJECTION"
+        "x-decision-id": "DEC-O-001"
       }
     },
     "/organizations/{organizationId}": {
@@ -16080,14 +16170,15 @@
           "RATE_LIMITED",
           "INTEGRATION_UNAVAILABLE",
           "INTERNAL_ERROR"
-        ]
+        ],
+        "x-decision-id": "DEC-O-001"
       },
       "patch": {
         "operationId": "updateOrganization",
         "tags": [
           "Organizations"
         ],
-        "summary": "Update organization",
+        "summary": "updateOrganization",
         "parameters": [
           {
             "$ref": "#/components/parameters/WorkspaceIdHeader"
@@ -16113,7 +16204,27 @@
             "$ref": "#/components/parameters/IfMatchHeader"
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOrganizationRequest"
+              }
+            }
+          }
+        },
         "responses": {
+          "200": {
+            "description": "updateOrganization committed or replayed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UpdateOrganizationResponse"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Problem Details",
             "content": {
@@ -16204,16 +16315,6 @@
               }
             }
           },
-          "501": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
           "503": {
             "description": "Problem Details",
             "content": {
@@ -16225,22 +16326,32 @@
             }
           }
         },
-        "x-contract-status": "BLOCKED",
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
         "x-module-owner": "organizations",
         "x-required-capability": "organizations.update",
         "x-resource-scope": "RESOURCE",
         "x-data-scope": "WORKSPACE",
         "x-workspace-required": true,
         "x-actor-required": true,
-        "x-idempotency-policy": "UNRESOLVED_BLOCKED",
-        "x-concurrency-policy": "UNRESOLVED_BLOCKED",
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "IF_MATCH_REQUIRED",
+        "x-aggregate-id-policy": "MUST_MATCH_TARGET",
         "x-audit-requirement": "IMMUTABLE_COMMAND_AUDIT",
-        "x-event-outbox-expectation": "UNRESOLVED_BLOCKED",
-        "x-transaction-boundary": "UNRESOLVED_BLOCKED",
+        "x-event-outbox-expectation": "ORGANIZATION_UPDATED",
+        "x-transaction-boundary": "SINGLE_ORGANIZATION_AGGREGATE_TRANSACTION",
         "x-error-codes": [
-          "CONTRACT_OPERATION_BLOCKED"
+          "AUTHENTICATION_REQUIRED",
+          "ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "RESOURCE_VERSION_CONFLICT",
+          "ORGANIZATION_ALREADY_ARCHIVED",
+          "RATE_LIMITED",
+          "INTERNAL_ERROR"
         ],
-        "x-blocking-decision-id": "DEC-MUTATION-RESULT-PROJECTION"
+        "x-decision-id": "DEC-O-001"
       }
     },
     "/payment-allocations": {
@@ -42837,7 +42948,8 @@
           "VALIDATION_FAILED",
           "RATE_LIMITED",
           "INTERNAL_ERROR"
-        ]
+        ],
+        "x-decision-id": "DEC-O-001"
       }
     },
     "/deals/forecast-summary": {
@@ -48409,6 +48521,188 @@
         ],
         "x-decision-id": "DEC-C6-002"
       }
+    },
+    "/organizations/{organizationId}/archive": {
+      "post": {
+        "operationId": "archiveOrganization",
+        "tags": [
+          "Organizations"
+        ],
+        "summary": "archiveOrganization",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "name": "organizationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArchiveOrganizationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "archiveOrganization committed or replayed.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArchiveOrganizationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "organizations",
+        "x-required-capability": "organizations.delete",
+        "x-resource-scope": "RESOURCE",
+        "x-data-scope": "WORKSPACE",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "IF_MATCH_REQUIRED",
+        "x-aggregate-id-policy": "MUST_MATCH_TARGET",
+        "x-audit-requirement": "IMMUTABLE_COMMAND_AUDIT",
+        "x-event-outbox-expectation": "ORGANIZATION_ARCHIVED",
+        "x-transaction-boundary": "SINGLE_ORGANIZATION_AGGREGATE_TRANSACTION",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "RESOURCE_VERSION_CONFLICT",
+          "ORGANIZATION_ALREADY_ARCHIVED",
+          "RATE_LIMITED",
+          "INTERNAL_ERROR"
+        ],
+        "x-decision-id": "DEC-O-001"
+      }
     }
   },
   "components": {
@@ -51583,18 +51877,6 @@
             "type": "string",
             "maxLength": 160
           },
-          "ownerId": {
-            "$ref": "#/components/schemas/EntityId"
-          },
-          "primaryContactId": {
-            "$ref": "#/components/schemas/EntityId"
-          },
-          "contactRefs": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/EntityId"
-            }
-          },
           "relationshipLevel": {
             "type": "string",
             "enum": [
@@ -51615,9 +51897,9 @@
               "prospect",
               "active",
               "strategic",
-              "inactive",
-              "archived"
-            ]
+              "inactive"
+            ],
+            "default": "prospect"
           }
         }
       },
@@ -53037,6 +53319,7 @@
           "ORDER_DUPLICATION_BLOCKED",
           "ORDER_LIFECYCLE_CONFLICT",
           "ORDER_PRICING_FAILED",
+          "ORGANIZATION_ALREADY_ARCHIVED",
           "PASSWORD_POLICY_VIOLATION",
           "PAYMENT_ALLOCATION_EXCEEDS_AVAILABLE",
           "PAYMENT_DELIVERY_CHANNEL_UNAVAILABLE",
@@ -57147,13 +57430,17 @@
             "$ref": "#/components/schemas/EntityId"
           },
           "primaryContactId": {
-            "$ref": "#/components/schemas/EntityId"
+            "$ref": "#/components/schemas/EntityId",
+            "deprecated": true,
+            "description": "Legacy compatibility projection only; Contact C6 relationship state is authoritative."
           },
           "contactRefs": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/EntityId"
-            }
+            },
+            "deprecated": true,
+            "description": "Legacy compatibility projection only; Contact C6 relationship state is authoritative."
           },
           "relationshipLevel": {
             "type": "string",
@@ -62557,7 +62844,7 @@
       "UpdateOrganizationRequest": {
         "type": "object",
         "additionalProperties": false,
-        "required": [],
+        "minProperties": 1,
         "properties": {
           "displayName": {
             "type": "string",
@@ -62616,18 +62903,6 @@
             "type": "string",
             "maxLength": 160
           },
-          "ownerId": {
-            "$ref": "#/components/schemas/EntityId"
-          },
-          "primaryContactId": {
-            "$ref": "#/components/schemas/EntityId"
-          },
-          "contactRefs": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/EntityId"
-            }
-          },
           "relationshipLevel": {
             "type": "string",
             "enum": [
@@ -62648,8 +62923,7 @@
               "prospect",
               "active",
               "strategic",
-              "inactive",
-              "archived"
+              "inactive"
             ]
           }
         }
@@ -65813,9 +66087,7 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "representativeCount",
-          "openDealsCount",
-          "completedOrdersCount"
+          "representativeCount"
         ],
         "properties": {
           "representativeCount": {
@@ -65836,7 +66108,8 @@
           "orderValue": {
             "$ref": "#/components/schemas/Money"
           }
-        }
+        },
+        "description": "Permission-filtered metrics. Organization/C6-owned representativeCount is always present; unsupported cross-owner facts are omitted."
       },
       "OrganizationOverviewReadModel": {
         "type": "object",
@@ -71210,6 +71483,100 @@
             ]
           }
         }
+      },
+      "OrganizationListResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OrganizationDocument"
+            }
+          },
+          "pageInfo": {
+            "$ref": "#/components/schemas/PageInfo"
+          }
+        }
+      },
+      "ArchiveOrganizationResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "commandId",
+          "correlationId",
+          "aggregateId",
+          "aggregateType",
+          "version",
+          "occurredAt",
+          "outcome",
+          "result"
+        ],
+        "properties": {
+          "commandId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "correlationId": {
+            "$ref": "#/components/schemas/CorrelationId"
+          },
+          "aggregateId": {
+            "$ref": "#/components/schemas/EntityId"
+          },
+          "aggregateType": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "version": {
+            "$ref": "#/components/schemas/ResourceVersion"
+          },
+          "occurredAt": {
+            "$ref": "#/components/schemas/UtcDateTime"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "COMMITTED",
+              "REPLAYED"
+            ]
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 500
+            }
+          },
+          "emittedEventIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160
+            }
+          },
+          "auditEvidenceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160
+            }
+          },
+          "result": {
+            "$ref": "#/components/schemas/OrganizationDocument"
+          }
+        }
+      },
+      "ArchiveOrganizationRequest": {
+        "type": "object",
+        "additionalProperties": false
       }
     }
   },

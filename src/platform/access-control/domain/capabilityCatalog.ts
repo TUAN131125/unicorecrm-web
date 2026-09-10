@@ -30,6 +30,7 @@ export const CAPABILITIES = {
   ORGANIZATIONS_READ: "organizations.read",
   ORGANIZATIONS_CREATE: "organizations.create",
   ORGANIZATIONS_UPDATE: "organizations.update",
+  ORGANIZATIONS_DELETE: "organizations.delete",
   TASKS_READ: "tasks.read",
   TASKS_CREATE: "tasks.create",
   TASKS_UPDATE: "tasks.update",

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "generatorVersion": 11,
   "contractVersion": "0.23.20-contract.0",
-  "specSha256": "55015771fd7d96468272530d15266287f4bd907e33b01226e1e3583c2c0b5d84",
+  "specSha256": "20ca5a04c5c991c4c91d2ffe927219590cf6a858c9b424bbe6a289a07401b094",
   "generatedAt": "DETERMINISTIC",
   "coveragePolicy": {
     "ownerModule": "REQUIRED",
@@ -13,13 +13,13 @@
     "concurrency": "DERIVED_FROM_IF_MATCH_HEADER"
   },
   "summary": {
-    "operations": 276,
-    "ownedOperations": 276,
-    "generatedClientMappings": 276,
-    "productionReadyOperations": 245,
-    "blockedOperations": 31,
-    "declaredConnectedBoundaries": 245,
-    "blockedByContract": 31,
+    "operations": 277,
+    "ownedOperations": 277,
+    "generatedClientMappings": 277,
+    "productionReadyOperations": 248,
+    "blockedOperations": 29,
+    "declaredConnectedBoundaries": 248,
+    "blockedByContract": 29,
     "pendingConnectedAdapters": 0
   },
   "operations": [
@@ -885,6 +885,44 @@
       "blockingDecisionId": null,
       "requiredCapability": "orders.delete",
       "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE"
+    },
+    {
+      "operationId": "archiveOrganization",
+      "method": "POST",
+      "path": "/organizations/{organizationId}/archive",
+      "boundedContext": "Organizations",
+      "ownerModule": "organizations",
+      "generatedClient": {
+        "file": "src/platform/api/generated/commercialApi.ts",
+        "className": "CommercialApiClient",
+        "method": "archiveOrganization"
+      },
+      "httpAdapter": "src/modules/organizations/infrastructure/http/OrganizationHttpApiAdapter.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.application-composition",
+        "quality.commercial-authoritative-queries",
+        "quality.deal-api-boundary",
+        "quality.lead-qualification-api-boundary",
+        "quality.order-to-cash-api-contracts",
+        "quality.product-order-api-boundary",
+        "quality.quote-api-boundary",
+        "quality.relationship-domain-api-boundary",
+        "quality.shipping-returns-api-boundary",
+        "quality.support-api-boundary",
+        "quality.task-activity-api-boundary"
+      ],
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "requestBodySchema": "ArchiveOrganizationRequest",
+      "responseSchema": "ArchiveOrganizationResponse",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "organizations.delete",
+      "resourceScope": "RESOURCE",
       "dataScope": "WORKSPACE"
     },
     {
@@ -2664,7 +2702,7 @@
         "method": "createOrganization"
       },
       "httpAdapter": "src/modules/organizations/infrastructure/http/OrganizationHttpApiAdapter.ts",
-      "adapterStatus": "BLOCKED_BY_CONTRACT",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
       "testGateIds": [
         "quality.api-contract",
         "quality.application-composition",
@@ -2679,13 +2717,13 @@
         "quality.support-api-boundary",
         "quality.task-activity-api-boundary"
       ],
-      "idempotencyPolicy": "UNRESOLVED_BLOCKED",
-      "concurrencyPolicy": "UNRESOLVED_BLOCKED",
-      "requestBodySchema": null,
-      "responseSchema": null,
-      "successStatus": null,
-      "contractStatus": "BLOCKED",
-      "blockingDecisionId": "DEC-MUTATION-RESULT-PROJECTION",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "BACKEND_SERIALIZED",
+      "requestBodySchema": "CreateOrganizationRequest",
+      "responseSchema": "CreateOrganizationResponse",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
       "requiredCapability": "organizations.create",
       "resourceScope": "WORKSPACE",
       "dataScope": "WORKSPACE"
@@ -5624,7 +5662,7 @@
       "idempotencyPolicy": "NOT_APPLICABLE",
       "concurrencyPolicy": "NOT_APPLICABLE",
       "requestBodySchema": null,
-      "responseSchema": "OrganizationList",
+      "responseSchema": "OrganizationListResponse",
       "successStatus": "200",
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
@@ -9159,7 +9197,7 @@
         "method": "updateOrganization"
       },
       "httpAdapter": "src/modules/organizations/infrastructure/http/OrganizationHttpApiAdapter.ts",
-      "adapterStatus": "BLOCKED_BY_CONTRACT",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
       "testGateIds": [
         "quality.api-contract",
         "quality.application-composition",
@@ -9174,13 +9212,13 @@
         "quality.support-api-boundary",
         "quality.task-activity-api-boundary"
       ],
-      "idempotencyPolicy": "UNRESOLVED_BLOCKED",
-      "concurrencyPolicy": "UNRESOLVED_BLOCKED",
-      "requestBodySchema": null,
-      "responseSchema": null,
-      "successStatus": null,
-      "contractStatus": "BLOCKED",
-      "blockingDecisionId": "DEC-MUTATION-RESULT-PROJECTION",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "requestBodySchema": "UpdateOrganizationRequest",
+      "responseSchema": "UpdateOrganizationResponse",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
       "requiredCapability": "organizations.update",
       "resourceScope": "RESOURCE",
       "dataScope": "WORKSPACE"

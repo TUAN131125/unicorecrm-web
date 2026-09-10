@@ -1,6 +1,7 @@
 import { assertMutationCommandSupported, createMutationMetadata, executeMutationCommand, type MutationCommandMetadata, type MutationOutcome } from "@/shared/application";
 import type { OrganizationAccount } from "../domain/model/organizationAccount.types";
 import { isOrganizationConnectedApiRuntime, organizationAccountRepository } from "../application/composition/organizationApplicationServices";
+export { createOrganizationViaApi, updateOrganizationViaApi, archiveOrganizationViaApi } from "../application/commands/organizationApiCommands";
 
 /** True when Organization data is served by the backend, where local Organization writes are refused. */
 export function isOrganizationConnectedMode(): boolean { return isOrganizationConnectedApiRuntime(); }

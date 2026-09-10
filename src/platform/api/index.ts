@@ -65,7 +65,7 @@ export type {
   LeadListResponse,
   LeadMutationResponse,
   OrganizationDocument,
-  OrganizationList,
+  OrganizationListResponse,
   ProductDocument,
   ProductList,
   ReopenDisqualifiedLeadRequest,

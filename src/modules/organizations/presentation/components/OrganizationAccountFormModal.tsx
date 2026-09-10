@@ -213,7 +213,6 @@ export function OrganizationAccountFormModal({
               <option value="active">{vi ? "Đang hoạt động" : "Active"}</option>
               <option value="strategic">{vi ? "Chiến lược" : "Strategic"}</option>
               {mode === "edit" ? <option value="inactive">{vi ? "Ngừng hoạt động" : "Inactive"}</option> : null}
-              {mode === "edit" ? <option value="archived">{vi ? "Lưu trữ" : "Archived"}</option> : null}
             </Select>
             <Input label="Website" value={draft.website} onChange={(event) => update("website", event.target.value)} />
             <Input label={vi ? "Tên miền" : "Domain"} value={draft.domain} onChange={(event) => update("domain", event.target.value)} placeholder={normalizedDomain || "acme.vn"} />

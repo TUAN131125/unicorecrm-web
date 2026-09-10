@@ -16,7 +16,7 @@ import { OrganizationStatisticsDrawer } from "../list/OrganizationStatisticsDraw
 import { OrganizationTable, type OrganizationListRow } from "../list/OrganizationTable";
 import { getOrganizationAccountMetrics, getOrganizationStatus, getPrimaryOrganizationContact } from "../model/organizationAccountView";
 import { getWorkspaceMemberOptions } from "@/platform/member-directory";
-import type { OrganizationAccountStatus } from "../../public/api";
+import { isOrganizationConnectedMode, type OrganizationAccountStatus } from "../../public/api";
 import { useOrganizationAccounts } from "../hooks/useOrganizationAccounts";
 import { useI18n } from "@/i18n";
 
@@ -43,6 +43,7 @@ export const OrganizationAccountListPage: React.FC = () => {
   const [message, setMessage] = useState<string | null>(null);
 
   const actorId = access.memberId || access.accountId || "current-user";
+  const connected = isOrganizationConnectedMode();
   const canCreateOrganizationWithRepresentative = access.canPerform("organizations", "create") && access.canPerform("contacts", "create");
 
   const industries = useMemo(
@@ -130,6 +131,10 @@ export const OrganizationAccountListPage: React.FC = () => {
   };
 
   const exportOrganizations = () => {
+    if (connected) {
+      setMessage(vi ? "Xuất dữ liệu tổ chức chưa được backend hỗ trợ." : "Organization export is not supported by the backend yet.");
+      return;
+    }
     const selected = selectedIds.length > 0
       ? allRows.filter((row) => selectedIds.includes(row.account.id))
       : allRows;
@@ -222,11 +227,11 @@ export const OrganizationAccountListPage: React.FC = () => {
         hasActiveFilters={hasActiveFilters}
         filtersLabel={vi ? "Bộ lọc" : "Filters"}
         statsLabel={vi ? "Thống kê" : "Statistics"}
-        rightSlot={<button type="button" onClick={() => setMessage("Dữ liệu tổ chức đã được làm mới từ nguồn dữ liệu hiện tại.")} className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-xs transition hover:border-violet-200 hover:text-violet-700" title="Làm mới"><RefreshCw size={14} /></button>}
+        rightSlot={<button type="button" onClick={() => void organizationQuery.refresh()} disabled={organizationQuery.refreshing} className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-xs transition hover:border-violet-200 hover:text-violet-700 disabled:opacity-50" title="Làm mới"><RefreshCw size={14} /></button>}
       />
 
       <ListBulkActionBar selectedCount={selectedIds.length} label="Đã chọn" onClear={() => setSelectedIds([])}>
-        <button type="button" onClick={exportOrganizations} className="inline-flex items-center gap-1.5 rounded-xl bg-violet-600 px-3 py-1.5 text-[10px] font-semibold text-white hover:bg-violet-700"><Download size={11} /> Xuất dữ liệu</button>
+        {!connected && <button type="button" onClick={exportOrganizations} className="inline-flex items-center gap-1.5 rounded-xl bg-violet-600 px-3 py-1.5 text-[10px] font-semibold text-white hover:bg-violet-700"><Download size={11} /> Xuất dữ liệu</button>}
       </ListBulkActionBar>
 
       {rows.length === 0 ? (
@@ -261,4 +266,3 @@ export const OrganizationAccountListPage: React.FC = () => {
     </>
   );
 };
-

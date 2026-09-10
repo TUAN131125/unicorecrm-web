@@ -1,10 +1,9 @@
 import React from "react";
 import { formatApplicationError } from "@/shared/operations";
-import { type Contact } from "@/modules/contacts";
 import { recordOperationalAudit } from "@/platform/operational-audit";
 import { useWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import { createPostalAddressFromLine } from "@/platform/identity";
-import { type OrganizationAccount } from "../../public/api";
+import { createOrganizationViaApi, isOrganizationConnectedMode, type OrganizationAccount } from "../../public/api";
 import { createOrganizationWithRepresentativeWorkflow } from "@/workflows/contact-organization-relationship";
 import {
   OrganizationAccountFormModal,
@@ -31,9 +30,23 @@ export const OrganizationCreateModal: React.FC<OrganizationCreateModalProps> = (
     if (isOpen) setError(null);
   }, [isOpen]);
 
-  const submit = (draft: OrganizationAccountFormDraft) => {
+  const submit = async (draft: OrganizationAccountFormDraft) => {
     setError(null);
     try {
+      if (isOrganizationConnectedMode()) {
+        const organization = await createOrganizationViaApi({
+          displayName: draft.displayName, legalName: draft.legalName.trim() || undefined,
+          taxCode: draft.taxCode.trim() || undefined, industry: draft.industry.trim() || undefined,
+          sizeBand: draft.sizeBand || undefined, website: draft.website.trim() || undefined,
+          domain: draft.domain || undefined, phone: draft.phone.trim() || undefined,
+          email: draft.email.trim() || undefined, address: draft.address.trim() || undefined,
+          source: draft.source.trim() || "manual", relationshipLevel: draft.relationshipLevel,
+          notes: draft.notes.trim() || undefined, status: draft.status === "archived" ? undefined : draft.status,
+        });
+        onCreated(organization);
+        onClose();
+        return;
+      }
       const suffix = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
       const organizationId = `org_${suffix}`;
       const contactId = `contact_${suffix}`;

@@ -4,6 +4,8 @@ import type { Contact } from "@/modules/contacts";
 import { recordOperationalAudit } from "@/platform/operational-audit";
 import {
   saveOrganizationAccountSnapshot,
+  isOrganizationConnectedMode,
+  updateOrganizationViaApi,
   type OrganizationAccount,
 } from "../../public/api";
 import {
@@ -34,9 +36,19 @@ export const OrganizationEditModal: React.FC<OrganizationEditModalProps> = ({
     if (isOpen) setError(null);
   }, [isOpen]);
 
-  const submit = (draft: OrganizationAccountFormDraft) => {
+  const submit = async (draft: OrganizationAccountFormDraft) => {
     setError(null);
     try {
+      if (isOrganizationConnectedMode()) {
+        if (account.resourceVersion === undefined) throw new Error("ORGANIZATION_VERSION_REQUIRED");
+        const updated = await updateOrganizationViaApi({ organizationId: account.id, expectedVersion: account.resourceVersion,
+          displayName: draft.displayName, legalName: draft.legalName.trim() || undefined, taxCode: draft.taxCode.trim() || undefined,
+          industry: draft.industry.trim() || undefined, sizeBand: draft.sizeBand.trim() || undefined,
+          website: draft.website.trim() || undefined, domain: draft.domain || undefined, phone: draft.phone.trim() || undefined,
+          email: draft.email.trim() || undefined, address: draft.address.trim() || undefined, source: draft.source.trim() || undefined,
+          status: draft.status === "archived" ? undefined : draft.status, relationshipLevel: draft.relationshipLevel, notes: draft.notes.trim() || undefined });
+        onSaved(updated); onClose(); return;
+      }
       const next: OrganizationAccount = {
         ...account,
         displayName: draft.displayName,

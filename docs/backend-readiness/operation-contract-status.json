@@ -171,6 +171,13 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "archiveOrganization",
+      "method": "POST",
+      "path": "/organizations/{organizationId}/archive",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "archiveProduct",
       "method": "POST",
       "path": "/products/{productId}/archive",
@@ -517,8 +524,8 @@
       "operationId": "createOrganization",
       "method": "POST",
       "path": "/organizations",
-      "status": "BLOCKED",
-      "blockingDecisionId": "DEC-MUTATION-RESULT-PROJECTION"
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
     },
     {
       "operationId": "createPaymentIntent",
@@ -1861,8 +1868,8 @@
       "operationId": "updateOrganization",
       "method": "PATCH",
       "path": "/organizations/{organizationId}",
-      "status": "BLOCKED",
-      "blockingDecisionId": "DEC-MUTATION-RESULT-PROJECTION"
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
     },
     {
       "operationId": "updateProductConfigurationType",
