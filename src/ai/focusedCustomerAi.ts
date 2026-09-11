@@ -127,14 +127,14 @@ export function buildFocusedCustomerSummary(
     lang === "vi"
       ? `### 👥 Tổng quan khách hàng: **${readModel.identity.displayName}**\n` +
         `- **Sức khỏe tính toán**: ${intelligence.score}/100 · ${intelligence.level} · ${intelligence.trend}.\n` +
-        `- **Doanh thu đã ghi nhận**: ${formatAiMoney(readModel.metrics.revenue, "vi-VN")} · **Cơ hội đang mở**: ${readModel.metrics.openDealCount} cơ hội.\n` +
+        `- **Doanh thu đã ghi nhận**: ${readModel.metrics.revenue === undefined ? "chưa có dữ liệu" : formatAiMoney(readModel.metrics.revenue, "vi-VN")} · **Cơ hội đang mở**: ${readModel.metrics.openDealCount ?? "chưa có dữ liệu"} cơ hội.\n` +
         `- **Ngoại lệ vận hành**: ${readModel.metrics.overdueTaskCount} việc quá hạn · ${readModel.metrics.supportRiskCount} yêu cầu hỗ trợ có rủi ro.\n` +
         `${returnsLine}\n` +
         `- **Hành động tiếp theo**: ${intelligence.nextActionVi}\n\n` +
         `${signalLines || "✅ Chưa có tín hiệu bất thường cần ưu tiên."}`
       : `### 👥 Tổng quan khách hàng: **${readModel.identity.displayName}**\n` +
         `- **Computed health**: ${intelligence.score}/100 · ${intelligence.level} · ${intelligence.trend}.\n` +
-        `- **Recognized revenue**: ${formatAiMoney(readModel.metrics.revenue, "en-US")} · **Open pipeline**: ${readModel.metrics.openDealCount} opportunities.\n` +
+        `- **Recognized revenue**: ${readModel.metrics.revenue === undefined ? "unavailable" : formatAiMoney(readModel.metrics.revenue, "en-US")} · **Open pipeline**: ${readModel.metrics.openDealCount ?? "unavailable"} opportunities.\n` +
         `- **Operational exceptions**: ${readModel.metrics.overdueTaskCount} overdue tasks · ${readModel.metrics.supportRiskCount} support risks.\n` +
         `${returnsLine}\n` +
         `- **Next action**: ${intelligence.nextActionEn}\n\n` +
@@ -263,4 +263,3 @@ function buildFocusedCustomerEvidenceAnswer(
     ),
   );
 }
-

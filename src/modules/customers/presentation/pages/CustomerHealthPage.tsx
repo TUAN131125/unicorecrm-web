@@ -7,10 +7,11 @@ import type { Customer, CustomerHealth } from "../../domain/model/customer.types
 import { CustomerHealthBadge } from "../components/CustomerStatusBadge";
 import { buildCustomer360ReadModel } from "../model/customer360ReadModel";
 
-const CUSTOMER_HEALTH_ORDER: Record<CustomerHealth, number> = {
+const CUSTOMER_HEALTH_ORDER: Record<CustomerHealth | "UNKNOWN", number> = {
   RISK: 0,
   WATCH: 1,
   GOOD: 2,
+  UNKNOWN: 3,
 };
 
 export const CustomerHealthPage: React.FC<{
@@ -30,8 +31,8 @@ export const CustomerHealthPage: React.FC<{
         }))
         .sort(
           (a, b) =>
-            CUSTOMER_HEALTH_ORDER[a.customer.health] -
-            CUSTOMER_HEALTH_ORDER[b.customer.health],
+            CUSTOMER_HEALTH_ORDER[a.customer.health ?? "UNKNOWN"] -
+            CUSTOMER_HEALTH_ORDER[b.customer.health ?? "UNKNOWN"],
         ),
     [customers, refreshToken],
   );

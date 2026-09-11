@@ -86,8 +86,8 @@ export const CustomerDetailInfoTab: React.FC<CustomerDetailInfoTabProps> = ({
       field(customerSection, "segment", isVi ? "Phân khúc" : "Segment", customer.segment, localizeBusinessDescriptor(customer.segment, isVi ? "vi" : "en")),
       field(customerSection, "tags", isVi ? "Nhãn" : "Tags", customer.tags, localizeBusinessDescriptors(customer.tags, isVi ? "vi" : "en").join(", ")),
       field(customerSection, "careOwner", isVi ? "Người phụ trách quan hệ" : "Relationship owner", ownerName),
-      field(customerSection, "firstPurchaseAt", isVi ? "Mua hàng lần đầu" : "First purchase", dateTime(customer.firstPurchaseAt, isVi)),
-      field(customerSection, "lastPurchaseAt", isVi ? "Mua hàng gần nhất" : "Latest purchase", dateTime(customer.lastPurchaseAt, isVi)),
+      field(customerSection, "firstPurchaseAt", isVi ? "Mua hàng lần đầu" : "First purchase", dateTime(customer.firstPurchaseAt ?? undefined, isVi)),
+      field(customerSection, "lastPurchaseAt", isVi ? "Mua hàng gần nhất" : "Latest purchase", dateTime(customer.lastPurchaseAt ?? undefined, isVi)),
       field(customerSection, "nextCareAt", isVi ? "Chăm sóc tiếp theo" : "Next care", dateTime(customer.nextCareAt, isVi)),
       field(customerSection, "lastCareAt", isVi ? "Chăm sóc gần nhất" : "Latest care", dateTime(customer.lastCareAt, isVi)),
 

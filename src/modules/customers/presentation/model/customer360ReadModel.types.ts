@@ -86,23 +86,23 @@ export interface Customer360ReadModel {
   purchaseEvidence: PurchaseEvidence[];
   timeline: CustomerTimelineItem[];
   metrics: {
-    revenue: number;
-    leadCount: number;
-    orderCount: number;
-    openTaskCount: number;
-    overdueTaskCount: number;
-    openSupportCount: number;
-    supportRiskCount: number;
-    openDealCount: number;
-    quoteCount: number;
-    productCount: number;
-    purchaseCount: number;
-    openInvoiceCount: number;
-    overdueReceivableCount: number;
-    activeReturnCount: number;
-    returnAttentionCount: number;
+    revenue?: number;
+    leadCount?: number;
+    orderCount?: number;
+    openTaskCount?: number;
+    overdueTaskCount?: number;
+    openSupportCount?: number;
+    supportRiskCount?: number;
+    openDealCount?: number;
+    quoteCount?: number;
+    productCount?: number;
+    purchaseCount?: number;
+    openInvoiceCount?: number;
+    overdueReceivableCount?: number;
+    activeReturnCount?: number;
+    returnAttentionCount?: number;
   };
-  integrity: {
+  integrity: { status: "UNKNOWN" } | {
     status: "HEALTHY" | "NEEDS_REVIEW" | "BLOCKED";
     errorCount: number;
     warningCount: number;

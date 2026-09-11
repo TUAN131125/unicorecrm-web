@@ -247,12 +247,12 @@ function renderCustomerCell(
           <span className="font-medium text-slate-600 crm-text-wrap">{owner.name}</span>
         </div>
       ) : "—";
-    case "revenue": return <span className="font-semibold tabular-nums text-slate-800 whitespace-nowrap">{formatCustomerCurrency(model.metrics.revenue, isVi)}</span>;
-    case "orders": return <span className="font-medium text-slate-700">{model.metrics.orderCount}</span>;
-    case "openDeals": return <span className="font-medium text-indigo-600">{model.metrics.openDealCount}</span>;
-    case "openWork": return <span className="font-medium text-slate-700">{model.metrics.openTaskCount}</span>;
-    case "openSupport": return <span className="font-medium text-slate-700">{model.metrics.openSupportCount}</span>;
-    case "lastPurchase": return <span className="whitespace-nowrap">{formatCustomerDate(customer.lastPurchaseAt, isVi)}</span>;
+    case "revenue": return <span className="font-semibold tabular-nums text-slate-800 whitespace-nowrap">{model.metrics.revenue === undefined ? "—" : formatCustomerCurrency(model.metrics.revenue, isVi)}</span>;
+    case "orders": return <span className="font-medium text-slate-700">{model.metrics.orderCount ?? "—"}</span>;
+    case "openDeals": return <span className="font-medium text-indigo-600">{model.metrics.openDealCount ?? "—"}</span>;
+    case "openWork": return <span className="font-medium text-slate-700">{model.metrics.openTaskCount ?? "—"}</span>;
+    case "openSupport": return <span className="font-medium text-slate-700">{model.metrics.openSupportCount ?? "—"}</span>;
+    case "lastPurchase": return <span className="whitespace-nowrap">{formatCustomerDate(customer.lastPurchaseAt ?? undefined, isVi)}</span>;
     case "nextCare": return <span className="whitespace-nowrap">{formatCustomerDate(customer.nextCareAt, isVi)}</span>;
     default: return "—";
   }

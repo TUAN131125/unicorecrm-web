@@ -59,11 +59,11 @@ export const ReturnsTab: React.FC<{
       <div className="grid gap-3 sm:grid-cols-3">
         <ReturnMetric
           label={isVi ? "Đang hoạt động" : "Active"}
-          value={model.metrics.activeReturnCount}
+          value={model.metrics.activeReturnCount ?? 0}
         />
         <ReturnMetric
           label={isVi ? "Cần chú ý" : "Needs attention"}
-          value={model.metrics.returnAttentionCount}
+          value={model.metrics.returnAttentionCount ?? 0}
         />
         <ReturnMetric
           label={isVi ? "Tác vụ xử lý lỗi" : "Failed resolution actions"}

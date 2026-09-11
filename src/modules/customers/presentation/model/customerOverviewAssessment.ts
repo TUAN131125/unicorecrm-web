@@ -300,7 +300,7 @@ export function buildCustomerRelationshipAssessment(
 
   addReturnSignals(model, addSignal);
 
-  const lastPurchaseAt = dateMs(model.customer.lastPurchaseAt);
+  const lastPurchaseAt = dateMs(model.customer.lastPurchaseAt ?? undefined);
   if (lastPurchaseAt !== undefined) {
     const daysSincePurchase = Math.max(
       0,
@@ -323,7 +323,7 @@ export function buildCustomerRelationshipAssessment(
             recordId: model.customer.id,
             factVi: `Lần mua gần nhất: ${model.customer.lastPurchaseAt}`,
             factEn: `Latest purchase: ${model.customer.lastPurchaseAt}`,
-            occurredAt: model.customer.lastPurchaseAt,
+            occurredAt: model.customer.lastPurchaseAt ?? undefined,
           },
         ],
         recommendedAction: {
@@ -495,4 +495,3 @@ export function buildCustomerRelationshipAssessment(
     signals: sortedSignals.slice(0, 6),
   };
 }
-

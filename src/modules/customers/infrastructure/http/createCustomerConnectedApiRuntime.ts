@@ -4,5 +4,6 @@ import type { CustomerApiRuntime } from "../../application/ports/CustomerApiRunt
 import { CustomerHttpApiAdapter } from "./CustomerHttpApiAdapter";
 
 export function createCustomerConnectedApiRuntime(httpClient: HttpClient): CustomerApiRuntime {
-  return { mode: "connected", queries: new CustomerHttpApiAdapter(new CommercialApiClient(httpClient)) };
+  const adapter = new CustomerHttpApiAdapter(new CommercialApiClient(httpClient));
+  return { mode: "connected", queries: adapter, commands: adapter };
 }

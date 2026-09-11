@@ -11,10 +11,10 @@ export interface CustomerStatisticsSummary {
   active: number;
   atRisk: number;
   archived: number;
-  revenue: number;
-  openDeals: number;
-  openWork: number;
-  openSupport: number;
+  revenue?: number;
+  openDeals?: number;
+  openWork?: number;
+  openSupport?: number;
   statusCount: Record<string, number>;
   healthCount: Record<string, number>;
 }
@@ -48,9 +48,9 @@ export const CustomerStatisticsPanel: React.FC<CustomerStatisticsPanelProps> = (
             <StatCard label="B2C" value={String(statsSummary.b2c)} meta={`${rate(statsSummary.b2c).toFixed(0)}%`} tone="text-cyan-600" />
             <StatCard label={isVi ? "Đang hoạt động" : "Active"} value={String(statsSummary.active)} meta={`${rate(statsSummary.active).toFixed(0)}%`} tone="text-emerald-600" />
             <StatCard label={isVi ? "Có rủi ro" : "At risk"} value={String(statsSummary.atRisk)} meta={`${rate(statsSummary.atRisk).toFixed(0)}%`} tone="text-rose-600" />
-            <StatCard label={isVi ? "Cơ hội đang mở" : "Open opportunities"} value={String(statsSummary.openDeals)} tone="text-violet-600" />
-            <StatCard label={isVi ? "Doanh thu hoàn tất" : "Completed revenue"} value={formatCustomerCurrency(statsSummary.revenue, isVi)} className="col-span-2" valueClassName="text-lg" />
-            <StatCard label={isVi ? "Công việc đang mở" : "Open tasks"} value={String(statsSummary.openWork)} tone="text-amber-600" />
+            <StatCard label={isVi ? "Cơ hội đang mở" : "Open opportunities"} value={formatOptionalCount(statsSummary.openDeals)} tone="text-violet-600" />
+            <StatCard label={isVi ? "Doanh thu hoàn tất" : "Completed revenue"} value={statsSummary.revenue === undefined ? "—" : formatCustomerCurrency(statsSummary.revenue, isVi)} className="col-span-2" valueClassName="text-lg" />
+            <StatCard label={isVi ? "Công việc đang mở" : "Open tasks"} value={formatOptionalCount(statsSummary.openWork)} tone="text-amber-600" />
           </div>
         </div>
 
@@ -60,13 +60,15 @@ export const CustomerStatisticsPanel: React.FC<CustomerStatisticsPanelProps> = (
         </div>
 
         <div className="grid grid-cols-1 gap-3 text-left md:grid-cols-2">
-          <StatCard label={isVi ? "Hỗ trợ đang mở" : "Open support"} value={String(statsSummary.openSupport)} />
+          <StatCard label={isVi ? "Hỗ trợ đang mở" : "Open support"} value={formatOptionalCount(statsSummary.openSupport)} />
           <StatCard label={isVi ? "Đã lưu trữ" : "Archived"} value={String(statsSummary.archived)} />
         </div>
       </div>
     </Modal>
   );
 };
+
+const formatOptionalCount = (value: number | undefined): string => value === undefined ? "—" : String(value);
 
 const StatCard: React.FC<{ label: string; value: string; meta?: string; tone?: string; className?: string; valueClassName?: string }> = ({ label, value, meta, tone = "text-slate-800", className = "", valueClassName = "text-2xl" }) => (
   <div className={`rounded-xl border border-slate-200 bg-white p-4 shadow-sm ${className}`}>

@@ -102,7 +102,7 @@ assert.match(directSale, /state: "DRAFT"/);
 assert.doesNotMatch(directSale, /state: "CONFIRMED"/);
 
 const spec = JSON.parse(read("docs/api/openapi.json")) as { paths: Record<string, Record<string, { operationId?: string }>>; components: { schemas: Record<string, { properties?: Record<string, unknown> }> } };
-assert.equal(spec.paths["/customers"]?.post, undefined, "OpenAPI must not expose unrestricted direct Customer creation.");
+assert.equal(spec.paths["/customers"]?.post?.operationId, "createCustomer", "OpenAPI must expose the admitted direct Customer creation operation.");
 assert.equal(spec.paths["/customer-onboarding"]?.post?.operationId, "onboardExistingCustomer");
 for (const field of ["workspaceId", "customerCode", "relationshipRef", "onboardingStatus", "createdFromEvidenceId", "tier", "serviceLevel", "careCadenceDays"]) {
   assert.ok(spec.components.schemas.CustomerDocument?.properties?.[field], `CustomerDocument is missing ${field}.`);

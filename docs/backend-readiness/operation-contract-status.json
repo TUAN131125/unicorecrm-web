@@ -129,6 +129,13 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "archiveCustomer",
+      "method": "POST",
+      "path": "/customers/{customerId}/archive",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "archiveDealCommand",
       "method": "POST",
       "path": "/deals/{dealId}/archive",
@@ -470,6 +477,13 @@
       "path": "/crm-configuration/pipelines/{pipelineId}/stages",
       "status": "BLOCKED",
       "blockingDecisionId": "DEC-CREATECRMPIPELINESTAGE"
+    },
+    {
+      "operationId": "createCustomer",
+      "method": "POST",
+      "path": "/customers",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
     },
     {
       "operationId": "createDealCommand",
@@ -1823,11 +1837,11 @@
       "blockingDecisionId": "DEC-UPDATECRMPIPELINESTAGE"
     },
     {
-      "operationId": "updateCustomerLifecycle",
+      "operationId": "updateCustomer",
       "method": "PATCH",
       "path": "/customers/{customerId}",
-      "status": "BLOCKED",
-      "blockingDecisionId": "DEC-MUTATION-RESULT-PROJECTION"
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
     },
     {
       "operationId": "updateDealCommand",

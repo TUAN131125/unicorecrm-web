@@ -278,25 +278,32 @@
           "line": 67
         }
       ],
-      "openApiOperationId": null,
+      "openApiOperationId": "archiveCustomer",
       "blockedOperationCandidate": null,
-      "requestSchema": null,
-      "successResponseSchema": null,
+      "requestSchema": "ArchiveCustomerRequest",
+      "successResponseSchema": "CustomerMutationResponse",
       "errorSchema": "ProblemDetails",
-      "requiredCapability": "UNRESOLVED",
-      "resourceScope": "UNRESOLVED",
+      "requiredCapability": "customers.archive",
+      "resourceScope": "RESOURCE",
       "dataScope": "WORKSPACE",
-      "idempotencyPolicy": "UNRESOLVED_BLOCKED",
-      "concurrencyPolicy": "UNRESOLVED_BLOCKED",
-      "auditRequirement": "SERVER_OWNED_REQUIRED_BEFORE_UNBLOCK",
-      "eventOutboxExpectation": "UNRESOLVED_BLOCKED",
-      "transactionBoundary": "UNRESOLVED_BLOCKED",
-      "runtimeImplementationMode": "DEMO_ONLY_LOCAL_EXECUTOR",
-      "readModelRefreshRequirement": [],
-      "status": "BLOCKED",
-      "decisionId": "DEC-CMD-CUSTOMER-ARCHIVE",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "auditRequirement": "IMMUTABLE_COMMAND_AUDIT",
+      "eventOutboxExpectation": "CUSTOMER_ARCHIVED",
+      "transactionBoundary": "SINGLE_CUSTOMER_AGGREGATE_TRANSACTION",
+      "runtimeImplementationMode": "CONNECTED_HTTP_OPENAPI_WITH_DEMO_LOCAL_EXECUTOR",
+      "readModelRefreshRequirement": [
+        "customers"
+      ],
+      "status": "PRODUCTION_CONTRACT_READY",
+      "decisionId": "DEC-CU-001..008",
       "originalAuditAlignment": "SEMANTIC_OTHER_PATH",
-      "originalRuntimePath": "/customers/{id}/archive"
+      "originalRuntimePath": "/customers/{id}/archive",
+      "aggregateIdPolicy": "MUST_MATCH_TARGET",
+      "requestProjection": "CUSTOMER_ARCHIVE",
+      "affectedModuleKeys": [
+        "customers"
+      ]
     },
     {
       "stableCommandId": "CMD-010",
@@ -6612,6 +6619,74 @@
         "orders",
         "payments",
         "shipping"
+      ]
+    },
+    {
+      "stableCommandId": "CMD-174",
+      "commandType": "customer.create",
+      "useCase": "Create Customer for an existing account subject",
+      "openApiOperationId": "createCustomer",
+      "requestSchema": "CreateCustomerRequest",
+      "requiredCapability": "customers.onboard_existing",
+      "resourceScope": "WORKSPACE",
+      "concurrencyPolicy": "BACKEND_SERIALIZED",
+      "eventOutboxExpectation": "CUSTOMER_CREATED",
+      "aggregateIdPolicy": "SERVER_ASSIGNED",
+      "requestProjection": "CUSTOMER_DIRECT_CREATE",
+      "moduleOwner": "customers",
+      "aggregateOwner": "customer",
+      "frontendApplicationSymbols": [],
+      "blockedOperationCandidate": null,
+      "successResponseSchema": "CustomerMutationResponse",
+      "errorSchema": "ProblemDetails",
+      "dataScope": "WORKSPACE",
+      "idempotencyPolicy": "REQUIRED",
+      "auditRequirement": "IMMUTABLE_COMMAND_AUDIT",
+      "transactionBoundary": "SINGLE_CUSTOMER_AGGREGATE_TRANSACTION",
+      "runtimeImplementationMode": "CONNECTED_HTTP_OPENAPI",
+      "readModelRefreshRequirement": [
+        "customers"
+      ],
+      "status": "PRODUCTION_CONTRACT_READY",
+      "decisionId": "DEC-CU-001..008",
+      "originalAuditAlignment": "ADDED_CU",
+      "originalRuntimePath": null,
+      "affectedModuleKeys": [
+        "customers"
+      ]
+    },
+    {
+      "stableCommandId": "CMD-175",
+      "commandType": "customer.update",
+      "useCase": "Update Customer-owned profile or admitted lifecycle",
+      "openApiOperationId": "updateCustomer",
+      "requestSchema": "UpdateCustomerRequest",
+      "requiredCapability": "customers.edit",
+      "resourceScope": "RESOURCE",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "eventOutboxExpectation": "CUSTOMER_PROFILE_OR_LIFECYCLE_CHANGED",
+      "aggregateIdPolicy": "MUST_MATCH_TARGET",
+      "requestProjection": "CUSTOMER_PROFILE_UPDATE",
+      "moduleOwner": "customers",
+      "aggregateOwner": "customer",
+      "frontendApplicationSymbols": [],
+      "blockedOperationCandidate": null,
+      "successResponseSchema": "CustomerMutationResponse",
+      "errorSchema": "ProblemDetails",
+      "dataScope": "WORKSPACE",
+      "idempotencyPolicy": "REQUIRED",
+      "auditRequirement": "IMMUTABLE_COMMAND_AUDIT",
+      "transactionBoundary": "SINGLE_CUSTOMER_AGGREGATE_TRANSACTION",
+      "runtimeImplementationMode": "CONNECTED_HTTP_OPENAPI",
+      "readModelRefreshRequirement": [
+        "customers"
+      ],
+      "status": "PRODUCTION_CONTRACT_READY",
+      "decisionId": "DEC-CU-001..008",
+      "originalAuditAlignment": "ADDED_CU",
+      "originalRuntimePath": null,
+      "affectedModuleKeys": [
+        "customers"
       ]
     }
   ]

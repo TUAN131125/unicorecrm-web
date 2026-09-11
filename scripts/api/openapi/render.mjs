@@ -4,7 +4,7 @@ import { repositoryRoot } from "../../quality/core/repo-context.mjs";
 import { buildApiOperationCatalog, buildOperationCoverageLedger } from "./normalize.mjs";
 import { getServerPath, refName, resolveRef } from "./validate.mjs";
 
-const generatorVersion = 16;
+const generatorVersion = 17;
 const productVersionBoundReadOperationIds = new Set([
   "getProductAvailability",
   "getProductPriceProjection",
@@ -13,7 +13,9 @@ const productVersionBoundReadOperationIds = new Set([
 function schemaType(schema) {
   if (schema === true || !schema || Object.keys(schema).length === 0) return "unknown";
   if (schema.$ref) return refName(schema.$ref);
+  if (schema.anyOf) return schema.anyOf.map(schemaType).join(" | ");
   if (schema.enum) return schema.enum.map((value) => JSON.stringify(value)).join(" | ");
+  if (schema.type === "null") return "null";
   if (schema.type === "string") return "string";
   if (schema.type === "integer" || schema.type === "number") return "number";
   if (schema.type === "boolean") return "boolean";

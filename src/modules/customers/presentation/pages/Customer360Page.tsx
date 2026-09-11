@@ -7,7 +7,6 @@ import { RecordDetailFrame, type RecordAttachmentItem, type RecordAttachmentUplo
 import { Button, ConfirmDialog, RecordTabTransition } from "@/shared/components/ui";
 import { useI18n } from "@/i18n";
 import { getAuthSessionSnapshot } from "@/platform/identity-auth";
-import { CAPABILITIES, useEffectiveAccess } from "@/platform/access-control";
 import { listWorkspaceMemberDirectory, resolveWorkspaceMemberName } from "@/platform/member-directory";
 import {
   completeTaskCommand,
@@ -19,13 +18,12 @@ import { createDealForCustomer, isCustomerCommercialActionsUnavailable } from "@
 import { DealFormModal, getDealStagesSnapshot, mapSelectedPickerItemsToDealLineItems, type DealFormDraft } from "@/modules/deals";
 import { updateCustomerIdentityFrom360 } from "@/workflows/customer-identity";
 import {
-  archiveCustomerCommand,
-  isCustomerRetentionUnavailable,
-  completeCustomerOnboardingSnapshot,
-  updateCustomerLifecycleSnapshot,
+  archiveCustomerProductionCommand,
+  updateCustomerCommand,
   type Customer,
 } from "../../public/api";
 import { buildCustomer360ReadModel } from "../model/customer360ReadModel";
+import type { Customer360ReadModel as Customer360PageModel } from "../model/customer360ReadModel.types";
 import { customerPresentationPreferences } from "../customerPresentationPreferences";
 import {
   CustomerDetailTabs,
@@ -43,9 +41,12 @@ import {
   type CustomerQuickActivityDraft,
 } from "../detail/CustomerQuickActivityModal";
 import { CustomerRecordHeader } from "../detail/CustomerRecordHeader";
+import type { Customer360Projection } from "../../application/ports/CustomerApiRuntime";
+import { isCustomerConnectedApiRuntime } from "../../application/composition/customerApplicationServices";
 
 interface Customer360PageProps {
   customer: Customer;
+  authoritativeProjection?: Customer360Projection;
   refreshToken?: unknown;
 }
 
@@ -53,18 +54,17 @@ const RIGHT_PANEL_PREFERENCE_KEY = "centrix_customer_right_panel_visible";
 
 export const Customer360Page: React.FC<Customer360PageProps> = ({
   customer,
+  authoritativeProjection,
   refreshToken,
 }) => {
   const navigate = useNavigate();
   const { locale } = useI18n();
   const isVi = locale === "vi";
   const model = useMemo(
-    () => buildCustomer360ReadModel(customer),
-    [customer, refreshToken],
+    () => authoritativeProjection ? buildConnectedCustomer360Model(authoritativeProjection) : buildCustomer360ReadModel(customer),
+    [authoritativeProjection, customer, refreshToken],
   );
   const session = getAuthSessionSnapshot();
-  const access = useEffectiveAccess();
-  const canCompleteOnboarding = access.can(CAPABILITIES.CUSTOMERS_EDIT);
   const currentMemberId = session?.principal.memberId;
   const members = listWorkspaceMemberDirectory();
   const currentActorName =
@@ -98,7 +98,6 @@ export const Customer360Page: React.FC<Customer360PageProps> = ({
   const [completingTaskId, setCompletingTaskId] = useState<string | null>(null);
   const [creatingDeal, setCreatingDeal] = useState(false);
   const [savingIdentity, setSavingIdentity] = useState(false);
-  const [completingOnboarding, setCompletingOnboarding] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [customerAttachments, setCustomerAttachments] = useState<RecordAttachmentItem[]>([]);
 
@@ -129,14 +128,11 @@ export const Customer360Page: React.FC<Customer360PageProps> = ({
 
   const openTaskModal = () => setTaskOpen(true);
 
-  // Customer identity + lifecycle have no production contract yet (WF-06 and
-  // `updateCustomerLifecycle` are blocked). Connected mode fails closed inside the
-  // workflow; the user must be told the action is unavailable, never left guessing.
-  const saveCustomerProfile = (draft: CustomerEditDraft) => {
+  const saveCustomerProfile = async (draft: CustomerEditDraft) => {
     if (savingIdentity) return;
     setSavingIdentity(true);
     try {
-      updateCustomerIdentityFrom360(customer.id, {
+      if (!isCustomerConnectedApiRuntime()) updateCustomerIdentityFrom360(customer.id, {
       displayName: draft.displayName,
       email: draft.email,
       phone: draft.phone,
@@ -180,24 +176,19 @@ export const Customer360Page: React.FC<Customer360PageProps> = ({
       organizationRelationshipLevel: draft.organizationRelationshipLevel,
       organizationNotes: draft.organizationNotes,
       actorId: currentMemberId || "system",
-    });
-      updateCustomerLifecycleSnapshot(customer.id, {
-        status: draft.status,
-        health: draft.health,
-        careOwnerId: draft.careOwnerId || undefined,
+      });
+      await updateCustomerCommand(customer.id, {
+        status: draft.status === "ACTIVE" || draft.status === "INACTIVE" ? draft.status : undefined,
         segment: draft.segment.trim() || undefined,
         tags: splitTags(draft.tags),
-        nextCareAt: toOptionalBusinessIso(draft.nextCareAt),
-        lastCareAt: toOptionalBusinessIso(draft.lastCareAt),
         tier: draft.tier,
         serviceLevel: draft.serviceLevel,
-        careCadenceDays: Math.max(1, Math.min(365, Number(draft.careCadenceDays) || 30)),
       });
       setEditOpen(false);
       showToast(
         isVi
-          ? "Đã cập nhật Customer và ghi dữ liệu về đúng module sở hữu."
-          : "Customer updated through the correct owning modules.",
+          ? "Đã cập nhật hồ sơ Customer."
+          : "Customer profile updated.",
       );
     } catch (error) {
       showToast(formatOperationUnavailableError(error, {
@@ -359,38 +350,9 @@ export const Customer360Page: React.FC<Customer360PageProps> = ({
         onAddTaskClick={openTaskModal}
         onOpenSourceClick={openSource}
         onArchiveClick={() => setArchiveOpen(true)}
+        canEdit={!authoritativeProjection || authoritativeProjection.allowedActions.includes("updateCustomer")}
+        canArchive={!authoritativeProjection || authoritativeProjection.allowedActions.includes("archiveCustomer")}
       />
-
-      {customer.onboardingStatus !== "COMPLETED" && canCompleteOnboarding && (
-        <section className="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="text-sm font-semibold">{isVi ? "Customer đang chờ hoàn tất onboarding" : "Customer onboarding is pending"}</div>
-            <p className="mt-1 text-xs leading-5">{isVi ? "Xác nhận hồ sơ và người phụ trách để chuyển Customer từ NEW sang trạng thái vận hành." : "Confirm the profile and relationship owner to move the Customer from NEW into an operational state."}</p>
-          </div>
-          <Button
-            type="button"
-            variant="primary"
-            disabled={completingOnboarding}
-            onClick={() => {
-              if (completingOnboarding) return;
-              setCompletingOnboarding(true);
-              try {
-                completeCustomerOnboardingSnapshot(customer.id, currentMemberId || "system");
-                showToast(isVi ? "Đã hoàn tất onboarding Customer." : "Customer onboarding completed.");
-              } catch (error) {
-                showToast(formatOperationUnavailableError(error, {
-                  locale,
-                  action: isVi ? "Hoàn tất onboarding Customer" : "Completing Customer onboarding",
-                }));
-              } finally {
-                setCompletingOnboarding(false);
-              }
-            }}
-          >
-            {isVi ? "Hoàn tất onboarding" : "Complete onboarding"}
-          </Button>
-        </section>
-      )}
 
       <div className="relative min-w-0 xl:min-h-[calc(100vh-170px)]">
         <div className="flex min-w-0 flex-col gap-3 xl:min-h-[calc(100vh-170px)] xl:flex-row xl:items-start">
@@ -532,6 +494,7 @@ export const Customer360Page: React.FC<Customer360PageProps> = ({
         isOpen={editOpen}
         model={model}
         isVi={isVi}
+        customerFieldsOnly={Boolean(authoritativeProjection)}
         onClose={() => setEditOpen(false)}
         onSave={saveCustomerProfile}
       />
@@ -586,18 +549,7 @@ export const Customer360Page: React.FC<Customer360PageProps> = ({
         isOpen={archiveOpen}
         onClose={() => setArchiveOpen(false)}
         onConfirm={async () => {
-          // `customer.archive` is a BLOCKED canonical command: refuse before the mutation
-          // is started instead of failing inside the command boundary.
-          if (isCustomerRetentionUnavailable()) {
-            setArchiveOpen(false);
-            showToast(backendUnavailableMessage({ locale, action: isVi ? "Lưu trữ khách hàng" : "Archiving a customer" }));
-            return;
-          }
-          await archiveCustomerCommand(customer.id, {
-            reason: "Archived from Customer 360",
-            actorId: currentMemberId ?? "system",
-            actorName: currentActorName,
-          });
+          await archiveCustomerProductionCommand(customer.id);
           setArchiveOpen(false);
           showToast(isVi ? "Đã lưu trữ khách hàng." : "Customer archived.");
         }}
@@ -611,13 +563,42 @@ export const Customer360Page: React.FC<Customer360PageProps> = ({
   );
 };
 
-
-
-function toOptionalBusinessIso(value: string): string | undefined {
-  if (!value) return undefined;
-  const date = new Date(`${value}T09:00:00`);
-  return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
+function buildConnectedCustomer360Model(projection: Customer360Projection): Customer360PageModel {
+  const metrics = projection.metrics;
+  return {
+    customer: projection.customer,
+    identity: {
+      ...projection.identity,
+      ownerId: projection.customer.ownerId ?? undefined,
+      contacts: [],
+    },
+    leads: [], deals: [], quotes: [], orders: [], paymentObligations: [], paymentTransactions: [],
+    invoices: [], receivables: [], shippingBookings: [], returns: [], returnIntents: [], supportCases: [],
+    tasks: [], activities: [], careCards: [], purchaseEvidence: [], productsPurchased: [],
+    timeline: projection.linkedRecords.map((record) => ({
+      id: `${record.moduleKey}:${record.recordId}`,
+      kind: "CUSTOMER",
+      title: record.label ?? `${record.moduleKey} · ${record.recordId}`,
+      occurredAt: projection.generatedAt,
+      recordRef: { moduleKey: record.moduleKey, recordId: record.recordId },
+    })),
+    metrics: {
+      revenue: metrics.lifetimeRevenue ? Number(metrics.lifetimeRevenue.amount) : undefined,
+      leadCount: metrics.leadCount,
+      orderCount: metrics.orderCount,
+      openTaskCount: metrics.openTaskCount,
+      openSupportCount: metrics.openSupportCount,
+      openDealCount: metrics.openDealCount,
+      quoteCount: metrics.quoteCount,
+      openInvoiceCount: metrics.openInvoiceCount,
+      overdueReceivableCount: metrics.overdueReceivableCount,
+      activeReturnCount: metrics.activeReturnCount,
+    },
+    integrity: { status: "UNKNOWN" },
+  };
 }
+
+
 
 function parseOptionalNumber(value: string): number | undefined {
   if (!value.trim()) return undefined;

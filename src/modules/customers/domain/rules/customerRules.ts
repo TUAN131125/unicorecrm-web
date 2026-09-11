@@ -44,6 +44,7 @@ export function assertCustomerInvariant(customer: Customer): void {
   if (!customer.customerCode.trim()) errors.push("Customer code is required.");
   if (!customer.relationshipRef.id.trim()) errors.push("Customer relationshipRef.id is required.");
   if (customer.type !== customerTypeForRelationship(customer.relationshipRef)) errors.push("Customer type must match relationshipRef type.");
-  if (!customer.firstPurchaseAt.trim() || !customer.lastPurchaseAt.trim()) errors.push("Customer purchase timestamps are required.");
+  if ((customer.firstPurchaseAt === null) !== (customer.lastPurchaseAt === null)) errors.push("Customer purchase timestamps must both be present or both be null.");
+  if (customer.firstPurchaseAt !== null && (!customer.firstPurchaseAt.trim() || !customer.lastPurchaseAt?.trim())) errors.push("Customer purchase timestamps cannot be blank.");
   if (errors.length) throw new Error(errors.join(" "));
 }

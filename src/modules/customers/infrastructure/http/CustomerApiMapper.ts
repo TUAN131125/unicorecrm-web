@@ -28,6 +28,7 @@ export function mapCustomerDocument(value: CustomerDocument): Customer {
     careCadenceDays: value.careCadenceDays,
     firstPurchaseAt: value.firstPurchaseAt,
     lastPurchaseAt: value.lastPurchaseAt,
+    ownerId: value.ownerId,
     careOwnerId: value.careOwnerId,
     segment: value.segment,
     tags: value.tags ?? [],
@@ -52,5 +53,6 @@ export function mapCustomer360ReadModel(value: Customer360ReadModel): Customer36
     allowedActions: [...value.allowedActions],
     projectionVersion: value.projectionVersion,
     generatedAt: value.generatedAt,
+    stakeholderContacts: value.stakeholderContacts.map((contact) => ({ ...contact })),
   };
 }

@@ -33,10 +33,10 @@ assert.equal(customerRuntime.includes("profiles.flatMap"), false, "Customer runt
 const customerList = read("src/modules/customers/presentation/pages/CustomerListPage.tsx");
 assert.match(customerList, /customers\?: Customer\[\]/);
 const customerListRoute = read("src/modules/customers/list-route.tsx");
-assert.match(customerListRoute, /useSubscribableSnapshot\(getCustomersSnapshot, subscribeToCustomers\)/, "Customer List route must subscribe to the official Customer repository.");
-assert.doesNotMatch(customerList, /Thêm khách hàng|Create customer/, "Normal UI must not expose fake/manual Customer creation.");
-assert.match(customerList, /ExistingCustomerOnboardingModal/, "Customer List must expose evidence-backed onboarding for existing customers.");
-assert.match(customerList, /Ghi nhận khách hàng hiện hữu/, "The onboarding action must clearly distinguish historical/external Customer evidence from direct CRUD creation.");
+assert.match(customerListRoute, /<CustomerListPage\s*\/>/, "Customer List route must delegate connected loading to the authoritative page boundary.");
+assert.doesNotMatch(customerListRoute, /getCustomersSnapshot|subscribeToCustomers/, "Connected route must not subscribe to demo repository snapshots.");
+assert.match(customerList, /ExistingCustomerOnboardingModal/, "Customer List must expose the admitted direct Customer create flow.");
+assert.match(customerList, /Tạo Customer|Create Customer/, "The direct create action must use the admitted Customer contract.");
 
 const customer360 = read("src/modules/customers/presentation/pages/Customer360Page.tsx");
 for (const ownerWorkflow of ["createDealForCustomer", "TaskCreateModal"]) assert.match(customer360, new RegExp(ownerWorkflow), `Customer 360 must orchestrate through ${ownerWorkflow}.`);

@@ -26,9 +26,9 @@ assert.equal(OPENAPI_CONTRACT_VERSION, packageJson.version);
 assert.equal(OPENAPI_SPEC_SHA256, artifacts.sha256);
 assert.equal(manifest.specSha256, artifacts.sha256);
 assert.equal(manifest.contractVersion, packageJson.version);
-assert.equal(coverage.summary.operations, 277);
-assert.equal(coverage.summary.productionReadyOperations, 248);
-assert.equal(coverage.summary.blockedOperations, 29);
+assert.equal(coverage.summary.operations, 279);
+assert.equal(coverage.summary.productionReadyOperations, 251);
+assert.equal(coverage.summary.blockedOperations, 28);
 
 for (const [relativePath, expected] of [
   ["docs/api/openapi.sha256", artifacts.checksum],
@@ -41,8 +41,8 @@ for (const [relativePath, expected] of [
 ] as const) assert.equal(read(relativePath), expected, `${relativePath} drifted from OpenAPI generation.`);
 
 const operations = collectOperations(spec);
-assert.equal(operations.length, 277);
-assert.equal(new Set(operations.map((operation) => operation.operationId)).size, 277);
+assert.equal(operations.length, 279);
+assert.equal(new Set(operations.map((operation) => operation.operationId)).size, 279);
 assert.deepEqual(manifest.operations.map((operation) => operation.operationId).sort(), operations.map((operation) => operation.operationId).sort());
 assert.deepEqual(coverage.operations.map((operation) => operation.operationId).sort(), operations.map((operation) => operation.operationId).sort());
 
@@ -96,6 +96,9 @@ for (const operationId of [
   "importLeadBatch",
   "handoverLeadWithTasks",
 ]) assert.ok(readyMutations.some((item) => item.operationId === operationId), `${operationId} must be a ready Lead mutation.`);
+for (const operationId of ["createCustomer", "updateCustomer", "archiveCustomer"]) {
+  assert.ok(readyMutations.some((item) => item.operationId === operationId), `${operationId} must be a ready Customer mutation.`);
+}
 for (const operation of readyMutations) {
   assert.ok(operation.operation.requestBody?.content?.["application/json"]?.schema?.$ref, `${operation.operationId} requires a typed request.`);
   const success = Object.entries(operation.operation.responses ?? {}).find(([status]) => /^2\d\d$/u.test(status))?.[1];

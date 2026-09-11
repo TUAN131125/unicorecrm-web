@@ -21,6 +21,7 @@ interface CustomerFilterPopoverProps {
   nextCareDateFilter: string;
   setNextCareDateFilter(value: string): void;
   segments: string[];
+  authoritativeFiltersOnly?: boolean;
   onResetAll(): void;
 }
 
@@ -40,6 +41,7 @@ export const CustomerFilterPopover: React.FC<CustomerFilterPopoverProps> = ({
   nextCareDateFilter,
   setNextCareDateFilter,
   segments,
+  authoritativeFiltersOnly = false,
   onResetAll,
 }) => {
   const { locale } = useI18n();
@@ -81,7 +83,7 @@ export const CustomerFilterPopover: React.FC<CustomerFilterPopoverProps> = ({
           <option value="ARCHIVED">{isVi ? "Đã lưu trữ" : "Archived"}</option>
         </Select>
 
-        <Select
+        {!authoritativeFiltersOnly && <Select
           label={isVi ? "Sức khỏe quan hệ" : "Relationship health"}
           value={healthFilter}
           onChange={(event) => setHealthFilter(event.target.value as CustomerHealth | "all")}
@@ -90,7 +92,7 @@ export const CustomerFilterPopover: React.FC<CustomerFilterPopoverProps> = ({
           <option value="GOOD">{isVi ? "Tốt" : "Good"}</option>
           <option value="WATCH">{isVi ? "Theo dõi" : "Watch"}</option>
           <option value="RISK">{isVi ? "Rủi ro" : "Risk"}</option>
-        </Select>
+        </Select>}
 
         <Select
           label={isVi ? "Người phụ trách" : "Owner"}
@@ -112,12 +114,12 @@ export const CustomerFilterPopover: React.FC<CustomerFilterPopoverProps> = ({
           {segments.map((segment) => <option key={segment} value={segment}>{segment}</option>)}
         </Select>
 
-        <Input
+        {!authoritativeFiltersOnly && <Input
           label={isVi ? "Ngày chăm sóc tiếp" : "Next care date"}
           type="date"
           value={nextCareDateFilter}
           onChange={(event) => setNextCareDateFilter(event.target.value)}
-        />
+        />}
       </ListFilterGrid>
     </ListFilterPopover>
   );

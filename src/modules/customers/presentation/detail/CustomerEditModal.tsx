@@ -67,6 +67,7 @@ interface CustomerEditModalProps {
   isOpen: boolean;
   model: Customer360ReadModel;
   isVi: boolean;
+  customerFieldsOnly?: boolean;
   onClose(): void;
   onSave(draft: CustomerEditDraft): void;
 }
@@ -80,7 +81,7 @@ export function createCustomerEditDraft(model: Customer360ReadModel): CustomerEd
   const organization = model.identity.organization;
   return {
     status: model.customer.status,
-    health: model.customer.health,
+    health: model.customer.health ?? "WATCH",
     segment: model.customer.segment ?? "",
     tags: model.customer.tags.join(", "),
     careOwnerId: model.customer.careOwnerId || model.identity.ownerId || "",
@@ -137,7 +138,7 @@ export function createCustomerEditDraft(model: Customer360ReadModel): CustomerEd
   };
 }
 
-export const CustomerEditModal: React.FC<CustomerEditModalProps> = ({ isOpen, model, isVi, onClose, onSave }) => {
+export const CustomerEditModal: React.FC<CustomerEditModalProps> = ({ isOpen, model, isVi, customerFieldsOnly = false, onClose, onSave }) => {
   const [draft, setDraft] = useState<CustomerEditDraft>(() => createCustomerEditDraft(model));
 
   useEffect(() => {
@@ -172,36 +173,39 @@ export const CustomerEditModal: React.FC<CustomerEditModalProps> = ({ isOpen, mo
       >
         <div className="rounded-xl border border-indigo-100 bg-indigo-50/60 px-4 py-3 text-[11px] font-semibold text-indigo-800">
           {isVi
-            ? "Customer 360 điều phối cập nhật nhưng dữ liệu vẫn được ghi về đúng owner: Customer lifecycle, Contact hoặc Organization."
-            : "Customer 360 coordinates the edit while data is written back to the correct owner: Customer lifecycle, Contact or Organization."}
+            ? customerFieldsOnly ? "Chỉ các trường Customer có contract production được phép cập nhật tại đây." : "Customer 360 điều phối cập nhật nhưng dữ liệu vẫn được ghi về đúng owner: Customer lifecycle, Contact hoặc Organization."
+            : customerFieldsOnly ? "Only Customer fields admitted by the production contract can be updated here." : "Customer 360 coordinates the edit while data is written back to the correct owner: Customer lifecycle, Contact or Organization."}
         </div>
 
         <FormSection icon={<HeartHandshake size={15} />} title={isVi ? "Quan hệ Customer" : "Customer relationship"}>
           <Select label={isVi ? "Trạng thái" : "Status"} value={draft.status} disabled={model.customer.onboardingStatus !== "COMPLETED"} onChange={(event) => update("status", event.target.value as CustomerStatus)}>
-            {(["NEW", "ACTIVE", "AT_RISK", "INACTIVE", "CHURNED", "DO_NOT_CONTACT", "ARCHIVED"] as CustomerStatus[]).map((value) => <option key={value} value={value}>{value}</option>)}
+            {(customerFieldsOnly
+              ? (["ACTIVE", "INACTIVE"] as CustomerStatus[])
+              : (["NEW", "ACTIVE", "AT_RISK", "INACTIVE", "CHURNED", "DO_NOT_CONTACT", "ARCHIVED"] as CustomerStatus[])
+            ).map((value) => <option key={value} value={value}>{value}</option>)}
           </Select>
-          <Select label={isVi ? "Sức khỏe" : "Health"} value={draft.health} onChange={(event) => update("health", event.target.value as CustomerHealth)}>
+          {!customerFieldsOnly && <Select label={isVi ? "Sức khỏe" : "Health"} value={draft.health} onChange={(event) => update("health", event.target.value as CustomerHealth)}>
             {(["GOOD", "WATCH", "RISK"] as CustomerHealth[]).map((value) => <option key={value} value={value}>{value}</option>)}
-          </Select>
+          </Select>}
           <Input label={isVi ? "Phân khúc" : "Segment"} value={draft.segment} onChange={(event) => update("segment", event.target.value)} />
           <Input label={isVi ? "Nhãn, cách nhau bằng dấu phẩy" : "Tags, comma separated"} value={draft.tags} onChange={(event) => update("tags", event.target.value)} />
-          <Select label={isVi ? "Người phụ trách quan hệ" : "Relationship owner"} value={draft.careOwnerId} onChange={(event) => update("careOwnerId", event.target.value)} required>
+          {!customerFieldsOnly && <Select label={isVi ? "Người phụ trách quan hệ" : "Relationship owner"} value={draft.careOwnerId} onChange={(event) => update("careOwnerId", event.target.value)} required>
             <option value="">{isVi ? "Chọn người phụ trách" : "Select owner"}</option>
             {getWorkspaceMemberOptions().map((user) => <option key={user.id} value={user.id}>{user.name}</option>)}
-          </Select>
-          <Input label={isVi ? "Chăm sóc tiếp theo" : "Next care"} type="date" value={draft.nextCareAt} onChange={(event) => update("nextCareAt", event.target.value)} />
-          <Input label={isVi ? "Chăm sóc gần nhất" : "Latest care"} type="date" value={draft.lastCareAt} onChange={(event) => update("lastCareAt", event.target.value)} />
+          </Select>}
+          {!customerFieldsOnly && <Input label={isVi ? "Chăm sóc tiếp theo" : "Next care"} type="date" value={draft.nextCareAt} onChange={(event) => update("nextCareAt", event.target.value)} />}
+          {!customerFieldsOnly && <Input label={isVi ? "Chăm sóc gần nhất" : "Latest care"} type="date" value={draft.lastCareAt} onChange={(event) => update("lastCareAt", event.target.value)} />}
           <Select label={isVi ? "Hạng khách hàng" : "Customer tier"} value={draft.tier} onChange={(event) => update("tier", event.target.value as CustomerTier)}>
             {(["STANDARD", "SILVER", "GOLD", "PLATINUM", "STRATEGIC"] as CustomerTier[]).map((value) => <option key={value} value={value}>{value}</option>)}
           </Select>
           <Select label={isVi ? "Mức dịch vụ" : "Service level"} value={draft.serviceLevel} onChange={(event) => update("serviceLevel", event.target.value as CustomerServiceLevel)}>
             {(["STANDARD", "PRIORITY", "PREMIUM", "ENTERPRISE"] as CustomerServiceLevel[]).map((value) => <option key={value} value={value}>{value}</option>)}
           </Select>
-          <Input label={isVi ? "Chu kỳ chăm sóc (ngày)" : "Care cadence (days)"} type="number" min={1} max={365} value={draft.careCadenceDays} onChange={(event) => update("careCadenceDays", event.target.value)} />
+          {!customerFieldsOnly && <Input label={isVi ? "Chu kỳ chăm sóc (ngày)" : "Care cadence (days)"} type="number" min={1} max={365} value={draft.careCadenceDays} onChange={(event) => update("careCadenceDays", event.target.value)} />}
           {model.customer.onboardingStatus !== "COMPLETED" && <p className="col-span-full text-xs font-medium text-amber-700">{isVi ? "Hoàn tất onboarding trước khi thay đổi trạng thái Customer." : "Complete onboarding before changing Customer status."}</p>}
         </FormSection>
 
-        <FormSection icon={<ContactRound size={15} />} title={isVi ? "Nhận dạng và kênh liên hệ" : "Identity and communication"}>
+        {!customerFieldsOnly && <><FormSection icon={<ContactRound size={15} />} title={isVi ? "Nhận dạng và kênh liên hệ" : "Identity and communication"}>
           <Input label={isVi ? "Tên hiển thị" : "Display name"} value={draft.displayName} onChange={(event) => update("displayName", event.target.value)} required />
           <Input label={isVi ? "Nguồn" : "Source"} value={draft.source} onChange={(event) => update("source", event.target.value)} />
           <Input label="Email" type="email" value={draft.email} onChange={(event) => update("email", event.target.value)} />
@@ -262,7 +266,7 @@ export const CustomerEditModal: React.FC<CustomerEditModalProps> = ({ isOpen, mo
             </Select>
             <Textarea label={isVi ? "Ghi chú tổ chức" : "Organization notes"} value={draft.organizationNotes} onChange={(event) => update("organizationNotes", event.target.value)} rows={5} />
           </FormSection>
-        )}
+        )}</>}
       </form>
     </Modal>
   );

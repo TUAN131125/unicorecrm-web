@@ -68,7 +68,7 @@ export const CustomerOverviewTab: React.FC<CustomerOverviewTabProps> = ({
   ).slice(0, 2);
   const primarySignal = visibleSignals[0];
   const operationalAttentionCount =
-    model.metrics.supportRiskCount + model.metrics.returnAttentionCount;
+    (model.metrics.supportRiskCount ?? 0) + (model.metrics.returnAttentionCount ?? 0);
 
   const runAction = (action: CustomerRecommendedAction | undefined) => {
     if (!action) return;
@@ -252,7 +252,7 @@ export const CustomerOverviewTab: React.FC<CustomerOverviewTabProps> = ({
         <OverviewKpi
           icon={<CircleDollarSign size={16} />}
           label={isVi ? "Doanh thu ghi nhận" : "Recognized revenue"}
-          value={formatCurrency(model.metrics.revenue, isVi)}
+          value={model.metrics.revenue === undefined ? "—" : formatCurrency(model.metrics.revenue, isVi)}
           meta={`${model.metrics.purchaseCount} ${isVi ? "bằng chứng mua" : "purchase evidence"}`}
           onClick={() => onSelectTab("transactions", "history")}
         />
@@ -280,7 +280,7 @@ export const CustomerOverviewTab: React.FC<CustomerOverviewTabProps> = ({
               : `${model.metrics.supportRiskCount} support · ${model.metrics.returnAttentionCount} returns`
           }
           onClick={() =>
-            model.metrics.supportRiskCount > 0
+            (model.metrics.supportRiskCount ?? 0) > 0
               ? onSelectTab("service", "support")
               : onSelectTab("transactions", "returns")
           }

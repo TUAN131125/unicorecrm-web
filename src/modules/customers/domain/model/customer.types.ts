@@ -24,7 +24,7 @@ export interface Customer {
   type: CustomerType;
   relationshipRef: RelationshipRef;
   status: CustomerStatus;
-  health: CustomerHealth;
+  health: CustomerHealth | null;
   calculatedHealth?: CustomerHealth;
   manualHealthOverride?: CustomerHealth;
   onboardingStatus?: CustomerOnboardingStatus;
@@ -37,8 +37,9 @@ export interface Customer {
   tier?: CustomerTier;
   serviceLevel?: CustomerServiceLevel;
   careCadenceDays?: number;
-  firstPurchaseAt: string;
-  lastPurchaseAt: string;
+  firstPurchaseAt: string | null;
+  lastPurchaseAt: string | null;
+  ownerId?: string | null;
   careOwnerId?: string;
   segment?: string;
   tags: string[];

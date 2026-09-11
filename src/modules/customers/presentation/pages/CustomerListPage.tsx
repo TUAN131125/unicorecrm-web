@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from "react";
-import { AuthoritativeQueryNotice, backendUnavailableMessage } from "@/shared/operations";
+import { AuthoritativeQueryNotice } from "@/shared/operations";
 import { useCustomers } from "../hooks/useCustomers";
 import { AnimatePresence } from "motion/react";
 import { useNavigate } from "react-router-dom";
@@ -11,7 +11,7 @@ import { ConfirmDialog, IconButton } from "@/shared/components/ui";
 import { useI18n } from "@/i18n";
 import { getAuthSessionSnapshot } from "@/platform/identity-auth";
 import { CAPABILITIES, useEffectiveAccess } from "@/platform/access-control";
-import { archiveCustomerCommand, isCustomerRetentionUnavailable, type Customer } from "../../public/api";
+import { archiveCustomerProductionCommand, type Customer } from "../../public/api";
 import { useCustomerListFilters } from "../hooks/useCustomerListFilters";
 import { useCustomerListViewSettings } from "../hooks/useCustomerListViewSettings";
 import { CustomerCardList } from "../list/CustomerCardList";
@@ -26,9 +26,11 @@ import { CustomerDataQualityPanel } from "../list/CustomerDataQualityPanel";
 import { customerSourceIdentityPath } from "../list/customerList.helpers";
 import type { CustomerListPresentationSnapshot, CustomerListRow } from "../list/customerList.types";
 import { buildCustomer360ReadModel } from "../model/customer360ReadModel";
+import type { Customer360ReadModel } from "../model/customer360ReadModel.types";
 import { CUSTOMER_COLUMNS_METADATA } from "../model/customerColumns";
 import { captureCustomerPresentationSnapshot, getDefaultCustomerFilters, resolveCustomerPresentationSnapshot } from "../model/customerListPresentationPreferences";
 import { getWorkspaceMemberOptions } from "@/platform/member-directory";
+import { buildConnectedCustomerListQuery, CONNECTED_CUSTOMER_SAVED_VIEW_KEYS } from "../model/customerConnectedListPolicy";
 
 interface CustomerListPageProps {
   customers?: Customer[];
@@ -36,8 +38,6 @@ interface CustomerListPageProps {
 }
 
 export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: providedCustomers, refreshToken }) => {
-  const customerSource = useCustomers();
-  const customers = providedCustomers ?? customerSource.customers;
   const navigate = useNavigate();
   const { locale } = useI18n();
   const isVi = locale === "vi";
@@ -80,6 +80,15 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
     resetColumnWidth,
   } = useCustomerListViewSettings();
 
+  const backendQuery = useMemo(() => {
+    return buildConnectedCustomerListQuery({
+      searchTerm, typeFilter, statusFilter, ownerFilter, segmentFilter, activeView,
+      principalMemberId: session?.principal.memberId,
+    });
+  }, [activeView, ownerFilter, searchTerm, segmentFilter, session?.principal.memberId, statusFilter, typeFilter]);
+  const customerSource = useCustomers({ query: backendQuery });
+  const customers = providedCustomers ?? customerSource.customers;
+
   const [viewMode, setViewMode] = useState<"card" | "table">("table");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [showStatisticsPanel, setShowStatisticsPanel] = useState(false);
@@ -97,15 +106,18 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
   const viewSaveInFlightRef = useRef(false);
 
   const rows = useMemo<CustomerListRow[]>(
-    () => customers.map((customer) => ({ customer, model: buildCustomer360ReadModel(customer) })),
-    [customers, refreshToken],
+    () => customers.map((customer) => ({
+      customer,
+      model: customerSource.query.connected ? buildConnectedCustomerListModel(customer) : buildCustomer360ReadModel(customer),
+    })),
+    [customerSource.query.connected, customers, refreshToken],
   );
 
   const segments = useMemo(() => [...new Set(rows.map((row) => row.customer.segment).filter((value): value is string => Boolean(value)))].sort(), [rows]);
   const today = new Date().toISOString().slice(0, 10);
-  const currentUserId = getWorkspaceMemberOptions()[0]?.id;
+  const currentUserId = session?.principal.memberId;
 
-  const filteredRows = useMemo(() => rows.filter((row) => {
+  const locallyFilteredRows = useMemo(() => rows.filter((row) => {
     const { customer, model } = row;
     const normalizedSearch = searchTerm.trim().toLocaleLowerCase();
     const isExplicitArchiveView = activeView === "archived" || statusFilter === "ARCHIVED";
@@ -140,19 +152,23 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
     if (activeView === "atRisk" && customer.status !== "AT_RISK" && customer.health !== "RISK") return false;
     if (activeView === "needCareToday" && customer.nextCareAt?.slice(0, 10) !== today) return false;
     if (activeView === "overdueCare" && (!customer.nextCareAt || customer.nextCareAt.slice(0, 10) >= today)) return false;
-    if (activeView === "openOpportunity" && model.metrics.openDealCount <= 0) return false;
-    if (activeView === "openSupport" && model.metrics.openSupportCount <= 0) return false;
+    if (activeView === "openOpportunity" && (model.metrics.openDealCount ?? 0) <= 0) return false;
+    if (activeView === "openSupport" && (model.metrics.openSupportCount ?? 0) <= 0) return false;
     return true;
   }), [activeView, currentUserId, healthFilter, nextCareDateFilter, ownerFilter, rows, searchTerm, segmentFilter, statusFilter, today, typeFilter]);
 
-  const pagination = useListPagination(filteredRows, 25);
+  const filteredRows = customerSource.query.connected ? rows : locallyFilteredRows;
+  const localPagination = useListPagination(filteredRows, 25);
+  const pagination = customerSource.query.connected ? customerSource.serverPagination : localPagination;
+  const pageRows = customerSource.query.connected ? rows : localPagination.pageItems;
 
   const statistics = useMemo<CustomerStatisticsSummary>(() => {
     const statusCount: Record<string, number> = {};
     const healthCount: Record<string, number> = {};
     rows.forEach((row) => {
       statusCount[row.customer.status] = (statusCount[row.customer.status] || 0) + 1;
-      healthCount[row.customer.health] = (healthCount[row.customer.health] || 0) + 1;
+      const healthKey = row.customer.health ?? "UNKNOWN";
+      healthCount[healthKey] = (healthCount[healthKey] || 0) + 1;
     });
     return {
       total: rows.length,
@@ -161,14 +177,14 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
       active: rows.filter((row) => row.customer.status === "ACTIVE").length,
       atRisk: rows.filter((row) => row.customer.status === "AT_RISK" || row.customer.health === "RISK").length,
       archived: rows.filter((row) => row.customer.status === "ARCHIVED").length,
-      revenue: rows.reduce((sum, row) => sum + row.model.metrics.revenue, 0),
-      openDeals: rows.reduce((sum, row) => sum + row.model.metrics.openDealCount, 0),
-      openWork: rows.reduce((sum, row) => sum + row.model.metrics.openTaskCount, 0),
-      openSupport: rows.reduce((sum, row) => sum + row.model.metrics.openSupportCount, 0),
+      revenue: customerSource.query.connected ? undefined : rows.reduce((sum, row) => sum + (row.model.metrics.revenue ?? 0), 0),
+      openDeals: customerSource.query.connected ? undefined : rows.reduce((sum, row) => sum + (row.model.metrics.openDealCount ?? 0), 0),
+      openWork: customerSource.query.connected ? undefined : rows.reduce((sum, row) => sum + (row.model.metrics.openTaskCount ?? 0), 0),
+      openSupport: customerSource.query.connected ? undefined : rows.reduce((sum, row) => sum + (row.model.metrics.openSupportCount ?? 0), 0),
       statusCount,
       healthCount,
     };
-  }, [rows]);
+  }, [customerSource.query.connected, rows]);
 
   const showToast = (message: string) => {
     setToastMessage(message);
@@ -184,7 +200,10 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
 
   const applyPresentation = (snapshot?: Partial<CustomerListPresentationSnapshot>) => {
     const resolved = resolveCustomerPresentationSnapshot(snapshot);
-    applyFilterSnapshot({ ...getDefaultCustomerFilters(), ...(resolved.filters ?? {}) });
+    const filters = { ...getDefaultCustomerFilters(), ...(resolved.filters ?? {}) };
+    applyFilterSnapshot(customerSource.query.connected
+      ? { ...filters, healthFilter: "all", nextCareDateFilter: "" }
+      : filters);
     setViewMode(resolved.viewMode!);
   };
 
@@ -249,7 +268,7 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
   };
 
   const toggleAllSelection = (checked: boolean) => {
-    const visibleIds = pagination.pageItems.map((row) => row.customer.id);
+    const visibleIds = pageRows.map((row) => row.customer.id);
     setSelectedCustomerIds((current) => checked ? [...new Set([...current, ...visibleIds])] : current.filter((id) => !visibleIds.includes(id)));
   };
 
@@ -260,18 +279,7 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
   };
 
   const confirmArchive = async () => {
-    // `customer.archive` is a BLOCKED canonical command: refuse before any of the batch is
-    // dispatched, so no partial archive can be attempted.
-    if (isCustomerRetentionUnavailable()) {
-      setArchiveTargets([]);
-      showToast(backendUnavailableMessage({ locale, action: isVi ? "Lưu trữ khách hàng" : "Archiving customers" }));
-      return;
-    }
-    await Promise.all(archiveTargets.map((row) => archiveCustomerCommand(row.customer.id, {
-      reason: "Archived from the customer workspace",
-      actorId,
-      actorName,
-    })));
+    await Promise.all(archiveTargets.map((row) => archiveCustomerProductionCommand(row.customer.id)));
     setArchiveTargets([]);
     setSelectedCustomerIds([]);
     showToast(isVi ? "Đã lưu trữ khách hàng được chọn." : "Selected customers archived.");
@@ -320,7 +328,7 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
               },
               ...(canOnboardExistingCustomer ? [{
                 id: "onboard-existing-customer",
-                label: isVi ? "Ghi nhận khách hàng hiện hữu" : "Onboard existing customer",
+                label: isVi ? "Tạo Customer" : "Create Customer",
                 icon: <Plus size={14} />,
                 onClick: () => setOnboardingOpen(true),
                 variant: "primary" as const,
@@ -377,6 +385,7 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
             nextCareDateFilter={nextCareDateFilter}
             setNextCareDateFilter={setNextCareDateFilter}
             segments={segments}
+            authoritativeFiltersOnly={customerSource.query.connected}
             onResetAll={() => {
               resetFilters();
               showToast(isVi ? "Đã đặt lại tất cả bộ lọc." : "All filters reset.");
@@ -395,7 +404,7 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
         leftSlot={(
           <div className="flex items-center gap-2 shrink-0">
             <CustomerSavedViewSelector
-              views={customViews}
+              views={customerSource.query.connected ? customViews.filter((view) => CONNECTED_CUSTOMER_SAVED_VIEW_KEYS.has(view.key)) : customViews}
               activeView={activeView}
               onSelectView={handleSelectSavedView}
               isOpen={isViewDropdownOpen}
@@ -470,7 +479,7 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
         <>
           <div className={viewMode === "card" ? "block" : "block md:hidden"}>
             <CustomerCardList
-              rows={pagination.pageItems}
+              rows={pageRows}
               selectedCustomerIds={selectedCustomerIds}
               onSelectRow={toggleRowSelection}
               openRowActionId={openRowActionId}
@@ -486,7 +495,7 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
           </div>
           <div className={viewMode === "table" ? "hidden md:block" : "hidden"}>
             <CustomerTable
-              rows={pagination.pageItems}
+              rows={pageRows}
               visibleColumns={visibleColumns}
               columnWidths={columnWidths}
               selectedCustomerIds={selectedCustomerIds}
@@ -544,7 +553,7 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
         actorId={actorId}
         isVi={isVi}
         onCompleted={(createdCustomer) => {
-          showToast(isVi ? "Đã ghi nhận khách hàng từ bằng chứng mua hàng." : "Customer created from purchase evidence.");
+          showToast(isVi ? "Đã tạo Customer." : "Customer created.");
           navigate(`/customers/${createdCustomer.id}`);
         }}
       />
@@ -560,3 +569,15 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
     </ListPageFrame>
   </>);
 };
+
+function buildConnectedCustomerListModel(customer: Customer): Customer360ReadModel {
+  return {
+    customer,
+    identity: { displayName: customer.customerCode, ownerId: customer.ownerId ?? undefined, contacts: [] },
+    leads: [], deals: [], quotes: [], orders: [], paymentObligations: [], paymentTransactions: [], invoices: [], receivables: [],
+    shippingBookings: [], returns: [], returnIntents: [], supportCases: [], tasks: [], activities: [], careCards: [], purchaseEvidence: [], timeline: [],
+    metrics: {},
+    integrity: { status: "UNKNOWN" },
+    productsPurchased: [],
+  };
+}

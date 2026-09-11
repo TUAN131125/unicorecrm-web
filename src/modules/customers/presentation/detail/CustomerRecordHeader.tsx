@@ -41,6 +41,8 @@ interface CustomerRecordHeaderProps {
   onAddTaskClick(): void;
   onOpenSourceClick(): void;
   onArchiveClick(): void;
+  canEdit?: boolean;
+  canArchive?: boolean;
   isRightPanelVisible?: boolean;
   onToggleRightPanel?(): void;
 }
@@ -56,6 +58,8 @@ export const CustomerRecordHeader: React.FC<CustomerRecordHeaderProps> = ({
   onAddTaskClick,
   onOpenSourceClick,
   onArchiveClick,
+  canEdit = true,
+  canArchive = true,
   isRightPanelVisible = true,
   onToggleRightPanel,
 }) => {
@@ -142,9 +146,9 @@ export const CustomerRecordHeader: React.FC<CustomerRecordHeaderProps> = ({
         <div className="flex flex-wrap items-center justify-start sm:justify-end gap-2 shrink-0 max-w-full">
           <CustomerIntegrityIndicator integrity={model.integrity} isVi={isVi} />
 
-          <IconButton id="edit-direct-btn" onClick={onEditClick} variant="secondary" size="sm" title={isVi ? "Sửa" : "Edit"}>
+          {canEdit ? <IconButton id="edit-direct-btn" onClick={onEditClick} variant="secondary" size="sm" title={isVi ? "Sửa" : "Edit"}>
             <Edit3 size={14} />
-          </IconButton>
+          </IconButton> : null}
 
           {onToggleRightPanel && (
             <IconButton id="mobile-panel-toggle" onClick={onToggleRightPanel} variant="secondary" size="sm" className="2xl:hidden" title={isRightPanelVisible ? (isVi ? "Ẩn lịch sử tương tác" : "Hide activity history") : (isVi ? "Lịch sử hoạt động" : "Activity history")}>
@@ -187,7 +191,7 @@ export const CustomerRecordHeader: React.FC<CustomerRecordHeaderProps> = ({
               {!isArchived && (
                 <>
                   <MenuDivider />
-                  <MenuItemButton onClick={() => run(onArchiveClick)} icon={<Archive size={14} />} danger>{isVi ? "Lưu trữ khách hàng" : "Archive customer"}</MenuItemButton>
+                  {canArchive ? <MenuItemButton onClick={() => run(onArchiveClick)} icon={<Archive size={14} />} danger>{isVi ? "Lưu trữ khách hàng" : "Archive customer"}</MenuItemButton> : null}
                 </>
               )}
             </div>

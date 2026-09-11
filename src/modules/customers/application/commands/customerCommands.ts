@@ -38,9 +38,9 @@ export function ensureCustomerFromPurchaseEvidence(
   const now = input.now ?? new Date().toISOString();
 
   if (existing) {
-    const firstPurchaseAt = existing.firstPurchaseAt < occurredAt ? existing.firstPurchaseAt : occurredAt;
-    const lastPurchaseAt = existing.lastPurchaseAt > occurredAt ? existing.lastPurchaseAt : occurredAt;
-    const status = deriveCustomerStatus({ current: existing.status, latestPurchaseAt: lastPurchaseAt, health: existing.health, now });
+    const firstPurchaseAt = existing.firstPurchaseAt && existing.firstPurchaseAt < occurredAt ? existing.firstPurchaseAt : occurredAt;
+    const lastPurchaseAt = existing.lastPurchaseAt && existing.lastPurchaseAt > occurredAt ? existing.lastPurchaseAt : occurredAt;
+    const status = deriveCustomerStatus({ current: existing.status, latestPurchaseAt: lastPurchaseAt, health: existing.health ?? undefined, now });
     const legacyAliases = [...new Set([...(existing.legacyAliases ?? []), ...(input.legacyAliases ?? [])])];
     const unchanged = existing.firstPurchaseAt === firstPurchaseAt
       && existing.lastPurchaseAt === lastPurchaseAt
@@ -114,8 +114,8 @@ export function updateCustomerLifecycle(
     ...current,
     ...patch,
     tags: patch.tags ? [...patch.tags] : current.tags,
-    calculatedHealth: current.calculatedHealth ?? current.health,
-    manualHealthOverride: patch.health !== undefined ? patch.health : current.manualHealthOverride,
+    calculatedHealth: current.calculatedHealth ?? current.health ?? undefined,
+    manualHealthOverride: patch.health !== undefined ? patch.health ?? undefined : current.manualHealthOverride,
     archivedAt: patch.status === "ARCHIVED" ? current.archivedAt ?? now : current.archivedAt,
     updatedAt: now,
   };
@@ -159,7 +159,9 @@ export function applyCalculatedCustomerHealth(
     ...current,
     calculatedHealth,
     health: effectiveHealth,
-    status: deriveCustomerStatus({ current: current.status, latestPurchaseAt: current.lastPurchaseAt, health: effectiveHealth, now }),
+    status: current.lastPurchaseAt
+      ? deriveCustomerStatus({ current: current.status, latestPurchaseAt: current.lastPurchaseAt, health: effectiveHealth, now })
+      : current.status,
     updatedAt: now,
   };
   assertCustomerInvariant(updated);

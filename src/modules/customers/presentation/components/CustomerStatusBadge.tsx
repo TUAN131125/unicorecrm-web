@@ -18,9 +18,9 @@ export const CustomerStatusBadge: React.FC<{ status: CustomerStatus; locale?: "v
   </Badge>
 );
 
-export const CustomerHealthBadge: React.FC<{ health: CustomerHealth; locale?: "vi" | "en" }> = ({ health, locale = "vi" }) => (
-  <Badge variant={health === "GOOD" ? "success" : health === "WATCH" ? "warning" : "danger"} className="whitespace-nowrap">
-    {locale === "vi" ? (health === "GOOD" ? "Tốt" : health === "WATCH" ? "Theo dõi" : "Rủi ro") : (health === "GOOD" ? "Good" : health === "WATCH" ? "Watch" : "Risk")}
+export const CustomerHealthBadge: React.FC<{ health: CustomerHealth | null; locale?: "vi" | "en" }> = ({ health, locale = "vi" }) => (
+  <Badge variant={health === "GOOD" ? "success" : health === "WATCH" ? "warning" : health === "RISK" ? "danger" : "neutral"} className="whitespace-nowrap">
+    {health === null ? (locale === "vi" ? "Chưa có" : "Unknown") : locale === "vi" ? (health === "GOOD" ? "Tốt" : health === "WATCH" ? "Theo dõi" : "Rủi ro") : (health === "GOOD" ? "Good" : health === "WATCH" ? "Watch" : "Risk")}
   </Badge>
 );
 

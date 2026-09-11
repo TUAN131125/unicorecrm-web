@@ -8,7 +8,7 @@ export interface ProductionModuleQueryDefinition {
 export const PRODUCTION_MODULE_QUERY_DEFINITIONS = [
   { key: "commercialEvidence" },
   { key: "contacts", list: { operationId: "listContacts", path: "/contacts", allowedQueryParameters: [] }, detail: { operationId: "getContact", pathTemplate: "/contacts/{contactId}", pathParameter: "contactId" } },
-  { key: "customers", list: { operationId: "listCustomers", path: "/customers", allowedQueryParameters: [] }, detail: { operationId: "getCustomer", pathTemplate: "/customers/{customerId}", pathParameter: "customerId" } },
+  { key: "customers", list: { operationId: "listCustomers", path: "/customers", allowedQueryParameters: ["q","type","status","ownerId","segment","tier","cursor","limit"] }, detail: { operationId: "getCustomer", pathTemplate: "/customers/{customerId}", pathParameter: "customerId" } },
   { key: "deals", list: { operationId: "listDeals", path: "/deals", allowedQueryParameters: ["cursor","limit","search","sortBy","sortDirection","stageCode","stageCategory","ownerId","buyerType","buyerId"] }, detail: { operationId: "getDeal", pathTemplate: "/deals/{dealId}", pathParameter: "dealId" } },
   { key: "invoices", list: { operationId: "listInvoices", path: "/invoices", allowedQueryParameters: [] }, detail: { operationId: "getInvoice", pathTemplate: "/invoices/{invoiceId}", pathParameter: "invoiceId" } },
   { key: "leads", list: { operationId: "listLeads", path: "/leads", allowedQueryParameters: ["cursor","limit","search","workState","ownerId"] }, detail: { operationId: "getLead", pathTemplate: "/leads/{leadId}", pathParameter: "leadId" } },

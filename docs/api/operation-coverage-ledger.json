@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "generatorVersion": 11,
   "contractVersion": "0.23.20-contract.0",
-  "specSha256": "20ca5a04c5c991c4c91d2ffe927219590cf6a858c9b424bbe6a289a07401b094",
+  "specSha256": "f847a220450091a860d0614d5ca2aac6e626f4c5d99b1e257ef9ecf99bb5483a",
   "generatedAt": "DETERMINISTIC",
   "coveragePolicy": {
     "ownerModule": "REQUIRED",
@@ -13,13 +13,13 @@
     "concurrency": "DERIVED_FROM_IF_MATCH_HEADER"
   },
   "summary": {
-    "operations": 277,
-    "ownedOperations": 277,
-    "generatedClientMappings": 277,
-    "productionReadyOperations": 248,
-    "blockedOperations": 29,
-    "declaredConnectedBoundaries": 248,
-    "blockedByContract": 29,
+    "operations": 279,
+    "ownedOperations": 279,
+    "generatedClientMappings": 279,
+    "productionReadyOperations": 251,
+    "blockedOperations": 28,
+    "declaredConnectedBoundaries": 251,
+    "blockedByContract": 28,
     "pendingConnectedAdapters": 0
   },
   "operations": [
@@ -656,6 +656,44 @@
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "contacts.delete",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    {
+      "operationId": "archiveCustomer",
+      "method": "POST",
+      "path": "/customers/{customerId}/archive",
+      "boundedContext": "Customers",
+      "ownerModule": "customers",
+      "generatedClient": {
+        "file": "src/platform/api/generated/commercialApi.ts",
+        "className": "CommercialApiClient",
+        "method": "archiveCustomer"
+      },
+      "httpAdapter": "src/modules/customers/infrastructure/http/CustomerHttpApiAdapter.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.application-composition",
+        "quality.commercial-authoritative-queries",
+        "quality.deal-api-boundary",
+        "quality.lead-qualification-api-boundary",
+        "quality.order-to-cash-api-contracts",
+        "quality.product-order-api-boundary",
+        "quality.quote-api-boundary",
+        "quality.relationship-domain-api-boundary",
+        "quality.shipping-returns-api-boundary",
+        "quality.support-api-boundary",
+        "quality.task-activity-api-boundary"
+      ],
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "requestBodySchema": "ArchiveCustomerRequest",
+      "responseSchema": "CustomerMutationResponse",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "customers.archive",
       "resourceScope": "RESOURCE",
       "dataScope": "WORKSPACE"
     },
@@ -2448,6 +2486,44 @@
       "blockingDecisionId": "DEC-CREATECRMPIPELINESTAGE",
       "requiredCapability": "studio.configure",
       "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    {
+      "operationId": "createCustomer",
+      "method": "POST",
+      "path": "/customers",
+      "boundedContext": "Customers",
+      "ownerModule": "customers",
+      "generatedClient": {
+        "file": "src/platform/api/generated/commercialApi.ts",
+        "className": "CommercialApiClient",
+        "method": "createCustomer"
+      },
+      "httpAdapter": "src/modules/customers/infrastructure/http/CustomerHttpApiAdapter.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.application-composition",
+        "quality.commercial-authoritative-queries",
+        "quality.deal-api-boundary",
+        "quality.lead-qualification-api-boundary",
+        "quality.order-to-cash-api-contracts",
+        "quality.product-order-api-boundary",
+        "quality.quote-api-boundary",
+        "quality.relationship-domain-api-boundary",
+        "quality.shipping-returns-api-boundary",
+        "quality.support-api-boundary",
+        "quality.task-activity-api-boundary"
+      ],
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "BACKEND_SERIALIZED",
+      "requestBodySchema": "CreateCustomerRequest",
+      "responseSchema": "CustomerMutationResponse",
+      "successStatus": "201",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "customers.onboard_existing",
+      "resourceScope": "WORKSPACE",
       "dataScope": "WORKSPACE"
     },
     {
@@ -8968,7 +9044,7 @@
       "dataScope": "WORKSPACE"
     },
     {
-      "operationId": "updateCustomerLifecycle",
+      "operationId": "updateCustomer",
       "method": "PATCH",
       "path": "/customers/{customerId}",
       "boundedContext": "Customers",
@@ -8976,10 +9052,10 @@
       "generatedClient": {
         "file": "src/platform/api/generated/commercialApi.ts",
         "className": "CommercialApiClient",
-        "method": "updateCustomerLifecycle"
+        "method": "updateCustomer"
       },
       "httpAdapter": "src/modules/customers/infrastructure/http/CustomerHttpApiAdapter.ts",
-      "adapterStatus": "BLOCKED_BY_CONTRACT",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
       "testGateIds": [
         "quality.api-contract",
         "quality.application-composition",
@@ -8994,13 +9070,13 @@
         "quality.support-api-boundary",
         "quality.task-activity-api-boundary"
       ],
-      "idempotencyPolicy": "UNRESOLVED_BLOCKED",
-      "concurrencyPolicy": "UNRESOLVED_BLOCKED",
-      "requestBodySchema": null,
-      "responseSchema": null,
-      "successStatus": null,
-      "contractStatus": "BLOCKED",
-      "blockingDecisionId": "DEC-MUTATION-RESULT-PROJECTION",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "requestBodySchema": "UpdateCustomerRequest",
+      "responseSchema": "CustomerMutationResponse",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
       "requiredCapability": "customers.edit",
       "resourceScope": "RESOURCE",
       "dataScope": "WORKSPACE"

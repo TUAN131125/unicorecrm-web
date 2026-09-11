@@ -16,6 +16,10 @@ export const CustomerIntegrityIndicator: React.FC<CustomerIntegrityIndicatorProp
   const [open, setOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
 
+  if (integrity.status === "UNKNOWN") {
+    return <span className="rounded-lg bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-500" title={isVi ? "Backend chưa cung cấp đánh giá toàn vẹn" : "Integrity assessment is unavailable from the backend"}>{isVi ? "Toàn vẹn: chưa có" : "Integrity: unknown"}</span>;
+  }
+
   const issueCount = integrity.errorCount + integrity.warningCount;
   if (issueCount === 0) return null;
 

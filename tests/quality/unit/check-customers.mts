@@ -105,7 +105,7 @@ const stale = {
 };
 const migrated = migrateStoredAccessControlSnapshot(stale, "ws_default");
 assert.ok(migrated.roles[0].capabilities.includes(CAPABILITIES.CUSTOMERS_VIEW), "System-role legacy Customer View read permission must migrate to customers.view.");
-assert.equal(migrated.roles[0].capabilities.includes(CAPABILITIES.CUSTOMERS_EDIT), false, "System roles must not regain Customer write capabilities that are not backend-admitted.");
+assert.equal(migrated.roles[0].capabilities.includes(CAPABILITIES.CUSTOMERS_EDIT), false, "Legacy read migration must not infer newly admitted Customer write capabilities.");
 assert.deepEqual(migrated.roles.find((role) => role.roleId === "custom")?.capabilities, [CAPABILITIES.CUSTOMERS_VIEW], "Custom roles may migrate legacy read access but must not gain write capabilities.");
 assert.ok(migrated.dataScopes.some((scope) => scope.resourceKey === "customers"), "Persisted Customer View data scopes must migrate to customers.");
 
@@ -128,6 +128,40 @@ const customerPageSource = read("src/modules/customers/presentation/pages/Custom
 assert.equal(customerPageSource.includes("setCareTasks"), false, "Customer Care must not use local task state.");
 assert.doesNotMatch(customerPageSource, /createCustomerCareCardWithTask|careOpen|careDraft/, "Customer 360 must not restore a duplicate Care Plan workflow.");
 assert.match(customerPageSource, /support\/cases\/new\?customerId=/, "Customer Care actions must open the canonical Care Case creation flow.");
+assert.match(customerPageSource, /updateCustomerCommand/, "Customer 360 edits must use the authoritative Customer command port.");
+assert.match(customerPageSource, /archiveCustomerProductionCommand/, "Customer 360 archive must use the authoritative Customer command port.");
+assert.equal(customerPageSource.includes("completeCustomerOnboardingSnapshot"), false, "The blocked onboarding completion action must not remain in connected Customer 360.");
+
+const customerAdapterSource = read("src/modules/customers/infrastructure/http/CustomerHttpApiAdapter.ts");
+for (const marker of ["response.items.map", "response.pageInfo.hasNextPage", "createCustomer", "updateCustomer", "archiveCustomer"]) {
+  assert.ok(customerAdapterSource.includes(marker), `Connected Customer adapter is missing ${marker}.`);
+}
+const customerCreateModalSource = read("src/modules/customers/presentation/list/ExistingCustomerOnboardingModal.tsx");
+assert.match(customerCreateModalSource, /createCustomerCommand/, "Customer create UI must use createCustomer.");
+assert.equal(customerCreateModalSource.includes("onboardExistingCustomerWorkflow"), false, "Customer create UI must not invoke the blocked evidence-onboarding workflow.");
+
+const { buildConnectedCustomerListQuery, CONNECTED_CUSTOMER_SAVED_VIEW_KEYS } = await import("@/modules/customers/presentation/model/customerConnectedListPolicy");
+assert.deepEqual(buildConnectedCustomerListQuery({
+  searchTerm: "  Acme  ", typeFilter: "B2B", statusFilter: "ACTIVE", ownerFilter: "all",
+  segmentFilter: "Enterprise", activeView: "myCustomers", principalMemberId: "member_authenticated",
+}), {
+  search: "Acme",
+  filters: { type: "B2B", status: "ACTIVE", ownerId: "member_authenticated", segment: "Enterprise" },
+}, "Connected Customer list must translate admitted filters and My Customers from the authenticated principal.");
+assert.throws(() => buildConnectedCustomerListQuery({
+  searchTerm: "", typeFilter: "all", statusFilter: "all", ownerFilter: "all",
+  segmentFilter: "all", activeView: "myCustomers",
+}), /Authenticated member context/, "My Customers must fail closed without an authenticated member context.");
+assert.equal(CONNECTED_CUSTOMER_SAVED_VIEW_KEYS.has("needCareToday"), false);
+assert.equal(CONNECTED_CUSTOMER_SAVED_VIEW_KEYS.has("overdueCare"), false);
+assert.equal(CONNECTED_CUSTOMER_SAVED_VIEW_KEYS.has("openOpportunity"), false);
+assert.equal(CONNECTED_CUSTOMER_SAVED_VIEW_KEYS.has("openSupport"), false);
+const customerHookSource = read("src/modules/customers/presentation/hooks/useCustomers.ts");
+assert.match(customerHookSource, /useServerPagedCollection/);
+assert.match(customerHookSource, /queries\.list\(request, signal\)/);
+const customerDetailRouteSource = read("src/modules/customers/detail-route.tsx");
+assert.match(customerDetailRouteSource, /connected && !detailQuery\.error \? detailQuery\.data : undefined/);
+assert.doesNotMatch(customerDetailRouteSource, /detailQuery\.data\?\.customer \?\?/);
 
 console.log("Customer module business contracts: PASS");
 console.log("- purchase evidence conversion is effective-only, idempotent and unique per relationship");

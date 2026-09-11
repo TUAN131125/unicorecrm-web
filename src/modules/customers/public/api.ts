@@ -1,12 +1,13 @@
 import type { RelationshipRef } from "@/platform/identity";
-import { assertMutationCommandSupported, createMutationMetadata, executeMutationCommand, isMutationCommandUnavailable, type MutationCommandMetadata, type MutationOutcome } from "@/shared/application";
+import type { CreateCustomerRequest, UpdateCustomerRequest } from "@/platform/api/generated/commercialApi";
+import { assertMutationCommandSupported, createMutationMetadata, executeMutationCommand, isMutationCommandUnavailable, runBackendProjection, type MutationCommandMetadata, type MutationOutcome } from "@/shared/application";
 import { getWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import { anonymizeCustomer, applyCalculatedCustomerHealth, archiveCustomer, archiveCustomerRecord, completeCustomerOnboarding, saveCustomerCareCard, updateCustomerLifecycle } from "../application/commands/customerCommands";
 import { findCustomerByRelationshipRef, getCustomer, getCustomerCareCards, queryCustomers } from "../application/queries/customerQueries";
 import { resolveCustomerRelationshipContext, assertCustomerRelationshipContext, type CustomerRelationshipContext } from "../application/queries/customerRelationshipContext";
 import { auditCustomerRelationshipDataQuality as auditCustomerRelationshipDataQualityQuery, type CustomerRelationshipDataQualitySummary, type RelationshipDataQualityIssue } from "../application/queries/customerRelationshipDataQuality";
 import type { Customer, CustomerCareCard, CustomerHealth, CustomerStatus, CustomerType } from "../domain/model/customer.types";
-import { customerRepository, ensureCustomerRepositoryReady, getCustomerMigrationProfileRuntime, reconcileCustomerRepositoryFromPurchaseEvidence } from "../application/composition/customerApplicationServices";
+import { customerRepository, ensureCustomerRepositoryReady, getCustomerApiRuntime, getCustomerMigrationProfileRuntime, reconcileCustomerRepositoryFromPurchaseEvidence } from "../application/composition/customerApplicationServices";
 
 export type {
   Customer,
@@ -56,6 +57,51 @@ export function completeCustomerOnboardingSnapshot(customerId: string, actorId: 
 export function applyCalculatedCustomerHealthSnapshot(customerId: string, health: CustomerHealth, now?: string): Customer { return applyCalculatedCustomerHealth(customerRepository, customerId, health, now); }
 
 export type CustomerRetentionMutationMetadata = Partial<MutationCommandMetadata>;
+
+function projectAuthoritativeCustomer(customer: Customer): Customer {
+  runBackendProjection("customers", () => customerRepository.save(customer));
+  return customer;
+}
+
+function customerCommandOptions(prefix: string, metadata: CustomerRetentionMutationMetadata = {}) {
+  const resolved = createMutationMetadata(prefix, metadata);
+  return {
+    idempotencyKey: resolved.idempotencyKey,
+    expectedVersion: typeof resolved.expectedVersion === "number" ? resolved.expectedVersion : undefined,
+    signal: resolved.signal,
+  };
+}
+
+export async function createCustomerCommand(
+  input: CreateCustomerRequest,
+  metadata: CustomerRetentionMutationMetadata = {},
+): Promise<Customer> {
+  const customer = await getCustomerApiRuntime().commands.create(input, customerCommandOptions(`customer.create:${input.relationshipRef.type}:${input.relationshipRef.id}`, metadata));
+  return projectAuthoritativeCustomer(customer);
+}
+
+export async function updateCustomerCommand(
+  customerId: string,
+  input: UpdateCustomerRequest,
+  metadata: CustomerRetentionMutationMetadata = {},
+): Promise<Customer> {
+  const current = getCustomerSnapshot(customerId);
+  const expectedVersion = metadata.expectedVersion ?? current?.resourceVersion;
+  if (typeof expectedVersion !== "number") throw new Error("CUSTOMER_RESOURCE_VERSION_REQUIRED");
+  const customer = await getCustomerApiRuntime().commands.update(customerId, input, customerCommandOptions(`customer.update:${customerId}`, { ...metadata, expectedVersion }));
+  return projectAuthoritativeCustomer(customer);
+}
+
+export async function archiveCustomerProductionCommand(
+  customerId: string,
+  metadata: CustomerRetentionMutationMetadata = {},
+): Promise<Customer> {
+  const current = getCustomerSnapshot(customerId);
+  const expectedVersion = metadata.expectedVersion ?? current?.resourceVersion;
+  if (typeof expectedVersion !== "number") throw new Error("CUSTOMER_RESOURCE_VERSION_REQUIRED");
+  const customer = await getCustomerApiRuntime().commands.archive(customerId, customerCommandOptions(`customer.archive:${customerId}`, { ...metadata, expectedVersion }));
+  return projectAuthoritativeCustomer(customer);
+}
 
 /**
  * True when Customer retention cannot run in the active runtime: `customer.archive` and

@@ -4091,6 +4091,79 @@
           },
           {
             "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 240
+            }
+          },
+          {
+            "name": "type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "B2C",
+                "B2B"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/CustomerStatus"
+            }
+          },
+          {
+            "name": "ownerId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          },
+          {
+            "name": "segment",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 160
+            }
+          },
+          {
+            "name": "tier",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/CustomerTier"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/CursorToken"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 250,
+              "default": 50
+            }
           }
         ],
         "responses": {
@@ -4226,7 +4299,177 @@
           "RATE_LIMITED",
           "INTEGRATION_UNAVAILABLE",
           "INTERNAL_ERROR"
-        ]
+        ],
+        "x-decision-id": "DEC-CU-001..008"
+      },
+      "post": {
+        "operationId": "createCustomer",
+        "tags": [
+          "Customers"
+        ],
+        "summary": "createCustomer",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateCustomerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "createCustomer committed or replayed.",
+            "headers": {
+              "ETag": {
+                "description": "Quoted authoritative Customer resource version.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerMutationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "customers",
+        "x-required-capability": "customers.onboard_existing",
+        "x-resource-scope": "WORKSPACE",
+        "x-data-scope": "WORKSPACE",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "BACKEND_SERIALIZED",
+        "x-aggregate-id-policy": "SERVER_ASSIGNED",
+        "x-audit-requirement": "IMMUTABLE_COMMAND_AUDIT",
+        "x-event-outbox-expectation": "CUSTOMER_CREATED",
+        "x-transaction-boundary": "SINGLE_CUSTOMER_AGGREGATE_TRANSACTION",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "RESOURCE_VERSION_CONFLICT",
+          "DUPLICATE_BUSINESS_KEY",
+          "RELATIONSHIP_CONFLICT",
+          "LIFECYCLE_CONFLICT",
+          "RATE_LIMITED",
+          "INTERNAL_ERROR"
+        ],
+        "x-decision-id": "DEC-CU-001..008"
       }
     },
     "/customers/{customerId}": {
@@ -4262,6 +4505,14 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/CustomerDocument"
+                }
+              }
+            },
+            "headers": {
+              "ETag": {
+                "description": "Quoted authoritative Customer resource version.",
+                "schema": {
+                  "type": "string"
                 }
               }
             }
@@ -4388,14 +4639,15 @@
           "RATE_LIMITED",
           "INTEGRATION_UNAVAILABLE",
           "INTERNAL_ERROR"
-        ]
+        ],
+        "x-decision-id": "DEC-CU-001..008"
       },
       "patch": {
-        "operationId": "updateCustomerLifecycle",
+        "operationId": "updateCustomer",
         "tags": [
           "Customers"
         ],
-        "summary": "Update customer lifecycle",
+        "summary": "updateCustomer",
         "parameters": [
           {
             "$ref": "#/components/parameters/WorkspaceIdHeader"
@@ -4421,7 +4673,35 @@
             "$ref": "#/components/parameters/IfMatchHeader"
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateCustomerRequest"
+              }
+            }
+          }
+        },
         "responses": {
+          "200": {
+            "description": "updateCustomer committed or replayed.",
+            "headers": {
+              "ETag": {
+                "description": "Quoted authoritative Customer resource version.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerMutationResponse"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Problem Details",
             "content": {
@@ -4472,16 +4752,6 @@
               }
             }
           },
-          "412": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
           "422": {
             "description": "Problem Details",
             "content": {
@@ -4512,16 +4782,6 @@
               }
             }
           },
-          "501": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
           "503": {
             "description": "Problem Details",
             "content": {
@@ -4533,22 +4793,34 @@
             }
           }
         },
-        "x-contract-status": "BLOCKED",
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
         "x-module-owner": "customers",
         "x-required-capability": "customers.edit",
         "x-resource-scope": "RESOURCE",
         "x-data-scope": "WORKSPACE",
         "x-workspace-required": true,
         "x-actor-required": true,
-        "x-idempotency-policy": "UNRESOLVED_BLOCKED",
-        "x-concurrency-policy": "UNRESOLVED_BLOCKED",
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "IF_MATCH_REQUIRED",
+        "x-aggregate-id-policy": "MUST_MATCH_TARGET",
         "x-audit-requirement": "IMMUTABLE_COMMAND_AUDIT",
-        "x-event-outbox-expectation": "UNRESOLVED_BLOCKED",
-        "x-transaction-boundary": "UNRESOLVED_BLOCKED",
+        "x-event-outbox-expectation": "CUSTOMER_PROFILE_OR_LIFECYCLE_CHANGED",
+        "x-transaction-boundary": "SINGLE_CUSTOMER_AGGREGATE_TRANSACTION",
         "x-error-codes": [
-          "CONTRACT_OPERATION_BLOCKED"
+          "AUTHENTICATION_REQUIRED",
+          "ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "RESOURCE_VERSION_CONFLICT",
+          "DUPLICATE_BUSINESS_KEY",
+          "RELATIONSHIP_CONFLICT",
+          "LIFECYCLE_CONFLICT",
+          "RATE_LIMITED",
+          "INTERNAL_ERROR"
         ],
-        "x-blocking-decision-id": "DEC-MUTATION-RESULT-PROJECTION"
+        "x-decision-id": "DEC-CU-001..008"
       }
     },
     "/customers/{customerId}/complete-onboarding": {
@@ -42786,7 +43058,8 @@
           "VALIDATION_FAILED",
           "RATE_LIMITED",
           "INTERNAL_ERROR"
-        ]
+        ],
+        "x-decision-id": "DEC-CU-001..008"
       }
     },
     "/organizations/{organizationId}/overview": {
@@ -48703,6 +48976,188 @@
         ],
         "x-decision-id": "DEC-O-001"
       }
+    },
+    "/customers/{customerId}/archive": {
+      "post": {
+        "operationId": "archiveCustomer",
+        "tags": [
+          "Customers"
+        ],
+        "summary": "archiveCustomer",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "name": "customerId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ArchiveCustomerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "archiveCustomer committed or replayed.",
+            "headers": {
+              "ETag": {
+                "description": "Quoted authoritative Customer resource version.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerMutationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "customers",
+        "x-required-capability": "customers.archive",
+        "x-resource-scope": "RESOURCE",
+        "x-data-scope": "WORKSPACE",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "IF_MATCH_REQUIRED",
+        "x-aggregate-id-policy": "MUST_MATCH_TARGET",
+        "x-audit-requirement": "IMMUTABLE_COMMAND_AUDIT",
+        "x-event-outbox-expectation": "CUSTOMER_ARCHIVED",
+        "x-transaction-boundary": "SINGLE_CUSTOMER_AGGREGATE_TRANSACTION",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "RESOURCE_VERSION_CONFLICT",
+          "DUPLICATE_BUSINESS_KEY",
+          "RELATIONSHIP_CONFLICT",
+          "LIFECYCLE_CONFLICT",
+          "RATE_LIMITED",
+          "INTERNAL_ERROR"
+        ],
+        "x-decision-id": "DEC-CU-001..008"
+      }
     }
   },
   "components": {
@@ -52679,10 +53134,11 @@
       },
       "CustomerDocument": {
         "type": "object",
-        "additionalProperties": true,
+        "additionalProperties": false,
         "required": [
           "id",
           "workspaceId",
+          "ownerId",
           "customerCode",
           "type",
           "relationshipRef",
@@ -52720,41 +53176,57 @@
             "$ref": "#/components/schemas/CustomerStatus"
           },
           "health": {
-            "$ref": "#/components/schemas/CustomerHealth"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CustomerHealth"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "calculatedHealth": {
-            "$ref": "#/components/schemas/CustomerHealth"
+            "$ref": "#/components/schemas/CustomerHealth",
+            "description": "Legacy compatibility read only; not mutable in Customer CU."
           },
           "manualHealthOverride": {
-            "$ref": "#/components/schemas/CustomerHealth"
+            "$ref": "#/components/schemas/CustomerHealth",
+            "description": "Legacy compatibility read only; not mutable in Customer CU."
           },
           "onboardingStatus": {
             "type": "string",
             "enum": [
               "PENDING",
               "COMPLETED"
-            ]
+            ],
+            "description": "Legacy compatibility read only; not mutable in Customer CU."
           },
           "onboardingCompletedAt": {
-            "$ref": "#/components/schemas/UtcDateTime"
+            "$ref": "#/components/schemas/UtcDateTime",
+            "description": "Legacy compatibility read only; not mutable in Customer CU."
           },
           "createdFromEvidenceId": {
-            "$ref": "#/components/schemas/EntityId"
+            "$ref": "#/components/schemas/EntityId",
+            "description": "Legacy compatibility read only; not mutable in Customer CU."
           },
           "conversionPolicyVersion": {
             "type": "string",
-            "maxLength": 80
+            "maxLength": 80,
+            "description": "Legacy compatibility read only; not mutable in Customer CU."
           },
           "conversionCorrelationId": {
-            "$ref": "#/components/schemas/CorrelationId"
+            "$ref": "#/components/schemas/CorrelationId",
+            "description": "Legacy compatibility read only; not mutable in Customer CU."
           },
           "sourceSystem": {
             "type": "string",
-            "maxLength": 120
+            "maxLength": 120,
+            "description": "Legacy compatibility read only; not mutable in Customer CU."
           },
           "externalCustomerRef": {
             "type": "string",
-            "maxLength": 160
+            "maxLength": 160,
+            "description": "Legacy compatibility read only; not mutable in Customer CU."
           },
           "tier": {
             "$ref": "#/components/schemas/CustomerTier"
@@ -52765,16 +53237,32 @@
           "careCadenceDays": {
             "type": "integer",
             "minimum": 1,
-            "maximum": 365
+            "maximum": 365,
+            "description": "Legacy compatibility read only; not mutable in Customer CU."
           },
           "firstPurchaseAt": {
-            "$ref": "#/components/schemas/UtcDateTime"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UtcDateTime"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "lastPurchaseAt": {
-            "$ref": "#/components/schemas/UtcDateTime"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UtcDateTime"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "careOwnerId": {
-            "$ref": "#/components/schemas/EntityId"
+            "$ref": "#/components/schemas/EntityId",
+            "description": "Legacy compatibility read only; not mutable in Customer CU."
           },
           "segment": {
             "type": "string",
@@ -52788,10 +53276,12 @@
             }
           },
           "nextCareAt": {
-            "$ref": "#/components/schemas/UtcDateTime"
+            "$ref": "#/components/schemas/UtcDateTime",
+            "description": "Legacy compatibility read only; not mutable in Customer CU."
           },
           "lastCareAt": {
-            "$ref": "#/components/schemas/UtcDateTime"
+            "$ref": "#/components/schemas/UtcDateTime",
+            "description": "Legacy compatibility read only; not mutable in Customer CU."
           },
           "version": {
             "$ref": "#/components/schemas/ResourceVersion"
@@ -52801,6 +53291,16 @@
           },
           "updatedAt": {
             "$ref": "#/components/schemas/UtcDateTime"
+          },
+          "ownerId": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         }
       },
@@ -52813,9 +53313,22 @@
         ]
       },
       "CustomerList": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/CustomerDocument"
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomerDocument"
+            }
+          },
+          "pageInfo": {
+            "$ref": "#/components/schemas/PageInfo"
+          }
         }
       },
       "CustomerServiceLevel": {
@@ -65952,17 +66465,6 @@
       "Customer360Metrics": {
         "type": "object",
         "additionalProperties": false,
-        "required": [
-          "leadCount",
-          "openDealCount",
-          "quoteCount",
-          "orderCount",
-          "openTaskCount",
-          "openSupportCount",
-          "openInvoiceCount",
-          "overdueReceivableCount",
-          "activeReturnCount"
-        ],
         "properties": {
           "leadCount": {
             "type": "integer",
@@ -66006,7 +66508,8 @@
           "outstandingReceivables": {
             "$ref": "#/components/schemas/Money"
           }
-        }
+        },
+        "description": "Only metrics proven by authorized owning-module participants are present; absence is not numeric zero."
       },
       "Customer360Identity": {
         "type": "object",
@@ -66046,6 +66549,7 @@
         "required": [
           "customer",
           "identity",
+          "stakeholderContacts",
           "metrics",
           "linkedRecords",
           "allowedActions",
@@ -66079,6 +66583,12 @@
           },
           "generatedAt": {
             "$ref": "#/components/schemas/UtcDateTime"
+          },
+          "stakeholderContacts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CustomerStakeholderContact"
+            }
           }
         },
         "description": "Backend-composed, permission-filtered Customer 360 projection. The frontend must not rebuild it through N+1 module queries."
@@ -71577,6 +72087,179 @@
       "ArchiveOrganizationRequest": {
         "type": "object",
         "additionalProperties": false
+      },
+      "CreateCustomerRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "relationshipRef"
+        ],
+        "properties": {
+          "relationshipRef": {
+            "$ref": "#/components/schemas/RelationshipRef"
+          },
+          "segment": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "tags": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          },
+          "tier": {
+            "$ref": "#/components/schemas/CustomerTier"
+          },
+          "serviceLevel": {
+            "$ref": "#/components/schemas/CustomerServiceLevel"
+          }
+        }
+      },
+      "UpdateCustomerRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "minProperties": 1,
+        "properties": {
+          "segment": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "tags": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          },
+          "tier": {
+            "$ref": "#/components/schemas/CustomerTier"
+          },
+          "serviceLevel": {
+            "$ref": "#/components/schemas/CustomerServiceLevel"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ACTIVE",
+              "INACTIVE"
+            ]
+          }
+        }
+      },
+      "ArchiveCustomerRequest": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "CustomerMutationResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "commandId",
+          "correlationId",
+          "aggregateId",
+          "aggregateType",
+          "version",
+          "occurredAt",
+          "outcome",
+          "result"
+        ],
+        "properties": {
+          "commandId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "correlationId": {
+            "$ref": "#/components/schemas/CorrelationId"
+          },
+          "aggregateId": {
+            "$ref": "#/components/schemas/EntityId"
+          },
+          "aggregateType": {
+            "type": "string",
+            "const": "CUSTOMER"
+          },
+          "version": {
+            "$ref": "#/components/schemas/ResourceVersion"
+          },
+          "occurredAt": {
+            "$ref": "#/components/schemas/UtcDateTime"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "COMMITTED",
+              "REPLAYED"
+            ]
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 500
+            }
+          },
+          "emittedEventIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160
+            }
+          },
+          "auditEvidenceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160
+            }
+          },
+          "result": {
+            "$ref": "#/components/schemas/CustomerDocument"
+          }
+        }
+      },
+      "CustomerStakeholderContact": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "relationshipId",
+          "contactId",
+          "displayName",
+          "role",
+          "effectiveFrom"
+        ],
+        "properties": {
+          "relationshipId": {
+            "$ref": "#/components/schemas/EntityId"
+          },
+          "contactId": {
+            "$ref": "#/components/schemas/EntityId"
+          },
+          "displayName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240
+          },
+          "role": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 80
+          },
+          "effectiveFrom": {
+            "$ref": "#/components/schemas/UtcDateTime"
+          },
+          "effectiveTo": {
+            "$ref": "#/components/schemas/UtcDateTime"
+          }
+        }
       }
     }
   },

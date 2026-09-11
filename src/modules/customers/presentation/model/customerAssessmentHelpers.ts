@@ -93,7 +93,7 @@ export function buildNextActionVi(
     case "relationship-silence":
       return "Chủ động tạo một tương tác mới và ghi lại kết quả vào dòng hoạt động.";
     default:
-      return model.metrics.openDealCount > 0
+      return (model.metrics.openDealCount ?? 0) > 0
         ? "Duy trì bước tiếp theo cho các cơ hội đang mở và theo dõi công việc chăm sóc."
         : "Duy trì nhịp chăm sóc và theo dõi các ngoại lệ mới.";
   }
@@ -125,7 +125,7 @@ export function buildNextActionEn(
     case "relationship-silence":
       return "Create a new interaction and record the outcome in the timeline.";
     default:
-      return model.metrics.openDealCount > 0
+      return (model.metrics.openDealCount ?? 0) > 0
         ? "Maintain next-action discipline across the pipeline and monitor open care work."
         : "Maintain the care rhythm and monitor new exceptions.";
   }
