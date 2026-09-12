@@ -20,6 +20,7 @@ export const CAPABILITIES = {
   LEADS_BULK: "leads.bulk",
   LEADS_ASSIGN: "leads.assign",
   LEADS_QUALIFY: "leads.qualify",
+  LEADS_CONVERT_TO_CUSTOMER: "leads.convert_to_customer",
   CONTACTS_READ: "contacts.read",
   CONTACTS_CREATE: "contacts.create",
   CONTACTS_UPDATE: "contacts.update",

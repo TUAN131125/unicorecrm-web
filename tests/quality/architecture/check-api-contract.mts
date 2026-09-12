@@ -26,8 +26,8 @@ assert.equal(OPENAPI_CONTRACT_VERSION, packageJson.version);
 assert.equal(OPENAPI_SPEC_SHA256, artifacts.sha256);
 assert.equal(manifest.specSha256, artifacts.sha256);
 assert.equal(manifest.contractVersion, packageJson.version);
-assert.equal(coverage.summary.operations, 279);
-assert.equal(coverage.summary.productionReadyOperations, 251);
+assert.equal(coverage.summary.operations, 280);
+assert.equal(coverage.summary.productionReadyOperations, 252);
 assert.equal(coverage.summary.blockedOperations, 28);
 
 for (const [relativePath, expected] of [
@@ -41,8 +41,8 @@ for (const [relativePath, expected] of [
 ] as const) assert.equal(read(relativePath), expected, `${relativePath} drifted from OpenAPI generation.`);
 
 const operations = collectOperations(spec);
-assert.equal(operations.length, 279);
-assert.equal(new Set(operations.map((operation) => operation.operationId)).size, 279);
+assert.equal(operations.length, 280);
+assert.equal(new Set(operations.map((operation) => operation.operationId)).size, 280);
 assert.deepEqual(manifest.operations.map((operation) => operation.operationId).sort(), operations.map((operation) => operation.operationId).sort());
 assert.deepEqual(coverage.operations.map((operation) => operation.operationId).sort(), operations.map((operation) => operation.operationId).sort());
 

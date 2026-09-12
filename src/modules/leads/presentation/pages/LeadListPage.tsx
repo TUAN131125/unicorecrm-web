@@ -546,7 +546,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
         }] : []),
       ],
     },
-    ...(canCreateLeads && isLeadOperationAvailable(LEAD_OPERATION.IMPORT_BATCH) ? [{
+    ...(canCreateLeads && canBulkLeads && isLeadOperationAvailable(LEAD_OPERATION.IMPORT_BATCH) ? [{
       id: "import",
       title: locale === "vi" ? "Nhập dữ liệu" : "Import",
       items: [{

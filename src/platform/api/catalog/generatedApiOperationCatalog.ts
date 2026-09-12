@@ -7135,6 +7135,128 @@ export const API_OPERATION_CATALOG = {
       "quality.task-activity-api-boundary"
     ]
   },
+  "convertLeadToCustomer": {
+    "operationId": "convertLeadToCustomer",
+    "moduleId": "leads",
+    "boundedContext": "LeadQualification",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/workflows/lead-customer-conversion/{leadId}",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "convertLeadToCustomer"
+    },
+    "adapter": {
+      "file": "src/workflows/lead-qualification/infrastructure/http/LeadQualificationHttpAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "ConvertLeadToCustomerRequest",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "IdempotencyKey",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "If-Match",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "leadId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "LeadCustomerConversionResponse",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "leads.convert_to_customer",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "IF_MATCH_REQUIRED_AT_ADMISSION_THEN_SEMANTIC_RECOVERY",
+      "audit": "IMMUTABLE_OWNER_AUDIT_AND_DURABLE_WORKFLOW_EVIDENCE",
+      "transactionBoundary": "DURABLE_MULTI_OWNER_LEAD_CUSTOMER_CONVERSION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
   "createAccessRole": {
     "operationId": "createAccessRole",
     "moduleId": "platform/access-control",

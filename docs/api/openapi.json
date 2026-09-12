@@ -49158,6 +49158,209 @@
         ],
         "x-decision-id": "DEC-CU-001..008"
       }
+    },
+    "/workflows/lead-customer-conversion/{leadId}": {
+      "post": {
+        "operationId": "convertLeadToCustomer",
+        "tags": [
+          "LeadQualification"
+        ],
+        "summary": "Convert an eligible Lead to a Customer",
+        "description": "Standalone durable CRM conversion. It creates or reuses the exact-subject Customer and records the Customer reference on the CLOSED/OPPORTUNITY Lead; it does not create or require a Deal, Quote, Order or Direct Sale.",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "name": "leadId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConvertLeadToCustomerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Authoritative committed or replayed Lead to Customer conversion",
+            "headers": {
+              "ETag": {
+                "description": "Quoted final Lead resource version",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeadCustomerConversionResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "leads",
+        "x-required-capability": "leads.convert_to_customer",
+        "x-resource-scope": "RESOURCE",
+        "x-data-scope": "WORKSPACE",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "IF_MATCH_REQUIRED_AT_ADMISSION_THEN_SEMANTIC_RECOVERY",
+        "x-audit-requirement": "IMMUTABLE_OWNER_AUDIT_AND_DURABLE_WORKFLOW_EVIDENCE",
+        "x-event-outbox-expectation": "CUSTOMER_CREATED_WHEN_NEEDED_AND_LEAD_CUSTOMER_CONVERSION_RECORDED",
+        "x-transaction-boundary": "DURABLE_MULTI_OWNER_LEAD_CUSTOMER_CONVERSION",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "RESOURCE_SCOPE_DENIED",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "VERSION_CONFLICT",
+          "IDEMPOTENCY_KEY_REUSED",
+          "LIFECYCLE_CONFLICT",
+          "LEAD_CONVERSION_INELIGIBLE",
+          "LEAD_ALREADY_CONVERTED",
+          "LEAD_CONVERSION_SUBJECT_INVALID",
+          "LEAD_CONVERSION_MANUAL_REVIEW",
+          "RATE_LIMITED",
+          "INTERNAL_ERROR"
+        ],
+        "x-aggregate-id-policy": "SERVER_ASSIGNED",
+        "x-variant-admission": {
+          "existingContact": "ADMITTED",
+          "existingOrganization": "ADMITTED",
+          "newContact": "FAIL_CLOSED",
+          "newOrganization": "FAIL_CLOSED",
+          "stakeholder": "FAIL_CLOSED"
+        },
+        "x-decision-id": "DEC-WF-001;DEC-WF-002;DEC-WF-003"
+      }
     }
   },
   "components": {
@@ -53301,6 +53504,22 @@
                 "type": "null"
               }
             ]
+          },
+          "sourceLeadId": {
+            "$ref": "#/components/schemas/EntityId"
+          },
+          "conversionCompletedAt": {
+            "$ref": "#/components/schemas/UtcDateTime"
+          },
+          "conversionInitiatedBy": {
+            "$ref": "#/components/schemas/EntityId"
+          },
+          "conversionResult": {
+            "type": "string",
+            "enum": [
+              "CREATED",
+              "REUSED"
+            ]
           }
         }
       },
@@ -53925,7 +54144,11 @@
           "UNKNOWN_BUSINESS_STATUS",
           "VALIDATION_FAILED",
           "VERSION_CONFLICT",
-          "WORKSPACE_MISMATCH"
+          "WORKSPACE_MISMATCH",
+          "LEAD_CONVERSION_INELIGIBLE",
+          "LEAD_ALREADY_CONVERTED",
+          "LEAD_CONVERSION_SUBJECT_INVALID",
+          "LEAD_CONVERSION_MANUAL_REVIEW"
         ]
       },
       "EvidenceItem": {
@@ -55565,6 +55788,9 @@
           "disqualificationNote": {
             "type": "string",
             "maxLength": 4000
+          },
+          "customerRef": {
+            "$ref": "#/components/schemas/EntityId"
           }
         },
         "x-lifecycle-invariants": [
@@ -72258,6 +72484,196 @@
           },
           "effectiveTo": {
             "$ref": "#/components/schemas/UtcDateTime"
+          }
+        }
+      },
+      "LeadCustomerConversionSubject": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "type",
+          "mode"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "CONTACT",
+              "ORGANIZATION_ACCOUNT"
+            ]
+          },
+          "mode": {
+            "type": "string",
+            "enum": [
+              "EXISTING",
+              "NEW"
+            ]
+          },
+          "id": {
+            "$ref": "#/components/schemas/EntityId"
+          },
+          "contact": {
+            "$ref": "#/components/schemas/LeadQualificationContactInput"
+          }
+        },
+        "description": "EXISTING requires id and forbids contact. NEW CONTACT requires contact and forbids id. NEW ORGANIZATION_ACCOUNT is reserved and fails closed."
+      },
+      "LeadCustomerConversionStakeholder": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "contactId",
+          "role"
+        ],
+        "properties": {
+          "contactId": {
+            "$ref": "#/components/schemas/EntityId"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "primary_contact",
+              "billing",
+              "decision_maker",
+              "end_user",
+              "technical",
+              "support",
+              "other"
+            ]
+          }
+        }
+      },
+      "ConvertLeadToCustomerRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "accountSubject"
+        ],
+        "properties": {
+          "accountSubject": {
+            "$ref": "#/components/schemas/LeadCustomerConversionSubject"
+          },
+          "stakeholder": {
+            "$ref": "#/components/schemas/LeadCustomerConversionStakeholder"
+          }
+        }
+      },
+      "LeadCustomerConversionResult": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "conversionId",
+          "leadId",
+          "customerId",
+          "customerResolution",
+          "accountSubject",
+          "leadVersion",
+          "customerVersion"
+        ],
+        "properties": {
+          "conversionId": {
+            "$ref": "#/components/schemas/EntityId"
+          },
+          "leadId": {
+            "$ref": "#/components/schemas/EntityId"
+          },
+          "customerId": {
+            "$ref": "#/components/schemas/EntityId"
+          },
+          "customerResolution": {
+            "type": "string",
+            "enum": [
+              "CREATED",
+              "REUSED"
+            ]
+          },
+          "accountSubject": {
+            "$ref": "#/components/schemas/RelationshipRef"
+          },
+          "contactId": {
+            "$ref": "#/components/schemas/EntityId"
+          },
+          "organizationId": {
+            "$ref": "#/components/schemas/EntityId"
+          },
+          "stakeholderRelationshipId": {
+            "$ref": "#/components/schemas/EntityId"
+          },
+          "leadVersion": {
+            "$ref": "#/components/schemas/ResourceVersion"
+          },
+          "customerVersion": {
+            "$ref": "#/components/schemas/ResourceVersion"
+          }
+        }
+      },
+      "LeadCustomerConversionResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "commandId",
+          "correlationId",
+          "aggregateId",
+          "aggregateType",
+          "version",
+          "occurredAt",
+          "outcome",
+          "result"
+        ],
+        "properties": {
+          "commandId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "correlationId": {
+            "$ref": "#/components/schemas/CorrelationId"
+          },
+          "aggregateId": {
+            "$ref": "#/components/schemas/EntityId"
+          },
+          "aggregateType": {
+            "type": "string",
+            "const": "LEAD_CUSTOMER_CONVERSION"
+          },
+          "version": {
+            "$ref": "#/components/schemas/ResourceVersion"
+          },
+          "occurredAt": {
+            "$ref": "#/components/schemas/UtcDateTime"
+          },
+          "outcome": {
+            "type": "string",
+            "enum": [
+              "COMMITTED",
+              "REPLAYED"
+            ]
+          },
+          "warnings": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 500
+            }
+          },
+          "emittedEventIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160
+            }
+          },
+          "auditEvidenceIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 160
+            }
+          },
+          "result": {
+            "$ref": "#/components/schemas/LeadCustomerConversionResult"
           }
         }
       }
