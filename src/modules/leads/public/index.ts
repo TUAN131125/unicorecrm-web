@@ -30,3 +30,5 @@ export type {
 } from "../domain/rules/leadProgressiveProfile";
 
 export { getLeadDuplicateCandidates, getLeadDuplicateMatchKeys } from "../application/queries/leadIdentityResolution";
+export { getLeadDetailResource } from "../application/vertical-slice/leadAuthoritativeQueries";
+export { useLeadAuthoritativeResource } from "../presentation/hooks/useLeadAuthoritativeResource";

@@ -49166,7 +49166,7 @@
           "LeadQualification"
         ],
         "summary": "Convert an eligible Lead to a Customer",
-        "description": "Standalone durable CRM conversion. It creates or reuses the exact-subject Customer and records the Customer reference on the CLOSED/OPPORTUNITY Lead; it does not create or require a Deal, Quote, Order or Direct Sale.",
+        "description": "Standalone durable CRM conversion for an eligible active, Nurture, Opportunity, or already-converged Lead. It creates or reuses the exact-subject Customer and records the Customer reference without creating or requiring a Deal, Quote, Order, or Direct Sale.",
         "parameters": [
           {
             "$ref": "#/components/parameters/WorkspaceIdHeader"
@@ -49348,6 +49348,7 @@
           "LEAD_ALREADY_CONVERTED",
           "LEAD_CONVERSION_SUBJECT_INVALID",
           "LEAD_CONVERSION_MANUAL_REVIEW",
+          "LEAD_CONVERSION_IN_PROGRESS",
           "RATE_LIMITED",
           "INTERNAL_ERROR"
         ],
@@ -53504,22 +53505,6 @@
                 "type": "null"
               }
             ]
-          },
-          "sourceLeadId": {
-            "$ref": "#/components/schemas/EntityId"
-          },
-          "conversionCompletedAt": {
-            "$ref": "#/components/schemas/UtcDateTime"
-          },
-          "conversionInitiatedBy": {
-            "$ref": "#/components/schemas/EntityId"
-          },
-          "conversionResult": {
-            "type": "string",
-            "enum": [
-              "CREATED",
-              "REUSED"
-            ]
           }
         }
       },
@@ -56577,6 +56562,7 @@
           "DISQUALIFIED",
           "NURTURE",
           "OPPORTUNITY",
+          "CUSTOMER",
           "DIRECT_SALE"
         ]
       },

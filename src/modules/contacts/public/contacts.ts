@@ -1,5 +1,4 @@
 import { assertMutationCommandSupported, createMutationMetadata, executeMutationCommand, isBusinessOperationUnavailable, isMutationCommandUnavailable, type MutationCommandMetadata, type MutationOutcome } from "@/shared/application";
-import { OPENAPI_OPERATION_RUNTIME_CONTRACTS } from "@/platform/api/contracts/generatedOpenApiRuntimeContract";
 import { CONTACT_ARCHIVE_OPERATION, CONTACT_CREATE_OPERATION, CONTACT_UPDATE_OPERATION } from "../application/ports/ContactApiRuntime";
 import type { Contact } from "../domain/model/contact.types";
 import { contactPreferences, contactRepository, isContactConnectedApiRuntime } from "../application/composition/contactApplicationServices";
@@ -16,8 +15,8 @@ import {
 
 /** True when Contact data is served by the backend, where local Contact writes are refused. */
 export function isContactConnectedMode(): boolean { return isContactConnectedApiRuntime(); }
-function isContactOperationReady(operation: keyof typeof OPENAPI_OPERATION_RUNTIME_CONTRACTS): boolean {
-  return OPENAPI_OPERATION_RUNTIME_CONTRACTS[operation].contractStatus === "PRODUCTION_CONTRACT_READY";
+function isContactOperationReady(operation: string): boolean {
+  return !isBusinessOperationUnavailable(operation);
 }
 export function isContactCreateAvailable(): boolean {
   return isContactOperationReady(CONTACT_CREATE_OPERATION)

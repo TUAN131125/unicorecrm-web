@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "generatorVersion": 11,
   "contractVersion": "0.23.20-contract.0",
-  "specSha256": "54665adc1852e2119c3a625926760098ff9172116f47fd5c3d5594a47fa9649c",
+  "specSha256": "0fc737fc3945bebe495632d08299b78cf77abbbbf78c4ba4a1a797eb9e217fd3",
   "generatedAt": "DETERMINISTIC",
   "coveragePolicy": {
     "ownerModule": "REQUIRED",

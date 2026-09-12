@@ -35,6 +35,7 @@ export function getLeadOutcomeCounts(repository: LeadRepository): Record<Qualifi
     [QualificationOutcome.NURTURE]: 0,
     [QualificationOutcome.OPPORTUNITY]: 0,
     [QualificationOutcome.DIRECT_SALE]: 0,
+    [QualificationOutcome.CUSTOMER]: 0,
   };
   repository.list().forEach((lead) => {
     if (lead.qualificationOutcome) counts[lead.qualificationOutcome] += 1;

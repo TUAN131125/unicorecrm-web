@@ -15,6 +15,7 @@ export const QualificationOutcome = {
   DISQUALIFIED: "DISQUALIFIED",
   NURTURE: "NURTURE",
   OPPORTUNITY: "OPPORTUNITY",
+  CUSTOMER: "CUSTOMER",
   DIRECT_SALE: "DIRECT_SALE",
 } as const;
 
@@ -43,6 +44,7 @@ export function validateCanonicalLeadLifecycle(
   if (
     state.qualificationOutcome &&
     state.qualificationOutcome !== QualificationOutcome.DISQUALIFIED &&
+    state.qualificationOutcome !== QualificationOutcome.CUSTOMER &&
     !state.relationshipRef
   ) {
     errors.push(`${state.qualificationOutcome} requires relationshipRef.`);

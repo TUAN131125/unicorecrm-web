@@ -34,6 +34,8 @@ export function getQualificationOutcomeLabel(outcome: QualificationOutcomeValue,
       return vi ? "Cơ hội" : "Opportunity";
     case QualificationOutcome.DIRECT_SALE:
       return vi ? "Bán ngay" : "Direct Sale";
+    case QualificationOutcome.CUSTOMER:
+      return vi ? "Khách hàng" : "Customer";
   }
 }
 
@@ -61,6 +63,7 @@ export function getLeadLifecycleBadgeVariant(
       return "warning";
     case QualificationOutcome.OPPORTUNITY:
     case QualificationOutcome.DIRECT_SALE:
+    case QualificationOutcome.CUSTOMER:
       return "success";
   }
 }

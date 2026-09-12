@@ -1,9 +1,22 @@
 import type { AuthoritativePage, ModuleListQuery } from "@/shared/application";
-import type {
-  CreateCustomerRequest,
-  UpdateCustomerRequest,
-} from "@/platform/api/generated/commercialApi";
-import type { Customer } from "../../domain/model/customer.types";
+import type { RelationshipRef } from "@/platform/identity";
+import type { Customer, CustomerServiceLevel, CustomerTier } from "../../domain/model/customer.types";
+
+export interface CreateCustomerRequest {
+  relationshipRef: RelationshipRef;
+  segment?: string;
+  tags?: string[];
+  tier?: CustomerTier;
+  serviceLevel?: CustomerServiceLevel;
+}
+
+export interface UpdateCustomerRequest {
+  segment?: string;
+  tags?: string[];
+  tier?: CustomerTier;
+  serviceLevel?: CustomerServiceLevel;
+  status?: "ACTIVE" | "INACTIVE";
+}
 
 export type CustomerApiRuntimeMode = "demo" | "connected" | "test";
 

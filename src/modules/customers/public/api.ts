@@ -1,5 +1,5 @@
 import type { RelationshipRef } from "@/platform/identity";
-import type { CreateCustomerRequest, UpdateCustomerRequest } from "@/platform/api/generated/commercialApi";
+import type { CreateCustomerRequest, UpdateCustomerRequest } from "../application/ports/CustomerApiRuntime";
 import { assertMutationCommandSupported, createMutationMetadata, executeMutationCommand, isMutationCommandUnavailable, runBackendProjection, type MutationCommandMetadata, type MutationOutcome } from "@/shared/application";
 import { getWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import { anonymizeCustomer, applyCalculatedCustomerHealth, archiveCustomer, archiveCustomerRecord, completeCustomerOnboarding, saveCustomerCareCard, updateCustomerLifecycle } from "../application/commands/customerCommands";

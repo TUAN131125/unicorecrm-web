@@ -68,6 +68,7 @@ export interface Lead {
   qualificationOutcome?: QualificationOutcome;
   relationshipRef?: RelationshipRef;
   dealRef?: string;
+  customerRef?: string;
   migrationReview?: {
     rule: "LEAD_OUTCOME_REQUIRES_EVIDENCE";
     legacyStatus: "QUALIFIED" | "CONVERTED";

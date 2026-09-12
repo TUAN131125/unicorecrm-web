@@ -27,6 +27,7 @@ export function mapLeadDocumentToApplication(dto: LeadDocument): Lead {
     ...(dto.qualificationOutcome === undefined ? {} : { qualificationOutcome: dto.qualificationOutcome }),
     ...(dto.relationshipRef === undefined ? {} : { relationshipRef: { type: dto.relationshipRef.type === "ORGANIZATION" ? "ORGANIZATION_ACCOUNT" : "CONTACT", id: dto.relationshipRef.id } }),
     ...((dto.dealRef ?? dto.qualifiedDealId) === undefined ? {} : { dealRef: dto.dealRef ?? dto.qualifiedDealId }),
+    ...(dto.customerRef === undefined ? {} : { customerRef: dto.customerRef }),
     ownerId: dto.ownerId,
     interestedProducts: dto.interestedProducts.map((item) => ({
       id: item.id,
