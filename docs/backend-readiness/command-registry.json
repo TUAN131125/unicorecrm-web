@@ -6688,6 +6688,44 @@
       "affectedModuleKeys": [
         "customers"
       ]
+    },
+    {
+      "stableCommandId": "CMD-176",
+      "commandType": "lead.convert-to-customer",
+      "useCase": "Convert eligible Lead to exact-subject Customer",
+      "moduleOwner": "leads",
+      "aggregateOwner": "lead",
+      "frontendApplicationSymbols": [],
+      "openApiOperationId": "convertLeadToCustomer",
+      "blockedOperationCandidate": null,
+      "requestSchema": "ConvertLeadToCustomerRequest",
+      "successResponseSchema": "LeadCustomerConversionResponse",
+      "errorSchema": "ProblemDetails",
+      "requiredCapability": "leads.convert_to_customer",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED_AT_ADMISSION_THEN_SEMANTIC_RECOVERY",
+      "auditRequirement": "IMMUTABLE_OWNER_AUDIT_AND_DURABLE_WORKFLOW_EVIDENCE",
+      "eventOutboxExpectation": "CUSTOMER_CREATED_WHEN_NEEDED_AND_LEAD_CUSTOMER_CONVERSION_RECORDED",
+      "transactionBoundary": "DURABLE_MULTI_OWNER_LEAD_CUSTOMER_CONVERSION",
+      "runtimeImplementationMode": "CONNECTED_HTTP_OPENAPI",
+      "readModelRefreshRequirement": [
+        "leads",
+        "customers",
+        "contacts",
+        "organizations"
+      ],
+      "status": "PRODUCTION_CONTRACT_READY",
+      "decisionId": "DEC-WF-001;DEC-WF-002;DEC-WF-003",
+      "aggregateIdPolicy": "SERVER_ASSIGNED",
+      "requestProjection": "LEAD_CUSTOMER_CONVERSION",
+      "affectedModuleKeys": [
+        "leads",
+        "customers",
+        "contacts",
+        "organizations"
+      ]
     }
   ]
 }

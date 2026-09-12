@@ -372,6 +372,34 @@
       "contractReadiness": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "evidenceSummary": "Backend atomically verifies queue eligibility, assigns the actor and advances the authoritative Lead work state."
+    },
+    {
+      "workflowId": "WF-29",
+      "name": "lead-customer-conversion",
+      "participatingOwners": [
+        "leads",
+        "contacts",
+        "organizations",
+        "customers"
+      ],
+      "authoritativeCoordinator": "BACKEND_ORCHESTRATED",
+      "executionClassification": "DURABLE",
+      "publicOperations": [
+        "convertLeadToCustomer"
+      ],
+      "declaredTransactionBoundaries": [
+        "DURABLE_MULTI_OWNER_LEAD_CUSTOMER_CONVERSION"
+      ],
+      "idempotencyBoundary": "WORKSPACE_OPERATION_LEAD_ID_AND_REQUEST_KEY_PLUS_BUSINESS_UNIQUENESS",
+      "concurrencyBoundary": "DATABASE_UNIQUE_LEAD_CONVERSION_AND_OWNER_PARTICIPANT_REPLAY",
+      "compensationSemantics": "FORWARD_ONLY_NO_DESTRUCTIVE_COMPENSATION",
+      "contractReadiness": "PRODUCTION_CONTRACT_READY",
+      "backendAdmission": "ADMITTED_NOT_IMPLEMENTED",
+      "implementationStatus": "NOT_IMPLEMENTED",
+      "connectedFrontendCoordinatorAllowed": false,
+      "decisionId": "DEC-WF-001;DEC-WF-002;DEC-WF-003",
+      "blockingDecisionId": null,
+      "authoritativeCoordinatorOwner": "Workflows"
     }
   ],
   "contractVersion": "0.23.20-contract.0"

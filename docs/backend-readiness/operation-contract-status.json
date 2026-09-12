@@ -430,6 +430,13 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "convertLeadToCustomer",
+      "method": "POST",
+      "path": "/workflows/lead-customer-conversion/{leadId}",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "createAccessRole",
       "method": "POST",
       "path": "/access/roles",

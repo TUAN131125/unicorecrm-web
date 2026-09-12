@@ -24,7 +24,7 @@ const LeadDetailPage = lazyRouteComponent("LeadDetailPage", () => import("@/modu
 const LeadQueuePage = lazyRouteComponent("LeadQueuePage", () => import("@/modules/leads/presentation"), (m) => m.LeadQueuePage);
 const LeadQualificationPage = lazyRouteComponent("LeadQualificationPage", () => import("@/workflows/lead-qualification/qualification-route"), (m) => m.LeadQualificationPage);
 const LeadSellNowPage = lazyRouteComponent("LeadSellNowPage", () => import("@/workflows/lead-qualification/sell-now-route"), (m) => m.LeadSellNowPage);
-const LegacyLeadConvertRedirect = lazyRouteComponent("LegacyLeadConvertRedirect", () => import("@/app/router/adapters/lead-qualification/LegacyLeadConvertRedirect"), (m) => m.LegacyLeadConvertRedirect);
+const LeadCustomerConversionPage = lazyRouteComponent("LeadCustomerConversionPage", () => import("@/workflows/lead-customer-conversion/conversion-route"), (m) => m.LeadCustomerConversionPage);
 
 
 const TaskListPage = lazyRouteComponent("TaskListPage", () => import("@/modules/tasks/list-route"), (m) => m.TaskListPage);
@@ -129,7 +129,7 @@ export function createCrmWorkspaceRoutes(crmConfig: CrmWorkspaceConfig): RouteOb
     { path: relativeRoutePath(ROUTE_KEYS.LEAD_DETAIL), element: moduleRoute("leads", canRead("leads"), <LeadDetailPage />) },
     { path: relativeRoutePath(ROUTE_KEYS.LEAD_QUALIFY), element: moduleActionRoute(positiveLeadQualificationEnabled, CAPABILITIES.LEADS_QUALIFY, <LeadQualificationPage />) },
     { path: relativeRoutePath(ROUTE_KEYS.LEAD_SELL_NOW), element: moduleActionRoute(directSaleQualificationEnabled, CAPABILITIES.LEADS_QUALIFY, <LeadSellNowPage />) },
-    { path: relativeRoutePath(ROUTE_KEYS.LEAD_CONVERT), element: moduleActionRoute(positiveLeadQualificationEnabled, CAPABILITIES.LEADS_QUALIFY, <LegacyLeadConvertRedirect />) },
+    { path: relativeRoutePath(ROUTE_KEYS.LEAD_CONVERT), element: moduleActionRoute(canWrite("leads"), CAPABILITIES.LEADS_CONVERT_TO_CUSTOMER, <LeadCustomerConversionPage />) },
 
     { path: relativeRoutePath(ROUTE_KEYS.CATALOG), element: permissionRoute("products", <ProductListPage />) },
     { path: relativeRoutePath(ROUTE_KEYS.PRODUCT_DETAIL), element: permissionRoute("products", <ProductDetailPage />) },

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "generatorVersion": 11,
   "contractVersion": "0.23.20-contract.0",
-  "specSha256": "f847a220450091a860d0614d5ca2aac6e626f4c5d99b1e257ef9ecf99bb5483a",
+  "specSha256": "54665adc1852e2119c3a625926760098ff9172116f47fd5c3d5594a47fa9649c",
   "generatedAt": "DETERMINISTIC",
   "coveragePolicy": {
     "ownerModule": "REQUIRED",
@@ -13,12 +13,12 @@
     "concurrency": "DERIVED_FROM_IF_MATCH_HEADER"
   },
   "summary": {
-    "operations": 279,
-    "ownedOperations": 279,
-    "generatedClientMappings": 279,
-    "productionReadyOperations": 251,
+    "operations": 280,
+    "ownedOperations": 280,
+    "generatedClientMappings": 280,
+    "productionReadyOperations": 252,
     "blockedOperations": 28,
-    "declaredConnectedBoundaries": 251,
+    "declaredConnectedBoundaries": 252,
     "blockedByContract": 28,
     "pendingConnectedAdapters": 0
   },
@@ -2257,6 +2257,44 @@
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "orders.create",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    {
+      "operationId": "convertLeadToCustomer",
+      "method": "POST",
+      "path": "/workflows/lead-customer-conversion/{leadId}",
+      "boundedContext": "LeadQualification",
+      "ownerModule": "leads",
+      "generatedClient": {
+        "file": "src/platform/api/generated/commercialApi.ts",
+        "className": "CommercialApiClient",
+        "method": "convertLeadToCustomer"
+      },
+      "httpAdapter": "src/workflows/lead-qualification/infrastructure/http/LeadQualificationHttpAdapter.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.application-composition",
+        "quality.commercial-authoritative-queries",
+        "quality.deal-api-boundary",
+        "quality.lead-qualification-api-boundary",
+        "quality.order-to-cash-api-contracts",
+        "quality.product-order-api-boundary",
+        "quality.quote-api-boundary",
+        "quality.relationship-domain-api-boundary",
+        "quality.shipping-returns-api-boundary",
+        "quality.support-api-boundary",
+        "quality.task-activity-api-boundary"
+      ],
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED_AT_ADMISSION_THEN_SEMANTIC_RECOVERY",
+      "requestBodySchema": "ConvertLeadToCustomerRequest",
+      "responseSchema": "LeadCustomerConversionResponse",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "leads.convert_to_customer",
       "resourceScope": "RESOURCE",
       "dataScope": "WORKSPACE"
     },
