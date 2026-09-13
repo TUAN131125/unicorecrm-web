@@ -27,6 +27,17 @@ import type { Lead } from "../../../src/modules/leads/domain/model/lead.types";
 import { InMemoryLeadRepository } from "../../../src/modules/leads/infrastructure/InMemoryLeadRepository";
 import { LEAD_MODULE_MANIFEST } from "../../../src/modules/leads/manifest";
 import { ModuleRegistry } from "../../../src/platform/module-registry/ModuleRegistry";
+import { editableLeadCustomerConversionFields, isLeadCustomerConversionSuppressed, retainOrCreateConversionIntent } from "../../../src/workflows/lead-customer-conversion/application/conversionIntent";
+
+const firstIntent = retainOrCreateConversionIntent(undefined, { subjectType: "CONTACT", subjectId: "contact-1", expectedVersion: 7 }, () => "key-1");
+const inProgressRetry = retainOrCreateConversionIntent(firstIntent, { subjectType: "CONTACT", subjectId: "contact-1", expectedVersion: 99 }, () => "must-not-run");
+assert.equal(inProgressRetry.idempotencyKey, "key-1", "in-progress retry retains the original idempotency key");
+assert.equal(inProgressRetry.expectedVersion, 7, "in-progress retry retains the original admission version");
+const changedSubject = retainOrCreateConversionIntent(firstIntent, { subjectType: "CONTACT", subjectId: "contact-2", expectedVersion: 8 }, () => "key-2");
+assert.equal(changedSubject.idempotencyKey, "key-2", "subject change creates a new conversion intent key");
+assert.equal(isLeadCustomerConversionSuppressed("customer-1"), true, "authoritative CustomerRef suppresses conversion");
+assert.equal(isLeadCustomerConversionSuppressed(undefined), false, "a Lead without CustomerRef may be converted");
+assert.deepEqual(editableLeadCustomerConversionFields, ["subjectType", "subjectId"], "conversion exposes no manual Lead version input");
 
 const seed: Lead[] = [
   createLead("lead-1", "0901000001", LeadWorkState.NEW, "unassigned", 90, "2026-07-04T00:00:00.000Z"),
@@ -145,4 +156,3 @@ function createLead(
     activities: [],
   };
 }
-

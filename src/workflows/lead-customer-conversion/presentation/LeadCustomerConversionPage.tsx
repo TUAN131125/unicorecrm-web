@@ -4,8 +4,8 @@ import { getLeadDetailResource, useLeadAuthoritativeResource } from "@/modules/l
 import { invalidateModuleQueries } from "@/shared/application";
 import { AuthoritativeQueryBoundary, formatApplicationError } from "@/shared/operations";
 import { convertLeadToCustomer, isLeadConversionInProgress, type LeadConversionOutcome } from "../infrastructure/convertLeadToCustomer";
+import { isLeadCustomerConversionSuppressed, retainOrCreateConversionIntent, type LeadCustomerConversionIntent as ConversionIntent } from "../application/conversionIntent";
 
-interface ConversionIntent { subjectType: "CONTACT" | "ORGANIZATION_ACCOUNT"; subjectId: string; expectedVersion: number; idempotencyKey: string }
 
 export const LeadCustomerConversionPage: React.FC = () => {
   const { leadId = "" } = useParams();
@@ -17,13 +17,14 @@ export const LeadCustomerConversionPage: React.FC = () => {
   const [error, setError] = useState<string>();
   const [result, setResult] = useState<LeadConversionOutcome>();
   const intent = useRef<ConversionIntent | undefined>(undefined);
+  const authoritativeCustomerRef = query.data?.customerRef;
 
   useEffect(() => { intent.current = undefined; setError(undefined); }, [subjectType, subjectId]);
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault(); const normalizedSubjectId = subjectId.trim(); const expectedVersion = query.data?.resourceVersion;
     if (expectedVersion === undefined) { setError("The authoritative Lead version is unavailable. Refresh the Lead and try again."); return; }
-    const current = intent.current ?? { subjectType, subjectId: normalizedSubjectId, expectedVersion, idempotencyKey: crypto.randomUUID() };
+    const current = retainOrCreateConversionIntent(intent.current, { subjectType, subjectId: normalizedSubjectId, expectedVersion }, () => crypto.randomUUID());
     intent.current = current; setBusy(true); setError(undefined);
     try {
       const response = await convertLeadToCustomer(leadId, current.expectedVersion, current.idempotencyKey, {
@@ -41,7 +42,7 @@ export const LeadCustomerConversionPage: React.FC = () => {
     <main className="mx-auto max-w-2xl space-y-6 p-6">
       <header><h1 className="text-2xl font-semibold">Convert Lead to Customer</h1>
         <p className="mt-2 text-sm text-muted-foreground">Associate this Lead with an authoritative existing CRM subject and create or reuse its exact-subject Customer. No Deal, Quote, Order, or Direct Sale is required or created.</p></header>
-      {query.data?.customerRef ? <section className="rounded-lg border p-5"><h2 className="font-semibold">Lead already converted</h2><p className="mt-2 text-sm">Customer: <Link className="underline" to={`/customers/${query.data.customerRef}`}>{query.data.customerRef}</Link></p></section>
+      {isLeadCustomerConversionSuppressed(authoritativeCustomerRef) ? <section className="rounded-lg border p-5"><h2 className="font-semibold">Lead already converted</h2><p className="mt-2 text-sm">Customer: <Link className="underline" to={`/customers/${authoritativeCustomerRef}`}>{authoritativeCustomerRef}</Link></p></section>
       : result ? <section className="rounded-lg border p-5" aria-live="polite"><h2 className="font-semibold">Conversion {result.result.customerResolution === "CREATED" ? "created a Customer" : "reused a Customer"}</h2><p className="mt-2 text-sm">Customer: <Link className="underline" to={`/customers/${result.result.customerId}`}>{result.result.customerId}</Link></p><p className="text-sm">Resolution: {result.result.customerResolution}</p><p className="text-sm">Outcome: {result.outcome}</p></section>
       : <form className="space-y-4 rounded-lg border p-5" onSubmit={submit}>
         <label className="block text-sm font-medium">Subject type<select className="mt-1 block w-full rounded border p-2" value={subjectType} onChange={e=>setSubjectType(e.target.value as ConversionIntent["subjectType"])}><option value="CONTACT">Contact (B2C)</option><option value="ORGANIZATION_ACCOUNT">Organization (B2B)</option></select></label>
