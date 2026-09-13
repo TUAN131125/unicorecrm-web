@@ -1,4 +1,6 @@
 import React from "react";
+import { getApplicationRuntimeMode } from "@/app/composition";
+import { ConnectedOutboundWebhooksView } from "./ConnectedOutboundWebhooksView";
 import {
   ArrowDownToLine,
   ArrowUpFromLine,
@@ -90,6 +92,10 @@ function samplePayload(item: WebhookDefinition): string {
 }
 
 export function WebhooksApiView() {
+  return getApplicationRuntimeMode() === "connected" ? <ConnectedOutboundWebhooksView /> : <DemoWebhooksApiView />;
+}
+
+function DemoWebhooksApiView() {
   const { locale } = useI18n();
   const text = (vi: string, en: string) => locale === "vi" ? vi : en;
   const canConfigure = useEffectiveAccess().can(CAPABILITIES.STUDIO_CONFIGURE);

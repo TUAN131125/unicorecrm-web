@@ -352,6 +352,118 @@ export const API_OPERATION_CATALOG = {
       "quality.identity-auth-api-boundary"
     ]
   },
+  "activateOutboundWebhookSubscription": {
+    "operationId": "activateOutboundWebhookSubscription",
+    "moduleId": "platform/integrations",
+    "boundedContext": "IntegrationConfiguration",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/outbound-webhooks/{subscriptionId}/activate",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "integration-configuration",
+      "file": "src/platform/api/generated/integrationConfigurationApi.ts",
+      "className": "IntegrationConfigurationApiClient",
+      "method": "activateOutboundWebhookSubscription"
+    },
+    "adapter": {
+      "file": "src/platform/api/runtime/configurationApiClients.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "EmptyCommand",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "IdempotencyKey",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "If-Match",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "subscriptionId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "OutboundWebhookMutationResponse",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "studio.configure",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "OPTIMISTIC_WHERE_RESOURCE_VERSION_EXISTS",
+      "audit": "IMMUTABLE_OWNER_AUDIT",
+      "transactionBoundary": "INTEGRATIONS_OWNER_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.studio-api-contract"
+    ]
+  },
   "activatePaymentPlan": {
     "operationId": "activatePaymentPlan",
     "moduleId": "payments",
@@ -2995,6 +3107,118 @@ export const API_OPERATION_CATALOG = {
       "quality.shipping-returns-api-boundary",
       "quality.support-api-boundary",
       "quality.task-activity-api-boundary"
+    ]
+  },
+  "archiveOutboundWebhookSubscription": {
+    "operationId": "archiveOutboundWebhookSubscription",
+    "moduleId": "platform/integrations",
+    "boundedContext": "IntegrationConfiguration",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/outbound-webhooks/{subscriptionId}/archive",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "integration-configuration",
+      "file": "src/platform/api/generated/integrationConfigurationApi.ts",
+      "className": "IntegrationConfigurationApiClient",
+      "method": "archiveOutboundWebhookSubscription"
+    },
+    "adapter": {
+      "file": "src/platform/api/runtime/configurationApiClients.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "EmptyCommand",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "IdempotencyKey",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "If-Match",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "subscriptionId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "OutboundWebhookMutationResponse",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "studio.configure",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "OPTIMISTIC_WHERE_RESOURCE_VERSION_EXISTS",
+      "audit": "IMMUTABLE_OWNER_AUDIT",
+      "transactionBoundary": "INTEGRATIONS_OWNER_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.studio-api-contract"
     ]
   },
   "archiveProduct": {
@@ -8859,6 +9083,96 @@ export const API_OPERATION_CATALOG = {
       "quality.task-activity-api-boundary"
     ]
   },
+  "createOutboundWebhookSubscription": {
+    "operationId": "createOutboundWebhookSubscription",
+    "moduleId": "platform/integrations",
+    "boundedContext": "IntegrationConfiguration",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/outbound-webhooks",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "integration-configuration",
+      "file": "src/platform/api/generated/integrationConfigurationApi.ts",
+      "className": "IntegrationConfigurationApiClient",
+      "method": "createOutboundWebhookSubscription"
+    },
+    "adapter": {
+      "file": "src/platform/api/runtime/configurationApiClients.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "CreateOutboundWebhookSubscriptionRequest",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "IdempotencyKey",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "OutboundWebhookMutationResponse",
+      "successStatus": "201"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "studio.configure",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "OPTIMISTIC_WHERE_RESOURCE_VERSION_EXISTS",
+      "audit": "IMMUTABLE_OWNER_AUDIT",
+      "transactionBoundary": "INTEGRATIONS_OWNER_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.studio-api-contract"
+    ]
+  },
   "createPaymentIntent": {
     "operationId": "createPaymentIntent",
     "moduleId": "payments",
@@ -12431,6 +12745,85 @@ export const API_OPERATION_CATALOG = {
       "quality.task-activity-api-boundary"
     ]
   },
+  "getIntegrationEventCatalog": {
+    "operationId": "getIntegrationEventCatalog",
+    "moduleId": "platform/integrations",
+    "boundedContext": "IntegrationConfiguration",
+    "kind": "QUERY",
+    "method": "GET",
+    "path": "/integration-event-catalog",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "integration-configuration",
+      "file": "src/platform/api/generated/integrationConfigurationApi.ts",
+      "className": "IntegrationConfigurationApiClient",
+      "method": "getIntegrationEventCatalog"
+    },
+    "adapter": {
+      "file": "src/platform/api/runtime/configurationApiClients.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "IntegrationEventCatalogResponse",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "studio.read",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "READ_ONLY",
+      "audit": "READ_AUDIT",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.studio-api-contract"
+    ]
+  },
   "getInvoice": {
     "operationId": "getInvoice",
     "moduleId": "invoices",
@@ -13503,6 +13896,96 @@ export const API_OPERATION_CATALOG = {
       "quality.shipping-returns-api-boundary",
       "quality.support-api-boundary",
       "quality.task-activity-api-boundary"
+    ]
+  },
+  "getOutboundWebhookSubscription": {
+    "operationId": "getOutboundWebhookSubscription",
+    "moduleId": "platform/integrations",
+    "boundedContext": "IntegrationConfiguration",
+    "kind": "QUERY",
+    "method": "GET",
+    "path": "/outbound-webhooks/{subscriptionId}",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "integration-configuration",
+      "file": "src/platform/api/generated/integrationConfigurationApi.ts",
+      "className": "IntegrationConfigurationApiClient",
+      "method": "getOutboundWebhookSubscription"
+    },
+    "adapter": {
+      "file": "src/platform/api/runtime/configurationApiClients.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "subscriptionId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "OutboundWebhookSubscription",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "studio.read",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "READ_ONLY",
+      "audit": "READ_AUDIT",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.studio-api-contract"
     ]
   },
   "getPaymentIntent": {
@@ -17756,6 +18239,175 @@ export const API_OPERATION_CATALOG = {
       "quality.task-activity-api-boundary"
     ]
   },
+  "listOutboundWebhookDeliveries": {
+    "operationId": "listOutboundWebhookDeliveries",
+    "moduleId": "platform/integrations",
+    "boundedContext": "IntegrationConfiguration",
+    "kind": "QUERY",
+    "method": "GET",
+    "path": "/outbound-webhook-deliveries",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "integration-configuration",
+      "file": "src/platform/api/generated/integrationConfigurationApi.ts",
+      "className": "IntegrationConfigurationApiClient",
+      "method": "listOutboundWebhookDeliveries"
+    },
+    "adapter": {
+      "file": "src/platform/api/runtime/configurationApiClients.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "subscriptionId",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "OutboundWebhookDeliveryList",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "studio.read",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "READ_ONLY",
+      "audit": "READ_AUDIT",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.studio-api-contract"
+    ]
+  },
+  "listOutboundWebhookSubscriptions": {
+    "operationId": "listOutboundWebhookSubscriptions",
+    "moduleId": "platform/integrations",
+    "boundedContext": "IntegrationConfiguration",
+    "kind": "QUERY",
+    "method": "GET",
+    "path": "/outbound-webhooks",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "integration-configuration",
+      "file": "src/platform/api/generated/integrationConfigurationApi.ts",
+      "className": "IntegrationConfigurationApiClient",
+      "method": "listOutboundWebhookSubscriptions"
+    },
+    "adapter": {
+      "file": "src/platform/api/runtime/configurationApiClients.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "OutboundWebhookSubscriptionList",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "studio.read",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "READ_ONLY",
+      "audit": "READ_AUDIT",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.studio-api-contract"
+    ]
+  },
   "listPaymentAllocations": {
     "operationId": "listPaymentAllocations",
     "moduleId": "payments",
@@ -20894,6 +21546,118 @@ export const API_OPERATION_CATALOG = {
       "quality.api-contract",
       "quality.studio-api-contract",
       "quality.studio-core-api-boundary"
+    ]
+  },
+  "pauseOutboundWebhookSubscription": {
+    "operationId": "pauseOutboundWebhookSubscription",
+    "moduleId": "platform/integrations",
+    "boundedContext": "IntegrationConfiguration",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/outbound-webhooks/{subscriptionId}/pause",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "integration-configuration",
+      "file": "src/platform/api/generated/integrationConfigurationApi.ts",
+      "className": "IntegrationConfigurationApiClient",
+      "method": "pauseOutboundWebhookSubscription"
+    },
+    "adapter": {
+      "file": "src/platform/api/runtime/configurationApiClients.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "EmptyCommand",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "IdempotencyKey",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "If-Match",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "subscriptionId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "OutboundWebhookMutationResponse",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "studio.configure",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "OPTIMISTIC_WHERE_RESOURCE_VERSION_EXISTS",
+      "audit": "IMMUTABLE_OWNER_AUDIT",
+      "transactionBoundary": "INTEGRATIONS_OWNER_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.studio-api-contract"
     ]
   },
   "previewPaymentPlan": {
@@ -24290,6 +25054,107 @@ export const API_OPERATION_CATALOG = {
       "quality.write-boundary-authorization"
     ]
   },
+  "replayOutboundWebhookDelivery": {
+    "operationId": "replayOutboundWebhookDelivery",
+    "moduleId": "platform/integrations",
+    "boundedContext": "IntegrationConfiguration",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/outbound-webhook-deliveries/{deliveryId}/replay",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "integration-configuration",
+      "file": "src/platform/api/generated/integrationConfigurationApi.ts",
+      "className": "IntegrationConfigurationApiClient",
+      "method": "replayOutboundWebhookDelivery"
+    },
+    "adapter": {
+      "file": "src/platform/api/runtime/configurationApiClients.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "EmptyCommand",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "IdempotencyKey",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "deliveryId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "OutboundWebhookDelivery",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "studio.configure",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "OPTIMISTIC_WHERE_RESOURCE_VERSION_EXISTS",
+      "audit": "IMMUTABLE_OWNER_AUDIT",
+      "transactionBoundary": "INTEGRATIONS_OWNER_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.studio-api-contract"
+    ]
+  },
   "repriceOrderDraft": {
     "operationId": "repriceOrderDraft",
     "moduleId": "orders",
@@ -25934,6 +26799,118 @@ export const API_OPERATION_CATALOG = {
       "quality.task-activity-api-boundary"
     ]
   },
+  "resumeOutboundWebhookSubscription": {
+    "operationId": "resumeOutboundWebhookSubscription",
+    "moduleId": "platform/integrations",
+    "boundedContext": "IntegrationConfiguration",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/outbound-webhooks/{subscriptionId}/resume",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "integration-configuration",
+      "file": "src/platform/api/generated/integrationConfigurationApi.ts",
+      "className": "IntegrationConfigurationApiClient",
+      "method": "resumeOutboundWebhookSubscription"
+    },
+    "adapter": {
+      "file": "src/platform/api/runtime/configurationApiClients.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "EmptyCommand",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "IdempotencyKey",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "If-Match",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "subscriptionId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "OutboundWebhookMutationResponse",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "studio.configure",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "OPTIMISTIC_WHERE_RESOURCE_VERSION_EXISTS",
+      "audit": "IMMUTABLE_OWNER_AUDIT",
+      "transactionBoundary": "INTEGRATIONS_OWNER_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.studio-api-contract"
+    ]
+  },
   "retryInvoiceIssue": {
     "operationId": "retryInvoiceIssue",
     "moduleId": "invoices",
@@ -26960,6 +27937,118 @@ export const API_OPERATION_CATALOG = {
       "quality.access-governance-api-boundary",
       "quality.api-contract",
       "quality.write-boundary-authorization"
+    ]
+  },
+  "rotateOutboundWebhookSecret": {
+    "operationId": "rotateOutboundWebhookSecret",
+    "moduleId": "platform/integrations",
+    "boundedContext": "IntegrationConfiguration",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/outbound-webhooks/{subscriptionId}/rotate-secret",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "integration-configuration",
+      "file": "src/platform/api/generated/integrationConfigurationApi.ts",
+      "className": "IntegrationConfigurationApiClient",
+      "method": "rotateOutboundWebhookSecret"
+    },
+    "adapter": {
+      "file": "src/platform/api/runtime/configurationApiClients.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "EmptyCommand",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "IdempotencyKey",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "If-Match",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "subscriptionId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "OutboundWebhookMutationResponse",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "studio.configure",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "OPTIMISTIC_WHERE_RESOURCE_VERSION_EXISTS",
+      "audit": "IMMUTABLE_OWNER_AUDIT",
+      "transactionBoundary": "INTEGRATIONS_OWNER_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.studio-api-contract"
     ]
   },
   "saveInvoiceDraft": {
@@ -29423,6 +30512,118 @@ export const API_OPERATION_CATALOG = {
       "quality.shipping-returns-api-boundary",
       "quality.support-api-boundary",
       "quality.task-activity-api-boundary"
+    ]
+  },
+  "updateOutboundWebhookSubscription": {
+    "operationId": "updateOutboundWebhookSubscription",
+    "moduleId": "platform/integrations",
+    "boundedContext": "IntegrationConfiguration",
+    "kind": "COMMAND",
+    "method": "PUT",
+    "path": "/outbound-webhooks/{subscriptionId}",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "integration-configuration",
+      "file": "src/platform/api/generated/integrationConfigurationApi.ts",
+      "className": "IntegrationConfigurationApiClient",
+      "method": "updateOutboundWebhookSubscription"
+    },
+    "adapter": {
+      "file": "src/platform/api/runtime/configurationApiClients.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "UpdateOutboundWebhookSubscriptionRequest",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "IdempotencyKey",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "If-Match",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "subscriptionId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "OutboundWebhookMutationResponse",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "studio.configure",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "OPTIMISTIC_WHERE_RESOURCE_VERSION_EXISTS",
+      "audit": "IMMUTABLE_OWNER_AUDIT",
+      "transactionBoundary": "INTEGRATIONS_OWNER_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.studio-api-contract"
     ]
   },
   "updateProductConfigurationType": {

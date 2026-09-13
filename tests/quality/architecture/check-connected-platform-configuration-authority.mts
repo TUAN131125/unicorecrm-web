@@ -200,8 +200,8 @@ const guardedRuntimes = sourceFiles
   .filter((file) => file.startsWith("src/platform/"))
   .filter((file) => sourceOf(file).includes("connectedConfigurationAvailability"));
 assert.ok(
-  guardedRuntimes.length >= 3,
-  "At least the integration, developer-configuration and CRM configuration runtimes must consult the availability "
+  guardedRuntimes.length >= 2,
+  "At least the integration and CRM configuration runtimes must consult the availability "
     + "module.",
 );
 

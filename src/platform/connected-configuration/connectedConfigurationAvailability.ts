@@ -26,7 +26,6 @@ import { isBusinessOperationUnavailable } from "@/shared/application";
 export const INTEGRATION_CONNECTION_SAVE_OPERATION = "Integration connection save";
 export const INTEGRATION_CONNECTION_DISCONNECT_OPERATION = "Integration connection disconnect";
 export const INTEGRATION_CONNECTION_VERIFY_OPERATION = "Integration connection verify";
-export const DEVELOPER_WEBHOOK_SAVE_OPERATION = "Developer webhook configuration save";
 export const CRM_OBJECT_SCHEMA_SAVE_OPERATION = "CRM object schema save";
 
 /** Every platform configuration write the connected runtime cannot perform authoritatively. */
@@ -34,7 +33,6 @@ export const CONNECTED_UNAVAILABLE_CONFIGURATION_OPERATIONS = [
   INTEGRATION_CONNECTION_SAVE_OPERATION,
   INTEGRATION_CONNECTION_DISCONNECT_OPERATION,
   INTEGRATION_CONNECTION_VERIFY_OPERATION,
-  DEVELOPER_WEBHOOK_SAVE_OPERATION,
   CRM_OBJECT_SCHEMA_SAVE_OPERATION,
 ] as const;
 
@@ -72,7 +70,7 @@ export function isIntegrationConfigurationWriteUnavailable(): boolean {
 
 /** True when developer webhook configuration cannot be written authoritatively. */
 export function isDeveloperWebhookSaveUnavailable(): boolean {
-  return isConfigurationOperationUnavailable(DEVELOPER_WEBHOOK_SAVE_OPERATION);
+  return false;
 }
 
 /** True when CRM object schemas cannot be written authoritatively. */

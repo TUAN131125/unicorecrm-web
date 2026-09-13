@@ -91,4 +91,17 @@ for (const operationId of ["getWorkspaceConfiguration", "updateWorkspaceBusiness
   assert.ok(adapter.includes(operationId), `StudioCoreHttpAdapter must own ${operationId}`);
 }
 assert.equal(existsSync(join(root, "src/workspaces/studio/infrastructure/HttpStudioConfigurationGateway.ts")), false);
+const outbound = readFileSync(join(root, "src/workspaces/studio/presentation/views/ConnectedOutboundWebhooksView.tsx"), "utf8");
+const outboundApi = readFileSync(join(root, "src/workspaces/studio/infrastructure/ConnectedOutboundWebhookApi.ts"), "utf8");
+for (const operationId of ["getIntegrationEventCatalog", "listOutboundWebhookSubscriptions", "createOutboundWebhookSubscription", "updateOutboundWebhookSubscription", "activateOutboundWebhookSubscription", "pauseOutboundWebhookSubscription", "resumeOutboundWebhookSubscription", "archiveOutboundWebhookSubscription", "rotateOutboundWebhookSecret", "listOutboundWebhookDeliveries", "replayOutboundWebhookDelivery"]) {
+  assert.ok((outbound + outboundApi).includes(operationId), `Connected outbound webhook boundary must use generated ${operationId}`);
+}
+assert.equal(outbound.includes("saveDeveloperWebhooks"), false, "Connected outbound mode must not persist to the browser repository");
+assert.equal(outbound.includes("webhook_${crypto.randomUUID()}"), false, "Connected outbound mode must use the backend subscription id");
+assert.equal(outbound.includes("localStorage"), false, "Connected outbound failures must not fall back to browser storage");
+assert.ok(outbound.includes('item.status!=="DRAFT"&&item.status!=="PAUSED"'), "Editing must be restricted to DRAFT and PAUSED subscriptions");
+assert.ok((outbound.match(/await load\(\)/gu)?.length ?? 0) >= 4, "Connected mutations must refetch authoritative backend state");
+assert.ok(outbound.includes('typeof result.signingSecret==="string"'), "One-time create/rotate secrets must come only from mutation responses");
+const webhooksView = readFileSync(join(root, "src/workspaces/studio/presentation/views/WebhooksApiView.tsx"), "utf8");
+assert.ok(webhooksView.includes('getApplicationRuntimeMode() === "connected" ? <ConnectedOutboundWebhooksView />'), "Connected mode must fail closed into the generated-client view");
 console.log(`Studio API contract: PASS (${operationIds.size} operations; ${ready} ready; ${blocked} blocked).`);

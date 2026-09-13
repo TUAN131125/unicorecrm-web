@@ -3,7 +3,7 @@
   "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
   "info": {
     "title": "UNICORE CRM API Contract — Phase 18 Shipping & Returns",
-    "version": "0.23.20-contract.0",
+    "version": "0.24.0-contract.0",
     "description": "Canonical production HTTP contract through Phase 18. OpenAPI is the sole production HTTP authority. Shipping booking, carrier selection, tracking, delivery and COD evidence plus Return eligibility, receipt, inspection and resolution are server-backed with decimal-string Money, idempotency, concurrency and backend-owned cross-module sagas. Operations marked x-contract-status=BLOCKED MUST NOT be implemented or invoked."
   },
   "servers": [
@@ -49362,6 +49362,2152 @@
         },
         "x-decision-id": "DEC-WF-001;DEC-WF-002;DEC-WF-003"
       }
+    },
+    "/integration-event-catalog": {
+      "get": {
+        "operationId": "getIntegrationEventCatalog",
+        "tags": [
+          "IntegrationConfiguration"
+        ],
+        "summary": "get integration event catalog",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IntegrationEventCatalogResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "integrations",
+        "x-required-capability": "studio.read",
+        "x-resource-scope": "WORKSPACE",
+        "x-data-scope": "WORKSPACE",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-idempotency-policy": "NOT_APPLICABLE",
+        "x-concurrency-policy": "READ_ONLY",
+        "x-audit-requirement": "READ_AUDIT",
+        "x-event-outbox-expectation": "NOT_APPLICABLE",
+        "x-transaction-boundary": "READ_ONLY",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "RESOURCE_VERSION_CONFLICT",
+          "IDEMPOTENCY_KEY_REUSED",
+          "LIFECYCLE_CONFLICT"
+        ]
+      }
+    },
+    "/outbound-webhooks": {
+      "get": {
+        "operationId": "listOutboundWebhookSubscriptions",
+        "tags": [
+          "IntegrationConfiguration"
+        ],
+        "summary": "list outbound webhook subscriptions",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutboundWebhookSubscriptionList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "integrations",
+        "x-required-capability": "studio.read",
+        "x-resource-scope": "WORKSPACE",
+        "x-data-scope": "WORKSPACE",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-idempotency-policy": "NOT_APPLICABLE",
+        "x-concurrency-policy": "READ_ONLY",
+        "x-audit-requirement": "READ_AUDIT",
+        "x-event-outbox-expectation": "NOT_APPLICABLE",
+        "x-transaction-boundary": "READ_ONLY",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "RESOURCE_VERSION_CONFLICT",
+          "IDEMPOTENCY_KEY_REUSED",
+          "LIFECYCLE_CONFLICT"
+        ]
+      },
+      "post": {
+        "operationId": "createOutboundWebhookSubscription",
+        "tags": [
+          "IntegrationConfiguration"
+        ],
+        "summary": "create outbound webhook subscription",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateOutboundWebhookSubscriptionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutboundWebhookMutationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "integrations",
+        "x-required-capability": "studio.configure",
+        "x-resource-scope": "WORKSPACE",
+        "x-data-scope": "WORKSPACE",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "OPTIMISTIC_WHERE_RESOURCE_VERSION_EXISTS",
+        "x-audit-requirement": "IMMUTABLE_OWNER_AUDIT",
+        "x-event-outbox-expectation": "NOT_APPLICABLE",
+        "x-transaction-boundary": "INTEGRATIONS_OWNER_TRANSACTION",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "RESOURCE_VERSION_CONFLICT",
+          "IDEMPOTENCY_KEY_REUSED",
+          "LIFECYCLE_CONFLICT"
+        ]
+      }
+    },
+    "/outbound-webhooks/{subscriptionId}": {
+      "get": {
+        "operationId": "getOutboundWebhookSubscription",
+        "tags": [
+          "IntegrationConfiguration"
+        ],
+        "summary": "get outbound webhook subscription",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "name": "subscriptionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutboundWebhookSubscription"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "integrations",
+        "x-required-capability": "studio.read",
+        "x-resource-scope": "WORKSPACE",
+        "x-data-scope": "WORKSPACE",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-idempotency-policy": "NOT_APPLICABLE",
+        "x-concurrency-policy": "READ_ONLY",
+        "x-audit-requirement": "READ_AUDIT",
+        "x-event-outbox-expectation": "NOT_APPLICABLE",
+        "x-transaction-boundary": "READ_ONLY",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "RESOURCE_VERSION_CONFLICT",
+          "IDEMPOTENCY_KEY_REUSED",
+          "LIFECYCLE_CONFLICT"
+        ]
+      },
+      "put": {
+        "operationId": "updateOutboundWebhookSubscription",
+        "tags": [
+          "IntegrationConfiguration"
+        ],
+        "summary": "update outbound webhook subscription",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
+          },
+          {
+            "name": "subscriptionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateOutboundWebhookSubscriptionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "headers": {
+              "ETag": {
+                "required": true,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutboundWebhookMutationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "integrations",
+        "x-required-capability": "studio.configure",
+        "x-resource-scope": "WORKSPACE",
+        "x-data-scope": "WORKSPACE",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "OPTIMISTIC_WHERE_RESOURCE_VERSION_EXISTS",
+        "x-audit-requirement": "IMMUTABLE_OWNER_AUDIT",
+        "x-event-outbox-expectation": "NOT_APPLICABLE",
+        "x-transaction-boundary": "INTEGRATIONS_OWNER_TRANSACTION",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "RESOURCE_VERSION_CONFLICT",
+          "IDEMPOTENCY_KEY_REUSED",
+          "LIFECYCLE_CONFLICT"
+        ]
+      }
+    },
+    "/outbound-webhooks/{subscriptionId}/activate": {
+      "post": {
+        "operationId": "activateOutboundWebhookSubscription",
+        "tags": [
+          "IntegrationConfiguration"
+        ],
+        "summary": "activate outbound webhook subscription",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
+          },
+          {
+            "name": "subscriptionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "headers": {
+              "ETag": {
+                "required": true,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutboundWebhookMutationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "integrations",
+        "x-required-capability": "studio.configure",
+        "x-resource-scope": "WORKSPACE",
+        "x-data-scope": "WORKSPACE",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "OPTIMISTIC_WHERE_RESOURCE_VERSION_EXISTS",
+        "x-audit-requirement": "IMMUTABLE_OWNER_AUDIT",
+        "x-event-outbox-expectation": "NOT_APPLICABLE",
+        "x-transaction-boundary": "INTEGRATIONS_OWNER_TRANSACTION",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "RESOURCE_VERSION_CONFLICT",
+          "IDEMPOTENCY_KEY_REUSED",
+          "LIFECYCLE_CONFLICT"
+        ]
+      }
+    },
+    "/outbound-webhooks/{subscriptionId}/pause": {
+      "post": {
+        "operationId": "pauseOutboundWebhookSubscription",
+        "tags": [
+          "IntegrationConfiguration"
+        ],
+        "summary": "pause outbound webhook subscription",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
+          },
+          {
+            "name": "subscriptionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "headers": {
+              "ETag": {
+                "required": true,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutboundWebhookMutationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "integrations",
+        "x-required-capability": "studio.configure",
+        "x-resource-scope": "WORKSPACE",
+        "x-data-scope": "WORKSPACE",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "OPTIMISTIC_WHERE_RESOURCE_VERSION_EXISTS",
+        "x-audit-requirement": "IMMUTABLE_OWNER_AUDIT",
+        "x-event-outbox-expectation": "NOT_APPLICABLE",
+        "x-transaction-boundary": "INTEGRATIONS_OWNER_TRANSACTION",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "RESOURCE_VERSION_CONFLICT",
+          "IDEMPOTENCY_KEY_REUSED",
+          "LIFECYCLE_CONFLICT"
+        ]
+      }
+    },
+    "/outbound-webhooks/{subscriptionId}/resume": {
+      "post": {
+        "operationId": "resumeOutboundWebhookSubscription",
+        "tags": [
+          "IntegrationConfiguration"
+        ],
+        "summary": "resume outbound webhook subscription",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
+          },
+          {
+            "name": "subscriptionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "headers": {
+              "ETag": {
+                "required": true,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutboundWebhookMutationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "integrations",
+        "x-required-capability": "studio.configure",
+        "x-resource-scope": "WORKSPACE",
+        "x-data-scope": "WORKSPACE",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "OPTIMISTIC_WHERE_RESOURCE_VERSION_EXISTS",
+        "x-audit-requirement": "IMMUTABLE_OWNER_AUDIT",
+        "x-event-outbox-expectation": "NOT_APPLICABLE",
+        "x-transaction-boundary": "INTEGRATIONS_OWNER_TRANSACTION",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "RESOURCE_VERSION_CONFLICT",
+          "IDEMPOTENCY_KEY_REUSED",
+          "LIFECYCLE_CONFLICT"
+        ]
+      }
+    },
+    "/outbound-webhooks/{subscriptionId}/archive": {
+      "post": {
+        "operationId": "archiveOutboundWebhookSubscription",
+        "tags": [
+          "IntegrationConfiguration"
+        ],
+        "summary": "archive outbound webhook subscription",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
+          },
+          {
+            "name": "subscriptionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "headers": {
+              "ETag": {
+                "required": true,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutboundWebhookMutationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "integrations",
+        "x-required-capability": "studio.configure",
+        "x-resource-scope": "WORKSPACE",
+        "x-data-scope": "WORKSPACE",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "OPTIMISTIC_WHERE_RESOURCE_VERSION_EXISTS",
+        "x-audit-requirement": "IMMUTABLE_OWNER_AUDIT",
+        "x-event-outbox-expectation": "NOT_APPLICABLE",
+        "x-transaction-boundary": "INTEGRATIONS_OWNER_TRANSACTION",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "RESOURCE_VERSION_CONFLICT",
+          "IDEMPOTENCY_KEY_REUSED",
+          "LIFECYCLE_CONFLICT"
+        ]
+      }
+    },
+    "/outbound-webhooks/{subscriptionId}/rotate-secret": {
+      "post": {
+        "operationId": "rotateOutboundWebhookSecret",
+        "tags": [
+          "IntegrationConfiguration"
+        ],
+        "summary": "rotate outbound webhook secret",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
+          },
+          {
+            "name": "subscriptionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "headers": {
+              "ETag": {
+                "required": true,
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutboundWebhookMutationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "integrations",
+        "x-required-capability": "studio.configure",
+        "x-resource-scope": "WORKSPACE",
+        "x-data-scope": "WORKSPACE",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "OPTIMISTIC_WHERE_RESOURCE_VERSION_EXISTS",
+        "x-audit-requirement": "IMMUTABLE_OWNER_AUDIT",
+        "x-event-outbox-expectation": "NOT_APPLICABLE",
+        "x-transaction-boundary": "INTEGRATIONS_OWNER_TRANSACTION",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "RESOURCE_VERSION_CONFLICT",
+          "IDEMPOTENCY_KEY_REUSED",
+          "LIFECYCLE_CONFLICT"
+        ]
+      }
+    },
+    "/outbound-webhook-deliveries": {
+      "get": {
+        "operationId": "listOutboundWebhookDeliveries",
+        "tags": [
+          "IntegrationConfiguration"
+        ],
+        "summary": "list outbound webhook deliveries",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "name": "subscriptionId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutboundWebhookDeliveryList"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "integrations",
+        "x-required-capability": "studio.read",
+        "x-resource-scope": "WORKSPACE",
+        "x-data-scope": "WORKSPACE",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-idempotency-policy": "NOT_APPLICABLE",
+        "x-concurrency-policy": "READ_ONLY",
+        "x-audit-requirement": "READ_AUDIT",
+        "x-event-outbox-expectation": "NOT_APPLICABLE",
+        "x-transaction-boundary": "READ_ONLY",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "RESOURCE_VERSION_CONFLICT",
+          "IDEMPOTENCY_KEY_REUSED",
+          "LIFECYCLE_CONFLICT"
+        ]
+      }
+    },
+    "/outbound-webhook-deliveries/{deliveryId}/replay": {
+      "post": {
+        "operationId": "replayOutboundWebhookDelivery",
+        "tags": [
+          "IntegrationConfiguration"
+        ],
+        "summary": "replay outbound webhook delivery",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "name": "deliveryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyCommand"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OutboundWebhookDelivery"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "integrations",
+        "x-required-capability": "studio.configure",
+        "x-resource-scope": "WORKSPACE",
+        "x-data-scope": "WORKSPACE",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "OPTIMISTIC_WHERE_RESOURCE_VERSION_EXISTS",
+        "x-audit-requirement": "IMMUTABLE_OWNER_AUDIT",
+        "x-event-outbox-expectation": "NOT_APPLICABLE",
+        "x-transaction-boundary": "INTEGRATIONS_OWNER_TRANSACTION",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "RESOURCE_VERSION_CONFLICT",
+          "IDEMPOTENCY_KEY_REUSED",
+          "LIFECYCLE_CONFLICT"
+        ]
+      }
     }
   },
   "components": {
@@ -72661,6 +74807,286 @@
           "result": {
             "$ref": "#/components/schemas/LeadCustomerConversionResult"
           }
+        }
+      },
+      "EmptyCommand": {
+        "type": "object",
+        "additionalProperties": false
+      },
+      "IntegrationEventCatalogItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "eventType",
+          "schemaVersion",
+          "name",
+          "description",
+          "sourceCategory"
+        ],
+        "properties": {
+          "eventType": {
+            "type": "string"
+          },
+          "schemaVersion": {
+            "type": "integer"
+          },
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "sourceCategory": {
+            "type": "string"
+          }
+        }
+      },
+      "IntegrationEventCatalogResponse": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/IntegrationEventCatalogItem"
+        }
+      },
+      "OutboundWebhookSubscription": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "subscriptionId",
+          "workspaceId",
+          "name",
+          "eventType",
+          "endpointUrl",
+          "status",
+          "version",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "subscriptionId": {
+            "type": "string"
+          },
+          "workspaceId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "eventType": {
+            "type": "string"
+          },
+          "endpointUrl": {
+            "type": "string",
+            "format": "uri"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "ACTIVE",
+              "PAUSED",
+              "ARCHIVED"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "archivedAt": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "OutboundWebhookSubscriptionList": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/OutboundWebhookSubscription"
+        }
+      },
+      "CreateOutboundWebhookSubscriptionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "eventType",
+          "endpointUrl"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "eventType": {
+            "type": "string"
+          },
+          "endpointUrl": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "UpdateOutboundWebhookSubscriptionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "eventType",
+          "endpointUrl"
+        ],
+        "properties": {
+          "name": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "eventType": {
+            "type": "string"
+          },
+          "endpointUrl": {
+            "type": "string",
+            "format": "uri"
+          }
+        }
+      },
+      "OutboundWebhookMutationResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "subscription",
+          "outcome"
+        ],
+        "properties": {
+          "subscription": {
+            "$ref": "#/components/schemas/OutboundWebhookSubscription"
+          },
+          "outcome": {
+            "type": "string"
+          },
+          "signingSecret": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "OutboundWebhookDelivery": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "deliveryId",
+          "subscriptionId",
+          "eventId",
+          "eventType",
+          "status",
+          "attemptCount",
+          "nextAttemptAt",
+          "createdAt",
+          "replayable"
+        ],
+        "properties": {
+          "deliveryId": {
+            "type": "string"
+          },
+          "subscriptionId": {
+            "type": "string"
+          },
+          "eventId": {
+            "type": "string"
+          },
+          "eventType": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "PENDING",
+              "IN_FLIGHT",
+              "RETRY_SCHEDULED",
+              "SUCCEEDED",
+              "DEAD_LETTER"
+            ]
+          },
+          "attemptCount": {
+            "type": "integer"
+          },
+          "nextAttemptAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastHttpStatus": {
+            "oneOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lastErrorCode": {
+            "oneOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "succeededAt": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "deadLetteredAt": {
+            "oneOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "replayable": {
+            "type": "boolean"
+          }
+        }
+      },
+      "OutboundWebhookDeliveryList": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/OutboundWebhookDelivery"
         }
       }
     }

@@ -2,9 +2,9 @@
   "schemaVersion": 2,
   "generatorVersion": 17,
   "openapiVersion": "3.1.0",
-  "contractVersion": "0.23.20-contract.0",
+  "contractVersion": "0.24.0-contract.0",
   "specPath": "docs/api/openapi.json",
-  "specSha256": "0fc737fc3945bebe495632d08299b78cf77abbbbf78c4ba4a1a797eb9e217fd3",
+  "specSha256": "08572c439173da5ecd22c957a04458c52e5150d147465e8deb417fe5745f6d03",
   "ownershipPath": "scripts/api/openapi/client-ownership.json",
   "coverageLedgerPath": "docs/api/operation-coverage-ledger.json",
   "breakingBaselinePath": "docs/api/openapi-breaking-baseline.json",
@@ -162,7 +162,7 @@
       "output": "src/platform/api/generated/integrationConfigurationApi.ts",
       "className": "IntegrationConfigurationApiClient",
       "requestOptionsName": "IntegrationConfigurationRequestOptions",
-      "operationCount": 6
+      "operationCount": 18
     }
   ],
   "operations": [
@@ -207,6 +207,20 @@
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "identity.invitation.accept"
+    },
+    {
+      "operationId": "activateOutboundWebhookSubscription",
+      "method": "POST",
+      "path": "/outbound-webhooks/{subscriptionId}/activate",
+      "boundedContext": "IntegrationConfiguration",
+      "ownerModule": "platform/integrations",
+      "generatedClientId": "integration-configuration",
+      "generatedMethod": "activateOutboundWebhookSubscription",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "OPTIMISTIC_WHERE_RESOURCE_VERSION_EXISTS",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "studio.configure"
     },
     {
       "operationId": "activatePaymentPlan",
@@ -529,6 +543,20 @@
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "organizations.delete"
+    },
+    {
+      "operationId": "archiveOutboundWebhookSubscription",
+      "method": "POST",
+      "path": "/outbound-webhooks/{subscriptionId}/archive",
+      "boundedContext": "IntegrationConfiguration",
+      "ownerModule": "platform/integrations",
+      "generatedClientId": "integration-configuration",
+      "generatedMethod": "archiveOutboundWebhookSubscription",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "OPTIMISTIC_WHERE_RESOURCE_VERSION_EXISTS",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "studio.configure"
     },
     {
       "operationId": "archiveProduct",
@@ -1259,6 +1287,20 @@
       "requiredCapability": "organizations.create"
     },
     {
+      "operationId": "createOutboundWebhookSubscription",
+      "method": "POST",
+      "path": "/outbound-webhooks",
+      "boundedContext": "IntegrationConfiguration",
+      "ownerModule": "platform/integrations",
+      "generatedClientId": "integration-configuration",
+      "generatedMethod": "createOutboundWebhookSubscription",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "OPTIMISTIC_WHERE_RESOURCE_VERSION_EXISTS",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "studio.configure"
+    },
+    {
       "operationId": "createPaymentIntent",
       "method": "POST",
       "path": "/payment-intents",
@@ -1749,6 +1791,20 @@
       "requiredCapability": "deals.read"
     },
     {
+      "operationId": "getIntegrationEventCatalog",
+      "method": "GET",
+      "path": "/integration-event-catalog",
+      "boundedContext": "IntegrationConfiguration",
+      "ownerModule": "platform/integrations",
+      "generatedClientId": "integration-configuration",
+      "generatedMethod": "getIntegrationEventCatalog",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "READ_ONLY",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "studio.read"
+    },
+    {
       "operationId": "getInvoice",
       "method": "GET",
       "path": "/invoices/{invoiceId}",
@@ -1901,6 +1957,20 @@
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "organizations.read"
+    },
+    {
+      "operationId": "getOutboundWebhookSubscription",
+      "method": "GET",
+      "path": "/outbound-webhooks/{subscriptionId}",
+      "boundedContext": "IntegrationConfiguration",
+      "ownerModule": "platform/integrations",
+      "generatedClientId": "integration-configuration",
+      "generatedMethod": "getOutboundWebhookSubscription",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "READ_ONLY",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "studio.read"
     },
     {
       "operationId": "getPaymentIntent",
@@ -2477,6 +2547,34 @@
       "requiredCapability": "organizations.read"
     },
     {
+      "operationId": "listOutboundWebhookDeliveries",
+      "method": "GET",
+      "path": "/outbound-webhook-deliveries",
+      "boundedContext": "IntegrationConfiguration",
+      "ownerModule": "platform/integrations",
+      "generatedClientId": "integration-configuration",
+      "generatedMethod": "listOutboundWebhookDeliveries",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "READ_ONLY",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "studio.read"
+    },
+    {
+      "operationId": "listOutboundWebhookSubscriptions",
+      "method": "GET",
+      "path": "/outbound-webhooks",
+      "boundedContext": "IntegrationConfiguration",
+      "ownerModule": "platform/integrations",
+      "generatedClientId": "integration-configuration",
+      "generatedMethod": "listOutboundWebhookSubscriptions",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "READ_ONLY",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "studio.read"
+    },
+    {
       "operationId": "listPaymentAllocations",
       "method": "GET",
       "path": "/payment-allocations",
@@ -2864,6 +2962,20 @@
       "generatedMethod": "openStudioQuickSetup",
       "idempotencyPolicy": "REQUIRED",
       "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "studio.configure"
+    },
+    {
+      "operationId": "pauseOutboundWebhookSubscription",
+      "method": "POST",
+      "path": "/outbound-webhooks/{subscriptionId}/pause",
+      "boundedContext": "IntegrationConfiguration",
+      "ownerModule": "platform/integrations",
+      "generatedClientId": "integration-configuration",
+      "generatedMethod": "pauseOutboundWebhookSubscription",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "OPTIMISTIC_WHERE_RESOURCE_VERSION_EXISTS",
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "studio.configure"
@@ -3303,6 +3415,20 @@
       "requiredCapability": "access.configure"
     },
     {
+      "operationId": "replayOutboundWebhookDelivery",
+      "method": "POST",
+      "path": "/outbound-webhook-deliveries/{deliveryId}/replay",
+      "boundedContext": "IntegrationConfiguration",
+      "ownerModule": "platform/integrations",
+      "generatedClientId": "integration-configuration",
+      "generatedMethod": "replayOutboundWebhookDelivery",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "OPTIMISTIC_WHERE_RESOURCE_VERSION_EXISTS",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "studio.configure"
+    },
+    {
       "operationId": "repriceOrderDraft",
       "method": "POST",
       "path": "/orders/{orderId}/reprice",
@@ -3513,6 +3639,20 @@
       "requiredCapability": "products.edit"
     },
     {
+      "operationId": "resumeOutboundWebhookSubscription",
+      "method": "POST",
+      "path": "/outbound-webhooks/{subscriptionId}/resume",
+      "boundedContext": "IntegrationConfiguration",
+      "ownerModule": "platform/integrations",
+      "generatedClientId": "integration-configuration",
+      "generatedMethod": "resumeOutboundWebhookSubscription",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "OPTIMISTIC_WHERE_RESOURCE_VERSION_EXISTS",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "studio.configure"
+    },
+    {
       "operationId": "retryInvoiceIssue",
       "method": "POST",
       "path": "/invoices/{invoiceId}/retry-issue",
@@ -3637,6 +3777,20 @@
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "access.configure"
+    },
+    {
+      "operationId": "rotateOutboundWebhookSecret",
+      "method": "POST",
+      "path": "/outbound-webhooks/{subscriptionId}/rotate-secret",
+      "boundedContext": "IntegrationConfiguration",
+      "ownerModule": "platform/integrations",
+      "generatedClientId": "integration-configuration",
+      "generatedMethod": "rotateOutboundWebhookSecret",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "OPTIMISTIC_WHERE_RESOURCE_VERSION_EXISTS",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "studio.configure"
     },
     {
       "operationId": "saveInvoiceDraft",
@@ -3945,6 +4099,20 @@
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "organizations.update"
+    },
+    {
+      "operationId": "updateOutboundWebhookSubscription",
+      "method": "PUT",
+      "path": "/outbound-webhooks/{subscriptionId}",
+      "boundedContext": "IntegrationConfiguration",
+      "ownerModule": "platform/integrations",
+      "generatedClientId": "integration-configuration",
+      "generatedMethod": "updateOutboundWebhookSubscription",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "OPTIMISTIC_WHERE_RESOURCE_VERSION_EXISTS",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "studio.configure"
     },
     {
       "operationId": "updateProductConfigurationType",

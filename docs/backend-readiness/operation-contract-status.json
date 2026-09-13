@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "contractVersion": "0.23.20-contract.0",
+  "contractVersion": "0.24.0-contract.0",
   "operations": [
     {
       "operationId": "acceptQuote",
@@ -20,6 +20,13 @@
       "operationId": "acceptWorkspaceInvitation",
       "method": "POST",
       "path": "/auth/invitations/accept",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "activateOutboundWebhookSubscription",
+      "method": "POST",
+      "path": "/outbound-webhooks/{subscriptionId}/activate",
       "status": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null
     },
@@ -181,6 +188,13 @@
       "operationId": "archiveOrganization",
       "method": "POST",
       "path": "/organizations/{organizationId}/archive",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "archiveOutboundWebhookSubscription",
+      "method": "POST",
+      "path": "/outbound-webhooks/{subscriptionId}/archive",
       "status": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null
     },
@@ -549,6 +563,13 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "createOutboundWebhookSubscription",
+      "method": "POST",
+      "path": "/outbound-webhooks",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "createPaymentIntent",
       "method": "POST",
       "path": "/payment-intents",
@@ -794,6 +815,13 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "getIntegrationEventCatalog",
+      "method": "GET",
+      "path": "/integration-event-catalog",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "getInvoice",
       "method": "GET",
       "path": "/invoices/{invoiceId}",
@@ -867,6 +895,13 @@
       "operationId": "getOrganizationOverview",
       "method": "GET",
       "path": "/organizations/{organizationId}/overview",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "getOutboundWebhookSubscription",
+      "method": "GET",
+      "path": "/outbound-webhooks/{subscriptionId}",
       "status": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null
     },
@@ -1158,6 +1193,20 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "listOutboundWebhookDeliveries",
+      "method": "GET",
+      "path": "/outbound-webhook-deliveries",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "listOutboundWebhookSubscriptions",
+      "method": "GET",
+      "path": "/outbound-webhooks",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "listPaymentAllocations",
       "method": "GET",
       "path": "/payment-allocations",
@@ -1350,6 +1399,13 @@
       "operationId": "openStudioQuickSetup",
       "method": "POST",
       "path": "/studio/quick-setup/open",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "pauseOutboundWebhookSubscription",
+      "method": "POST",
+      "path": "/outbound-webhooks/{subscriptionId}/pause",
       "status": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null
     },
@@ -1571,6 +1627,13 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "replayOutboundWebhookDelivery",
+      "method": "POST",
+      "path": "/outbound-webhook-deliveries/{deliveryId}/replay",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "repriceOrderDraft",
       "method": "POST",
       "path": "/orders/{orderId}/reprice",
@@ -1676,6 +1739,13 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "resumeOutboundWebhookSubscription",
+      "method": "POST",
+      "path": "/outbound-webhooks/{subscriptionId}/resume",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "retryInvoiceIssue",
       "method": "POST",
       "path": "/invoices/{invoiceId}/retry-issue",
@@ -1735,6 +1805,13 @@
       "operationId": "rotateManagedMemberPassword",
       "method": "POST",
       "path": "/access/members/{membershipId}/rotate-password",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "rotateOutboundWebhookSecret",
+      "method": "POST",
+      "path": "/outbound-webhooks/{subscriptionId}/rotate-secret",
       "status": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null
     },
@@ -1889,6 +1966,13 @@
       "operationId": "updateOrganization",
       "method": "PATCH",
       "path": "/organizations/{organizationId}",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "updateOutboundWebhookSubscription",
+      "method": "PUT",
+      "path": "/outbound-webhooks/{subscriptionId}",
       "status": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null
     },

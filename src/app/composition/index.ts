@@ -1,5 +1,6 @@
 export {
   getApplicationCompositionStatus,
+  getApplicationConfigurationApiClients,
   getApplicationHttpClient,
   getApplicationRuntimeMode,
   initializeApplicationComposition,

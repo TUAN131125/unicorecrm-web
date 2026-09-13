@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
   "packageName": "unicorecrm-web",
-  "version": "0.23.20-contract.0",
-  "releaseId": "unicorecrm-web@0.23.20-contract.0",
+  "version": "0.24.0-contract.0",
+  "releaseId": "unicorecrm-web@0.24.0-contract.0",
   "releaseDate": "2026-07-26",
   "status": "QUALITY_BASELINE_REMEDIATION_CANDIDATE",
   "sourceScope": "FRONTEND_QUALITY_AND_RUNTIME_REMEDIATION",
