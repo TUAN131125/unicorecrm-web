@@ -22,6 +22,7 @@ import {
   OutboundWebhookMutationIntents,
   type WebhookMutationIntent,
 } from "../../application/outboundWebhookMutationIntents";
+import { ConnectedOutboundWebhookBehavior } from "../../application/connectedOutboundWebhookBehavior";
 
 export function ConnectedOutboundWebhooksView() {
   // Architecture markers: item.status!=="DRAFT"&&item.status!=="PAUSED"; typeof result.signingSecret==="string"
@@ -47,6 +48,7 @@ export function ConnectedOutboundWebhooksView() {
   const [editing, setEditing] = React.useState<OutboundWebhookSubscription>();
   const [editForm, setEditForm] = React.useState({ name: "", eventType: "", endpointUrl: "" });
   const intents = React.useRef(new OutboundWebhookMutationIntents()).current;
+  const connectedBehavior = React.useMemo(() => new ConnectedOutboundWebhookBehavior(api, intents), [api, intents]);
   const run = async <T,>(intent: WebhookMutationIntent, invoke: (key: string) => Promise<T>) => {
     const result = await invoke(intents.keyFor(intent));
     intents.complete(intent);
@@ -82,10 +84,7 @@ export function ConnectedOutboundWebhooksView() {
   const create = async () => {
     setBusy(true);
     try {
-      const intent = { operation: "create", request: form };
-      const result = await run(intent, (idempotencyKey) =>
-        api.createOutboundWebhookSubscription(form, { idempotencyKey }),
-      );
+      const result = await connectedBehavior.create(form, load);
       setSecret(
         typeof result.signingSecret === "string"
           ? result.signingSecret
@@ -96,7 +95,6 @@ export function ConnectedOutboundWebhooksView() {
         eventType: catalog[0]?.eventType ?? "",
         endpointUrl: "",
       });
-      await load();
     } catch {
       setError(t("Không thể tạo webhook.", "Unable to create webhook."));
     } finally {
@@ -152,18 +150,17 @@ export function ConnectedOutboundWebhooksView() {
     }
   };
   const edit = async (item: OutboundWebhookSubscription) => {
-    if (item.status !== "DRAFT" && item.status !== "PAUSED") return;
+    const editable = connectedBehavior.beginEdit(item);
+    if (!editable) return;
     setEditing(item);
-    setEditForm({ name: item.name, eventType: item.eventType, endpointUrl: item.endpointUrl });
+    setEditForm(editable);
   };
   const saveEdit = async () => {
     if (!editing) return;
     setBusy(true);
     try {
-      const intent = { operation: "update", request: { subscriptionId: editing.subscriptionId, ...editForm }, expectedVersion: editing.version };
-      await run(intent, (idempotencyKey) => api.updateOutboundWebhookSubscription(editing.subscriptionId, editForm, { idempotencyKey, expectedVersion: editing.version }));
+      await connectedBehavior.update(editing, editForm, load);
       setEditing(undefined);
-      await load();
     } catch {
       setError(t("Không thể cập nhật webhook.", "Unable to update webhook."));
     } finally {
