@@ -184,6 +184,9 @@ export function projectEffectiveAccess(context: AuthorizationContextProjection):
   const roleTemplateIds = new Set(context.roleTemplateIds);
   const capabilities = new Set(context.capabilities);
   const productSpaces = new Set(context.productSpaces);
+  if (capabilities.has("ai.configuration.read") || capabilities.has("ai.configuration.manage")) {
+    productSpaces.add("studio");
+  }
   return {
     workspaceId: context.workspaceId,
     membershipId: context.membershipId,

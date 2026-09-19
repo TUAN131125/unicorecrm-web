@@ -22,3 +22,5 @@ export { FinancialConfigurationApiClient } from "./financialConfigurationApi";
 export type { FinancialConfigurationRequestOptions } from "./financialConfigurationApi";
 export { IntegrationConfigurationApiClient } from "./integrationConfigurationApi";
 export type { IntegrationConfigurationRequestOptions } from "./integrationConfigurationApi";
+export { AiApiClient } from "./aiApi";
+export type { AiRequestOptions } from "./aiApi";

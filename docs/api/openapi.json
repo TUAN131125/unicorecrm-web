@@ -14,6 +14,11 @@
   ],
   "tags": [
     {
+      "name": "AI",
+      "description": "Read-only, backend-authoritative CRM advisory chat.",
+      "x-bounded-context": "ai"
+    },
+    {
       "name": "Receivables",
       "description": "Invoice-owned receivables projections and buyer account statements.",
       "x-bounded-context": "invoices"
@@ -51508,6 +51513,777 @@
           "LIFECYCLE_CONFLICT"
         ]
       }
+    },
+    "/ai/configuration/catalog": {
+      "get": {
+        "tags": [
+          "AI"
+        ],
+        "operationId": "getAiProviderCatalog",
+        "summary": "Read the admitted AI provider and model catalog",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Provider catalog",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiProviderCatalogResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "ai",
+        "x-required-capability": "ai.configuration.read",
+        "x-resource-scope": "WORKSPACE",
+        "x-data-scope": "WORKSPACE",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-idempotency-policy": "NOT_APPLICABLE_READ_ONLY",
+        "x-concurrency-policy": "READ_ONLY",
+        "x-audit-requirement": "SAFE_CONFIGURATION_READ",
+        "x-event-outbox-expectation": "NOT_APPLICABLE",
+        "x-transaction-boundary": "PLATFORM_AI_READ"
+      }
+    },
+    "/ai/configuration": {
+      "get": {
+        "tags": [
+          "AI"
+        ],
+        "operationId": "getAiConfiguration",
+        "summary": "Read safe Workspace AI configuration",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Safe configuration",
+            "headers": {
+              "ETag": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiConfigurationView"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "ai",
+        "x-required-capability": "ai.configuration.read",
+        "x-resource-scope": "WORKSPACE",
+        "x-data-scope": "WORKSPACE",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-idempotency-policy": "NOT_APPLICABLE_READ_ONLY",
+        "x-concurrency-policy": "READ_ONLY",
+        "x-audit-requirement": "SAFE_CONFIGURATION_READ",
+        "x-event-outbox-expectation": "NOT_APPLICABLE",
+        "x-transaction-boundary": "PLATFORM_AI_READ"
+      },
+      "put": {
+        "tags": [
+          "AI"
+        ],
+        "operationId": "saveAiConfiguration",
+        "summary": "Save a Workspace AI configuration draft",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SaveAiConfigurationRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved draft",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiConfigurationMutationResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Concurrency or idempotency conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid configuration",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "ai",
+        "x-required-capability": "ai.configuration.manage",
+        "x-resource-scope": "WORKSPACE",
+        "x-data-scope": "WORKSPACE",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "IF_MATCH_REQUIRED",
+        "x-audit-requirement": "IMMUTABLE_SAFE_CONFIGURATION_AUDIT",
+        "x-event-outbox-expectation": "NOT_APPLICABLE",
+        "x-transaction-boundary": "PLATFORM_AI_CONFIGURATION"
+      }
+    },
+    "/ai/configuration/credential": {
+      "put": {
+        "tags": [
+          "AI"
+        ],
+        "operationId": "setAiCredential",
+        "summary": "Set or rotate a server-side Workspace AI credential",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SetAiCredentialRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Credential accepted without echo",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiConfigurationMutationResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Concurrency or idempotency conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid credential write",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "ai",
+        "x-required-capability": "ai.configuration.manage",
+        "x-resource-scope": "WORKSPACE",
+        "x-data-scope": "WORKSPACE",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "IF_MATCH_REQUIRED",
+        "x-audit-requirement": "CREDENTIAL_METADATA_ONLY",
+        "x-event-outbox-expectation": "NOT_APPLICABLE",
+        "x-transaction-boundary": "PLATFORM_AI_CONFIGURATION"
+      }
+    },
+    "/ai/configuration/test": {
+      "post": {
+        "tags": [
+          "AI"
+        ],
+        "operationId": "testAiConfiguration",
+        "summary": "Test AI configuration with synthetic non-CRM input",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmptyCommandRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Safe test result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiConfigurationTestResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Concurrency conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Provider rate limited",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Provider unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Provider timeout",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "ai",
+        "x-required-capability": "ai.configuration.manage",
+        "x-resource-scope": "WORKSPACE",
+        "x-data-scope": "SYNTHETIC_ONLY",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "IF_MATCH_REQUIRED",
+        "x-audit-requirement": "SAFE_TEST_RESULT",
+        "x-event-outbox-expectation": "NOT_APPLICABLE",
+        "x-transaction-boundary": "PLATFORM_AI_CONFIGURATION"
+      }
+    },
+    "/ai/configuration/activate": {
+      "post": {
+        "tags": [
+          "AI"
+        ],
+        "operationId": "activateAiConfiguration",
+        "summary": "Activate a validated Workspace AI configuration",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmptyCommandRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Activated configuration",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiConfigurationMutationResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Not validated, concurrency, or idempotency conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "ai",
+        "x-required-capability": "ai.configuration.manage",
+        "x-resource-scope": "WORKSPACE",
+        "x-data-scope": "WORKSPACE",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "IF_MATCH_REQUIRED",
+        "x-audit-requirement": "IMMUTABLE_SAFE_CONFIGURATION_AUDIT",
+        "x-event-outbox-expectation": "NOT_APPLICABLE",
+        "x-transaction-boundary": "PLATFORM_AI_CONFIGURATION"
+      }
+    },
+    "/ai/configuration/disable": {
+      "post": {
+        "tags": [
+          "AI"
+        ],
+        "operationId": "disableAiConfiguration",
+        "summary": "Disable active Workspace AI configuration",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IfMatchHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmptyCommandRequest" } } }
+        },
+        "responses": {
+          "200": {
+            "description": "Disabled configuration",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiConfigurationMutationResponse"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Concurrency or idempotency conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "ai",
+        "x-required-capability": "ai.configuration.manage",
+        "x-resource-scope": "WORKSPACE",
+        "x-data-scope": "WORKSPACE",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "IF_MATCH_REQUIRED",
+        "x-audit-requirement": "IMMUTABLE_SAFE_CONFIGURATION_AUDIT",
+        "x-event-outbox-expectation": "NOT_APPLICABLE",
+        "x-transaction-boundary": "PLATFORM_AI_CONFIGURATION"
+      }
+    },
+    "/ai/configuration/usage": {
+      "get": {
+        "tags": ["AI"],
+        "operationId": "getAiUsageSummary",
+        "summary": "Read safe Workspace AI health and usage summary",
+        "parameters": [
+          { "$ref": "#/components/parameters/WorkspaceIdHeader" },
+          { "$ref": "#/components/parameters/RequestIdHeader" },
+          { "$ref": "#/components/parameters/CorrelationIdHeader" }
+        ],
+        "responses": {
+          "200": { "description": "Safe usage summary", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AiUsageSummaryResponse" } } } },
+          "403": { "description": "Access denied", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetails" } } } }
+        },
+        "security": [{ "bearerAuth": [] }],
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "ai",
+        "x-required-capability": "ai.configuration.read",
+        "x-resource-scope": "WORKSPACE",
+        "x-data-scope": "SAFE_OPERATIONAL_SUMMARY",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-idempotency-policy": "NOT_APPLICABLE_READ_ONLY",
+        "x-concurrency-policy": "READ_ONLY",
+        "x-audit-requirement": "SAFE_CONFIGURATION_READ",
+        "x-event-outbox-expectation": "NOT_APPLICABLE",
+        "x-transaction-boundary": "PLATFORM_AI_READ"
+      }
+    },
+    "/ai/advisories": {
+      "post": {
+        "tags": [
+          "AI"
+        ],
+        "operationId": "requestAiAdvisory",
+        "summary": "Request a grounded read-only CRM advisory",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiAdvisoryRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Grounded advisory",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiAdvisoryResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Workspace or context access denied",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Context unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Request too large",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Invalid context or conversation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Provider rate limited",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Invalid provider response",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Provider unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "504": {
+            "description": "Provider timeout",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "ai",
+        "x-required-capability": "OWNER_RESOURCE_READ",
+        "x-resource-scope": "RECORD",
+        "x-data-scope": "OWNER_AUTHORIZED_FIELDS",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-idempotency-policy": "NOT_APPLICABLE_READ_ONLY",
+        "x-concurrency-policy": "READ_ONLY",
+        "x-audit-requirement": "DURABLE_EXECUTION_EVIDENCE",
+        "x-event-outbox-expectation": "NOT_APPLICABLE",
+        "x-transaction-boundary": "OWNER_READS_THEN_PLATFORM_EXECUTION_LEDGER",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "AI_CONTEXT_ACCESS_DENIED",
+          "AI_CONTEXT_NOT_FOUND",
+          "AI_REQUEST_INVALID",
+          "AI_REQUEST_TOO_LARGE",
+          "AI_PROVIDER_UNAVAILABLE",
+          "AI_PROVIDER_TIMEOUT",
+          "AI_PROVIDER_RATE_LIMITED",
+          "AI_PROVIDER_RESPONSE_INVALID"
+        ]
+      }
     }
   },
   "components": {
@@ -51710,6 +52486,513 @@
       }
     },
     "schemas": {
+      "AiContextReference": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "type",
+          "id"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "lead",
+              "contact",
+              "organization",
+              "customer",
+              "deal",
+              "task"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 128
+          }
+        }
+      },
+      "AiConversationMessage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "role",
+          "content"
+        ],
+        "properties": {
+          "role": {
+            "type": "string",
+            "enum": [
+              "user",
+              "assistant"
+            ]
+          },
+          "content": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          }
+        }
+      },
+      "AiAdvisoryRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "question",
+          "locale",
+          "contextReferences"
+        ],
+        "properties": {
+          "question": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 2000
+          },
+          "locale": {
+            "type": "string",
+            "enum": [
+              "en",
+              "vi"
+            ]
+          },
+          "contextReferences": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 6,
+            "items": {
+              "$ref": "#/components/schemas/AiContextReference"
+            }
+          },
+          "conversation": {
+            "type": "array",
+            "maxItems": 12,
+            "items": {
+              "$ref": "#/components/schemas/AiConversationMessage"
+            }
+          }
+        }
+      },
+      "AiGroundingEvidence": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "entityType",
+          "entityId",
+          "contextType"
+        ],
+        "properties": {
+          "entityType": {
+            "type": "string",
+            "enum": [
+              "lead",
+              "contact",
+              "organization",
+              "customer",
+              "deal",
+              "task"
+            ]
+          },
+          "entityId": {
+            "type": "string"
+          },
+          "displayLabel": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "contextType": {
+            "type": "string"
+          }
+        }
+      },
+      "AiAdvisoryProviderView": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "name",
+          "model"
+        ],
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "model": {
+            "type": "string"
+          }
+        }
+      },
+      "AiAdvisoryResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "executionId",
+          "summary",
+          "attentionPoints",
+          "advisory",
+          "contextReferences",
+          "evidence",
+          "provider"
+        ],
+        "properties": {
+          "executionId": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "suggestedNextAction": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "attentionPoints": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "advisory": {
+            "type": "boolean",
+            "const": true
+          },
+          "contextReferences": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AiContextReference"
+            }
+          },
+          "evidence": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AiGroundingEvidence"
+            }
+          },
+          "provider": {
+            "$ref": "#/components/schemas/AiAdvisoryProviderView"
+          }
+        }
+      },
+      "AiProviderModelView": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "displayName",
+          "structuredOutput"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "structuredOutput": {
+            "type": "boolean"
+          }
+        }
+      },
+      "AiProviderCatalogEntry": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "displayName",
+          "deploymentCredentialAvailable",
+          "models"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "enum": [
+              "GEMINI",
+              "OPENAI"
+            ]
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "deploymentCredentialAvailable": {
+            "type": "boolean"
+          },
+          "models": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AiProviderModelView"
+            }
+          }
+        }
+      },
+      "AiProviderCatalogResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "providers"
+        ],
+        "properties": {
+          "providers": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AiProviderCatalogEntry"
+            }
+          }
+        }
+      },
+      "AiConfigurationView": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "status",
+          "primaryProvider",
+          "primaryModel",
+          "primaryCredentialSource",
+          "primaryCredentialConfigured",
+          "fallbackEnabled",
+          "fallbackCredentialConfigured",
+          "retryRateLimited",
+          "isValidated",
+          "version",
+          "createdAt",
+          "updatedAt"
+        ],
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "UNCONFIGURED",
+              "DRAFT",
+              "ACTIVE",
+              "DISABLED"
+            ]
+          },
+          "primaryProvider": {
+            "type": "string",
+            "enum": [
+              "GEMINI",
+              "OPENAI"
+            ]
+          },
+          "primaryModel": {
+            "type": "string"
+          },
+          "primaryCredentialSource": {
+            "type": "string",
+            "enum": [
+              "WORKSPACE",
+              "DEPLOYMENT"
+            ]
+          },
+          "primaryCredentialConfigured": {
+            "type": "boolean"
+          },
+          "fallbackEnabled": {
+            "type": "boolean"
+          },
+          "fallbackProvider": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "GEMINI",
+              "OPENAI",
+              null
+            ]
+          },
+          "fallbackModel": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fallbackCredentialSource": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "WORKSPACE",
+              "DEPLOYMENT",
+              null
+            ]
+          },
+          "fallbackCredentialConfigured": {
+            "type": "boolean"
+          },
+          "retryRateLimited": {
+            "type": "boolean"
+          },
+          "isValidated": {
+            "type": "boolean"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "updatedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "activatedAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
+      "SaveAiConfigurationRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "primaryProvider",
+          "primaryModel",
+          "primaryCredentialSource",
+          "fallbackEnabled",
+          "retryRateLimited"
+        ],
+        "properties": {
+          "primaryProvider": {
+            "type": "string",
+            "enum": [
+              "GEMINI",
+              "OPENAI"
+            ]
+          },
+          "primaryModel": {
+            "type": "string"
+          },
+          "primaryCredentialSource": {
+            "type": "string",
+            "enum": [
+              "WORKSPACE",
+              "DEPLOYMENT"
+            ]
+          },
+          "fallbackEnabled": {
+            "type": "boolean"
+          },
+          "fallbackProvider": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "GEMINI",
+              "OPENAI",
+              null
+            ]
+          },
+          "fallbackModel": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fallbackCredentialSource": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "WORKSPACE",
+              "DEPLOYMENT",
+              null
+            ]
+          },
+          "retryRateLimited": {
+            "type": "boolean"
+          }
+        }
+      },
+      "SetAiCredentialRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "credential",
+          "fallback"
+        ],
+        "properties": {
+          "credential": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 4096,
+            "writeOnly": true
+          },
+          "fallback": {
+            "type": "boolean"
+          }
+        }
+      },
+      "AiConfigurationMutationResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "configuration"
+        ],
+        "properties": {
+          "configuration": {
+            "$ref": "#/components/schemas/AiConfigurationView"
+          }
+        }
+      },
+      "AiConfigurationTestResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "succeeded",
+          "provider",
+          "model",
+          "status",
+          "configuration"
+        ],
+        "properties": {
+          "succeeded": {
+            "type": "boolean"
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "GEMINI",
+              "OPENAI"
+            ]
+          },
+          "model": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "configuration": {
+            "$ref": "#/components/schemas/AiConfigurationView"
+          }
+        }
+      },
+      "AiUsageSummaryResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["executions","successfulExecutions","failedExecutions","providerAttempts","inputTokens","outputTokens","windowStartedAt"],
+        "properties": {
+          "executions": { "type": "integer", "format": "int64" },
+          "successfulExecutions": { "type": "integer", "format": "int64" },
+          "failedExecutions": { "type": "integer", "format": "int64" },
+          "providerAttempts": { "type": "integer", "format": "int64" },
+          "inputTokens": { "type": "integer", "format": "int64" },
+          "outputTokens": { "type": "integer", "format": "int64" },
+          "windowStartedAt": { "type": "string", "format": "date-time" },
+          "lastExecutionAt": { "type": ["string","null"], "format": "date-time" },
+          "lastStatus": { "type": ["string","null"] }
+        }
+      },
       "AcceptQuoteRequest": {
         "type": "object",
         "additionalProperties": false,

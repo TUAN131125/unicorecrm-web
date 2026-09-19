@@ -69,7 +69,7 @@ export function evaluateEffectiveAccess({ snapshot, member, memberDirectory }: A
   const productSpaces = new Set<"crm" | "studio" | "people">();
 
   if ([...capabilities].some((capability) => !capability.startsWith("studio.") && !capability.startsWith("access.") && !capability.startsWith("audit."))) productSpaces.add("crm");
-  if (capabilities.has("studio.read") || capabilities.has("studio.configure")) productSpaces.add("studio");
+  if (capabilities.has("studio.read") || capabilities.has("studio.configure") || capabilities.has("ai.configuration.read") || capabilities.has("ai.configuration.manage")) productSpaces.add("studio");
   if (capabilities.has("access.read") || capabilities.has("access.configure") || capabilities.has("audit.read")) productSpaces.add("people");
 
   const getDataScope = (resourceKey: string): DataScope => {

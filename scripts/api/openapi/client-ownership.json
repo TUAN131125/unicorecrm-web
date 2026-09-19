@@ -286,6 +286,16 @@
         "quality.api-contract",
         "quality.studio-api-contract"
       ]
+    },
+    {
+      "id": "ai",
+      "tags": ["AI"],
+      "output": "src/platform/api/generated/aiApi.ts",
+      "className": "AiApiClient",
+      "requestOptionsName": "AiRequestOptions",
+      "ownerByTag": {"AI": "ai"},
+      "adapterByTag": {"AI": "src/platform/api/extensions/aiAdvisoryApi.ts"},
+      "testGateIds": ["quality.api-contract", "quality.ai-application-contracts"]
     }
   ],
   "approvedExternalTransports": [

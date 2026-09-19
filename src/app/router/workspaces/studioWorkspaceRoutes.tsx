@@ -19,6 +19,7 @@ const InformationFieldsView = lazyRouteComponent("StudioInformationFieldsView", 
 const PaymentInformationView = lazyRouteComponent("StudioPaymentInformationView", () => import("@/workspaces/studio/presentation/views/PaymentInformationView"), (module) => module.PaymentInformationView);
 const InvoiceInformationView = lazyRouteComponent("StudioInvoiceInformationView", () => import("@/workspaces/studio/presentation/views/InvoiceInformationView"), (module) => module.InvoiceInformationView);
 const IntegrationsView = lazyRouteComponent("StudioIntegrationsView", () => import("@/workspaces/studio/presentation/views/IntegrationsView"), (module) => module.IntegrationsView);
+const AiConfigurationView = lazyRouteComponent("StudioAiConfigurationView", () => import("@/workspaces/studio/presentation/views/AiConfigurationView"), (module) => module.AiConfigurationView);
 const WebhooksApiView = lazyRouteComponent("StudioWebhooksApiView", () => import("@/workspaces/studio/presentation/views/WebhooksApiView"), (module) => module.WebhooksApiView);
 const StudioIndexRoute = lazyRouteComponent("StudioIndexRoute", () => import("@/workspaces/studio/presentation/pages/StudioIndexRoute"), (module) => module.StudioIndexRoute);
 
@@ -34,6 +35,7 @@ function resolveStudioRouteScreen(sectionId: StudioSectionId): React.ElementType
     case "payment-information": return PaymentInformationView;
     case "invoice-information": return InvoiceInformationView;
     case "integrations": return IntegrationsView;
+    case "ai": return AiConfigurationView;
     case "webhooks-api": return WebhooksApiView;
   }
 }
@@ -137,9 +139,11 @@ export function createStudioWorkspaceRoutes(): RouteObject[] {
       path: section.routePath,
       element: (
         <PermissionRouteGuard capability={section.requiredCapability}>
-          <StudioCoreRuntimeBoundary includeQuickSetup={section.id === "quick-setup"}>
-            <StudioRouteScreen sectionId={section.id} screen={Screen} />
-          </StudioCoreRuntimeBoundary>
+          {section.id === "ai" ? <StudioRouteScreen sectionId={section.id} screen={Screen} /> : (
+            <StudioCoreRuntimeBoundary includeQuickSetup={section.id === "quick-setup"}>
+              <StudioRouteScreen sectionId={section.id} screen={Screen} />
+            </StudioCoreRuntimeBoundary>
+          )}
         </PermissionRouteGuard>
       ),
     };

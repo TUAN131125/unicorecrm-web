@@ -5,7 +5,7 @@
  * React components resolve the AI capability through this binding instead of
  * constructing browser or mock services themselves.
  */
-import type { HttpClient } from "@/platform/api";
+import type { HttpClient } from "@/platform/api/client";
 import { registerWorkspaceScopeDisposer } from "@/platform/workspace-scope";
 import type { AiActionIntent } from "../application/aiActionIntent";
 import type {

@@ -3,15 +3,15 @@
   "generatorVersion": 1,
   "authority": "docs/api/openapi.json",
   "contractVersion": "0.24.0-contract.0",
-  "specSha256": "08572c439173da5ecd22c957a04458c52e5150d147465e8deb417fe5745f6d03",
+  "specSha256": "89cbe9a4c1d2bca319d37410105b440b1a860239aef032d96be6a6c423fff50e",
   "generatedAt": "DETERMINISTIC",
   "summary": {
-    "operations": 292,
-    "queries": 83,
-    "commands": 209,
-    "productionReady": 264,
+    "operations": 301,
+    "queries": 86,
+    "commands": 215,
+    "productionReady": 273,
     "blocked": 28,
-    "modules": 20
+    "modules": 21
   },
   "operations": [
     {
@@ -337,6 +337,107 @@
         "quality.auth-session-contracts",
         "quality.auth-ux-contracts",
         "quality.identity-auth-api-boundary"
+      ]
+    },
+    {
+      "operationId": "activateAiConfiguration",
+      "moduleId": "ai",
+      "boundedContext": "AI",
+      "kind": "COMMAND",
+      "method": "POST",
+      "path": "/ai/configuration/activate",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "generatedClient": {
+        "id": "ai",
+        "file": "src/platform/api/generated/aiApi.ts",
+        "className": "AiApiClient",
+        "method": "activateAiConfiguration"
+      },
+      "adapter": {
+        "file": "src/platform/api/extensions/aiAdvisoryApi.ts",
+        "status": "CONNECTED_BOUNDARY_DECLARED"
+      },
+      "request": {
+        "schema": "EmptyCommandRequest",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "ref": "IdempotencyKey",
+              "type": null,
+              "format": null,
+              "pattern": null
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "ref": null,
+              "type": "string",
+              "format": null,
+              "pattern": null
+            }
+          },
+          {
+            "name": "X-Correlation-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "ref": "CorrelationId",
+              "type": null,
+              "format": null,
+              "pattern": null
+            }
+          },
+          {
+            "name": "X-Request-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "ref": "RequestId",
+              "type": null,
+              "format": null,
+              "pattern": null
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "ref": "WorkspaceId",
+              "type": null,
+              "format": null,
+              "pattern": null
+            }
+          }
+        ]
+      },
+      "response": {
+        "schema": "AiConfigurationMutationResponse",
+        "successStatus": "200"
+      },
+      "authorization": {
+        "auth": "REQUIRED",
+        "workspace": "REQUIRED",
+        "capability": "ai.configuration.manage",
+        "resourceScope": "WORKSPACE",
+        "dataScope": "WORKSPACE"
+      },
+      "delivery": {
+        "idempotency": "REQUIRED",
+        "concurrency": "IF_MATCH_REQUIRED",
+        "audit": "IMMUTABLE_SAFE_CONFIGURATION_AUDIT",
+        "transactionBoundary": "PLATFORM_AI_CONFIGURATION"
+      },
+      "testGateIds": [
+        "quality.ai-application-contracts",
+        "quality.api-contract"
       ]
     },
     {
@@ -10561,6 +10662,107 @@
       ]
     },
     {
+      "operationId": "disableAiConfiguration",
+      "moduleId": "ai",
+      "boundedContext": "AI",
+      "kind": "COMMAND",
+      "method": "POST",
+      "path": "/ai/configuration/disable",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "generatedClient": {
+        "id": "ai",
+        "file": "src/platform/api/generated/aiApi.ts",
+        "className": "AiApiClient",
+        "method": "disableAiConfiguration"
+      },
+      "adapter": {
+        "file": "src/platform/api/extensions/aiAdvisoryApi.ts",
+        "status": "CONNECTED_BOUNDARY_DECLARED"
+      },
+      "request": {
+        "schema": "EmptyCommandRequest",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "ref": "IdempotencyKey",
+              "type": null,
+              "format": null,
+              "pattern": null
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "ref": null,
+              "type": "string",
+              "format": null,
+              "pattern": null
+            }
+          },
+          {
+            "name": "X-Correlation-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "ref": "CorrelationId",
+              "type": null,
+              "format": null,
+              "pattern": null
+            }
+          },
+          {
+            "name": "X-Request-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "ref": "RequestId",
+              "type": null,
+              "format": null,
+              "pattern": null
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "ref": "WorkspaceId",
+              "type": null,
+              "format": null,
+              "pattern": null
+            }
+          }
+        ]
+      },
+      "response": {
+        "schema": "AiConfigurationMutationResponse",
+        "successStatus": "200"
+      },
+      "authorization": {
+        "auth": "REQUIRED",
+        "workspace": "REQUIRED",
+        "capability": "ai.configuration.manage",
+        "resourceScope": "WORKSPACE",
+        "dataScope": "WORKSPACE"
+      },
+      "delivery": {
+        "idempotency": "REQUIRED",
+        "concurrency": "IF_MATCH_REQUIRED",
+        "audit": "IMMUTABLE_SAFE_CONFIGURATION_AUDIT",
+        "transactionBoundary": "PLATFORM_AI_CONFIGURATION"
+      },
+      "testGateIds": [
+        "quality.ai-application-contracts",
+        "quality.api-contract"
+      ]
+    },
+    {
       "operationId": "discardInvoiceDraft",
       "moduleId": "invoices",
       "boundedContext": "Invoices",
@@ -11777,6 +11979,243 @@
         "quality.shipping-returns-api-boundary",
         "quality.support-api-boundary",
         "quality.task-activity-api-boundary"
+      ]
+    },
+    {
+      "operationId": "getAiConfiguration",
+      "moduleId": "ai",
+      "boundedContext": "AI",
+      "kind": "QUERY",
+      "method": "GET",
+      "path": "/ai/configuration",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "generatedClient": {
+        "id": "ai",
+        "file": "src/platform/api/generated/aiApi.ts",
+        "className": "AiApiClient",
+        "method": "getAiConfiguration"
+      },
+      "adapter": {
+        "file": "src/platform/api/extensions/aiAdvisoryApi.ts",
+        "status": "CONNECTED_BOUNDARY_DECLARED"
+      },
+      "request": {
+        "schema": null,
+        "parameters": [
+          {
+            "name": "X-Correlation-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "ref": "CorrelationId",
+              "type": null,
+              "format": null,
+              "pattern": null
+            }
+          },
+          {
+            "name": "X-Request-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "ref": "RequestId",
+              "type": null,
+              "format": null,
+              "pattern": null
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "ref": "WorkspaceId",
+              "type": null,
+              "format": null,
+              "pattern": null
+            }
+          }
+        ]
+      },
+      "response": {
+        "schema": "AiConfigurationView",
+        "successStatus": "200"
+      },
+      "authorization": {
+        "auth": "REQUIRED",
+        "workspace": "REQUIRED",
+        "capability": "ai.configuration.read",
+        "resourceScope": "WORKSPACE",
+        "dataScope": "WORKSPACE"
+      },
+      "delivery": {
+        "idempotency": "NOT_APPLICABLE_READ_ONLY",
+        "concurrency": "READ_ONLY",
+        "audit": "SAFE_CONFIGURATION_READ",
+        "transactionBoundary": "PLATFORM_AI_READ"
+      },
+      "testGateIds": [
+        "quality.ai-application-contracts",
+        "quality.api-contract"
+      ]
+    },
+    {
+      "operationId": "getAiProviderCatalog",
+      "moduleId": "ai",
+      "boundedContext": "AI",
+      "kind": "QUERY",
+      "method": "GET",
+      "path": "/ai/configuration/catalog",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "generatedClient": {
+        "id": "ai",
+        "file": "src/platform/api/generated/aiApi.ts",
+        "className": "AiApiClient",
+        "method": "getAiProviderCatalog"
+      },
+      "adapter": {
+        "file": "src/platform/api/extensions/aiAdvisoryApi.ts",
+        "status": "CONNECTED_BOUNDARY_DECLARED"
+      },
+      "request": {
+        "schema": null,
+        "parameters": [
+          {
+            "name": "X-Correlation-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "ref": "CorrelationId",
+              "type": null,
+              "format": null,
+              "pattern": null
+            }
+          },
+          {
+            "name": "X-Request-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "ref": "RequestId",
+              "type": null,
+              "format": null,
+              "pattern": null
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "ref": "WorkspaceId",
+              "type": null,
+              "format": null,
+              "pattern": null
+            }
+          }
+        ]
+      },
+      "response": {
+        "schema": "AiProviderCatalogResponse",
+        "successStatus": "200"
+      },
+      "authorization": {
+        "auth": "REQUIRED",
+        "workspace": "REQUIRED",
+        "capability": "ai.configuration.read",
+        "resourceScope": "WORKSPACE",
+        "dataScope": "WORKSPACE"
+      },
+      "delivery": {
+        "idempotency": "NOT_APPLICABLE_READ_ONLY",
+        "concurrency": "READ_ONLY",
+        "audit": "SAFE_CONFIGURATION_READ",
+        "transactionBoundary": "PLATFORM_AI_READ"
+      },
+      "testGateIds": [
+        "quality.ai-application-contracts",
+        "quality.api-contract"
+      ]
+    },
+    {
+      "operationId": "getAiUsageSummary",
+      "moduleId": "ai",
+      "boundedContext": "AI",
+      "kind": "QUERY",
+      "method": "GET",
+      "path": "/ai/configuration/usage",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "generatedClient": {
+        "id": "ai",
+        "file": "src/platform/api/generated/aiApi.ts",
+        "className": "AiApiClient",
+        "method": "getAiUsageSummary"
+      },
+      "adapter": {
+        "file": "src/platform/api/extensions/aiAdvisoryApi.ts",
+        "status": "CONNECTED_BOUNDARY_DECLARED"
+      },
+      "request": {
+        "schema": null,
+        "parameters": [
+          {
+            "name": "X-Correlation-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "ref": "CorrelationId",
+              "type": null,
+              "format": null,
+              "pattern": null
+            }
+          },
+          {
+            "name": "X-Request-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "ref": "RequestId",
+              "type": null,
+              "format": null,
+              "pattern": null
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "ref": "WorkspaceId",
+              "type": null,
+              "format": null,
+              "pattern": null
+            }
+          }
+        ]
+      },
+      "response": {
+        "schema": "AiUsageSummaryResponse",
+        "successStatus": "200"
+      },
+      "authorization": {
+        "auth": "REQUIRED",
+        "workspace": "REQUIRED",
+        "capability": "ai.configuration.read",
+        "resourceScope": "WORKSPACE",
+        "dataScope": "SAFE_OPERATIONAL_SUMMARY"
+      },
+      "delivery": {
+        "idempotency": "NOT_APPLICABLE_READ_ONLY",
+        "concurrency": "READ_ONLY",
+        "audit": "SAFE_CONFIGURATION_READ",
+        "transactionBoundary": "PLATFORM_AI_READ"
+      },
+      "testGateIds": [
+        "quality.ai-application-contracts",
+        "quality.api-contract"
       ]
     },
     {
@@ -25387,6 +25826,85 @@
       ]
     },
     {
+      "operationId": "requestAiAdvisory",
+      "moduleId": "ai",
+      "boundedContext": "AI",
+      "kind": "COMMAND",
+      "method": "POST",
+      "path": "/ai/advisories",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "generatedClient": {
+        "id": "ai",
+        "file": "src/platform/api/generated/aiApi.ts",
+        "className": "AiApiClient",
+        "method": "requestAiAdvisory"
+      },
+      "adapter": {
+        "file": "src/platform/api/extensions/aiAdvisoryApi.ts",
+        "status": "CONNECTED_BOUNDARY_DECLARED"
+      },
+      "request": {
+        "schema": "AiAdvisoryRequest",
+        "parameters": [
+          {
+            "name": "X-Correlation-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "ref": "CorrelationId",
+              "type": null,
+              "format": null,
+              "pattern": null
+            }
+          },
+          {
+            "name": "X-Request-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "ref": "RequestId",
+              "type": null,
+              "format": null,
+              "pattern": null
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "ref": "WorkspaceId",
+              "type": null,
+              "format": null,
+              "pattern": null
+            }
+          }
+        ]
+      },
+      "response": {
+        "schema": "AiAdvisoryResponse",
+        "successStatus": "200"
+      },
+      "authorization": {
+        "auth": "REQUIRED",
+        "workspace": "REQUIRED",
+        "capability": "OWNER_RESOURCE_READ",
+        "resourceScope": "RECORD",
+        "dataScope": "OWNER_AUTHORIZED_FIELDS"
+      },
+      "delivery": {
+        "idempotency": "NOT_APPLICABLE_READ_ONLY",
+        "concurrency": "READ_ONLY",
+        "audit": "DURABLE_EXECUTION_EVIDENCE",
+        "transactionBoundary": "OWNER_READS_THEN_PLATFORM_EXECUTION_LEDGER"
+      },
+      "testGateIds": [
+        "quality.ai-application-contracts",
+        "quality.api-contract"
+      ]
+    },
+    {
       "operationId": "requestLeadExport",
       "moduleId": "leads",
       "boundedContext": "Leads",
@@ -28039,6 +28557,107 @@
       ]
     },
     {
+      "operationId": "saveAiConfiguration",
+      "moduleId": "ai",
+      "boundedContext": "AI",
+      "kind": "COMMAND",
+      "method": "PUT",
+      "path": "/ai/configuration",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "generatedClient": {
+        "id": "ai",
+        "file": "src/platform/api/generated/aiApi.ts",
+        "className": "AiApiClient",
+        "method": "saveAiConfiguration"
+      },
+      "adapter": {
+        "file": "src/platform/api/extensions/aiAdvisoryApi.ts",
+        "status": "CONNECTED_BOUNDARY_DECLARED"
+      },
+      "request": {
+        "schema": "SaveAiConfigurationRequest",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "ref": "IdempotencyKey",
+              "type": null,
+              "format": null,
+              "pattern": null
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "ref": null,
+              "type": "string",
+              "format": null,
+              "pattern": null
+            }
+          },
+          {
+            "name": "X-Correlation-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "ref": "CorrelationId",
+              "type": null,
+              "format": null,
+              "pattern": null
+            }
+          },
+          {
+            "name": "X-Request-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "ref": "RequestId",
+              "type": null,
+              "format": null,
+              "pattern": null
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "ref": "WorkspaceId",
+              "type": null,
+              "format": null,
+              "pattern": null
+            }
+          }
+        ]
+      },
+      "response": {
+        "schema": "AiConfigurationMutationResponse",
+        "successStatus": "200"
+      },
+      "authorization": {
+        "auth": "REQUIRED",
+        "workspace": "REQUIRED",
+        "capability": "ai.configuration.manage",
+        "resourceScope": "WORKSPACE",
+        "dataScope": "WORKSPACE"
+      },
+      "delivery": {
+        "idempotency": "REQUIRED",
+        "concurrency": "IF_MATCH_REQUIRED",
+        "audit": "IMMUTABLE_SAFE_CONFIGURATION_AUDIT",
+        "transactionBoundary": "PLATFORM_AI_CONFIGURATION"
+      },
+      "testGateIds": [
+        "quality.ai-application-contracts",
+        "quality.api-contract"
+      ]
+    },
+    {
       "operationId": "saveInvoiceDraft",
       "moduleId": "invoices",
       "boundedContext": "Invoices",
@@ -28481,6 +29100,107 @@
       ]
     },
     {
+      "operationId": "setAiCredential",
+      "moduleId": "ai",
+      "boundedContext": "AI",
+      "kind": "COMMAND",
+      "method": "PUT",
+      "path": "/ai/configuration/credential",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "generatedClient": {
+        "id": "ai",
+        "file": "src/platform/api/generated/aiApi.ts",
+        "className": "AiApiClient",
+        "method": "setAiCredential"
+      },
+      "adapter": {
+        "file": "src/platform/api/extensions/aiAdvisoryApi.ts",
+        "status": "CONNECTED_BOUNDARY_DECLARED"
+      },
+      "request": {
+        "schema": "SetAiCredentialRequest",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "ref": "IdempotencyKey",
+              "type": null,
+              "format": null,
+              "pattern": null
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "ref": null,
+              "type": "string",
+              "format": null,
+              "pattern": null
+            }
+          },
+          {
+            "name": "X-Correlation-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "ref": "CorrelationId",
+              "type": null,
+              "format": null,
+              "pattern": null
+            }
+          },
+          {
+            "name": "X-Request-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "ref": "RequestId",
+              "type": null,
+              "format": null,
+              "pattern": null
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "ref": "WorkspaceId",
+              "type": null,
+              "format": null,
+              "pattern": null
+            }
+          }
+        ]
+      },
+      "response": {
+        "schema": "AiConfigurationMutationResponse",
+        "successStatus": "200"
+      },
+      "authorization": {
+        "auth": "REQUIRED",
+        "workspace": "REQUIRED",
+        "capability": "ai.configuration.manage",
+        "resourceScope": "WORKSPACE",
+        "dataScope": "WORKSPACE"
+      },
+      "delivery": {
+        "idempotency": "REQUIRED",
+        "concurrency": "IF_MATCH_REQUIRED",
+        "audit": "CREDENTIAL_METADATA_ONLY",
+        "transactionBoundary": "PLATFORM_AI_CONFIGURATION"
+      },
+      "testGateIds": [
+        "quality.ai-application-contracts",
+        "quality.api-contract"
+      ]
+    },
+    {
       "operationId": "signIn",
       "moduleId": "platform/identity-auth",
       "boundedContext": "Identity",
@@ -28875,6 +29595,107 @@
         "quality.shipping-returns-api-boundary",
         "quality.support-api-boundary",
         "quality.task-activity-api-boundary"
+      ]
+    },
+    {
+      "operationId": "testAiConfiguration",
+      "moduleId": "ai",
+      "boundedContext": "AI",
+      "kind": "COMMAND",
+      "method": "POST",
+      "path": "/ai/configuration/test",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "generatedClient": {
+        "id": "ai",
+        "file": "src/platform/api/generated/aiApi.ts",
+        "className": "AiApiClient",
+        "method": "testAiConfiguration"
+      },
+      "adapter": {
+        "file": "src/platform/api/extensions/aiAdvisoryApi.ts",
+        "status": "CONNECTED_BOUNDARY_DECLARED"
+      },
+      "request": {
+        "schema": "EmptyCommandRequest",
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "ref": "IdempotencyKey",
+              "type": null,
+              "format": null,
+              "pattern": null
+            }
+          },
+          {
+            "name": "If-Match",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "ref": null,
+              "type": "string",
+              "format": null,
+              "pattern": null
+            }
+          },
+          {
+            "name": "X-Correlation-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "ref": "CorrelationId",
+              "type": null,
+              "format": null,
+              "pattern": null
+            }
+          },
+          {
+            "name": "X-Request-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "ref": "RequestId",
+              "type": null,
+              "format": null,
+              "pattern": null
+            }
+          },
+          {
+            "name": "X-Workspace-Id",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "ref": "WorkspaceId",
+              "type": null,
+              "format": null,
+              "pattern": null
+            }
+          }
+        ]
+      },
+      "response": {
+        "schema": "AiConfigurationTestResponse",
+        "successStatus": "200"
+      },
+      "authorization": {
+        "auth": "REQUIRED",
+        "workspace": "REQUIRED",
+        "capability": "ai.configuration.manage",
+        "resourceScope": "WORKSPACE",
+        "dataScope": "SYNTHETIC_ONLY"
+      },
+      "delivery": {
+        "idempotency": "REQUIRED",
+        "concurrency": "IF_MATCH_REQUIRED",
+        "audit": "SAFE_TEST_RESULT",
+        "transactionBoundary": "PLATFORM_AI_CONFIGURATION"
+      },
+      "testGateIds": [
+        "quality.ai-application-contracts",
+        "quality.api-contract"
       ]
     },
     {

@@ -17,6 +17,7 @@ import { terminateAuthSession } from "@/platform/identity-auth";
 import { resetWorkspaceContextSelection } from "@/platform/workspace-context";
 import { ROUTE_KEYS } from "@/platform/navigation";
 import { isKnownStudioRoutePath } from "@/workspaces/studio/navigation/studioSectionRegistry";
+import { CAPABILITIES } from "@/platform/access-control";
 import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 import { MobileDrawer } from "./MobileDrawer";
@@ -130,6 +131,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
     }
 
     if (space === "studio") {
+      if (relativePath === "settings/ai") return shellAccess.can(CAPABILITIES.AI_CONFIGURATION_READ);
       return isKnownStudioRoutePath(relativePath) && shellAccess.canAccessModule("systemConfiguration");
     }
 

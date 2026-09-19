@@ -15,6 +15,7 @@ export type StudioSectionIconKey =
   | "payments"
   | "invoice"
   | "integrations"
+  | "ai"
   | "webhooks";
 
 export type StudioSectionId =
@@ -28,6 +29,7 @@ export type StudioSectionId =
   | "payment-information"
   | "invoice-information"
   | "integrations"
+  | "ai"
   | "webhooks-api";
 
 export interface StudioSectionDefinition {
@@ -168,6 +170,18 @@ export const STUDIO_SECTIONS: readonly StudioSectionDefinition[] = [
     order: 80,
   },
   {
+    id: "ai",
+    groupId: "connections",
+    routePath: relativeRoutePath(ROUTE_KEYS.SETTINGS_AI),
+    labelVi: "Trợ lý AI",
+    labelEn: "AI Assistant",
+    descriptionVi: "Cấu hình nhà cung cấp AI phía máy chủ cho workspace.",
+    descriptionEn: "Configure server-side AI providers for this workspace.",
+    icon: "ai",
+    requiredCapability: CAPABILITIES.AI_CONFIGURATION_READ,
+    order: 90,
+  },
+  {
     id: "integrations",
     groupId: "connections",
     routePath: relativeRoutePath(ROUTE_KEYS.SETTINGS_INTEGRATIONS),
@@ -177,7 +191,7 @@ export const STUDIO_SECTIONS: readonly StudioSectionDefinition[] = [
     descriptionEn: "Connect email, messaging, shipping, payments, and external providers.",
     icon: "integrations",
     requiredCapability: CAPABILITIES.STUDIO_READ,
-    order: 90,
+    order: 100,
   },
   {
     id: "webhooks-api",
@@ -189,7 +203,7 @@ export const STUDIO_SECTIONS: readonly StudioSectionDefinition[] = [
     descriptionEn: "Receive CRM data and publish events to external systems.",
     icon: "webhooks",
     requiredCapability: CAPABILITIES.STUDIO_READ,
-    order: 100,
+    order: 110,
   },
 ] as const;
 

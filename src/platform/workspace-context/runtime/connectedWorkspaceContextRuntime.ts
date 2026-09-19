@@ -27,7 +27,7 @@ export class ConnectedWorkspaceContextRuntime {
 
   listMemberships(): WorkspaceMembership[] { return this.memberships.map(cloneMembership); }
   getActiveContext(): WorkspaceBootstrapContext | null { return this.activeContext ? cloneContext(this.activeContext) : null; }
-  getActiveWorkspaceId(): string | undefined { return this.activeContext?.workspace.workspaceId ?? this.pendingWorkspaceId; }
+  getActiveWorkspaceId(): string | undefined { return this.pendingWorkspaceId ?? this.activeContext?.workspace.workspaceId; }
   findMembershipById(workspaceId: string): WorkspaceMembership | undefined {
     const membership = this.memberships.find((item) => item.workspaceId === workspaceId);
     return membership ? cloneMembership(membership) : undefined;

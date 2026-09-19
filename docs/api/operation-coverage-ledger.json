@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "generatorVersion": 11,
   "contractVersion": "0.24.0-contract.0",
-  "specSha256": "08572c439173da5ecd22c957a04458c52e5150d147465e8deb417fe5745f6d03",
+  "specSha256": "89cbe9a4c1d2bca319d37410105b440b1a860239aef032d96be6a6c423fff50e",
   "generatedAt": "DETERMINISTIC",
   "coveragePolicy": {
     "ownerModule": "REQUIRED",
@@ -13,12 +13,12 @@
     "concurrency": "DERIVED_FROM_IF_MATCH_HEADER"
   },
   "summary": {
-    "operations": 292,
-    "ownedOperations": 292,
-    "generatedClientMappings": 292,
-    "productionReadyOperations": 264,
+    "operations": 301,
+    "ownedOperations": 301,
+    "generatedClientMappings": 301,
+    "productionReadyOperations": 273,
     "blockedOperations": 28,
-    "declaredConnectedBoundaries": 264,
+    "declaredConnectedBoundaries": 273,
     "blockedByContract": 28,
     "pendingConnectedAdapters": 0
   },
@@ -128,6 +128,34 @@
       "requiredCapability": "identity.invitation.accept",
       "resourceScope": "WORKSPACE_INVITATION",
       "dataScope": "GLOBAL_IDENTITY"
+    },
+    {
+      "operationId": "activateAiConfiguration",
+      "method": "POST",
+      "path": "/ai/configuration/activate",
+      "boundedContext": "AI",
+      "ownerModule": "ai",
+      "generatedClient": {
+        "file": "src/platform/api/generated/aiApi.ts",
+        "className": "AiApiClient",
+        "method": "activateAiConfiguration"
+      },
+      "httpAdapter": "src/platform/api/extensions/aiAdvisoryApi.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.ai-application-contracts",
+        "quality.api-contract"
+      ],
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "requestBodySchema": "EmptyCommandRequest",
+      "responseSchema": "AiConfigurationMutationResponse",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "ai.configuration.manage",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE"
     },
     {
       "operationId": "activateOutboundWebhookSubscription",
@@ -3393,6 +3421,34 @@
       "dataScope": "WORKSPACE"
     },
     {
+      "operationId": "disableAiConfiguration",
+      "method": "POST",
+      "path": "/ai/configuration/disable",
+      "boundedContext": "AI",
+      "ownerModule": "ai",
+      "generatedClient": {
+        "file": "src/platform/api/generated/aiApi.ts",
+        "className": "AiApiClient",
+        "method": "disableAiConfiguration"
+      },
+      "httpAdapter": "src/platform/api/extensions/aiAdvisoryApi.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.ai-application-contracts",
+        "quality.api-contract"
+      ],
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "requestBodySchema": "EmptyCommandRequest",
+      "responseSchema": "AiConfigurationMutationResponse",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "ai.configuration.manage",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE"
+    },
+    {
       "operationId": "discardInvoiceDraft",
       "method": "POST",
       "path": "/invoices/{invoiceId}/discard",
@@ -3774,6 +3830,90 @@
       "requiredCapability": "quotes.update",
       "resourceScope": "WORKSPACE",
       "dataScope": "WORKSPACE"
+    },
+    {
+      "operationId": "getAiConfiguration",
+      "method": "GET",
+      "path": "/ai/configuration",
+      "boundedContext": "AI",
+      "ownerModule": "ai",
+      "generatedClient": {
+        "file": "src/platform/api/generated/aiApi.ts",
+        "className": "AiApiClient",
+        "method": "getAiConfiguration"
+      },
+      "httpAdapter": "src/platform/api/extensions/aiAdvisoryApi.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.ai-application-contracts",
+        "quality.api-contract"
+      ],
+      "idempotencyPolicy": "NOT_APPLICABLE_READ_ONLY",
+      "concurrencyPolicy": "READ_ONLY",
+      "requestBodySchema": null,
+      "responseSchema": "AiConfigurationView",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "ai.configuration.read",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE"
+    },
+    {
+      "operationId": "getAiProviderCatalog",
+      "method": "GET",
+      "path": "/ai/configuration/catalog",
+      "boundedContext": "AI",
+      "ownerModule": "ai",
+      "generatedClient": {
+        "file": "src/platform/api/generated/aiApi.ts",
+        "className": "AiApiClient",
+        "method": "getAiProviderCatalog"
+      },
+      "httpAdapter": "src/platform/api/extensions/aiAdvisoryApi.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.ai-application-contracts",
+        "quality.api-contract"
+      ],
+      "idempotencyPolicy": "NOT_APPLICABLE_READ_ONLY",
+      "concurrencyPolicy": "READ_ONLY",
+      "requestBodySchema": null,
+      "responseSchema": "AiProviderCatalogResponse",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "ai.configuration.read",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE"
+    },
+    {
+      "operationId": "getAiUsageSummary",
+      "method": "GET",
+      "path": "/ai/configuration/usage",
+      "boundedContext": "AI",
+      "ownerModule": "ai",
+      "generatedClient": {
+        "file": "src/platform/api/generated/aiApi.ts",
+        "className": "AiApiClient",
+        "method": "getAiUsageSummary"
+      },
+      "httpAdapter": "src/platform/api/extensions/aiAdvisoryApi.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.ai-application-contracts",
+        "quality.api-contract"
+      ],
+      "idempotencyPolicy": "NOT_APPLICABLE_READ_ONLY",
+      "concurrencyPolicy": "READ_ONLY",
+      "requestBodySchema": null,
+      "responseSchema": "AiUsageSummaryResponse",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "ai.configuration.read",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "SAFE_OPERATIONAL_SUMMARY"
     },
     {
       "operationId": "getBuyerAccountStatement",
@@ -8087,6 +8227,34 @@
       "dataScope": "WORKSPACE"
     },
     {
+      "operationId": "requestAiAdvisory",
+      "method": "POST",
+      "path": "/ai/advisories",
+      "boundedContext": "AI",
+      "ownerModule": "ai",
+      "generatedClient": {
+        "file": "src/platform/api/generated/aiApi.ts",
+        "className": "AiApiClient",
+        "method": "requestAiAdvisory"
+      },
+      "httpAdapter": "src/platform/api/extensions/aiAdvisoryApi.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.ai-application-contracts",
+        "quality.api-contract"
+      ],
+      "idempotencyPolicy": "NOT_APPLICABLE_READ_ONLY",
+      "concurrencyPolicy": "READ_ONLY",
+      "requestBodySchema": "AiAdvisoryRequest",
+      "responseSchema": "AiAdvisoryResponse",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "OWNER_RESOURCE_READ",
+      "resourceScope": "RECORD",
+      "dataScope": "OWNER_AUTHORIZED_FIELDS"
+    },
+    {
       "operationId": "requestLeadExport",
       "method": "POST",
       "path": "/leads/export",
@@ -8899,6 +9067,34 @@
       "dataScope": "WORKSPACE"
     },
     {
+      "operationId": "saveAiConfiguration",
+      "method": "PUT",
+      "path": "/ai/configuration",
+      "boundedContext": "AI",
+      "ownerModule": "ai",
+      "generatedClient": {
+        "file": "src/platform/api/generated/aiApi.ts",
+        "className": "AiApiClient",
+        "method": "saveAiConfiguration"
+      },
+      "httpAdapter": "src/platform/api/extensions/aiAdvisoryApi.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.ai-application-contracts",
+        "quality.api-contract"
+      ],
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "requestBodySchema": "SaveAiConfigurationRequest",
+      "responseSchema": "AiConfigurationMutationResponse",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "ai.configuration.manage",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE"
+    },
+    {
       "operationId": "saveInvoiceDraft",
       "method": "PATCH",
       "path": "/invoices/{invoiceId}/draft",
@@ -9027,6 +9223,34 @@
       "dataScope": "WORKSPACE"
     },
     {
+      "operationId": "setAiCredential",
+      "method": "PUT",
+      "path": "/ai/configuration/credential",
+      "boundedContext": "AI",
+      "ownerModule": "ai",
+      "generatedClient": {
+        "file": "src/platform/api/generated/aiApi.ts",
+        "className": "AiApiClient",
+        "method": "setAiCredential"
+      },
+      "httpAdapter": "src/platform/api/extensions/aiAdvisoryApi.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.ai-application-contracts",
+        "quality.api-contract"
+      ],
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "requestBodySchema": "SetAiCredentialRequest",
+      "responseSchema": "AiConfigurationMutationResponse",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "ai.configuration.manage",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE"
+    },
+    {
       "operationId": "signIn",
       "method": "POST",
       "path": "/auth/sessions",
@@ -9152,6 +9376,34 @@
       "requiredCapability": "shipping.create",
       "resourceScope": "RESOURCE",
       "dataScope": "WORKSPACE"
+    },
+    {
+      "operationId": "testAiConfiguration",
+      "method": "POST",
+      "path": "/ai/configuration/test",
+      "boundedContext": "AI",
+      "ownerModule": "ai",
+      "generatedClient": {
+        "file": "src/platform/api/generated/aiApi.ts",
+        "className": "AiApiClient",
+        "method": "testAiConfiguration"
+      },
+      "httpAdapter": "src/platform/api/extensions/aiAdvisoryApi.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.ai-application-contracts",
+        "quality.api-contract"
+      ],
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "requestBodySchema": "EmptyCommandRequest",
+      "responseSchema": "AiConfigurationTestResponse",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "ai.configuration.manage",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "SYNTHETIC_ONLY"
     },
     {
       "operationId": "transitionSupportCase",

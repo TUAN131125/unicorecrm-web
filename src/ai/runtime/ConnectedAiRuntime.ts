@@ -6,7 +6,9 @@
  * Conversation state is an ephemeral presentation shell: it is scoped in
  * memory, cleared on workspace/session disposal and never treated as CRM truth.
  */
-import { AiAdvisoryApiClient, ApiClientError, type AiAdvisoryContextReferences, type HttpClient } from "@/platform/api";
+import { AiAdvisoryApiClient, type AiContextReference } from "@/platform/api/extensions/aiAdvisoryApi";
+import { ApiClientError } from "@/platform/api/errors/ApiClientError";
+import type { HttpClient } from "@/platform/api/client";
 import type { AiActionIntent } from "../application/aiActionIntent";
 import type {
   AiActionApproval,
@@ -37,6 +39,7 @@ export class ConnectedAiRuntime implements AiRuntime {
       question: request.question.trim(),
       locale: request.locale,
       contextReferences: toAdvisoryContextReferences(request),
+      conversation: this.conversationHistory(request),
     }, request.signal);
     return {
       message: {
@@ -48,6 +51,8 @@ export class ConnectedAiRuntime implements AiRuntime {
           relatedEntityType: request.focusedEntity.entityType,
           relatedEntityId: request.focusedEntity.entityId,
         }),
+        evidenceRefs: response.evidence.map((item) => `${item.entityType}:${item.entityId}`),
+        suggestedActions: response.evidence.map((item) => ({ id: `evidence_${item.entityType}_${item.entityId}`, label: item.displayLabel ?? `${item.entityType}: ${item.entityId}`, description: `${item.contextType}${item.version === undefined ? "" : ` · v${item.version}`}`, actionType: "navigate" as const, route: `/${item.entityType === "organization" ? "organizations" : `${item.entityType}s`}/${item.entityId}`, intent: { type: "NAVIGATE" as const, route: `/${item.entityType === "organization" ? "organizations" : `${item.entityType}s`}/${item.entityId}` } })),
       },
       decision: {
         allowed: true,
@@ -123,6 +128,11 @@ export class ConnectedAiRuntime implements AiRuntime {
     this.conversations.clear();
   }
 
+  private conversationHistory(request: AiAskRequest) {
+    const thread = this.readThreads(request.scope).find((item) => item.id === request.conversationId);
+    return (thread?.messages ?? []).slice(-12).filter((item) => item.role !== "system" && item.content.trim()).map((item) => ({ role: item.role as "user" | "assistant", content: item.content.slice(0, 2000) }));
+  }
+
   private readThreads(scope: AiWorkspaceScope): AiChatThread[] {
     return (this.conversations.get(scopeKey(scope)) ?? []).map(cloneThread);
   }
@@ -142,20 +152,18 @@ export class ConnectedAiRuntime implements AiRuntime {
   }
 }
 
-function toAdvisoryContextReferences(request: AiAskRequest): AiAdvisoryContextReferences {
+function toAdvisoryContextReferences(request: AiAskRequest): AiContextReference[] {
   const entity = request.focusedEntity;
   const entityId = entity?.entityId?.trim();
-  if (!entity || !entityId || !["lead", "deal", "task"].includes(entity.entityType)) {
+  if (!entity || !entityId || !["lead", "contact", "organization", "customer", "deal", "task"].includes(entity.entityType)) {
     throw new ApiClientError({
       code: "AI_CONTEXT_UNAVAILABLE",
-      message: "Connected AI advisories require a focused Lead, Deal, or Task record.",
+      message: "Connected AI advisories require a focused Lead, Contact, Organization, Customer, Deal, or Task record.",
       status: 422,
       retryable: false,
     });
   }
-  if (entity.entityType === "lead") return { leadId: entityId };
-  if (entity.entityType === "deal") return { dealId: entityId };
-  return { taskId: entityId };
+  return [{ type: entity.entityType as AiContextReference["type"], id: entityId }];
 }
 
 function formatAdvisory(
@@ -181,6 +189,7 @@ function cloneMessage(message: AiChatMessage): AiChatMessage {
   return {
     ...message,
     ...(message.suggestedActions === undefined ? {} : { suggestedActions: message.suggestedActions.map((action) => ({ ...action })) }),
+    ...(message.evidenceRefs === undefined ? {} : { evidenceRefs: [...message.evidenceRefs] }),
   };
 }
 

@@ -4,7 +4,7 @@
   "openapiVersion": "3.1.0",
   "contractVersion": "0.24.0-contract.0",
   "specPath": "docs/api/openapi.json",
-  "specSha256": "08572c439173da5ecd22c957a04458c52e5150d147465e8deb417fe5745f6d03",
+  "specSha256": "89cbe9a4c1d2bca319d37410105b440b1a860239aef032d96be6a6c423fff50e",
   "ownershipPath": "scripts/api/openapi/client-ownership.json",
   "coverageLedgerPath": "docs/api/operation-coverage-ledger.json",
   "breakingBaselinePath": "docs/api/openapi-breaking-baseline.json",
@@ -22,6 +22,7 @@
     "src/platform/api/generated/productConfigurationApi.ts",
     "src/platform/api/generated/financialConfigurationApi.ts",
     "src/platform/api/generated/integrationConfigurationApi.ts",
+    "src/platform/api/generated/aiApi.ts",
     "src/platform/api/generated/index.ts",
     "src/platform/api/contracts/generatedOpenApiRuntimeContract.ts",
     "src/platform/api/contracts/generatedProductionCommandRegistry.ts",
@@ -163,6 +164,16 @@
       "className": "IntegrationConfigurationApiClient",
       "requestOptionsName": "IntegrationConfigurationRequestOptions",
       "operationCount": 18
+    },
+    {
+      "id": "ai",
+      "tags": [
+        "AI"
+      ],
+      "output": "src/platform/api/generated/aiApi.ts",
+      "className": "AiApiClient",
+      "requestOptionsName": "AiRequestOptions",
+      "operationCount": 9
     }
   ],
   "operations": [
@@ -207,6 +218,20 @@
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "identity.invitation.accept"
+    },
+    {
+      "operationId": "activateAiConfiguration",
+      "method": "POST",
+      "path": "/ai/configuration/activate",
+      "boundedContext": "AI",
+      "ownerModule": "ai",
+      "generatedClientId": "ai",
+      "generatedMethod": "activateAiConfiguration",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "ai.configuration.manage"
     },
     {
       "operationId": "activateOutboundWebhookSubscription",
@@ -1497,6 +1522,20 @@
       "requiredCapability": "products.configure"
     },
     {
+      "operationId": "disableAiConfiguration",
+      "method": "POST",
+      "path": "/ai/configuration/disable",
+      "boundedContext": "AI",
+      "ownerModule": "ai",
+      "generatedClientId": "ai",
+      "generatedMethod": "disableAiConfiguration",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "ai.configuration.manage"
+    },
+    {
       "operationId": "discardInvoiceDraft",
       "method": "POST",
       "path": "/invoices/{invoiceId}/discard",
@@ -1649,6 +1688,48 @@
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "quotes.update"
+    },
+    {
+      "operationId": "getAiConfiguration",
+      "method": "GET",
+      "path": "/ai/configuration",
+      "boundedContext": "AI",
+      "ownerModule": "ai",
+      "generatedClientId": "ai",
+      "generatedMethod": "getAiConfiguration",
+      "idempotencyPolicy": "NOT_APPLICABLE_READ_ONLY",
+      "concurrencyPolicy": "READ_ONLY",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "ai.configuration.read"
+    },
+    {
+      "operationId": "getAiProviderCatalog",
+      "method": "GET",
+      "path": "/ai/configuration/catalog",
+      "boundedContext": "AI",
+      "ownerModule": "ai",
+      "generatedClientId": "ai",
+      "generatedMethod": "getAiProviderCatalog",
+      "idempotencyPolicy": "NOT_APPLICABLE_READ_ONLY",
+      "concurrencyPolicy": "READ_ONLY",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "ai.configuration.read"
+    },
+    {
+      "operationId": "getAiUsageSummary",
+      "method": "GET",
+      "path": "/ai/configuration/usage",
+      "boundedContext": "AI",
+      "ownerModule": "ai",
+      "generatedClientId": "ai",
+      "generatedMethod": "getAiUsageSummary",
+      "idempotencyPolicy": "NOT_APPLICABLE_READ_ONLY",
+      "concurrencyPolicy": "READ_ONLY",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "ai.configuration.read"
     },
     {
       "operationId": "getBuyerAccountStatement",
@@ -3457,6 +3538,20 @@
       "requiredCapability": "quotes.update"
     },
     {
+      "operationId": "requestAiAdvisory",
+      "method": "POST",
+      "path": "/ai/advisories",
+      "boundedContext": "AI",
+      "ownerModule": "ai",
+      "generatedClientId": "ai",
+      "generatedMethod": "requestAiAdvisory",
+      "idempotencyPolicy": "NOT_APPLICABLE_READ_ONLY",
+      "concurrencyPolicy": "READ_ONLY",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "OWNER_RESOURCE_READ"
+    },
+    {
       "operationId": "requestLeadExport",
       "method": "POST",
       "path": "/leads/export",
@@ -3793,6 +3888,20 @@
       "requiredCapability": "studio.configure"
     },
     {
+      "operationId": "saveAiConfiguration",
+      "method": "PUT",
+      "path": "/ai/configuration",
+      "boundedContext": "AI",
+      "ownerModule": "ai",
+      "generatedClientId": "ai",
+      "generatedMethod": "saveAiConfiguration",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "ai.configuration.manage"
+    },
+    {
       "operationId": "saveInvoiceDraft",
       "method": "PATCH",
       "path": "/invoices/{invoiceId}/draft",
@@ -3849,6 +3958,20 @@
       "requiredCapability": "invoices.send"
     },
     {
+      "operationId": "setAiCredential",
+      "method": "PUT",
+      "path": "/ai/configuration/credential",
+      "boundedContext": "AI",
+      "ownerModule": "ai",
+      "generatedClientId": "ai",
+      "generatedMethod": "setAiCredential",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "ai.configuration.manage"
+    },
+    {
       "operationId": "signIn",
       "method": "POST",
       "path": "/auth/sessions",
@@ -3903,6 +4026,20 @@
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "shipping.create"
+    },
+    {
+      "operationId": "testAiConfiguration",
+      "method": "POST",
+      "path": "/ai/configuration/test",
+      "boundedContext": "AI",
+      "ownerModule": "ai",
+      "generatedClientId": "ai",
+      "generatedMethod": "testAiConfiguration",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "ai.configuration.manage"
     },
     {
       "operationId": "transitionSupportCase",

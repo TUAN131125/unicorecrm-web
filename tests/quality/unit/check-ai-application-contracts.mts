@@ -39,6 +39,9 @@ import {
 import { getAiSuggestedTaskIntentKey } from "@/workflows/work-activation";
 import { getTaskActivitySnapshot, getTaskSnapshot } from "@/modules/tasks";
 import type { StoragePort } from "@/platform/persistence";
+import type { HttpClient, HttpRequest } from "@/platform/api/client";
+import { AiApiClient } from "@/platform/api/generated/aiApi";
+import { AiConfigurationHttpAdapter } from "@/workspaces/studio/infrastructure/AiConfigurationHttpAdapter";
 
 const root = repositoryRoot;
 const read = (relativePath: string): string => fs.readFileSync(path.join(root, relativePath), "utf8");
@@ -244,7 +247,8 @@ const connected = new ConnectedAiRuntime({
       suggestedNextAction: "Call the lead tomorrow.",
       attentionPoints: ["Confirm the budget."],
       advisory: true,
-      contextReferences: { leadId: "lead-1" },
+      contextReferences: [{ type: "lead", id: "lead-1" }],
+      evidence: [{ entityType: "lead", entityId: "lead-1", displayLabel: "Lead One", version: 3, contextType: "lead.summary.read" }],
       provider: { name: "DevelopmentDeterministic", model: "deterministic-v1" },
     } as T;
   },
@@ -268,19 +272,26 @@ assert.match(advisory.message.content, /Read-only advisory/u);
 assert.match(advisory.message.content, /DevelopmentDeterministic/u);
 assert.equal(connectedRequests[0]?.operationId, "requestAiAdvisory");
 assert.equal(connectedRequests[0]?.path, "/ai/advisories");
-assert.equal(connectedRequests[0]?.contractAuthority, "semantic-extension");
+assert.equal(connectedRequests[0]?.contractAuthority, undefined);
 assert.deepEqual(connectedRequests[0]?.body, {
   question: "What should I do next?",
   locale: "en",
-  contextReferences: { leadId: "lead-1" },
+  contextReferences: [{ type: "lead", id: "lead-1" }],
+  conversation: [{ role: "assistant", content: "w" }],
 });
 assert.equal(JSON.stringify(connectedRequests[0]?.body).includes("localContext"), false);
 assert.equal(JSON.stringify(connectedRequests[0]?.body).includes("workspaceId"), false, "Trusted workspace authority must stay in the request header.");
 
+for (const entityType of ["contact", "organization", "customer", "deal", "task"] as const) {
+  await connected.ask({ scope: scopeA, conversationId: connectedThread.id, question: `Summarize ${entityType}`, locale: "en", requestedContextScope: ["FOCUSED_RECORD"], focusedEntity: { entityType, entityId: `${entityType}-1` } });
+  const body = connectedRequests.at(-1)?.body as { contextReferences?: unknown };
+  assert.deepEqual(body.contextReferences, [{ type: entityType, id: `${entityType}-1` }], `${entityType} must map to the server-owned context reference contract.`);
+}
+
 await assert.rejects(
   connected.ask({ scope: scopeA, conversationId: connectedThread.id, question: "global", locale: "en", requestedContextScope: [] }),
   (error: unknown) => error instanceof Error && "code" in error && error.code === "AI_CONTEXT_UNAVAILABLE",
-  "The backend extension requires a focused Lead, Deal or Task and must not receive browser-composed record collections.",
+  "The backend contract requires one of the six admitted CRM records and must not receive browser-composed record collections.",
 );
 for (const operation of [
   () => connected.getGovernanceDecision(scopeA, { type: "NONE" }),
@@ -437,5 +448,41 @@ for (const file of aiSources) {
   }
 }
 assert.deepEqual(providerLeaks, [], `Frontend AI code must never reference a model provider endpoint or credential: ${providerLeaks.join(", ")}`);
+
+// ---------------------------------------------------------------------------
+// 9. Connected Workspace AI Settings uses only the generated backend contract.
+// ---------------------------------------------------------------------------
+class RecordingAiSettingsHttp implements HttpClient {
+  readonly requests: HttpRequest[] = [];
+  async request<TResponse, TBody = unknown>(input: HttpRequest<TBody>): Promise<TResponse> {
+    this.requests.push(input);
+    if (input.operationId === "getAiProviderCatalog") return { providers: [{ id: "GEMINI", displayName: "Google Gemini", deploymentCredentialAvailable: true, models: [{ id: "gemini-2.5-flash", displayName: "Gemini 2.5 Flash", structuredOutput: true }] }] } as TResponse;
+    if (input.operationId === "getAiUsageSummary") return { executions: 4, successfulExecutions: 3, failedExecutions: 1, providerAttempts: 5, inputTokens: 10, outputTokens: 4, windowStartedAt: "2026-08-19T00:00:00Z" } as TResponse;
+    const configuration = { status: "DRAFT", primaryProvider: "GEMINI", primaryModel: "gemini-2.5-flash", primaryCredentialSource: "WORKSPACE", primaryCredentialConfigured: input.operationId === "setAiCredential", fallbackEnabled: false, fallbackCredentialConfigured: false, retryRateLimited: false, isValidated: input.operationId === "testAiConfiguration", version: 2, createdAt: "2026-09-19T00:00:00Z", updatedAt: "2026-09-19T00:00:00Z" };
+    if (input.operationId === "getAiConfiguration") return configuration as TResponse;
+    if (input.operationId === "testAiConfiguration") return { succeeded: true, provider: "GEMINI", model: "gemini-2.5-flash", status: "VALIDATED", configuration } as TResponse;
+    return { configuration } as TResponse;
+  }
+}
+const settingsHttp = new RecordingAiSettingsHttp();
+const settings = new AiConfigurationHttpAdapter(new AiApiClient(settingsHttp));
+assert.equal((await settings.getCatalog())[0]?.id, "GEMINI");
+assert.equal((await settings.getUsage()).providerAttempts, 5);
+const safeConfiguration = await settings.getConfiguration();
+assert.equal("credential" in safeConfiguration, false, "Safe configuration reads must not expose a credential field.");
+await settings.setCredential("temporary-browser-secret", false, { expectedVersion: 1, idempotencyKey: "ai-settings-test-key" });
+const credentialWrite = settingsHttp.requests.find((item) => item.operationId === "setAiCredential");
+assert.equal(credentialWrite?.path, "/ai/configuration/credential");
+assert.equal(credentialWrite?.expectedVersion, 1);
+assert.equal(credentialWrite?.idempotencyKey, "ai-settings-test-key");
+assert.equal(JSON.stringify(settingsHttp.requests.filter((item) => item.operationId !== "setAiCredential")).includes("temporary-browser-secret"), false, "Credential must only cross the dedicated write boundary.");
+await settings.test({ expectedVersion: 2, idempotencyKey: "ai-settings-test-connection" });
+assert.equal(settingsHttp.requests.at(-1)?.operationId, "testAiConfiguration");
+assert.equal(settingsHttp.requests.at(-1)?.retry, "never");
+
+const settingsViewSource = read("src/workspaces/studio/presentation/views/AiConfigurationView.tsx");
+assert.ok(settingsViewSource.includes('type="password"'), "Workspace credentials must use a secret input.");
+assert.ok(settingsViewSource.includes('setCredentialValue("")'), "The transient primary secret must be cleared after submission.");
+assert.equal(/localStorage|sessionStorage/u.test(settingsViewSource), false, "AI Settings must not persist credentials in browser storage.");
 
 console.log("AI application contracts: PASS — typed intents, scoped conversations, governed actions, fail-closed connected runtime and provider isolation verified");

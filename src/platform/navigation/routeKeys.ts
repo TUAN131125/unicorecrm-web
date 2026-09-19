@@ -75,6 +75,7 @@ export const ROUTE_KEYS = {
   SETTINGS_PAYMENT_INFORMATION: "/settings/payment-information",
   SETTINGS_INVOICE_INFORMATION: "/settings/invoice-information",
   SETTINGS_INTEGRATIONS: "/settings/integrations",
+  SETTINGS_AI: "/settings/ai",
   SETTINGS_WEBHOOKS_API: "/settings/webhooks-api",
   SETTINGS_USERS_PERMISSIONS: "/settings/users-permissions",
   SETTINGS_AUDIT_LOGS: "/settings/audit-logs"

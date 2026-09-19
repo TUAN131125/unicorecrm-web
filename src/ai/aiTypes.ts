@@ -28,6 +28,7 @@ export interface AiInsight {
   suggestedActions: AiSuggestedAction[];
   relatedEntityType?: string;
   relatedEntityId?: string;
+  evidenceRefs?: string[];
   route?: string;
   createdAt: string;
 }
@@ -56,6 +57,7 @@ export interface AiChatMessage {
   createdAt: string;
   relatedEntityType?: string;
   relatedEntityId?: string;
+  evidenceRefs?: string[];
   suggestedActions?: AiSuggestedAction[];
 }
 

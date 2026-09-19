@@ -35,6 +35,9 @@ import { AccessGovernanceApiClient } from "@/platform/api/generated/accessGovern
 import { AccessGovernanceHttpAdapter } from "@/platform/access-control/infrastructure/AccessGovernanceHttpAdapter";
 import { WorkspaceConfigurationApiClient } from "@/platform/api/generated/workspaceConfigurationApi";
 import { StudioQuickSetupApiClient } from "@/platform/api/generated/studioQuickSetupApi";
+import { AiApiClient } from "@/platform/api/generated/aiApi";
+import { AiConfigurationHttpAdapter } from "@/workspaces/studio/infrastructure/AiConfigurationHttpAdapter";
+import { configureAiConfigurationGateway, resetAiConfigurationGateway } from "@/workspaces/studio/runtime/aiConfigurationRuntime";
 import { StudioCoreHttpAdapter } from "@/workspaces/studio/infrastructure/StudioCoreHttpAdapter";
 import { configureConnectedStudioCoreGateway, resetStudioCoreRuntime } from "@/workspaces/studio/runtime/studioCoreRuntime";
 import { configureConnectedAiRuntime, resetAiRuntime } from "@/ai/runtime/aiRuntimeBinding";
@@ -200,8 +203,10 @@ export async function initializeApplicationComposition(
       new WorkspaceConfigurationApiClient(connectedHttpClient as HttpClient),
       new StudioQuickSetupApiClient(connectedHttpClient as HttpClient),
     ));
+    configureAiConfigurationGateway(new AiConfigurationHttpAdapter(new AiApiClient(connectedHttpClient as HttpClient)));
   } else {
     resetStudioCoreRuntime();
+    resetAiConfigurationGateway();
   }
   // AI is a cross-cutting CRM capability, not one of the 15 business modules.
   // Connected mode binds the HTTP-backed runtime; demo mode falls back to the

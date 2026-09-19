@@ -64,8 +64,8 @@ export const AiAssistantDrawer: React.FC<AiAssistantDrawerProps> = ({ isOpen, on
 
   const welcomeMessage = connectedAdvisoryOnly
     ? (isVi
-      ? "Xin chào! Tôi cung cấp tư vấn chỉ đọc cho Lead, Deal hoặc Task đang được chọn. Các hành động tạo hoặc cập nhật dữ liệu không khả dụng trong Trợ lý AI."
-      : "Hello! I provide read-only advice for the selected Lead, Deal, or Task. Create and update actions are unavailable in the AI Assistant.")
+      ? "Xin chào! Tôi cung cấp tư vấn chỉ đọc cho Lead, Liên hệ, Tổ chức, Khách hàng, Cơ hội hoặc Công việc đang được chọn. Các hành động tạo hoặc cập nhật dữ liệu không khả dụng trong Trợ lý AI."
+      : "Hello! I provide read-only advice for the selected Lead, Contact, Organization, Customer, Deal, or Task. Create and update actions are unavailable in the AI Assistant.")
     : (isVi
       ? "Xin chào! Tôi là Trợ lý AI của UnicoreCRM. Bạn có thể hỏi dữ liệu CRM, yêu cầu phân tích hoặc ra lệnh tạo công việc."
       : "Hello! I am the UnicoreCRM AI Assistant. Ask about CRM data, request analysis, or command task creation.");

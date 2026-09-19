@@ -24,6 +24,13 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "activateAiConfiguration",
+      "method": "POST",
+      "path": "/ai/configuration/activate",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "activateOutboundWebhookSubscription",
       "method": "POST",
       "path": "/outbound-webhooks/{subscriptionId}/activate",
@@ -668,6 +675,13 @@
       "blockingDecisionId": "DEC-DELETEPRODUCTCONFIGURATIONTYPE"
     },
     {
+      "operationId": "disableAiConfiguration",
+      "method": "POST",
+      "path": "/ai/configuration/disable",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "discardInvoiceDraft",
       "method": "POST",
       "path": "/invoices/{invoiceId}/discard",
@@ -741,6 +755,27 @@
       "operationId": "expireQuotesBatch",
       "method": "POST",
       "path": "/quotes/expire-batch",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "getAiConfiguration",
+      "method": "GET",
+      "path": "/ai/configuration",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "getAiProviderCatalog",
+      "method": "GET",
+      "path": "/ai/configuration/catalog",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "getAiUsageSummary",
+      "method": "GET",
+      "path": "/ai/configuration/usage",
       "status": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null
     },
@@ -1648,6 +1683,13 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "requestAiAdvisory",
+      "method": "POST",
+      "path": "/ai/advisories",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "requestLeadExport",
       "method": "POST",
       "path": "/leads/export",
@@ -1816,6 +1858,13 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "saveAiConfiguration",
+      "method": "PUT",
+      "path": "/ai/configuration",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "saveInvoiceDraft",
       "method": "PATCH",
       "path": "/invoices/{invoiceId}/draft",
@@ -1844,6 +1893,13 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "setAiCredential",
+      "method": "PUT",
+      "path": "/ai/configuration/credential",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "signIn",
       "method": "POST",
       "path": "/auth/sessions",
@@ -1868,6 +1924,13 @@
       "operationId": "syncShippingBookingCommand",
       "method": "POST",
       "path": "/shipping/{bookingId}/sync-booking",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "testAiConfiguration",
+      "method": "POST",
+      "path": "/ai/configuration/test",
       "status": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null
     },

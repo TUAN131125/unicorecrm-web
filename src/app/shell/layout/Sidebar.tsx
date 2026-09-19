@@ -43,6 +43,7 @@ import {
   Database,
   Banknote,
   Webhook,
+  Bot,
 } from "lucide-react";
 import type { EffectiveShellAccess } from "@/app/authorization";
 import { isPrimaryNavigationModule, resolveRoleNavigationProfile } from "@/app/navigation/roleBasedNavigation";
@@ -263,6 +264,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     payments: <Banknote size={14} />,
     invoice: <ReceiptText size={14} />,
     integrations: <Cable size={14} />,
+    ai: <Bot size={14} />,
     webhooks: <Webhook size={14} />,
   }[icon]);
 
