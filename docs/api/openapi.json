@@ -52741,6 +52741,35 @@
           }
         }
       },
+      "AiPendingConfigurationView": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "status",
+          "primaryProvider",
+          "primaryModel",
+          "primaryCredentialSource",
+          "primaryCredentialConfigured",
+          "fallbackEnabled",
+          "fallbackCredentialConfigured",
+          "retryRateLimited",
+          "isValidated"
+        ],
+        "properties": {
+          "status": { "type": "string", "enum": ["DRAFT"] },
+          "primaryProvider": { "type": "string", "enum": ["GEMINI", "OPENAI"] },
+          "primaryModel": { "type": "string" },
+          "primaryCredentialSource": { "type": "string", "enum": ["WORKSPACE", "DEPLOYMENT"] },
+          "primaryCredentialConfigured": { "type": "boolean" },
+          "fallbackEnabled": { "type": "boolean" },
+          "fallbackProvider": { "type": ["string", "null"], "enum": ["GEMINI", "OPENAI", null] },
+          "fallbackModel": { "type": ["string", "null"] },
+          "fallbackCredentialSource": { "type": ["string", "null"], "enum": ["WORKSPACE", "DEPLOYMENT", null] },
+          "fallbackCredentialConfigured": { "type": "boolean" },
+          "retryRateLimited": { "type": "boolean" },
+          "isValidated": { "type": "boolean" }
+        }
+      },
       "AiConfigurationView": {
         "type": "object",
         "additionalProperties": false,
@@ -52847,6 +52876,9 @@
               "null"
             ],
             "format": "date-time"
+          },
+          "pendingDraft": {
+            "$ref": "#/components/schemas/AiPendingConfigurationView"
           }
         }
       },

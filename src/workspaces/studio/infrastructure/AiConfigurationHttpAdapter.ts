@@ -23,4 +23,10 @@ const map = (value: AiConfigurationView): AiConfiguration => ({
   fallbackModel: typeof value.fallbackModel === "string" ? value.fallbackModel : null,
   fallbackCredentialSource: value.fallbackCredentialSource ?? null,
   activatedAt: typeof value.activatedAt === "string" ? value.activatedAt : null,
+  pendingDraft: value.pendingDraft ? {
+    ...value.pendingDraft,
+    fallbackProvider: value.pendingDraft.fallbackProvider ?? null,
+    fallbackModel: typeof value.pendingDraft.fallbackModel === "string" ? value.pendingDraft.fallbackModel : null,
+    fallbackCredentialSource: value.pendingDraft.fallbackCredentialSource ?? null,
+  } : null,
 });

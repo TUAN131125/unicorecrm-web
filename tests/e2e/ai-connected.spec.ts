@@ -26,8 +26,15 @@ test("real connected Contact advisory is grounded, read-only, denied by owner ca
 
   const catalogResponse = page.waitForResponse((response) => response.request().method() === "GET" && new URL(response.url()).pathname === "/ai/configuration/catalog");
   await page.goto(`/#/w/${workspaceAKey}/studio/settings/ai`);
-  expect((await catalogResponse).status()).toBe(200);
+  const catalogResult = await catalogResponse;
+  expect(catalogResult.status()).toBe(200);
+  const catalog = await catalogResult.json() as { providers: Array<{ id: string; displayName: string }> };
   await expect(page.getByRole("heading", { name: /AI Assistant|Trợ lý AI/u })).toBeVisible();
+  const primaryProvider = page.getByLabel(/Provider|Nhà cung cấp/u).first();
+  await expect(primaryProvider.locator("option")).toHaveCount(catalog.providers.length);
+  expect(await primaryProvider.locator("option").evaluateAll((options) => options.map((option) => ({ value: (option as HTMLOptionElement).value, label: option.textContent }))))
+    .toEqual(catalog.providers.map((provider) => ({ value: provider.id, label: provider.displayName })));
+  await expect(page.getByText(/Allow retry and cross-provider failover|Cho phép thử lại/u)).toBeVisible();
   const credentialSource = page.getByLabel(/Credential source|Nguồn thông tin xác thực/u).first();
   await credentialSource.selectOption("WORKSPACE");
   const draftResponse = page.waitForResponse((response) => response.request().method() === "PUT" && new URL(response.url()).pathname === "/ai/configuration");
@@ -60,13 +67,61 @@ test("real connected Contact advisory is grounded, read-only, denied by owner ca
   expect(response.status()).toBe(200);
   const requestBody = response.request().postDataJSON() as { contextReferences: Array<{ type: string; id: string }> };
   expect(requestBody.contextReferences).toEqual([{ type: "contact", id: contactId }]);
-  const responseBody = await response.json() as { evidence: Array<{ entityType: string; entityId: string; displayLabel?: string }> };
+  const responseBody = await response.json() as { provider: { name: string }; evidence: Array<{ entityType: string; entityId: string; displayLabel?: string }> };
+  expect(responseBody.provider.name).toBe("GEMINI");
   expect(responseBody.evidence).toEqual(expect.arrayContaining([expect.objectContaining({ entityType: "contact", entityId: contactId })]));
   await expect(page.getByText(/Read-only advisory|Tư vấn chỉ đọc/u).last()).toBeVisible();
   const evidenceAction = page.locator(`[data-ai-action-intent="NAVIGATE"]`).filter({ hasText: responseBody.evidence[0]?.displayLabel ?? contactId });
   await expect(evidenceAction).toBeVisible();
   await evidenceAction.click();
   await expect(page).toHaveURL(new RegExp(`/contacts/${contactId}$`, "u"));
+  expect(sqlScalar(`SELECT Version FROM contacts.Contacts WHERE WorkspaceId='${workspaceA}' AND ContactId='${contactId}';`)).toBe(beforeVersion);
+
+  const openAiBeforeDisabledFailure = Number(sqlScalar(`SELECT COUNT(*) FROM platform_ai.AiProviderAttempts WHERE WorkspaceId='${workspaceA}' AND Provider='OPENAI';`));
+  const disabledFallbackResponse = page.waitForResponse((item) => item.request().method() === "POST" && new URL(item.url()).pathname === "/ai/advisories");
+  await page.getByPlaceholder(/Message Unicore AI|Nhắn cho Unicore AI/u).fill("DETERMINISTIC_GEMINI_TRANSIENT_FAILURE prove fallback is disabled.");
+  await page.getByRole("button", { name: /^(?:Send|Gửi)$/u }).click();
+  expect((await disabledFallbackResponse).status()).toBe(503);
+  await expect(page.locator('[data-ai-interaction-state="provider_unavailable"]')).toBeVisible();
+  expect(Number(sqlScalar(`SELECT COUNT(*) FROM platform_ai.AiProviderAttempts WHERE WorkspaceId='${workspaceA}' AND Provider='OPENAI';`))).toBe(openAiBeforeDisabledFailure);
+  await expect(page.getByText(/simulated output is not substituted/iu)).toHaveCount(0);
+  await page.getByRole("button", { name: /Close AI Assistant|Đóng Trợ lý AI/u }).click();
+
+  await page.goto(`/#/w/${workspaceAKey}/studio/settings/ai`);
+  await page.getByLabel(/Enable cross-provider failover|Bật failover/u).check();
+  const fallbackSource = page.getByLabel(/Credential source|Nguồn thông tin xác thực/u).last();
+  await fallbackSource.selectOption("WORKSPACE");
+  const fallbackDraftResponse = page.waitForResponse((item) => item.request().method() === "PUT" && new URL(item.url()).pathname === "/ai/configuration");
+  await page.getByRole("button", { name: /Save draft|Lưu bản nháp/u }).click();
+  expect((await fallbackDraftResponse).status()).toBe(200);
+  await expect(page.locator('[data-ai-active-configuration="true"]')).toContainText("GEMINI");
+  await expect(page.locator('[data-ai-pending-configuration="true"]')).toBeVisible();
+  await expect(page.getByRole("button", { name: /Disable|Tắt/u })).toBeEnabled();
+  const fallbackSecret = "browser-fallback-secret-never-echo";
+  await page.getByLabel("API key").last().fill(fallbackSecret);
+  const fallbackCredentialResponse = page.waitForResponse((item) => item.request().method() === "PUT" && new URL(item.url()).pathname === "/ai/configuration/credential");
+  await page.getByRole("button", { name: /Set key|Đặt khóa/u }).last().click();
+  const fallbackCredentialResult = await fallbackCredentialResponse;
+  expect(fallbackCredentialResult.status()).toBe(200);
+  expect(await fallbackCredentialResult.text()).not.toContain(fallbackSecret);
+  const fallbackTestResponse = page.waitForResponse((item) => item.request().method() === "POST" && new URL(item.url()).pathname === "/ai/configuration/test");
+  await page.getByRole("button", { name: /^(?:Test|Kiểm tra)$/u }).click();
+  expect((await fallbackTestResponse).status()).toBe(200);
+  const fallbackActivateResponse = page.waitForResponse((item) => item.request().method() === "POST" && new URL(item.url()).pathname === "/ai/configuration/activate");
+  await page.getByRole("button", { name: /Activate|Kích hoạt/u }).click();
+  expect((await fallbackActivateResponse).status()).toBe(200);
+
+  await page.goto(`/#/w/${workspaceAKey}/crm/contacts/${contactId}`);
+  await page.locator("#floating-ai-assistant-btn").click();
+  const failoverResponse = page.waitForResponse((item) => item.request().method() === "POST" && new URL(item.url()).pathname === "/ai/advisories");
+  await page.getByPlaceholder(/Message Unicore AI|Nhắn cho Unicore AI/u).fill("DETERMINISTIC_GEMINI_TRANSIENT_FAILURE summarize this Contact through controlled failover.");
+  await page.getByRole("button", { name: /^(?:Send|Gửi)$/u }).click();
+  const failoverResult = await failoverResponse;
+  expect(failoverResult.status()).toBe(200);
+  const failoverBody = await failoverResult.json() as { provider: { name: string }; evidence: Array<{ entityType: string; entityId: string; displayLabel?: string }> };
+  expect(failoverBody.provider.name).toBe("OPENAI");
+  expect(failoverBody.evidence).toEqual(responseBody.evidence);
+  await expect(page.locator(`[data-ai-action-intent="NAVIGATE"]`).filter({ hasText: failoverBody.evidence[0]?.displayLabel ?? contactId }).last()).toBeVisible();
   expect(sqlScalar(`SELECT Version FROM contacts.Contacts WHERE WorkspaceId='${workspaceA}' AND ContactId='${contactId}';`)).toBe(beforeVersion);
 
   sqlExec(`DELETE rc FROM access.RoleCapabilities rc INNER JOIN access.Roles r ON r.RoleId=rc.RoleId WHERE r.WorkspaceId='${workspaceA}' AND rc.Capability='contacts.read';`);

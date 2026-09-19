@@ -8,6 +8,10 @@ export interface AiConfiguration {
   fallbackEnabled: boolean; fallbackProvider?: AiProviderId | null; fallbackModel?: string | null; fallbackCredentialSource?: AiCredentialSource | null;
   fallbackCredentialConfigured: boolean; retryRateLimited: boolean; isValidated: boolean; version: number;
   createdAt: string; updatedAt: string; activatedAt?: string | null;
+  pendingDraft?: AiPendingConfiguration | null;
+}
+export interface AiPendingConfiguration extends AiConfigurationDraft {
+  status: "DRAFT"; primaryCredentialConfigured: boolean; fallbackCredentialConfigured: boolean; isValidated: boolean;
 }
 export interface AiConfigurationDraft {
   primaryProvider: AiProviderId; primaryModel: string; primaryCredentialSource: AiCredentialSource; fallbackEnabled: boolean;
