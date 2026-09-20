@@ -237,7 +237,7 @@ function renderCustomerCell(
     case "email":
       return model.identity.email ? <span className="font-medium text-slate-600 crm-text-wrap flex items-center gap-1"><Mail size={11} className="text-slate-400 shrink-0" /><span className="crm-text-wrap">{model.identity.email}</span></span> : "—";
     case "status": return <CustomerStatusBadge status={customer.status} locale={isVi ? "vi" : "en"} />;
-    case "health": return <CustomerHealthBadge health={customer.health} locale={isVi ? "vi" : "en"} />;
+    case "health": return <CustomerHealthBadge health={customer.healthAssessment?.healthBand ?? customer.health} locale={isVi ? "vi" : "en"} />;
     case "type": return <CustomerTypeBadge type={customer.type} />;
     case "segment": return customer.segment ? localizeBusinessDescriptor(customer.segment, isVi ? "vi" : "en") : "—";
     case "owner":

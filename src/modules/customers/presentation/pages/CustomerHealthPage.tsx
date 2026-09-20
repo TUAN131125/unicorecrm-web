@@ -3,21 +3,22 @@ import { useNavigate } from "react-router-dom";
 import { ArrowLeft, HeartPulse } from "lucide-react";
 import { Button, PageHeader } from "@/shared/components/ui";
 import { useI18n } from "@/i18n";
-import type { Customer, CustomerHealth } from "../../domain/model/customer.types";
+import type { Customer, CustomerHealthBand } from "../../domain/model/customer.types";
 import { CustomerHealthBadge } from "../components/CustomerStatusBadge";
 import { buildCustomer360ReadModel } from "../model/customer360ReadModel";
 
-const CUSTOMER_HEALTH_ORDER: Record<CustomerHealth | "UNKNOWN", number> = {
-  RISK: 0,
-  WATCH: 1,
-  GOOD: 2,
-  UNKNOWN: 3,
+const CUSTOMER_HEALTH_ORDER: Record<CustomerHealthBand, number> = {
+  CRITICAL: 0,
+  AT_RISK: 1,
+  WATCH: 2,
+  HEALTHY: 3,
+  UNKNOWN: 4,
 };
 
 export const CustomerHealthPage: React.FC<{
   customers: Customer[];
-  refreshToken?: unknown;
-}> = ({ customers, refreshToken }) => {
+  connected: boolean;
+}> = ({ customers, connected }) => {
   const navigate = useNavigate();
   const { locale } = useI18n();
   const isVi = locale === "vi";
@@ -27,14 +28,14 @@ export const CustomerHealthPage: React.FC<{
       customers
         .map((customer) => ({
           customer,
-          model: buildCustomer360ReadModel(customer),
+          model: connected ? undefined : buildCustomer360ReadModel(customer),
+          band: customer.healthAssessment?.healthBand ?? "UNKNOWN" as CustomerHealthBand,
         }))
         .sort(
           (a, b) =>
-            CUSTOMER_HEALTH_ORDER[a.customer.health ?? "UNKNOWN"] -
-            CUSTOMER_HEALTH_ORDER[b.customer.health ?? "UNKNOWN"],
+            CUSTOMER_HEALTH_ORDER[a.band] - CUSTOMER_HEALTH_ORDER[b.band],
         ),
-    [customers, refreshToken],
+    [connected, customers],
   );
 
   return (
@@ -55,7 +56,7 @@ export const CustomerHealthPage: React.FC<{
       />
 
       <div className="grid gap-3">
-        {rows.map(({ customer, model }) => (
+        {rows.map(({ customer, model, band }) => (
           <button
             key={customer.id}
             type="button"
@@ -64,7 +65,7 @@ export const CustomerHealthPage: React.FC<{
           >
             <div>
               <div className="font-black text-slate-950">
-                {model.identity.displayName}
+                {model?.identity.displayName ?? customer.customerCode}
               </div>
               <div className="mt-1 text-[10px] text-slate-500">
                 {customer.customerCode} · {customer.type}
@@ -72,22 +73,22 @@ export const CustomerHealthPage: React.FC<{
             </div>
             <div>
               <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                {isVi ? "Việc mở" : "Open work"}
+                {isVi ? "Điểm" : "Score"}
               </div>
               <div className="mt-1 font-extrabold">
-                {model.metrics.openTaskCount}
+                {customer.healthAssessment?.score ?? "—"}
               </div>
             </div>
             <div>
               <div className="text-[10px] font-black uppercase tracking-wider text-slate-400">
-                {isVi ? "Hỗ trợ mở" : "Open support"}
+                {isVi ? "Độ tin cậy" : "Confidence"}
               </div>
               <div className="mt-1 font-extrabold">
-                {model.metrics.openSupportCount}
+                {customer.healthAssessment?.confidence ?? (isVi ? "Không có" : "None")}
               </div>
             </div>
             <CustomerHealthBadge
-              health={customer.health}
+              health={connected ? band : customer.health}
               locale={isVi ? "vi" : "en"}
             />
           </button>

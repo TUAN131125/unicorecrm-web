@@ -3,7 +3,7 @@ import { getCustomerCollectionResource } from "../../application/vertical-slice/
 import { getCustomersSnapshot, replaceCustomerSnapshot, subscribeToCustomers, type Customer } from "../../public/api";
 import { getAllCustomerCareCardsSnapshot } from "../../public/api";
 import { useModuleAuthoritativeResource, useServerPagedCollection } from "@/shared/operations";
-import type { ModuleListQuery } from "@/shared/application";
+import { runBackendProjection, type ModuleListQuery } from "@/shared/application";
 import { useWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import { getCustomerApiRuntime, isCustomerConnectedApiRuntime } from "../../application/composition/customerApplicationServices";
 
@@ -20,7 +20,9 @@ export function useCustomers(options: {
     onScopeChange: () => replaceCustomerSnapshot({ customers: [], careCards: getAllCustomerCareCardsSnapshot() }),
   });
   const project = useCallback((records: readonly Customer[]) => {
-    replaceCustomerSnapshot({ customers: [...records], careCards: getAllCustomerCareCardsSnapshot() });
+    runBackendProjection("customers", () =>
+      replaceCustomerSnapshot({ customers: [...records], careCards: getAllCustomerCareCardsSnapshot() }),
+    );
   }, []);
   const loadPage = useCallback((request: ModuleListQuery, signal: AbortSignal) => (
     getCustomerApiRuntime().queries.list(request, signal)

@@ -567,6 +567,7 @@ function buildConnectedCustomer360Model(projection: Customer360Projection): Cust
   const metrics = projection.metrics;
   return {
     customer: projection.customer,
+    healthAssessment: projection.healthAssessment,
     identity: {
       ...projection.identity,
       ownerId: projection.customer.ownerId ?? undefined,

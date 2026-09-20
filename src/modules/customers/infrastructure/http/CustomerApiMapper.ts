@@ -13,7 +13,8 @@ export function mapCustomerDocument(value: CustomerDocument): Customer {
     type: value.type,
     relationshipRef: value.relationshipRef,
     status: value.status,
-    health: value.health,
+    health: value.health ?? null,
+    healthAssessment: value.healthAssessment ? mapHealthAssessment(value.healthAssessment) : undefined,
     calculatedHealth: value.calculatedHealth,
     manualHealthOverride: value.manualHealthOverride,
     onboardingStatus: value.onboardingStatus,
@@ -26,8 +27,8 @@ export function mapCustomerDocument(value: CustomerDocument): Customer {
     tier: value.tier,
     serviceLevel: value.serviceLevel,
     careCadenceDays: value.careCadenceDays,
-    firstPurchaseAt: value.firstPurchaseAt,
-    lastPurchaseAt: value.lastPurchaseAt,
+    firstPurchaseAt: value.firstPurchaseAt ?? null,
+    lastPurchaseAt: value.lastPurchaseAt ?? null,
     ownerId: value.ownerId,
     careOwnerId: value.careOwnerId,
     segment: value.segment,
@@ -43,6 +44,7 @@ export function mapCustomerDocument(value: CustomerDocument): Customer {
 export function mapCustomer360ReadModel(value: Customer360ReadModel): Customer360Projection {
   return {
     customer: mapCustomerDocument(value.customer),
+    healthAssessment: value.healthAssessment ? mapHealthAssessment(value.healthAssessment) : undefined,
     identity: { ...value.identity },
     metrics: {
       ...value.metrics,
@@ -54,5 +56,16 @@ export function mapCustomer360ReadModel(value: Customer360ReadModel): Customer36
     projectionVersion: value.projectionVersion,
     generatedAt: value.generatedAt,
     stakeholderContacts: value.stakeholderContacts.map((contact) => ({ ...contact })),
+  };
+}
+
+function mapHealthAssessment(value: NonNullable<CustomerDocument["healthAssessment"]>) {
+  return {
+    ...value,
+    score: value.score ?? null,
+    lastPurchaseAt: value.lastPurchaseAt ?? null,
+    expectedPurchaseCadenceDays: value.expectedPurchaseCadenceDays ?? null,
+    daysSinceLastPurchase: value.daysSinceLastPurchase ?? null,
+    algorithmVersion: "CUSTOMER_HEALTH_PURCHASE_RECENCY_V1" as const,
   };
 }

@@ -13,6 +13,22 @@ export type CustomerStatus =
   | "ARCHIVED";
 
 export type CustomerHealth = "GOOD" | "WATCH" | "RISK";
+export type CustomerHealthBand = "UNKNOWN" | "HEALTHY" | "WATCH" | "AT_RISK" | "CRITICAL";
+export type CustomerChurnRisk = "UNKNOWN" | "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+export type CustomerHealthConfidence = "NONE" | "LOW" | "MEDIUM" | "HIGH";
+export interface CustomerHealthAssessment {
+  score: number | null;
+  healthBand: CustomerHealthBand;
+  churnRisk: CustomerChurnRisk;
+  confidence: CustomerHealthConfidence;
+  purchaseCount: number;
+  lastPurchaseAt: string | null;
+  expectedPurchaseCadenceDays: number | null;
+  daysSinceLastPurchase: number | null;
+  reasonCode: "NO_PURCHASE_EVIDENCE" | "PURCHASE_RECENCY_HEALTHY" | "PURCHASE_WITHIN_EXPECTED_CADENCE" | "PURCHASE_CADENCE_SLIPPING" | "PURCHASE_OVER_EXPECTED_CADENCE" | "PURCHASE_SEVERELY_OVERDUE";
+  algorithmVersion: "CUSTOMER_HEALTH_PURCHASE_RECENCY_V1";
+  evaluatedAt: string;
+}
 export type CustomerOnboardingStatus = "PENDING" | "COMPLETED";
 export type CustomerTier = "STANDARD" | "SILVER" | "GOLD" | "PLATINUM" | "STRATEGIC";
 export type CustomerServiceLevel = "STANDARD" | "PRIORITY" | "PREMIUM" | "ENTERPRISE";
@@ -25,6 +41,7 @@ export interface Customer {
   relationshipRef: RelationshipRef;
   status: CustomerStatus;
   health: CustomerHealth | null;
+  healthAssessment?: CustomerHealthAssessment;
   calculatedHealth?: CustomerHealth;
   manualHealthOverride?: CustomerHealth;
   onboardingStatus?: CustomerOnboardingStatus;

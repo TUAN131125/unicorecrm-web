@@ -56808,9 +56808,6 @@
           "type",
           "relationshipRef",
           "status",
-          "health",
-          "firstPurchaseAt",
-          "lastPurchaseAt",
           "version",
           "createdAt",
           "updatedAt"
@@ -56849,6 +56846,10 @@
                 "type": "null"
               }
             ]
+          },
+          "healthAssessment": {
+            "$ref": "#/components/schemas/CustomerHealthAssessment",
+            "description": "Customers-owned purchase-recency assessment calculated on read. Omitted for archived Customers."
           },
           "calculatedHealth": {
             "$ref": "#/components/schemas/CustomerHealth",
@@ -56976,6 +56977,32 @@
           "WATCH",
           "RISK"
         ]
+      },
+      "CustomerHealthAssessment": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "healthBand",
+          "churnRisk",
+          "confidence",
+          "purchaseCount",
+          "reasonCode",
+          "algorithmVersion",
+          "evaluatedAt"
+        ],
+        "properties": {
+          "score": { "anyOf": [{ "type": "integer", "minimum": 0, "maximum": 100 }, { "type": "null" }] },
+          "healthBand": { "type": "string", "enum": ["UNKNOWN", "HEALTHY", "WATCH", "AT_RISK", "CRITICAL"] },
+          "churnRisk": { "type": "string", "enum": ["UNKNOWN", "LOW", "MEDIUM", "HIGH", "CRITICAL"] },
+          "confidence": { "type": "string", "enum": ["NONE", "LOW", "MEDIUM", "HIGH"] },
+          "purchaseCount": { "type": "integer", "minimum": 0 },
+          "lastPurchaseAt": { "anyOf": [{ "$ref": "#/components/schemas/UtcDateTime" }, { "type": "null" }] },
+          "expectedPurchaseCadenceDays": { "anyOf": [{ "type": "integer", "minimum": 7, "maximum": 365 }, { "type": "null" }] },
+          "daysSinceLastPurchase": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] },
+          "reasonCode": { "type": "string", "enum": ["NO_PURCHASE_EVIDENCE", "PURCHASE_RECENCY_HEALTHY", "PURCHASE_WITHIN_EXPECTED_CADENCE", "PURCHASE_CADENCE_SLIPPING", "PURCHASE_OVER_EXPECTED_CADENCE", "PURCHASE_SEVERELY_OVERDUE"] },
+          "algorithmVersion": { "type": "string", "const": "CUSTOMER_HEALTH_PURCHASE_RECENCY_V1" },
+          "evaluatedAt": { "$ref": "#/components/schemas/UtcDateTime" }
+        }
       },
       "CustomerList": {
         "type": "object",
@@ -70232,6 +70259,10 @@
         "properties": {
           "customer": {
             "$ref": "#/components/schemas/CustomerDocument"
+          },
+          "healthAssessment": {
+            "$ref": "#/components/schemas/CustomerHealthAssessment",
+            "description": "Same Customers-owned assessment semantics exposed on Customer reads."
           },
           "identity": {
             "$ref": "#/components/schemas/Customer360Identity"

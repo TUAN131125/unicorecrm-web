@@ -1,6 +1,6 @@
 import type { AuthoritativePage, ModuleListQuery } from "@/shared/application";
 import type { RelationshipRef } from "@/platform/identity";
-import type { Customer, CustomerServiceLevel, CustomerTier } from "../../domain/model/customer.types";
+import type { Customer, CustomerHealthAssessment, CustomerServiceLevel, CustomerTier } from "../../domain/model/customer.types";
 
 export interface CreateCustomerRequest {
   relationshipRef: RelationshipRef;
@@ -22,6 +22,7 @@ export type CustomerApiRuntimeMode = "demo" | "connected" | "test";
 
 export interface Customer360Projection {
   customer: Customer;
+  healthAssessment?: CustomerHealthAssessment;
   identity: {
     displayName: string;
     contactId?: string;

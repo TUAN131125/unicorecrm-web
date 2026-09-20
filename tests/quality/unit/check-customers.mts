@@ -15,6 +15,8 @@ import { CAPABILITIES } from "@/platform/access-control/domain/capabilityCatalog
 import { createDefaultAccessControlSnapshot } from "@/platform/access-control/runtime/accessControlSeed";
 import { migrateStoredAccessControlSnapshot } from "@/platform/access-control/runtime/accessControlMigration";
 import { ModuleRegistry } from "@/platform/module-registry/ModuleRegistry";
+import { mapCustomerDocument } from "@/modules/customers/infrastructure/http/CustomerApiMapper";
+import type { CustomerDocument } from "@/platform/api/generated/commercialApi";
 
 const root = repositoryRoot;
 const workspaceId = "ws_customer_contract";
@@ -162,6 +164,31 @@ assert.match(customerHookSource, /queries\.list\(request, signal\)/);
 const customerDetailRouteSource = read("src/modules/customers/detail-route.tsx");
 assert.match(customerDetailRouteSource, /connected && !detailQuery\.error \? detailQuery\.data : undefined/);
 assert.doesNotMatch(customerDetailRouteSource, /detailQuery\.data\?\.customer \?\?/);
+
+const authoritativeHealthDocument: CustomerDocument = {
+  id: "customer_health_contract", workspaceId, ownerId: "member_health", customerCode: "CU-HEALTH",
+  type: "B2C", relationshipRef: contactRef, status: "ACTIVE", health: "RISK",
+  firstPurchaseAt: null, lastPurchaseAt: null, version: 7,
+  createdAt: "2026-09-01T00:00:00.000Z", updatedAt: "2026-09-01T00:00:00.000Z",
+  healthAssessment: {
+    score: null, healthBand: "UNKNOWN", churnRisk: "UNKNOWN", confidence: "NONE", purchaseCount: 0,
+    lastPurchaseAt: null, expectedPurchaseCadenceDays: null, daysSinceLastPurchase: null,
+    reasonCode: "NO_PURCHASE_EVIDENCE", algorithmVersion: "CUSTOMER_HEALTH_PURCHASE_RECENCY_V1",
+    evaluatedAt: "2026-09-20T00:00:00.000Z",
+  },
+};
+const authoritativeHealthCustomer = mapCustomerDocument(authoritativeHealthDocument);
+assert.equal(authoritativeHealthCustomer.healthAssessment?.healthBand, "UNKNOWN", "Connected Customer mapping must preserve backend UNKNOWN instead of legacy RISK.");
+assert.equal(authoritativeHealthCustomer.healthAssessment?.score, null);
+assert.equal(authoritativeHealthCustomer.healthAssessment?.confidence, "NONE");
+const healthRouteSource = read("src/modules/customers/health-route.tsx");
+for (const forbiddenConnectedDependency of ["getOrderListSnapshot", "getSupportCasesSnapshot", "getTaskActivitySnapshot", "buildCustomerRelationshipAssessment"]) {
+  assert.equal(healthRouteSource.includes(forbiddenConnectedDependency), false, `Connected Customer Health route must not depend on ${forbiddenConnectedDependency}.`);
+}
+assert.match(healthRouteSource, /useCustomers\(\{ loadAuthoritative: true \}\)/, "Customer Health route must use the connected Customers query boundary.");
+const healthPageSource = read("src/modules/customers/presentation/pages/CustomerHealthPage.tsx");
+assert.match(healthPageSource, /customer\.healthAssessment\?\.healthBand/);
+assert.match(healthPageSource, /connected \? band : customer\.health/, "Legacy health may only remain as an explicit demo-mode presentation fallback.");
 
 console.log("Customer module business contracts: PASS");
 console.log("- purchase evidence conversion is effective-only, idempotent and unique per relationship");

@@ -12,7 +12,7 @@ import type { ShippingBooking } from "@/modules/shipping";
 import type { SupportCase } from "@/modules/support";
 import type { Activity, Task } from "@/modules/tasks";
 import type { RelationshipIntegrityIssue } from "@/platform/relationship-integrity";
-import type { Customer, CustomerCareCard } from "../../domain/model/customer.types";
+import type { Customer, CustomerCareCard, CustomerHealthAssessment } from "../../domain/model/customer.types";
 
 export interface CustomerIdentityView {
   displayName: string;
@@ -67,6 +67,7 @@ export interface CustomerTimelineItem {
 
 export interface Customer360ReadModel {
   customer: Customer;
+  healthAssessment?: CustomerHealthAssessment;
   identity: CustomerIdentityView;
   leads: Lead[];
   deals: Deal[];

@@ -47,10 +47,41 @@ export const CustomerOverviewTab: React.FC<CustomerOverviewTabProps> = ({
   onOpenRecord,
 }) => {
   const assessment = useMemo(
-    () => buildCustomerRelationshipAssessment(model),
+    () => model.healthAssessment ? null : buildCustomerRelationshipAssessment(model),
     [model],
   );
   const [evidenceOpen, setEvidenceOpen] = useState(false);
+  if (model.healthAssessment) {
+    const health = model.healthAssessment;
+    return (
+      <div data-customer-health-authority="backend" className="space-y-4 animate-fade-in">
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <div className="text-[11px] font-semibold uppercase tracking-wide text-violet-700">
+                {isVi ? "Sức khỏe khách hàng" : "Customer health"}
+              </div>
+              <h2 className="mt-1 text-lg font-semibold text-slate-950">
+                {healthBandLabel(health.healthBand, isVi)}
+              </h2>
+            </div>
+            <AssessmentBadge label={healthBandLabel(health.healthBand, isVi)} level={health.healthBand === "HEALTHY" ? "HEALTHY" : health.healthBand === "AT_RISK" ? "RISK" : health.healthBand === "UNKNOWN" ? "WATCH" : health.healthBand} />
+          </div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <AiMetric label={isVi ? "Điểm sức khỏe" : "Health score"} value={health.score === null ? "—" : `${health.score}/100`} />
+            <AiMetric label={isVi ? "Rủi ro rời bỏ" : "Churn risk"} value={health.churnRisk} help={isVi ? "Phân loại, không phải xác suất" : "Classification, not probability"} />
+            <AiMetric label={isVi ? "Độ tin cậy" : "Confidence"} value={health.confidence} help={`${health.purchaseCount} ${isVi ? "lần mua" : "purchase(s)"}`} />
+          </div>
+          <p className="mt-4 text-sm text-slate-600">{healthReasonLabel(health.reasonCode, isVi)}</p>
+          <div className="mt-3 text-xs text-slate-500">
+            {health.daysSinceLastPurchase === null ? "" : `${health.daysSinceLastPurchase} ${isVi ? "ngày từ lần mua gần nhất" : "days since latest purchase"}`}
+            {health.expectedPurchaseCadenceDays === null ? "" : ` · ${isVi ? "Nhịp kỳ vọng" : "Expected cadence"}: ${health.expectedPurchaseCadenceDays} ${isVi ? "ngày" : "days"}`}
+          </div>
+        </section>
+      </div>
+    );
+  }
+  if (!assessment) return null;
   const openDeals = model.deals.filter(
     (deal) => !["WON", "LOST"].includes(String(deal.stage).toUpperCase()),
   );
@@ -371,6 +402,29 @@ export const CustomerOverviewTab: React.FC<CustomerOverviewTabProps> = ({
     </div>
   );
 };
+
+function healthBandLabel(value: import("../../domain/model/customer.types").CustomerHealthBand, isVi: boolean): string {
+  const labels = {
+    UNKNOWN: isVi ? "Chưa đủ dữ liệu" : "Unknown",
+    HEALTHY: isVi ? "Khỏe mạnh" : "Healthy",
+    WATCH: isVi ? "Theo dõi" : "Watch",
+    AT_RISK: isVi ? "Có rủi ro" : "At risk",
+    CRITICAL: isVi ? "Nghiêm trọng" : "Critical",
+  } as const;
+  return labels[value];
+}
+
+function healthReasonLabel(value: import("../../domain/model/customer.types").CustomerHealthAssessment["reasonCode"], isVi: boolean): string {
+  const labels = {
+    NO_PURCHASE_EVIDENCE: isVi ? "Chưa có bằng chứng mua hàng hiệu lực." : "No effective purchase evidence is available.",
+    PURCHASE_RECENCY_HEALTHY: isVi ? "Lần mua gần đây nằm trong nhịp mua khỏe mạnh." : "The latest purchase is within a healthy cadence.",
+    PURCHASE_WITHIN_EXPECTED_CADENCE: isVi ? "Lần mua gần nhất vẫn trong nhịp kỳ vọng." : "The latest purchase remains within the expected cadence.",
+    PURCHASE_CADENCE_SLIPPING: isVi ? "Nhịp mua đang chậm lại." : "The purchase cadence is slipping.",
+    PURCHASE_OVER_EXPECTED_CADENCE: isVi ? "Lần mua đã quá nhịp kỳ vọng." : "The latest purchase is over the expected cadence.",
+    PURCHASE_SEVERELY_OVERDUE: isVi ? "Lần mua đã quá hạn nghiêm trọng so với nhịp kỳ vọng." : "The latest purchase is severely overdue against the expected cadence.",
+  } as const;
+  return labels[value];
+}
 
 const AiMetric: React.FC<{
   label: string;
