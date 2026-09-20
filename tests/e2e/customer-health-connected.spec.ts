@@ -10,6 +10,8 @@ const unknownCustomerCode = process.env.UNICORECRM_TEST_UNKNOWN_CUSTOMER_CODE ??
 const recentCustomerId = process.env.UNICORECRM_TEST_RECENT_CUSTOMER_ID ?? "";
 const recentCustomerCode = process.env.UNICORECRM_TEST_RECENT_CUSTOMER_CODE ?? "";
 const overdueCustomerCode = process.env.UNICORECRM_TEST_OVERDUE_CUSTOMER_CODE ?? "";
+const archivedCustomerId = process.env.UNICORECRM_TEST_ARCHIVED_CUSTOMER_ID ?? "";
+const archivedCustomerCode = process.env.UNICORECRM_TEST_ARCHIVED_CUSTOMER_CODE ?? "";
 
 async function signIn(page: import("@playwright/test").Page, email: string, password: string) {
   await page.goto("/#/login");
@@ -87,4 +89,28 @@ test("connected detail for no-purchase Customer remains UNKNOWN", async ({ page 
   await expect(card).toContainText(/Unknown|Chưa đủ dữ liệu/u);
   await expect(card).toContainText(/NONE|Không có/u);
   await expect(card).not.toContainText("%");
+});
+
+test("connected archived Customer shows no active assessment and never falls back locally", async ({ page }) => {
+  test.setTimeout(90_000);
+  await signIn(page, ownerEmail, ownerPassword);
+  const workspace = page.url().match(/#\/w\/([^/]+)/u)?.[1];
+  expect(workspace).toBeTruthy();
+  expect(archivedCustomerId).not.toBe("");
+  expect(archivedCustomerCode).not.toBe("");
+
+  const detailResponse = page.waitForResponse((response) =>
+    response.request().method() === "GET" && new URL(response.url()).pathname === `/customers/${archivedCustomerId}/360`,
+  );
+  await page.evaluate((hash) => { window.location.hash = hash; }, `#/w/${workspace}/crm/customers/${archivedCustomerId}`);
+  const response = await detailResponse;
+  expect(response.status()).toBe(200);
+  expect((await response.json()).healthAssessment ?? null).toBeNull();
+
+  const absentCard = page.locator('[data-customer-health-authority="backend-absent"]');
+  await expect(absentCard).toBeVisible();
+  await expect(absentCard).toContainText(/Not assessed|Không được đánh giá/u);
+  await expect(absentCard).not.toContainText(/\/100/u);
+  await expect(page.locator('[data-customer-ai-brief="canonical"]')).toHaveCount(0);
+  await expect(page.locator('[data-customer-health-authority="backend"]')).toHaveCount(0);
 });

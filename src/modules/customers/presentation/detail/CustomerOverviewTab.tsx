@@ -23,6 +23,7 @@ import { localizeBusinessDescriptor } from "@/shared/lib/i18n/businessDescriptor
 
 interface CustomerOverviewTabProps {
   model: Customer360ReadModel;
+  connected: boolean;
   ownerName: string;
   isVi: boolean;
   onSelectTab(tab: CustomerDetailTab, subTab?: string): void;
@@ -36,6 +37,7 @@ interface CustomerOverviewTabProps {
 
 export const CustomerOverviewTab: React.FC<CustomerOverviewTabProps> = ({
   model,
+  connected,
   ownerName,
   isVi,
   onSelectTab,
@@ -47,8 +49,8 @@ export const CustomerOverviewTab: React.FC<CustomerOverviewTabProps> = ({
   onOpenRecord,
 }) => {
   const assessment = useMemo(
-    () => model.healthAssessment ? null : buildCustomerRelationshipAssessment(model),
-    [model],
+    () => connected || model.healthAssessment ? null : buildCustomerRelationshipAssessment(model),
+    [connected, model],
   );
   const [evidenceOpen, setEvidenceOpen] = useState(false);
   if (model.healthAssessment) {
@@ -77,6 +79,25 @@ export const CustomerOverviewTab: React.FC<CustomerOverviewTabProps> = ({
             {health.daysSinceLastPurchase === null ? "" : `${health.daysSinceLastPurchase} ${isVi ? "ngày từ lần mua gần nhất" : "days since latest purchase"}`}
             {health.expectedPurchaseCadenceDays === null ? "" : ` · ${isVi ? "Nhịp kỳ vọng" : "Expected cadence"}: ${health.expectedPurchaseCadenceDays} ${isVi ? "ngày" : "days"}`}
           </div>
+        </section>
+      </div>
+    );
+  }
+  if (connected) {
+    return (
+      <div data-customer-health-authority="backend-absent" className="space-y-4 animate-fade-in">
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+            {isVi ? "Sức khỏe khách hàng" : "Customer health"}
+          </div>
+          <h2 className="mt-1 text-lg font-semibold text-slate-950">
+            {isVi ? "Không được đánh giá" : "Not assessed"}
+          </h2>
+          <p className="mt-2 text-sm text-slate-600">
+            {isVi
+              ? "Backend không cung cấp đánh giá sức khỏe đang hoạt động cho khách hàng này."
+              : "The backend did not provide an active Health assessment for this Customer."}
+          </p>
         </section>
       </div>
     );

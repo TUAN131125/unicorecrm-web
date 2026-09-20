@@ -30,6 +30,7 @@ interface CustomerDetailTabContentProps {
   activeTab: CustomerDetailTab;
   requestedSubTab?: string;
   model: Customer360ReadModel;
+  connected: boolean;
   ownerName: string;
   onEditIdentity(): void;
   onCreateOpportunity(): void;
@@ -64,6 +65,7 @@ export const CustomerDetailTabContent: React.FC<
   activeTab,
   requestedSubTab,
   model,
+  connected,
   ownerName,
   onEditIdentity,
   onCreateOpportunity,
@@ -258,6 +260,7 @@ export const CustomerDetailTabContent: React.FC<
         return (
           <CustomerOverviewTab
             model={model}
+            connected={connected}
             ownerName={ownerName}
             isVi={isVi}
             onSelectTab={onSelectTab}

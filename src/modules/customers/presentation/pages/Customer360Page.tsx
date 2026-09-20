@@ -388,6 +388,7 @@ export const Customer360Page: React.FC<Customer360PageProps> = ({
                   activeTab={activeTab}
                   requestedSubTab={requestedSubTab}
                   model={model}
+                  connected={Boolean(authoritativeProjection)}
                   ownerName={ownerName}
                   onEditIdentity={() => setEditOpen(true)}
                   onCreateOpportunity={openDealModal}
