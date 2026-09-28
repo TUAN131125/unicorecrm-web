@@ -230,6 +230,7 @@
         "quality.lead-webhook-connector",
         "quality.lead-form-recovery-contracts",
         "quality.lead-detail-work-resources",
+        "quality.lead-work-panel",
         "quality.crm-ui-interaction-contracts",
         "quality.role-based-navigation",
         "quality.read-only-cross-domain",
@@ -5275,6 +5276,32 @@
         {
           "type": "node",
           "entry": "tests/quality/integration/check-lead-detail-work-resources.mts",
+          "nodeArgs": [
+            "--import",
+            "tsx"
+          ],
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "quality.lead-work-panel",
+      "commandName": "test:lead-work-panel",
+      "groupId": "integration",
+      "kind": "integration",
+      "owner": "quality-integration",
+      "entry": "tests/quality/integration/check-lead-work-panel.mts",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node",
+        "tsx"
+      ],
+      "shardKey": "quality.lead-work-panel",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/integration/check-lead-work-panel.mts",
           "nodeArgs": [
             "--import",
             "tsx"

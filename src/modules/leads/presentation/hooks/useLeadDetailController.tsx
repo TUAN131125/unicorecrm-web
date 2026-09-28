@@ -24,7 +24,7 @@ import type { SelectedPickerItem } from "@/modules/products";
 import { useLeads } from "../hooks/useLeads";
 import { useLeadActions } from "../hooks/useLeadActions";
 import { useLeadDetailDialogs } from "../hooks/useLeadDetailDialogs";
-import { LeadDetailActivityPanel, type LeadQuickAction } from "../components/LeadDetailActivityPanel";
+import type { LeadQuickAction } from "../components/LeadWorkPanel";
 import { LeadCompletedWorkTab, LeadOpenWorkTab } from "../components/LeadWorkActivityTabs";
 import { LeadDetailMoreMenu } from "../components/LeadDetailMoreMenu";
 import {
@@ -125,9 +125,6 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
     showProductForm, setShowProductForm,
     showCampaignForm, setShowCampaignForm,
     showMoreMenu, setShowMoreMenu,
-    selectedActivity, setSelectedActivity,
-    isFilterExpanded, setIsFilterExpanded,
-    timelineFilter, setTimelineFilter,
   } = viewState;
 
   const dialogs = useLeadDetailDialogs(lead);
@@ -577,12 +574,6 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
     setShowCampaignForm,
     showMoreMenu,
     setShowMoreMenu,
-    selectedActivity,
-    setSelectedActivity,
-    isFilterExpanded,
-    setIsFilterExpanded,
-    timelineFilter,
-    setTimelineFilter,
     dialogs,
     showDisqualifyModal,
     setShowDisqualifyModal,

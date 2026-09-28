@@ -111,10 +111,11 @@ export const CRM_EXTENDED_SCREEN_GUIDANCE: ScreenGuidance[] = [
     id: "crm.leads.detail",
     routeKey: "LEAD_DETAIL",
     productSpace: "crm",
-    version: 4,
+    version: 5,
     title: text("Chi tiết khách hàng tiềm năng", "Lead detail"),
     purpose: text("Tập hợp thông tin nhận diện, nhu cầu, tương tác và tiến trình xử lý của một khách hàng tiềm năng.", "Bring together identity, need, interactions, and work progress for a lead."),
     primaryTasks: [
+      task("work", "Dùng Công việc Lead để xem việc quá hạn, công việc tiếp theo và người phụ trách. Mở Ngữ cảnh nhanh khi cần; dùng Thao tác khác để đặt lịch hẹn hoặc ghi nhận SMS ngoài CRM.", "Use Lead work to check overdue work, the next task, and the owner. Expand Quick context when needed; use More actions to schedule a meeting or log external SMS."),
       task("verify", "Kiểm tra thông tin liên hệ, nguồn, nhu cầu và người phụ trách.", "Verify contact details, source, need, and owner."),
       task("update", "Dùng Bắt đầu liên hệ, Bắt đầu xác minh và Chốt kết quả theo bước hiện tại.", "Use Start contacting, Start verifying, and Resolve outcome for the current step.", [CAPABILITIES.LEADS_UPDATE]),
       task("qualify", "Chốt kết quả khi Lead đang ở bước Đang xác minh.", "Resolve the outcome when the Lead is in Verifying.", [CAPABILITIES.LEADS_QUALIFY]),

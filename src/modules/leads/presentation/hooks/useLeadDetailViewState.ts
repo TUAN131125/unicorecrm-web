@@ -1,8 +1,6 @@
 import { useState } from "react";
-import type { CRMActivity } from "@/shared/domain";
 
 import { getLeadPreference, removeLeadPreference, setLeadPreference } from "../../public/leads";
-import type { LeadTimelineFilter } from "../components/LeadDetailActivityPanel";
 
 export type LeadDetailTab =
   | "details"
@@ -29,9 +27,6 @@ export function useLeadDetailViewState() {
   const [showProductForm, setShowProductForm] = useState(false);
   const [showCampaignForm, setShowCampaignForm] = useState(false);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
-  const [selectedActivity, setSelectedActivity] = useState<CRMActivity | null>(null);
-  const [isFilterExpanded, setIsFilterExpanded] = useState(false);
-  const [timelineFilter, setTimelineFilter] = useState<LeadTimelineFilter>("all");
 
   const toggleRightPanel = () => {
     setIsRightPanelVisible((current) => {
@@ -51,8 +46,5 @@ export function useLeadDetailViewState() {
     showProductForm, setShowProductForm,
     showCampaignForm, setShowCampaignForm,
     showMoreMenu, setShowMoreMenu,
-    selectedActivity, setSelectedActivity,
-    isFilterExpanded, setIsFilterExpanded,
-    timelineFilter, setTimelineFilter,
   };
 }

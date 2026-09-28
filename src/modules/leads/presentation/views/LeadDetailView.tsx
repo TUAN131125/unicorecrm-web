@@ -24,7 +24,7 @@ import type { SelectedPickerItem } from "@/modules/products";
 import { useLeads } from "../hooks/useLeads";
 import { useLeadActions } from "../hooks/useLeadActions";
 import { useLeadDetailDialogs } from "../hooks/useLeadDetailDialogs";
-import { LeadDetailActivityPanel, type LeadQuickAction } from "../components/LeadDetailActivityPanel";
+import { LeadWorkPanel } from "../components/LeadWorkPanel";
 import { LeadCompletedWorkTab, LeadOpenWorkTab } from "../components/LeadWorkActivityTabs";
 import { LeadDetailMoreMenu } from "../components/LeadDetailMoreMenu";
 import { LeadConsentPanel } from "../components/LeadConsentPanel";
@@ -121,12 +121,6 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
     setShowCampaignForm,
     showMoreMenu,
     setShowMoreMenu,
-    selectedActivity,
-    setSelectedActivity,
-    isFilterExpanded,
-    setIsFilterExpanded,
-    timelineFilter,
-    setTimelineFilter,
     dialogs,
     showDisqualifyModal,
     setShowDisqualifyModal,
@@ -1013,23 +1007,22 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
           </div>
         </main>
 
-        <LeadDetailActivityPanel
+        <LeadWorkPanel
+          key={lead.id}
           lead={lead}
-          activities={leadActivities}
-          activityQuery={workResources.activityQuery}
-          hasActivityData={workResources.activityQuery.data !== undefined}
           locale={locale}
-          t={t}
-          lt={lt}
           isVisible={isRightPanelVisible}
-          isFilterExpanded={isFilterExpanded}
-          setIsFilterExpanded={setIsFilterExpanded}
-          timelineFilter={timelineFilter}
-          setTimelineFilter={setTimelineFilter}
-          selectedActivity={selectedActivity}
-          setSelectedActivity={setSelectedActivity}
+          workResources={workResources}
+          ownerName={ownerName}
+          sourceName={referenceData.sources.find((source) => source.id === lead.source || source.code === lead.source)?.name}
+          campaignName={referenceData.campaigns.find((campaign) => campaign.id === lead.campaignId)?.name}
+          canHandover={canHandover}
+          canQualify={canQualify}
+          onHandover={() => setShowHandoverModal(true)}
+          onQualify={() => navigate(`/leads/${lead.id}/qualify`)}
+          onOpenWork={() => setActiveTab("open_activities")}
+          onOpenTask={(task) => navigate(toWorkspacePath(workspace.workspaceKey, "crm", `tasks/${task.id}`))}
           onQuickAction={handleActivityQuickAction}
-          showToast={showToast}
         />
         </div>
       </div>

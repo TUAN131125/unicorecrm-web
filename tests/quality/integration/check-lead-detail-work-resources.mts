@@ -198,7 +198,15 @@ try {
   assert.equal(current().completedLeadTasks.some((task) => task.id === "open-a"), true, "Command invalidates scoped resources");
   await act(async () => { rejectTasks = true; await resource.refresh(); current().setActiveTab("open_activities"); });
   assert.equal(current().workResources.taskQuery.state, "ERROR");
+  assert.match(rootElement.querySelector("aside")?.textContent ?? "", /Dữ liệu có thể chưa mới nhất/);
+  assert.match(rootElement.textContent ?? "", /Bắt đầu liên hệ/);
+  assert.ok(rootElement.querySelector("h2"));
   assert.ok(rootElement.querySelector('[data-authoritative-query-notice="stale"]'), "Refresh failure is visible while retaining prior data");
+  await act(async () => { resource.reset(); await resource.refresh(); current().setActiveTab("details"); });
+  assert.match(rootElement.querySelector("aside")?.textContent ?? "", /Không thể tải công việc/);
+  assert.match(rootElement.querySelector("main")?.textContent ?? "", /Work resource Lead/);
+  assert.match(rootElement.textContent ?? "", /Bắt đầu liên hệ|Thông tin chi tiết/);
+  assert.ok(rootElement.querySelector("h2"));
   await act(async () => { rejectTasks = false; await resource.refresh(); });
   await act(async () => { rejectActivities = true; await activityResource.refresh(); current().setActiveTab("email"); });
   assert.ok(rootElement.querySelector('[data-authoritative-query-notice="stale"]'));
@@ -208,7 +216,8 @@ try {
     await act(async () => current().setActiveTab(tab));
     assert.match(rootElement.querySelector("main")?.textContent ?? "", new RegExp(title));
     assert.doesNotMatch(rootElement.querySelector("main")?.textContent ?? "", /Thư mục Email rỗng|Lịch sử SMS trống/);
-    assert.match(rootElement.querySelector("aside")?.textContent ?? "", /Không thể tải hoạt động\./);
+    assert.match(rootElement.querySelector("aside")?.textContent ?? "", /Công việc Lead/);
+    assert.doesNotMatch(rootElement.querySelector("aside")?.textContent ?? "", /Không thể tải hoạt động\./, "Activity failure cannot block Task work panel");
     assert.ok([...rootElement.querySelectorAll("button")].some((button) => button.textContent?.trim() === "Thử lại"), "Initial errors offer Retry, never Cancel");
   }
   await act(async () => current().setActiveTab("details"));
