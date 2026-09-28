@@ -291,11 +291,14 @@ export function MeetingActivityCreateModal({
 }
 
 export interface EmailActivityCreateModalProps extends BaseActivityModalProps {
+  titleOverride?: string;
+  submitLabelOverride?: string;
+  helperTextOverride?: string;
   defaults?: Partial<EmailActivityDraft>;
   onSubmit(draft: EmailActivityDraft): void;
 }
 
-export function EmailActivityCreateModal({ isOpen, onClose, defaults, onSubmit, contactPolicy, formId = "canonical-email-activity-form" }: EmailActivityCreateModalProps) {
+export function EmailActivityCreateModal({ titleOverride, submitLabelOverride, helperTextOverride, isOpen, onClose, defaults, onSubmit, contactPolicy, formId = "canonical-email-activity-form" }: EmailActivityCreateModalProps) {
   const { locale } = useI18n();
   const vi = locale === "vi";
   const createDraft = React.useCallback((): EmailActivityDraft => ({ to: defaults?.to ?? "", subject: defaults?.subject ?? "", body: defaults?.body ?? "", attachProposal: defaults?.attachProposal ?? false }), [defaults]);
@@ -308,7 +311,8 @@ export function EmailActivityCreateModal({ isOpen, onClose, defaults, onSubmit, 
     wasOpen.current = isOpen;
   }, [isOpen]);
   return (
-    <RelationshipQuickActionModal isOpen={isOpen} onClose={onClose} title={vi ? "Ghi nhận Email" : "Log email"} formId={formId} cancelLabel={vi ? "Hủy" : "Cancel"} submitLabel={vi ? "Gửi Email" : "Send email"} submitDisabled={!draft.to.trim() || !draft.subject.trim() || !draft.body.trim()} onSubmit={(event) => { event.preventDefault(); if (contactPolicy?.restricted && !confirmed) { setError(vi ? "Bạn phải xác nhận quyền liên lạc trước khi tiếp tục." : "Confirm contact authorization before continuing."); return; } onSubmit({ ...draft, to: draft.to.trim(), subject: draft.subject.trim(), body: draft.body.trim() }); }}>
+    <RelationshipQuickActionModal isOpen={isOpen} onClose={onClose} title={titleOverride ?? (vi ? "Ghi nhận Email" : "Log email")} formId={formId} cancelLabel={vi ? "Hủy" : "Cancel"} submitLabel={submitLabelOverride ?? (vi ? "Gửi Email" : "Send email")} submitDisabled={!draft.to.trim() || !draft.subject.trim() || !draft.body.trim()} onSubmit={(event) => { event.preventDefault(); if (contactPolicy?.restricted && !confirmed) { setError(vi ? "Bạn phải xác nhận quyền liên lạc trước khi tiếp tục." : "Confirm contact authorization before continuing."); return; } onSubmit({ ...draft, to: draft.to.trim(), subject: draft.subject.trim(), body: draft.body.trim() }); }}>
+      {helperTextOverride && <p className="text-xs text-slate-500">{helperTextOverride}</p>}
       <ContactPolicyNotice confirmationId={`${formId}-contact-policy-confirmation`} policy={contactPolicy} checked={confirmed} error={error} onChange={(value) => { setConfirmed(value); if (value) setError(""); }} />
       <Input label={vi ? "Người nhận" : "Recipient"} type="email" value={draft.to} onChange={(event) => setDraft((current) => ({ ...current, to: event.target.value }))} required />
       <Input label={vi ? "Tiêu đề" : "Subject"} value={draft.subject} onChange={(event) => setDraft((current) => ({ ...current, subject: event.target.value }))} required />
@@ -319,11 +323,14 @@ export function EmailActivityCreateModal({ isOpen, onClose, defaults, onSubmit, 
 }
 
 export interface SmsActivityCreateModalProps extends BaseActivityModalProps {
+  titleOverride?: string;
+  submitLabelOverride?: string;
+  helperTextOverride?: string;
   defaults?: Partial<SmsActivityDraft>;
   onSubmit(draft: SmsActivityDraft): void;
 }
 
-export function SmsActivityCreateModal({ isOpen, onClose, defaults, onSubmit, contactPolicy, formId = "canonical-sms-activity-form" }: SmsActivityCreateModalProps) {
+export function SmsActivityCreateModal({ titleOverride, submitLabelOverride, helperTextOverride, isOpen, onClose, defaults, onSubmit, contactPolicy, formId = "canonical-sms-activity-form" }: SmsActivityCreateModalProps) {
   const { locale } = useI18n();
   const vi = locale === "vi";
   const createDraft = React.useCallback((): SmsActivityDraft => ({ phone: defaults?.phone ?? "", body: defaults?.body ?? "" }), [defaults]);
@@ -336,7 +343,8 @@ export function SmsActivityCreateModal({ isOpen, onClose, defaults, onSubmit, co
     wasOpen.current = isOpen;
   }, [isOpen]);
   return (
-    <RelationshipQuickActionModal isOpen={isOpen} onClose={onClose} title={vi ? "Ghi nhận SMS" : "Log SMS"} formId={formId} cancelLabel={vi ? "Hủy" : "Cancel"} submitLabel={vi ? "Gửi tin nhắn" : "Send message"} submitDisabled={!draft.phone.trim() || !draft.body.trim()} onSubmit={(event) => { event.preventDefault(); if (contactPolicy?.restricted && !confirmed) { setError(vi ? "Bạn phải xác nhận quyền liên lạc trước khi tiếp tục." : "Confirm contact authorization before continuing."); return; } onSubmit({ phone: draft.phone.trim(), body: draft.body.trim() }); }}>
+    <RelationshipQuickActionModal isOpen={isOpen} onClose={onClose} title={titleOverride ?? (vi ? "Ghi nhận SMS" : "Log SMS")} formId={formId} cancelLabel={vi ? "Hủy" : "Cancel"} submitLabel={submitLabelOverride ?? (vi ? "Gửi tin nhắn" : "Send message")} submitDisabled={!draft.phone.trim() || !draft.body.trim()} onSubmit={(event) => { event.preventDefault(); if (contactPolicy?.restricted && !confirmed) { setError(vi ? "Bạn phải xác nhận quyền liên lạc trước khi tiếp tục." : "Confirm contact authorization before continuing."); return; } onSubmit({ phone: draft.phone.trim(), body: draft.body.trim() }); }}>
+      {helperTextOverride && <p className="text-xs text-slate-500">{helperTextOverride}</p>}
       <ContactPolicyNotice confirmationId={`${formId}-contact-policy-confirmation`} policy={contactPolicy} checked={confirmed} error={error} onChange={(value) => { setConfirmed(value); if (value) setError(""); }} />
       <Input label={vi ? "Số điện thoại" : "Phone number"} value={draft.phone} onChange={(event) => setDraft((current) => ({ ...current, phone: event.target.value }))} required />
       <Textarea label={vi ? "Nội dung tin nhắn" : "Message"} value={draft.body} onChange={(event) => setDraft((current) => ({ ...current, body: event.target.value.slice(0, 160) }))} rows={4} required />

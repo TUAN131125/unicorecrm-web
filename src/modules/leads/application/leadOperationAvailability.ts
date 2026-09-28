@@ -1,6 +1,7 @@
 import { isBusinessOperationUnavailable } from "@/shared/application";
 
 export const LEAD_OPERATION = {
+  RECORD_CONSENT: "recordLeadConsent",
   ARCHIVE: "archiveLead",
   ASSIGN_OWNER: "assignLeadOwner",
   IMPORT_BATCH: "importLeadBatch",

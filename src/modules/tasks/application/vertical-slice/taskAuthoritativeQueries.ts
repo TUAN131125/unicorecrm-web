@@ -1,18 +1,21 @@
+import { registerWorkspaceScopeDisposer } from "@/platform/workspace-scope";
 import {
   createAuthoritativeResource,
   runBackendProjection,
+  runWorkspaceScopeReset,
   subscribeModuleQueryInvalidation,
   type AuthoritativePage,
   type AuthoritativeResource,
 } from "@/shared/application";
 import type { Activity, Task } from "../../domain/model/task.types";
-import type { ActivityListQuery } from "../ports/TaskApiRuntime";
+import type { ActivityListQuery, TaskListQuery } from "../ports/TaskApiRuntime";
 import { getTaskApiRuntime, taskActivityRepository } from "../composition/taskApplicationServices";
 
 const PAGE_SIZE = 250;
 const MAX_PAGES = 20;
 
 const taskCollection = createTaskCollectionResource();
+const scopedTaskCollections = new Map<string, AuthoritativeResource<AuthoritativePage<Task>>>();
 const taskDetails = new Map<string, AuthoritativeResource<Task>>();
 const activityCollections = new Map<string, AuthoritativeResource<AuthoritativePage<Activity>>>();
 
@@ -30,26 +33,75 @@ export function getTaskDetailResource(taskId: string): AuthoritativeResource<Tas
 }
 
 export function getActivityCollectionResource(query: ActivityListQuery = {}): AuthoritativeResource<AuthoritativePage<Activity>> {
-  const key = JSON.stringify(query);
+  const key = collectionQueryKey(query);
   let resource = activityCollections.get(key);
   if (!resource) {
-    resource = createActivityCollectionResource(query);
+    resource = createActivityCollectionResource(structuredClone(query));
     activityCollections.set(key, resource);
   }
   return resource;
 }
 
+export function getScopedTaskCollectionResource(
+  query: Omit<TaskListQuery, "cursor" | "limit">,
+): AuthoritativeResource<AuthoritativePage<Task>> {
+  assertTaskIdentityQuery(query);
+  const key = collectionQueryKey(query);
+  let resource = scopedTaskCollections.get(key);
+  if (!resource) {
+    const scopedQuery = structuredClone(query);
+    resource = createAuthoritativeResource(async (signal) => {
+      const page = await loadAllPages((cursor) => getTaskApiRuntime().queries.list({
+        ...scopedQuery, limit: PAGE_SIZE, ...(cursor ? { cursor } : {}),
+      }, signal));
+      signal.throwIfAborted();
+      runBackendProjection("tasks", () => {
+        const current = taskActivityRepository.snapshot();
+        // The complete identity scope is replaced; unrelated records remain projected.
+        const retained = current.tasks.filter((task) => !matchesTaskScope(task, scopedQuery));
+        const tasks = dedupeById([...retained, ...page.items]);
+        taskActivityRepository.replace({ tasks, activities: current.activities });
+      });
+      return page;
+    });
+    const created = resource;
+    subscribeModuleQueryInvalidation("tasks", async (event) => {
+      if (!isTaskMutation(event.commandType) || created.getSnapshot().state === "IDLE") return;
+      const projected = taskActivityRepository.findTaskById(event.aggregateId);
+      if (created.getSnapshot().data?.items.some((task) => task.id === event.aggregateId)
+        || (projected && matchesTaskScope(projected, scopedQuery))) await created.refresh();
+    });
+    scopedTaskCollections.set(key, resource);
+  }
+  return resource;
+}
+
+function collectionQueryKey(query: TaskListQuery | ActivityListQuery): string {
+  return JSON.stringify(query, [...new Set([
+    ...Object.keys(query), ...Object.keys(query.filters ?? {}),
+  ])].sort());
+}
+
+registerWorkspaceScopeDisposer(() => {
+  const resources = [taskCollection, ...scopedTaskCollections.values(), ...taskDetails.values(), ...activityCollections.values()];
+  for (const resource of resources) {
+    if (resource.getSnapshot().state !== "IDLE") resource.reset();
+  }
+  runWorkspaceScopeReset(() => taskActivityRepository.replace({ tasks: [], activities: [] }));
+});
+
 function createTaskCollectionResource(): AuthoritativeResource<AuthoritativePage<Task>> {
   const resource = createAuthoritativeResource(async (signal) => {
     const page = await loadAllPages((cursor) => getTaskApiRuntime().queries.list({ limit: PAGE_SIZE, ...(cursor ? { cursor } : {}) }, signal));
+    signal.throwIfAborted();
     runBackendProjection("tasks", () => {
       const current = taskActivityRepository.snapshot();
       taskActivityRepository.replace({ tasks: page.items, activities: current.activities });
     });
     return page;
   });
-  subscribeModuleQueryInvalidation("tasks", async () => {
-    if (resource.getSnapshot().state !== "IDLE") await resource.refresh();
+  subscribeModuleQueryInvalidation("tasks", async (event) => {
+    if (isTaskMutation(event.commandType) && resource.getSnapshot().state !== "IDLE") await resource.refresh();
   });
   return resource;
 }
@@ -57,6 +109,7 @@ function createTaskCollectionResource(): AuthoritativeResource<AuthoritativePage
 function createTaskDetailResource(taskId: string): AuthoritativeResource<Task> {
   const resource = createAuthoritativeResource(async (signal) => {
     const task = await getTaskApiRuntime().queries.get(taskId, signal);
+    signal.throwIfAborted();
     runBackendProjection("tasks", () => {
       const current = taskActivityRepository.snapshot();
       const tasks = current.tasks.some((item) => item.id === task.id)
@@ -66,8 +119,9 @@ function createTaskDetailResource(taskId: string): AuthoritativeResource<Task> {
     });
     return task;
   });
-  subscribeModuleQueryInvalidation("tasks", async () => {
-    if (resource.getSnapshot().state !== "IDLE") await resource.refresh();
+  subscribeModuleQueryInvalidation("tasks", async (event) => {
+    if (isTaskMutation(event.commandType) && event.aggregateId === taskId
+      && resource.getSnapshot().state !== "IDLE") await resource.refresh();
   });
   return resource;
 }
@@ -75,6 +129,7 @@ function createTaskDetailResource(taskId: string): AuthoritativeResource<Task> {
 function createActivityCollectionResource(query: ActivityListQuery): AuthoritativeResource<AuthoritativePage<Activity>> {
   const resource = createAuthoritativeResource(async (signal) => {
     const page = await loadAllPages((cursor) => getTaskApiRuntime().queries.listActivities({ ...query, limit: PAGE_SIZE, ...(cursor ? { cursor } : {}) }, signal));
+    signal.throwIfAborted();
     runBackendProjection("tasks", () => {
       const current = taskActivityRepository.snapshot();
       const filters = query.filters ?? {};
@@ -85,8 +140,11 @@ function createActivityCollectionResource(query: ActivityListQuery): Authoritati
     });
     return page;
   });
-  subscribeModuleQueryInvalidation("tasks", async () => {
-    if (resource.getSnapshot().state !== "IDLE") await resource.refresh();
+  subscribeModuleQueryInvalidation("tasks", async (event) => {
+    if (event.commandType !== "task.log-activity" || resource.getSnapshot().state === "IDLE") return;
+    const projected = taskActivityRepository.snapshot().activities.find((activity) => activity.id === event.aggregateId);
+    if (resource.getSnapshot().data?.items.some((activity) => activity.id === event.aggregateId)
+      || (projected && matchesActivityScope(projected, query))) await resource.refresh();
   });
   return resource;
 }
@@ -110,6 +168,34 @@ async function loadAllPages<T>(load: (cursor?: string) => Promise<AuthoritativeP
     if (!cursor) throw new Error("TASKS_AUTHORITATIVE_CURSOR_REQUIRED");
   }
   throw new Error("TASKS_AUTHORITATIVE_PAGE_LIMIT_EXCEEDED");
+}
+
+// Replacement requires a complete identity query, never a status/search subset.
+function assertTaskIdentityQuery(query: Omit<TaskListQuery, "cursor" | "limit">): void {
+  const filters = query.filters ?? {};
+  const keys = ["recordModuleKey", "recordId", "relationshipType", "relationshipId"];
+  const hasRecord = Boolean(filters.recordModuleKey && filters.recordId);
+  const hasRelationship = Boolean(filters.relationshipType && filters.relationshipId);
+  const partialRecord = Boolean(filters.recordModuleKey || filters.recordId) && !hasRecord;
+  const partialRelationship = Boolean(filters.relationshipType || filters.relationshipId) && !hasRelationship;
+  if ((!hasRecord && !hasRelationship) || partialRecord || partialRelationship
+    || Object.keys(query).some((key) => key !== "filters")
+    || Object.keys(filters).some((key) => !keys.includes(key))) {
+    throw new Error("TASK_SCOPED_IDENTITY_QUERY_REQUIRED");
+  }
+}
+
+function isTaskMutation(commandType: string): boolean {
+  return ["task.create", "task.complete", "task.cancel", "task.assign", "task.reschedule", "task.archive"].includes(commandType);
+}
+
+function matchesTaskScope(task: Task, query: TaskListQuery): boolean {
+  const filters = query.filters ?? {};
+  if (filters.recordModuleKey && task.recordRef?.moduleKey !== filters.recordModuleKey) return false;
+  if (filters.recordId && task.recordRef?.recordId !== filters.recordId) return false;
+  if (filters.relationshipType && task.relationshipRef?.type !== filters.relationshipType) return false;
+  if (filters.relationshipId && task.relationshipRef?.id !== filters.relationshipId) return false;
+  return true;
 }
 
 function matchesActivityScope(activity: Activity, query: ActivityListQuery): boolean {

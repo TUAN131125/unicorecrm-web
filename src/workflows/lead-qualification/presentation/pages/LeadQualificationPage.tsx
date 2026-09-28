@@ -198,7 +198,7 @@ export const LeadQualificationPage: React.FC = () => {
   const dealEnabled = crmConfig.modules.deals && crmConfig.workflow.dealUsageMode !== "DISABLED";
   const eligible = lead?.leadWorkState === LeadWorkState.VERIFYING;
   const outcomeCards = useMemo(() => [
-    { key: "DISQUALIFIED" as const, title: vi ? "Không phù hợp" : "Disqualify", desc: vi ? "Đóng tiềm năng với lý do và bằng chứng." : "Close the lead with a reason and evidence.", icon: <Ban size={18} /> },
+    { key: "DISQUALIFIED" as const, title: vi ? "Không đủ điều kiện" : "Disqualify", desc: vi ? "Đóng tiềm năng với lý do và bằng chứng." : "Close the lead with a reason and evidence.", icon: <Ban size={18} /> },
     { key: "NURTURE" as const, title: vi ? "Chăm sóc thêm" : "Nurture", desc: vi ? "Tạo lịch quay lại khi khách hàng chưa sẵn sàng." : "Schedule a follow-up when the buyer is not ready.", icon: <HeartHandshake size={18} /> },
     { key: "OPPORTUNITY" as const, title: vi ? "Tạo cơ hội" : "Create opportunity", desc: vi ? "Tạo cơ hội khi đã ghi nhận nhu cầu hoặc sản phẩm quan tâm. Công việc theo dõi là tùy chọn." : "Create an opportunity when either the customer need or interested products are known. A follow-up task is optional.", icon: <TrendingUp size={18} /> },
   ], [vi]);
@@ -359,7 +359,7 @@ export const LeadQualificationPage: React.FC = () => {
         })}
         <button type="button" disabled={!directSaleAvailable} onClick={() => navigate(`/leads/${lead.id}/sell-now`)} className="rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:border-emerald-300 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-60">
           <ShoppingCart size={18} className="text-emerald-600" />
-          <div className="mt-3 font-semibold text-slate-900">{vi ? "Bán ngay" : "Sell now"}</div>
+          <div className="mt-3 font-semibold text-slate-900">{vi ? "Bán trực tiếp" : "Sell now"}</div>
           <div className="mt-1 text-[11px] leading-relaxed text-slate-500">{vi ? "Tạo báo giá hoặc đơn hàng mà không tạo cơ hội ngầm." : "Create a quote or order without a hidden opportunity."}</div>
           {!directSaleAvailable && <div className="mt-2 text-[10px] text-slate-500">{vi ? "Direct Sale chưa khả dụng trong chế độ kết nối." : "Direct Sale is unavailable in connected mode."}</div>}
         </button>

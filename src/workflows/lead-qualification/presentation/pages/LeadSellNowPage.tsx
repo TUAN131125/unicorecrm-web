@@ -78,7 +78,7 @@ export const LeadSellNowPage: React.FC = () => {
   useEffect(() => {
     if (!lead) return;
     setRelationship((current) => current ?? createRelationshipInput(lead));
-    setTitle((current) => current || `${vi ? "Bán ngay" : "Direct Sale"} - ${lead.companyName || lead.name}`);
+    setTitle((current) => current || `${vi ? "Bán trực tiếp" : "Direct Sale"} - ${lead.companyName || lead.name}`);
   }, [lead, vi]);
   useEffect(() => {
     if (!lead || selectedItems.length > 0 || products.length === 0) return;
@@ -161,14 +161,14 @@ export const LeadSellNowPage: React.FC = () => {
     <div className="max-w-5xl mx-auto space-y-6 text-xs p-2">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h1 className="text-xl font-black text-slate-900">{vi ? "Bán ngay" : "Sell Now"}</h1>
+          <h1 className="text-xl font-black text-slate-900">{vi ? "Bán trực tiếp" : "Sell Now"}</h1>
           <p className="text-slate-500 mt-1">{lead.name} · {lead.companyName || (vi ? "Cá nhân" : "Individual")}</p>
         </div>
         <Button variant="secondary" size="sm" icon={<ArrowLeft size={13} />} onClick={() => navigate(`/leads/${lead.id}/qualify`)}>{vi ? "Quay lại" : "Back"}</Button>
       </div>
 
-      {!eligible && <div className="p-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 font-semibold">{vi ? "Lead phải ở bước Đang xác minh trước khi Bán ngay." : "Lead must be in Verifying before Sell Now."}</div>}
-      {!actorCanSellNow && <div className="p-4 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 font-semibold">{vi ? "Vai trò hiện tại không có quyền tạo giao dịch Bán ngay." : "The current role is not permitted to create a Sell Now transaction."}</div>}
+      {!eligible && <div className="p-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 font-semibold">{vi ? "Lead phải ở bước Đang xác minh trước khi Bán trực tiếp." : "Lead must be in Verifying before Sell Now."}</div>}
+      {!actorCanSellNow && <div className="p-4 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 font-semibold">{vi ? "Vai trò hiện tại không có quyền tạo giao dịch Bán trực tiếp." : "The current role is not permitted to create a Sell Now transaction."}</div>}
 
       <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-6 shadow-sm">
         {relationship && <RelationshipResolutionFields value={relationship} onChange={setRelationship} contacts={contacts} organizations={organizations} locale={locale} />}

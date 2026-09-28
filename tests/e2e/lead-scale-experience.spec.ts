@@ -4,8 +4,12 @@ import AxeBuilder from "@axe-core/playwright";
 async function signInToLeads(page: import("@playwright/test").Page) {
   await page.goto("/#/login");
   await page.getByLabel("Email").fill("sales.manager@unicorecrm.local");
-  await page.getByLabel("Mật khẩu").fill("welcome123");
+  await page.getByLabel("Mật khẩu", { exact: true }).fill("welcome123");
   await page.getByRole("button", { name: "Đăng nhập" }).click();
+  await page.waitForURL(/#\/(?:select-workspace|w\/[^/]+\/crm\/)/u);
+  if (page.url().includes("#/select-workspace")) {
+    await page.getByRole("button", { name: "Unicore Vietnam unicore-vietnam", exact: true }).click();
+  }
   await expect(page).toHaveURL(/#\/w\/[^/]+\/crm\//u);
 
   const workspaceMatch = page.url().match(/#\/w\/([^/]+)/u);

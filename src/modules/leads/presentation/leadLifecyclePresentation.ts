@@ -19,7 +19,7 @@ export function getLeadWorkStateLabel(state: LeadWorkStateValue, locale: string)
     case LeadWorkState.VERIFYING:
       return vi ? "Đang xác minh" : "Verifying";
     case LeadWorkState.CLOSED:
-      return vi ? "Đã giải quyết" : "Closed";
+      return vi ? "Đã đóng" : "Closed";
   }
 }
 
@@ -27,13 +27,13 @@ export function getQualificationOutcomeLabel(outcome: QualificationOutcomeValue,
   const vi = locale === "vi";
   switch (outcome) {
     case QualificationOutcome.DISQUALIFIED:
-      return vi ? "Không phù hợp" : "Disqualified";
+      return vi ? "Không đủ điều kiện" : "Disqualified";
     case QualificationOutcome.NURTURE:
-      return vi ? "Chăm sóc" : "Nurture";
+      return vi ? "Chăm sóc tiếp" : "Nurture";
     case QualificationOutcome.OPPORTUNITY:
       return vi ? "Cơ hội" : "Opportunity";
     case QualificationOutcome.DIRECT_SALE:
-      return vi ? "Bán ngay" : "Direct Sale";
+      return vi ? "Bán trực tiếp" : "Direct Sale";
     case QualificationOutcome.CUSTOMER:
       return vi ? "Khách hàng" : "Customer";
   }

@@ -397,7 +397,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
     if (targetIds.length === 0) return false;
 
     if (data.needRecontact) {
-      showToast(locale === "vi" ? "Trường hợp cần tiếp tục chăm sóc phải chọn kết quả Chăm sóc, không chọn Không phù hợp." : "Future re-engagement belongs to NURTURE, not DISQUALIFIED.");
+      showToast(locale === "vi" ? "Trường hợp cần tiếp tục chăm sóc phải chọn kết quả Chăm sóc tiếp, không chọn Không đủ điều kiện." : "Future re-engagement belongs to NURTURE, not DISQUALIFIED.");
       return false;
     }
     const evidence = data.note.trim() || undefined;

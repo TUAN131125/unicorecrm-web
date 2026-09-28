@@ -229,6 +229,7 @@
         "quality.integration-resilience",
         "quality.lead-webhook-connector",
         "quality.lead-form-recovery-contracts",
+        "quality.lead-detail-work-resources",
         "quality.crm-ui-interaction-contracts",
         "quality.role-based-navigation",
         "quality.read-only-cross-domain",
@@ -663,7 +664,8 @@
       "timeoutMs": 180000,
       "openHandleGraceMs": 250,
       "requires": [
-        "node"
+        "node",
+        "tsx"
       ],
       "shardKey": "quality.lead-api-boundary",
       "steps": [
@@ -671,9 +673,8 @@
           "type": "node",
           "entry": "tests/quality/architecture/check-lead-api-boundary.mts",
           "nodeArgs": [
-            "--experimental-transform-types",
-            "--loader",
-            "./scripts/quality/core/typescript-path-loader.mjs"
+            "--import",
+            "tsx"
           ],
           "args": []
         }
@@ -5251,6 +5252,32 @@
             "tsx",
             "--import",
             "./tests/fixtures/runtime/bootstrap-demo-application-composition.mjs"
+          ],
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "quality.lead-detail-work-resources",
+      "commandName": "test:lead-detail-work-resources",
+      "groupId": "integration",
+      "kind": "integration",
+      "owner": "quality-integration",
+      "entry": "tests/quality/integration/check-lead-detail-work-resources.mts",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node",
+        "tsx"
+      ],
+      "shardKey": "quality.lead-detail-work-resources",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/integration/check-lead-detail-work-resources.mts",
+          "nodeArgs": [
+            "--import",
+            "tsx"
           ],
           "args": []
         }

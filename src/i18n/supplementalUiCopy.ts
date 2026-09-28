@@ -26,7 +26,7 @@ export const supplementalUiCopyEntries: SupplementalUiCopyEntry[] = [
   { vi: "Biến tín hiệu thành quan hệ thương mại có lịch sử liên tục.", en: "Turn every signal into a continuous commercial relationship." },
 
   { vi: "Vui lòng nhập lý do cụ thể!", en: "Please enter a specific reason." },
-  { vi: "Đã lưu trạng thái Không phù hợp.", en: "Disqualified status saved.", sources: ["Đã lưu trạng thái Không đạt."] },
+  { vi: "Đã lưu trạng thái Không đủ điều kiện.", en: "Disqualified status saved.", sources: ["Đã lưu trạng thái Không đạt."] },
   { vi: "Vui lòng nhập tiêu đề cuộc gọi!", en: "Please enter a call subject." },
   { vi: "Đã ghi nhận cuộc gọi thành công!", en: "Call logged successfully!", sources: ["Đăng cuộc gọi thành công!"] },
   { vi: "Vui lòng nhập tên công việc!", en: "Please enter a task title.", sources: ["Vui lòng điền tên công việc!"] },
@@ -134,7 +134,7 @@ export const supplementalUiCopyEntries: SupplementalUiCopyEntry[] = [
   { vi: "Đơn vị vận chuyển đã thu, đang chờ xử lý", en: "Carrier collected the COD amount; processing is pending.", sources: ["Carrier đã thu, chờ xử lý"] },
 
   { vi: "Các phần chi tiết thanh toán", en: "Payment detail sections", sources: ["Payment detail sections"] },
-  { vi: "Lead đã đóng: Không phù hợp", en: "Lead closed: Disqualified", sources: ["Lead closed: Disqualified"] },
+  { vi: "Lead đã đóng: Không đủ điều kiện", en: "Lead closed: Disqualified", sources: ["Lead closed: Disqualified"] },
   { vi: "Theo dõi tiếp", en: "Follow up", sources: ["Follow up"] },
 ];
 

@@ -40,8 +40,6 @@ import { evaluateLeadContactPolicy, getLeadContactPolicyMessage, LeadContactChan
 import {
   completeTaskCommand,
   createTaskCommand,
-  getTaskActivitySnapshot,
-  subscribeToTaskActivity,
   type CallActivityDraft,
   type EmailActivityDraft,
   type MeetingActivityDraft,
@@ -60,7 +58,7 @@ import { useConfigurationRuntime } from "@/platform/configuration-runtime";
 import { toWorkspacePath } from "@/platform/navigation";
 import { useLeadReferenceData } from "../hooks/useLeadReferenceData";
 import { isLeadOperationAvailable, LEAD_OPERATION } from "../../application/leadOperationAvailability";
-import { getLeadDetailResource } from "../../application/vertical-slice/leadAuthoritativeQueries";
+import { useLeadDetailWorkResources } from "./useLeadDetailWorkResources";
 
 
 
@@ -86,7 +84,7 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
   const { leads } = useLeads({ loadAuthoritative: false });
   const leadActions = useLeadActions();
   const referenceData = useLeadReferenceData(sources, campaigns);
-  const taskActivity = useSubscribableSnapshot(getTaskActivitySnapshot, subscribeToTaskActivity);
+  const workResources = useLeadDetailWorkResources(leadId ?? "");
   const careCases = useSubscribableSnapshot(getSupportCasesSnapshot, subscribeToSupportCases);
   const ownership = useRecordOwnershipContext("leads", CAPABILITIES.LEADS_ASSIGN);
   const access = useEffectiveAccess();
@@ -100,6 +98,7 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
     ? authoritativeLead
     : leads.find(l => l.id === leadId);
   const canEdit = canUpdatePermission && !lead?.archivedAt;
+  const canRecordConsent = canEdit && isLeadOperationAvailable(LEAD_OPERATION.RECORD_CONSENT);
   const canQualify = canQualifyPermission && !lead?.archivedAt;
   const canArchive = isLeadOperationAvailable(LEAD_OPERATION.ARCHIVE)
     && access.can(CAPABILITIES.LEADS_DELETE)
@@ -273,11 +272,8 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
       setShowEditModal(false);
       showToast(locale === "vi" ? "Lưu bản sửa đổi thành công!" : "Lead updated successfully");
     } catch (error: unknown) {
-      const applicationError = normalizeApplicationError(error);
-      if (applicationError.code === "VERSION_CONFLICT") {
-        await getLeadDetailResource(lead.id).refresh();
-      }
-      showToast(formatApplicationError(applicationError, { locale }));
+      // LeadForm owns recovery and dirty state. Do not refresh away the editing version.
+      throw normalizeApplicationError(error);
     }
   };
 
@@ -290,7 +286,7 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
     const fullDesc = `Danh mục: ${disqualifyCategory} | Chi tiết: ${disqualifyReasonText.trim()}`;
     const activity: CRMActivity = {
       id: `act_outcome_${Date.now()}`,
-      title: locale === "vi" ? "Lead đã đóng: Không phù hợp" : "Lead closed: Disqualified",
+      title: locale === "vi" ? "Lead đã đóng: Không đủ điều kiện" : "Lead closed: Disqualified",
       description: fullDesc,
       createdAt: "Vừa xong",
       author: "Hệ thống",
@@ -304,7 +300,7 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
     });
     setShowDisqualifyModal(false);
     setDisqualifyReasonText("");
-    showToast("Đã lưu trạng thái Không phù hợp.");
+    showToast(locale === "vi" ? "Đã lưu trạng thái Không đủ điều kiện." : "Disqualified status saved.");
   };
 
   // Reopen disqualified Lead
@@ -406,7 +402,7 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
     showToast(locale === "vi" ? "Đã lưu lịch hẹn." : "Meeting saved.");
   };
 
-  const handleSendEmailFromComposer = async (draft: EmailActivityDraft) => {
+  const handleLogExternalEmail = async (draft: EmailActivityDraft) => {
     if (!ensureContactAllowed(LeadContactChannel.EMAIL)) return;
     await addTimelineActivity(
       "email",
@@ -418,7 +414,7 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
     showToast(locale === "vi" ? "Đã ghi nhận hoạt động Email." : "Email activity logged.");
   };
 
-  const handleSendSMSFromComposer = async (draft: SmsActivityDraft) => {
+  const handleLogExternalSms = async (draft: SmsActivityDraft) => {
     if (!ensureContactAllowed(LeadContactChannel.SMS)) return;
     await addTimelineActivity("sms", locale === "vi" ? "SMS đã ghi nhận" : "SMS logged", `${locale === "vi" ? "Tới số" : "To"}: ${draft.phone} | ${locale === "vi" ? "Nội dung" : "Content"}: ${draft.body}`);
     setShowSmsModal(false);
@@ -435,21 +431,16 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
   // Link addition handler
 
 
-  // Helper filter for system open / completed activities
-  const getActivitiesByStatus = (completed: boolean) => {
-    return lead.activities.filter(act => {
-      if (act.type !== "call" && act.type !== "meeting") return false;
-      const desc = act.description || "";
-      const isCompleted = desc.includes("Trạng thái: Hoàn thành") || desc.includes("Status: Completed");
-      return completed ? isCompleted : !isCompleted;
-    });
-  };
-
-  const openActivities = getActivitiesByStatus(false);
-  const completedActivities = getActivitiesByStatus(true);
-  const leadTasks = taskActivity.tasks.filter((task) => task.recordRef?.moduleKey === "leads" && task.recordRef.recordId === lead.id);
-  const openLeadTasks = leadTasks.filter((task) => task.status === "OPEN");
-  const completedLeadTasks = leadTasks.filter((task) => task.status !== "OPEN");
+  const { tasks: leadTasks, openTasks: openLeadTasks, completedTasks: completedLeadTasks } = workResources;
+  const leadActivities: CRMActivity[] = workResources.activities.map((activity) => ({
+    id: activity.id,
+    title: activity.subject,
+    description: activity.body,
+    createdAt: activity.occurredAt,
+    author: resolveWorkspaceMemberName(activity.actorId),
+    type: activity.type.toLowerCase(),
+  }));
+  const leadNotes = workResources.activities.filter((activity) => activity.type === "NOTE");
   const leadCareCases = lead.relationshipRef
     ? careCases.filter((item) => item.relationshipRef && relationshipRefKey(item.relationshipRef) === relationshipRefKey(lead.relationshipRef!))
     : [];
@@ -546,11 +537,14 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
     leads,
     leadActions,
     referenceData,
-    taskActivity,
+    workResources,
+    leadActivities,
+    leadNotes,
     careCases,
     ownership,
     access,
     canEdit,
+    canRecordConsent,
     canQualify,
     canArchive,
     canHandover,
@@ -646,12 +640,9 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
     ensureContactAllowed,
     handleSavePhoneCall,
     handleSaveMeeting,
-    handleSendEmailFromComposer,
-    handleSendSMSFromComposer,
+    handleLogExternalEmail,
+    handleLogExternalSms,
     handleAddNoteFromComposer,
-    getActivitiesByStatus,
-    openActivities,
-    completedActivities,
     leadTasks,
     openLeadTasks,
     completedLeadTasks,

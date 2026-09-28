@@ -26,3 +26,5 @@ export { RelationshipActivityCreateModal } from "../presentation/components/Rela
 export type { RelationshipActivityAction, RelationshipActivityDraft, RelationshipActivityCreateModalProps } from "../presentation/components/RelationshipActivityCreateModal";
 
 export { useTasksAuthoritative } from "../presentation/hooks/useTasksAuthoritative";
+
+export { getScopedTaskCollectionResource, getActivityCollectionResource } from "../application/vertical-slice/taskAuthoritativeQueries";

@@ -25,9 +25,14 @@ assert.deepEqual(
 );
 assert.equal(manifest.groups.at(-2)?.id, "build", "Production build must run immediately before external acceptance.");
 assert.equal(manifest.groups.at(-1)?.id, "acceptance", "External backend and browser acceptance must remain the final quality group.");
-assert.equal(manifest.gates.length, 332);
-assert.equal(new Set(manifest.gates.map((gate: { id: string }) => gate.id)).size, 332, "Stable gate IDs must be unique.");
-assert.equal(new Set(manifest.gates.map((gate: { commandName: string }) => gate.commandName)).size, 332, "Compatibility command names must be unique.");
+assert.equal(manifest.gates.length, 333);
+const leadWorkGate = manifest.gates.find((gate: { id: string }) => gate.id === "quality.lead-detail-work-resources");
+assert.equal(leadWorkGate?.groupId, "integration");
+assert.equal(leadWorkGate?.entry, "tests/quality/integration/check-lead-detail-work-resources.mts");
+assert.equal(manifest.gates.flatMap((gate: { steps: Array<{ entry?: string }> }) => gate.steps)
+  .filter((step: { entry?: string }) => step.entry === leadWorkGate?.entry).length, 1, "Lead work resource regression test must execute exactly once.");
+assert.equal(new Set(manifest.gates.map((gate: { id: string }) => gate.id)).size, 333, "Stable gate IDs must be unique.");
+assert.equal(new Set(manifest.gates.map((gate: { commandName: string }) => gate.commandName)).size, 333, "Compatibility command names must be unique.");
 assert.equal(fs.existsSync(path.join(repositoryRoot, "scripts/quality/gate-migration-manifest.json")), false, "The migration ledger must be retired after compatibility cleanup.");
 assert.equal(fs.existsSync(path.join(repositoryRoot, "scripts/quality/run-legacy-gate.mjs")), false, "The legacy gate dispatcher must remain retired.");
 assert.equal(manifest.gates.some((gate: { id: string }) => gate.id === "quality.gate-migration-contract"), false);
@@ -322,5 +327,5 @@ const retiredRunnerPath = ["scripts", "run-verify.cjs"].join("/");
 assert.equal(fs.existsSync(path.join(repositoryRoot, retiredRunnerPath)), false);
 
 const indexed = indexQualityManifest(manifest);
-assert.equal(indexed.gatesById.size, 332);
+assert.equal(indexed.gatesById.size, 333);
 console.log(`Quality pipeline: PASS (${validation.groupCount} groups, ${validation.gateCount} stable manifest-owned gates).`);

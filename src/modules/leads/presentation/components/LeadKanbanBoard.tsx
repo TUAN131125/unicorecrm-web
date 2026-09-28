@@ -1,4 +1,5 @@
 import React from "react";
+import { getQualificationOutcomeLabel } from "../leadLifecyclePresentation";
 import { GripVertical, Mail, MoreHorizontal, Phone } from "lucide-react";
 import type { Lead } from "../../domain/model/lead.types";
 import { LeadWorkState, QualificationOutcome } from "../../domain/model/leadLifecycle.canonical";
@@ -81,10 +82,10 @@ export const LeadKanbanBoard: React.FC<LeadKanbanBoardProps> = ({
 
   const columns = React.useMemo<Array<{ status: LeadKanbanColumnStatus; title: string }>>(() => {
     if (activeView === "nurture") {
-      return [{ status: QualificationOutcome.NURTURE, title: locale === "vi" ? "Chăm sóc" : "Nurture" }];
+      return [{ status: QualificationOutcome.NURTURE, title: getQualificationOutcomeLabel(QualificationOutcome.NURTURE, locale) }];
     }
     if (activeView === "disqualified") {
-      return [{ status: QualificationOutcome.DISQUALIFIED, title: locale === "vi" ? "Không phù hợp" : "Disqualified" }];
+      return [{ status: QualificationOutcome.DISQUALIFIED, title: getQualificationOutcomeLabel(QualificationOutcome.DISQUALIFIED, locale) }];
     }
     return [
       { status: LeadWorkState.NEW, title: locale === "vi" ? "Mới" : "New" },

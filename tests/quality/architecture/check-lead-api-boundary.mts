@@ -123,7 +123,7 @@ const client: HttpClient = {
         { ...baseDocument, archivedAt: "2026-07-25T06:00:00.000Z", archiveReason: "Campaign complete", version: 4, updatedAt: "2026-07-25T06:00:00.000Z" },
         { ...baseDocument, id: "lead-2", displayName: "Lead Two", archivedAt: "2026-07-25T06:00:00.000Z", archiveReason: "Campaign complete", version: 8, updatedAt: "2026-07-25T06:00:00.000Z" },
       ];
-      return { commandId: "cmd-archive-batch", correlationId: "corr-archive-batch", aggregateId: "lead-batch-1", aggregateType: "LEAD", version: 8, occurredAt: "2026-07-25T06:00:00.000Z", outcome: "COMMITTED", warnings: [], emittedEventIds: ["event-archive-batch"], auditEvidenceIds: ["audit-1", "audit-2"], result: { leads } } as TResponse;
+      return { commandId: "cmd-archive-batch", correlationId: "corr-archive-batch", aggregateId: "lead-archive-group", aggregateType: "LEAD", version: 8, occurredAt: "2026-07-25T06:00:00.000Z", outcome: "COMMITTED", warnings: [], emittedEventIds: ["event-archive-batch"], auditEvidenceIds: ["audit-1", "audit-2"], result: { leads } } as TResponse;
     }
     throw new Error(`Unexpected operation: ${input.operationId}`);
   },

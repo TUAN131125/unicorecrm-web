@@ -1,3 +1,4 @@
+import { AuthoritativeQueryBoundary } from "@/shared/operations";
 import React, { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "motion/react";
@@ -39,9 +40,7 @@ import { getConfiguredLeadProfileBlockers } from "../../application/policies/lea
 import { evaluateLeadContactPolicy, getLeadContactPolicyMessage, LeadContactChannel } from "../../domain/rules/leadContactPolicy";
 import {
   completeTaskCommand,
-  getTaskActivitySnapshot,
   NoteActivityCreateModal,
-  subscribeToTaskActivity,
 } from "@/modules/tasks";
 import { getSupportCasesSnapshot, subscribeToSupportCases } from "@/modules/support";
 import { relationshipRefKey } from "@/platform/identity";
@@ -82,11 +81,14 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
     leads,
     leadActions,
     referenceData,
-    taskActivity,
+    workResources,
+    leadActivities,
+    leadNotes,
     careCases,
     ownership,
     access,
     canEdit,
+    canRecordConsent,
     canQualify,
     canArchive,
     canHandover,
@@ -181,12 +183,9 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
     ensureContactAllowed,
     handleSavePhoneCall,
     handleSaveMeeting,
-    handleSendEmailFromComposer,
-    handleSendSMSFromComposer,
+    handleLogExternalEmail,
+    handleLogExternalSms,
     handleAddNoteFromComposer,
-    getActivitiesByStatus,
-    openActivities,
-    completedActivities,
     leadTasks,
     openLeadTasks,
     completedLeadTasks,
@@ -245,7 +244,7 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
                     {lead.priority === "high" ? (locale === "vi" ? "Ưu tiên cao" : "High Priority") : lead.priority === "medium" ? (locale === "vi" ? "Trung bình" : "Medium Priority") : (locale === "vi" ? "Thấp" : "Low Priority")}
                   </Badge>
                 )}
-                {canEdit && ownership?.memberId && (
+                {canRecordConsent && ownership?.memberId && (
                   <LeadConsentPanel
                     lead={lead}
                     actorId={ownership.memberId}
@@ -333,9 +332,9 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
                 icon={lead.leadWorkState === LeadWorkState.NEW ? <Phone size={12} /> : lead.leadWorkState === LeadWorkState.CONTACTING ? <CheckCircle2 size={12} /> : <ArrowRightLeft size={12} />}
               >
                 {lead.leadWorkState === LeadWorkState.NEW
-                  ? (locale === "vi" ? "Đã liên hệ" : "Mark contacted")
+                  ? (locale === "vi" ? "Bắt đầu liên hệ" : "Start contacting")
                   : lead.leadWorkState === LeadWorkState.CONTACTING
-                    ? (locale === "vi" ? "Đạt chất lượng" : "Qualify")
+                    ? (locale === "vi" ? "Bắt đầu xác minh" : "Start verifying")
                     : (locale === "vi" ? "Chốt kết quả" : "Resolve outcome")}
               </Button>
             )}
@@ -433,13 +432,13 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
                 { id: "details", label: locale === "vi" ? "Thông tin chi tiết" : "Detailed Information", icon: <User size={12} /> },
                 { id: "notes", label: locale === "vi" ? "Ghi chú" : "Notes", icon: <FileText size={12} /> },
                 { id: "attachments", label: locale === "vi" ? "Tài liệu đính kèm" : "Attachments", icon: <Paperclip size={12} /> },
-                { id: "products", label: locale === "vi" ? "Hàng hóa quan tâm" : "Interested Products", icon: <ShoppingBag size={12} /> },
+                { id: "products", label: locale === "vi" ? "Sản phẩm quan tâm" : "Interested Products", icon: <ShoppingBag size={12} /> },
                 { id: "campaigns", label: locale === "vi" ? "Chiến dịch" : "Campaigns", icon: <Layers size={12} /> },
                 { id: "email", label: "Email", icon: <Mail size={12} /> },
                 { id: "sms", label: "SMS", icon: <MessageCircle size={12} /> },
                 { id: "care_cases", label: locale === "vi" ? "Phiếu hỗ trợ" : "Support Tickets", icon: <HelpCircle size={12} />, badge: leadCareCases.length || "" },
-                { id: "open_activities", label: locale === "vi" ? "Công việc đang thực hiện" : "Open Activities", icon: <CheckSquare size={12} />, badge: openActivities.length + openLeadTasks.length || "" },
-                { id: "completed_activities", label: locale === "vi" ? "Công việc đã hoàn thành" : "Completed Activities", icon: <Clock size={12} />, badge: completedActivities.length + completedLeadTasks.length || "" },
+                { id: "open_activities", label: locale === "vi" ? "Công việc đang mở" : "Open Tasks", icon: <CheckSquare size={12} />, badge: openLeadTasks.length || "" },
+                { id: "completed_activities", label: locale === "vi" ? "Công việc đã hoàn thành" : "Completed Tasks", icon: <Clock size={12} />, badge: completedLeadTasks.length || "" },
                 { id: "others", label: locale === "vi" ? "Khác" : "Others", icon: <HelpCircle size={12} /> }
                   ]}
                 />
@@ -576,6 +575,9 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
 
               {/* TAB 2: NOTES */}
               {activeTab === "notes" && (
+                <AuthoritativeQueryBoundary key={workResources.activityQuery.data !== undefined ? "loaded" : workResources.activityQuery.state} query={workResources.activityQuery} hasData={workResources.activityQuery.data !== undefined}
+                  loadingTitleVi="Đang tải ghi chú" loadingTitleEn="Loading notes"
+                  errorTitleVi="Không thể tải ghi chú" errorTitleEn="Could not load notes" showNotice={Boolean(workResources.activityQuery.error)}>
                 <div className="space-y-4">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">{locale === "vi" ? "Ghi chú" : "Notes"}</span>
@@ -586,14 +588,15 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
 
 
                   <div className="pt-2 border-t border-slate-100 space-y-3">
-                    {lead.activities.filter(a => a.type === "note").length > 0 ? (
-                      lead.activities.filter(a => a.type === "note").map(item => (
+                    {leadNotes.length > 0 ? (
+                      leadNotes.map(item => (
                         <div key={item.id} className="p-3 bg-white border border-slate-200/60 rounded-xl space-y-1 text-left">
                           <div className="flex justify-between items-center text-[10px] text-slate-400 font-bold">
-                            <span>{item.author}</span>
-                            <span>{item.createdAt}</span>
+                            <span>{resolveWorkspaceMemberName(item.actorId)}</span>
+                            <span>{item.occurredAt}</span>
                           </div>
-                          <p className="text-xs text-slate-700 font-medium whitespace-pre-line">{item.description}</p>
+                          <p className="text-xs font-bold text-slate-800">{item.subject}</p>
+                          <p className="text-xs text-slate-700 font-medium whitespace-pre-line">{item.body}</p>
                         </div>
                       ))
                     ) : (
@@ -601,6 +604,7 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
                     )}
                   </div>
                 </div>
+                </AuthoritativeQueryBoundary>
               )}
 
               {/* TAB 3: ATTACHMENTS */}
@@ -634,9 +638,9 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
                 return (
                   <div className="space-y-4">
                     <div className="flex justify-between items-center mb-2">
-                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">{locale === "vi" ? "Hàng hóa quan tâm" : "Interested Products"}</span>
+                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">{locale === "vi" ? "Sản phẩm quan tâm" : "Interested Products"}</span>
                       <Button onClick={() => setIsProductPickerOpen(true)} actionIntent="create" size="sm" className="min-w-[132px]" icon={<Plus size={14} />}>
-                        {locale === "vi" ? "Chọn hàng hóa" : "Select product"}
+                        {locale === "vi" ? "Chọn sản phẩm" : "Select product"}
                       </Button>
                     </div>
 
@@ -788,7 +792,7 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
                           interestedProducts: nextProducts,
                         }));
 
-                        showToast(locale === "vi" ? "Cập nhập hàng hóa quan tâm thành công!" : "Successfully updated interested products!");
+                        showToast(locale === "vi" ? "Đã cập nhật sản phẩm quan tâm." : "Successfully updated interested products!");
                         setIsProductPickerOpen(false);
                       }}
                     />
@@ -858,17 +862,20 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
 
               {/* TAB 6: EMAIL */}
               {activeTab === "email" && (
+                <AuthoritativeQueryBoundary key={workResources.activityQuery.data !== undefined ? "loaded" : workResources.activityQuery.state} query={workResources.activityQuery} hasData={workResources.activityQuery.data !== undefined}
+                  loadingTitleVi="Đang tải lịch sử Email" loadingTitleEn="Loading Email history"
+                  errorTitleVi="Không thể tải lịch sử Email." errorTitleEn="Could not load Email history." showNotice={Boolean(workResources.activityQuery.error)}>
                 <div className="space-y-4 text-left">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">{locale === "vi" ? "Lịch sử tương tác Email" : "Email History"}</span>
                     <Button onClick={() => { if (ensureContactAllowed(LeadContactChannel.EMAIL)) setShowEmailModal(true); }} disabled={!evaluateLeadContactPolicy(lead, LeadContactChannel.EMAIL).allowed} title={evaluateLeadContactPolicy(lead, LeadContactChannel.EMAIL).allowed ? undefined : getLeadContactPolicyMessage(evaluateLeadContactPolicy(lead, LeadContactChannel.EMAIL).reason, locale)} actionIntent="create" size="sm" className="min-w-[132px]" icon={<Plus size={14} />}>
-                      {locale === "vi" ? "Soạn & Gửi Email" : "Compose & Send Email"}
+                      {locale === "vi" ? "Ghi nhận Email ngoài CRM" : "Log external Email"}
                     </Button>
                   </div>
 
                   <div className="border-t border-slate-100 pt-2 space-y-3">
-                    {lead.activities.filter(a => a.type === "email").length > 0 ? (
-                      lead.activities.filter(a => a.type === "email").map(item => (
+                    {leadActivities.filter(a => a.type === "email").length > 0 ? (
+                      leadActivities.filter(a => a.type === "email").map(item => (
                         <div key={item.id} className="p-3 bg-white border border-slate-200 rounded-xl text-xs space-y-1">
                           <div className="flex justify-between items-center text-[10px] text-slate-400 font-bold">
                             <span>{locale === "vi" ? "Sự kiện chăm sóc email" : "Email interaction"}</span>
@@ -883,35 +890,29 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
                     )}
                   </div>
                 </div>
+                </AuthoritativeQueryBoundary>
               )}
 
               {/* TAB 7: SMS */}
               {activeTab === "sms" && (
+                <AuthoritativeQueryBoundary key={workResources.activityQuery.data !== undefined ? "loaded" : workResources.activityQuery.state} query={workResources.activityQuery} hasData={workResources.activityQuery.data !== undefined}
+                  loadingTitleVi="Đang tải lịch sử SMS" loadingTitleEn="Loading SMS history"
+                  errorTitleVi="Không thể tải lịch sử SMS." errorTitleEn="Could not load SMS history." showNotice={Boolean(workResources.activityQuery.error)}>
                 <div className="space-y-4 text-left">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">{locale === "vi" ? "Lịch sử tương tác SMS" : "SMS History"}</span>
                     <Button onClick={() => { if (ensureContactAllowed(LeadContactChannel.SMS)) setShowSmsModal(true); }} disabled={!evaluateLeadContactPolicy(lead, LeadContactChannel.SMS).allowed} title={evaluateLeadContactPolicy(lead, LeadContactChannel.SMS).allowed ? undefined : getLeadContactPolicyMessage(evaluateLeadContactPolicy(lead, LeadContactChannel.SMS).reason, locale)} actionIntent="create" size="sm" className="min-w-[132px]" icon={<Plus size={14} />}>
-                      {locale === "vi" ? "Gửi tin nhắn SMS" : "Send SMS"}
+                      {locale === "vi" ? "Ghi nhận SMS ngoài CRM" : "Log external SMS"}
                     </Button>
                   </div>
 
                   <div className="border-t border-slate-100 pt-2 space-y-3">
-                    {lead.activities.filter(a => a.type === "sms").length > 0 ? (
-                      lead.activities.filter(a => a.type === "sms").map(item => (
-                        <div key={item.id} className="p-3 bg-white border border-slate-200 rounded-xl text-xs space-y-1">
-                          <div className="flex justify-between items-center text-[10px] text-slate-400 font-bold">
-                            <span>{locale === "vi" ? "Chiến dịch tương tác SMS" : "SMS Campaign"}</span>
-                            <span>{item.createdAt}</span>
-                          </div>
-                          <p className="font-bold text-slate-800 text-xs">{item.title}</p>
-                          <p className="text-slate-600 font-medium text-[11px]">{item.description}</p>
-                        </div>
-                      ))
-                    ) : (
-                      <EmptyState title={locale === "vi" ? "Lịch sử SMS trống" : "SMS History Empty"} />
-                    )}
+                    <p className="text-xs text-slate-500">{locale === "vi"
+                      ? "Bản ghi SMS ngoài CRM được lưu trong lịch sử hoạt động chung. Chưa hỗ trợ lịch sử SMS riêng theo kênh."
+                      : "External SMS logs are stored in the general activity history. A separate SMS channel history is not supported."}</p>
                   </div>
                 </div>
+                </AuthoritativeQueryBoundary>
               )}
 
               {activeTab === "care_cases" && (
@@ -948,12 +949,13 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
 
               {/* TAB 8: OPEN ACTIVITIES */}
               {activeTab === "open_activities" && (
+                <AuthoritativeQueryBoundary query={workResources.taskQuery} hasData={workResources.taskQuery.data !== undefined}
+                  loadingTitleVi="Đang tải công việc" loadingTitleEn="Loading tasks"
+                  errorTitleVi="Không thể tải công việc" errorTitleEn="Could not load tasks" showNotice={Boolean(workResources.taskQuery.error)}>
                 <LeadOpenWorkTab
                   locale={locale}
                   tasks={openLeadTasks}
-                  activities={openActivities}
                   onCreateTask={() => setShowTaskModal(true)}
-                  onCreateMeeting={() => setShowMeetingModal(true)}
                   onOpenTask={(task) => navigate(toWorkspacePath(workspace.workspaceKey, "crm", `tasks/${task.id}`))}
                   onCompleteTask={async (task) => {
                     await completeTaskCommand(task.id, {
@@ -963,28 +965,21 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
                     });
                     showToast(locale === "vi" ? "Đã hoàn thành công việc." : "Task completed.");
                   }}
-                  onCompleteActivity={async (activity) => {
-                    await leadActions.appendActivity(lead.id, {
-                      id: `act_complete_${activity.id}_${Date.now()}`,
-                      title: locale === "vi" ? "Hoàn thành hoạt động" : "Activity completed",
-                      description: `${activity.title}: ${activity.description ?? ""}`,
-                      createdAt: new Date().toISOString(),
-                      author: getAuthSessionSnapshot()?.principal.displayName,
-                      type: "system",
-                    });
-                    showToast(locale === "vi" ? "Đã ghi nhận hoàn thành hoạt động." : "Activity completion recorded.");
-                  }}
                 />
+                </AuthoritativeQueryBoundary>
               )}
 
               {/* TAB 9: COMPLETED ACTIVITIES */}
               {activeTab === "completed_activities" && (
+                <AuthoritativeQueryBoundary query={workResources.taskQuery} hasData={workResources.taskQuery.data !== undefined}
+                  loadingTitleVi="Đang tải công việc" loadingTitleEn="Loading tasks"
+                  errorTitleVi="Không thể tải công việc" errorTitleEn="Could not load tasks" showNotice={Boolean(workResources.taskQuery.error)}>
                 <LeadCompletedWorkTab
                   locale={locale}
                   tasks={completedLeadTasks}
-                  activities={completedActivities}
                   onOpenTask={(task) => navigate(toWorkspacePath(workspace.workspaceKey, "crm", `tasks/${task.id}`))}
                 />
+                </AuthoritativeQueryBoundary>
               )}
 
               {/* TAB 10: OTHERS */}
@@ -1020,6 +1015,9 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
 
         <LeadDetailActivityPanel
           lead={lead}
+          activities={leadActivities}
+          activityQuery={workResources.activityQuery}
+          hasActivityData={workResources.activityQuery.data !== undefined}
           locale={locale}
           t={t}
           lt={lt}
@@ -1069,8 +1067,8 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
           handleSaveEditFromForm,
           handleSavePhoneCall,
                 handleSaveMeeting,
-          handleSendEmailFromComposer,
-          handleSendSMSFromComposer,
+          handleLogExternalEmail,
+          handleLogExternalSms,
           members,
           archiveListPath: toWorkspacePath(workspace.workspaceKey, "crm", "leads"),
         }}

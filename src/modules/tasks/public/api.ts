@@ -5,6 +5,7 @@ import {
   createMutationMetadata,
   getMutationAuthority,
   runBackendProjection,
+  invalidateModuleQueries,
   type MutationCommandMetadata,
   type MutationOutcome,
 } from "@/shared/application";
@@ -181,15 +182,16 @@ function projectActivity(activity: Activity): void {
   runBackendProjection("tasks", () => taskActivityRepository.saveActivity(activity));
 }
 
-function taskOutcome(commandType: string, options: MutationCommandMetadata, result: TaskMutationResult): MutationOutcome<Task> {
+function taskOutcome(commandType: string, options: MutationCommandMetadata, result: TaskMutationResult): Promise<MutationOutcome<Task>> {
   return mutationOutcome(commandType, options, result.evidence, result.task);
 }
 
-function activityOutcome(commandType: string, options: MutationCommandMetadata, result: ActivityMutationResult): MutationOutcome<Activity> {
+function activityOutcome(commandType: string, options: MutationCommandMetadata, result: ActivityMutationResult): Promise<MutationOutcome<Activity>> {
   return mutationOutcome(commandType, options, result.evidence, result.activity);
 }
 
-function mutationOutcome<T>(commandType: string, options: MutationCommandMetadata, evidence: TaskMutationEvidence, data: T): MutationOutcome<T> {
+async function mutationOutcome<T>(commandType: string, options: MutationCommandMetadata, evidence: TaskMutationEvidence, data: T): Promise<MutationOutcome<T>> {
+  await invalidateModuleQueries({ moduleKeys: ["tasks"], commandType, aggregateId: evidence.aggregateId, occurredAt: evidence.occurredAt });
   return {
     data,
     commandId: evidence.commandId,

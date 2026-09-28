@@ -1,3 +1,4 @@
+import { AuthoritativeQueryBoundary, type AuthoritativeQueryViewState } from "@/shared/operations";
 import type { Dispatch, SetStateAction } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import {
@@ -25,6 +26,9 @@ type Translate = ReturnType<typeof useI18n>["t"];
 
 interface LeadDetailActivityPanelProps {
   lead: Lead;
+  activities: CRMActivity[];
+  activityQuery: AuthoritativeQueryViewState;
+  hasActivityData: boolean;
   locale: string;
   t: Translate;
   lt: (viText: string, enText: string) => string;
@@ -41,6 +45,9 @@ interface LeadDetailActivityPanelProps {
 
 export function LeadDetailActivityPanel({
   lead,
+  activities,
+  activityQuery,
+  hasActivityData,
   locale,
   t,
   lt,
@@ -55,7 +62,7 @@ export function LeadDetailActivityPanel({
   showToast,
 }: LeadDetailActivityPanelProps) {
   const reduceMotion = useReducedMotion();
-  const filteredActivities = lead.activities.filter(
+  const filteredActivities = activities.filter(
     (activity) => timelineFilter === "all" || activity.type === timelineFilter,
   );
 
@@ -149,6 +156,9 @@ export function LeadDetailActivityPanel({
           />
 
           <div className="min-h-0 flex-1 overflow-y-auto pr-1 crm-scroll-y">
+            <AuthoritativeQueryBoundary key={hasActivityData ? "loaded" : activityQuery.error ? "error" : "loading"} query={activityQuery} hasData={hasActivityData}
+              loadingTitleVi="Đang tải hoạt động" loadingTitleEn="Loading activities"
+              errorTitleVi="Không thể tải hoạt động." errorTitleEn="Could not load activities." showNotice={Boolean(activityQuery.error)}>
             <div className="space-y-2.5 text-left">
               <AnimatePresence mode="popLayout" initial={false}>
               {filteredActivities.map((activity) => {
@@ -214,6 +224,7 @@ export function LeadDetailActivityPanel({
                 <p className="text-center text-slate-400 py-6 text-[10px] font-semibold italic">Chưa thu nhận tương tác nào tương ứng.</p>
               )}
             </div>
+            </AuthoritativeQueryBoundary>
           </div>
 
           {selectedActivity && (

@@ -32,7 +32,12 @@ export function createTaskDemoApiRuntime(repository: TaskActivityRepository, wor
           status: filters.status,
           priority: filters.priority,
           assigneeId: filters.assigneeId,
-        })).filter((task) => !task.archivedAt);
+        })).filter((task) => !task.archivedAt)
+          .filter((task) => !filters.recordModuleKey || task.recordRef?.moduleKey === filters.recordModuleKey)
+          .filter((task) => !filters.recordId || task.recordRef?.recordId === filters.recordId)
+          .filter((task) => !filters.relationshipType || task.relationshipRef?.type === filters.relationshipType)
+          .filter((task) => !filters.relationshipId || task.relationshipRef?.id === filters.relationshipId)
+          .filter((task) => !filters.overdueAt || (task.status === "OPEN" && task.dueAt < filters.overdueAt));
         return page(items, "demo");
       },
       async get(taskId: string): Promise<Task> {

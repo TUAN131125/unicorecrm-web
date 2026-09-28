@@ -129,8 +129,8 @@ export const LeadFilterPopover: React.FC<LeadFilterPopoverProps> = ({
 
           <Select label={locale === "vi" ? "Kết quả xác minh" : "Qualification outcome"} value={filterQualificationOutcome} onChange={(event) => setFilterQualificationOutcome(event.target.value)}>
             <option value="">{allLabel}</option>
-            <option value={QualificationOutcome.NURTURE}>{locale === "vi" ? "Chăm sóc" : "Nurture"}</option>
-            <option value={QualificationOutcome.DISQUALIFIED}>{locale === "vi" ? "Không phù hợp" : "Disqualified"}</option>
+            <option value={QualificationOutcome.NURTURE}>{getQualificationOutcomeLabel(QualificationOutcome.NURTURE, locale)}</option>
+            <option value={QualificationOutcome.DISQUALIFIED}>{getQualificationOutcomeLabel(QualificationOutcome.DISQUALIFIED, locale)}</option>
             <option value={QualificationOutcome.OPPORTUNITY}>{locale === "vi" ? "Cơ hội" : "Opportunity"}</option>
             <option value={QualificationOutcome.DIRECT_SALE}>{locale === "vi" ? "Bán trực tiếp" : "Direct sale"}</option>
           </Select>

@@ -44,8 +44,8 @@ export interface LeadDetailModalScreen {
   handleSaveEditFromForm: (formData: Partial<Lead>) => void;
   handleSavePhoneCall: (draft: CallActivityDraft) => void;
   handleSaveMeeting: (draft: MeetingActivityDraft) => void;
-  handleSendEmailFromComposer: (draft: EmailActivityDraft) => void;
-  handleSendSMSFromComposer: (draft: SmsActivityDraft) => void;
+  handleLogExternalEmail: (draft: EmailActivityDraft) => void;
+  handleLogExternalSms: (draft: SmsActivityDraft) => void;
   members: Array<{ memberId: string; displayName: string }>;
   archiveListPath: string;
 }
@@ -59,7 +59,7 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
     dialogs, lead, locale, t, sources, campaigns, products, showToast, navigate, leadActions,
     handleConfirmDisqualify, handleConfirmHandover, handleSaveEditFromForm,
     handleSavePhoneCall, handleSaveMeeting,
-    handleSendEmailFromComposer, handleSendSMSFromComposer, members, archiveListPath,
+    handleLogExternalEmail, handleLogExternalSms, members, archiveListPath,
   } = screen;
 
   const {
@@ -384,20 +384,26 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
 
       {/* EMAIL MODAL */}
       <EmailActivityCreateModal
+        titleOverride={locale === "vi" ? "Ghi nhận Email ngoài CRM" : "Log external Email"}
+        submitLabelOverride={locale === "vi" ? "Lưu hoạt động" : "Save activity"}
+        helperTextOverride={locale === "vi" ? "Chỉ dùng khi Email đã được gửi hoặc nhận ngoài UniCoreCRM." : "Use only for Email already sent or received outside UniCoreCRM."}
         isOpen={showEmailModal}
         onClose={() => setShowEmailModal(false)}
         formId="lead-quick-email-form"
         defaults={{ to: emailForm.to || lead.email || "", subject: emailForm.subject, body: emailForm.content }}
-        onSubmit={handleSendEmailFromComposer}
+        onSubmit={handleLogExternalEmail}
       />
 
       {/* SMS MODAL */}
       <SmsActivityCreateModal
+        titleOverride={locale === "vi" ? "Ghi nhận SMS ngoài CRM" : "Log external SMS"}
+        submitLabelOverride={locale === "vi" ? "Lưu hoạt động" : "Save activity"}
+        helperTextOverride={locale === "vi" ? "Chỉ dùng khi SMS đã được gửi hoặc nhận ngoài UniCoreCRM." : "Use only for SMS already sent or received outside UniCoreCRM."}
         isOpen={showSmsModal}
         onClose={() => setShowSmsModal(false)}
         formId="lead-quick-sms-form"
         defaults={{ phone: smsForm.to || lead.phone || "", body: smsForm.content }}
-        onSubmit={handleSendSMSFromComposer}
+        onSubmit={handleLogExternalSms}
       />
     </>
   );
