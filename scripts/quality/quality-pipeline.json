@@ -231,6 +231,7 @@
         "quality.lead-form-recovery-contracts",
         "quality.lead-detail-work-resources",
         "quality.lead-work-panel",
+        "quality.lead-detail-surfaces",
         "quality.crm-ui-interaction-contracts",
         "quality.role-based-navigation",
         "quality.read-only-cross-domain",
@@ -5302,6 +5303,32 @@
         {
           "type": "node",
           "entry": "tests/quality/integration/check-lead-work-panel.mts",
+          "nodeArgs": [
+            "--import",
+            "tsx"
+          ],
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "quality.lead-detail-surfaces",
+      "commandName": "test:lead-detail-surfaces",
+      "groupId": "integration",
+      "kind": "integration",
+      "owner": "quality-integration",
+      "entry": "tests/quality/integration/check-lead-detail-surfaces.mts",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node",
+        "tsx"
+      ],
+      "shardKey": "quality.lead-detail-surfaces",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/integration/check-lead-detail-surfaces.mts",
           "nodeArgs": [
             "--import",
             "tsx"

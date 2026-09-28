@@ -1,6 +1,7 @@
 import React from "react";
+import { RelationshipQuickActionModal } from "@/components/crm/relationship-panel/RelationshipQuickActionModal";
 import type { NavigateFunction } from "react-router-dom";
-import { Button, ConfirmDialog, Input, Modal, Select, Textarea } from "@/shared/components/ui";
+import { Button, ConfirmDialog, Drawer, Input, Modal, RowActionPortal, Select, Textarea } from "@/shared/components/ui";
 import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
 import { formatApplicationError } from "@/shared/operations";
 import { normalizeApplicationError } from "@/shared/domain";
@@ -40,7 +41,7 @@ export interface LeadDetailModalScreen {
   navigate: NavigateFunction;
   leadActions: LeadActions;
   handleConfirmDisqualify: () => void;
-  handleConfirmHandover: (ownerId: string, reason: string) => void;
+  handleConfirmHandover: (ownerId: string, reason: string) => void | Promise<void>;
   handleSaveEditFromForm: (formData: Partial<Lead>) => void;
   handleSavePhoneCall: (draft: CallActivityDraft) => void;
   handleSaveMeeting: (draft: MeetingActivityDraft) => void;
@@ -76,8 +77,11 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
 
   const closeEditModal = React.useCallback(() => setShowEditModal(false), [setShowEditModal]);
   const editUnsavedChanges = useUnsavedChangesGuard(closeEditModal);
+  const editPending = React.useRef(false);
+  const requestEditClose = () => { if (!editPending.current) editUnsavedChanges.requestClose(); };
   const [tagDraft, setTagDraft] = React.useState("");
   const [archivePending, setArchivePending] = React.useState(false);
+  React.useEffect(() => { if (!showTagsModal) setTagDraft(""); }, [showTagsModal]);
   React.useEffect(() => {
     if (!showEditModal) {
       editUnsavedChanges.setIsDirty(false);
@@ -160,33 +164,26 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
         }}
       />
 
-      {/* HANDOVER ASSIGNMENT MODAL */}
-      <Modal
-        variant="form"
+      <RelationshipQuickActionModal
+        size="sm"
+        guardChanges
         isOpen={showHandoverModal}
         onClose={() => setShowHandoverModal(false)}
+        dirty={Boolean(handoverReason || handoverOwnerId)}
         title={locale === "vi" ? "Bàn giao Lead & công việc" : "Handover Lead & tasks"}
-        description={locale === "vi" ? "Đổi chủ sở hữu Lead, chuyển các công việc đang mở và tạo công việc tiếp nhận cho người mới." : "Change Lead ownership, reassign open tasks, and create a handover task for the new owner."}
-        size="sm"
-        footer={(
-          <>
-            <Button onClick={() => setShowHandoverModal(false)} variant="secondary" size="sm">{t("common.cancel")}</Button>
-            <Button
-              onClick={() => {
-                if (!handoverOwnerId || !handoverReason.trim()) {
-                  showToast(locale === "vi" ? "Hãy chọn người nhận và nhập lý do bàn giao." : "Select the new owner and enter a handover reason.");
-                  return;
-                }
-                handleConfirmHandover(handoverOwnerId, handoverReason.trim());
-              }}
-              variant="primary"
-              size="sm"
-            >
-              {locale === "vi" ? "Bàn giao" : "Handover"}
-            </Button>
-          </>
-        )}
+        formId="lead-handover-form"
+        cancelLabel={t("common.cancel")}
+        submitLabel={locale === "vi" ? "Bàn giao" : "Handover"}
+        onSubmit={(event) => {
+          event.preventDefault();
+          if (!handoverOwnerId || !handoverReason.trim()) {
+            showToast(locale === "vi" ? "Hãy chọn người nhận và nhập lý do bàn giao." : "Select the new owner and enter a handover reason.");
+            return;
+          }
+          return handleConfirmHandover(handoverOwnerId, handoverReason.trim());
+        }}
       >
+        <p className="mb-4 text-xs text-slate-500">{locale === "vi" ? "Đổi chủ sở hữu Lead, chuyển các công việc đang mở và tạo công việc tiếp nhận cho người mới." : "Change Lead ownership, reassign open tasks, and create a handover task for the new owner."}</p>
         <div className="space-y-4 text-left text-xs font-sans">
           <Select
             label={locale === "vi" ? "Người chịu trách nhiệm mới *" : "New owner *"}
@@ -209,20 +206,17 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
               : "Open tasks linked to this Lead will be reassigned. A handover task will also be created in the Tasks module."}
           </div>
         </div>
-      </Modal>
+      </RelationshipQuickActionModal>
 
-      {/* MANAGE TAGS MODAL */}
-      <Modal
-        variant="form"
-        isOpen={showTagsModal}
+      <RowActionPortal
+        open={showTagsModal && Boolean(dialogs.tagsAnchor?.isConnected)}
+        anchorEl={dialogs.tagsAnchor}
         onClose={() => { setShowTagsModal(false); setTagDraft(""); }}
-        title={locale === "vi" ? "Quản lý nhãn Lead" : "Manage Lead Tags"}
-        size="sm"
-        footer={(
-          <Button type="button" onClick={() => { setShowTagsModal(false); setTagDraft(""); }} variant="primary" size="sm">
-            {locale === "vi" ? "Đóng" : "Done"}
-          </Button>
-        )}
+        width={340}
+        align="end"
+        role="dialog"
+        ariaLabel={locale === "vi" ? "Quản lý nhãn Lead" : "Manage Lead Tags"}
+        className="p-4"
       >
         <div className="space-y-4 text-left text-xs font-sans">
           <p className="text-slate-500">
@@ -230,6 +224,7 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
           </p>
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-end gap-3">
             <Input
+              autoFocus
               label={locale === "vi" ? "Nhãn mới" : "New tag"}
               placeholder={locale === "vi" ? "Ví dụ: Khách hàng ưu tiên" : "For example: Priority account"}
               value={tagDraft}
@@ -286,14 +281,15 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
             </div>
           </div>
         </div>
-      </Modal>
+      </RowActionPortal>
 
       {/* MODAL: INTEGRATED EDIT FORM */}
-      <Modal variant="form"
+      <Drawer
+        containPopovers
         isOpen={showEditModal}
-        onClose={editUnsavedChanges.requestClose}
+        onClose={requestEditClose}
         title={locale === "vi" ? "Chỉnh sửa Chi tiết Khách hàng tiềm năng" : "Edit Lead Details"}
-        size="lg"
+        size="wide"
         scrollBody={false}
         bodyClassName="p-0"
         footer={<div id="lead-edit-modal-footer" className="contents" />}
@@ -306,15 +302,19 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
           campaigns={campaigns}
           products={products}
           defaultOwnerId={lead.ownerId}
-          canAssignOwner={false} 
-          onSubmit={handleSaveEditFromForm} 
-          onCancel={editUnsavedChanges.requestClose}
+          canAssignOwner={false}
+          onSubmit={async (draft) => {
+            editPending.current = true;
+            try { await handleSaveEditFromForm(draft); }
+            finally { editPending.current = false; }
+          }}
+          onCancel={requestEditClose}
           onDirtyChange={editUnsavedChanges.setIsDirty}
           isEdit={true}
           footerPortalId="lead-edit-modal-footer"
         />
         </React.Suspense>
-      </Modal>
+      </Drawer>
 
       <ConfirmDialog
         isOpen={editUnsavedChanges.isConfirmOpen}
@@ -331,6 +331,7 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
 
       {/* CUỘC GỌI MODAL */}
       <CallActivityCreateModal
+        guardChanges
         isOpen={showCallModal}
         onClose={() => setShowCallModal(false)}
         formId="lead-quick-call-form"
@@ -348,6 +349,7 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
 
       {/* NHIỆM VỤ MODAL */}
       <TaskCreateModal
+        guardChanges
         isOpen={showTaskModal}
         onClose={() => setShowTaskModal(false)}
         context={{
@@ -367,6 +369,8 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
 
       {/* LỊCH HẸN MODAL */}
       <MeetingActivityCreateModal
+        titleOverride={locale === "vi" ? "Ghi nhận lịch hẹn" : "Log meeting"}
+        guardChanges
         isOpen={showMeetingModal}
         onClose={() => setShowMeetingModal(false)}
         formId="lead-quick-meeting-form"
@@ -384,6 +388,7 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
 
       {/* EMAIL MODAL */}
       <EmailActivityCreateModal
+        guardChanges
         titleOverride={locale === "vi" ? "Ghi nhận Email ngoài CRM" : "Log external Email"}
         submitLabelOverride={locale === "vi" ? "Lưu hoạt động" : "Save activity"}
         helperTextOverride={locale === "vi" ? "Chỉ dùng khi Email đã được gửi hoặc nhận ngoài UniCoreCRM." : "Use only for Email already sent or received outside UniCoreCRM."}
@@ -396,6 +401,7 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
 
       {/* SMS MODAL */}
       <SmsActivityCreateModal
+        guardChanges
         titleOverride={locale === "vi" ? "Ghi nhận SMS ngoài CRM" : "Log external SMS"}
         submitLabelOverride={locale === "vi" ? "Lưu hoạt động" : "Save activity"}
         helperTextOverride={locale === "vi" ? "Chỉ dùng khi SMS đã được gửi hoặc nhận ngoài UniCoreCRM." : "Use only for SMS already sent or received outside UniCoreCRM."}

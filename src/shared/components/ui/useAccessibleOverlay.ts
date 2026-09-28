@@ -73,17 +73,20 @@ function isTopOverlay(surface: HTMLElement): boolean {
 export interface AccessibleOverlayOptions {
   isOpen: boolean;
   onClose: () => void;
+  shouldHandleEscape?: () => boolean;
 }
 
 /** Implements the keyboard/focus lifecycle required by an aria-modal dialog. */
-export function useAccessibleOverlay({ isOpen, onClose }: AccessibleOverlayOptions) {
+export function useAccessibleOverlay({ isOpen, onClose, shouldHandleEscape }: AccessibleOverlayOptions) {
   const rootRef = React.useRef<HTMLDivElement>(null);
   const surfaceRef = React.useRef<HTMLDivElement>(null);
   const onCloseRef = React.useRef(onClose);
+  const shouldHandleEscapeRef = React.useRef(shouldHandleEscape);
 
   React.useEffect(() => {
     onCloseRef.current = onClose;
-  }, [onClose]);
+    shouldHandleEscapeRef.current = shouldHandleEscape;
+  }, [onClose, shouldHandleEscape]);
 
   React.useEffect(() => {
     if (!isOpen || typeof document === "undefined") return;
@@ -100,7 +103,7 @@ export function useAccessibleOverlay({ isOpen, onClose }: AccessibleOverlayOptio
     // emulating browser focus containment. Real browsers use the complete path.
     if (isJsdom) {
       const handleJsdomKeyDown = (event: KeyboardEvent) => {
-        if (event.key === "Escape") onCloseRef.current();
+        if (event.key === "Escape" && shouldHandleEscapeRef.current?.() !== false) onCloseRef.current();
       };
       window.addEventListener("keydown", handleJsdomKeyDown);
       return () => {
@@ -120,6 +123,7 @@ export function useAccessibleOverlay({ isOpen, onClose }: AccessibleOverlayOptio
     const handleKeyDown = (event: KeyboardEvent) => {
       if (!isTopOverlay(surface)) return;
       if (event.key === "Escape") {
+        if (shouldHandleEscapeRef.current?.() === false) return;
         event.preventDefault();
         event.stopPropagation();
         onCloseRef.current();

@@ -54,6 +54,8 @@ export interface NoteActivityDraft {
 }
 
 interface BaseActivityModalProps {
+  guardChanges?: boolean;
+  titleOverride?: string;
   isOpen: boolean;
   onClose(): void;
   formId?: string;
@@ -72,16 +74,17 @@ function normalizeLocalDateTime(value?: string, fallback = new Date()): string {
   return Number.isNaN(parsed.getTime()) ? localDateTimeInput(fallback) : localDateTimeInput(parsed);
 }
 
-function useDraftOnOpen<T>(isOpen: boolean, createDraft: () => T): [T, React.Dispatch<React.SetStateAction<T>>] {
+function useDraftOnOpen<T>(isOpen: boolean, createDraft: () => T): [T, React.Dispatch<React.SetStateAction<T>>, boolean] {
   const [draft, setDraft] = React.useState<T>(createDraft);
+  const initial = React.useRef(draft);
   const wasOpen = React.useRef(false);
 
   React.useEffect(() => {
-    if (isOpen && !wasOpen.current) setDraft(createDraft());
+    if (isOpen && !wasOpen.current) { initial.current = createDraft(); setDraft(initial.current); }
     wasOpen.current = isOpen;
   }, [createDraft, isOpen]);
 
-  return [draft, setDraft];
+  return [draft, setDraft, JSON.stringify(draft) !== JSON.stringify(initial.current)];
 }
 
 function ContactPolicyNotice({
@@ -120,10 +123,12 @@ function ContactPolicyNotice({
 
 export interface CallActivityCreateModalProps extends BaseActivityModalProps {
   defaults?: Partial<CallActivityDraft>;
-  onSubmit(draft: CallActivityDraft): void;
+  onSubmit(draft: CallActivityDraft): void | Promise<void>;
 }
 
 export function CallActivityCreateModal({
+  guardChanges,
+  titleOverride,
   isOpen,
   onClose,
   defaults,
@@ -144,7 +149,7 @@ export function CallActivityCreateModal({
     nextFollowUpAt: defaults?.nextFollowUpAt ? normalizeLocalDateTime(defaults.nextFollowUpAt) : undefined,
     createFollowUpTask: defaults?.createFollowUpTask ?? false,
   }), [defaults]);
-  const [draft, setDraft] = useDraftOnOpen(isOpen, createDraft);
+  const [draft, setDraft, dirty] = useDraftOnOpen(isOpen, createDraft);
   const [confirmed, setConfirmed] = React.useState(false);
   const [policyError, setPolicyError] = React.useState("");
 
@@ -158,10 +163,10 @@ export function CallActivityCreateModal({
   }, [isOpen]);
 
   return (
-    <RelationshipQuickActionModal
+    <RelationshipQuickActionModal guardChanges={guardChanges} dirty={dirty}
       isOpen={isOpen}
       onClose={onClose}
-      title={vi ? "Ghi nhận cuộc gọi" : "Log call"}
+      title={titleOverride ?? (vi ? "Ghi nhận cuộc gọi" : "Log call")}
       formId={formId}
       cancelLabel={vi ? "Hủy" : "Cancel"}
       submitLabel={vi ? "Lưu hoạt động" : "Save activity"}
@@ -172,7 +177,7 @@ export function CallActivityCreateModal({
           setPolicyError(vi ? "Bạn phải xác nhận quyền liên lạc trước khi tiếp tục." : "Confirm contact authorization before continuing.");
           return;
         }
-        onSubmit({ ...draft, subject: draft.subject.trim(), recipient: draft.recipient.trim(), body: draft.body.trim() });
+        return onSubmit({ ...draft, subject: draft.subject.trim(), recipient: draft.recipient.trim(), body: draft.body.trim() });
       }}
     >
       <ContactPolicyNotice confirmationId={`${formId}-contact-policy-confirmation`} policy={contactPolicy} checked={confirmed} error={policyError} onChange={(value) => { setConfirmed(value); if (value) setPolicyError(""); }} />
@@ -204,10 +209,12 @@ export function CallActivityCreateModal({
 
 export interface MeetingActivityCreateModalProps extends BaseActivityModalProps {
   defaults?: Partial<MeetingActivityDraft>;
-  onSubmit(draft: MeetingActivityDraft): void;
+  onSubmit(draft: MeetingActivityDraft): void | Promise<void>;
 }
 
 export function MeetingActivityCreateModal({
+  guardChanges,
+  titleOverride,
   isOpen,
   onClose,
   defaults,
@@ -231,7 +238,7 @@ export function MeetingActivityCreateModal({
       reminder: defaults?.reminder ?? true,
     };
   }, [defaults]);
-  const [draft, setDraft] = useDraftOnOpen(isOpen, createDraft);
+  const [draft, setDraft, dirty] = useDraftOnOpen(isOpen, createDraft);
   const [confirmed, setConfirmed] = React.useState(false);
   const [error, setError] = React.useState("");
 
@@ -246,10 +253,10 @@ export function MeetingActivityCreateModal({
 
   const policyApplies = contactPolicy?.restricted && draft.channel === "phone";
   return (
-    <RelationshipQuickActionModal
+    <RelationshipQuickActionModal guardChanges={guardChanges} dirty={dirty}
       isOpen={isOpen}
       onClose={onClose}
-      title={vi ? "Thêm lịch hẹn" : "Add meeting"}
+      title={titleOverride ?? (vi ? "Thêm lịch hẹn" : "Add meeting")}
       formId={formId}
       cancelLabel={vi ? "Hủy" : "Cancel"}
       submitLabel={vi ? "Lưu lịch hẹn" : "Save meeting"}
@@ -264,7 +271,7 @@ export function MeetingActivityCreateModal({
           setError(vi ? "Bạn phải xác nhận quyền liên lạc trước khi tiếp tục." : "Confirm contact authorization before continuing.");
           return;
         }
-        onSubmit({ ...draft, title: draft.title.trim(), location: draft.location?.trim() || undefined, attendees: draft.attendees?.trim() || undefined, owner: draft.owner?.trim() || undefined, agenda: draft.agenda?.trim() || undefined });
+        return onSubmit({ ...draft, title: draft.title.trim(), location: draft.location?.trim() || undefined, attendees: draft.attendees?.trim() || undefined, owner: draft.owner?.trim() || undefined, agenda: draft.agenda?.trim() || undefined });
       }}
     >
       {policyApplies ? <ContactPolicyNotice confirmationId={`${formId}-contact-policy-confirmation`} policy={contactPolicy} checked={confirmed} error={error} onChange={(value) => { setConfirmed(value); if (value) setError(""); }} /> : null}
@@ -295,14 +302,14 @@ export interface EmailActivityCreateModalProps extends BaseActivityModalProps {
   submitLabelOverride?: string;
   helperTextOverride?: string;
   defaults?: Partial<EmailActivityDraft>;
-  onSubmit(draft: EmailActivityDraft): void;
+  onSubmit(draft: EmailActivityDraft): void | Promise<void>;
 }
 
-export function EmailActivityCreateModal({ titleOverride, submitLabelOverride, helperTextOverride, isOpen, onClose, defaults, onSubmit, contactPolicy, formId = "canonical-email-activity-form" }: EmailActivityCreateModalProps) {
+export function EmailActivityCreateModal({ guardChanges, titleOverride, submitLabelOverride, helperTextOverride, isOpen, onClose, defaults, onSubmit, contactPolicy, formId = "canonical-email-activity-form" }: EmailActivityCreateModalProps) {
   const { locale } = useI18n();
   const vi = locale === "vi";
   const createDraft = React.useCallback((): EmailActivityDraft => ({ to: defaults?.to ?? "", subject: defaults?.subject ?? "", body: defaults?.body ?? "", attachProposal: defaults?.attachProposal ?? false }), [defaults]);
-  const [draft, setDraft] = useDraftOnOpen(isOpen, createDraft);
+  const [draft, setDraft, dirty] = useDraftOnOpen(isOpen, createDraft);
   const [confirmed, setConfirmed] = React.useState(false);
   const [error, setError] = React.useState("");
   const wasOpen = React.useRef(false);
@@ -311,7 +318,7 @@ export function EmailActivityCreateModal({ titleOverride, submitLabelOverride, h
     wasOpen.current = isOpen;
   }, [isOpen]);
   return (
-    <RelationshipQuickActionModal isOpen={isOpen} onClose={onClose} title={titleOverride ?? (vi ? "Ghi nhận Email" : "Log email")} formId={formId} cancelLabel={vi ? "Hủy" : "Cancel"} submitLabel={submitLabelOverride ?? (vi ? "Gửi Email" : "Send email")} submitDisabled={!draft.to.trim() || !draft.subject.trim() || !draft.body.trim()} onSubmit={(event) => { event.preventDefault(); if (contactPolicy?.restricted && !confirmed) { setError(vi ? "Bạn phải xác nhận quyền liên lạc trước khi tiếp tục." : "Confirm contact authorization before continuing."); return; } onSubmit({ ...draft, to: draft.to.trim(), subject: draft.subject.trim(), body: draft.body.trim() }); }}>
+    <RelationshipQuickActionModal guardChanges={guardChanges} dirty={dirty} isOpen={isOpen} onClose={onClose} title={titleOverride ?? (vi ? "Ghi nhận Email" : "Log email")} formId={formId} cancelLabel={vi ? "Hủy" : "Cancel"} submitLabel={submitLabelOverride ?? (vi ? "Gửi Email" : "Send email")} submitDisabled={!draft.to.trim() || !draft.subject.trim() || !draft.body.trim()} onSubmit={(event) => { event.preventDefault(); if (contactPolicy?.restricted && !confirmed) { setError(vi ? "Bạn phải xác nhận quyền liên lạc trước khi tiếp tục." : "Confirm contact authorization before continuing."); return; } return onSubmit({ ...draft, to: draft.to.trim(), subject: draft.subject.trim(), body: draft.body.trim() }); }}>
       {helperTextOverride && <p className="text-xs text-slate-500">{helperTextOverride}</p>}
       <ContactPolicyNotice confirmationId={`${formId}-contact-policy-confirmation`} policy={contactPolicy} checked={confirmed} error={error} onChange={(value) => { setConfirmed(value); if (value) setError(""); }} />
       <Input label={vi ? "Người nhận" : "Recipient"} type="email" value={draft.to} onChange={(event) => setDraft((current) => ({ ...current, to: event.target.value }))} required />
@@ -327,14 +334,14 @@ export interface SmsActivityCreateModalProps extends BaseActivityModalProps {
   submitLabelOverride?: string;
   helperTextOverride?: string;
   defaults?: Partial<SmsActivityDraft>;
-  onSubmit(draft: SmsActivityDraft): void;
+  onSubmit(draft: SmsActivityDraft): void | Promise<void>;
 }
 
-export function SmsActivityCreateModal({ titleOverride, submitLabelOverride, helperTextOverride, isOpen, onClose, defaults, onSubmit, contactPolicy, formId = "canonical-sms-activity-form" }: SmsActivityCreateModalProps) {
+export function SmsActivityCreateModal({ guardChanges, titleOverride, submitLabelOverride, helperTextOverride, isOpen, onClose, defaults, onSubmit, contactPolicy, formId = "canonical-sms-activity-form" }: SmsActivityCreateModalProps) {
   const { locale } = useI18n();
   const vi = locale === "vi";
   const createDraft = React.useCallback((): SmsActivityDraft => ({ phone: defaults?.phone ?? "", body: defaults?.body ?? "" }), [defaults]);
-  const [draft, setDraft] = useDraftOnOpen(isOpen, createDraft);
+  const [draft, setDraft, dirty] = useDraftOnOpen(isOpen, createDraft);
   const [confirmed, setConfirmed] = React.useState(false);
   const [error, setError] = React.useState("");
   const wasOpen = React.useRef(false);
@@ -343,7 +350,7 @@ export function SmsActivityCreateModal({ titleOverride, submitLabelOverride, hel
     wasOpen.current = isOpen;
   }, [isOpen]);
   return (
-    <RelationshipQuickActionModal isOpen={isOpen} onClose={onClose} title={titleOverride ?? (vi ? "Ghi nhận SMS" : "Log SMS")} formId={formId} cancelLabel={vi ? "Hủy" : "Cancel"} submitLabel={submitLabelOverride ?? (vi ? "Gửi tin nhắn" : "Send message")} submitDisabled={!draft.phone.trim() || !draft.body.trim()} onSubmit={(event) => { event.preventDefault(); if (contactPolicy?.restricted && !confirmed) { setError(vi ? "Bạn phải xác nhận quyền liên lạc trước khi tiếp tục." : "Confirm contact authorization before continuing."); return; } onSubmit({ phone: draft.phone.trim(), body: draft.body.trim() }); }}>
+    <RelationshipQuickActionModal guardChanges={guardChanges} dirty={dirty} isOpen={isOpen} onClose={onClose} title={titleOverride ?? (vi ? "Ghi nhận SMS" : "Log SMS")} formId={formId} cancelLabel={vi ? "Hủy" : "Cancel"} submitLabel={submitLabelOverride ?? (vi ? "Gửi tin nhắn" : "Send message")} submitDisabled={!draft.phone.trim() || !draft.body.trim()} onSubmit={(event) => { event.preventDefault(); if (contactPolicy?.restricted && !confirmed) { setError(vi ? "Bạn phải xác nhận quyền liên lạc trước khi tiếp tục." : "Confirm contact authorization before continuing."); return; } return onSubmit({ phone: draft.phone.trim(), body: draft.body.trim() }); }}>
       {helperTextOverride && <p className="text-xs text-slate-500">{helperTextOverride}</p>}
       <ContactPolicyNotice confirmationId={`${formId}-contact-policy-confirmation`} policy={contactPolicy} checked={confirmed} error={error} onChange={(value) => { setConfirmed(value); if (value) setError(""); }} />
       <Input label={vi ? "Số điện thoại" : "Phone number"} value={draft.phone} onChange={(event) => setDraft((current) => ({ ...current, phone: event.target.value }))} required />
@@ -353,7 +360,7 @@ export function SmsActivityCreateModal({ titleOverride, submitLabelOverride, hel
   );
 }
 
-export interface NoteActivityCreateModalProps extends Omit<BaseActivityModalProps, "contactPolicy"> {
+export interface NoteActivityCreateModalProps extends Omit<BaseActivityModalProps, "contactPolicy" | "guardChanges" | "titleOverride"> {
   defaults?: Partial<NoteActivityDraft>;
   onSubmit(draft: NoteActivityDraft): void;
 }

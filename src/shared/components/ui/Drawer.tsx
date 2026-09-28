@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { useBodyScrollLock } from "@/shared/hooks/useBodyScrollLock";
+import { OverlayLayerProvider, useOverlayLayer } from "../../../components/overlay/OverlayLayerContext";
 import { OVERLAY_Z } from "../../../components/overlay/overlayLayers";
 import { cn } from "../../lib/classnames/cn";
 import { IconButton } from "./Button";
@@ -17,9 +18,13 @@ export interface DrawerProps {
   ariaLabel?: string;
   closeLabel?: string;
   children: React.ReactNode;
-  size?: "md" | "lg";
+  size?: "md" | "lg" | "wide";
   className?: string;
   position?: "left" | "right";
+  containPopovers?: boolean;
+  footer?: React.ReactNode;
+  bodyClassName?: string;
+  scrollBody?: boolean;
 }
 
 export const Drawer: React.FC<DrawerProps> = ({
@@ -33,13 +38,21 @@ export const Drawer: React.FC<DrawerProps> = ({
   size = "md",
   className,
   position = "right",
+  containPopovers = false,
+  footer,
+  bodyClassName,
+  scrollBody = true,
 }) => {
   const { locale, t } = useI18n();
   const titleId = React.useId();
   const subtitleId = React.useId();
   const resolvedCloseLabel = closeLabel ?? t("common.closeDrawer", locale === "vi" ? "Đóng bảng điều khiển" : "Close drawer");
   const resolvedAriaLabel = ariaLabel ?? t("common.drawer", locale === "vi" ? "Bảng điều khiển" : "Drawer");
-  const { rootRef, surfaceRef } = useAccessibleOverlay({ isOpen, onClose });
+  const parentLayer = useOverlayLayer();
+  const { rootRef, surfaceRef } = useAccessibleOverlay({
+    isOpen, onClose,
+    shouldHandleEscape: () => !containPopovers || !surfaceRef.current?.querySelector('[data-floating-overlay="menu"]'),
+  });
   const motionDisabled =
     (typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent)) ||
     (typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true);
@@ -55,6 +68,7 @@ export const Drawer: React.FC<DrawerProps> = ({
   const sizeClasses = {
     md: "max-w-xl",
     lg: "max-w-2xl",
+    wide: "max-w-full lg:w-[80vw] lg:max-w-[960px] xl:w-[65vw]",
   };
 
   useBodyScrollLock(isOpen);
@@ -62,6 +76,7 @@ export const Drawer: React.FC<DrawerProps> = ({
   const isLeft = position === "left";
 
   const drawerElement = (
+    <OverlayLayerProvider value={containPopovers ? { scope: "modal", baseZIndex: 7000, portalContainer: surfaceRef } : parentLayer}>
     <AnimatePresence initial={false}>
       {isOpen && (
         <div
@@ -78,6 +93,7 @@ export const Drawer: React.FC<DrawerProps> = ({
           <DrawerSurface
             {...drawerMotionProps}
             ref={surfaceRef}
+            data-surface="drawer"
             role="dialog"
             aria-modal="true"
             aria-labelledby={title ? titleId : undefined}
@@ -108,13 +124,15 @@ export const Drawer: React.FC<DrawerProps> = ({
             )}
             
             {/* Drawer Content */}
-            <div className="crm-scroll-y flex-1 overflow-y-auto p-6 text-sm text-slate-700">
+            <div className={cn("min-h-0 flex-1 text-sm text-slate-700", scrollBody ? "crm-scroll-y overflow-y-auto" : "overflow-hidden", bodyClassName ?? "p-6")}>
               {children}
             </div>
+            {footer && <div className="flex shrink-0 items-center justify-end gap-3 border-t border-slate-200 bg-white px-6 py-4">{footer}</div>}
           </DrawerSurface>
         </div>
       )}
     </AnimatePresence>
+    </OverlayLayerProvider>
   );
 
   return typeof document !== "undefined" ? createPortal(drawerElement, document.body) : null;

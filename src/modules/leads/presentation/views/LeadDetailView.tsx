@@ -363,7 +363,7 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
             <div ref={moreActionsAnchorRef} className="relative">
               <IconButton
                 id="header-more-actions-btn"
-                onClick={() => setShowMoreMenu(prev => !prev)}
+                onClick={() => { setShowTagsModal(false); setShowMoreMenu(prev => !prev); }}
                 variant="secondary"
                 size="sm"
                 title={locale === "vi" ? "Thao tác khác" : "More Actions"}
@@ -379,7 +379,7 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
                 canUpdate={canEdit}
                 canQualify={canQualify}
                 canManageTags={canEdit}
-                onClose={() => setShowMoreMenu(false)}
+                onClose={() => { setShowTagsModal(false); setShowMoreMenu(false); }}
                 onMarkContacted={() => {
                   updateWorkStateDirectly(
                     LeadWorkState.CONTACTING,
@@ -396,7 +396,7 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
                 onDisqualify={() => { setShowDisqualifyModal(true); setShowMoreMenu(false); }}
                 onReopen={() => { handleReopenLead(); setShowMoreMenu(false); }}
                 onHandover={() => { setShowMoreMenu(false); setHandoverOwnerId(lead.ownerId); setShowHandoverModal(true); }}
-                onManageTags={() => { setShowMoreMenu(false); setShowTagsModal(true); }}
+                onManageTags={(event) => { dialogs.setTagsAnchor(event.currentTarget); setShowTagsModal(!showTagsModal); }}
                 onPrint={() => { setShowMoreMenu(false); window.print(); }}
                 onArchive={canArchive ? () => { setShowMoreMenu(false); setShowArchiveConfirm(true); } : undefined}
               />

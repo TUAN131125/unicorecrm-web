@@ -378,7 +378,7 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
             failed: locale === "vi" ? "Công việc theo dõi" : "the follow-up task",
           }, locale)} ${failure}`
         : failure);
-      return;
+      throw normalizeApplicationError(callReport.error);
     }
     setShowCallModal(false);
     setCallForm((current) => ({ ...current, title: "", desc: "" }));
@@ -482,6 +482,7 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
         : `Reassigned to ${nextOwner?.displayName || nextOwnerId}, moved ${openLeadTasks.length} open tasks, and created a handover task.`);
     } catch (error) {
       showToast(formatApplicationError(error, { locale }));
+      throw normalizeApplicationError(error);
     }
   };
 

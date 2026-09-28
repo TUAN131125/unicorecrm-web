@@ -3,6 +3,7 @@ import React from "react";
 export interface OverlayLayer {
   scope: "page" | "modal";
   baseZIndex: number;
+  portalContainer?: React.RefObject<HTMLElement | null>;
 }
 
 const DEFAULT_OVERLAY_LAYER: OverlayLayer = { scope: "page", baseZIndex: 2980 };

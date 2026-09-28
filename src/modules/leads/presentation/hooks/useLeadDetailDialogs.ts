@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import type { Lead } from "../../domain/model/lead.types";
 import { useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
 import { toDateKeyInTimeZone } from "@/shared/lib/datetime/workspaceDateTime";
@@ -10,18 +10,32 @@ export function useLeadDetailDialogs(lead?: Lead) {
   const [disqualifyCategory, setDisqualifyCategory] = useState("Không có nhu cầu");
   const [disqualifyReasonText, setDisqualifyReasonText] = useState("");
 
-  const [showEditModal, setShowEditModal] = useState(false);
+  type FormKind = "edit" | "handover" | "call" | "task" | "meeting" | "email" | "sms";
+  const [activeForm, setActiveForm] = useState<FormKind | null>(null);
+  // Background triggers cannot replace a live draft; close the current surface first.
+  const setForm = useCallback((kind: FormKind, open: boolean) => {
+    setActiveForm((current) => open ? current ?? kind : current === kind ? null : current);
+  }, []);
+  const showEditModal = activeForm === "edit";
+  const setShowEditModal = useCallback((open: boolean) => setForm("edit", open), [setForm]);
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
-  const [showHandoverModal, setShowHandoverModal] = useState(false);
+  const showHandoverModal = activeForm === "handover";
+  const setShowHandoverModal = useCallback((open: boolean) => setForm("handover", open), [setForm]);
   const [showTagsModal, setShowTagsModal] = useState(false);
+  const [tagsAnchor, setTagsAnchor] = useState<HTMLElement | null>(null);
   const [handoverOwnerId, setHandoverOwnerId] = useState("");
   const [handoverReason, setHandoverReason] = useState("");
 
-  const [showCallModal, setShowCallModal] = useState(false);
-  const [showTaskModal, setShowTaskModal] = useState(false);
-  const [showMeetingModal, setShowMeetingModal] = useState(false);
-  const [showEmailModal, setShowEmailModal] = useState(false);
-  const [showSmsModal, setShowSmsModal] = useState(false);
+  const showCallModal = activeForm === "call";
+  const setShowCallModal = useCallback((open: boolean) => setForm("call", open), [setForm]);
+  const showTaskModal = activeForm === "task";
+  const setShowTaskModal = useCallback((open: boolean) => setForm("task", open), [setForm]);
+  const showMeetingModal = activeForm === "meeting";
+  const setShowMeetingModal = useCallback((open: boolean) => setForm("meeting", open), [setForm]);
+  const showEmailModal = activeForm === "email";
+  const setShowEmailModal = useCallback((open: boolean) => setForm("email", open), [setForm]);
+  const showSmsModal = activeForm === "sms";
+  const setShowSmsModal = useCallback((open: boolean) => setForm("sms", open), [setForm]);
 
   const [callForm, setCallForm] = useState({
     title: "",
@@ -71,7 +85,7 @@ export function useLeadDetailDialogs(lead?: Lead) {
     showEditModal, setShowEditModal,
     showArchiveConfirm, setShowArchiveConfirm,
     showHandoverModal, setShowHandoverModal,
-    showTagsModal, setShowTagsModal,
+    showTagsModal, setShowTagsModal, tagsAnchor, setTagsAnchor,
     handoverOwnerId, setHandoverOwnerId,
     handoverReason, setHandoverReason,
     showCallModal, setShowCallModal,

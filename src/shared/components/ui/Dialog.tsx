@@ -15,6 +15,7 @@ export type ModalVariant = "auto" | "standard" | "form";
 
 export interface ModalProps {
   id?: string;
+  containPopovers?: boolean;
   isOpen: boolean;
   onClose: () => void;
   title?: React.ReactNode;
@@ -43,6 +44,7 @@ function containsNativeForm(node: React.ReactNode): boolean {
 
 export const Modal: React.FC<ModalProps> = ({
   id,
+  containPopovers = false,
   isOpen,
   onClose,
   title,
@@ -65,7 +67,10 @@ export const Modal: React.FC<ModalProps> = ({
   const descriptionId = React.useId();
   const resolvedCloseLabel = closeLabel ?? t("common.closeDialog", locale === "vi" ? "Đóng hộp thoại" : "Close dialog");
   const resolvedAriaLabel = ariaLabel ?? t("common.dialog", locale === "vi" ? "Hộp thoại" : "Dialog");
-  const { rootRef, surfaceRef } = useAccessibleOverlay({ isOpen, onClose });
+  const { rootRef, surfaceRef } = useAccessibleOverlay({
+    isOpen, onClose,
+    shouldHandleEscape: () => !containPopovers || !surfaceRef.current?.querySelector('[data-floating-overlay="menu"]'),
+  });
   const explicitZIndex = Number(zIndexClass.match(/z-\[(\d+)\]/)?.[1]);
   const modalZIndex = zIndexClass !== "z-[9000]" && Number.isFinite(explicitZIndex)
     ? explicitZIndex
@@ -104,7 +109,7 @@ export const Modal: React.FC<ModalProps> = ({
   useBodyScrollLock(isOpen);
 
   const modalElement = (
-    <OverlayLayerProvider value={{ scope: "modal", baseZIndex: modalZIndex }}>
+    <OverlayLayerProvider value={{ scope: "modal", baseZIndex: modalZIndex, ...(containPopovers ? { portalContainer: surfaceRef } : {}) }}>
     <AnimatePresence initial={false}>
       {isOpen && (
         <div
@@ -402,6 +407,6 @@ export const RowActionPortal: React.FC<RowActionPortalProps> = ({
         {children}
       </div>
     </>,
-    document.body
+    overlayLayer.portalContainer?.current ?? document.body
   );
 };

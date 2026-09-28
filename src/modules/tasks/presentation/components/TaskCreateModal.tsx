@@ -1,4 +1,5 @@
 import React from "react";
+import { RelationshipQuickActionModal } from "@/components/crm/relationship-panel/RelationshipQuickActionModal";
 import { Button, Input, Modal, SearchableSelect, Select, Textarea } from "@/shared/components/ui";
 import { useI18n } from "@/i18n";
 import { useEffectiveAccess } from "@/platform/access-control";
@@ -27,6 +28,7 @@ export interface TaskCreateDefaults {
 }
 
 export interface TaskCreateModalProps {
+  guardChanges?: boolean;
   isOpen: boolean;
   onClose: () => void;
   context?: TaskCreateContext;
@@ -80,6 +82,7 @@ function createTaskId(): string {
 }
 
 export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
+  guardChanges = false,
   isOpen,
   onClose,
   context,
@@ -103,10 +106,12 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
   const [fieldErrors, setFieldErrors] = React.useState<Record<string, string>>({});
   const [submitting, setSubmitting] = React.useState(false);
   const previousOpen = React.useRef(false);
+  const initialDraft = React.useRef(draft);
 
   React.useEffect(() => {
     if (isOpen && !previousOpen.current) {
-      setDraft(createDraft(defaults, currentMemberId));
+      initialDraft.current = createDraft(defaults, currentMemberId);
+      setDraft(initialDraft.current);
       setErrorMessage("");
       setFieldErrors({});
       setSubmitting(false);
@@ -170,23 +175,8 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
 
   const canCreate = Boolean(currentMemberId) && access.canPerform("tasks", "create");
 
-  return (
-    <Modal
-      variant="form"
-      isOpen={isOpen}
-      onClose={onClose}
-      title={title ?? (vi ? "Tạo công việc" : "Create task")}
-      size="md"
-      footer={(
-        <>
-          <Button type="button" variant="secondary" onClick={onClose}>{vi ? "Hủy" : "Cancel"}</Button>
-          <Button type="submit" variant="primary" form="canonical-task-create-form" disabled={!canCreate || submitting}>
-            {submitLabel ?? (vi ? "Tạo công việc" : "Create task")}
-          </Button>
-        </>
-      )}
-    >
-      <form id="canonical-task-create-form" className="crm-form-surface grid gap-4 sm:grid-cols-2" onSubmit={submit}>
+  const fields = (
+      <>
         <div className="sm:col-span-2">
           <Input
             id="task-create-title"
@@ -261,7 +251,37 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
             {errorMessage}
           </p>
         ) : null}
-      </form>
+      </>
+  );
+  if (guardChanges) return (
+    <RelationshipQuickActionModal guardChanges isOpen={isOpen} onClose={onClose}
+      dirty={JSON.stringify(draft) !== JSON.stringify(initialDraft.current)}
+      title={title ?? (vi ? "Tạo công việc" : "Create task")}
+      formId="canonical-task-create-form" cancelLabel={vi ? "Hủy" : "Cancel"}
+      submitLabel={submitLabel ?? (vi ? "Tạo công việc" : "Create task")}
+      submitDisabled={!canCreate || submitting} onSubmit={submit}
+    >
+      <div className="grid gap-4 sm:grid-cols-2">{fields}</div>
+    </RelationshipQuickActionModal>
+  );
+
+  return (
+    <Modal
+      variant="form"
+      isOpen={isOpen}
+      onClose={onClose}
+      title={title ?? (vi ? "Tạo công việc" : "Create task")}
+      size="md"
+      footer={(
+        <>
+          <Button type="button" variant="secondary" onClick={onClose}>{vi ? "Hủy" : "Cancel"}</Button>
+          <Button type="submit" variant="primary" form="canonical-task-create-form" disabled={!canCreate || submitting}>
+            {submitLabel ?? (vi ? "Tạo công việc" : "Create task")}
+          </Button>
+        </>
+      )}
+    >
+      <form id="canonical-task-create-form" className="crm-form-surface grid gap-4 sm:grid-cols-2" onSubmit={submit}>{fields}</form>
     </Modal>
   );
 };

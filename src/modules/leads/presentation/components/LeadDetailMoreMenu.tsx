@@ -18,7 +18,7 @@ interface LeadDetailMoreMenuProps {
   onDisqualify: () => void;
   onReopen: () => void;
   onHandover: () => void;
-  onManageTags: () => void;
+  onManageTags: (event: React.MouseEvent<HTMLButtonElement>) => void;
   onPrint: () => void;
   onArchive?: () => void;
 }
