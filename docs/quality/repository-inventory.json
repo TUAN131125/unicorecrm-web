@@ -23,7 +23,7 @@
   "summary": {
     "repositoryFiles": 2069,
     "sourceFiles": 1382,
-    "sourceLines": 212578,
+    "sourceLines": 212579,
     "modules": 15,
     "routes": 80,
     "loadableRouteModules": 64,
@@ -30273,8 +30273,8 @@
     {
       "path": "src/modules/leads/presentation/pages/LeadListPage.tsx",
       "owner": "leads",
-      "lines": 1221,
-      "bytes": 54291
+      "lines": 1222,
+      "bytes": 54323
     },
     {
       "path": "src/modules/contacts/presentation/hooks/useContactListController.tsx",
@@ -40848,8 +40848,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "leads",
-      "bytes": 54291,
-      "lines": 1221,
+      "bytes": 54323,
+      "lines": 1222,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -56253,8 +56253,8 @@
       "classification": "active-test",
       "reason": "Test source.",
       "owner": "test",
-      "bytes": 15631,
-      "lines": 218,
+      "bytes": 18130,
+      "lines": 256,
       "usage": {
         "runtimeReachable": false,
         "scriptReachable": false,
@@ -58218,5 +58218,5 @@
       "quality.work-operations-ux"
     ]
   },
-  "inventoryFingerprint": "a46a4509add7fc5874e328cb734eb67964a7828a662ef264b6f191a9a84bdb44"
+  "inventoryFingerprint": "0e54fa1f753d736f0c478cada6199c799c6845ec04e574a7f5928e3c0bc63420"
 }

@@ -261,6 +261,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
 
   const handleSelectSavedView = (key: string) => {
     const snapshot = savedViews.selectSavedView(key);
+    selection.clearSelection();
     if (!snapshot) {
       filters.resetFilters();
       return;
