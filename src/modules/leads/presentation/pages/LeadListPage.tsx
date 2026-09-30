@@ -176,7 +176,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
     project: projectServerLeadPage,
     evictProjection: clearLeadProjection,
   });
-  const queueClaim = useLeadQueueClaim({ enabled: canClaim, locale, refresh: serverPagination.refresh, notify: showToast });
+
   const canArchiveLeads = isLeadOperationAvailable(LEAD_OPERATION.ARCHIVE)
     && access.can(CAPABILITIES.LEADS_DELETE);
   const canAssignLeadBatch = Boolean(ownership?.canAssign)
@@ -227,6 +227,18 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
 
   // 3. Selection Custom Hook
   const selection = useLeadSelection();
+  const queueClaim = useLeadQueueClaim({ enabled: canClaim, locale, refresh: serverPagination.refresh, notify: showToast,
+    onClaimed: (leadId) => selection.toggleSelection(leadId, false),
+  });
+  useEffect(() => {
+    if (serverPagination.connected && serverPagination.loadedAt !== undefined && !serverPagination.loading && !serverPagination.stale) {
+      queueClaim.reconcile(serverPagination.items);
+      if (savedViews.activeView === "unassigned") {
+        const visible = new Set(serverPagination.items.map(lead => lead.id));
+        selection.setSelectedLeadIds(ids => ids.every(id => visible.has(id)) ? ids : ids.filter(id => visible.has(id)));
+      }
+    }
+  }, [serverPagination.connected, serverPagination.loadedAt, serverPagination.loading, serverPagination.stale, serverPagination.items, savedViews.activeView, queueClaim.reconcile, selection.setSelectedLeadIds]);
 
   // 4. Table Custom Hook
   const table = useLeadTable(showToast, t);

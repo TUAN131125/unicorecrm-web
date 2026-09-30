@@ -23,19 +23,21 @@ const { createLeadConnectedApiRuntime } = await import("@/modules/leads/infrastr
 const { configureLeadApplication, getLeadApplicationServices } = await import("@/modules/leads/application/composition/leadApplicationServices");
 const { mapLeadDocumentToApplication } = await import("@/modules/leads/infrastructure/http/LeadApiMapper");
 const { useLeadQueueClaim } = await import("@/modules/leads/presentation/hooks/useLeadQueueClaim");
+const { useLeadSelection } = await import("@/modules/leads/presentation/hooks/useLeadSelection");
 const { LeadClaimButton } = await import("@/modules/leads/presentation/components/LeadClaimButton");
 const { LEAD_OPERATION, isLeadOperationAvailable } = await import("@/modules/leads/application/leadOperationAvailability");
 const shared = await import("@/shared/application");
 const document: LeadDocument = { id: "lead_queue_claim", displayName: "Queue Lead", ownerId: null, version: 0, createdAt: "2026-09-30T00:00:00Z", updatedAt: "2026-09-30T00:00:00Z", leadWorkState: "NEW", score: 0, interestedProducts: [], activityProjection: "NOT_INCLUDED" };
 const requests: HttpRequest[] = [];
 let release: (() => void) | undefined;
-let mode: "PENDING" | "SUCCESS" | "CONFLICT" | "NETWORK" = "PENDING";
+let mode: "PENDING" | "SUCCESS" | "CONFLICT" | "VERSION" | "NETWORK" = "PENDING";
 const client: HttpClient = {
   async request<TResponse, TBody = unknown>(input: HttpRequest<TBody>): Promise<TResponse> {
     requests.push(input);
     if (input.operationId === "listLeads") return { items: [document], pageInfo: { hasNextPage: false, totalCount: 1 } } as TResponse;
     if (mode === "PENDING") await new Promise<void>(resolve => { release = resolve; });
     if (mode === "CONFLICT") throw new ApplicationError({ code: "LEAD_QUEUE_CLAIM_CONFLICT", category: "CONFLICT", message: "private conflict", status: 409 });
+    if (mode === "VERSION") throw new ApplicationError({ code: "VERSION_CONFLICT", category: "CONFLICT", message: "stale version", status: 412 });
     if (mode === "NETWORK") throw new ApplicationError({ code: "NETWORK_ERROR", category: "NETWORK", message: "private network", retryable: true });
     return { commandId: "claim_command", correlationId: "claim_correlation", aggregateId: document.id, aggregateType: "LEAD", version: 1, occurredAt: document.updatedAt, outcome: "COMMITTED", warnings: [], emittedEventIds: ["claim_event"], auditEvidenceIds: ["claim_audit"], result: { ...document, ownerId: "member_actor", version: 1 } } as TResponse;
   },
@@ -62,14 +64,23 @@ let invalidations = 0;
 const stop = shared.subscribeModuleQueryInvalidation("leads", () => { invalidations++; });
 const messages: string[] = [];
 let enabled = true;
+let failRefresh = false;
+let selection: ReturnType<typeof useLeadSelection>;
+let observed = [{ id: document.id, resourceVersion: 0 }, { id: "lead_b", resourceVersion: 0 }];
 function Fixture() {
-  current = useLeadQueueClaim({ enabled, locale: "vi", refresh: async () => { refreshes++; }, notify: message => messages.push(message) });
+  selection = useLeadSelection();
+  current = useLeadQueueClaim({ enabled, locale: "vi", refresh: async () => {
+    refreshes++;
+    if (failRefresh) return; // Real collection records ERROR but resolves refresh.
+    current.reconcile(observed);
+  }, onClaimed: id => { selection.toggleSelection(id, false); observed = observed.filter(item => item.id !== id); }, notify: message => messages.push(message) });
   return React.createElement(LeadClaimButton, { leadId: document.id, pending: current.pendingIds.has(document.id), onClaim: id => { void current.claim(id, 0); } });
 }
 const container = window.document.getElementById("root"); assert.ok(container);
 const root = createRoot(container);
 const render = () => act(async () => root.render(React.createElement(I18nProvider, null, React.createElement(Fixture))));
 await render();
+await act(async () => selection.selectAll([document.id, "lead_b"], true));
 assert.match(container.textContent ?? "", /Nhận Lead/u);
 assert.equal(container.querySelector('[role="dialog"]'), null);
 project();
@@ -87,6 +98,8 @@ assert.ok(sent.idempotencyKey);
 mode = "SUCCESS";
 await act(async () => { release?.(); await pending; });
 assert.equal(services.repository.getById(document.id)?.ownerId, "member_actor");
+await act(async () => assert.deepEqual(selection.selectedLeadIds, ["lead_b"], "UI-CLAIM-01 removes only claimed selection"));
+assert.ok(!observed.some(item => item.id === document.id));
 assert.equal(refreshes, 1); assert.equal(invalidations, 1);
 assert.ok(messages.includes("Đã nhận Lead."));
 project(); mode = "CONFLICT";
@@ -102,10 +115,43 @@ mode = "SUCCESS";
 await act(async () => current.claim(document.id, 1));
 assert.equal(requests.at(-1)?.expectedVersion, 0, "Retry preserves the original intent version");
 assert.equal(requests.at(-1)?.idempotencyKey, retryKey, "Ambiguous network failure retains stable intent key");
+// UI-CLAIM-02/03: successful version-conflict refresh discards the old attempt.
+project(); mode = "VERSION";
+await act(async () => current.claim(document.id, 0));
+const rejectedVersionKey = requests.at(-1)?.idempotencyKey;
+await act(async () => current.reconcile([{ id: document.id, resourceVersion: 1 }]));
+mode = "SUCCESS";
+await act(async () => current.claim(document.id, 1));
+assert.equal(requests.at(-1)?.expectedVersion, 1);
+assert.notEqual(requests.at(-1)?.idempotencyKey, rejectedVersionKey);
+// UI-CLAIM-04: failed immediate conflict refresh must remain safely blocked.
+project(); mode = "CONFLICT"; failRefresh = true;
+await act(async () => current.claim(document.id, 0));
+await act(async () => assert.equal(current.pendingIds.has(document.id), true));
+const blockedRequests = requests.length;
+await act(async () => current.claim(document.id, 0));
+assert.equal(requests.length, blockedRequests);
+// A later successful normal page load reconciles without a component remount.
+failRefresh = false;
+await act(async () => current.reconcile([{ id: document.id, resourceVersion: 2 }]));
+await act(async () => assert.equal(current.pendingIds.has(document.id), false, "UI-CLAIM-04 later observation unblocks"));
+mode = "NETWORK";
+await act(async () => current.claim(document.id, 2));
+const staleKey = requests.at(-1)?.idempotencyKey;
+await act(async () => current.reconcile([{ id: document.id, resourceVersion: 3 }]));
+mode = "SUCCESS";
+await act(async () => current.claim(document.id, 3));
+assert.equal(requests.at(-1)?.expectedVersion, 3, "UI-CLAIM-03/06 uses authoritative new version");
+assert.notEqual(requests.at(-1)?.idempotencyKey, staleKey, "UI-CLAIM-06 discards stale attempt");
+await act(async () => current.reconcile([]));
+await act(async () => assert.equal(current.pendingIds.size, 0));
 enabled = false; await render();
 const disabledCount = requests.length;
 await act(async () => current.claim(document.id, 0)); assert.equal(requests.length, disabledCount);
 const page = readFileSync("src/modules/leads/presentation/pages/LeadListPage.tsx", "utf8");
+assert.match(page, /onClaimed:.*selection\.toggleSelection\(leadId, false\)/u);
+assert.match(page, /queueClaim\.reconcile\(serverPagination.items\)/u);
+assert.match(page, /!serverPagination.loading && !serverPagination.stale/u);
 assert.match(page, /assignmentState: "UNASSIGNED"/u);
 assert.match(page, /CAPABILITIES\.LEADS_READ.*CAPABILITIES\.LEADS_QUEUE_READ/u);
 assert.match(page, /CAPABILITIES\.LEADS_CLAIM/u);

@@ -19,7 +19,7 @@ Do not delete a dead, compatibility, deprecated or duplicate candidate based on 
 |---|---:|
 | Repository files | 2069 |
 | Source files | 1382 |
-| Source lines | 212529 |
+| Source lines | 212552 |
 | Registered modules | 15 |
 | Route keys | 80 |
 | Loadable route modules | 64 |
@@ -37,7 +37,7 @@ Do not delete a dead, compatibility, deprecated or duplicate candidate based on 
 | Quality groups | 11 |
 | Verify gates | 337 |
 
-Inventory fingerprint: `e8a524afeb247efb3f03ff9a5175f0a9d37d04ac5a7380923b4bbe128d42d911`
+Inventory fingerprint: `94014c28ad1caf21eb476dcf4c5e4ed23e5ba6e01c68f379526008f484a3d691`
 
 
 ## Quality pipeline
@@ -184,7 +184,7 @@ The JSON manifest includes each detected key pattern, operation, path, line and 
 | `src/platform/api/generated/financialApi.ts` | 1757 | `platform:api` |
 | `src/modules/contacts/presentation/hooks/useContactDetailController.tsx` | 1272 | `contacts` |
 | `src/modules/deals/presentation/pages/DealPipelinePage.tsx` | 1233 | `deals` |
-| `src/modules/leads/presentation/pages/LeadListPage.tsx` | 1204 | `leads` |
+| `src/modules/leads/presentation/pages/LeadListPage.tsx` | 1216 | `leads` |
 | `src/modules/contacts/presentation/hooks/useContactListController.tsx` | 1179 | `contacts` |
 | `src/modules/quotes/presentation/views/QuoteBuilderView.tsx` | 1106 | `quotes` |
 | `src/modules/quotes/presentation/pages/QuoteListPage.tsx` | 1103 | `quotes` |
