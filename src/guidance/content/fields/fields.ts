@@ -57,8 +57,8 @@ export const FIELD_GUIDANCE: FieldGuidance[] = [
     title: { vi: "Người phụ trách Lead", en: "Lead owner" },
     purpose: { vi: "Xác định người chịu trách nhiệm phản hồi, xác minh và theo dõi Lead.", en: "Identifies the person accountable for responding to, verifying, and following up the Lead." },
     example: { vi: "Khi bạn tạo Lead, hệ thống mặc định giao cho bạn. Người có quyền phân công mới có thể chọn thành viên khác trong phạm vi cho phép.", en: "When you create a Lead, it is assigned to you by default. Only a permitted assigner can choose another member within scope." },
-    impact: { vi: "Ảnh hưởng hàng đợi công việc, SLA, báo cáo hiệu suất và khả năng tìm lại bản ghi.", en: "Affects work queues, SLA, performance reporting, and record visibility." },
-    requiredWhen: { vi: "Luôn có khi Lead được lưu; thay đổi người phụ trách phải có lý do.", en: "Always set when a Lead is saved; changing it requires a reason." },
+    impact: { vi: "Ảnh hưởng owner và phạm vi hiển thị của Lead; không thay đổi người thực hiện công việc hay hoạt động.", en: "Changes Lead ownership and visibility; does not change Task assignees or Activities." },
+    requiredWhen: { vi: "Lead ngoài CRM có thể chưa phân công. Phân công một Lead yêu cầu chọn thành viên hợp lệ và nhập lý do.", en: "External Leads may be unassigned. Assigning a single Lead requires a valid member and a reason." },
     keywords: { vi: "owner người phụ trách giao lead bàn giao của tôi", en: "owner assignee lead handover mine" },
   },
   {

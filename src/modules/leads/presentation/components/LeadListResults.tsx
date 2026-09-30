@@ -43,6 +43,8 @@ interface LeadListResultsProps {
   canClaim?: boolean;
   claimPendingIds?: ReadonlySet<string>;
   onClaim?: (leadId: string) => void;
+  onAssigned?: (leadId: string) => void;
+  refreshAfterAssign?: () => Promise<unknown>;
   onCall: (lead: Lead) => void;
   onMarkContacted?: (leadId: string) => void;
   onQualify?: (leadId: string) => void;
@@ -86,6 +88,8 @@ export function LeadListResults({
   canClaim = false,
   claimPendingIds = new Set(),
   onClaim,
+  onAssigned,
+  refreshAfterAssign,
   onCall,
   onMarkContacted,
   onQualify,
@@ -132,6 +136,8 @@ export function LeadListResults({
         <>
           <div className="hidden md:block">
             <LeadTable
+              onAssigned={onAssigned}
+              refreshAfterAssign={refreshAfterAssign}
               filteredLeads={leads}
               selectedLeadIds={selectedLeadIds}
               onSelectAll={(checked) => onSelectAll(leads.map((lead) => lead.id), checked)}

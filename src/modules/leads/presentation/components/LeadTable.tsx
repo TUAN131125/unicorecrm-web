@@ -1,3 +1,4 @@
+import { LeadOwnerAssignAction } from "./LeadOwnerAssignAction";
 import { LeadClaimButton } from "./LeadClaimButton";
 import React from "react";
 import { AlertCircle, Phone, Mail, Clock, RefreshCw, Eye, MoreHorizontal } from "lucide-react";
@@ -37,6 +38,8 @@ interface LeadTableProps {
   canClaim?: boolean;
   claimPendingIds?: ReadonlySet<string>;
   onClaim?: (leadId: string) => void;
+  onAssigned?: (leadId: string) => void;
+  refreshAfterAssign?: () => Promise<unknown>;
   onCall?: (lead: Lead) => void;
   onMarkContacted?: (leadId: string) => void;
   onQualify?: (leadId: string) => void;
@@ -66,6 +69,8 @@ export const LeadTable: React.FC<LeadTableProps> = ({
   canClaim = false,
   claimPendingIds = new Set(),
   onClaim,
+  onAssigned,
+  refreshAfterAssign,
   onCall,
   onMarkContacted,
   onQualify,
@@ -422,6 +427,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                     }} 
                     className="p-2 py-2.5 text-center sticky right-0 bg-white/95 select-none z-20 border-l border-slate-100 flex items-center justify-center gap-1.5"
                   >
+<LeadOwnerAssignAction lead={lead} onAssigned={onAssigned} refresh={refreshAfterAssign} />
 {canClaim && !lead.ownerId && !lead.archivedAt && onClaim && <LeadClaimButton leadId={lead.id} pending={claimPendingIds.has(lead.id)} onClaim={onClaim} />}
                     {/* QUICK VIEW DETAILS */}
                     <IconButton

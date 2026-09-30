@@ -983,6 +983,8 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
         campaigns={referenceData.campaigns}
         memberById={referenceData.memberById}
         productById={referenceData.productById}
+        onAssigned={(leadId) => selection.toggleSelection(leadId, false)}
+        refreshAfterAssign={serverPagination.refresh}
         canClaim={canClaim}
         claimPendingIds={queueClaim.pendingIds}
         onClaim={(leadId) => {

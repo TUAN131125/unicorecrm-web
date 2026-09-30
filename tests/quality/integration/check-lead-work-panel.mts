@@ -23,6 +23,10 @@ Object.defineProperty(window, "matchMedia", { value: () => ({ matches: true, add
 const React = await import("react");
 const { act } = React;
 const { createRoot } = await import("react-dom/client");
+const { signIn } = await import("@/platform/identity-auth");
+assert.equal(signIn({ email: "admin@unicorecrm.local", password: "admin123" }).ok, true);
+const { initializeApplicationComposition } = await import("@/app/composition");
+await initializeApplicationComposition({ mode: "demo" });
 const { LeadWorkPanel } = await import("@/modules/leads/presentation/components/LeadWorkPanel");
 const { ApplicationError } = await import("@/shared/domain");
 const { I18nProvider } = await import("@/i18n");

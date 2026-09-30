@@ -266,7 +266,8 @@
         "quality.contact-visual-baseline",
         "quality.connected-backend-integration",
         "quality.lead-ownership-distribution-contracts",
-        "quality.lead-queue-claim"
+        "quality.lead-queue-claim",
+        "quality.lead-owner-assign"
       ]
     },
     {
@@ -9209,6 +9210,32 @@
         {
           "type": "node",
           "entry": "tests/quality/integration/check-lead-queue-claim.mts",
+          "nodeArgs": [
+            "--import",
+            "tsx"
+          ],
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "quality.lead-owner-assign",
+      "commandName": "test:lead-owner-assign",
+      "groupId": "integration",
+      "kind": "integration",
+      "owner": "quality-integration",
+      "entry": "tests/quality/integration/check-lead-owner-assign.mts",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node",
+        "tsx"
+      ],
+      "shardKey": "quality.lead-owner-assign",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/integration/check-lead-owner-assign.mts",
           "nodeArgs": [
             "--import",
             "tsx"

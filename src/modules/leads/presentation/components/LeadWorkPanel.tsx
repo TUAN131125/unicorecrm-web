@@ -1,3 +1,4 @@
+import { LeadOwnerAssignAction } from "./LeadOwnerAssignAction";
 import { useRef, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { AlertCircle, Calendar, CheckSquare, ChevronDown, FileText, Mail, MessageCircle, MoreHorizontal, Phone } from "lucide-react";
@@ -110,6 +111,7 @@ export function LeadWorkPanel({ lead, locale, isVisible, workResources, ownerNam
                 <div className="flex items-center gap-2">
                   <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-xs font-bold text-indigo-600">{ownerName && ownerName !== "—" ? ownerName.trim().split(/\s+/).slice(-2).map((part) => part[0]).join("") : "?"}</span>
                   <span className="min-w-0 flex-1 truncate text-xs font-semibold text-slate-700" title={owner}>{owner}</span>
+                  <LeadOwnerAssignAction lead={lead} />
                   {canHandover && <Button size="xs" onClick={onHandover}>{text("Bàn giao", "Handover")}</Button>}
                 </div>
               </section>

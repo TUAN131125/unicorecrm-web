@@ -12734,10 +12734,12 @@
           "INTEGRATION_UNAVAILABLE",
           "INTERNAL_ERROR",
           "LEAD_ASSIGNMENT_REASON_REQUIRED",
-          "LEAD_OWNER_NOT_ASSIGNABLE"
+          "LEAD_OWNER_NOT_ASSIGNABLE",
+          "LEAD_OWNER_ALREADY_ASSIGNED"
         ],
         "x-aggregate-id-policy": "MUST_MATCH_TARGET",
-        "x-request-projection": "LEAD_OWNER_ASSIGNMENT"
+        "x-request-projection": "LEAD_OWNER_ASSIGNMENT",
+        "description": "Assign only the Lead owner; Tasks and Activities are unchanged. Current record scope gates execution and replay. A fresh intent targeting the current owner returns 409 LEAD_OWNER_ALREADY_ASSIGNED without side effects."
       }
     },
     "/leads/{leadId}/consent": {
@@ -57509,6 +57511,7 @@
           "LEAD_QUALIFICATION_DOWNSTREAM_MODULE_DISABLED",
           "LEAD_QUALIFICATION_RELATIONSHIP_INVALID",
           "LEAD_QUEUE_CLAIM_CONFLICT",
+          "LEAD_OWNER_ALREADY_ASSIGNED",
           "LEAD_REOPEN_NOT_ALLOWED",
           "LEAD_RETENTION_REASON_REQUIRED",
           "LEAD_TAG_REQUIRED",

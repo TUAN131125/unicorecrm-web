@@ -3,7 +3,7 @@
   "generatorVersion": 1,
   "authority": "docs/api/openapi.json",
   "contractVersion": "0.24.0-contract.0",
-  "specSha256": "3a9e32cee1f90e6f091a9d808f759db3039ad716f179fc964ccb7741336c79a1",
+  "specSha256": "33188c4bbac1f6deef6e19248198e289110616fc329e6a271f2f3dce8540bd35",
   "generatedAt": "DETERMINISTIC",
   "summary": {
     "operations": 301,

@@ -197,10 +197,11 @@ export async function requestLeadExportViaApi(leadIds: readonly string[]): Promi
 export async function assignLeadOwnerViaApi(
   leadId: string,
   input: { ownerId: string; reason: string },
+  attempt?: { idempotencyKey: string; expectedVersion: number },
 ): Promise<AssignLeadOwnerResult> {
-  const expectedVersion = requireLeadVersion(leadId, "assignLeadOwner");
+  const expectedVersion = attempt?.expectedVersion ?? requireLeadVersion(leadId, "assignLeadOwner");
   const result = await getLeadApiRuntime().commands.assignLeadOwner(leadId, input, {
-    idempotencyKey: createAttemptKey(`lead:assign-owner:${leadId}:${input.ownerId}`),
+    idempotencyKey: attempt?.idempotencyKey ?? createAttemptKey(`lead:assign-owner:${leadId}:${input.ownerId}`),
     expectedVersion,
   });
   await projectAndInvalidate(result, "lead.assign-owner");
