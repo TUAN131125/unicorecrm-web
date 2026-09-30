@@ -230,15 +230,21 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
   const queueClaim = useLeadQueueClaim({ enabled: canClaim, locale, refresh: serverPagination.refresh, notify: showToast,
     onClaimed: (leadId) => selection.toggleSelection(leadId, false),
   });
+  // Query/page changes may temporarily retain the previous response; never relabel it.
+  const lastClaimPageItems = React.useRef(serverPagination.items);
   useEffect(() => {
-    if (serverPagination.connected && serverPagination.loadedAt !== undefined && !serverPagination.loading && !serverPagination.stale) {
-      queueClaim.reconcile(serverPagination.items);
-      if (savedViews.activeView === "unassigned") {
-        const visible = new Set(serverPagination.items.map(lead => lead.id));
-        selection.setSelectedLeadIds(ids => ids.every(id => visible.has(id)) ? ids : ids.filter(id => visible.has(id)));
+    if (serverPagination.connected && lastClaimPageItems.current !== serverPagination.items && serverPagination.loadedAt !== undefined && !serverPagination.loading && !serverPagination.stale) {
+      lastClaimPageItems.current = serverPagination.items;
+      const removedIds = new Set(queueClaim.reconcile({
+        queryKey: JSON.stringify([workspace.workspaceId, savedViews.activeView, leadServerQuery]),
+        pageKey: JSON.stringify([serverPagination.page, serverPagination.pageSize]),
+        items: serverPagination.items,
+      }));
+      if (savedViews.activeView === "unassigned" && removedIds.size > 0) {
+        selection.setSelectedLeadIds(ids => ids.some(id => removedIds.has(id)) ? ids.filter(id => !removedIds.has(id)) : ids);
       }
     }
-  }, [serverPagination.connected, serverPagination.loadedAt, serverPagination.loading, serverPagination.stale, serverPagination.items, savedViews.activeView, queueClaim.reconcile, selection.setSelectedLeadIds]);
+  }, [serverPagination.connected, serverPagination.loadedAt, serverPagination.loading, serverPagination.stale, serverPagination.items, savedViews.activeView, workspace.workspaceId, leadServerQuery, serverPagination.page, serverPagination.pageSize, queueClaim.reconcile, selection.setSelectedLeadIds]);
 
   // 4. Table Custom Hook
   const table = useLeadTable(showToast, t);
@@ -255,7 +261,6 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
 
   const handleSelectSavedView = (key: string) => {
     const snapshot = savedViews.selectSavedView(key);
-    selection.clearSelection();
     if (!snapshot) {
       filters.resetFilters();
       return;
