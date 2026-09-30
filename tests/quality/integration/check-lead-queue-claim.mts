@@ -1,0 +1,118 @@
+import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { JSDOM } from "jsdom";
+import type { HttpClient, HttpRequest } from "@/platform/api/client/HttpClient";
+import type { LeadDocument } from "@/platform/api/generated/commercialApi";
+
+const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', { url: "http://localhost", pretendToBeVisual: true });
+const { window } = dom;
+for (const key of ["window", "document", "navigator", "localStorage", "HTMLElement", "SVGElement", "Element", "Node", "Event", "CustomEvent", "EventTarget", "MutationObserver"] as const) {
+  Object.defineProperty(globalThis, key, { value: key === "window" ? window : window[key], configurable: true });
+}
+Object.defineProperty(globalThis, "IS_REACT_ACT_ENVIRONMENT", { value: true, configurable: true });
+const { signIn } = await import("@/platform/identity-auth");
+assert.equal(signIn({ email: "admin@unicorecrm.local", password: "admin123" }).ok, true);
+const { initializeApplicationComposition } = await import("@/app/composition");
+await initializeApplicationComposition({ mode: "demo" });
+const React = await import("react");
+const { act } = React;
+const { createRoot } = await import("react-dom/client");
+const { I18nProvider } = await import("@/i18n");
+const { ApplicationError } = await import("@/shared/domain");
+const { createLeadConnectedApiRuntime } = await import("@/modules/leads/infrastructure/http/createLeadConnectedApiRuntime");
+const { configureLeadApplication, getLeadApplicationServices } = await import("@/modules/leads/application/composition/leadApplicationServices");
+const { mapLeadDocumentToApplication } = await import("@/modules/leads/infrastructure/http/LeadApiMapper");
+const { useLeadQueueClaim } = await import("@/modules/leads/presentation/hooks/useLeadQueueClaim");
+const { LeadClaimButton } = await import("@/modules/leads/presentation/components/LeadClaimButton");
+const { LEAD_OPERATION, isLeadOperationAvailable } = await import("@/modules/leads/application/leadOperationAvailability");
+const shared = await import("@/shared/application");
+const document: LeadDocument = { id: "lead_queue_claim", displayName: "Queue Lead", ownerId: null, version: 0, createdAt: "2026-09-30T00:00:00Z", updatedAt: "2026-09-30T00:00:00Z", leadWorkState: "NEW", score: 0, interestedProducts: [], activityProjection: "NOT_INCLUDED" };
+const requests: HttpRequest[] = [];
+let release: (() => void) | undefined;
+let mode: "PENDING" | "SUCCESS" | "CONFLICT" | "NETWORK" = "PENDING";
+const client: HttpClient = {
+  async request<TResponse, TBody = unknown>(input: HttpRequest<TBody>): Promise<TResponse> {
+    requests.push(input);
+    if (input.operationId === "listLeads") return { items: [document], pageInfo: { hasNextPage: false, totalCount: 1 } } as TResponse;
+    if (mode === "PENDING") await new Promise<void>(resolve => { release = resolve; });
+    if (mode === "CONFLICT") throw new ApplicationError({ code: "LEAD_QUEUE_CLAIM_CONFLICT", category: "CONFLICT", message: "private conflict", status: 409 });
+    if (mode === "NETWORK") throw new ApplicationError({ code: "NETWORK_ERROR", category: "NETWORK", message: "private network", retryable: true });
+    return { commandId: "claim_command", correlationId: "claim_correlation", aggregateId: document.id, aggregateType: "LEAD", version: 1, occurredAt: document.updatedAt, outcome: "COMMITTED", warnings: [], emittedEventIds: ["claim_event"], auditEvidenceIds: ["claim_audit"], result: { ...document, ownerId: "member_actor", version: 1 } } as TResponse;
+  },
+};
+const baseServices = getLeadApplicationServices();
+let records = [mapLeadDocumentToApplication(document)];
+const services = { ...baseServices, repository: { list: () => [...records], getById: (id: string) => records.find(record => record.id === id), replace: (next: typeof records) => { records = next; }, subscribe: () => () => {} } };
+const api = createLeadConnectedApiRuntime(client);
+configureLeadApplication({ ...services, api });
+const project = () => shared.runBackendProjection("leads", () => services.repository.replace([mapLeadDocumentToApplication(document)]));
+project();
+await api.queries.list({ filters: { assignmentState: "UNASSIGNED" } });
+assert.equal(requests[0].query?.assignmentState, "UNASSIGNED");
+assert.equal(isLeadOperationAvailable(LEAD_OPERATION.CLAIM), true);
+for (const op of [LEAD_OPERATION.ASSIGN_OWNER, LEAD_OPERATION.ASSIGN_OWNER_BATCH, LEAD_OPERATION.HANDOVER_WITH_TASKS]) assert.equal(isLeadOperationAvailable(op), false);
+const before = requests.length;
+await assert.rejects(() => api.commands.assignLeadOwner(document.id, { ownerId: "member_other", reason: "test" }, { idempotencyKey: "assign_key", expectedVersion: 0 }));
+await assert.rejects(() => api.commands.assignLeadOwnerBatch({ ownerId: "member_other", reason: "test", items: [{ leadId: document.id, expectedVersion: 0 }] }, { idempotencyKey: "batch_key" }));
+await assert.rejects(() => api.commands.handoverLeadWithTasks(document.id, { nextOwnerId: "member_other", reason: "test", taskTargets: [] }, { idempotencyKey: "handover_key", expectedVersion: 0 }));
+assert.equal(requests.length, before);
+let current: ReturnType<typeof useLeadQueueClaim>;
+let refreshes = 0;
+let invalidations = 0;
+const stop = shared.subscribeModuleQueryInvalidation("leads", () => { invalidations++; });
+const messages: string[] = [];
+let enabled = true;
+function Fixture() {
+  current = useLeadQueueClaim({ enabled, locale: "vi", refresh: async () => { refreshes++; }, notify: message => messages.push(message) });
+  return React.createElement(LeadClaimButton, { leadId: document.id, pending: current.pendingIds.has(document.id), onClaim: id => { void current.claim(id, 0); } });
+}
+const container = window.document.getElementById("root"); assert.ok(container);
+const root = createRoot(container);
+const render = () => act(async () => root.render(React.createElement(I18nProvider, null, React.createElement(Fixture))));
+await render();
+assert.match(container.textContent ?? "", /Nhận Lead/u);
+assert.equal(container.querySelector('[role="dialog"]'), null);
+project();
+let pending: Promise<void>;
+await act(async () => { pending = current.claim(document.id, 0); await current.claim(document.id, 0); });
+assert.equal(requests.length, before + 1, "Double-submit sends only one command");
+assert.equal(services.repository.getById(document.id)?.ownerId, undefined, "No optimistic owner mutation");
+assert.equal(container.querySelector("button")?.disabled, true);
+const sent = requests.at(-1); assert.ok(sent);
+assert.equal(sent.operationId, "claimLeadFromQueue");
+assert.match(sent.path, /\/workflows\/lead-queue\/lead_queue_claim\/claim$/u);
+assert.deepEqual(sent.body, {});
+assert.equal(sent.expectedVersion, 0);
+assert.ok(sent.idempotencyKey);
+mode = "SUCCESS";
+await act(async () => { release?.(); await pending; });
+assert.equal(services.repository.getById(document.id)?.ownerId, "member_actor");
+assert.equal(refreshes, 1); assert.equal(invalidations, 1);
+assert.ok(messages.includes("Đã nhận Lead."));
+project(); mode = "CONFLICT";
+await act(async () => current.claim(document.id, 0));
+assert.equal(refreshes, 2); assert.equal(services.repository.getById(document.id)?.ownerId, undefined);
+assert.ok(messages.includes("Lead này vừa được một nhân viên khác nhận."));
+mode = "NETWORK";
+await act(async () => current.claim(document.id, 0));
+const retryKey = requests.at(-1)?.idempotencyKey;
+assert.equal(refreshes, 2); assert.equal(services.repository.getById(document.id)?.ownerId, undefined);
+assert.equal(container.querySelector("button")?.disabled, false);
+mode = "SUCCESS";
+await act(async () => current.claim(document.id, 1));
+assert.equal(requests.at(-1)?.expectedVersion, 0, "Retry preserves the original intent version");
+assert.equal(requests.at(-1)?.idempotencyKey, retryKey, "Ambiguous network failure retains stable intent key");
+enabled = false; await render();
+const disabledCount = requests.length;
+await act(async () => current.claim(document.id, 0)); assert.equal(requests.length, disabledCount);
+const page = readFileSync("src/modules/leads/presentation/pages/LeadListPage.tsx", "utf8");
+assert.match(page, /assignmentState: "UNASSIGNED"/u);
+assert.match(page, /CAPABILITIES\.LEADS_READ.*CAPABILITIES\.LEADS_QUEUE_READ/u);
+assert.match(page, /CAPABILITIES\.LEADS_CLAIM/u);
+assert.match(page, /activeView === "unassigned" \? serverPagination.items/u);
+for (const file of ["LeadTable", "LeadMobileCardList"]) {
+  const source = readFileSync(`src/modules/leads/presentation/components/${file}.tsx`, "utf8");
+  assert.match(source, /canClaim && !lead.ownerId && !lead.archivedAt && onClaim/u);
+}
+stop(); await act(async () => root.unmount()); dom.window.close();
+console.log("Lead queue Claim PASS: HTTP fixture + JSDOM controller, NOT connected E2E; authority, pending, replay intent, refresh/recovery, future containment.");

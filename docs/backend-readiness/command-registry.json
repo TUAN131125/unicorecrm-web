@@ -4845,7 +4845,7 @@
       "blockedOperationCandidate": null,
       "requestSchema": "ClaimLeadFromQueueRequest",
       "successResponseSchema": "LeadMutationResponse",
-      "requiredCapability": "leads.assign",
+      "requiredCapability": "leads.claim",
       "resourceScope": "RESOURCE",
       "concurrencyPolicy": "IF_MATCH_REQUIRED",
       "auditRequirement": "IMMUTABLE_QUEUE_CLAIM_AUDIT",

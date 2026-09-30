@@ -605,7 +605,7 @@
       "method": "POST",
       "path": "/workflows/lead-queue/{leadId}/claim",
       "moduleOwner": "leads",
-      "capability": "leads.assign",
+      "capability": "leads.claim",
       "resourceScope": "RESOURCE",
       "dataScope": "WORKSPACE",
       "status": "PRODUCTION_CONTRACT_READY",

@@ -172,9 +172,7 @@ export interface ScheduleLeadFollowUpBatchInput {
   note: string;
 }
 
-export interface ClaimLeadFromQueueInput {
-  reason: string;
-}
+export type ClaimLeadFromQueueInput = Readonly<Record<string, never>>;
 
 export interface RequestLeadExportInput {
   leadIds: readonly string[];

@@ -1,3 +1,4 @@
+import { LeadClaimButton } from "./LeadClaimButton";
 import React from "react";
 import { Phone, Mail, Clock, CheckSquare, Sparkles } from "lucide-react";
 import type { Lead, LeadCampaign } from "../../domain/model/lead.types";
@@ -22,6 +23,9 @@ interface LeadMobileCardListProps {
   campaigns: LeadCampaign[];
   memberById: ReadonlyMap<string, WorkspaceMemberDirectoryEntry>;
   productById: ReadonlyMap<string, Product>;
+  canClaim?: boolean;
+  claimPendingIds?: ReadonlySet<string>;
+  onClaim?: (leadId: string) => void;
   onCall?: (lead: Lead) => void;
   onMarkContacted?: (leadId: string) => void;
   onQualify?: (leadId: string) => void;
@@ -42,6 +46,9 @@ export const LeadMobileCardList: React.FC<LeadMobileCardListProps> = ({
   campaigns,
   memberById,
   productById,
+  canClaim = false,
+  claimPendingIds = new Set(),
+  onClaim,
   onCall,
   onMarkContacted,
   onQualify,
@@ -130,6 +137,7 @@ export const LeadMobileCardList: React.FC<LeadMobileCardListProps> = ({
               </div>
             </div>
 
+{canClaim && !lead.ownerId && !lead.archivedAt && onClaim && <LeadClaimButton leadId={lead.id} pending={claimPendingIds.has(lead.id)} onClaim={onClaim} />}
             {lead.companyName && (
               <div className="text-xs font-medium text-slate-700">
                 🏢 {lead.companyName}

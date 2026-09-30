@@ -1,3 +1,5 @@
+import { getRecordOwnershipContext } from "@/platform/record-ownership";
+import { CAPABILITIES } from "@/platform/access-control";
 import type { AuthoritativePage } from "@/shared/application";
 import { moneyToDisplayNumber } from "@/shared/money";
 import type {
@@ -306,14 +308,16 @@ export function createLeadDemoApiRuntime(repository: LeadRepository): LeadApiRun
       },
       async claimLeadFromQueue(leadId: string, input: ClaimLeadFromQueueInput, options: LeadVersionedCommandOptions): Promise<ClaimLeadFromQueueResult> {
         assertVersion(repository, leadId, options.expectedVersion);
-        if (!input.reason.trim()) throw new Error("LEAD_QUEUE_CLAIM_REASON_REQUIRED");
+        if (Object.keys(input).length) throw new Error("VALIDATION_FAILED");
         const current = repository.getById(leadId);
         if (!current) throw new Error(`LEAD_NOT_FOUND:${leadId}`);
+        const actor = getRecordOwnershipContext("leads", CAPABILITIES.LEADS_CLAIM);
+        if (!actor?.memberId || current.ownerId || current.archivedAt) throw new Error("LEAD_QUEUE_CLAIM_CONFLICT");
         const now = new Date().toISOString();
         const updated = {
           ...current,
-          ownerId: "demo-actor",
-          leadWorkState: current.leadWorkState === LeadWorkState.NEW ? LeadWorkState.CONTACTING : current.leadWorkState,
+          ownerId: actor.memberId,
+          leadWorkState: current.leadWorkState,
           resourceVersion: options.expectedVersion + 1,
           updatedAt: now,
         };

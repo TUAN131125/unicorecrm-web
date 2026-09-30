@@ -6013,7 +6013,7 @@ export const API_OPERATION_CATALOG = {
     "authorization": {
       "auth": "REQUIRED",
       "workspace": "REQUIRED",
-      "capability": "leads.assign",
+      "capability": "leads.claim",
       "resourceScope": "RESOURCE",
       "dataScope": "WORKSPACE"
     },

@@ -13,8 +13,8 @@ const STORAGE_KEY = "centrix_custom_misa_views";
 
 export type LeadSavedView = LeadSavedViewItem;
 
-export function useLeadSavedViews(defaultSnapshot: LeadListPresentationSnapshot) {
-  const [activeView, setActiveView] = useState("all");
+export function useLeadSavedViews(defaultSnapshot: LeadListPresentationSnapshot, initialView = "all") {
+  const [activeView, setActiveView] = useState(initialView);
   const [isViewDropdownOpen, setIsViewDropdownOpen] = useState(false);
   const [isAddViewOpen, setIsAddViewOpen] = useState(false);
   const [editingViewKey, setEditingViewKey] = useState<string | null>(null);

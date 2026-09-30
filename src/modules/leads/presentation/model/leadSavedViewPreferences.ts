@@ -26,6 +26,7 @@ export type LeadCustomSavedView = LeadSavedViewItem & {
 };
 
 export const LEAD_SYSTEM_SAVED_VIEWS: LeadSavedViewItem[] = [
+  { key: "unassigned", labelKey: "unassignedLeads", isShared: true, icon: "all" },
   { key: "all", labelKey: "allLeads", isShared: true, icon: "all" },
   { key: "my_leads", labelKey: "myLeads", isShared: true, icon: "my" },
   { key: "team_leads", labelKey: "teamLeads", isShared: true, icon: "team" },

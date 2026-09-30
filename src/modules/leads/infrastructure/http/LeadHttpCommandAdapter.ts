@@ -1,3 +1,4 @@
+import { ApplicationError } from "@/shared/domain";
 import type {
   AdvanceLeadWorkStateBatchRequest,
   AdvanceLeadWorkStateRequest,
@@ -412,7 +413,8 @@ export class LeadHttpCommandAdapter implements LeadCommandPort {
     options: LeadVersionedCommandOptions,
   ): Promise<ClaimLeadFromQueueResult> {
     const aggregateId = requireLeadId("claimLeadFromQueue", leadId);
-    const body: ClaimLeadFromQueueRequest = { reason: requireReason("claimLeadFromQueue", input.reason) };
+    const body: ClaimLeadFromQueueRequest = {};
+    if (Object.keys(input).length !== 0) throw new ApplicationError({ code: "VALIDATION_FAILED", message: "Claim has no request fields.", category: "VALIDATION", retryable: false });
     const response = await this.api.claimLeadFromQueue<LeadMutationResponse>(aggregateId, body, versionedOptions("claimLeadFromQueue", options));
     return requireTargetLead("claimLeadFromQueue", aggregateId, response);
   }

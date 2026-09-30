@@ -280,3 +280,7 @@ Contract version: `0.23.20-contract.0`. OpenAPI metadata is authoritative.
 | verifyIntegrationConnection | UNRESOLVED_BLOCKED | BLOCKED |
 | verifyMfa | BACKEND_SERIALIZED | READY |
 | voidInvoice | IF_MATCH_REQUIRED | READY |
+
+## Local O2 Claim implementation evidence
+
+Claim locks the single workspace-qualified Lead with UPDLOCK/HOLDLOCK inside the existing serializable transaction before idempotency lookup. Concurrent actors with distinct keys yield one commit and one LEAD_QUEUE_CLAIM_CONFLICT, with one version increment and audit. If-Match still yields VERSION_CONFLICT for stale unassigned intent. This evidence admits Claim only; future ownership commands are not implemented.

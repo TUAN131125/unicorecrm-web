@@ -17,13 +17,13 @@ Do not delete a dead, compatibility, deprecated or duplicate candidate based on 
 
 | Metric | Count |
 |---|---:|
-| Repository files | 2066 |
-| Source files | 1380 |
-| Source lines | 212408 |
+| Repository files | 2069 |
+| Source files | 1382 |
+| Source lines | 212529 |
 | Registered modules | 15 |
 | Route keys | 80 |
 | Loadable route modules | 64 |
-| Capabilities | 130 |
+| Capabilities | 131 |
 | Workspace module flags | 13 |
 | Cross-module workflows | 23 |
 | Public boundary files | 107 |
@@ -31,13 +31,13 @@ Do not delete a dead, compatibility, deprecated or duplicate candidate based on 
 | Repository/store/adapter files | 146 |
 | Compatibility candidates | 53 |
 | Dead-code candidates | 0 |
-| Large source files (â‰¥ 500 lines) | 44 |
+| Large source files (â‰¥ 500 lines) | 45 |
 | Circular dependency groups | 0 |
 | Package scripts | 23 |
 | Quality groups | 11 |
-| Verify gates | 336 |
+| Verify gates | 337 |
 
-Inventory fingerprint: `2000625782f6ce7ef0c6d13c9ec66ec9797fd4af13b05947e15db0265b89f2c5`
+Inventory fingerprint: `e8a524afeb247efb3f03ff9a5175f0a9d37d04ac5a7380923b4bbe128d42d911`
 
 
 ## Quality pipeline
@@ -49,7 +49,7 @@ Inventory fingerprint: `2000625782f6ce7ef0c6d13c9ec66ec9797fd4af13b05947e15db026
 | `architecture` | 66 |
 | `unit` | 32 |
 | `contract` | 64 |
-| `integration` | 46 |
+| `integration` | 47 |
 | `route-smoke` | 8 |
 | `critical-e2e` | 5 |
 | `backend-contract-hardening` | 90 |
@@ -60,9 +60,9 @@ Inventory fingerprint: `2000625782f6ce7ef0c6d13c9ec66ec9797fd4af13b05947e15db026
 
 | Classification | Count |
 |---|---:|
-| `active-runtime` | 1296 |
+| `active-runtime` | 1298 |
 | `active-script` | 79 |
-| `active-test` | 441 |
+| `active-test` | 442 |
 | `compatibility` | 53 |
 | `documentation` | 192 |
 | `fixture` | 3 |
@@ -177,14 +177,14 @@ The JSON manifest includes each detected key pattern, operation, path, line and 
 | File | Lines | Owner |
 |---|---:|---|
 | `src/platform/api/catalog/generatedApiOperationCatalog.ts` | 32466 | `platform:api` |
-| `src/platform/api/generated/commercialApi.ts` | 6039 | `platform:api` |
+| `src/platform/api/generated/commercialApi.ts` | 6038 | `platform:api` |
 | `src/i18n/translations/en.ts` | 4989 | `shared:i18n` |
 | `src/i18n/translations/vi.ts` | 4989 | `shared:i18n` |
 | `src/i18n/types.ts` | 2036 | `shared:i18n` |
 | `src/platform/api/generated/financialApi.ts` | 1757 | `platform:api` |
 | `src/modules/contacts/presentation/hooks/useContactDetailController.tsx` | 1272 | `contacts` |
 | `src/modules/deals/presentation/pages/DealPipelinePage.tsx` | 1233 | `deals` |
-| `src/modules/leads/presentation/pages/LeadListPage.tsx` | 1182 | `leads` |
+| `src/modules/leads/presentation/pages/LeadListPage.tsx` | 1204 | `leads` |
 | `src/modules/contacts/presentation/hooks/useContactListController.tsx` | 1179 | `contacts` |
 | `src/modules/quotes/presentation/views/QuoteBuilderView.tsx` | 1106 | `quotes` |
 | `src/modules/quotes/presentation/pages/QuoteListPage.tsx` | 1103 | `quotes` |
@@ -197,7 +197,7 @@ The JSON manifest includes each detected key pattern, operation, path, line and 
 | `src/i18n/legacyUiCopy.ts` | 832 | `shared:i18n` |
 | `src/modules/orders/presentation/views/OrderListView.tsx` | 812 | `orders` |
 | `src/modules/orders/presentation/pages/OrderDetailPage.tsx` | 730 | `orders` |
-| `src/modules/leads/infrastructure/http/LeadHttpCommandAdapter.ts` | 703 | `leads` |
+| `src/modules/leads/infrastructure/http/LeadHttpCommandAdapter.ts` | 705 | `leads` |
 | `src/guidance/content/crm/extendedScreens.ts` | 700 | `shared:guidance` |
 | `src/modules/organizations/presentation/pages/OrganizationAccountDetailPage.tsx` | 695 | `organizations` |
 | `src/modules/products/presentation/pages/ProductDetailPage.tsx` | 695 | `products` |

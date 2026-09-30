@@ -50,7 +50,7 @@ Contract version: `0.23.20-contract.0`. OpenAPI metadata is authoritative.
 | changeQuoteStatusCommand | POST | /quotes/{quoteId}/change-status | quotes | quotes.update | RESOURCE | WORKSPACE | BLOCKED |
 | changeShippingProviderCommand | POST | /shipping/{bookingId}/change-provider | shipping | shipping.create | RESOURCE | WORKSPACE | READY |
 | changeWorkspaceMemberStatus | POST | /access/members/{membershipId}/status | platform/access-control | access.configure | WORKSPACE_MEMBERSHIP | SELECTED_WORKSPACE | READY |
-| claimLeadFromQueue | POST | /workflows/lead-queue/{leadId}/claim | leads | leads.assign | RESOURCE | WORKSPACE | READY |
+| claimLeadFromQueue | POST | /workflows/lead-queue/{leadId}/claim | leads | leads.claim | RESOURCE | WORKSPACE | READY |
 | closeReturnCommand | POST | /returns/{returnId}/close | returns | returns.update | RESOURCE | WORKSPACE | READY |
 | completeCustomerOnboarding | POST | /customers/{customerId}/complete-onboarding | customers | customers.edit | RESOURCE | WORKSPACE | BLOCKED |
 | completeOrderFromFulfillmentEvidence | POST | /workflows/order-closing/{orderId}/complete-from-fulfillment-evidence | orders | orders.complete | RESOURCE | WORKSPACE | READY |

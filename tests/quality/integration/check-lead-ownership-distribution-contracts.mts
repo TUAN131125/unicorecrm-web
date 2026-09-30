@@ -49,7 +49,6 @@ for (const operation of [LEAD_OPERATION.ASSIGN_OWNER, LEAD_OPERATION.ASSIGN_OWNE
   assert.equal(isLeadOperationAvailable(operation), false);
 }
 const rejectedCommands = [
-  () => runtime.commands.claimLeadFromQueue(document.id, { reason: "test" }, { idempotencyKey: "claim", expectedVersion: 0 }),
   () => runtime.commands.assignLeadOwner(document.id, { ownerId: "member_sales", reason: "test" }, { idempotencyKey: "assign", expectedVersion: 0 }),
   () => runtime.commands.assignLeadOwnerBatch({ ownerId: "member_sales", reason: "test", items: [{ leadId: document.id, expectedVersion: 0 }] }, { idempotencyKey: "assign-batch" }),
   () => runtime.commands.handoverLeadWithTasks(document.id, { nextOwnerId: "member_sales", reason: "test", taskTargets: [] }, { idempotencyKey: "handover", expectedVersion: 0 }),

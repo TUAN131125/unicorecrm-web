@@ -103,5 +103,31 @@
     "Generated frontend operations are not implementation evidence.",
     "Backend-readiness READY labels must be verified against admitted backend routes.",
     "Connected mode must remain fail-closed until backend implementation is verified."
-  ]
+  ],
+  "localO2Implementation": {
+    "status": "LOCAL_VERIFIED_PENDING_REVIEW",
+    "operationId": "claimLeadFromQueue",
+    "method": "POST",
+    "path": "/workflows/lead-queue/{leadId}/claim",
+    "requestFields": [],
+    "requiredCapabilities": [
+      "leads.read",
+      "leads.queue.read",
+      "leads.claim"
+    ],
+    "allowedScopes": [
+      "OWN",
+      "WORKSPACE"
+    ],
+    "deniedScopes": [
+      "TEAM",
+      "CUSTOM"
+    ],
+    "target": "AUTHENTICATED_ACTIVE_WORKSPACE_MEMBER",
+    "tasksChanged": false,
+    "lifecycleChanged": false,
+    "assignAvailable": false,
+    "handoverAvailable": false,
+    "report": "backend/backend-work/review/lead-queue-claim.md"
+  }
 }

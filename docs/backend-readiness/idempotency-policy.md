@@ -280,3 +280,7 @@ Contract version: `0.23.20-contract.0`. OpenAPI metadata is authoritative.
 | verifyIntegrationConnection | UNRESOLVED_BLOCKED | BLOCKED |
 | verifyMfa | REQUIRED | READY |
 | voidInvoice | REQUIRED | READY |
+
+## Local O2 Claim implementation evidence
+
+Claim uses the existing workspace/actor/operation/target/key scope and fingerprints lead ID plus expected version. Identical replay projects the stored result under current authorization without changing version, audit or outbox. A changed fingerprint is rejected. The frontend retains key and version after ambiguous network failure. Assign and Handover remain unavailable.

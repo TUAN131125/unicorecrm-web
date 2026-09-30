@@ -176,10 +176,10 @@ export async function scheduleLeadFollowUpBatchViaApi(
   return result;
 }
 
-export async function claimLeadFromQueueViaApi(leadId: string, reason: string): Promise<ClaimLeadFromQueueResult> {
-  const expectedVersion = requireLeadVersion(leadId, "claimLeadFromQueue");
-  const result = await getLeadApiRuntime().commands.claimLeadFromQueue(leadId, { reason }, {
-    idempotencyKey: createAttemptKey(`lead:claim-from-queue:${leadId}`),
+export async function claimLeadFromQueueViaApi(leadId: string, attempt?: { idempotencyKey: string; expectedVersion: number }): Promise<ClaimLeadFromQueueResult> {
+  const expectedVersion = attempt?.expectedVersion ?? requireLeadVersion(leadId, "claimLeadFromQueue");
+  const result = await getLeadApiRuntime().commands.claimLeadFromQueue(leadId, {}, {
+    idempotencyKey: attempt?.idempotencyKey ?? createAttemptKey(`lead:claim-from-queue:${leadId}`),
     expectedVersion,
   });
   await projectAndInvalidate(result, "lead.claim-from-queue");

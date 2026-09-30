@@ -131,3 +131,7 @@ The compatibility bridge never executes generic Lead mutations. Dedicated Lead c
 - qualification generated-client imports limited to workflow infrastructure;
 - distinct qualification operation ownership, Money mapping and authoritative workflow evidence;
 - connected bulk lifecycle helpers remaining blocked without a batch contract.
+
+## O2 Claim boundary
+
+`claimLeadFromQueue` now uses the generated canonical POST `/workflows/lead-queue/{leadId}/claim` with `{}`, Idempotency-Key and If-Match. The caller supplies no owner. The connected adapter has no demo fallback. Queue rows and counts come from backend `assignmentState=UNASSIGNED`; row version is carried into Claim without requiring a locally owned cache entry. Ambiguous network retries retain the original key and version. Claim does not change lifecycle or Tasks. Assign, bulk Assign and Handover remain connected unavailable.

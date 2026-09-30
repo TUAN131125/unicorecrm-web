@@ -40,6 +40,9 @@ interface LeadListResultsProps {
   setOpenRowActionId: (leadId: string | null) => void;
   getReturnToUrl: (mode: "table" | "kanban") => string;
   onMoveLead: (leadId: string, target: LeadKanbanDropTarget) => void;
+  canClaim?: boolean;
+  claimPendingIds?: ReadonlySet<string>;
+  onClaim?: (leadId: string) => void;
   onCall: (lead: Lead) => void;
   onMarkContacted?: (leadId: string) => void;
   onQualify?: (leadId: string) => void;
@@ -80,6 +83,9 @@ export function LeadListResults({
   setOpenRowActionId,
   getReturnToUrl,
   onMoveLead,
+  canClaim = false,
+  claimPendingIds = new Set(),
+  onClaim,
   onCall,
   onMarkContacted,
   onQualify,
@@ -140,6 +146,9 @@ export function LeadListResults({
               productById={productById}
               getReturnToUrl={getReturnToUrl}
               onSelectRow={onSelectRow}
+              canClaim={canClaim}
+              claimPendingIds={claimPendingIds}
+              {...(onClaim ? { onClaim } : {})}
               {...sharedActions}
             />
           </div>
@@ -153,6 +162,9 @@ export function LeadListResults({
               campaigns={campaigns}
               memberById={memberById}
               productById={productById}
+              canClaim={canClaim}
+              claimPendingIds={claimPendingIds}
+              {...(onClaim ? { onClaim } : {})}
               {...sharedActions}
             />
           </div>

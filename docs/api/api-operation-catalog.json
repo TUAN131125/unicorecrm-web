@@ -3,7 +3,7 @@
   "generatorVersion": 1,
   "authority": "docs/api/openapi.json",
   "contractVersion": "0.24.0-contract.0",
-  "specSha256": "fcefecce28596ac70297eebebd871baf4ace1111d0fc023d3a514dd577136db6",
+  "specSha256": "3a9e32cee1f90e6f091a9d808f759db3039ad716f179fc964ccb7741336c79a1",
   "generatedAt": "DETERMINISTIC",
   "summary": {
     "operations": 301,
@@ -6000,7 +6000,7 @@
       "authorization": {
         "auth": "REQUIRED",
         "workspace": "REQUIRED",
-        "capability": "leads.assign",
+        "capability": "leads.claim",
         "resourceScope": "RESOURCE",
         "dataScope": "WORKSPACE"
       },

@@ -31,3 +31,7 @@ Contract version: `0.23.20-contract.0`.
 | WF-25 | lead-handover | SINGLE_BACKEND_TRANSACTION | FALSE | LEAD_ID_PLUS_IDEMPOTENCY_KEY_PLUS_LEAD_AND_TASK_VERSIONS | BACKEND | PRODUCTION_CONTRACT_READY | DEC-PHASE6-LEAD-MODULE-COMPLETION |
 | WF-26 | lead-follow-up | SINGLE_BACKEND_TRANSACTION | FALSE | WORKSPACE_OPERATION_IDEMPOTENCY_KEY_PLUS_VERSIONED_LEAD_SET | BACKEND | PRODUCTION_CONTRACT_READY | DEC-PHASE6-LEAD-MODULE-COMPLETION |
 | WF-27 | lead-queue-claim | SINGLE_BACKEND_TRANSACTION | FALSE | LEAD_ID_PLUS_IDEMPOTENCY_KEY_PLUS_RESOURCE_VERSION | BACKEND | PRODUCTION_CONTRACT_READY | DEC-PHASE6-LEAD-MODULE-COMPLETION |
+
+## Local O2 Claim authority
+
+The canonical workflow Claim route delegates to Leads, which owns nullable ownership, atomic actor-bound mutation, version, audit, idempotency and outbox. AccessControl supplies explicit Claim authority; Tasks and Activities are not mutated. No Assign, bulk Assign or Handover runtime is admitted.

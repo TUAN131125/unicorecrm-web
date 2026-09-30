@@ -262,3 +262,9 @@ Approved clarification for assignment foundation (2026-09-29): `leads.read` rema
 `assignmentState=ASSIGNED|UNASSIGNED` is filtered by the backend; omission adds no assignment filter. `UNASSIGNED` combined with `ownerId` is invalid (422). The nullable wire field remains required: `ownerId: null` is unassigned; omission is not an ownership state. Interactive creation binds the authenticated creator; delegated webhook creation stores null and retains integration/delegated audit provenance. Profile replacement preserves ownership and cannot assign or unassign.
 
 O1 does not enable Claim, Assign, Handover or bulk assignment. `leads.claim` is reserved for O2 and is not Queue read authority. The system owner role gains the new capability through its existing exact-set upgrade path; custom role capabilities are never automatically extended. The frontend sales-manager template includes Queue read; sales representatives require an explicit grant.
+
+## O2 local Claim admission — 2026-09-30
+
+O2 implements only `claimLeadFromQueue`, POST `/workflows/lead-queue/{leadId}/claim`, with a closed empty JSON body. Normal read, Queue read and explicit `leads.claim` are required. OWN and WORKSPACE can atomically claim null-owned Leads for the authenticated active workspace member. TEAM and CUSTOM fail closed. The narrow Claim authority does not enable ordinary OWN Queue mutations. Lifecycle, qualification, Tasks and Activities are unchanged. Assign, bulk Assign and Handover remain unavailable; the full V1 decision remains TARGET.
+
+If-Match and Idempotency-Key are required. Exact replay has no duplicate effects; a fresh assigned intent returns 409 LEAD_QUEUE_CLAIM_CONFLICT. The single workspace-qualified Lead uses an update lock before the idempotency lookup. Local real-host SQL and JSDOM evidence is recorded in sibling backend `backend-work/review/lead-queue-claim.md`; this is not independent CI or connected browser acceptance.

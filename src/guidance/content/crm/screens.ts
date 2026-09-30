@@ -39,7 +39,7 @@ export const CRM_SCREEN_GUIDANCE: ScreenGuidance[] = [
     id: "crm.leads.list",
     routeKey: "LEADS",
     productSpace: "crm",
-    version: 5,
+    version: 6,
     title: { vi: "Khách hàng tiềm năng", en: "Leads" },
     purpose: { vi: "Tiếp nhận, phân công, xác minh nhu cầu và quyết định bước bán hàng tiếp theo cho khách hàng tiềm năng.", en: "Capture, assign, verify, and determine the next selling outcome for leads." },
     prerequisites: [{ vi: "Có quyền xem khách hàng tiềm năng; quyền tạo, sửa, giao hoặc chốt kết quả được kiểm tra riêng.", en: "Lead read permission is required; create, update, assign, and qualification permissions are checked separately." }],
@@ -55,6 +55,7 @@ export const CRM_SCREEN_GUIDANCE: ScreenGuidance[] = [
     ],
     relatedWorkflowIds: ["workflow.lead-to-order"],
     steps: [
+      { id: "claim", targetId: "leads.list.claim", title: { vi: "Nhận Lead chưa phân công", en: "Claim an unassigned Lead" }, body: { vi: "Chọn Chưa phân công để tải hàng đợi từ máy chủ. Quyền xem hàng đợi và quyền Nhận Lead được kiểm tra riêng. Nhấn Nhận Lead ngay trên hàng; chờ xác nhận rồi tải lại danh sách. Nếu người khác nhận trước, danh sách sẽ được làm mới. Assign và Handover chưa khả dụng.", en: "Select Unassigned to load the server queue. Queue read and Claim permissions are separate. Click Claim Lead on the row and wait for confirmation and refresh. A competing claim refreshes the queue. Assign and Handover remain unavailable." }, placement: "left", expectedAction: "click", optional: true, requiredCapabilities: [CAPABILITIES.LEADS_READ, CAPABILITIES.LEADS_QUEUE_READ, CAPABILITIES.LEADS_CLAIM] },
       { id: "saved-view", targetId: "leads.list.saved-view", title: { vi: "Chọn giao diện Lead", en: "Choose a Lead view" }, body: { vi: "Dùng Tất cả tiềm năng, Lead của tôi, Lead của đội hoặc giao diện đã lưu để áp dụng phạm vi và bộ lọc phù hợp mà không cần thêm một cụm chọn trùng lặp trên thanh công cụ.", en: "Use All Leads, My Leads, Team Leads, or a saved view to apply the appropriate scope and filters without a duplicate scope control in the toolbar." }, placement: "bottom", expectedAction: "select" },
       { id: "create", targetId: "leads.list.create", title: { vi: "Tạo Lead đúng owner", en: "Create with the correct owner" }, body: { vi: "Lead mới mặc định giao cho bạn. Chỉ người có quyền phân công mới được chọn người khác; sau khi lưu có thể mở bản ghi ngay.", en: "A new Lead is assigned to you by default. Only an authorized assigner can choose someone else, and the saved record can be opened immediately." }, placement: "left", expectedAction: "click", requiredCapabilities: [CAPABILITIES.LEADS_CREATE] },
       { id: "quick-profile", targetId: "leads.form.progressive-profile", title: { vi: "Nhập vừa đủ để tiếp nhận", en: "Capture only what intake needs" }, body: { vi: "Chỉ cần tên và một kênh liên hệ để tạo Lead. Hệ thống tự giao cho thành viên hiện tại; mở phần nâng cao khi đã có nguồn, giá trị hoặc lịch chăm sóc.", en: "A name and one contact channel are enough to create a Lead. The system assigns the current member; open advanced details when source, value, or follow-up is known." }, placement: "top", expectedAction: "view", optional: true, requiredCapabilities: [CAPABILITIES.LEADS_CREATE] },

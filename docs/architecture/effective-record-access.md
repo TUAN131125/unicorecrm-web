@@ -78,3 +78,7 @@ The backend must derive workspace and actor from trusted request context, apply 
 ## Verification
 
 The permanent `quality.effective-record-access` gate verifies the HTTP contract, strict response normalization, fail-closed React boundary, protected surface coverage, command allowlists and field scopes.
+
+## O2 unassigned Claim exception
+
+Leads declares a single explicit `lead.claim-from-queue` command with `leads.claim`. Effective access permits this command on readable unassigned records only with normal read, Queue read, OWN/WORKSPACE scope and writable owner field. The exception does not enable `canUpdate`, `lead.update` or other ordinary OWN Queue mutations. Assigned records do not expose Claim. The backend Claim handler enforces the same authority at commit; frontend visibility is not mutation authority.

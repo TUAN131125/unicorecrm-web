@@ -37,7 +37,7 @@ export function createLeadConnectedApiRuntime(httpClient: HttpClient): LeadApiRu
     disqualifyLeadBatch: unavailable(LEAD_OPERATION.DISQUALIFY_BATCH),
     applyLeadTagBatch: unavailable(LEAD_OPERATION.APPLY_TAG_BATCH),
     scheduleLeadFollowUpBatch: unavailable(LEAD_OPERATION.SCHEDULE_FOLLOW_UP_BATCH),
-    claimLeadFromQueue: unavailable("claimLeadFromQueue"),
+    claimLeadFromQueue: (leadId, input, options) => adapter.claimLeadFromQueue(leadId, input, options),
     requestLeadExport: unavailable(LEAD_OPERATION.REQUEST_EXPORT),
     anonymizeLead: unavailable("anonymizeLead"),
     recordLeadConsent: unavailable("recordLeadConsent"),

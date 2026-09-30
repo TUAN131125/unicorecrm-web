@@ -33,7 +33,7 @@ export function useLeadActions() {
     scheduleFollowUpMany: (leadIds: readonly string[], input: { followUpAt: string; note: string }) => scheduleLeadFollowUpBatchViaApi(leadIds, input).then((result) => result.leads),
     disqualifyMany: (leadIds: readonly string[], input: { reason: string; evidence?: string }) => disqualifyLeadBatchViaApi(leadIds, input).then((result) => result.leads),
     reassignMany: (leadIds: readonly string[], input: { ownerId: string; reason: string }) => assignLeadOwnerBatchViaApi(leadIds, input).then((result) => result.leads),
-    claimFromQueue: (leadId: string, reason: string) => claimLeadFromQueueViaApi(leadId, reason).then((result) => result.lead),
+    claimFromQueue: (leadId: string) => claimLeadFromQueueViaApi(leadId).then((result) => result.lead),
     archive: (leadId: string) => archiveLeadViaApi(leadId).then((result) => result.lead),
     archiveMany: (leadIds: readonly string[]) => archiveLeadsViaApi(leadIds).then((result) => result.leads),
     advanceNewToContacting: (leadIds: readonly string[]) => advanceLeadWorkStateBatchViaApi(leadIds, "CONTACTING"),

@@ -1,3 +1,4 @@
+import { useLeadQueueClaim } from "../hooks/useLeadQueueClaim";
 import { AuthoritativeQueryBoundary, formatApplicationError } from "@/shared/operations";
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
@@ -62,12 +63,14 @@ const DEFAULT_LEAD_SAVED_VIEW_SNAPSHOT: LeadListPresentationSnapshot = {
   ownershipScope: "ALLOWED",
 };
 interface LeadListPageProps {
+  queueOnly?: boolean;
   globalSearchTerm?: string;
   sources?: LeadSource[];
   campaigns?: LeadCampaign[];
 }
 
 export const LeadListPage: React.FC<LeadListPageProps> = ({
+  queueOnly = false,
   globalSearchTerm = "",
   sources = [],
   campaigns = []
@@ -76,7 +79,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const { t, locale } = useI18n();
-  const viewMode = searchParams.get("view") === "kanban" ? "kanban" : "table";
+  const viewMode = !queueOnly && searchParams.get("view") === "kanban" ? "kanban" : "table";
   const { leads, query: fullCollectionQuery } = useLeads({ loadAuthoritative: viewMode === "kanban" });
   const leadActions = useLeadActions();
   const referenceData = useLeadReferenceData(sources, campaigns);
@@ -87,6 +90,9 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
   const canUpdateLeads = access.can(CAPABILITIES.LEADS_UPDATE);
   const canQualifyLeads = access.can(CAPABILITIES.LEADS_QUALIFY);
   const ownership = useRecordOwnershipContext("leads", CAPABILITIES.LEADS_ASSIGN);
+  const canReadQueue = access.can(CAPABILITIES.LEADS_READ) && access.can(CAPABILITIES.LEADS_QUEUE_READ)
+    && (ownership?.dataScope === "OWN" || ownership?.dataScope === "WORKSPACE");
+  const canClaim = canReadQueue && access.can(CAPABILITIES.LEADS_CLAIM) && isLeadOperationAvailable(LEAD_OPERATION.CLAIM);
   const workspace = useWorkspaceContextSnapshot();
   // Record scope is selected through the saved-view menu (All / Mine / My team).
   // Keep the base data set at the complete allowed scope so the duplicated scope
@@ -98,6 +104,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
 
   // View mode management
   const setViewMode = (newMode: "table" | "kanban") => {
+    if (savedViews.activeView === "unassigned" && newMode === "kanban") return;
     const nextParams = new URLSearchParams(searchParams);
     nextParams.set("view", newMode);
     setSearchParams(nextParams, { replace: true });
@@ -125,7 +132,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
   };
 
   // 1. Saved Views Custom Hook
-  const savedViews = useLeadSavedViews(DEFAULT_LEAD_SAVED_VIEW_SNAPSHOT);
+  const savedViews = useLeadSavedViews(DEFAULT_LEAD_SAVED_VIEW_SNAPSHOT, queueOnly ? "unassigned" : "all");
 
   // 2. Filters Custom Hook
   const filters = useLeadFilters(scopedLeads, savedViews.activeView, ownership);
@@ -143,6 +150,14 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
         : savedViews.activeView === "qualified"
           ? LeadWorkState.VERIFYING
           : undefined;
+    if (savedViews.activeView === "unassigned") return {
+      ...(filters.searchTerm.trim() ? { search: filters.searchTerm.trim() } : {}),
+      filters: {
+        assignmentState: "UNASSIGNED",
+        ...(stateFromFilter ? { workState: stateFromFilter } : {}),
+        ...(filters.filters.ownerId ? { ownerId: filters.filters.ownerId } : {}),
+      },
+    };
     const ownerId = filters.filters.ownerId
       || (savedViews.activeView === "my_leads" ? ownership?.memberId : undefined);
     return {
@@ -161,6 +176,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
     project: projectServerLeadPage,
     evictProjection: clearLeadProjection,
   });
+  const queueClaim = useLeadQueueClaim({ enabled: canClaim, locale, refresh: serverPagination.refresh, notify: showToast });
   const canArchiveLeads = isLeadOperationAvailable(LEAD_OPERATION.ARCHIVE)
     && access.can(CAPABILITIES.LEADS_DELETE);
   const canAssignLeadBatch = Boolean(ownership?.canAssign)
@@ -180,8 +196,8 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
     [serverPagination.items],
   );
   const serverPageItems = useMemo(
-    () => filters.filteredLeads.filter((lead) => serverPageLeadIds.has(lead.id)),
-    [filters.filteredLeads, serverPageLeadIds],
+    () => savedViews.activeView === "unassigned" ? serverPagination.items : filters.filteredLeads.filter((lead) => serverPageLeadIds.has(lead.id)),
+    [filters.filteredLeads, serverPageLeadIds, savedViews.activeView, serverPagination.items],
   );
   const localPagination = useLeadPagination(filters.filteredLeads, 50);
   const pagination = serverPagination.connected && viewMode === "table"
@@ -838,14 +854,14 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
         leftSlot={
           <div data-guidance-id="leads.list.saved-view" className="flex min-w-0 max-w-full flex-wrap items-center gap-2">
             <LeadSavedViewSelector
-              customViews={savedViews.customViews}
+              customViews={savedViews.customViews.filter((view) => queueOnly ? view.key === "unassigned" : view.key !== "unassigned" || (canReadQueue && viewMode === "table"))}
               activeView={savedViews.activeView}
               onSelectView={handleSelectSavedView}
               isViewDropdownOpen={savedViews.isViewDropdownOpen}
               setIsViewDropdownOpen={savedViews.setIsViewDropdownOpen}
               isAddViewOpen={savedViews.isAddViewOpen}
               setIsAddViewOpen={savedViews.setIsAddViewOpen}
-              leadsCount={scopedLeads.length}
+              leadsCount={savedViews.activeView === "unassigned" ? pagination.totalItems : scopedLeads.length}
               onDeleteCustomView={handleDeleteSavedView}
               onAddViewClick={savedViews.openCreateView}
             />
@@ -949,6 +965,12 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
         campaigns={referenceData.campaigns}
         memberById={referenceData.memberById}
         productById={referenceData.productById}
+        canClaim={canClaim}
+        claimPendingIds={queueClaim.pendingIds}
+        onClaim={(leadId) => {
+          const version = serverPagination.items.find((lead) => lead.id === leadId)?.resourceVersion;
+          if (version !== undefined) void queueClaim.claim(leadId, version);
+        }}
         canArchive={canArchiveLeads}
         canCreate={canCreateLeads}
         page={pagination.page}

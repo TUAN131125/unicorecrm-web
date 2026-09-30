@@ -35,7 +35,7 @@ export const LeadSavedViewSelector: React.FC<LeadSavedViewSelectorProps> = ({
   isAddViewOpen: _isAddViewOpen,
   setIsAddViewOpen: _setIsAddViewOpen,
 }) => {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const triggerRef = useRef<HTMLButtonElement>(null);
 
   const translateOrFallback = (key: string, fallback: string) => {
@@ -54,6 +54,7 @@ export const LeadSavedViewSelector: React.FC<LeadSavedViewSelectorProps> = ({
       return view.labelKey;
     }
 
+    if (view.key === "unassigned") return locale === "vi" ? "Chưa phân công" : "Unassigned";
     const normalizedLabelKey = normalizeViewLabelKey(view.labelKey || view.key);
     return translateOrFallback(`leads.customViews.${normalizedLabelKey}`, normalizedLabelKey);
   };

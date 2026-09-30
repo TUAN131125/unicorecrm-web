@@ -1,3 +1,7 @@
+import { LeadListPage } from "./LeadListPage";
+import { isLeadConnectedApiRuntime } from "../../application/composition/leadApplicationServices";
+import { useEffectiveAccess } from "@/platform/access-control";
+import { ListStatePanel } from "@/components/crm/list-archetype";
 import { formatApplicationError } from "@/shared/operations";
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
@@ -21,7 +25,7 @@ import { CAPABILITIES } from "@/platform/access-control";
 import { evaluateLeadContactPolicy, getLeadContactPolicyMessage, LeadContactChannel } from "../../domain/rules/leadContactPolicy";
 import { useRecordOwnershipContext } from "@/platform/record-ownership";
 
-export const LeadQueuePage: React.FC = () => {
+const DemoLeadQueuePage: React.FC = () => {
   const navigate = useNavigate();
   const { t, locale } = useI18n();
   const { leads } = useLeads();
@@ -66,10 +70,7 @@ export const LeadQueuePage: React.FC = () => {
       return;
     }
     try {
-      await leadActions.claimFromQueue(
-        leadId,
-        locale === "vi" ? "Nhận xử lý từ hàng đợi Lead" : "Claimed from the Lead queue",
-      );
+      await leadActions.claimFromQueue(leadId);
       notifyProduct(t("leadQueue.assignedAlert"), "success");
     } catch (error) {
       notifyProduct(formatApplicationError(error, { locale }), "warning");
@@ -437,4 +438,15 @@ export const LeadQueuePage: React.FC = () => {
 
     </div>
   );
+};
+
+export const LeadQueuePage: React.FC = () => {
+  const access = useEffectiveAccess();
+  const ownership = useRecordOwnershipContext("leads", CAPABILITIES.LEADS_ASSIGN);
+  const { locale } = useI18n();
+  if (!isLeadConnectedApiRuntime()) return <DemoLeadQueuePage />;
+  const allowed = access.can(CAPABILITIES.LEADS_READ) && access.can(CAPABILITIES.LEADS_QUEUE_READ)
+    && (ownership?.dataScope === "OWN" || ownership?.dataScope === "WORKSPACE");
+  if (!allowed) return <ListStatePanel kind="error" title={locale === "vi" ? "Bạn không có quyền đọc hàng đợi Lead." : "Lead queue access is unavailable."} />;
+  return <LeadListPage queueOnly />;
 };

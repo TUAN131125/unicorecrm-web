@@ -35274,7 +35274,7 @@
         },
         "x-contract-status": "PRODUCTION_CONTRACT_READY",
         "x-module-owner": "leads",
-        "x-required-capability": "leads.assign",
+        "x-required-capability": "leads.claim",
         "x-resource-scope": "RESOURCE",
         "x-data-scope": "WORKSPACE",
         "x-workspace-required": true,
@@ -54301,17 +54301,8 @@
       "ClaimLeadFromQueueRequest": {
         "type": "object",
         "additionalProperties": false,
-        "required": [
-          "reason"
-        ],
-        "properties": {
-          "reason": {
-            "type": "string",
-            "minLength": 1,
-            "maxLength": 2000
-          }
-        },
-        "x-command-invariant": "The backend derives the owner from the authenticated actor and atomically claims the Lead; NEW Leads advance to CONTACTING."
+        "properties": {},
+        "x-command-invariant": "The backend atomically claims only an unassigned Lead for the authenticated active member; lifecycle, qualification, Tasks and Activities are unchanged."
       },
       "CodCustomerCollectionState": {
         "type": "string",

@@ -1,3 +1,4 @@
+import { LeadClaimButton } from "./LeadClaimButton";
 import React from "react";
 import { AlertCircle, Phone, Mail, Clock, RefreshCw, Eye, MoreHorizontal } from "lucide-react";
 import type { Lead, LeadCampaign } from "../../domain/model/lead.types";
@@ -33,6 +34,9 @@ interface LeadTableProps {
   memberById: ReadonlyMap<string, WorkspaceMemberDirectoryEntry>;
   productById: ReadonlyMap<string, Product>;
   getReturnToUrl: (mode: "table" | "kanban") => string;
+  canClaim?: boolean;
+  claimPendingIds?: ReadonlySet<string>;
+  onClaim?: (leadId: string) => void;
   onCall?: (lead: Lead) => void;
   onMarkContacted?: (leadId: string) => void;
   onQualify?: (leadId: string) => void;
@@ -59,6 +63,9 @@ export const LeadTable: React.FC<LeadTableProps> = ({
   memberById,
   productById,
   getReturnToUrl,
+  canClaim = false,
+  claimPendingIds = new Set(),
+  onClaim,
   onCall,
   onMarkContacted,
   onQualify,
@@ -415,6 +422,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                     }} 
                     className="p-2 py-2.5 text-center sticky right-0 bg-white/95 select-none z-20 border-l border-slate-100 flex items-center justify-center gap-1.5"
                   >
+{canClaim && !lead.ownerId && !lead.archivedAt && onClaim && <LeadClaimButton leadId={lead.id} pending={claimPendingIds.has(lead.id)} onClaim={onClaim} />}
                     {/* QUICK VIEW DETAILS */}
                     <IconButton
                       onClick={() => onViewDetails && onViewDetails(lead.id)}

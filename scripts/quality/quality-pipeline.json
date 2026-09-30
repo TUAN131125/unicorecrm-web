@@ -265,7 +265,8 @@
         "quality.people-account-provisioning",
         "quality.contact-visual-baseline",
         "quality.connected-backend-integration",
-        "quality.lead-ownership-distribution-contracts"
+        "quality.lead-ownership-distribution-contracts",
+        "quality.lead-queue-claim"
       ]
     },
     {
@@ -9182,6 +9183,32 @@
         {
           "type": "node",
           "entry": "tests/quality/integration/check-lead-ownership-distribution-contracts.mts",
+          "nodeArgs": [
+            "--import",
+            "tsx"
+          ],
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "quality.lead-queue-claim",
+      "commandName": "test:lead-queue-claim",
+      "groupId": "integration",
+      "kind": "integration",
+      "owner": "quality-integration",
+      "entry": "tests/quality/integration/check-lead-queue-claim.mts",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node",
+        "tsx"
+      ],
+      "shardKey": "quality.lead-queue-claim",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/integration/check-lead-queue-claim.mts",
           "nodeArgs": [
             "--import",
             "tsx"

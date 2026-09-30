@@ -21,3 +21,6 @@ Lead list, detail and typed create transport are owned by `application/ports/Lea
 
 Lead profile create/edit and the single-aggregate lifecycle commands `advanceLeadWorkState`, `disqualifyLead`, and `reopenDisqualifiedLead` now use dedicated, closed production contracts with idempotency, `If-Match`, and authoritative mutation evidence. Connected UI paths do not fall back to browser authority. Positive qualification, duplicate resolution, consent, archive/anonymize, and bulk lifecycle workflows remain explicitly contract-blocked or demo-only. See `docs/architecture/lead-api-boundary.md` and `docs/backend-readiness/lead-lifecycle-qualification-decision.md`.
 
+## O2 Sales Queue and Claim
+
+Connected Queue reuses Lead List's Unassigned view with server `assignmentState=UNASSIGNED` and normal read plus Queue permission. Eligible table/mobile rows expose a direct Claim action, pending per row. The command uses the authoritative row version and waits for the backend projection before refreshing. Conflict refreshes the Queue; ambiguous network retry retains the same intent key/version. No Claim modal, Work Panel layout change or Kanban change is introduced. Assign, bulk Assign and Handover remain unavailable.
