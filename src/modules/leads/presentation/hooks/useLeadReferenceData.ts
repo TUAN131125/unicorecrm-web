@@ -73,7 +73,7 @@ export function getLeadMemberDisplay(
   memberId: string | undefined,
   locale: "vi" | "en",
 ): string {
-  if (!memberId || memberId === "unassigned") return locale === "vi" ? "Chưa phân công" : "Unassigned";
+  if (!memberId) return locale === "vi" ? "Chưa phân công" : "Unassigned";
   const member = memberById.get(memberId);
   if (member?.displayName && member.displayName !== "—") return member.displayName;
   return locale === "vi" ? "Chưa có thông tin người phụ trách" : "Owner information unavailable";

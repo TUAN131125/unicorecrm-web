@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "decisionId": "DEC-LEAD-OWNERSHIP-DISTRIBUTION-V1",
+  "status": "TARGET",
+  "businessAuthority": "docs/business/lead-ownership-and-distribution-v1.md",
+  "reviewedFrontend": {
+    "repository": "TUAN131125/unicorecrm-web",
+    "sha": "1c0f02510510bccb01078c0cb8d6410a274154f6",
+    "contractVersion": "0.24.0-contract.0"
+  },
+  "reviewedBackend": {
+    "repository": "TUAN131125/unicorecrm-backend",
+    "sha": "161a580417f05471c6f5c7a3faf1c95114f212f1",
+    "verifiedClaimAssignHandoverRoutes": false
+  },
+  "assignmentModel": {
+    "unassigned": "ownerId == null",
+    "assigned": "ownerId references an authoritative assignable workspace member",
+    "forbiddenOwnerSentinels": ["queue", "unassigned", "system"]
+  },
+  "creationPolicy": {
+    "interactiveCrmBySalesperson": "AUTHENTICATED_CREATOR",
+    "website": "UNASSIGNED",
+    "import": "UNASSIGNED",
+    "api": "UNASSIGNED",
+    "webhook": "UNASSIGNED",
+    "delegatedExternalIngress": "UNASSIGNED"
+  },
+  "o1QueueReadPolicy": {
+    "requiredCapabilities": ["leads.read", "leads.queue.read"],
+    "allowedScopes": ["WORKSPACE", "OWN"],
+    "deniedScopes": ["TEAM", "CUSTOM"],
+    "ownQueueMutationsAllowed": false,
+    "claimImplemented": false,
+    "customRoleAutoGrant": false
+  },
+  "salesQueue": {
+    "kind": "FILTERED_LEAD_VIEW",
+    "isAggregate": false,
+    "recommendedFilter": "assignmentState=UNASSIGNED"
+  },
+  "operations": {
+    "claim": {
+      "target": "authenticated actor",
+      "reasonRequired": false,
+      "taskEffect": "NONE",
+      "concurrency": "SINGLE_WINNER",
+      "idempotencyRequired": true
+    },
+    "assign": {
+      "reasonRequired": true,
+      "taskEffect": "NONE",
+      "idempotencyRequired": true
+    },
+    "handover": {
+      "reasonRequired": true,
+      "taskEffect": "REASSIGN_ELIGIBLE_OPEN_LEAD_TASKS",
+      "createTakeoverTask": true,
+      "frontendCoordinatorAllowed": false,
+      "workflowOwner": "BACKEND"
+    },
+    "bulkAssign": {
+      "v1": true,
+      "frontendLoopAllowed": false
+    },
+    "bulkHandover": {
+      "v1": false
+    }
+  },
+  "handoverTaskEligibility": {
+    "status": "OPEN",
+    "recordRef": {
+      "moduleKey": "leads",
+      "recordId": "target lead id"
+    },
+    "excludedStatuses": ["COMPLETED", "CANCELLED"],
+    "activitiesAffected": false
+  },
+  "outOfScope": [
+    "communications",
+    "automatic routing",
+    "round robin",
+    "load balancing",
+    "territory routing",
+    "skill routing",
+    "AI assignment",
+    "multiple named queues",
+    "bulk handover"
+  ],
+  "patchSequence": ["O1", "O2", "O3", "O4", "O5", "O6", "O7"],
+  "unresolvedDecisions": [
+    {
+      "id": "DECISION_REQUIRED-HO-SLA-001",
+      "topic": "takeover task due/SLA policy",
+      "recommendedCandidate": {
+        "setting": "handoverAcceptanceSlaHours",
+        "defaultHours": 24
+      },
+      "approved": false
+    }
+  ],
+  "warnings": [
+    "Generated frontend operations are not implementation evidence.",
+    "Backend-readiness READY labels must be verified against admitted backend routes.",
+    "Connected mode must remain fail-closed until backend implementation is verified."
+  ]
+}

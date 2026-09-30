@@ -70,7 +70,7 @@ export interface PilotIngressEvidence {
 export interface PilotLeadEvidence {
   id: string;
   workspaceId: string;
-  ownerId: string;
+  ownerId?: string;
   relationshipKey?: string;
   convertedContactId?: string;
   convertedOrganizationId?: string;

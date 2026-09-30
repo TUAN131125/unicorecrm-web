@@ -415,13 +415,12 @@ function requireLeadVersion(leadId: string, operationId: string): number {
 }
 
 function toLeadProfileInput(input: Partial<Lead>, requireOwner: false): LeadProfileInput;
-function toLeadProfileInput(input: Partial<Lead>, requireOwner: true): LeadProfileInput & { ownerId: string };
+function toLeadProfileInput(input: Partial<Lead>, requireOwner: true): LeadProfileInput;
 function toLeadProfileInput(input: Partial<Lead>, requireOwner: boolean): LeadProfileInput {
   const displayName = input.name?.trim() ?? "";
   const source = input.source?.trim() || undefined;
   const ownerId = input.ownerId?.trim() || undefined;
   if (!displayName) throw profileViolation("displayName", "Lead form must provide a name before calling the API.");
-  if (requireOwner && !ownerId) throw profileViolation("ownerId", "Lead profile replacement requires an owner.");
   if (!requireOwner && ![input.phone, input.workPhone, input.otherPhone, input.email, input.personalEmail, input.zaloId, input.facebook]
     .some((value) => value?.trim())) {
     throw profileViolation("contactChannel", "Lead form must provide at least one contact channel.");

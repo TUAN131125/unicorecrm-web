@@ -3,7 +3,7 @@
   "generatorVersion": 1,
   "authority": "docs/api/openapi.json",
   "contractVersion": "0.24.0-contract.0",
-  "specSha256": "1e37ac15ff5eacde9f9f79453070b67f5bfdc7bbcb77f2cdc3d1413f33bed4e3",
+  "specSha256": "fcefecce28596ac70297eebebd871baf4ace1111d0fc023d3a514dd577136db6",
   "generatedAt": "DETERMINISTIC",
   "summary": {
     "operations": 301,
@@ -18138,6 +18138,17 @@
             "schema": {
               "ref": "WorkspaceId",
               "type": null,
+              "format": null,
+              "pattern": null
+            }
+          },
+          {
+            "name": "assignmentState",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "ref": null,
+              "type": "string",
               "format": null,
               "pattern": null
             }

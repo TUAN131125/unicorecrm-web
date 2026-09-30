@@ -100,7 +100,7 @@ export function importLeadCsvPlanAtomically(
       resourceKey: "leads",
       recordId: lead.id,
       action: "CREATED",
-      nextOwnerId: lead.ownerId,
+      nextOwnerId: ownershipAssignments[index].ownerId,
       reason: `Lead created by atomic CSV import (${plan.checksum}).`,
     }, ownershipAssignments[index].context);
   });

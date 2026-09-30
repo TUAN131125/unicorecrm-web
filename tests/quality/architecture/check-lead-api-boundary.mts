@@ -141,7 +141,7 @@ assert.equal(leadPage.items[0]?.id, "lead-1");
 assert.equal(leadPage.pageInfo.hasNextPage, true);
 assert.equal(leadPage.pageInfo.nextCursor, "lead-cursor-2");
 assert.equal(leadPage.pageInfo.totalCount, 51);
-assert.deepEqual(requests[0]?.query, { cursor: undefined, limit: 25, search: "Lead One", workState: "NEW", ownerId: "user-1" });
+assert.deepEqual(requests[0]?.query, { cursor: undefined, limit: 25, search: "Lead One", workState: "NEW", ownerId: "user-1", assignmentState: undefined });
 assert.equal((await runtime.queries.get("lead-1")).resourceVersion, 3);
 await assert.rejects(() => runtime.queries.list({ sortBy: "unsupported" }), (error: unknown) => hasCode(error, "CONNECTED_QUERY_CONTRACT_VIOLATION"));
 

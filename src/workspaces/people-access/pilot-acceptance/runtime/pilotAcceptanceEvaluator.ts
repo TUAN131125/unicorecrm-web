@@ -141,7 +141,7 @@ function buildChecks(
       ];
     }
     case "owner-and-sla": {
-      const ownerValid = Boolean(lead && dataset.salesMemberIds.includes(lead.ownerId));
+      const ownerValid = Boolean(lead?.ownerId && dataset.salesMemberIds.includes(lead.ownerId));
       const ownershipAudit = Boolean(lead && dataset.ownershipAudit.some((item) => item.recordId === lead.id && item.nextOwnerId === lead.ownerId && item.reason.trim()));
       return [
         check("lead-chain", Boolean(lead), text("Đã tìm thấy Lead trong chuỗi pilot.", "A lead was found in the pilot chain."), text("Không tìm thấy Lead truy vết được từ chuỗi giao dịch.", "No lead can be traced from the transaction chain."), lead ? [lead.id] : undefined),

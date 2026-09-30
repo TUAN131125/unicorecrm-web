@@ -151,7 +151,7 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
   if (!lead) return null;
 
 
-  const ownerName = ownership?.visibleOwners.find((owner) => owner.memberId === lead.ownerId)?.displayName
+  const ownerName = !lead.ownerId ? (locale === "vi" ? "Chưa phân công" : "Unassigned") : ownership?.visibleOwners.find((owner) => owner.memberId === lead.ownerId)?.displayName
     || resolveWorkspaceMemberName(lead.ownerId);
   const activeCampaign = referenceData.campaigns.find((campaign) => campaign.id === lead.campaignId);
   const campaignName = activeCampaign ? activeCampaign.name : "Không thuộc chiến dịch";
@@ -344,6 +344,11 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
     // operation commits them together. The activity can commit and the Task still fail, so
     // the outcome is reported instead of the whole action appearing to do nothing. The
     // committed activity is never reversed from here.
+    const followUpOwnerId = lead.ownerId;
+    if (draft.createFollowUpTask && !followUpOwnerId) {
+      showToast(locale === "vi" ? "Lead chưa có người phụ trách để giao công việc." : "The Lead needs an owner before assigning a follow-up task.");
+      return;
+    }
     const followUpDueAt = draft.createFollowUpTask && draft.nextFollowUpAt
       ? new Date(draft.nextFollowUpAt).toISOString()
       : undefined;
@@ -352,19 +357,19 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
         step: "activity",
         run: () => addTimelineActivity("call", `${locale === "vi" ? "Cuộc gọi" : "Call"}: ${draft.subject}`, fullDesc),
       },
-      ...(followUpDueAt ? [{
+      ...(followUpDueAt && followUpOwnerId ? [{
         step: "followUpTask",
         run: () => createTaskCommand({
         id: `task_lead_call_${lead.id}_${Date.now()}`,
         title: `${locale === "vi" ? "Theo dõi cuộc gọi" : "Follow up call"}: ${draft.subject}`,
         description: draft.body || undefined,
         priority: "NORMAL",
-        assigneeId: lead.ownerId,
+        assigneeId: followUpOwnerId,
         dueAt: followUpDueAt,
         relationshipRef: lead.relationshipRef,
         recordRef: { moduleKey: "leads", recordId: lead.id, label: lead.name },
         sourceRef: { type: "LEAD_CALL_FOLLOW_UP", id: lead.id },
-          actorId: lead.ownerId,
+          actorId: followUpOwnerId,
           actorName: resolveWorkspaceMemberName(lead.ownerId),
         }),
       }] : []),
@@ -447,6 +452,7 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
     const actor = getAuthSessionSnapshot()?.principal;
     const actorId = actor?.memberId || ownership?.memberId || lead.ownerId;
     const actorName = actor?.displayName || ownership?.displayName || resolveWorkspaceMemberName(actorId);
+    if (!actorId) return;
 
     if (nextOwnerId === lead.ownerId) {
       showToast(locale === "vi" ? "Người nhận đang là chủ sở hữu hiện tại." : "The selected member already owns this Lead.");

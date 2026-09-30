@@ -160,5 +160,5 @@ export function closeLead(lead: Lead, input: CloseLeadInput): Lead {
 }
 
 export function canEnterLeadQueue(lead: Lead): boolean {
-  return lead.leadWorkState !== LeadWorkState.CLOSED && (lead.ownerId === "unassigned" || lead.ownerId === "");
+  return lead.leadWorkState !== LeadWorkState.CLOSED && lead.ownerId === undefined;
 }

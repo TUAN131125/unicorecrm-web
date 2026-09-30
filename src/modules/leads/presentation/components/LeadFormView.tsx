@@ -566,7 +566,7 @@ export function LeadFormView({ controller }: { controller: LeadFormViewControlle
                 onChange={(e) => setOwnerId(e.target.value)}
                 disabled={!canAssignOwner || isEdit}
               >
-                <option value="">{tf("placeholders.selectOwner")}</option>
+                <option value="">{isEdit && !initialLead?.ownerId ? (locale === "vi" ? "Chưa phân công" : "Unassigned") : tf("placeholders.selectOwner")}</option>
                 {availableOwnerOptions.map((owner) => (
                   <option key={owner.memberId} value={owner.memberId}>{owner.displayName}</option>
                 ))}

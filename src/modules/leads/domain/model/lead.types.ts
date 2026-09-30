@@ -73,7 +73,7 @@ export interface Lead {
     rule: "LEAD_OUTCOME_REQUIRES_EVIDENCE";
     legacyStatus: "QUALIFIED" | "CONVERTED";
   };
-  ownerId: string;
+  ownerId?: string;
   interestedProducts: LeadInterestedProduct[];
   nextFollowUpAt?: string;
   createdAt: string;

@@ -95,7 +95,6 @@ function ingestAuthenticatedLead(repository: LeadRepository, command: IngestLead
       campaignId: command.payload.campaign?.trim() || undefined,
       score: 0,
       leadWorkState: LeadWorkState.NEW,
-      ownerId: "unassigned",
       interestedProducts: [],
       createdAt: now,
       notes: command.payload.summary?.trim() || undefined,

@@ -14,6 +14,7 @@ export function mapLeadDocumentToApplication(dto: LeadDocument): Lead {
   if (dto.activityProjection !== "NOT_INCLUDED") {
     throw projectionViolation("getLead/listLeads", "Lead activityProjection must be NOT_INCLUDED until a timeline contract is loaded.");
   }
+  const ownerId = normalizeOwner(dto.ownerId);
   return {
     id: dto.id,
     name: dto.displayName,
@@ -28,7 +29,7 @@ export function mapLeadDocumentToApplication(dto: LeadDocument): Lead {
     ...(dto.relationshipRef === undefined ? {} : { relationshipRef: { type: dto.relationshipRef.type === "ORGANIZATION" ? "ORGANIZATION_ACCOUNT" : "CONTACT", id: dto.relationshipRef.id } }),
     ...((dto.dealRef ?? dto.qualifiedDealId) === undefined ? {} : { dealRef: dto.dealRef ?? dto.qualifiedDealId }),
     ...(dto.customerRef === undefined ? {} : { customerRef: dto.customerRef }),
-    ownerId: dto.ownerId,
+    ...(ownerId === undefined ? {} : { ownerId }),
     interestedProducts: dto.interestedProducts.map((item) => ({
       id: item.id,
       productId: item.productId,
@@ -145,7 +146,7 @@ function mapLeadProfileInputToRequest(
   operationId: string,
   includeOwner: boolean,
   requireContactChannel: boolean,
-): CreateLeadRequest | ReplaceLeadProfileRequest {
+): Omit<ReplaceLeadProfileRequest, "ownerId"> & { ownerId?: string | null } {
   const displayName = input.displayName.trim();
   const source = text(input.source);
   const ownerId = text(input.ownerId);
@@ -154,7 +155,7 @@ function mapLeadProfileInputToRequest(
   if (requireContactChannel && ![input.phone, input.workPhone, input.otherPhone, input.email, input.personalEmail, input.zaloId, input.facebook].some((value) => text(value))) {
     throw requestViolation(operationId, "contactChannel", "Lead requires at least one contact channel.");
   }
-  if (includeOwner && !ownerId) throw requestViolation(operationId, "ownerId", "Lead ownerId is required when replacing a profile.");
+  if (includeOwner && input.ownerId !== undefined && !ownerId) throw requestViolation(operationId, "ownerId", "Lead ownerId must be a member identifier when provided.");
   if (input.estimatedValue !== undefined && !currency) {
     throw requestViolation(operationId, "estimatedValue.currency", "Lead estimatedValue currency is required when a value is supplied.");
   }
@@ -187,7 +188,7 @@ function mapLeadProfileInputToRequest(
     contactAddress: text(input.contactAddress),
     source,
     campaignId: text(input.campaignId),
-    ownerId: includeOwner ? ownerId : undefined,
+    ownerId: includeOwner ? ownerId ?? null : undefined,
     assignedTeam: text(input.assignedTeam),
     decisionRole: text(input.decisionRole),
     priority: input.priority,
@@ -279,4 +280,12 @@ function projectionViolation(operationId: string, message: string): ApiClientErr
     retryable: false,
     details: { operationId, authority: "docs/api/openapi.json" },
   });
+}
+
+function normalizeOwner(ownerId: unknown): string | undefined {
+  if (ownerId === null) return undefined;
+  if (typeof ownerId !== "string" || !/^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$/.test(ownerId) || ["queue", "unassigned", "system", "sales_queue"].includes(ownerId)) {
+    throw projectionViolation("getLead/listLeads", "Lead ownerId must be null or a workspace member identifier.");
+  }
+  return ownerId;
 }

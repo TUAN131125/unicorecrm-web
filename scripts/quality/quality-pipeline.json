@@ -264,7 +264,8 @@
         "quality.access-control-contracts",
         "quality.people-account-provisioning",
         "quality.contact-visual-baseline",
-        "quality.connected-backend-integration"
+        "quality.connected-backend-integration",
+        "quality.lead-ownership-distribution-contracts"
       ]
     },
     {
@@ -9159,6 +9160,32 @@
           "type": "node",
           "entry": "tests/contract/provider/run-shipping-returns-core-provider-contract.mjs",
           "nodeArgs": [],
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "quality.lead-ownership-distribution-contracts",
+      "commandName": "test:lead-ownership-distribution-contracts",
+      "groupId": "integration",
+      "kind": "integration",
+      "owner": "quality-integration",
+      "entry": "tests/quality/integration/check-lead-ownership-distribution-contracts.mts",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node",
+        "tsx"
+      ],
+      "shardKey": "quality.lead-ownership-distribution-contracts",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/integration/check-lead-ownership-distribution-contracts.mts",
+          "nodeArgs": [
+            "--import",
+            "tsx"
+          ],
           "args": []
         }
       ]

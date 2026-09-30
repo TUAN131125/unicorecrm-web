@@ -61,7 +61,7 @@ export interface LeadProfileInput {
 }
 
 export type CreateLeadInput = LeadProfileInput;
-export type ReplaceLeadProfileInput = LeadProfileInput & { ownerId: string };
+export type ReplaceLeadProfileInput = LeadProfileInput;
 
 export interface LeadCommandOptions {
   idempotencyKey: string;

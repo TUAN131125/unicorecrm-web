@@ -79,7 +79,7 @@ export function saveLead(repository: LeadRepository, lead: Lead): Lead {
       ? current.map((item) => item.id === lead.id ? normalized : item)
       : [normalized, ...current],
   );
-  if (!previous) {
+  if (!previous && normalized.ownerId) {
     appendRecordOwnershipAudit({
       resourceKey: "leads",
       recordId: normalized.id,

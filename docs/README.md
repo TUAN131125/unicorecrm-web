@@ -64,6 +64,10 @@ Status labels:
 
 ## Business boundaries
 
+- [Lead Ownership & Distribution V1](business/lead-ownership-and-distribution-v1.md) — TARGET, canonical product semantics
+- [Lead Ownership backend decision](backend-readiness/lead-ownership-distribution-decision.md) ([machine-readable companion](backend-readiness/lead-ownership-distribution-decision.json)) — TARGET
+- [Lead Ownership acceptance contract](quality/lead-ownership-distribution-acceptance.md) — TRACKER
+
 - [Customer relationship and commercial flow](business/customer-relationship-and-commercial-flow.md) — CURRENT
 - [Metric catalog and reporting](business/metric-catalog-and-reporting.md) — CURRENT
 - [Sales Quick Create and pipeline health](business/sales-quick-create-and-pipeline-health.md) — CURRENT

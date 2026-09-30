@@ -395,7 +395,7 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
                 }}
                 onDisqualify={() => { setShowDisqualifyModal(true); setShowMoreMenu(false); }}
                 onReopen={() => { handleReopenLead(); setShowMoreMenu(false); }}
-                onHandover={() => { setShowMoreMenu(false); setHandoverOwnerId(lead.ownerId); setShowHandoverModal(true); }}
+                onHandover={() => { setShowMoreMenu(false); setHandoverOwnerId(lead.ownerId ?? ""); setShowHandoverModal(true); }}
                 onManageTags={(event) => { dialogs.setTagsAnchor(event.currentTarget); setShowTagsModal(!showTagsModal); }}
                 onPrint={() => { setShowMoreMenu(false); window.print(); }}
                 onArchive={canArchive ? () => { setShowMoreMenu(false); setShowArchiveConfirm(true); } : undefined}

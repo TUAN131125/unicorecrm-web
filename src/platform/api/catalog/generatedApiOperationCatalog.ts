@@ -18156,6 +18156,17 @@ export const API_OPERATION_CATALOG = {
           }
         },
         {
+          "name": "assignmentState",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
           "name": "cursor",
           "in": "query",
           "required": false,

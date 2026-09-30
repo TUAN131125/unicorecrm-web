@@ -182,7 +182,7 @@ export function useLeadFormController(props: LeadFormProps) {
     }
     return next;
   }, [initialLead?.ownerId, locale, ownerOptions]);
-  const [ownerId, setOwnerId] = useState(initialLead?.ownerId || defaultOwnerId || availableOwnerOptions[0]?.memberId || "");
+  const [ownerId, setOwnerId] = useState(isEdit ? initialLead?.ownerId ?? "" : defaultOwnerId || availableOwnerOptions[0]?.memberId || "");
   const [assignedTeam, setAssignedTeam] = useState(initialLead?.assignedTeam || "");
 
   // Sales & Qualification

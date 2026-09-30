@@ -965,6 +965,28 @@
       "scope": "REPOSITORY",
       "owner": "architecture",
       "lastVerifiedAgainst": "unicorecrm-web@0.23.20-contract.0"
+    },
+    "docs/business/lead-ownership-and-distribution-v1.md": {
+      "status": "TARGET",
+      "authority": "CANONICAL",
+      "scope": "SHARED",
+      "owner": "leads",
+      "lastVerifiedAgainst": "unicorecrm-web@0.24.0-contract.0"
+    },
+    "docs/backend-readiness/lead-ownership-distribution-decision.md": {
+      "status": "TARGET",
+      "authority": "CANONICAL",
+      "scope": "BACKEND_TARGET",
+      "owner": "leads",
+      "lastVerifiedAgainst": "unicorecrm-web@0.24.0-contract.0",
+      "machineReadableCompanion": "docs/backend-readiness/lead-ownership-distribution-decision.json"
+    },
+    "docs/quality/lead-ownership-distribution-acceptance.md": {
+      "status": "TRACKER",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "leads",
+      "lastVerifiedAgainst": "unicorecrm-web@0.24.0-contract.0"
     }
   }
 }

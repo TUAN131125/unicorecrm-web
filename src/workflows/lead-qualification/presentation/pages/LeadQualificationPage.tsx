@@ -258,11 +258,13 @@ export const LeadQualificationPage: React.FC = () => {
         await disqualifyLeadViaApi(lead.id, { reason, evidence });
         navigate(`/leads/${lead.id}`);
       } else if (selectedOutcome === "NURTURE") {
+        if (!lead.ownerId) { setOperationError(vi ? "Lead chưa có người phụ trách." : "The Lead has no owner."); return; }
         if (!relationship) { setOperationError(vi ? "Thiếu thông tin quan hệ khách hàng." : "Relationship input is missing."); return; }
         const outcome = await executeLeadNurtureCommand({ leadId: lead.id, relationship, revisitAt, reason, note: evidence, ownerId: lead.ownerId });
         setCompletion({ result: outcome.data, ...(outcome.outcome === undefined ? {} : { outcome: outcome.outcome }) });
         setSelectedOutcome(null);
       } else if (selectedOutcome === "OPPORTUNITY") {
+        if (!lead.ownerId) { setOperationError(vi ? "Lead chưa có người phụ trách." : "The Lead has no owner."); return; }
         if (!relationship) { setOperationError(vi ? "Thiếu thông tin quan hệ khách hàng." : "Relationship input is missing."); return; }
         const outcome = await executeLeadOpportunityCommand({
           leadId: lead.id,

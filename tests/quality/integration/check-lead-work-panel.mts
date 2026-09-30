@@ -83,6 +83,9 @@ try {
   assert.match(panel().textContent ?? "", /Chưa có công việc tiếp theo/);
   assert.match(panel().textContent ?? "", /Chưa xác định/);
   await click("+ Tạo công việc"); assert.equal(calls.pop(), "task");
+  props = { ...props, lead: { ...lead, ownerId: undefined }, ownerName: "Chưa phân công" };
+  await render();
+  assert.match(panel().textContent ?? "", /Chưa phân công/);
   const error = new ApplicationError({ code: "NETWORK_ERROR", message: "private diagnostics", category: "NETWORK", retryable: true });
   props = { ...props, workResources: { ...resources([]), taskQuery: { ...query, state: "ERROR", error } } };
   await render();

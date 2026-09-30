@@ -14,7 +14,6 @@ export const LEAD_DEMO_SEED: readonly Lead[] = [
     source: "Website",
     score: 88,
     leadWorkState: LeadWorkState.NEW,
-    ownerId: "unassigned", // unassigned lead
     interestedProducts: [
       {
         id: "lip_l1_1",

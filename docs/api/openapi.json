@@ -10097,6 +10097,19 @@
             "schema": {
               "$ref": "#/components/schemas/EntityId"
             }
+          },
+          {
+            "name": "assignmentState",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ASSIGNED",
+                "UNASSIGNED"
+              ]
+            },
+            "description": "Assignment filter. UNASSIGNED requires leads.queue.read in OWN or WORKSPACE scope and cannot be combined with ownerId."
           }
         ],
         "responses": {
@@ -10401,7 +10414,8 @@
           "INTEGRATION_UNAVAILABLE",
           "INTERNAL_ERROR"
         ],
-        "x-aggregate-id-policy": "MUST_MATCH_TARGET"
+        "x-aggregate-id-policy": "MUST_MATCH_TARGET",
+        "description": "Interactive creation resolves ownership to the authenticated creator; another requested owner is denied. Delegated external ingress creates UNASSIGNED Leads and preserves delegated audit provenance."
       }
     },
     "/leads/advance-work-state-batch": {
@@ -59044,7 +59058,15 @@
             "maximum": 100
           },
           "ownerId": {
-            "$ref": "#/components/schemas/EntityId"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Null means authoritative UNASSIGNED. Non-null is an authoritative workspace member."
           },
           "nextFollowUpAt": {
             "$ref": "#/components/schemas/UtcDateTime"
@@ -64397,7 +64419,15 @@
             "$ref": "#/components/schemas/EntityId"
           },
           "ownerId": {
-            "$ref": "#/components/schemas/EntityId"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Must match the existing owner; profile replacement cannot assign or unassign."
           },
           "assignedTeam": {
             "type": "string",

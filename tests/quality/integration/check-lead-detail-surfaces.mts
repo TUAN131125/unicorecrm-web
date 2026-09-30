@@ -222,6 +222,14 @@ try {
   lead = { ...lead, leadWorkState: "VERIFYING" }; await render("qualify"); await settle();
   await click("Thao tác khác", rail()); await click("Chốt kết quả", document.querySelector('[role="menu"]') ?? document);
   assert.match(rootElement.textContent ?? "", /Qualification destination/); assert.equal(document.querySelector('[data-surface="drawer"]'), null);
+  lead = { ...lead, ownerId: undefined, leadWorkState: "NEW" }; await render("unassigned-edit"); await settle();
+  await act(async () => { const button = document.querySelector<HTMLButtonElement>("#edit-direct-btn"); assert.ok(button); button.click(); }); await settle();
+  const unassignedOwner = drawer().querySelector<HTMLSelectElement>("#lead-owner");
+  assert.ok(unassignedOwner);
+  assert.equal(unassignedOwner.value, "", "Editing unassigned must not default to the first member");
+  assert.equal(unassignedOwner.disabled, true);
+  assert.match(drawer().textContent ?? "", /Chưa phân công/);
+  await close();
   // Shared consumers keep centered defaults unless they explicitly opt in.
   await act(async () => root.render(React.createElement(I18nProvider, null,
     React.createElement(tasks.EmailActivityCreateModal, { isOpen: true, onClose() {}, onSubmit() {} }))));

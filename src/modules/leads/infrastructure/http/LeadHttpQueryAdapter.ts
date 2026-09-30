@@ -5,7 +5,7 @@ import type { LeadListQuery, LeadQueryPort } from "../../application/ports/LeadA
 import type { Lead } from "../../domain/model/lead.types";
 import { mapLeadDocumentToApplication } from "./LeadApiMapper";
 
-const SUPPORTED_QUERY_KEYS = new Set(["cursor", "limit", "search", "workState", "ownerId"]);
+const SUPPORTED_QUERY_KEYS = new Set(["cursor", "limit", "search", "workState", "ownerId", "assignmentState"]);
 const LEAD_WORK_STATES = new Set<LeadWorkState>(["NEW", "CONTACTING", "VERIFYING", "CLOSED"]);
 
 export class LeadHttpQueryAdapter implements LeadQueryPort {
@@ -15,6 +15,13 @@ export class LeadHttpQueryAdapter implements LeadQueryPort {
     assertSupportedListQuery(query);
     const workState = query.filters?.workState;
     const ownerId = query.filters?.ownerId;
+    const assignmentState = query.filters?.assignmentState;
+    if (assignmentState !== undefined && assignmentState !== "ASSIGNED" && assignmentState !== "UNASSIGNED") {
+      throw queryViolation("listLeads", "assignmentState must be ASSIGNED or UNASSIGNED.");
+    }
+    if (assignmentState === "UNASSIGNED" && ownerId !== undefined) {
+      throw queryViolation("listLeads", "ownerId cannot be combined with UNASSIGNED.");
+    }
     if (workState !== undefined && (typeof workState !== "string" || !LEAD_WORK_STATES.has(workState as LeadWorkState))) {
       throw queryViolation("listLeads", "workState must be a supported Lead lifecycle state.");
     }
@@ -27,6 +34,7 @@ export class LeadHttpQueryAdapter implements LeadQueryPort {
       search: query.search,
       workState: workState as LeadWorkState | undefined,
       ownerId,
+      assignmentState,
     }, signal);
     if (!Array.isArray(response.items) || typeof response.pageInfo?.hasNextPage !== "boolean") {
       throw queryViolation("listLeads", "Lead collection response must include items and authoritative pageInfo.");

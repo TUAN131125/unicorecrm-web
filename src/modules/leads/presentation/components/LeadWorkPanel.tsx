@@ -37,7 +37,7 @@ export function LeadWorkPanel({ lead, locale, isVisible, workResources, ownerNam
   const { taskQuery, overdueTasks, nextTask } = workResources;
   const hasData = taskQuery.data !== undefined;
   const followUpOverdue = Boolean(lead.nextFollowUpAt && Date.parse(lead.nextFollowUpAt) < Date.now());
-  const owner = ownerName && ownerName !== "—" ? ownerName : text("Chưa xác định", "Unknown");
+  const owner = !lead.ownerId ? text("Chưa phân công", "Unassigned") : ownerName && ownerName !== "—" ? ownerName : text("Chưa xác định", "Unknown");
   const dateLabel = (value: string) => new Date(value).toLocaleString(locale === "vi" ? "vi-VN" : "en-US", { dateStyle: "short", timeStyle: "short" });
   const contextRows = [
     [text("Sản phẩm quan tâm", "Products of interest"), lead.interestedProducts.map((product) => product.productNameSnapshot).join(", ")],
