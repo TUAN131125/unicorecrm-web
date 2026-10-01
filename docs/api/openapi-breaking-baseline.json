@@ -9240,7 +9240,7 @@
     {
       "operationId": "handoverLeadWithTasks",
       "method": "POST",
-      "path": "/workflows/lead-handover/{leadId}",
+      "path": "/leads/{leadId}/handover",
       "parameters": [
         {
           "name": "Idempotency-Key",
@@ -26035,29 +26035,25 @@
     "HandoverLeadWithTasksRequest": {
       "additionalProperties": false,
       "properties": {
-        "nextOwnerId": {
+        "newOwnerId": {
           "$ref": "#/components/schemas/EntityId"
         },
+        "openTaskPolicy": {
+          "$ref": "#/components/schemas/LeadHandoverOpenTaskPolicy"
+        },
         "reason": {
-          "maxLength": 2000,
+          "maxLength": 1000,
           "minLength": 1,
           "type": "string"
-        },
-        "taskTargets": {
-          "items": {
-            "$ref": "#/components/schemas/TaskVersionedTarget"
-          },
-          "maxItems": 500,
-          "type": "array"
         }
       },
       "required": [
-        "nextOwnerId",
+        "newOwnerId",
         "reason",
-        "taskTargets"
+        "openTaskPolicy"
       ],
       "type": "object",
-      "x-workflow-semantics": "Atomically assign the Lead, reassign every declared open Task and create one handover Task. Any stale Task or authorization failure rolls back the complete workflow."
+      "x-workflow-semantics": "Tasks authoritatively discovers eligible OPEN nonarchived Lead Tasks for MOVE. Both policies create exactly one NORMAL takeover Task with frozen workspace SLA. Durable recovery completes ownership before success."
     },
     "IdempotencyKey": {
       "maxLength": 128,
@@ -28161,24 +28157,44 @@
     "LeadHandoverResult": {
       "additionalProperties": false,
       "properties": {
+        "handoverTaskDueAt": {
+          "format": "date-time",
+          "type": "string"
+        },
         "handoverTaskId": {
           "$ref": "#/components/schemas/EntityId"
         },
+        "handoverTaskVersion": {
+          "format": "int64",
+          "minimum": 1,
+          "type": "integer"
+        },
         "lead": {
           "$ref": "#/components/schemas/LeadDocument"
+        },
+        "openTaskPolicy": {
+          "$ref": "#/components/schemas/LeadHandoverOpenTaskPolicy"
         },
         "reassignedTaskIds": {
           "items": {
             "$ref": "#/components/schemas/EntityId"
           },
-          "maxItems": 500,
           "type": "array"
+        },
+        "resolvedHandoverAcceptanceSlaHours": {
+          "maximum": 168,
+          "minimum": 1,
+          "type": "integer"
         }
       },
       "required": [
         "lead",
         "reassignedTaskIds",
-        "handoverTaskId"
+        "handoverTaskId",
+        "openTaskPolicy",
+        "handoverTaskVersion",
+        "handoverTaskDueAt",
+        "resolvedHandoverAcceptanceSlaHours"
       ],
       "type": "object"
     },
@@ -40970,6 +40986,12 @@
         "defaultRevenueModel": {
           "$ref": "#/components/schemas/WorkspaceRevenueModel"
         },
+        "handoverAcceptanceSlaHours": {
+          "default": 24,
+          "maximum": 168,
+          "minimum": 1,
+          "type": "integer"
+        },
         "orderMode": {
           "enum": [
             "NATIVE",
@@ -41008,9 +41030,17 @@
         "defaultCustomerType",
         "defaultRevenueModel",
         "salesMotion",
-        "pipelineTemplate"
+        "pipelineTemplate",
+        "handoverAcceptanceSlaHours"
       ],
       "type": "object"
+    },
+    "LeadHandoverOpenTaskPolicy": {
+      "enum": [
+        "KEEP_CURRENT_ASSIGNEES",
+        "MOVE_LEAD_OPEN_TASKS_TO_NEW_OWNER"
+      ],
+      "type": "string"
     }
   }
 }

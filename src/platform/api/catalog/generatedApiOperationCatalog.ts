@@ -16407,7 +16407,7 @@ export const API_OPERATION_CATALOG = {
     "boundedContext": "Leads",
     "kind": "COMMAND",
     "method": "POST",
-    "path": "/workflows/lead-handover/{leadId}",
+    "path": "/leads/{leadId}/handover",
     "contractStatus": "PRODUCTION_CONTRACT_READY",
     "blockingDecisionId": null,
     "generatedClient": {
@@ -16498,7 +16498,7 @@ export const API_OPERATION_CATALOG = {
     "authorization": {
       "auth": "REQUIRED",
       "workspace": "REQUIRED",
-      "capability": "leads.assign",
+      "capability": "leads.handover",
       "resourceScope": "RESOURCE",
       "dataScope": "WORKSPACE"
     },
@@ -16506,7 +16506,7 @@ export const API_OPERATION_CATALOG = {
       "idempotency": "REQUIRED",
       "concurrency": "IF_MATCH_REQUIRED",
       "audit": "IMMUTABLE_CROSS_MODULE_HANDOVER_AUDIT",
-      "transactionBoundary": "SINGLE_BACKEND_CROSS_MODULE_TRANSACTION"
+      "transactionBoundary": "DURABLE_WORKFLOW_PARTICIPANT_LOCAL_TRANSACTIONS"
     },
     "testGateIds": [
       "quality.api-contract",

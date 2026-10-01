@@ -1,4 +1,5 @@
-import { useCallback, useState } from "react";
+import type { LeadHandoverOpenTaskPolicy } from "../../application/ports/LeadApiRuntime";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Lead } from "../../domain/model/lead.types";
 import { useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
 import { toDateKeyInTimeZone } from "@/shared/lib/datetime/workspaceDateTime";
@@ -25,6 +26,16 @@ export function useLeadDetailDialogs(lead?: Lead) {
   const [tagsAnchor, setTagsAnchor] = useState<HTMLElement | null>(null);
   const [handoverOwnerId, setHandoverOwnerId] = useState("");
   const [handoverReason, setHandoverReason] = useState("");
+  const [handoverOpenTaskPolicy, setHandoverOpenTaskPolicy] = useState<LeadHandoverOpenTaskPolicy | "">("");
+  const handoverLeadId = useRef(lead?.id);
+  useEffect(() => {
+    if (!lead?.id || handoverLeadId.current === lead.id) return;
+    handoverLeadId.current = lead.id;
+    setActiveForm((current) => current === "handover" ? null : current);
+    setHandoverOwnerId("");
+    setHandoverReason("");
+    setHandoverOpenTaskPolicy("");
+  }, [lead?.id]);
 
   const showCallModal = activeForm === "call";
   const setShowCallModal = useCallback((open: boolean) => setForm("call", open), [setForm]);
@@ -88,6 +99,7 @@ export function useLeadDetailDialogs(lead?: Lead) {
     showTagsModal, setShowTagsModal, tagsAnchor, setTagsAnchor,
     handoverOwnerId, setHandoverOwnerId,
     handoverReason, setHandoverReason,
+    handoverOpenTaskPolicy, setHandoverOpenTaskPolicy,
     showCallModal, setShowCallModal,
     showTaskModal, setShowTaskModal,
     showMeetingModal, setShowMeetingModal,

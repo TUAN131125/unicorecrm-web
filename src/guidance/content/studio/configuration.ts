@@ -17,7 +17,7 @@ const seeds: readonly StudioGuidanceSeed[] = [
     routeKey: "SETTINGS_QUICK_SETUP",
     title: { vi: "Thiết lập nhanh", en: "Quick Setup" },
     purpose: { vi: "Hoàn tất các cấu hình thiết yếu theo luồng tùy chọn và có thể mở lại.", en: "Complete essential configuration through an optional, reopenable flow." },
-    task: { vi: "Lưu dữ liệu trong biểu mẫu của module rồi đánh dấu bước hoàn tất hoặc bỏ qua.", en: "Save data in the owning module form, then finish or skip the step." },
+    task: { vi: "Lưu dữ liệu trong biểu mẫu của module rồi đánh dấu bước hoàn tất hoặc bỏ qua. Mô hình workspace có hạn tiếp nhận bàn giao Lead từ 1–168 giờ, mặc định 24.", en: "Save data in the owning module form, then finish or skip the step. The workspace blueprint includes Lead handover acceptance SLA: 1–168 elapsed hours, default 24." },
     mistake: { vi: "Quick Setup chỉ lưu tiến độ; không coi việc đánh dấu hoàn tất là đã lưu biểu mẫu.", en: "Quick Setup stores progress only; finishing a step does not save an unsaved form." },
     keywords: { vi: "thiết lập nhanh tùy chọn tiến độ", en: "quick setup optional progress" },
   },
@@ -117,7 +117,7 @@ export const STUDIO_SCREEN_GUIDANCE: readonly ScreenGuidance[] = seeds.map((seed
   id: seed.id,
   routeKey: seed.routeKey,
   productSpace: "studio",
-  version: 2,
+  version: seed.id === "studio.quick-setup" ? 3 : 2,
   title: seed.title,
   purpose: seed.purpose,
   audience: {

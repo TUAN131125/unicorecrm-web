@@ -52,6 +52,7 @@ export type CrmModuleVisibilityConfig = {
 };
 
 export type CrmWorkflowConfig = {
+  handoverAcceptanceSlaHours: number;
   dealUsageMode: DealUsageMode;
   quoteUsageMode: QuoteUsageMode;
   quoteRequirement?: "OPTIONAL" | "REQUIRED";

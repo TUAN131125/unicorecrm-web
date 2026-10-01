@@ -150,7 +150,7 @@ const leadDetailController = read("src/modules/leads/presentation/hooks/useLeadD
 for (const marker of [
   "handleConfirmHandover",
   "taskTargets",
-  "leadActions.handover",
+  "handover.submit",
   "createTaskCommand",
 ]) assert.ok(leadDetailController.includes(marker), `Lead detail workflow contract missing ${marker}`);
 assert.equal(leadDetailController.includes("reassignTaskSnapshot"), false, "Lead handover must not reassign tasks through the local snapshot boundary.");
@@ -159,7 +159,7 @@ const detailModals = read("src/modules/leads/presentation/components/LeadDetailM
 assert.equal(detailModals.includes("Xác nhận Lead đạt chất lượng"), false, "The redundant qualify confirmation dialog must stay removed.");
 for (const marker of [
   'title={locale === "vi" ? "Bàn giao Lead & công việc"',
-  "handleConfirmHandover(handoverOwnerId, handoverReason.trim())",
+  "handleConfirmHandover(handoverOwnerId, handoverReason.trim(), handoverOpenTaskPolicy)",
   'className="h-11 min-w-20"',
 ]) assert.ok(detailModals.includes(marker), `Lead modal alignment/work integration contract missing ${marker}`);
 

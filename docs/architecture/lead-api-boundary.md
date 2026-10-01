@@ -135,3 +135,11 @@ The compatibility bridge never executes generic Lead mutations. Dedicated Lead c
 ## O2 Claim boundary
 
 `claimLeadFromQueue` now uses the generated canonical POST `/workflows/lead-queue/{leadId}/claim` with `{}`, Idempotency-Key and If-Match. The caller supplies no owner. The connected adapter has no demo fallback. Queue rows and counts come from backend `assignmentState=UNASSIGNED`; row version is carried into Claim without requiring a locally owned cache entry. Ambiguous network retries retain the original key and version. Claim does not change lifecycle or Tasks. Assign, bulk Assign and Handover remain connected unavailable.
+
+## Canonical Lead Handover boundary
+
+`handoverLeadWithTasks` uses generated POST `/leads/{leadId}/handover` and the closed `{ newOwnerId, reason, openTaskPolicy }` body. The adapter validates the authoritative envelope and all result fields, accepting numeric Task version 0. It never asserts the returned Task set against browser-visible IDs or calculates connected SLA.
+
+The dedicated `useLeadHandover` hook retains the key, expected Lead version and full payload across ambiguous retry and same-Lead close/reopen; a changed record ID clears previous intent. New intent uses the newest authoritative prop/refresh version. A 412 keeps the dialog draft and requires explicit refresh. Exact ambiguous replay is allowed after target ownership is observed, under current capability/record authority; new admission additionally requires writable ownerId.
+
+Connected composition calls the real generated operation. Claim and single Assign remain available; Bulk Assign remains unavailable. Demo runtime independently discovers eligible retained Tasks and freezes due-at from workspace SLA. The permanent gate is `quality.lead-handover`; real-host SQL/recovery and browser acceptance are tracked separately.

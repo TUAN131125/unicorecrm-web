@@ -34003,13 +34003,13 @@
         "x-request-projection": "LEAD_FOLLOW_UP_BATCH"
       }
     },
-    "/workflows/lead-handover/{leadId}": {
+    "/leads/{leadId}/handover": {
       "post": {
         "operationId": "handoverLeadWithTasks",
         "tags": [
           "Leads"
         ],
-        "summary": "Atomically hand over a Lead and its open Tasks",
+        "summary": "Hand over an owned Lead with explicit open Task policy",
         "parameters": [
           {
             "$ref": "#/components/parameters/WorkspaceIdHeader"
@@ -34159,9 +34159,8 @@
         },
         "x-contract-status": "PRODUCTION_CONTRACT_READY",
         "x-module-owner": "leads",
-        "x-required-capability": "leads.assign",
+        "x-required-capability": "leads.handover",
         "x-additional-required-capabilities": [
-          "tasks.assign",
           "tasks.create"
         ],
         "x-resource-scope": "RESOURCE",
@@ -34172,7 +34171,7 @@
         "x-concurrency-policy": "IF_MATCH_REQUIRED",
         "x-audit-requirement": "IMMUTABLE_CROSS_MODULE_HANDOVER_AUDIT",
         "x-event-outbox-expectation": "LEAD_HANDOVER_COMPLETED",
-        "x-transaction-boundary": "SINGLE_BACKEND_CROSS_MODULE_TRANSACTION",
+        "x-transaction-boundary": "DURABLE_WORKFLOW_PARTICIPANT_LOCAL_TRANSACTIONS",
         "x-error-codes": [
           "AUTHENTICATION_REQUIRED",
           "ACCESS_DENIED",
@@ -34188,11 +34187,15 @@
           "INTERNAL_ERROR",
           "LEAD_HANDOVER_REASON_REQUIRED",
           "LEAD_OWNER_NOT_ASSIGNABLE",
-          "LEAD_HANDOVER_TASK_VERSION_CONFLICT",
           "LEAD_HANDOVER_TASK_SCOPE_DENIED"
         ],
         "x-aggregate-id-policy": "MUST_MATCH_TARGET",
-        "x-request-projection": "LEAD_HANDOVER_WITH_TASKS"
+        "x-request-projection": "LEAD_HANDOVER_WITH_TASKS",
+        "x-task-policy-capabilities": {
+          "MOVE_LEAD_OPEN_TASKS_TO_NEW_OWNER": [
+            "tasks.assign"
+          ]
+        }
       }
     },
     "/workflows/lead-identity-resolution/confirm-distinct": {
@@ -57757,32 +57760,35 @@
           "CANCELLED"
         ]
       },
+      "LeadHandoverOpenTaskPolicy": {
+        "type": "string",
+        "enum": [
+          "KEEP_CURRENT_ASSIGNEES",
+          "MOVE_LEAD_OPEN_TASKS_TO_NEW_OWNER"
+        ]
+      },
       "HandoverLeadWithTasksRequest": {
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "nextOwnerId",
+          "newOwnerId",
           "reason",
-          "taskTargets"
+          "openTaskPolicy"
         ],
         "properties": {
-          "nextOwnerId": {
+          "newOwnerId": {
             "$ref": "#/components/schemas/EntityId"
           },
           "reason": {
             "type": "string",
             "minLength": 1,
-            "maxLength": 2000
+            "maxLength": 1000
           },
-          "taskTargets": {
-            "type": "array",
-            "maxItems": 500,
-            "items": {
-              "$ref": "#/components/schemas/TaskVersionedTarget"
-            }
+          "openTaskPolicy": {
+            "$ref": "#/components/schemas/LeadHandoverOpenTaskPolicy"
           }
         },
-        "x-workflow-semantics": "Atomically assign the Lead, reassign every declared open Task and create one handover Task. Any stale Task or authorization failure rolls back the complete workflow."
+        "x-workflow-semantics": "Tasks authoritatively discovers eligible OPEN nonarchived Lead Tasks for MOVE. Both policies create exactly one NORMAL takeover Task with frozen workspace SLA. Durable recovery completes ownership before success."
       },
       "IdempotencyKey": {
         "type": "string",
@@ -59536,7 +59542,11 @@
         "required": [
           "lead",
           "reassignedTaskIds",
-          "handoverTaskId"
+          "handoverTaskId",
+          "openTaskPolicy",
+          "handoverTaskVersion",
+          "handoverTaskDueAt",
+          "resolvedHandoverAcceptanceSlaHours"
         ],
         "properties": {
           "lead": {
@@ -59544,13 +59554,29 @@
           },
           "reassignedTaskIds": {
             "type": "array",
-            "maxItems": 500,
             "items": {
               "$ref": "#/components/schemas/EntityId"
             }
           },
           "handoverTaskId": {
             "$ref": "#/components/schemas/EntityId"
+          },
+          "openTaskPolicy": {
+            "$ref": "#/components/schemas/LeadHandoverOpenTaskPolicy"
+          },
+          "handoverTaskVersion": {
+            "type": "integer",
+            "format": "int64",
+            "minimum": 0
+          },
+          "handoverTaskDueAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "resolvedHandoverAcceptanceSlaHours": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 168
           }
         }
       },
@@ -69893,7 +69919,8 @@
           "defaultCustomerType",
           "defaultRevenueModel",
           "salesMotion",
-          "pipelineTemplate"
+          "pipelineTemplate",
+          "handoverAcceptanceSlaHours"
         ],
         "properties": {
           "dealUsageMode": {
@@ -69935,6 +69962,12 @@
           },
           "pipelineTemplate": {
             "$ref": "#/components/schemas/WorkspacePipelineTemplate"
+          },
+          "handoverAcceptanceSlaHours": {
+            "type": "integer",
+            "default": 24,
+            "minimum": 1,
+            "maximum": 168
           }
         }
       },

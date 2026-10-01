@@ -145,7 +145,7 @@ Contract version: `0.23.20-contract.0`. OpenAPI metadata is authoritative.
 | getWorkspaceBootstrap | GET | /workspaces/{workspaceId}/bootstrap | platform/workspace-context | workspace.context.resolve | WORKSPACE_MEMBERSHIP | SELECTED_WORKSPACE | READY |
 | getWorkspaceConfiguration | GET | /workspace-configuration | workspaces/studio | studio.read | SYSTEM_CONFIGURATION | SELECTED_WORKSPACE | READY |
 | getWorkspaceCurrencies | GET | /workspace-configuration/currencies | workspaces/studio | studio.read | SYSTEM_CONFIGURATION | SELECTED_WORKSPACE | READY |
-| handoverLeadWithTasks | POST | /workflows/lead-handover/{leadId} | leads | leads.assign | RESOURCE | WORKSPACE | READY |
+| handoverLeadWithTasks | POST | /leads/{leadId}/handover | leads | leads.handover | RESOURCE | WORKSPACE | READY |
 | importLeadBatch | POST | /leads/import-batch | leads | leads.bulk | WORKSPACE | WORKSPACE | READY |
 | inviteWorkspaceMember | POST | /access/invitations | platform/access-control | access.configure | WORKSPACE_MEMBERSHIP | SELECTED_WORKSPACE | READY |
 | issueInvoice | POST | /invoices/{invoiceId}/issue | invoices | invoices.issue | RESOURCE | WORKSPACE | READY |

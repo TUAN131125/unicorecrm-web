@@ -267,7 +267,8 @@
         "quality.connected-backend-integration",
         "quality.lead-ownership-distribution-contracts",
         "quality.lead-queue-claim",
-        "quality.lead-owner-assign"
+        "quality.lead-owner-assign",
+        "quality.lead-handover"
       ]
     },
     {
@@ -9236,6 +9237,32 @@
         {
           "type": "node",
           "entry": "tests/quality/integration/check-lead-owner-assign.mts",
+          "nodeArgs": [
+            "--import",
+            "tsx"
+          ],
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "quality.lead-handover",
+      "commandName": "test:lead-handover",
+      "groupId": "integration",
+      "kind": "integration",
+      "owner": "quality-integration",
+      "entry": "tests/quality/integration/check-lead-handover.mts",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node",
+        "tsx"
+      ],
+      "shardKey": "quality.lead-handover",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/integration/check-lead-handover.mts",
           "nodeArgs": [
             "--import",
             "tsx"

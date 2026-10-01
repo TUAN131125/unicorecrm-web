@@ -3,7 +3,7 @@
   "generatorVersion": 1,
   "authority": "docs/api/openapi.json",
   "contractVersion": "0.24.0-contract.0",
-  "specSha256": "33188c4bbac1f6deef6e19248198e289110616fc329e6a271f2f3dce8540bd35",
+  "specSha256": "5c6f8b9eabf6603485fb8d52e58db55ccea8e2ecd4371e8683913b2871f50569",
   "generatedAt": "DETERMINISTIC",
   "summary": {
     "operations": 301,
@@ -16394,7 +16394,7 @@
       "boundedContext": "Leads",
       "kind": "COMMAND",
       "method": "POST",
-      "path": "/workflows/lead-handover/{leadId}",
+      "path": "/leads/{leadId}/handover",
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "generatedClient": {
@@ -16485,7 +16485,7 @@
       "authorization": {
         "auth": "REQUIRED",
         "workspace": "REQUIRED",
-        "capability": "leads.assign",
+        "capability": "leads.handover",
         "resourceScope": "RESOURCE",
         "dataScope": "WORKSPACE"
       },
@@ -16493,7 +16493,7 @@
         "idempotency": "REQUIRED",
         "concurrency": "IF_MATCH_REQUIRED",
         "audit": "IMMUTABLE_CROSS_MODULE_HANDOVER_AUDIT",
-        "transactionBoundary": "SINGLE_BACKEND_CROSS_MODULE_TRANSACTION"
+        "transactionBoundary": "DURABLE_WORKFLOW_PARTICIPANT_LOCAL_TRANSACTIONS"
       },
       "testGateIds": [
         "quality.api-contract",

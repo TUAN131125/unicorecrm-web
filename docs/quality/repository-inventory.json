@@ -21,33 +21,33 @@
     ]
   },
   "summary": {
-    "repositoryFiles": 2072,
-    "sourceFiles": 1384,
-    "sourceLines": 212797,
+    "repositoryFiles": 2075,
+    "sourceFiles": 1385,
+    "sourceLines": 212936,
     "modules": 15,
     "routes": 80,
     "loadableRouteModules": 64,
-    "capabilities": 131,
+    "capabilities": 132,
     "workspaceFlags": 13,
     "workflows": 23,
     "publicBoundaryFiles": 107,
     "publicExportStatements": 950,
-    "persistenceEntries": 3010,
+    "persistenceEntries": 3018,
     "repositoryImplementations": 146,
     "browserEventEntries": 13,
     "mockAndDefaultDataSources": 26,
     "compatibilityCandidates": 53,
     "deprecatedComponents": 9,
     "duplicateGroups": 0,
-    "largeFiles": 45,
+    "largeFiles": 44,
     "circularDependencyGroups": 0,
     "packageScripts": 23,
-    "verifyGates": 338,
+    "verifyGates": 339,
     "qualityGroups": 11,
     "fileClassifications": {
-      "active-runtime": 1300,
-      "active-script": 79,
-      "active-test": 443,
+      "active-runtime": 1301,
+      "active-script": 80,
+      "active-test": 444,
       "compatibility": 53,
       "documentation": 192,
       "fixture": 3,
@@ -924,6 +924,10 @@
     {
       "key": "LEADS_ASSIGN",
       "value": "leads.assign"
+    },
+    {
+      "key": "LEADS_HANDOVER",
+      "value": "leads.handover"
     },
     {
       "key": "LEADS_QUALIFY",
@@ -4989,6 +4993,14 @@
         "browserGlobal": false
       },
       {
+        "keyPattern": "#/components/schemas/LeadHandoverOpenTaskPolicy",
+        "operation": "workspace-resource",
+        "owner": "platform:api",
+        "path": "src/platform/api/contracts/generatedOpenApiRuntimeContract.ts",
+        "line": 4,
+        "browserGlobal": false
+      },
+      {
         "keyPattern": "#/components/schemas/LeadHandoverResult",
         "operation": "workspace-resource",
         "owner": "platform:api",
@@ -6358,14 +6370,6 @@
       },
       {
         "keyPattern": "#/components/schemas/TaskStatus",
-        "operation": "workspace-resource",
-        "owner": "platform:api",
-        "path": "src/platform/api/contracts/generatedOpenApiRuntimeContract.ts",
-        "line": 4,
-        "browserGlobal": false
-      },
-      {
-        "keyPattern": "#/components/schemas/TaskVersionedTarget",
         "operation": "workspace-resource",
         "owner": "platform:api",
         "path": "src/platform/api/contracts/generatedOpenApiRuntimeContract.ts",
@@ -8350,14 +8354,6 @@
       },
       {
         "keyPattern": "AT_RISK",
-        "operation": "workspace-resource",
-        "owner": "platform:api",
-        "path": "src/platform/api/contracts/generatedOpenApiRuntimeContract.ts",
-        "line": 4,
-        "browserGlobal": false
-      },
-      {
-        "keyPattern": "Atomically assign the Lead, reassign every declared open Task and create one handover Task. Any stale Task or authorization failure rolls back the complete workflow.",
         "operation": "workspace-resource",
         "owner": "platform:api",
         "path": "src/platform/api/contracts/generatedOpenApiRuntimeContract.ts",
@@ -14733,6 +14729,14 @@
         "browserGlobal": false
       },
       {
+        "keyPattern": "handoverAcceptanceSlaHours",
+        "operation": "workspace-resource",
+        "owner": "platform:api",
+        "path": "src/platform/api/contracts/generatedOpenApiRuntimeContract.ts",
+        "line": 4,
+        "browserGlobal": false
+      },
+      {
         "keyPattern": "HandoverLeadWithTasksRequest",
         "operation": "workspace-resource",
         "owner": "platform:api",
@@ -14741,7 +14745,23 @@
         "browserGlobal": false
       },
       {
+        "keyPattern": "handoverTaskDueAt",
+        "operation": "workspace-resource",
+        "owner": "platform:api",
+        "path": "src/platform/api/contracts/generatedOpenApiRuntimeContract.ts",
+        "line": 4,
+        "browserGlobal": false
+      },
+      {
         "keyPattern": "handoverTaskId",
+        "operation": "workspace-resource",
+        "owner": "platform:api",
+        "path": "src/platform/api/contracts/generatedOpenApiRuntimeContract.ts",
+        "line": 4,
+        "browserGlobal": false
+      },
+      {
+        "keyPattern": "handoverTaskVersion",
         "operation": "workspace-resource",
         "owner": "platform:api",
         "path": "src/platform/api/contracts/generatedOpenApiRuntimeContract.ts",
@@ -15981,6 +16001,14 @@
         "browserGlobal": false
       },
       {
+        "keyPattern": "KEEP_CURRENT_ASSIGNEES",
+        "operation": "workspace-resource",
+        "owner": "platform:api",
+        "path": "src/platform/api/contracts/generatedOpenApiRuntimeContract.ts",
+        "line": 4,
+        "browserGlobal": false
+      },
+      {
         "keyPattern": "Kiểm toán",
         "operation": "workspace-resource",
         "owner": "returns",
@@ -16765,6 +16793,14 @@
         "browserGlobal": false
       },
       {
+        "keyPattern": "LeadHandoverOpenTaskPolicy",
+        "operation": "workspace-resource",
+        "owner": "platform:api",
+        "path": "src/platform/api/contracts/generatedOpenApiRuntimeContract.ts",
+        "line": 4,
+        "browserGlobal": false
+      },
+      {
         "keyPattern": "LeadHandoverResponse",
         "operation": "workspace-resource",
         "owner": "platform:api",
@@ -17010,6 +17046,14 @@
         "owner": "leads",
         "path": "src/modules/leads/presentation/components/LeadOwnerAssignAction.tsx",
         "line": 32,
+        "browserGlobal": false
+      },
+      {
+        "keyPattern": "leads",
+        "operation": "workspace-resource",
+        "owner": "leads",
+        "path": "src/modules/leads/presentation/hooks/useLeadDetailController.tsx",
+        "line": 110,
         "browserGlobal": false
       },
       {
@@ -18053,6 +18097,14 @@
         "browserGlobal": false
       },
       {
+        "keyPattern": "MOVE_LEAD_OPEN_TASKS_TO_NEW_OWNER",
+        "operation": "workspace-resource",
+        "owner": "platform:api",
+        "path": "src/platform/api/contracts/generatedOpenApiRuntimeContract.ts",
+        "line": 4,
+        "browserGlobal": false
+      },
+      {
         "keyPattern": "mt-1 block text-[8px] font-medium text-slate-400",
         "operation": "workspace-resource",
         "owner": "workspace:people-access",
@@ -18157,6 +18209,14 @@
         "browserGlobal": false
       },
       {
+        "keyPattern": "newOwnerId",
+        "operation": "workspace-resource",
+        "owner": "platform:api",
+        "path": "src/platform/api/contracts/generatedOpenApiRuntimeContract.ts",
+        "line": 4,
+        "browserGlobal": false
+      },
+      {
         "keyPattern": "nextActionAt",
         "operation": "workspace-resource",
         "owner": "platform:api",
@@ -18230,14 +18290,6 @@
       },
       {
         "keyPattern": "nextFollowUpAt",
-        "operation": "workspace-resource",
-        "owner": "platform:api",
-        "path": "src/platform/api/contracts/generatedOpenApiRuntimeContract.ts",
-        "line": 4,
-        "browserGlobal": false
-      },
-      {
-        "keyPattern": "nextOwnerId",
         "operation": "workspace-resource",
         "owner": "platform:api",
         "path": "src/platform/api/contracts/generatedOpenApiRuntimeContract.ts",
@@ -18678,6 +18730,14 @@
       },
       {
         "keyPattern": "openTaskCount",
+        "operation": "workspace-resource",
+        "owner": "platform:api",
+        "path": "src/platform/api/contracts/generatedOpenApiRuntimeContract.ts",
+        "line": 4,
+        "browserGlobal": false
+      },
+      {
+        "keyPattern": "openTaskPolicy",
         "operation": "workspace-resource",
         "owner": "platform:api",
         "path": "src/platform/api/contracts/generatedOpenApiRuntimeContract.ts",
@@ -23453,6 +23513,14 @@
         "browserGlobal": false
       },
       {
+        "keyPattern": "resolvedHandoverAcceptanceSlaHours",
+        "operation": "workspace-resource",
+        "owner": "platform:api",
+        "path": "src/platform/api/contracts/generatedOpenApiRuntimeContract.ts",
+        "line": 4,
+        "browserGlobal": false
+      },
+      {
         "keyPattern": "resolvedLines",
         "operation": "workspace-resource",
         "owner": "platform:api",
@@ -26317,6 +26385,14 @@
         "browserGlobal": false
       },
       {
+        "keyPattern": "Tasks authoritatively discovers eligible OPEN nonarchived Lead Tasks for MOVE. Both policies create exactly one NORMAL takeover Task with frozen workspace SLA. Durable recovery completes ownership before success.",
+        "operation": "workspace-resource",
+        "owner": "platform:api",
+        "path": "src/platform/api/contracts/generatedOpenApiRuntimeContract.ts",
+        "line": 4,
+        "browserGlobal": false
+      },
+      {
         "keyPattern": "TaskSourceReference",
         "operation": "workspace-resource",
         "owner": "platform:api",
@@ -26326,14 +26402,6 @@
       },
       {
         "keyPattern": "TaskStatus",
-        "operation": "workspace-resource",
-        "owner": "platform:api",
-        "path": "src/platform/api/contracts/generatedOpenApiRuntimeContract.ts",
-        "line": 4,
-        "browserGlobal": false
-      },
-      {
-        "keyPattern": "taskTargets",
         "operation": "workspace-resource",
         "owner": "platform:api",
         "path": "src/platform/api/contracts/generatedOpenApiRuntimeContract.ts",
@@ -27988,12 +28056,12 @@
       "deals": 6,
       "feature:auth": 3,
       "invoices": 6,
-      "leads": 7,
+      "leads": 8,
       "orders": 4,
       "organizations": 2,
       "payments": 7,
       "platform:access-control": 46,
-      "platform:api": 2821,
+      "platform:api": 2828,
       "platform:audit": 4,
       "platform:configuration-runtime": 3,
       "platform:developer-configuration": 3,
@@ -28018,7 +28086,7 @@
       "declaration": 9,
       "read": 3,
       "remove": 1,
-      "workspace-resource": 2988,
+      "workspace-resource": 2996,
       "write": 9
     }
   },
@@ -30242,13 +30310,13 @@
       "path": "src/platform/api/catalog/generatedApiOperationCatalog.ts",
       "owner": "platform:api",
       "lines": 32466,
-      "bytes": 882416
+      "bytes": 882417
     },
     {
       "path": "src/platform/api/generated/commercialApi.ts",
       "owner": "platform:api",
-      "lines": 6038,
-      "bytes": 211274
+      "lines": 6039,
+      "bytes": 211427
     },
     {
       "path": "src/i18n/translations/en.ts",
@@ -30313,8 +30381,8 @@
     {
       "path": "src/modules/leads/presentation/views/LeadDetailView.tsx",
       "owner": "leads",
-      "lines": 1074,
-      "bytes": 62692
+      "lines": 1078,
+      "bytes": 62886
     },
     {
       "path": "src/modules/quotes/presentation/hooks/useQuoteBuilderController.tsx",
@@ -30365,16 +30433,10 @@
       "bytes": 70510
     },
     {
-      "path": "src/modules/leads/infrastructure/http/LeadHttpCommandAdapter.ts",
-      "owner": "leads",
-      "lines": 705,
-      "bytes": 34472
-    },
-    {
       "path": "src/guidance/content/crm/extendedScreens.ts",
       "owner": "shared:guidance",
       "lines": 701,
-      "bytes": 66826
+      "bytes": 67074
     },
     {
       "path": "src/modules/organizations/presentation/pages/OrganizationAccountDetailPage.tsx",
@@ -30389,10 +30451,10 @@
       "bytes": 38332
     },
     {
-      "path": "src/modules/leads/presentation/hooks/useLeadDetailController.tsx",
+      "path": "src/modules/leads/infrastructure/http/LeadHttpCommandAdapter.ts",
       "owner": "leads",
-      "lines": 652,
-      "bytes": 27823
+      "lines": 692,
+      "bytes": 34271
     },
     {
       "path": "src/modules/leads/presentation/hooks/useLeadFormController.tsx",
@@ -30419,6 +30481,12 @@
       "bytes": 59517
     },
     {
+      "path": "src/modules/leads/presentation/hooks/useLeadDetailController.tsx",
+      "owner": "leads",
+      "lines": 631,
+      "bytes": 27539
+    },
+    {
       "path": "src/modules/customers/presentation/pages/Customer360Page.tsx",
       "owner": "customers",
       "lines": 621,
@@ -30435,6 +30503,12 @@
       "owner": "workspace:crm",
       "lines": 604,
       "bytes": 48589
+    },
+    {
+      "path": "src/modules/leads/runtime/createLeadDemoApiRuntime.ts",
+      "owner": "leads",
+      "lines": 593,
+      "bytes": 32597
     },
     {
       "path": "src/modules/customers/presentation/pages/CustomerListPage.tsx",
@@ -30483,18 +30557,6 @@
       "owner": "products",
       "lines": 538,
       "bytes": 19809
-    },
-    {
-      "path": "src/modules/leads/runtime/createLeadDemoApiRuntime.ts",
-      "owner": "leads",
-      "lines": 531,
-      "bytes": 27622
-    },
-    {
-      "path": "src/modules/leads/application/commands/leadApiCommands.ts",
-      "owner": "leads",
-      "lines": 515,
-      "bytes": 23034
     },
     {
       "path": "src/workflows/lead-qualification/presentation/pages/LeadQualificationPage.tsx",
@@ -30737,7 +30799,7 @@
       "classification": "documentation",
       "reason": "Machine-readable documentation authority.",
       "owner": "documentation",
-      "bytes": 938264,
+      "bytes": 938265,
       "lines": null,
       "usage": {
         "runtimeReachable": false,
@@ -30750,7 +30812,7 @@
       "classification": "documentation",
       "reason": "Machine-readable documentation authority.",
       "owner": "documentation",
-      "bytes": 162404,
+      "bytes": 162397,
       "lines": null,
       "usage": {
         "runtimeReachable": false,
@@ -30763,7 +30825,7 @@
       "classification": "documentation",
       "reason": "Machine-readable documentation authority.",
       "owner": "documentation",
-      "bytes": 987141,
+      "bytes": 988038,
       "lines": null,
       "usage": {
         "runtimeReachable": false,
@@ -30776,7 +30838,7 @@
       "classification": "documentation",
       "reason": "Machine-readable documentation authority.",
       "owner": "documentation",
-      "bytes": 2213764,
+      "bytes": 2214803,
       "lines": null,
       "usage": {
         "runtimeReachable": false,
@@ -30802,7 +30864,7 @@
       "classification": "documentation",
       "reason": "Machine-readable documentation authority.",
       "owner": "documentation",
-      "bytes": 401134,
+      "bytes": 401127,
       "lines": null,
       "usage": {
         "runtimeReachable": false,
@@ -31192,8 +31254,8 @@
       "classification": "documentation",
       "reason": "Markdown documentation.",
       "owner": "documentation",
-      "bytes": 7517,
-      "lines": 138,
+      "bytes": 8720,
+      "lines": 146,
       "usage": {
         "runtimeReachable": false,
         "scriptReachable": false,
@@ -31712,7 +31774,7 @@
       "classification": "documentation",
       "reason": "Machine-readable documentation authority.",
       "owner": "documentation",
-      "bytes": 3830,
+      "bytes": 5676,
       "lines": null,
       "usage": {
         "runtimeReachable": false,
@@ -31725,8 +31787,8 @@
       "classification": "documentation",
       "reason": "Markdown documentation.",
       "owner": "documentation",
-      "bytes": 8438,
-      "lines": 271,
+      "bytes": 10660,
+      "lines": 267,
       "usage": {
         "runtimeReachable": false,
         "scriptReachable": false,
@@ -31803,7 +31865,7 @@
       "classification": "documentation",
       "reason": "Markdown documentation.",
       "owner": "documentation",
-      "bytes": 36404,
+      "bytes": 36397,
       "lines": 283,
       "usage": {
         "runtimeReachable": false,
@@ -31816,7 +31878,7 @@
       "classification": "documentation",
       "reason": "Machine-readable documentation authority.",
       "owner": "documentation",
-      "bytes": 63078,
+      "bytes": 63069,
       "lines": null,
       "usage": {
         "runtimeReachable": false,
@@ -32336,7 +32398,7 @@
       "classification": "documentation",
       "reason": "Machine-readable documentation authority.",
       "owner": "documentation",
-      "bytes": 18028,
+      "bytes": 18207,
       "lines": null,
       "usage": {
         "runtimeReachable": false,
@@ -32349,7 +32411,7 @@
       "classification": "documentation",
       "reason": "Markdown documentation.",
       "owner": "documentation",
-      "bytes": 5207,
+      "bytes": 5248,
       "lines": 38,
       "usage": {
         "runtimeReachable": false,
@@ -32401,8 +32463,8 @@
       "classification": "documentation",
       "reason": "Markdown documentation.",
       "owner": "documentation",
-      "bytes": 25642,
-      "lines": 1045,
+      "bytes": 28838,
+      "lines": 1022,
       "usage": {
         "runtimeReachable": false,
         "scriptReachable": false,
@@ -32635,8 +32697,8 @@
       "classification": "documentation",
       "reason": "Markdown documentation.",
       "owner": "documentation",
-      "bytes": 14406,
-      "lines": 316,
+      "bytes": 25654,
+      "lines": 391,
       "usage": {
         "runtimeReachable": false,
         "scriptReachable": false,
@@ -32857,6 +32919,19 @@
       "reason": "Repository tooling or build configuration.",
       "owner": "repository",
       "bytes": 215,
+      "lines": null,
+      "usage": {
+        "runtimeReachable": false,
+        "scriptReachable": false,
+        "testReachable": false
+      }
+    },
+    {
+      "path": "o4-verification.log",
+      "classification": "active-script",
+      "reason": "Repository support file.",
+      "owner": "repository",
+      "bytes": 3371,
       "lines": null,
       "usage": {
         "runtimeReachable": false,
@@ -33272,7 +33347,7 @@
       "classification": "active-script",
       "reason": "Repository tooling or build configuration.",
       "owner": "tooling",
-      "bytes": 289101,
+      "bytes": 289798,
       "lines": null,
       "usage": {
         "runtimeReachable": false,
@@ -35625,7 +35700,7 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "shared:guidance",
-      "bytes": 66826,
+      "bytes": 67074,
       "lines": 701,
       "usage": {
         "runtimeReachable": true,
@@ -35638,7 +35713,7 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "shared:guidance",
-      "bytes": 41148,
+      "bytes": 41354,
       "lines": 301,
       "usage": {
         "runtimeReachable": true,
@@ -35703,7 +35778,7 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "shared:guidance",
-      "bytes": 11324,
+      "bytes": 11558,
       "lines": 155,
       "usage": {
         "runtimeReachable": true,
@@ -39694,8 +39769,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "leads",
-      "bytes": 23034,
-      "lines": 515,
+      "bytes": 21716,
+      "lines": 480,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -39824,8 +39899,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "leads",
-      "bytes": 10621,
-      "lines": 381,
+      "bytes": 10772,
+      "lines": 382,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -40071,7 +40146,7 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "leads",
-      "bytes": 3039,
+      "bytes": 3073,
       "lines": 53,
       "usage": {
         "runtimeReachable": true,
@@ -40110,8 +40185,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "leads",
-      "bytes": 34472,
-      "lines": 705,
+      "bytes": 34271,
+      "lines": 692,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -40331,8 +40406,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "leads",
-      "bytes": 19910,
-      "lines": 417,
+      "bytes": 22750,
+      "lines": 437,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -40344,7 +40419,7 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "leads",
-      "bytes": 4032,
+      "bytes": 4040,
       "lines": 104,
       "usage": {
         "runtimeReachable": true,
@@ -40617,8 +40692,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "leads",
-      "bytes": 27823,
-      "lines": 652,
+      "bytes": 27539,
+      "lines": 631,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -40630,8 +40705,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "leads",
-      "bytes": 4230,
-      "lines": 104,
+      "bytes": 4850,
+      "lines": 116,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -40697,6 +40772,19 @@
       "owner": "leads",
       "bytes": 27132,
       "lines": 649,
+      "usage": {
+        "runtimeReachable": true,
+        "scriptReachable": true,
+        "testReachable": true
+      }
+    },
+    {
+      "path": "src/modules/leads/presentation/hooks/useLeadHandover.ts",
+      "classification": "active-runtime",
+      "reason": "Reachable from src/main.tsx.",
+      "owner": "leads",
+      "bytes": 4981,
+      "lines": 96,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -40916,8 +41004,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "leads",
-      "bytes": 62692,
-      "lines": 1074,
+      "bytes": 62886,
+      "lines": 1078,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -40968,8 +41056,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "leads",
-      "bytes": 27622,
-      "lines": 531,
+      "bytes": 32597,
+      "lines": 593,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -45986,8 +46074,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "platform:access-control",
-      "bytes": 11521,
-      "lines": 246,
+      "bytes": 11586,
+      "lines": 247,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -45999,7 +46087,7 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "platform:access-control",
-      "bytes": 4123,
+      "bytes": 4140,
       "lines": 75,
       "usage": {
         "runtimeReachable": true,
@@ -46051,7 +46139,7 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "platform:access-control",
-      "bytes": 9551,
+      "bytes": 9580,
       "lines": 121,
       "usage": {
         "runtimeReachable": true,
@@ -46259,7 +46347,7 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "platform:api",
-      "bytes": 882416,
+      "bytes": 882417,
       "lines": 32466,
       "usage": {
         "runtimeReachable": true,
@@ -46337,7 +46425,7 @@
       "classification": "compatibility",
       "reason": "deprecated-content, legacy-content, compatibility-content",
       "owner": "platform:api",
-      "bytes": 401850,
+      "bytes": 402469,
       "lines": 5,
       "usage": {
         "runtimeReachable": true,
@@ -46506,8 +46594,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "platform:api",
-      "bytes": 211274,
-      "lines": 6038,
+      "bytes": 211427,
+      "lines": 6039,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -46649,8 +46737,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "platform:api",
-      "bytes": 13645,
-      "lines": 385,
+      "bytes": 13683,
+      "lines": 386,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -47988,8 +48076,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "platform:workspace-config",
-      "bytes": 6180,
-      "lines": 249,
+      "bytes": 6218,
+      "lines": 250,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -48001,8 +48089,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "platform:workspace-config",
-      "bytes": 11112,
-      "lines": 358,
+      "bytes": 11352,
+      "lines": 364,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -51394,8 +51482,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "workspace:studio",
-      "bytes": 12066,
-      "lines": 147,
+      "bytes": 12923,
+      "lines": 150,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": false,
@@ -56139,7 +56227,7 @@
       "classification": "active-test",
       "reason": "Test source.",
       "owner": "test",
-      "bytes": 17245,
+      "bytes": 17264,
       "lines": 311,
       "usage": {
         "runtimeReachable": false,
@@ -56278,12 +56366,25 @@
       }
     },
     {
+      "path": "tests/quality/integration/check-lead-handover.mts",
+      "classification": "active-test",
+      "reason": "Test source.",
+      "owner": "test",
+      "bytes": 29866,
+      "lines": 383,
+      "usage": {
+        "runtimeReachable": false,
+        "scriptReachable": false,
+        "testReachable": true
+      }
+    },
+    {
       "path": "tests/quality/integration/check-lead-owner-assign.mts",
       "classification": "active-test",
       "reason": "Test source.",
       "owner": "test",
-      "bytes": 37316,
-      "lines": 458,
+      "bytes": 37123,
+      "lines": 457,
       "usage": {
         "runtimeReachable": false,
         "scriptReachable": false,
@@ -56295,8 +56396,8 @@
       "classification": "active-test",
       "reason": "Test source.",
       "owner": "test",
-      "bytes": 4148,
-      "lines": 58,
+      "bytes": 3933,
+      "lines": 57,
       "usage": {
         "runtimeReachable": false,
         "scriptReachable": false,
@@ -56308,8 +56409,8 @@
       "classification": "active-test",
       "reason": "Test source.",
       "owner": "test",
-      "bytes": 17931,
-      "lines": 255,
+      "bytes": 17696,
+      "lines": 254,
       "usage": {
         "runtimeReachable": false,
         "scriptReachable": false,
@@ -58033,7 +58134,7 @@
     {
       "id": "integration",
       "label": "Integration",
-      "gateCount": 48,
+      "gateCount": 49,
       "gates": [
         "quality.operational-context-contracts",
         "quality.auth-session-contracts",
@@ -58082,7 +58183,8 @@
         "quality.connected-backend-integration",
         "quality.lead-ownership-distribution-contracts",
         "quality.lead-queue-claim",
-        "quality.lead-owner-assign"
+        "quality.lead-owner-assign",
+        "quality.lead-handover"
       ]
     },
     {
@@ -58274,5 +58376,5 @@
       "quality.work-operations-ux"
     ]
   },
-  "inventoryFingerprint": "f1cf8a418540da16ed985a2f578e6635a22e2ab6bcee73faebbb81430f233ed4"
+  "inventoryFingerprint": "7958f92e0901b79c1d06129570ad00033d226eb9b939ba5b62de4275c838593e"
 }

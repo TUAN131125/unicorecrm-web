@@ -9,6 +9,7 @@ export const CRM_WORKSPACE_CONFIG_PRESETS: { nameKey: string; config: CrmWorkspa
       name: "B2B SaaS / Enterprise Sales",
       businessModel: "B2B",
       workflow: {
+        handoverAcceptanceSlaHours: 24,
         dealUsageMode: "OPTIONAL",
         quoteUsageMode: "QUOTE",
         defaultCustomerType: "COMPANY",
@@ -42,6 +43,7 @@ export const CRM_WORKSPACE_CONFIG_PRESETS: { nameKey: string; config: CrmWorkspa
       name: "B2B Service / Project Sales",
       businessModel: "B2B",
       workflow: {
+        handoverAcceptanceSlaHours: 24,
         dealUsageMode: "OPTIONAL",
         quoteUsageMode: "PROPOSAL",
         defaultCustomerType: "COMPANY",
@@ -75,6 +77,7 @@ export const CRM_WORKSPACE_CONFIG_PRESETS: { nameKey: string; config: CrmWorkspa
       name: "B2C Consultative Sales",
       businessModel: "B2C",
       workflow: {
+        handoverAcceptanceSlaHours: 24,
         dealUsageMode: "OPTIONAL",
         quoteUsageMode: "OFFER",
         defaultCustomerType: "INDIVIDUAL",
@@ -108,6 +111,7 @@ export const CRM_WORKSPACE_CONFIG_PRESETS: { nameKey: string; config: CrmWorkspa
       name: "Retail / Order-Based",
       businessModel: "B2C",
       workflow: {
+        handoverAcceptanceSlaHours: 24,
         dealUsageMode: "DISABLED",
         quoteUsageMode: "DISABLED",
         defaultCustomerType: "INDIVIDUAL",
@@ -141,6 +145,7 @@ export const CRM_WORKSPACE_CONFIG_PRESETS: { nameKey: string; config: CrmWorkspa
       name: "Service Booking / Clinic / Spa",
       businessModel: "B2C",
       workflow: {
+        handoverAcceptanceSlaHours: 24,
         dealUsageMode: "OPTIONAL",
         quoteUsageMode: "OFFER",
         defaultCustomerType: "INDIVIDUAL",
@@ -174,6 +179,7 @@ export const CRM_WORKSPACE_CONFIG_PRESETS: { nameKey: string; config: CrmWorkspa
       name: "Hybrid B2B + B2C",
       businessModel: "HYBRID",
       workflow: {
+        handoverAcceptanceSlaHours: 24,
         dealUsageMode: "OPTIONAL",
         quoteUsageMode: "QUOTE",
         defaultCustomerType: "COMPANY",

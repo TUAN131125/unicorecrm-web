@@ -53,18 +53,35 @@
       "idempotencyRequired": true
     },
     "handover": {
+      "operationId": "handoverLeadWithTasks",
+      "method": "POST",
+      "path": "/leads/{leadId}/handover",
+      "requestFields": ["newOwnerId", "reason", "openTaskPolicy"],
       "reasonRequired": true,
-      "taskEffect": "REASSIGN_ELIGIBLE_OPEN_LEAD_TASKS",
+      "reasonMaxLength": 1000,
+      "openTaskPolicyRequired": true,
+      "openTaskPolicies": ["KEEP_CURRENT_ASSIGNEES", "MOVE_LEAD_OPEN_TASKS_TO_NEW_OWNER"],
+      "taskEffect": "EXPLICIT_POLICY_KEEP_OR_MOVE_ELIGIBLE_OPEN_LEAD_TASKS",
+      "requiredCapabilities": ["leads.handover", "tasks.create"],
+      "moveRequiredCapability": "tasks.assign",
+      "recordCommand": "lead.handover",
+      "newAdmissionOwnerFieldAccess": "READ_WRITE",
+      "idempotencyRequired": true,
+      "expectedLeadVersionRequired": true,
+      "recovery": "BACKEND_DURABLE_EXACT_REPLAY_WITH_CURRENT_LEAD_AUTHORITY",
       "createTakeoverTask": true,
+      "takeoverTaskPriority": "NORMAL",
       "frontendCoordinatorAllowed": false,
       "workflowOwner": "BACKEND"
     },
     "bulkAssign": {
       "v1": true,
+      "available": false,
       "frontendLoopAllowed": false
     },
     "bulkHandover": {
-      "v1": false
+      "v1": false,
+      "available": false
     }
   },
   "handoverTaskEligibility": {
@@ -88,15 +105,21 @@
     "bulk handover"
   ],
   "patchSequence": ["O1", "O2", "O3", "O4", "O5", "O6", "O7"],
-  "unresolvedDecisions": [
+  "unresolvedDecisions": [],
+  "resolvedDecisions": [
     {
       "id": "DECISION_REQUIRED-HO-SLA-001",
       "topic": "takeover task due/SLA policy",
-      "recommendedCandidate": {
+      "approvedPolicy": {
         "setting": "handoverAcceptanceSlaHours",
-        "defaultHours": 24
+        "defaultHours": 24,
+        "minimumHours": 1,
+        "maximumHours": 168,
+        "type": "integer",
+        "snapshot": "SLA_AND_ISO_DUE_AT_FROZEN_ON_NEW_ADMISSION_REUSED_ON_RECOVERY"
       },
-      "approved": false
+      "approved": true,
+      "authority": "USER_FROZEN_O4"
     }
   ],
   "warnings": [
@@ -104,6 +127,24 @@
     "Backend-readiness READY labels must be verified against admitted backend routes.",
     "Connected mode must remain fail-closed until backend implementation is verified."
   ],
+  "localO4Implementation": {
+    "status": "LOCAL_VERIFIED_PENDING_REVIEW",
+    "frontendBaseline": "17bd129eb84989c2b14bb0b58efd7fb65d80e881",
+    "backendBaseline": "1106272021ea0f733c1f610c177e85e907142cac",
+    "handoverAvailable": true,
+    "bulkAssignAvailable": false,
+    "bulkHandoverAvailable": false,
+    "canonicalBackendRouteAndResponseSourceVerified": true,
+    "frontendOpenApiGenerationAndCheck": "PASS",
+    "frontendHandoverGate": "PASS",
+    "frontendLintAndBuild": "PASS",
+    "frontendInventoryCheck": "PASS",
+    "backendBuild": "MAIN_REPORTED_PASS",
+    "backendSqlRecoveryAcceptance": "MAIN_REPORTED_PASS_192_O4_212_HTTP_9_RACES",
+    "connectedBrowserAcceptance": "NOT_EXECUTED",
+    "overallO4Pass": true,
+    "report": "docs/quality/lead-ownership-distribution-acceptance.md"
+  },
   "localO2Implementation": {
     "status": "LOCAL_VERIFIED_PENDING_REVIEW",
     "operationId": "claimLeadFromQueue",

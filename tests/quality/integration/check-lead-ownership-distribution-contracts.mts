@@ -45,12 +45,11 @@ const before = requests.length;
 await assert.rejects(() => runtime.queries.list({ filters: { assignmentState: "UNASSIGNED", ownerId: "member_sales" } }));
 await assert.rejects(() => runtime.queries.list({ filters: { assignmentState: "QUEUE" } }));
 assert.equal(requests.length, before);
-for (const operation of [LEAD_OPERATION.ASSIGN_OWNER_BATCH, LEAD_OPERATION.HANDOVER_WITH_TASKS]) {
+for (const operation of [LEAD_OPERATION.ASSIGN_OWNER_BATCH]) {
   assert.equal(isLeadOperationAvailable(operation), false);
 }
 const rejectedCommands = [
   () => runtime.commands.assignLeadOwnerBatch({ ownerId: "member_sales", reason: "test", items: [{ leadId: document.id, expectedVersion: 0 }] }, { idempotencyKey: "assign-batch" }),
-  () => runtime.commands.handoverLeadWithTasks(document.id, { nextOwnerId: "member_sales", reason: "test", taskTargets: [] }, { idempotencyKey: "handover", expectedVersion: 0 }),
 ];
 for (const command of rejectedCommands) await assert.rejects(command, { code: "LEAD_CONNECTED_OPERATION_NOT_IMPLEMENTED" });
 assert.equal(requests.length, before, "Unavailable mutations must not call HTTP");

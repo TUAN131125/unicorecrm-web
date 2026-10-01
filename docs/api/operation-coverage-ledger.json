@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "generatorVersion": 11,
   "contractVersion": "0.24.0-contract.0",
-  "specSha256": "33188c4bbac1f6deef6e19248198e289110616fc329e6a271f2f3dce8540bd35",
+  "specSha256": "5c6f8b9eabf6603485fb8d52e58db55ccea8e2ecd4371e8683913b2871f50569",
   "generatedAt": "DETERMINISTIC",
   "coveragePolicy": {
     "ownerModule": "REQUIRED",
@@ -5404,7 +5404,7 @@
     {
       "operationId": "handoverLeadWithTasks",
       "method": "POST",
-      "path": "/workflows/lead-handover/{leadId}",
+      "path": "/leads/{leadId}/handover",
       "boundedContext": "Leads",
       "ownerModule": "leads",
       "generatedClient": {
@@ -5435,7 +5435,7 @@
       "successStatus": "200",
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
-      "requiredCapability": "leads.assign",
+      "requiredCapability": "leads.handover",
       "resourceScope": "RESOURCE",
       "dataScope": "WORKSPACE"
     },

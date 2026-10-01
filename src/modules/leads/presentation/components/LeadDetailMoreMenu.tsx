@@ -8,7 +8,7 @@ interface LeadDetailMoreMenuProps {
   lead: Lead;
   isOpen: boolean;
   anchorEl: HTMLElement | null;
-  canAssign: boolean;
+  canHandover: boolean;
   canUpdate: boolean;
   canQualify: boolean;
   canManageTags: boolean;
@@ -27,7 +27,7 @@ export function LeadDetailMoreMenu({
   lead,
   isOpen,
   anchorEl,
-  canAssign,
+  canHandover,
   canUpdate,
   canQualify,
   canManageTags,
@@ -80,10 +80,10 @@ export function LeadDetailMoreMenu({
           </>
         )}
 
-        {(canAssign || canManageTags) && (
+        {(canHandover || canManageTags) && (
           <>
             <MenuSection title={t("leadDetail.actions.work")} />
-            {canAssign && <MenuItemButton onClick={onHandover} icon={<UserPlus size={14} />}>{t("leadDetail.actions.handover")}</MenuItemButton>}
+            {canHandover && <MenuItemButton onClick={onHandover} icon={<UserPlus size={14} />}>{t("leadDetail.actions.handover")}</MenuItemButton>}
             {canManageTags && <MenuItemButton onClick={onManageTags} icon={<Tag size={14} />}>{t("leadDetail.actions.manageTags")}</MenuItemButton>}
             <MenuDivider />
           </>

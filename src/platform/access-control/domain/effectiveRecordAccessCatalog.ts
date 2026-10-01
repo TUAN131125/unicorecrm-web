@@ -7,7 +7,7 @@ export interface EffectiveRecordAccessProfile {
 
 export const EFFECTIVE_RECORD_ACCESS_PROFILES = {
   leads: {
-    requestedCommands: ["lead.create", "lead.update", "lead.change-work-state", "lead.qualify-opportunity", "lead.qualify-nurture", "lead.disqualify", "lead.record-consent", "lead.merge-duplicates", "lead.confirm-duplicates-distinct", "lead.archive"],
+    requestedCommands: ["lead.handover", "lead.create", "lead.update", "lead.change-work-state", "lead.qualify-opportunity", "lead.qualify-nurture", "lead.disqualify", "lead.record-consent", "lead.merge-duplicates", "lead.confirm-duplicates-distinct", "lead.archive"],
     requestedFields: ["fullName", "phone", "email", "ownerId", "assignedTo", "workState", "qualificationOutcome", "consent", "duplicateResolution"],
     includeExport: true,
     includeApproval: false,

@@ -1,3 +1,5 @@
+import type { LeadHandoverOpenTaskPolicy } from "../../application/ports/LeadApiRuntime";
+import type { useLeadHandover } from "../hooks/useLeadHandover";
 import React from "react";
 import { RelationshipQuickActionModal } from "@/components/crm/relationship-panel/RelationshipQuickActionModal";
 import type { NavigateFunction } from "react-router-dom";
@@ -41,7 +43,7 @@ export interface LeadDetailModalScreen {
   navigate: NavigateFunction;
   leadActions: LeadActions;
   handleConfirmDisqualify: () => void;
-  handleConfirmHandover: (ownerId: string, reason: string) => void | Promise<void>;
+  handleConfirmHandover: (ownerId: string, reason: string, openTaskPolicy: LeadHandoverOpenTaskPolicy) => void | Promise<void>;
   handleSaveEditFromForm: (formData: Partial<Lead>) => void;
   handleSavePhoneCall: (draft: CallActivityDraft) => void;
   handleSaveMeeting: (draft: MeetingActivityDraft) => void;
@@ -49,6 +51,11 @@ export interface LeadDetailModalScreen {
   handleLogExternalSms: (draft: SmsActivityDraft) => void;
   members: Array<{ memberId: string; displayName: string }>;
   archiveListPath: string;
+  handover: ReturnType<typeof useLeadHandover>;
+  canMoveHandoverTasks: boolean;
+  canHandover: boolean;
+  handoverMembers: Array<{ memberId: string; displayName: string }>;
+  handoverTaskPreview: number | undefined;
 }
 
 interface LeadDetailModalsProps {
@@ -59,6 +66,7 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
   const {
     dialogs, lead, locale, t, sources, campaigns, products, showToast, navigate, leadActions,
     handleConfirmDisqualify, handleConfirmHandover, handleSaveEditFromForm,
+    handover, canHandover, canMoveHandoverTasks, handoverMembers, handoverTaskPreview,
     handleSavePhoneCall, handleSaveMeeting,
     handleLogExternalEmail, handleLogExternalSms, members, archiveListPath,
   } = screen;
@@ -69,6 +77,7 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
     showArchiveConfirm, setShowArchiveConfirm, showHandoverModal, setShowHandoverModal,
     showTagsModal, setShowTagsModal,
     handoverOwnerId, setHandoverOwnerId, handoverReason, setHandoverReason, showCallModal, setShowCallModal,
+    handoverOpenTaskPolicy, setHandoverOpenTaskPolicy,
     showTaskModal, setShowTaskModal, showMeetingModal, setShowMeetingModal,
     showEmailModal, setShowEmailModal, showSmsModal, setShowSmsModal,
     callForm, setCallForm, meetingForm, setMeetingForm,
@@ -173,38 +182,49 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
         title={locale === "vi" ? "Bàn giao Lead & công việc" : "Handover Lead & tasks"}
         formId="lead-handover-form"
         cancelLabel={t("common.cancel")}
-        submitLabel={locale === "vi" ? "Bàn giao" : "Handover"}
+        submitLabel={handover.ambiguous ? (locale === "vi" ? "Thử lại bàn giao" : "Retry handover") : (locale === "vi" ? "Bàn giao" : "Handover")}
+        submitDisabled={!canHandover || handover.pending || handover.blocked || !handoverOwnerId || (handoverOwnerId === lead.ownerId && !(handoverOpenTaskPolicy && handover.isAmbiguousRetry({ newOwnerId: handoverOwnerId, reason: handoverReason, openTaskPolicy: handoverOpenTaskPolicy }))) || !handoverReason.trim() || handoverReason.trim().length > 1000 || !handoverOpenTaskPolicy || (handoverOpenTaskPolicy === "MOVE_LEAD_OPEN_TASKS_TO_NEW_OWNER" && !canMoveHandoverTasks)}
         onSubmit={(event) => {
           event.preventDefault();
-          if (!handoverOwnerId || !handoverReason.trim()) {
+          if (!handoverOwnerId || !handoverReason.trim() || !handoverOpenTaskPolicy || handoverReason.trim().length > 1000) {
             showToast(locale === "vi" ? "Hãy chọn người nhận và nhập lý do bàn giao." : "Select the new owner and enter a handover reason.");
             return;
           }
-          return handleConfirmHandover(handoverOwnerId, handoverReason.trim());
+          return handleConfirmHandover(handoverOwnerId, handoverReason.trim(), handoverOpenTaskPolicy);
         }}
       >
-        <p className="mb-4 text-xs text-slate-500">{locale === "vi" ? "Đổi chủ sở hữu Lead, chuyển các công việc đang mở và tạo công việc tiếp nhận cho người mới." : "Change Lead ownership, reassign open tasks, and create a handover task for the new owner."}</p>
+        <p className="mb-4 text-xs text-slate-500">{locale === "vi" ? "Đổi người phụ trách Lead, chọn cách xử lý công việc đang mở và tạo công việc tiếp nhận." : "Change Lead ownership, choose how open tasks are handled, and create an acceptance task."}</p>
         <div className="space-y-4 text-left text-xs font-sans">
           <Select
             label={locale === "vi" ? "Người chịu trách nhiệm mới *" : "New owner *"}
+            disabled={handover.pending || handover.ambiguous}
             value={handoverOwnerId}
             onChange={(event) => setHandoverOwnerId(event.target.value)}
           >
-            {members.map((member) => (
+            <option value="">{locale === "vi" ? "Chọn người nhận" : "Select new owner"}</option>
+            {handoverMembers.filter((member) => member.memberId !== lead.ownerId || (handover.ambiguous && member.memberId === handoverOwnerId)).map((member) => (
               <option key={member.memberId} value={member.memberId}>{member.displayName}</option>
             ))}
           </Select>
           <Textarea
             label={locale === "vi" ? "Lý do bàn giao *" : "Handover reason *"}
+            maxLength={1000}
+            disabled={handover.pending || handover.ambiguous}
             value={handoverReason}
             onChange={(event) => setHandoverReason(event.target.value)}
             placeholder={locale === "vi" ? "Ví dụ: chuyển theo khu vực hoặc chuyên môn phụ trách" : "For example: territory or expertise reassignment"}
           />
-          <div className="rounded-xl border border-indigo-100 bg-indigo-50/70 px-3 py-2.5 text-[11px] font-medium leading-5 text-indigo-800">
-            {locale === "vi"
-              ? "Các công việc đang mở liên kết với Lead sẽ được chuyển cho người mới. Hệ thống đồng thời tạo một công việc tiếp nhận trong module Công việc."
-              : "Open tasks linked to this Lead will be reassigned. A handover task will also be created in the Tasks module."}
-          </div>
+          <Select label={locale === "vi" ? "Công việc đang mở *" : "Open Task policy *"}
+            value={handoverOpenTaskPolicy} disabled={handover.pending || handover.ambiguous}
+            onChange={(event) => { const value = event.target.value; if (value === "" || value === "KEEP_CURRENT_ASSIGNEES" || value === "MOVE_LEAD_OPEN_TASKS_TO_NEW_OWNER") setHandoverOpenTaskPolicy(value); }}>
+            <option value="">{locale === "vi" ? "Chọn chính sách" : "Select policy"}</option>
+            <option value="KEEP_CURRENT_ASSIGNEES">{locale === "vi" ? "Giữ người thực hiện hiện tại" : "Keep current assignees"}</option>
+            <option value="MOVE_LEAD_OPEN_TASKS_TO_NEW_OWNER" disabled={!canMoveHandoverTasks}>{locale === "vi" ? "Chuyển công việc đang mở cho người nhận" : "Move open Lead tasks to new owner"}</option>
+          </Select>
+          <p className="text-xs text-slate-500">{locale === "vi" ? "Cả hai chính sách đều tạo công việc tiếp nhận. Máy chủ xác định công việc đủ điều kiện và hạn tiếp nhận." : "Both policies create an acceptance task. The server determines eligible tasks and the acceptance due date."}</p>
+          {handoverTaskPreview !== undefined && <p className="text-xs text-slate-500">{locale === "vi" ? `Đã tải ${handoverTaskPreview} công việc đang mở; chỉ để tham khảo.` : `${handoverTaskPreview} loaded open tasks; preview only.`}</p>}
+          {handover.blocked && <Button type="button" variant="secondary" onClick={() => { void handover.recover().catch((failure: unknown) => showToast(formatApplicationError(failure, { locale }))); }}>{locale === "vi" ? "Tải lại Lead để đối chiếu" : "Refresh Lead to reconcile"}</Button>}
+
         </div>
       </RelationshipQuickActionModal>
 

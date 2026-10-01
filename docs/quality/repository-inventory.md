@@ -17,27 +17,27 @@ Do not delete a dead, compatibility, deprecated or duplicate candidate based on 
 
 | Metric | Count |
 |---|---:|
-| Repository files | 2072 |
-| Source files | 1384 |
-| Source lines | 212797 |
+| Repository files | 2075 |
+| Source files | 1385 |
+| Source lines | 212936 |
 | Registered modules | 15 |
 | Route keys | 80 |
 | Loadable route modules | 64 |
-| Capabilities | 131 |
+| Capabilities | 132 |
 | Workspace module flags | 13 |
 | Cross-module workflows | 23 |
 | Public boundary files | 107 |
-| Persistence entries | 3010 |
+| Persistence entries | 3018 |
 | Repository/store/adapter files | 146 |
 | Compatibility candidates | 53 |
 | Dead-code candidates | 0 |
-| Large source files (â‰¥ 500 lines) | 45 |
+| Large source files (â‰¥ 500 lines) | 44 |
 | Circular dependency groups | 0 |
 | Package scripts | 23 |
 | Quality groups | 11 |
-| Verify gates | 338 |
+| Verify gates | 339 |
 
-Inventory fingerprint: `f1cf8a418540da16ed985a2f578e6635a22e2ab6bcee73faebbb81430f233ed4`
+Inventory fingerprint: `7958f92e0901b79c1d06129570ad00033d226eb9b939ba5b62de4275c838593e`
 
 
 ## Quality pipeline
@@ -49,7 +49,7 @@ Inventory fingerprint: `f1cf8a418540da16ed985a2f578e6635a22e2ab6bcee73faebbb8143
 | `architecture` | 66 |
 | `unit` | 32 |
 | `contract` | 64 |
-| `integration` | 48 |
+| `integration` | 49 |
 | `route-smoke` | 8 |
 | `critical-e2e` | 5 |
 | `backend-contract-hardening` | 90 |
@@ -60,9 +60,9 @@ Inventory fingerprint: `f1cf8a418540da16ed985a2f578e6635a22e2ab6bcee73faebbb8143
 
 | Classification | Count |
 |---|---:|
-| `active-runtime` | 1300 |
-| `active-script` | 79 |
-| `active-test` | 443 |
+| `active-runtime` | 1301 |
+| `active-script` | 80 |
+| `active-test` | 444 |
 | `compatibility` | 53 |
 | `documentation` | 192 |
 | `fixture` | 3 |
@@ -144,12 +144,12 @@ The journey table locks source evidence and executable command names. Actual com
 | `deals` | 6 |
 | `feature:auth` | 3 |
 | `invoices` | 6 |
-| `leads` | 7 |
+| `leads` | 8 |
 | `orders` | 4 |
 | `organizations` | 2 |
 | `payments` | 7 |
 | `platform:access-control` | 46 |
-| `platform:api` | 2821 |
+| `platform:api` | 2828 |
 | `platform:audit` | 4 |
 | `platform:configuration-runtime` | 3 |
 | `platform:developer-configuration` | 3 |
@@ -177,7 +177,7 @@ The JSON manifest includes each detected key pattern, operation, path, line and 
 | File | Lines | Owner |
 |---|---:|---|
 | `src/platform/api/catalog/generatedApiOperationCatalog.ts` | 32466 | `platform:api` |
-| `src/platform/api/generated/commercialApi.ts` | 6038 | `platform:api` |
+| `src/platform/api/generated/commercialApi.ts` | 6039 | `platform:api` |
 | `src/i18n/translations/en.ts` | 4989 | `shared:i18n` |
 | `src/i18n/translations/vi.ts` | 4989 | `shared:i18n` |
 | `src/i18n/types.ts` | 2036 | `shared:i18n` |
@@ -188,7 +188,7 @@ The JSON manifest includes each detected key pattern, operation, path, line and 
 | `src/modules/contacts/presentation/hooks/useContactListController.tsx` | 1179 | `contacts` |
 | `src/modules/quotes/presentation/views/QuoteBuilderView.tsx` | 1106 | `quotes` |
 | `src/modules/quotes/presentation/pages/QuoteListPage.tsx` | 1103 | `quotes` |
-| `src/modules/leads/presentation/views/LeadDetailView.tsx` | 1074 | `leads` |
+| `src/modules/leads/presentation/views/LeadDetailView.tsx` | 1078 | `leads` |
 | `src/modules/quotes/presentation/hooks/useQuoteBuilderController.tsx` | 997 | `quotes` |
 | `src/modules/deals/presentation/hooks/useDealPipelineController.ts` | 966 | `deals` |
 | `src/modules/orders/presentation/hooks/useOrderFormController.tsx` | 935 | `orders` |
@@ -197,15 +197,15 @@ The JSON manifest includes each detected key pattern, operation, path, line and 
 | `src/i18n/legacyUiCopy.ts` | 832 | `shared:i18n` |
 | `src/modules/orders/presentation/views/OrderListView.tsx` | 812 | `orders` |
 | `src/modules/orders/presentation/pages/OrderDetailPage.tsx` | 730 | `orders` |
-| `src/modules/leads/infrastructure/http/LeadHttpCommandAdapter.ts` | 705 | `leads` |
 | `src/guidance/content/crm/extendedScreens.ts` | 701 | `shared:guidance` |
 | `src/modules/organizations/presentation/pages/OrganizationAccountDetailPage.tsx` | 695 | `organizations` |
 | `src/modules/products/presentation/pages/ProductDetailPage.tsx` | 695 | `products` |
-| `src/modules/leads/presentation/hooks/useLeadDetailController.tsx` | 652 | `leads` |
+| `src/modules/leads/infrastructure/http/LeadHttpCommandAdapter.ts` | 692 | `leads` |
 | `src/modules/leads/presentation/hooks/useLeadFormController.tsx` | 649 | `leads` |
 | `src/modules/customers/presentation/detail/CustomerOverviewTab.tsx` | 640 | `customers` |
 | `src/modules/products/presentation/components/ProductFormModal.tsx` | 637 | `products` |
 | `src/modules/payments/presentation/pages/PaymentOperationsPage.tsx` | 634 | `payments` |
+| `src/modules/leads/presentation/hooks/useLeadDetailController.tsx` | 631 | `leads` |
 
 ## Circular dependency groups
 

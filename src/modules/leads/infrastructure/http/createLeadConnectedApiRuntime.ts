@@ -30,7 +30,7 @@ export function createLeadConnectedApiRuntime(httpClient: HttpClient): LeadApiRu
     archiveLead: (leadId, input, options) => adapter.archiveLead(leadId, input, options),
     assignLeadOwner: (leadId, input, options) => adapter.assignLeadOwner(leadId, input, options),
     importLeadBatch: unavailable(LEAD_OPERATION.IMPORT_BATCH),
-    handoverLeadWithTasks: unavailable(LEAD_OPERATION.HANDOVER_WITH_TASKS),
+    handoverLeadWithTasks: (leadId, input, options) => adapter.handoverLeadWithTasks(leadId, input, options),
     archiveLeadBatch: (input, options) => adapter.archiveLeadBatch(input, options),
     advanceLeadWorkStateBatch: unavailable(LEAD_OPERATION.ADVANCE_WORK_STATE_BATCH),
     assignLeadOwnerBatch: unavailable(LEAD_OPERATION.ASSIGN_OWNER_BATCH),

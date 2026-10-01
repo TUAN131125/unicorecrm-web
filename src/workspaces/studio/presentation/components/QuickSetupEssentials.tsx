@@ -97,14 +97,16 @@ export function QuickWorkspaceBlueprintEditor({ editorId, onEditorStateChange }:
   const canConfigure = useEffectiveAccess().can(CAPABILITIES.STUDIO_CONFIGURE);
   const configuration = useWorkspaceConfigSnapshot();
   const [selectedIndex, setSelectedIndex] = React.useState(() => Math.max(0, CRM_WORKSPACE_CONFIG_PRESETS.findIndex((preset) => preset.config.workflow.pipelineTemplate === configuration.workflow.pipelineTemplate && preset.config.businessModel === configuration.businessModel)));
+  const [handoverAcceptanceSlaHours, setHandoverAcceptanceSlaHours] = React.useState(configuration.workflow.handoverAcceptanceSlaHours);
+  React.useEffect(() => setHandoverAcceptanceSlaHours(configuration.workflow.handoverAcceptanceSlaHours), [configuration.workflow.handoverAcceptanceSlaHours]);
   const selected = CRM_WORKSPACE_CONFIG_PRESETS[selectedIndex];
-  const dirty = selected ? selected.config.workflow.pipelineTemplate !== configuration.workflow.pipelineTemplate || selected.config.businessModel !== configuration.businessModel : false;
+  const dirty = selected ? handoverAcceptanceSlaHours !== configuration.workflow.handoverAcceptanceSlaHours || selected.config.workflow.pipelineTemplate !== configuration.workflow.pipelineTemplate || selected.config.businessModel !== configuration.businessModel : false;
   const save = async (): Promise<boolean> => {
-    if (!selected) return false;
+    if (!selected || !Number.isInteger(handoverAcceptanceSlaHours) || handoverAcceptanceSlaHours < 1 || handoverAcceptanceSlaHours > 168) return false;
     await updateStudioBlueprint(
       {
         businessModel: selected.config.businessModel,
-        workflow: { ...selected.config.workflow },
+        workflow: { ...selected.config.workflow, handoverAcceptanceSlaHours },
       },
       { ...selected.config.modules },
     );
@@ -137,6 +139,7 @@ export function QuickWorkspaceBlueprintEditor({ editorId, onEditorStateChange }:
           );
         })}
       </div>
+      <StudioField label={text("Hạn tiếp nhận bàn giao Lead (giờ)", "Lead handover acceptance SLA (hours)")}><StudioInput type="number" min={1} max={168} step={1} disabled={!canConfigure} value={handoverAcceptanceSlaHours} onChange={(event) => setHandoverAcceptanceSlaHours(Number(event.target.value))} /></StudioField>
       <div className="flex flex-wrap gap-2 text-xs text-slate-600">
         <span className="inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5"><Globe2 size={13} />{text("Có thể thay đổi sau", "Change anytime")}</span>
         <span className="inline-flex items-center gap-1.5 rounded-full bg-white/80 px-3 py-1.5"><Coins size={13} />{text("Không tạo dữ liệu giả", "No sample data created")}</span>

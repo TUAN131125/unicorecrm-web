@@ -57,7 +57,6 @@ assert.equal(isLeadOperationAvailable(LEAD_OPERATION.ASSIGN_OWNER), true);
 assert.equal(isLeadOperationAvailable(LEAD_OPERATION.CLAIM), true);
 const before = requests.length;
 await assert.rejects(() => api.commands.assignLeadOwnerBatch({ ownerId: "member_target", reason: "r", items: [{ leadId: document.id, expectedVersion: 5 }] }, { idempotencyKey: "batch" }));
-await assert.rejects(() => api.commands.handoverLeadWithTasks(document.id, { nextOwnerId: "member_target", reason: "r", taskTargets: [] }, { idempotencyKey: "handover", expectedVersion: 5 }));
 assert.equal(requests.length, before, "Future operations send zero HTTP");
 let current!: ReturnType<typeof useLeadOwnerAssign>;
 let selection = [document.id, "lead_other"];

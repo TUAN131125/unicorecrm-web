@@ -259,43 +259,30 @@ export class LeadHttpCommandAdapter implements LeadCommandPort {
     options: LeadVersionedCommandOptions,
   ): Promise<HandoverLeadWithTasksResult> {
     const aggregateId = requireLeadId("handoverLeadWithTasks", leadId);
-    const nextOwnerId = input.nextOwnerId.trim();
-    if (!nextOwnerId) throw contractViolation("handoverLeadWithTasks", "nextOwnerId", "handoverLeadWithTasks requires a target owner ID.");
-    const taskTargets = input.taskTargets.map((target, index) => {
-      const taskId = target.taskId.trim();
-      if (!taskId || !Number.isInteger(target.expectedVersion) || target.expectedVersion < 1) {
-        throw contractViolation("handoverLeadWithTasks", `taskTargets[${index}]`, "Every open Task requires an ID and positive expectedVersion.");
-      }
-      return { taskId, expectedVersion: target.expectedVersion };
-    });
-    if (new Set(taskTargets.map((target) => target.taskId)).size !== taskTargets.length) {
-      throw contractViolation("handoverLeadWithTasks", "taskTargets", "Task targets must be unique.");
+    const newOwnerId = input.newOwnerId.trim();
+    const reason = input.reason.trim();
+    if (!newOwnerId || !reason || reason.length > 1000 || !["KEEP_CURRENT_ASSIGNEES", "MOVE_LEAD_OPEN_TASKS_TO_NEW_OWNER"].includes(input.openTaskPolicy)) {
+      throw contractViolation("handoverLeadWithTasks", "input", "Handover requires a new owner, a reason of 1..1000 characters and an explicit Task policy.");
     }
-    const body: HandoverLeadWithTasksRequest = {
-      nextOwnerId,
-      reason: requireReason("handoverLeadWithTasks", input.reason),
-      taskTargets,
-    };
+    const body: HandoverLeadWithTasksRequest = { newOwnerId, reason, openTaskPolicy: input.openTaskPolicy };
     const response = await this.api.handoverLeadWithTasks<LeadHandoverResponse>(aggregateId, body, versionedOptions("handoverLeadWithTasks", options));
     assertEnvelope("handoverLeadWithTasks", response);
-    if (!response.result || !response.result.lead || !Array.isArray(response.result.reassignedTaskIds) || !response.result.handoverTaskId) {
-      throw contractViolation("handoverLeadWithTasks", "result", "handoverLeadWithTasks must return the Lead, reassigned Task IDs and handover Task ID.");
+    const result = response.result;
+    if (!result || !result.lead || result.openTaskPolicy !== input.openTaskPolicy
+      || !Array.isArray(result.reassignedTaskIds) || result.reassignedTaskIds.some((id) => typeof id !== "string" || !id.trim())
+      || new Set(result.reassignedTaskIds).size !== result.reassignedTaskIds.length
+      || (input.openTaskPolicy === "KEEP_CURRENT_ASSIGNEES" && result.reassignedTaskIds.length !== 0)
+      || typeof result.handoverTaskId !== "string" || !result.handoverTaskId.trim()
+      || !Number.isInteger(result.handoverTaskVersion) || result.handoverTaskVersion < 0
+      || typeof result.handoverTaskDueAt !== "string" || !Number.isFinite(Date.parse(result.handoverTaskDueAt))
+      || !Number.isInteger(result.resolvedHandoverAcceptanceSlaHours) || result.resolvedHandoverAcceptanceSlaHours < 1 || result.resolvedHandoverAcceptanceSlaHours > 168) {
+      throw contractViolation("handoverLeadWithTasks", "result", "Handover must return its complete authoritative Task policy, Task identity/version, due date and frozen SLA.");
     }
-    const lead = mapLeadDocumentToApplication(response.result.lead);
-    if (lead.id !== aggregateId || lead.ownerId !== nextOwnerId || lead.resourceVersion !== response.version) {
-      throw contractViolation("handoverLeadWithTasks", "result.lead", "handoverLeadWithTasks returned an inconsistent authoritative Lead.");
+    const lead = mapLeadDocumentToApplication(result.lead);
+    if (response.aggregateId !== aggregateId || lead.id !== aggregateId || lead.ownerId !== newOwnerId || lead.resourceVersion !== response.version) {
+      throw contractViolation("handoverLeadWithTasks", "result.lead", "Handover returned an inconsistent authoritative Lead.");
     }
-    const expectedTaskIds = [...taskTargets.map((target) => target.taskId)].sort();
-    const actualTaskIds = [...response.result.reassignedTaskIds].sort();
-    if (actualTaskIds.length !== expectedTaskIds.length || actualTaskIds.some((value, index) => value !== expectedTaskIds[index])) {
-      throw contractViolation("handoverLeadWithTasks", "result.reassignedTaskIds", "handoverLeadWithTasks must account for every declared open Task.");
-    }
-    return {
-      lead,
-      reassignedTaskIds: [...response.result.reassignedTaskIds],
-      handoverTaskId: response.result.handoverTaskId,
-      evidence: mapEvidence(response),
-    };
+    return { ...result, lead, reassignedTaskIds: [...result.reassignedTaskIds], evidence: mapEvidence(response) };
   }
 
   async archiveLeadBatch(

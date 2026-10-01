@@ -1090,7 +1090,7 @@
     {
       "operationId": "handoverLeadWithTasks",
       "method": "POST",
-      "path": "/workflows/lead-handover/{leadId}",
+      "path": "/leads/{leadId}/handover",
       "status": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null
     },

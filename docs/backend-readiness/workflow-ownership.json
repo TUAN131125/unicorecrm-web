@@ -335,15 +335,15 @@
       "workflowId": "WF-25",
       "name": "lead-handover",
       "sourcePath": "src/modules/leads/application/commands/leadApiCommands.ts",
-      "ownershipDecision": "SINGLE_BACKEND_TRANSACTION",
+      "ownershipDecision": "BACKEND_ORCHESTRATED",
       "connectedFrontendCoordinatorAllowed": false,
-      "demoSnapshotRollbackAllowed": false,
-      "idempotencyBoundary": "LEAD_ID_PLUS_IDEMPOTENCY_KEY_PLUS_LEAD_AND_TASK_VERSIONS",
-      "compensationOwner": "BACKEND",
+      "demoSnapshotRollbackAllowed": true,
+      "idempotencyBoundary": "WORKSPACE_OPERATION_IDEMPOTENCY_KEY_PLUS_LEAD_VERSION_AND_EXPLICIT_POLICY",
+      "compensationOwner": "BACKEND_RECOVERY_NO_TASK_COMPENSATION",
       "decisionId": "DEC-PHASE6-LEAD-MODULE-COMPLETION",
       "contractReadiness": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
-      "evidenceSummary": "Backend atomically changes Lead ownership, reassigns declared open Tasks and creates the handover Task."
+      "evidenceSummary": "Durable participant-local Handover reserves the Lead, applies explicit KEEP/MOVE authoritative Task snapshot and creates exactly one NORMAL takeover Task with frozen workspace SLA. Recovery completes Lead without compensating committed Tasks."
     },
     {
       "workflowId": "WF-26",

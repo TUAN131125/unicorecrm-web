@@ -69,15 +69,19 @@ Required evidence:
 
 Required evidence:
 
-- backend owns orchestration;
-- eligible OPEN Task query uses authoritative `recordRef`;
-- completed/cancelled/unrelated Tasks unchanged;
-- Lead and eligible Tasks converge to new owner;
-- exactly one takeover Task;
-- reason audited;
-- retry/replay creates no duplicate takeover Task;
-- no silent partial terminal state;
-- connected frontend never loops Task reassign commands.
+- canonical Lead route, closed newOwnerId/reason (1..1000)/explicit policy body and all four headers;
+- owned, nonarchived Lead, different valid target and leads.handover record/field admission;
+- KEEP leaves existing assignees unchanged; MOVE discovers the authoritative OPEN/nonarchived Lead Task snapshot;
+- tasks.create for both policies; tasks.assign and complete eligible-set authority for MOVE;
+- exactly one NORMAL takeover Task, full reason evidence, numeric version >= 0, server-returned ISO due-at;
+- workspace SLA default 24/range 1..168, frozen across replay, configuration change and recovery;
+- crash after Tasks commit recovers Lead without Task compensation or duplicate takeover work;
+- repeated later B → C admission, active-only uniqueness, stable idempotent replay;
+- stable key/version/payload across ambiguity, target-owner observation and same-Lead close/reopen;
+- actual record-ID changes clear retry state; new intent chooses newest observed version;
+- 412 preserves the complete draft and requires explicit refresh;
+- informational Task preview/loading does not block submission; no fabricated unread count;
+- connected frontend never loops Task mutation commands.
 
 ### O5 — Frontend consolidation
 
@@ -313,3 +317,74 @@ Products effective-access assertion and the full-suite Lead export assertion rep
 O3 source-review follow-up retains an ambiguous Assign intent across dialog closure and record-authority reload, gates confirmation until scoped Task observation finishes, and applies authoritative version observations after pending settles. Independent read-only review found no unresolved actionable finding after these corrections. This does not provide a governed freeze attestation.
 
 Additional mandatory gate failures are baseline debt: AI route guidance contracts/runtime, Contact Detail presentation responsibility, pinned unrelated mutation inventory and architecture metadata. The backend-readiness document scan fails only with four pre-existing ignored test-result Markdown files; the same failure reproduces on the exact starting SHA with those artifacts copied to an isolated baseline. They are preserved. Full verify current 6/318 and baseline 6/317 stop at architecture; all 13 current violations exist among 35 baseline violations. None is introduced by O3.
+
+## O4 frontend verification evidence — 2026-10-01
+
+The permanent gate is `npm run quality:gate -- --gate quality.lead-handover`. It exercises the generated canonical request/result, numeric Task version 0, rejection of malformed responses, stable payload/key/version, route-change reset, monotonic new-intent version, same-Lead close/reopen, replay after observing target ownership, 412 draft preservation/explicit refresh, policy UI and demo snapshot/SLA replay. It uses React/JSDOM and HTTP fixtures, not connected browser E2E.
+
+The final review regressions cover the real Handover dialog switching A→B without remount (close and clear owner/reason/policy), preserving the same-Lead ambiguous draft on close/reopen, and retaining authoritative version 15 after a later prop 12 and an earlier result/refresh 8. The original ambiguous payload/key/version remains unchanged. No remaining O4 source-review fix is identified.
+
+All commands below run from `frontend/unicorecrm-web`. Local logs are ignored verification artifacts, not portable CI evidence.
+
+| Command | Actual result | Log |
+| --- | --- | --- |
+| `npm run api:generate` | PASS, 23 generated artifacts | Native generated manifest and checksum |
+| `npm run api:check` | PASS, 301 operations: 273 ready / 28 blocked | `.git/o4-final-api-check.log` |
+| `npm run quality:gate -- --gate quality.lead-handover` | PASS 1/1; 86 equality/deep-equality assertions plus rejection/source assertions | `.git/o4-final-focused.log` |
+| `npm run quality:gate -- --gate quality.strict-core` | PASS 1/1 | `.git/o4-final-quality.strict-core.log` |
+| `npm run lint` | PASS 1/1 | `.git/o4-final-lint.log` |
+| `npm run build` | PASS, entry 265.18 KiB; largest chunk 484.46 KiB / 500 KiB budget | `.git/o4-final-build.log` |
+| `npm run verify` | FAIL: 6/319 passed, architecture gate failed, 312 subsequent gates not run | `o4-verification.log` |
+| `npm run quality:group -- --groups unit,contract,integration,route-smoke` | FAIL: 33/153 passed, Lead data safety failed, 119 subsequent gates not run | `.git/o4-tests.log` |
+
+The individual 22-gate review uses `npm run quality:gate -- --gate <gate-id>`; initial results are `.git/o4-focused-results.json` and `.git/o4-quality.<gate-name>.log`. Passing gates cover Handover, API boundary, owner Assign, Queue Claim, ownership/distribution contracts, Work Panel, detail work resources, form recovery, strict core/regions, API contracts/management, frontend/backend separation and workflow ownership. Pipeline count expectations were updated from 338 to 339 for the new permanent gate; inventory is regenerated and checked after the final patch. Their final logs replace the initial drift failures.
+
+Failure classification is **PRE_EXISTING**, independently reproduced from exact frozen frontend `17bd129eb84989c2b14bb0b58efd7fb65d80e881` using an archived checkout and the existing dependency installation:
+
+| Failed gate | Baseline evidence | Cause |
+| --- | --- | --- |
+| `quality.architecture` | `.git/o4-baseline-architecture.log` | All 13 current violations appear among 35 baseline violations; unrelated Contacts/workflow/AI boundaries and stale authority inventory text. Capability count changes 131→132 for O4. |
+| `quality.lead-data-safety-contracts` | `.git/o4-baseline-data-safety.log` | Existing Lead export visibility assertion. |
+| `quality.lead-detail-surfaces` | `.git/o4-baseline-quality.lead-detail-surfaces.log` | Existing `lead-name` field assertion. |
+| `quality.crm-ui-interaction-contracts` | `.git/o4-baseline-quality.crm-ui-interaction-contracts.log` | Existing Lead filter popover source assertion. |
+| `quality.backend-readiness` | `.git/o4-baseline-readiness-with-artifacts.log` | Four existing ignored `test-results/*/error-context.md` files lack document-status entries. Baseline without these artifacts passes; copying the existing artifacts reproduces the current failure. |
+| `quality.presentation-responsibility` | `.git/o4-baseline-quality.presentation-responsibility.log` | Existing Contact Detail presentation state. |
+| `quality.mutation-command-authority` | `.git/o4-baseline-quality.mutation-command-authority.log` | Existing pinned Contact/Customer mutation inventory mismatch. |
+| `quality.guidance-contracts` | `.git/o4-baseline-quality.guidance-contracts.log` | Existing AI route classification/metadata and stale coverage counts. |
+
+These unrelated assertions were not weakened or repaired. Connected browser E2E, remaining stopped-suite gates, backend SQL/recovery and migration acceptance were not executed by this frontend slice. No commit or push was made, and all writes remain inside the frontend repository.
+
+### O4 real backend evidence — 2026-10-01
+
+Backend remains at `1106272021ea0f733c1f610c177e85e907142cac`, frontend at `17bd129eb84989c2b14bb0b58efd7fb65d80e881`; the O4 patch is uncommitted and unpushed.
+
+| Command (backend root) | Actual result |
+| --- | --- |
+| `dotnet build --no-restore -p:UseSharedCompilation=false` | PASS, 0 warnings / 0 errors |
+| `dotnet run --project scripts/TasksHandoverVerifier/TasksHandoverVerifier.csproj -p:UseSharedCompilation=false -- --sql` | PASS, 33 focused + 8 real SQL checks |
+| `dotnet run --project scripts/LeadHandoverWorkspaceVerifier/UnicoreCRM.LeadHandover.WorkspaceVerifier.csproj -p:UseSharedCompilation=false` | PASS, 31 checks |
+| `./scripts/verify-lead-handover.ps1 -DatabaseName UnicoreCRM_O2Claim_O4_Final_20261001093412 -RuntimeReady` | PASS, 192 O4 checks / 212 cumulative HTTP checks / 9 real races; solution and RealVerifier builds 0 warnings / 0 errors |
+| `./scripts/verify-access-control-record-access.ps1 -DatabaseName UnicoreCRM_O4_AccessFinal_20261001093803 -Port 5337 -KeepDatabase` | PASS, 567 / 0 failures |
+| `./scripts/verify-lead-owner-assign.ps1 -DatabaseName UnicoreCRM_O2Claim_O3_O4Final_20261001094054` | PASS, 34 Assign checks / 185 cumulative HTTP checks; Tasks and Activities unchanged |
+| `dotnet ef migrations has-pending-model-changes --project src/<owner-project> --startup-project src/<owner-project> --context <context> --no-build` | PASS for LeadsDbContext, WorkflowsDbContext, TasksDbContext, WorkspaceDbContext and AccessControlDbContext |
+| `git diff --check` | PASS |
+
+The real fault host commits Tasks, returns injected HTTP 500, then stops and restarts. A same-key human retry with revoked Task grants and denied service grant returns 503 while preserving the exact Lead reservation and Task hash. Service scan returns 0 without its grant and 1 after restoration despite revoked human authority. Exactly one takeover Task and the frozen 12-hour SLA/due instant survive restart and configuration changes. Completed human replay denies missing Task capability (403) and hidden Task scope (404), then returns stable 200 after authority restoration.
+
+Permanent participant tests prove both commit-before-fence and fence-before-late-worker orderings. Lead reservation fences use the production participant through a controlled test-only host endpoint; cancellation prevents a later reservation without changing owner/version, while committed reservation reconciliation preserves proof. All outgoing human success paths enforce current Task proof access after durable completion. No Workflows access to foreign DbContexts is introduced.
+
+Backend logs are ignored local artifacts under `scripts/LeadHandoverRealVerifier/run-final.log`, `run-access-final.log` and `run-assign-final.log`. Isolated databases are retained; all owned test hosts are stopped. Limits: bounded three race samples per pairing; SQL-accelerated lease/retry expiry; injected process failure/restart rather than physical power loss; migration Down guards inspected statically, not executed. Connected browser E2E and subsequent Ownership phases are not claimed.
+
+### O4 final frontend security and baseline follow-up
+
+Demo completed replay now requires current `tasks.create`, plus `tasks.assign` for MOVE, and current Task record access over the stored takeover/reassigned IDs before returning proof. It does not rediscover open Tasks or validate a new target member/version. Regression cases deny each capability and each stored Task scope without writes; KEEP replay remains available without `tasks.assign`.
+
+Main reports `npm run typecheck` PASS 3/3, `quality.connected-business-operation-availability` PASS and the Task boundary gate PASS. Its final `npm run test` fails at the same inherited Lead export assertion: 33/153 passed, one failed, 119 subsequent gates not run, 256.9 seconds; log `.git/o4-main-npm-test.log`.
+
+Main's `quality.effective-record-access` failure is independently reproduced on exact `17bd129eb84989c2b14bb0b58efd7fb65d80e881`: 0/1 passed, `src/modules/products/detail-route.tsx must use backend-effective access boundary`, assertion line 79. Command: `npm run quality:gate -- --gate quality.effective-record-access` from `.git/o4-baseline`; log `.git/o4-baseline-effective-record-access.log`. Classification: PRE_EXISTING. The archive was created with `git archive` of the frozen SHA and shares installed dependencies through a `node_modules` junction; no source repair or weakened assertion is included.
+
+Final post-hardening frontend commands are `npm run quality:gate -- --gate quality.lead-handover`, `npm run typecheck`, `npm run lint` and `npm run build`; logs `.git/o4-final-focused.log`, `.git/o4-final-typecheck.log`, `.git/o4-final-lint.log` and `.git/o4-final-build.log`. Inventory is regenerated after the main backend evidence/document updates and checked via `npm run repo:inventory` and `npm run quality:gate -- --gate quality.repository-inventory`, recorded in `.git/o4-final-inventory.log`.
+
+Main also ran `quality.record-ownership-contracts` and `quality.workspace-isolation-contracts`: both PASS 1/1, with logs `.git/o4-main-quality.record-ownership-contracts.log` and `.git/o4-main-quality.workspace-isolation-contracts.log`. Connected availability and Task boundary each PASS 1/1. These complement the existing Claim, Assign, ownership, API and frozen Work Panel checks.
+
+Local implementation/verification verdict: **O4 PASS**. Mandatory contract, service recovery, participant fencing, authorization, SLA, frontend retry and build checks pass; remaining repository failures are proven baseline debt. This verdict does not admit Bulk Assign, connected browser E2E or the next phase. Overall V1 stays TARGET, and the patch remains uncommitted/unpushed for source review.

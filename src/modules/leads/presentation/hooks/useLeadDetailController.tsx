@@ -1,3 +1,5 @@
+import { useLeadHandover } from "./useLeadHandover";
+import type { LeadHandoverOpenTaskPolicy } from "../../application/ports/LeadApiRuntime";
 import { describePartialCommit, executeSequentialCommits, formatApplicationError } from "@/shared/operations";
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -50,7 +52,7 @@ import { getSupportCasesSnapshot, subscribeToSupportCases } from "@/modules/supp
 import { relationshipRefKey } from "@/platform/identity";
 import { getAuthSessionSnapshot } from "@/platform/identity-auth";
 import { resolveWorkspaceMemberName } from "@/platform/member-directory";
-import { CAPABILITIES, useEffectiveAccess } from "@/platform/access-control";
+import { CAPABILITIES, useEffectiveAccess, useEffectiveRecordAccess } from "@/platform/access-control";
 import { useRecordOwnershipContext } from "@/platform/record-ownership";
 import { useSubscribableSnapshot } from "@/platform/react";
 import { useWorkspaceContextSnapshot } from "@/platform/workspace-context";
@@ -103,9 +105,17 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
   const canArchive = isLeadOperationAvailable(LEAD_OPERATION.ARCHIVE)
     && access.can(CAPABILITIES.LEADS_DELETE)
     && !lead?.archivedAt;
-  const canHandover = Boolean(ownership?.canAssign)
+  const handoverOwnership = useRecordOwnershipContext("leads", CAPABILITIES.LEADS_HANDOVER);
+  const handover = useLeadHandover(lead);
+  const handoverAccess = useEffectiveRecordAccess({ resourceKey: "leads", recordId: lead?.id, record: lead,
+    requestedCommands: ["lead.handover"], requestedFields: ["ownerId"], enabled: Boolean(lead?.ownerId) });
+  const canMoveHandoverTasks = access.can(CAPABILITIES.TASKS_ASSIGN);
+  const canHandover = (Boolean(lead?.ownerId) || handover.ambiguous) && access.can(CAPABILITIES.LEADS_HANDOVER)
+    && access.can(CAPABILITIES.TASKS_CREATE)
+    && Boolean(handoverAccess.data?.canRead && handoverAccess.data.allowedCommands.includes("lead.handover"))
+    && (handover.ambiguous || handoverAccess.data?.fieldAccess.ownerId === "READ_WRITE")
     && isLeadOperationAvailable(LEAD_OPERATION.HANDOVER_WITH_TASKS)
-    && !lead?.archivedAt;
+    && (!lead?.archivedAt || handover.ambiguous);
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showVerificationReadiness, setShowVerificationReadiness] = useState(false);
@@ -447,49 +457,15 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
     ? careCases.filter((item) => item.relationshipRef && relationshipRefKey(item.relationshipRef) === relationshipRefKey(lead.relationshipRef!))
     : [];
 
-  const handleConfirmHandover = async (nextOwnerId: string, reason: string) => {
-    const nextOwner = members.find((member) => member.memberId === nextOwnerId);
-    const actor = getAuthSessionSnapshot()?.principal;
-    const actorId = actor?.memberId || ownership?.memberId || lead.ownerId;
-    const actorName = actor?.displayName || ownership?.displayName || resolveWorkspaceMemberName(actorId);
-    if (!actorId) return;
-
-    if (nextOwnerId === lead.ownerId) {
-      showToast(locale === "vi" ? "Người nhận đang là chủ sở hữu hiện tại." : "The selected member already owns this Lead.");
-      return;
-    }
-    if (openLeadTasks.length > 0 && !access.can(CAPABILITIES.TASKS_ASSIGN)) {
-      showToast(locale === "vi" ? "Bạn chưa có quyền chuyển các công việc đang mở của Lead." : "You cannot reassign this Lead's open tasks.");
-      return;
-    }
-    if (!access.can(CAPABILITIES.TASKS_CREATE)) {
-      showToast(locale === "vi" ? "Bạn chưa có quyền tạo công việc tiếp nhận." : "You cannot create the handover task.");
-      return;
-    }
-
-    try {
-      const taskTargets = openLeadTasks.map((task) => {
-        if (!Number.isInteger(task.resourceVersion) || Number(task.resourceVersion) < 1) throw new Error(`TASK_VERSION_REQUIRED:${task.id}`);
-        return { taskId: task.id, expectedVersion: Number(task.resourceVersion) };
-      });
-      await leadActions.handover(lead.id, {
-        nextOwnerId,
-        reason,
-        taskTargets,
-        actorId,
-        actorName,
-        leadName: lead.name,
-      });
-
-      setShowHandoverModal(false);
-      setHandoverReason("");
-      showToast(locale === "vi"
-        ? `Đã bàn giao cho ${nextOwner?.displayName || nextOwnerId}, chuyển ${openLeadTasks.length} công việc và tạo công việc tiếp nhận.`
-        : `Reassigned to ${nextOwner?.displayName || nextOwnerId}, moved ${openLeadTasks.length} open tasks, and created a handover task.`);
-    } catch (error) {
-      showToast(formatApplicationError(error, { locale }));
-      throw normalizeApplicationError(error);
-    }
+  const handleConfirmHandover = async (newOwnerId: string, reason: string, openTaskPolicy: LeadHandoverOpenTaskPolicy) => {
+    if (!canHandover || (newOwnerId === lead.ownerId && !handover.isAmbiguousRetry({ newOwnerId, reason, openTaskPolicy })) || (openTaskPolicy === "MOVE_LEAD_OPEN_TASKS_TO_NEW_OWNER" && !canMoveHandoverTasks)) return;
+    const result = await handover.submit({ newOwnerId, reason, openTaskPolicy });
+    if (!result) return;
+    setShowHandoverModal(false);
+    setHandoverReason("");
+    showToast(locale === "vi"
+      ? `Đã bàn giao, chuyển ${result.reassignedTaskIds.length} công việc. Hạn tiếp nhận: ${result.handoverTaskDueAt}.`
+      : `Handover complete; moved ${result.reassignedTaskIds.length} tasks. Acceptance due: ${result.handoverTaskDueAt}.`);
   };
 
   const handleActivityQuickAction = (action: LeadQuickAction) => {
@@ -552,6 +528,9 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
     canQualify,
     canArchive,
     canHandover,
+    canMoveHandoverTasks,
+    handover,
+    handoverMembers: handoverOwnership?.assignableOwners ?? [],
     members,
     workspace,
     configurationRuntime,

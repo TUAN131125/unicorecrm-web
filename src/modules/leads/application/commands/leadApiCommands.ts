@@ -1,5 +1,4 @@
 import { invalidateModuleQueries, runBackendProjection } from "@/shared/application";
-import { createTaskSnapshot, reassignTaskSnapshot } from "@/modules/tasks";
 import { ApplicationError } from "@/shared/domain";
 import { money } from "@/shared/money";
 import type {
@@ -18,6 +17,7 @@ import type {
   DisqualifyLeadInput,
   DisqualifyLeadResult,
   ConfirmLeadDuplicatesDistinctResult,
+  HandoverLeadWithTasksInput,
   HandoverLeadWithTasksResult,
   ImportLeadBatchResult,
   LeadIdentityResolutionMutationResult,
@@ -210,46 +210,11 @@ export async function assignLeadOwnerViaApi(
 
 export async function handoverLeadWithTasksViaApi(
   leadId: string,
-  input: {
-    nextOwnerId: string;
-    reason: string;
-    taskTargets: readonly { taskId: string; expectedVersion: number }[];
-    actorId: string;
-    actorName?: string;
-    leadName: string;
-  },
+  input: HandoverLeadWithTasksInput,
+  attempt: { idempotencyKey: string; expectedVersion: number },
 ): Promise<HandoverLeadWithTasksResult> {
-  const expectedVersion = requireLeadVersion(leadId, "handoverLeadWithTasks");
-  const runtime = getLeadApiRuntime();
-  const result = await runtime.commands.handoverLeadWithTasks(leadId, {
-    nextOwnerId: input.nextOwnerId,
-    reason: input.reason,
-    taskTargets: input.taskTargets,
-  }, {
-    idempotencyKey: createAttemptKey(`lead:handover:${leadId}:${input.nextOwnerId}`),
-    expectedVersion,
-  });
+  const result = await getLeadApiRuntime().commands.handoverLeadWithTasks(leadId, input, attempt);
   runBackendProjection("leads", () => saveLead(leadRepository, result.lead));
-  if (runtime.mode === "demo") {
-    const now = result.evidence.occurredAt;
-    for (const target of input.taskTargets) {
-      reassignTaskSnapshot(target.taskId, { assigneeId: input.nextOwnerId, actorId: input.actorId, actorName: input.actorName, now });
-    }
-    createTaskSnapshot({
-      id: result.handoverTaskId,
-      title: `Take over Lead: ${input.leadName}`,
-      description: input.reason,
-      priority: "HIGH",
-      assigneeId: input.nextOwnerId,
-      dueAt: new Date(Date.parse(now) + 24 * 60 * 60 * 1000).toISOString(),
-      recordRef: { moduleKey: "leads", recordId: leadId, label: input.leadName },
-      sourceRef: { type: "LEAD_HANDOVER", id: leadId, evidence: input.reason },
-      dedupeKey: `lead-handover:${leadId}:${input.nextOwnerId}:${now}`,
-      actorId: input.actorId,
-      actorName: input.actorName,
-      now,
-    });
-  }
   await invalidateModuleQueries({ moduleKeys: ["leads", "tasks"], commandType: "lead.handover", aggregateId: leadId, occurredAt: result.evidence.occurredAt });
   return result;
 }

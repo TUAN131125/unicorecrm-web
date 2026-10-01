@@ -92,6 +92,7 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
     canQualify,
     canArchive,
     canHandover,
+    canMoveHandoverTasks, handover, handoverMembers,
     members,
     workspace,
     configurationRuntime,
@@ -375,7 +376,7 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
                 lead={lead}
                 isOpen={showMoreMenu}
                 anchorEl={moreActionsAnchorRef.current}
-                canAssign={canHandover}
+                canHandover={canHandover}
                 canUpdate={canEdit}
                 canQualify={canQualify}
                 canManageTags={canEdit}
@@ -395,7 +396,7 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
                 }}
                 onDisqualify={() => { setShowDisqualifyModal(true); setShowMoreMenu(false); }}
                 onReopen={() => { handleReopenLead(); setShowMoreMenu(false); }}
-                onHandover={() => { setShowMoreMenu(false); setHandoverOwnerId(lead.ownerId ?? ""); setShowHandoverModal(true); }}
+                onHandover={() => { setShowMoreMenu(false);  setShowHandoverModal(true); }}
                 onManageTags={(event) => { dialogs.setTagsAnchor(event.currentTarget); setShowTagsModal(!showTagsModal); }}
                 onPrint={() => { setShowMoreMenu(false); window.print(); }}
                 onArchive={canArchive ? () => { setShowMoreMenu(false); setShowArchiveConfirm(true); } : undefined}
@@ -1057,6 +1058,9 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
           navigate,
           leadActions,
           handleConfirmHandover,
+          canHandover, canMoveHandoverTasks, handover,
+          handoverMembers,
+          handoverTaskPreview: workResources.taskQuery.data ? openLeadTasks.length : undefined,
           handleConfirmDisqualify,
           handleSaveEditFromForm,
           handleSavePhoneCall,
