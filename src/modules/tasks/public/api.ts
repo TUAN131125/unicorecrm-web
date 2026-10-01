@@ -12,6 +12,7 @@ import {
 import { createTask, completeTask, cancelTask, archiveTask, logActivity, reassignTask, rescheduleTask } from "../application/commands/taskCommands";
 import { getActivitiesForCustomer, getActivitiesForRecord, getOverdueTasks, getTaskStats, getTasksForCustomer, getTasksForRecord, queryTasks } from "../application/queries/taskQueries";
 import { getTaskApiRuntime, taskActivityRepository } from "../application/composition/taskApplicationServices";
+import type { LeadHandoverTaskSnapshotCommand, LeadHandoverTaskSnapshotProof } from "../application/ports/TaskActivityRepository";
 import type { Activity, Task } from "../domain/model/task.types";
 import type { ActivityMutationResult, TaskMutationEvidence, TaskMutationResult } from "../application/ports/TaskApiRuntime";
 
@@ -155,6 +156,14 @@ export const logActivityViaApi = async (
   const outcome = await logActivityCommand(command, metadata);
   return { ...outcome, data: { activity: outcome.data } };
 };
+
+/** Tasks-owned demo participant. Connected mode never uses this local command. */
+export function handoverLeadTasksSnapshot(command: LeadHandoverTaskSnapshotCommand,
+  onCommitted: (proof: LeadHandoverTaskSnapshotProof) => void): void {
+  assertDemoTaskMutationAllowed("handoverLeadTasksSnapshot");
+  if (!taskActivityRepository.handoverLeadTasks) throw new Error("Demo Tasks handover participant unavailable.");
+  taskActivityRepository.handoverLeadTasks(command, onCommitted);
+}
 
 /** Demo-only synchronous mutation bridge. Connected mode fails closed. */
 export const createTaskSnapshot = (command: Omit<Parameters<typeof createTask>[1], "workspaceId">) => { assertDemoTaskMutationAllowed("createTaskSnapshot"); return createTask(taskActivityRepository, { ...command, workspaceId: getWorkspaceContextSnapshot().workspaceId }); };

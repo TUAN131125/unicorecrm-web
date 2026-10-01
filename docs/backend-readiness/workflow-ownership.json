@@ -338,12 +338,12 @@
       "ownershipDecision": "BACKEND_ORCHESTRATED",
       "connectedFrontendCoordinatorAllowed": false,
       "demoSnapshotRollbackAllowed": true,
-      "idempotencyBoundary": "WORKSPACE_OPERATION_IDEMPOTENCY_KEY_PLUS_LEAD_VERSION_AND_EXPLICIT_POLICY",
+      "idempotencyBoundary": "WORKSPACE_OPERATION_IDEMPOTENCY_KEY_PLUS_LEAD_VERSION_AND_CANONICAL_INTENT",
       "compensationOwner": "BACKEND_RECOVERY_NO_TASK_COMPENSATION",
       "decisionId": "DEC-PHASE6-LEAD-MODULE-COMPLETION",
       "contractReadiness": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
-      "evidenceSummary": "Durable participant-local Handover reserves the Lead, applies explicit KEEP/MOVE authoritative Task snapshot and creates exactly one NORMAL takeover Task with frozen workspace SLA. Recovery completes Lead without compensating committed Tasks."
+      "evidenceSummary": "Durable participant-local Handover reserves the Lead, transfers the authoritative eligible open Task snapshot and creates exactly one NORMAL takeover Task with frozen workspace SLA. Recovery completes Lead without compensating committed Tasks."
     },
     {
       "workflowId": "WF-26",

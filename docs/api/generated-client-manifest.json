@@ -4,7 +4,7 @@
   "openapiVersion": "3.1.0",
   "contractVersion": "0.24.0-contract.0",
   "specPath": "docs/api/openapi.json",
-  "specSha256": "5c6f8b9eabf6603485fb8d52e58db55ccea8e2ecd4371e8683913b2871f50569",
+  "specSha256": "b94acf0dddd7a13607a64824513d60d5a1764e44afee38f376034bd0b527537b",
   "ownershipPath": "scripts/api/openapi/client-ownership.json",
   "coverageLedgerPath": "docs/api/operation-coverage-ledger.json",
   "breakingBaselinePath": "docs/api/openapi-breaking-baseline.json",
@@ -2350,7 +2350,7 @@
     {
       "operationId": "handoverLeadWithTasks",
       "method": "POST",
-      "path": "/leads/{leadId}/handover",
+      "path": "/workflows/lead-handover/{leadId}",
       "boundedContext": "Leads",
       "ownerModule": "leads",
       "generatedClientId": "commercial",
@@ -2359,7 +2359,7 @@
       "concurrencyPolicy": "IF_MATCH_REQUIRED",
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
-      "requiredCapability": "leads.handover"
+      "requiredCapability": "leads.assign"
     },
     {
       "operationId": "importLeadBatch",

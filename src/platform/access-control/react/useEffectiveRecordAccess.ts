@@ -119,6 +119,7 @@ function buildLocalEffectiveRecordAccess(
 }
 
 function normalizeAction(prefix: string, action: string): string {
+  if (prefix === "lead" && action === "assign-owner") return "assign";
   if (prefix === "support") {
     if (action === "resolve" || action === "close") return "complete";
     if (action === "reopen" || action === "cancel") return "update";

@@ -123,12 +123,10 @@ export interface ImportLeadBatchInput {
   items: readonly LeadImportItemInput[];
 }
 
-export type LeadHandoverOpenTaskPolicy = "KEEP_CURRENT_ASSIGNEES" | "MOVE_LEAD_OPEN_TASKS_TO_NEW_OWNER";
 
 export interface HandoverLeadWithTasksInput {
-  newOwnerId: string;
+  nextOwnerId: string;
   reason: string;
-  openTaskPolicy: LeadHandoverOpenTaskPolicy;
 }
 
 export interface LeadVersionedTargetInput {
@@ -229,7 +227,6 @@ export type AssignLeadOwnerResult = LeadMutationResult;
 export interface HandoverLeadWithTasksResult extends LeadMutationResult {
   reassignedTaskIds: string[];
   handoverTaskId: string;
-  openTaskPolicy: LeadHandoverOpenTaskPolicy;
   handoverTaskVersion: number;
   handoverTaskDueAt: string;
   resolvedHandoverAcceptanceSlaHours: number;

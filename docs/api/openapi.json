@@ -34003,13 +34003,13 @@
         "x-request-projection": "LEAD_FOLLOW_UP_BATCH"
       }
     },
-    "/leads/{leadId}/handover": {
+    "/workflows/lead-handover/{leadId}": {
       "post": {
         "operationId": "handoverLeadWithTasks",
         "tags": [
           "Leads"
         ],
-        "summary": "Hand over an owned Lead with explicit open Task policy",
+        "summary": "Hand over an owned Lead and transfer eligible open Tasks",
         "parameters": [
           {
             "$ref": "#/components/parameters/WorkspaceIdHeader"
@@ -34159,8 +34159,9 @@
         },
         "x-contract-status": "PRODUCTION_CONTRACT_READY",
         "x-module-owner": "leads",
-        "x-required-capability": "leads.handover",
+        "x-required-capability": "leads.assign",
         "x-additional-required-capabilities": [
+          "tasks.assign",
           "tasks.create"
         ],
         "x-resource-scope": "RESOURCE",
@@ -34190,12 +34191,7 @@
           "LEAD_HANDOVER_TASK_SCOPE_DENIED"
         ],
         "x-aggregate-id-policy": "MUST_MATCH_TARGET",
-        "x-request-projection": "LEAD_HANDOVER_WITH_TASKS",
-        "x-task-policy-capabilities": {
-          "MOVE_LEAD_OPEN_TASKS_TO_NEW_OWNER": [
-            "tasks.assign"
-          ]
-        }
+        "x-request-projection": "LEAD_HANDOVER_WITH_TASKS"
       }
     },
     "/workflows/lead-identity-resolution/confirm-distinct": {
@@ -57760,35 +57756,24 @@
           "CANCELLED"
         ]
       },
-      "LeadHandoverOpenTaskPolicy": {
-        "type": "string",
-        "enum": [
-          "KEEP_CURRENT_ASSIGNEES",
-          "MOVE_LEAD_OPEN_TASKS_TO_NEW_OWNER"
-        ]
-      },
       "HandoverLeadWithTasksRequest": {
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "newOwnerId",
-          "reason",
-          "openTaskPolicy"
+          "nextOwnerId",
+          "reason"
         ],
         "properties": {
-          "newOwnerId": {
-            "$ref": "#/components/schemas/EntityId"
-          },
           "reason": {
             "type": "string",
             "minLength": 1,
             "maxLength": 1000
           },
-          "openTaskPolicy": {
-            "$ref": "#/components/schemas/LeadHandoverOpenTaskPolicy"
+          "nextOwnerId": {
+            "$ref": "#/components/schemas/EntityId"
           }
         },
-        "x-workflow-semantics": "Tasks authoritatively discovers eligible OPEN nonarchived Lead Tasks for MOVE. Both policies create exactly one NORMAL takeover Task with frozen workspace SLA. Durable recovery completes ownership before success."
+        "x-workflow-semantics": "Tasks authoritatively discovers and transfers all eligible OPEN nonarchived Lead Tasks and creates exactly one NORMAL takeover Task with frozen workspace SLA. Durable recovery completes ownership before success."
       },
       "IdempotencyKey": {
         "type": "string",
@@ -59543,7 +59528,6 @@
           "lead",
           "reassignedTaskIds",
           "handoverTaskId",
-          "openTaskPolicy",
           "handoverTaskVersion",
           "handoverTaskDueAt",
           "resolvedHandoverAcceptanceSlaHours"
@@ -59560,9 +59544,6 @@
           },
           "handoverTaskId": {
             "$ref": "#/components/schemas/EntityId"
-          },
-          "openTaskPolicy": {
-            "$ref": "#/components/schemas/LeadHandoverOpenTaskPolicy"
           },
           "handoverTaskVersion": {
             "type": "integer",

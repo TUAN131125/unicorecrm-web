@@ -9240,7 +9240,7 @@
     {
       "operationId": "handoverLeadWithTasks",
       "method": "POST",
-      "path": "/leads/{leadId}/handover",
+      "path": "/workflows/lead-handover/{leadId}",
       "parameters": [
         {
           "name": "Idempotency-Key",
@@ -26035,11 +26035,8 @@
     "HandoverLeadWithTasksRequest": {
       "additionalProperties": false,
       "properties": {
-        "newOwnerId": {
+        "nextOwnerId": {
           "$ref": "#/components/schemas/EntityId"
-        },
-        "openTaskPolicy": {
-          "$ref": "#/components/schemas/LeadHandoverOpenTaskPolicy"
         },
         "reason": {
           "maxLength": 1000,
@@ -26048,12 +26045,11 @@
         }
       },
       "required": [
-        "newOwnerId",
-        "reason",
-        "openTaskPolicy"
+        "nextOwnerId",
+        "reason"
       ],
       "type": "object",
-      "x-workflow-semantics": "Tasks authoritatively discovers eligible OPEN nonarchived Lead Tasks for MOVE. Both policies create exactly one NORMAL takeover Task with frozen workspace SLA. Durable recovery completes ownership before success."
+      "x-workflow-semantics": "Tasks authoritatively discovers and transfers all eligible OPEN nonarchived Lead Tasks and creates exactly one NORMAL takeover Task with frozen workspace SLA. Durable recovery completes ownership before success."
     },
     "IdempotencyKey": {
       "maxLength": 128,
@@ -41034,13 +41030,6 @@
         "handoverAcceptanceSlaHours"
       ],
       "type": "object"
-    },
-    "LeadHandoverOpenTaskPolicy": {
-      "enum": [
-        "KEEP_CURRENT_ASSIGNEES",
-        "MOVE_LEAD_OPEN_TASKS_TO_NEW_OWNER"
-      ],
-      "type": "string"
     }
   }
 }

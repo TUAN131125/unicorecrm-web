@@ -2,8 +2,8 @@ import { getRecordOwnershipContext } from "@/platform/record-ownership";
 import { ApplicationError } from "@/shared/domain";
 import { getWorkspaceConfigSnapshot } from "@/platform/workspace-config";
 import { getWorkspaceContextSnapshot } from "@/platform/workspace-context";
-import { createTaskSnapshot, reassignTaskSnapshot, getRetainedTaskActivitySnapshot, replaceTaskActivitySnapshot } from "@/modules/tasks";
-import { CAPABILITIES, assertRuntimeCommandAccess, assertRuntimeCapability } from "@/platform/access-control";
+import { handoverLeadTasksSnapshot } from "@/modules/tasks";
+import { CAPABILITIES, assertRuntimeCommandAccess, assertRuntimeCapability, getFieldAccess } from "@/platform/access-control";
 import type { AuthoritativePage } from "@/shared/application";
 import { moneyToDisplayNumber } from "@/shared/money";
 import type {
@@ -202,40 +202,37 @@ export function createLeadDemoApiRuntime(repository: LeadRepository): LeadApiRun
       },
       async handoverLeadWithTasks(leadId: string, input: HandoverLeadWithTasksInput, options: LeadVersionedCommandOptions): Promise<HandoverLeadWithTasksResult> {
         const workspaceId = getWorkspaceContextSnapshot().workspaceId;
-        const key = `${workspaceId}:${options.idempotencyKey}`;
-        const fingerprint = JSON.stringify({ leadId, expectedVersion: options.expectedVersion, ...input });
-        const current = repository.getById(leadId);
-        if (!current) throw new Error(`LEAD_NOT_FOUND:${leadId}`);
-        assertRuntimeCommandAccess(CAPABILITIES.LEADS_HANDOVER, "leads", current);
+        assertRuntimeCapability(CAPABILITIES.LEADS_ASSIGN);
+        const context = getRecordOwnershipContext("leads", CAPABILITIES.LEADS_ASSIGN);
+        if (!context) throw new ApplicationError({ code: "ACCESS_DENIED", category: "AUTHORIZATION", message: "Handover admission unavailable", status: 403 });
+        const key = `${workspaceId}:${context.memberId}:${leadId}:${options.idempotencyKey}`;
+        const fingerprint = JSON.stringify({ leadId, expectedVersion: options.expectedVersion, nextOwnerId: input.nextOwnerId.trim(), reason: input.reason.trim() });
         const replay = handovers.get(key);
         if (replay) {
           if (replay.fingerprint !== fingerprint) throw new ApplicationError({ code: "IDEMPOTENCY_KEY_REUSED", category: "CONFLICT", message: "Handover intent changed", status: 409 });
           assertRuntimeCapability(CAPABILITIES.TASKS_CREATE);
-          if (replay.result.openTaskPolicy === "MOVE_LEAD_OPEN_TASKS_TO_NEW_OWNER") assertRuntimeCapability(CAPABILITIES.TASKS_ASSIGN);
-          const storedTasks = getRetainedTaskActivitySnapshot().tasks;
-          for (const id of [replay.result.handoverTaskId, ...replay.result.reassignedTaskIds]) {
-            const task = storedTasks.find((candidate) => candidate.id === id && candidate.workspaceId === workspaceId);
-            if (!task) throw new ApplicationError({ code: "ACCESS_DENIED", category: "AUTHORIZATION", message: "Handover Task proof is unavailable", status: 403 });
-            assertRuntimeCommandAccess(id === replay.result.handoverTaskId ? CAPABILITIES.TASKS_CREATE : CAPABILITIES.TASKS_ASSIGN, "tasks", task);
-          }
+          assertRuntimeCapability(CAPABILITIES.LEADS_ASSIGN);
+          assertRuntimeCapability(CAPABILITIES.TASKS_ASSIGN);
           return structuredClone(replay.result);
         }
-        assertVersion(repository, leadId, options.expectedVersion);
-        const newOwnerId = input.newOwnerId.trim();
-        const reason = input.reason.trim();
-        const context = getRecordOwnershipContext("leads", CAPABILITIES.LEADS_HANDOVER);
-        assertRuntimeCapability(CAPABILITIES.TASKS_CREATE);
-        if (!current.ownerId || current.archivedAt || current.ownerId === newOwnerId
-          || !context?.assignableOwners.some((member) => member.memberId === newOwnerId)
-          || !reason || reason.length > 1000 || !["KEEP_CURRENT_ASSIGNEES", "MOVE_LEAD_OPEN_TASKS_TO_NEW_OWNER"].includes(input.openTaskPolicy)) {
-          throw new ApplicationError({ code: "VALIDATION_FAILED", category: "VALIDATION", message: "Invalid handover", status: 422 });
+        const current = repository.getById(leadId);
+        if (!current) throw new Error(`LEAD_NOT_FOUND:${leadId}`);
+        assertRuntimeCommandAccess(CAPABILITIES.LEADS_ASSIGN, "leads", current);
+        if (getFieldAccess("leads", "ownerId") !== "READ_WRITE") {
+          throw new ApplicationError({ code: "ACCESS_DENIED", category: "AUTHORIZATION", message: "Lead owner is not writable", status: 403 });
         }
-        const eligible = input.openTaskPolicy === "MOVE_LEAD_OPEN_TASKS_TO_NEW_OWNER"
-          ? getRetainedTaskActivitySnapshot().tasks.filter((task) => task.workspaceId === workspaceId && task.status === "OPEN" && !task.archivedAt && task.recordRef?.moduleKey === "leads" && task.recordRef.recordId === leadId).sort((a, b) => a.id.localeCompare(b.id))
-          : [];
-        if (input.openTaskPolicy === "MOVE_LEAD_OPEN_TASKS_TO_NEW_OWNER") {
-          assertRuntimeCapability(CAPABILITIES.TASKS_ASSIGN);
-          eligible.forEach((task) => assertRuntimeCommandAccess(CAPABILITIES.TASKS_ASSIGN, "tasks", task));
+        if (current.resourceVersion !== options.expectedVersion) {
+          throw new ApplicationError({ code: "VERSION_CONFLICT", category: "CONFLICT", status: 412,
+            retryable: false, message: "Lead version changed. Refresh before confirming handover.",
+            details: { expectedVersion: options.expectedVersion, currentVersion: current.resourceVersion } });
+        }
+        const nextOwnerId = input.nextOwnerId.trim();
+        const reason = input.reason.trim();
+        assertRuntimeCapability(CAPABILITIES.TASKS_CREATE);
+        if (!current.ownerId || current.archivedAt || current.ownerId === nextOwnerId
+          || !context?.assignableOwners.some((member) => member.memberId === nextOwnerId)
+          || !reason || reason.length > 1000) {
+          throw new ApplicationError({ code: "VALIDATION_FAILED", category: "VALIDATION", message: "Invalid handover", status: 422 });
         }
         const resolvedHandoverAcceptanceSlaHours = getWorkspaceConfigSnapshot().workflow.handoverAcceptanceSlaHours;
         if (!Number.isInteger(resolvedHandoverAcceptanceSlaHours) || resolvedHandoverAcceptanceSlaHours < 1 || resolvedHandoverAcceptanceSlaHours > 168) {
@@ -243,32 +240,19 @@ export function createLeadDemoApiRuntime(repository: LeadRepository): LeadApiRun
         }
         const now = new Date().toISOString();
         const handoverTaskDueAt = new Date(Date.parse(now) + resolvedHandoverAcceptanceSlaHours * 60 * 60 * 1000).toISOString();
-        const handoverId = `lead-handover:${workspaceId}:${options.idempotencyKey}`;
-        const taskBefore = structuredClone(getRetainedTaskActivitySnapshot());
+        const handoverId = `lead-handover:${key}`;
         return withRepositoryRollback(repository, () => {
-          try {
-            eligible.forEach((task) => reassignTaskSnapshot(task.id, { assigneeId: newOwnerId, actorId: context.memberId, now }));
-            const takeover = createTaskSnapshot({
-              id: `task_${handoverId}`, title: `Take over Lead: ${current.name}`, description: reason,
-              priority: "NORMAL", assigneeId: newOwnerId, dueAt: handoverTaskDueAt,
-              recordRef: { moduleKey: "leads", recordId: leadId, label: current.name },
-              sourceRef: { type: "LEAD_HANDOVER", id: handoverId, evidence: reason },
-              dedupeKey: handoverId, actorId: context.memberId, now,
-            });
-            const updated = { ...current, ownerId: newOwnerId, resourceVersion: options.expectedVersion + 1, updatedAt: now };
+          let result: HandoverLeadWithTasksResult | undefined;
+          handoverLeadTasksSnapshot({ workspaceId, leadId, leadLabel: current.name, handoverId,
+            nextOwnerId, reason, dueAt: handoverTaskDueAt, actorId: context.memberId, now }, proof => {
+            const updated = { ...current, ownerId: nextOwnerId, resourceVersion: options.expectedVersion + 1, updatedAt: now };
             replaceProjectedLeads(repository, [updated]);
-            const result: HandoverLeadWithTasksResult = {
-              lead: structuredClone(updated), openTaskPolicy: input.openTaskPolicy,
-              reassignedTaskIds: eligible.map((task) => task.id), handoverTaskId: takeover.id,
-              handoverTaskVersion: takeover.resourceVersion ?? 0, handoverTaskDueAt,
-              resolvedHandoverAcceptanceSlaHours, evidence: mutationResult(updated, options, now, "demo").evidence,
-            };
-            handovers.set(key, { fingerprint, result: structuredClone(result) });
-            return result;
-          } catch (failure) {
-            replaceTaskActivitySnapshot(taskBefore);
-            throw failure;
-          }
+            result = { lead: structuredClone(updated), ...proof, handoverTaskDueAt,
+              resolvedHandoverAcceptanceSlaHours, evidence: mutationResult(updated, options, now, "demo").evidence };
+          });
+          if (!result) throw new Error("Tasks handover participant did not commit.");
+          handovers.set(key, { fingerprint, result: structuredClone(result) });
+          return result;
         });
       },
 

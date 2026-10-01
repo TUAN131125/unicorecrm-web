@@ -69,10 +69,10 @@ Required evidence:
 
 Required evidence:
 
-- canonical Lead route, closed newOwnerId/reason (1..1000)/explicit policy body and all four headers;
-- owned, nonarchived Lead, different valid target and leads.handover record/field admission;
-- KEEP leaves existing assignees unchanged; MOVE discovers the authoritative OPEN/nonarchived Lead Task snapshot;
-- tasks.create for both policies; tasks.assign and complete eligible-set authority for MOVE;
+- canonical Lead route, closed nextOwnerId/reason (1..1000) body and all four headers;
+- owned, nonarchived Lead, different valid target and leads.assign record/field admission;
+- the Tasks participant transfers the authoritative OPEN/nonarchived Lead Task snapshot;
+- tasks.create, tasks.assign and complete eligible-set authority;
 - exactly one NORMAL takeover Task, full reason evidence, numeric version >= 0, server-returned ISO due-at;
 - workspace SLA default 24/range 1..168, frozen across replay, configuration change and recovery;
 - crash after Tasks commit recovers Lead without Task compensation or duplicate takeover work;
@@ -80,7 +80,7 @@ Required evidence:
 - stable key/version/payload across ambiguity, target-owner observation and same-Lead close/reopen;
 - actual record-ID changes clear retry state; new intent chooses newest observed version;
 - 412 preserves the complete draft and requires explicit refresh;
-- informational Task preview/loading does not block submission; no fabricated unread count;
+- loaded Tasks do not define authoritative admission; no fabricated unread count;
 - connected frontend never loops Task mutation commands.
 
 ### O5 — Frontend consolidation
@@ -320,9 +320,9 @@ Additional mandatory gate failures are baseline debt: AI route guidance contract
 
 ## O4 frontend verification evidence — 2026-10-01
 
-The permanent gate is `npm run quality:gate -- --gate quality.lead-handover`. It exercises the generated canonical request/result, numeric Task version 0, rejection of malformed responses, stable payload/key/version, route-change reset, monotonic new-intent version, same-Lead close/reopen, replay after observing target ownership, 412 draft preservation/explicit refresh, policy UI and demo snapshot/SLA replay. It uses React/JSDOM and HTTP fixtures, not connected browser E2E.
+The permanent gate is `npm run quality:gate -- --gate quality.lead-handover`. It exercises the generated canonical request/result, numeric Task version 0, rejection of malformed responses, stable payload/key/version, route-change reset, monotonic new-intent version, same-Lead close/reopen, replay after observing target ownership, 412 draft preservation/explicit refresh, canonical UI and demo snapshot/SLA replay. It uses React/JSDOM and HTTP fixtures, not connected browser E2E.
 
-The final review regressions cover the real Handover dialog switching A→B without remount (close and clear owner/reason/policy), preserving the same-Lead ambiguous draft on close/reopen, and retaining authoritative version 15 after a later prop 12 and an earlier result/refresh 8. The original ambiguous payload/key/version remains unchanged. No remaining O4 source-review fix is identified.
+The final review regressions cover the real Handover dialog switching A→B without remount (close and clear owner/reason), preserving the same-Lead ambiguous draft on close/reopen, and retaining authoritative version 15 after a later prop 12 and an earlier result/refresh 8. The original ambiguous payload/key/version remains unchanged. No remaining O4 source-review fix is identified.
 
 All commands below run from `frontend/unicorecrm-web`. Local logs are ignored verification artifacts, not portable CI evidence.
 
@@ -377,7 +377,7 @@ Backend logs are ignored local artifacts under `scripts/LeadHandoverRealVerifier
 
 ### O4 final frontend security and baseline follow-up
 
-Demo completed replay now requires current `tasks.create`, plus `tasks.assign` for MOVE, and current Task record access over the stored takeover/reassigned IDs before returning proof. It does not rediscover open Tasks or validate a new target member/version. Regression cases deny each capability and each stored Task scope without writes; KEEP replay remains available without `tasks.assign`.
+Demo completed replay checks current leads.assign/tasks.assign/tasks.create capabilities and returns stored evidence without rediscovering Tasks or rechecking transferred ownership. Initial admission checks Lead scope and every eligible Task before writes.
 
 Main reports `npm run typecheck` PASS 3/3, `quality.connected-business-operation-availability` PASS and the Task boundary gate PASS. Its final `npm run test` fails at the same inherited Lead export assertion: 33/153 passed, one failed, 119 subsequent gates not run, 256.9 seconds; log `.git/o4-main-npm-test.log`.
 
@@ -388,3 +388,18 @@ Final post-hardening frontend commands are `npm run quality:gate -- --gate quali
 Main also ran `quality.record-ownership-contracts` and `quality.workspace-isolation-contracts`: both PASS 1/1, with logs `.git/o4-main-quality.record-ownership-contracts.log` and `.git/o4-main-quality.workspace-isolation-contracts.log`. Connected availability and Task boundary each PASS 1/1. These complement the existing Claim, Assign, ownership, API and frozen Work Panel checks.
 
 Local implementation/verification verdict: **O4 PASS**. Mandatory contract, service recovery, participant fencing, authorization, SLA, frontend retry and build checks pass; remaining repository failures are proven baseline debt. This verdict does not admit Bulk Assign, connected browser E2E or the next phase. Overall V1 stays TARGET, and the patch remains uncommitted/unpushed for source review.
+
+
+## Canonical Handover corrective verification — 2026-10-02
+
+This evidence supersedes earlier route/policy/capability descriptions. Starting commits are backend `4db48b235b499b3c51bc9f7ba11e5845281263ee` and frontend `2059240736907dcad1e382666a0646de24e504b7`; both HEADs remain unchanged and the repair is uncommitted.
+
+- `verify-lead-handover.ps1`: 222 O4 checks, 223 cumulative HTTP checks, nine real races; fresh database `UnicoreCRM_O2Claim_O4_Corrective_Final2_20261002001525`.
+- Tasks participant verifier: 48 focused checks and eight real SQL checks. Workspace verifier: 43/43. AccessControl: 567/567. Native Assign regression: 34 checks, 185 cumulative HTTP checks, zero Task/Activity changes.
+- Build: zero warnings/errors. All five affected EF models have no pending changes. New migrations remove obsolete human grants and Task-policy storage while preserving applied history. Contract migration refuses an active historical workflow instead of reinterpreting it.
+- Permanent Handover gate proves canonical two-field transport, stable ambiguous intent, explicit 412 refresh, successful and identity-change draft clearing, actual scoped demo OWN success/replay, full Tasks-owned eligible-set admission, field-write denial and local `lead.assign-owner` capability mapping.
+- General frontend lint, typecheck, API check, build and repository checks pass. Existing Claim, Assign, ownership, isolation, connected availability, Work Panel, API boundary/management and pipeline gates pass.
+
+Both full frontend suites were also run on an isolated clean worktree of the exact starting commit. `npm run test` stops at the same export-visibility assertion after 33/153 passes; `npm run verify` stops at existing architecture violations after 6/319 passes. Independent failing gates reproduce baseline Products effective access, Contact Detail presentation responsibility, unrelated mutation inventory, AI guidance metadata and the stale Handover description assertion in Lead detail surfaces (line 187). These are PRE_EXISTING; their tests/source were not weakened or repaired.
+
+Evidence limits: real race coverage is bounded; recovery lease expiry is accelerated using SQL; the crash seam injects failure after the real Tasks commit and restarts the host. Rollback guards are inspected statically, not exercised as a production rollback. React/JSDOM and HTTP fixtures do not establish connected browser E2E or a governed freeze attestation.

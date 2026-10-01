@@ -77,7 +77,7 @@ V1 includes:
 4. A workspace Sales Queue exposes unassigned Leads.
 5. Authorized sales members may Claim an eligible unassigned Lead.
 6. Authorized managers/users may Assign a Lead to an active assignable workspace member.
-7. Handover transfers an already-owned Lead under an explicit open Task policy, creates exactly one takeover Task, and writes authoritative audit evidence.
+7. Handover transfers an already-owned Lead and all eligible open Tasks, creates exactly one takeover Task, and writes authoritative audit evidence.
 8. Lead List/Kanban/Detail/Work Panel expose assignment state without redesigning the frozen Lead UI.
 9. Bulk Assign is admitted in V1 after single-record semantics are stable.
 10. Connected mode remains fail-closed when any authoritative backend operation is unavailable.
@@ -166,7 +166,7 @@ Handover is a higher-impact workflow:
 
 ```text
 Lead owner changes
-+ explicit KEEP_CURRENT_ASSIGNEES or MOVE_LEAD_OPEN_TASKS_TO_NEW_OWNER policy
++ transfer every eligible open Lead Task
 + one takeover Task is created
 + reason and authoritative audit evidence are recorded
 ```
@@ -177,7 +177,7 @@ Lead owner changes
 | --- | --- | --- | --- | --- | --- | --- |
 | Claim | Sale | `ownerId = null` | `ownerId = actor` | unchanged | no | not required |
 | Assign | Manager / authorized user | null or member A | member B | unchanged | no | required |
-| Handover | Manager / authorized user | member A | member B | KEEP unchanged / MOVE eligible snapshot to B | yes | required (1..1000) |
+| Handover | Manager / authorized user | member A | member B | eligible snapshot transferred to B | yes | required (1..1000) |
 
 ### 5.1 Invariant OP-001
 
@@ -426,20 +426,20 @@ occurredAt
 The frozen O4 instruction supersedes the historical Handover contract in this document and the older canonical-design workflow. The canonical operation is `handoverLeadWithTasks`:
 
 ```http
-POST /leads/{leadId}/handover
+POST /workflows/lead-handover/{leadId}
 If-Match: required
 Idempotency-Key: required
 X-Request-Id: required
 X-Correlation-Id: required (8..128 characters)
 ```
 
-The closed body contains exactly `newOwnerId`, trimmed `reason` (1..1000 characters), and required `openTaskPolicy`. The policy is exactly `KEEP_CURRENT_ASSIGNEES` or `MOVE_LEAD_OPEN_TASKS_TO_NEW_OWNER`; omission has no default. No public Task IDs or Task versions are accepted.
+The closed body contains exactly `nextOwnerId` and trimmed `reason` (1..1000 characters). No public Task IDs or Task versions are accepted.
 
 A new admission requires an existing, nonarchived, already-owned Lead; a different active assignable target member in the trusted workspace; current Lead version; and no incompatible ownership/conversion reservation. An unassigned Lead uses Assign or Claim.
 
-### 10.2 Eligible Task snapshot and policies
+### 10.2 Eligible Task snapshot
 
-KEEP preserves every existing Task assignee. MOVE authoritatively discovers the complete eligible set inside the Tasks participant transaction:
+The Tasks participant authoritatively discovers the complete eligible set inside the Tasks participant transaction:
 
 ```text
 status == OPEN
@@ -452,7 +452,7 @@ The authoritative snapshot is resolved when the Tasks participant commits. Tasks
 
 ### 10.3 Mandatory takeover Task and SLA
 
-Both policies create exactly one OPEN takeover Task assigned to `newOwnerId`, priority NORMAL, linked to this Lead. `sourceRef.type = LEAD_HANDOVER`, `sourceRef.id` identifies the durable Handover, and `sourceRef.evidence` carries the full reason without truncation.
+Each Handover creates exactly one OPEN takeover Task assigned to `nextOwnerId`, priority NORMAL, linked to this Lead. `sourceRef.type = LEAD_HANDOVER`, `sourceRef.id` identifies the durable Handover, and `sourceRef.evidence` carries the full reason without truncation.
 
 Workspace `handoverAcceptanceSlaHours` defaults to 24 and permits integer values 1..168 elapsed hours. Initial workflow creation freezes the resolved SLA, authoritative occurred-at and due-at. Configuration changes, retry and recovery cannot recalculate these values. Connected frontend uses the returned `handoverTaskDueAt`; only demo authority calculates it from demo workspace configuration.
 
@@ -462,8 +462,7 @@ The existing mutation envelope contains authoritative result fields:
 
 ```text
 lead (existing LeadDocument)
-openTaskPolicy
-reassignedTaskIds (empty for KEEP)
+reassignedTaskIds (the committed eligible snapshot)
 handoverTaskId
 handoverTaskVersion (numeric backend long, integer >= 0)
 handoverTaskDueAt (ISO date-time string)
@@ -482,9 +481,9 @@ A crash after Tasks commit retains a recoverable anchor. Service-authorized reco
 
 Preserve the original idempotency key, expected Lead version and complete payload across ambiguity, including dialog close/reopen and observation that the target already owns the Lead. Exact replay remains subject to current backend authorization. A definitive 412 preserves the draft, blocks resubmission and requires explicit refresh/reconciliation. A new intent uses the newest authoritative version. Changing the actual Lead ID clears the previous record's retry state.
 
-Both policies preflight `leads.handover` and `tasks.create`; MOVE additionally preflights `tasks.assign`, regardless of loaded Task count. New admission requires writable `ownerId`; retained replay can use read-only projection. Default eligible administrator/manager templates may include Handover; custom roles receive no blanket grant.
+Preflight requires `leads.assign`, `tasks.create` and `tasks.assign`, regardless of loaded Task count. New admission requires writable `ownerId`; retained replay can use read-only projection. Default eligible administrator/manager templates may include Handover; custom roles receive no blanket grant.
 
-Task preview is read-only and informational. Task loading does not block Handover. Unread conversations are omitted without Communications authority. Preserve the existing dialog and Work Panel.
+Task loading does not determine Handover admission. Unread conversations are omitted without Communications authority. Preserve the existing dialog and Work Panel.
 
 ## 11. Task and Activity invariants
 
@@ -495,7 +494,7 @@ Task = actionable work
 Activity = immutable historical event
 ```
 
-MOVE Handover reassigns its eligible OPEN Task snapshot only; KEEP preserves assignees.
+Handover reassigns every eligible OPEN Task in its authoritative snapshot.
 
 It does not "complete" or mutate Activity history.
 
@@ -522,9 +521,9 @@ If the repository chooses not to add `leads.claim`, an equally explicit operatio
 
 Handover requires explicit authority over:
 
-- `leads.handover` and effective Lead record access;
+- `leads.assign` and effective Lead record access;
 - `tasks.create` for both policies;
-- `tasks.assign` and effective authority for every eligible Task for MOVE.
+- `tasks.assign` and effective authority for every eligible Task.
 
 The frontend must not infer permission from role names.
 
@@ -860,7 +859,7 @@ AND 2 OPEN Lead Tasks
 AND 1 COMPLETED Lead Task
 AND 1 CANCELLED Lead Task
 AND 1 archived OPEN Lead Task
-WHEN Lead is handed over to B with MOVE_LEAD_OPEN_TASKS_TO_NEW_OWNER
+WHEN Lead is handed over to B to the next owner
 THEN Lead owner = B
 AND the 2 OPEN Tasks are assigned to B
 AND COMPLETED Task is unchanged
@@ -945,7 +944,7 @@ Assign changes Lead owner only.
 
 ### DEC-OWN-006
 
-Handover transfers an owned Lead, applies explicit KEEP/MOVE Task policy, creates exactly one NORMAL takeover Task with frozen workspace SLA, and records audit reason.
+Handover transfers an owned Lead, transfers every eligible open Task, creates exactly one NORMAL takeover Task with frozen workspace SLA, and records audit reason.
 
 ### DEC-OWN-007
 

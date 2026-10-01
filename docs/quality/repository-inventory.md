@@ -19,15 +19,15 @@ Do not delete a dead, compatibility, deprecated or duplicate candidate based on 
 |---|---:|
 | Repository files | 2075 |
 | Source files | 1385 |
-| Source lines | 212936 |
+| Source lines | 212965 |
 | Registered modules | 15 |
 | Route keys | 80 |
 | Loadable route modules | 64 |
-| Capabilities | 132 |
+| Capabilities | 131 |
 | Workspace module flags | 13 |
 | Cross-module workflows | 23 |
 | Public boundary files | 107 |
-| Persistence entries | 3018 |
+| Persistence entries | 3013 |
 | Repository/store/adapter files | 146 |
 | Compatibility candidates | 53 |
 | Dead-code candidates | 0 |
@@ -37,7 +37,7 @@ Do not delete a dead, compatibility, deprecated or duplicate candidate based on 
 | Quality groups | 11 |
 | Verify gates | 339 |
 
-Inventory fingerprint: `7958f92e0901b79c1d06129570ad00033d226eb9b939ba5b62de4275c838593e`
+Inventory fingerprint: `e1c0bb184bdb1a1c5763219fd6b0565e87a4561b9700c66b919fbefaee094d6a`
 
 
 ## Quality pipeline
@@ -149,7 +149,7 @@ The journey table locks source evidence and executable command names. Actual com
 | `organizations` | 2 |
 | `payments` | 7 |
 | `platform:access-control` | 46 |
-| `platform:api` | 2828 |
+| `platform:api` | 2823 |
 | `platform:audit` | 4 |
 | `platform:configuration-runtime` | 3 |
 | `platform:developer-configuration` | 3 |
@@ -177,7 +177,7 @@ The JSON manifest includes each detected key pattern, operation, path, line and 
 | File | Lines | Owner |
 |---|---:|---|
 | `src/platform/api/catalog/generatedApiOperationCatalog.ts` | 32466 | `platform:api` |
-| `src/platform/api/generated/commercialApi.ts` | 6039 | `platform:api` |
+| `src/platform/api/generated/commercialApi.ts` | 6035 | `platform:api` |
 | `src/i18n/translations/en.ts` | 4989 | `shared:i18n` |
 | `src/i18n/translations/vi.ts` | 4989 | `shared:i18n` |
 | `src/i18n/types.ts` | 2036 | `shared:i18n` |
@@ -188,7 +188,7 @@ The JSON manifest includes each detected key pattern, operation, path, line and 
 | `src/modules/contacts/presentation/hooks/useContactListController.tsx` | 1179 | `contacts` |
 | `src/modules/quotes/presentation/views/QuoteBuilderView.tsx` | 1106 | `quotes` |
 | `src/modules/quotes/presentation/pages/QuoteListPage.tsx` | 1103 | `quotes` |
-| `src/modules/leads/presentation/views/LeadDetailView.tsx` | 1078 | `leads` |
+| `src/modules/leads/presentation/views/LeadDetailView.tsx` | 1077 | `leads` |
 | `src/modules/quotes/presentation/hooks/useQuoteBuilderController.tsx` | 997 | `quotes` |
 | `src/modules/deals/presentation/hooks/useDealPipelineController.ts` | 966 | `deals` |
 | `src/modules/orders/presentation/hooks/useOrderFormController.tsx` | 935 | `orders` |
@@ -200,12 +200,12 @@ The JSON manifest includes each detected key pattern, operation, path, line and 
 | `src/guidance/content/crm/extendedScreens.ts` | 701 | `shared:guidance` |
 | `src/modules/organizations/presentation/pages/OrganizationAccountDetailPage.tsx` | 695 | `organizations` |
 | `src/modules/products/presentation/pages/ProductDetailPage.tsx` | 695 | `products` |
-| `src/modules/leads/infrastructure/http/LeadHttpCommandAdapter.ts` | 692 | `leads` |
+| `src/modules/leads/infrastructure/http/LeadHttpCommandAdapter.ts` | 691 | `leads` |
 | `src/modules/leads/presentation/hooks/useLeadFormController.tsx` | 649 | `leads` |
 | `src/modules/customers/presentation/detail/CustomerOverviewTab.tsx` | 640 | `customers` |
 | `src/modules/products/presentation/components/ProductFormModal.tsx` | 637 | `products` |
+| `src/modules/leads/presentation/hooks/useLeadDetailController.tsx` | 635 | `leads` |
 | `src/modules/payments/presentation/pages/PaymentOperationsPage.tsx` | 634 | `payments` |
-| `src/modules/leads/presentation/hooks/useLeadDetailController.tsx` | 631 | `leads` |
 
 ## Circular dependency groups
 

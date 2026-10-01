@@ -16407,7 +16407,7 @@ export const API_OPERATION_CATALOG = {
     "boundedContext": "Leads",
     "kind": "COMMAND",
     "method": "POST",
-    "path": "/leads/{leadId}/handover",
+    "path": "/workflows/lead-handover/{leadId}",
     "contractStatus": "PRODUCTION_CONTRACT_READY",
     "blockingDecisionId": null,
     "generatedClient": {
@@ -16498,7 +16498,7 @@ export const API_OPERATION_CATALOG = {
     "authorization": {
       "auth": "REQUIRED",
       "workspace": "REQUIRED",
-      "capability": "leads.handover",
+      "capability": "leads.assign",
       "resourceScope": "RESOURCE",
       "dataScope": "WORKSPACE"
     },

@@ -28,7 +28,7 @@ Sales Queue is a filtered Lead query, not an aggregate or fake owner.
 | --- | --- | --- | --- |
 | Claim | null -> authenticated actor | none | Lead owner command / single authoritative transaction |
 | Assign | current/null -> target member | none | Lead owner command / single authoritative transaction |
-| Handover | current -> target member | explicit KEEP/MOVE snapshot; mandatory NORMAL takeover Task | backend-orchestrated cross-module workflow |
+| Handover | current -> target member | eligible open Task snapshot; mandatory NORMAL takeover Task | backend-orchestrated cross-module workflow |
 | Bulk Assign | versioned Lead set -> target member | none | authoritative backend batch |
 | Bulk Handover | not admitted in V1 | n/a | out of scope |
 
@@ -87,9 +87,9 @@ Body:
 
 ### Handover
 
-Frozen O4 canonical operation: `POST /leads/{leadId}/handover`, operation ID `handoverLeadWithTasks`. Require If-Match, Idempotency-Key, X-Request-Id and X-Correlation-Id. The closed body is `{ newOwnerId, reason, openTaskPolicy }`; reason is trimmed and capped at 1000. No public Task targets or Task versions.
+Frozen O4 canonical operation: `POST /workflows/lead-handover/{leadId}`, operation ID `handoverLeadWithTasks`. Require If-Match, Idempotency-Key, X-Request-Id and X-Correlation-Id. The closed body is `{ nextOwnerId, reason }`; reason is trimmed and capped at 1000. No public Task targets or Task versions.
 
-`leads.handover` and writable Lead owner field are required for new admission. Both policies require `tasks.create`; MOVE also requires `tasks.assign` and authority over the complete eligible snapshot. The backend record command is `lead.handover`. Current read/capability/record authorization applies to exact replay without requiring a new owner-field write admission.
+`leads.assign` and writable Lead owner field are required for new admission. Admission requires `tasks.create` and `tasks.assign` and authority over the complete eligible snapshot. The Lead record authority is `lead.assign-owner`. Current read/capability/record authorization applies to exact replay without requiring a new owner-field write admission.
 
 The response uses the existing mutation envelope and LeadDocument, plus policy, reassigned IDs, takeover Task ID, numeric nonnegative Task version (native create starts at 0), ISO due-at and resolved SLA hours.
 
@@ -168,7 +168,7 @@ Activity
 
 Claim and Assign are single authoritative Lead ownership transactions.
 
-Handover uses a durable Atomic Workflow with participant-local transactions and an exact Lead reservation. MOVE discovers its authoritative Task snapshot inside the Tasks transaction; KEEP leaves assignees unchanged. Both create exactly one NORMAL takeover Task. Recovery after Tasks commit completes Lead ownership without compensating Tasks or duplicating takeover work.
+Handover uses a durable Atomic Workflow with participant-local transactions and an exact Lead reservation. The Tasks participant discovers and transfers its authoritative eligible Task snapshot inside one transaction, and creates exactly one NORMAL takeover Task. Recovery after Tasks commit completes Lead ownership without compensating Tasks or duplicating takeover work.
 
 The frontend is never the coordinator.
 
@@ -259,8 +259,10 @@ O2 implements only `claimLeadFromQueue`, POST `/workflows/lead-queue/{leadId}/cl
 
 If-Match and Idempotency-Key are required. Exact replay has no duplicate effects; a fresh assigned intent returns 409 LEAD_QUEUE_CLAIM_CONFLICT. The single workspace-qualified Lead uses an update lock before the idempotency lookup. Local real-host SQL and JSDOM evidence is recorded in sibling backend `backend-work/review/lead-queue-claim.md`; this is not independent CI or connected browser acceptance.
 
-## O4 current verification — 2026-10-01
+## Canonical Handover current verification — 2026-10-02
 
-Frontend starts at `17bd129eb84989c2b14bb0b58efd7fb65d80e881`; frozen O4 instructions supersede historical Handover guidance above. Backend source has the real canonical route and matching request/result records; the main backend run reports a passing full build and 567/567 AccessControl host tests. These are reported backend results, not frontend-executed SQL/recovery acceptance.
+Corrective baselines: frontend `2059240736907dcad1e382666a0646de24e504b7`, backend `4db48b235b499b3c51bc9f7ba11e5845281263ee`. The public operation is `POST /workflows/lead-handover/{leadId}` with only `nextOwnerId` and trimmed `reason`. Human admission requires `leads.assign`, `tasks.assign` and `tasks.create`, with effective Lead/Task scope and write authority before effects. The obsolete human capability and optional Task policy are removed; service recovery authority remains.
 
-Frontend OpenAPI generation/check and the permanent `quality.lead-handover` React/JSDOM/HTTP-fixture gate pass locally. Full verification stops at inherited architecture and Lead export assertions. Real O4 HTTP/SQL verification passes 192 O4 checks, 212 cumulative HTTP checks and nine ownership races, including Tasks-commit crash/restart, revoked-human-grant service recovery, frozen SLA, cancellation fences and current Task replay privacy. Focused Tasks verification passes 33 checks plus eight SQL checks; Workspace verification passes 31; the standard AccessControl host passes 567/567 and Assign regression passes 34 checks. All five affected DbContexts have no pending model changes. See the acceptance tracker for exact commands and limitations. Connected browser E2E is not claimed. Overall V1 stays TARGET; Bulk Assign remains unavailable. The patch remains uncommitted for source review.
+Real HTTP/SQL verification passes 222 O4 checks, 223 cumulative HTTP checks and nine races. It proves initial OWN A→B success, current-resource replay without post-transfer ownership checks, historical completed intent replay, READ_ONLY owner replay, Tasks-commit crash/restart, revoked-human-grant service recovery, frozen SLA and cancellation fences. Tasks verification passes 48 checks plus eight SQL checks; Workspace passes 43; AccessControl passes 567/567; Assign passes 34 checks with no Task/Activity changes. All five affected DbContexts have no pending model changes.
+
+Frontend generated contract and focused Handover gate pass, including actual scoped demo repository replay and Tasks-owned snapshot admission. Full suites retain baseline failures reproduced on the exact corrective frontend baseline. See the acceptance tracker for commands and limits. No connected browser E2E, governed freeze attestation, commit or push is claimed. Bulk Assign remains unavailable.

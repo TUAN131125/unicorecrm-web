@@ -15,7 +15,7 @@ export function useLeadHandover(lead: Lead | undefined) {
   const recordId = useRef(lead?.id);
   const epoch = useRef(0);
   useEffect(() => {
-    if (!lead?.id || recordId.current === lead.id) return;
+    if (recordId.current === lead?.id) return;
     recordId.current = lead?.id;
     epoch.current++;
     attempt.current = undefined;
@@ -33,9 +33,8 @@ export function useLeadHandover(lead: Lead | undefined) {
   }, [newest]);
   const isAmbiguousRetry = (input: HandoverLeadWithTasksInput) => Boolean(ambiguous
     && attempt.current?.leadId === lead?.id
-    && attempt.current?.input.newOwnerId === input.newOwnerId.trim()
-    && attempt.current?.input.reason === input.reason.trim()
-    && attempt.current?.input.openTaskPolicy === input.openTaskPolicy);
+    && attempt.current?.input.nextOwnerId === input.nextOwnerId.trim()
+    && attempt.current?.input.reason === input.reason.trim());
   const recover = async () => {
     if (!lead || busy.current || ambiguous) return;
     const startedEpoch = epoch.current;
@@ -51,10 +50,9 @@ export function useLeadHandover(lead: Lead | undefined) {
     if (!lead || busy.current || blocked) return;
     const observed = newest;
     if (!observed) return;
-    const payload = { ...input, newOwnerId: input.newOwnerId.trim(), reason: input.reason.trim() };
+    const payload = { nextOwnerId: input.nextOwnerId.trim(), reason: input.reason.trim() };
     if (!attempt.current && (!observed.ownerId || observed.archivedAt || observed.resourceVersion === undefined
-      || payload.newOwnerId === observed.ownerId || !payload.newOwnerId || !payload.reason || payload.reason.length > 1000
-      || !["KEEP_CURRENT_ASSIGNEES", "MOVE_LEAD_OPEN_TASKS_TO_NEW_OWNER"].includes(payload.openTaskPolicy))) return;
+      || payload.nextOwnerId === observed.ownerId || !payload.nextOwnerId || !payload.reason || payload.reason.length > 1000)) return;
     if (!attempt.current && observed.resourceVersion !== undefined) attempt.current = { leadId: lead.id, idempotencyKey: `lead-handover-${crypto.randomUUID()}`, expectedVersion: observed.resourceVersion, input: payload };
     const intent = attempt.current;
     if (!intent) return;

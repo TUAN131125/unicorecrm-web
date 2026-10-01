@@ -16,7 +16,11 @@
   "assignmentModel": {
     "unassigned": "ownerId == null",
     "assigned": "ownerId references an authoritative assignable workspace member",
-    "forbiddenOwnerSentinels": ["queue", "unassigned", "system"]
+    "forbiddenOwnerSentinels": [
+      "queue",
+      "unassigned",
+      "system"
+    ]
   },
   "creationPolicy": {
     "interactiveCrmBySalesperson": "AUTHENTICATED_CREATOR",
@@ -27,9 +31,18 @@
     "delegatedExternalIngress": "UNASSIGNED"
   },
   "o1QueueReadPolicy": {
-    "requiredCapabilities": ["leads.read", "leads.queue.read"],
-    "allowedScopes": ["WORKSPACE", "OWN"],
-    "deniedScopes": ["TEAM", "CUSTOM"],
+    "requiredCapabilities": [
+      "leads.read",
+      "leads.queue.read"
+    ],
+    "allowedScopes": [
+      "WORKSPACE",
+      "OWN"
+    ],
+    "deniedScopes": [
+      "TEAM",
+      "CUSTOM"
+    ],
     "ownQueueMutationsAllowed": false,
     "claimImplemented": false,
     "customRoleAutoGrant": false
@@ -55,16 +68,20 @@
     "handover": {
       "operationId": "handoverLeadWithTasks",
       "method": "POST",
-      "path": "/leads/{leadId}/handover",
-      "requestFields": ["newOwnerId", "reason", "openTaskPolicy"],
+      "path": "/workflows/lead-handover/{leadId}",
+      "requestFields": [
+        "nextOwnerId",
+        "reason"
+      ],
       "reasonRequired": true,
       "reasonMaxLength": 1000,
-      "openTaskPolicyRequired": true,
-      "openTaskPolicies": ["KEEP_CURRENT_ASSIGNEES", "MOVE_LEAD_OPEN_TASKS_TO_NEW_OWNER"],
-      "taskEffect": "EXPLICIT_POLICY_KEEP_OR_MOVE_ELIGIBLE_OPEN_LEAD_TASKS",
-      "requiredCapabilities": ["leads.handover", "tasks.create"],
-      "moveRequiredCapability": "tasks.assign",
-      "recordCommand": "lead.handover",
+      "taskEffect": "TRANSFER_ALL_ELIGIBLE_OPEN_LEAD_TASKS",
+      "requiredCapabilities": [
+        "leads.assign",
+        "tasks.assign",
+        "tasks.create"
+      ],
+      "recordCommand": "lead.assign-owner",
       "newAdmissionOwnerFieldAccess": "READ_WRITE",
       "idempotencyRequired": true,
       "expectedLeadVersionRequired": true,
@@ -90,7 +107,10 @@
       "moduleKey": "leads",
       "recordId": "target lead id"
     },
-    "excludedStatuses": ["COMPLETED", "CANCELLED"],
+    "excludedStatuses": [
+      "COMPLETED",
+      "CANCELLED"
+    ],
     "activitiesAffected": false
   },
   "outOfScope": [
@@ -104,7 +124,15 @@
     "multiple named queues",
     "bulk handover"
   ],
-  "patchSequence": ["O1", "O2", "O3", "O4", "O5", "O6", "O7"],
+  "patchSequence": [
+    "O1",
+    "O2",
+    "O3",
+    "O4",
+    "O5",
+    "O6",
+    "O7"
+  ],
   "unresolvedDecisions": [],
   "resolvedDecisions": [
     {
@@ -129,8 +157,8 @@
   ],
   "localO4Implementation": {
     "status": "LOCAL_VERIFIED_PENDING_REVIEW",
-    "frontendBaseline": "17bd129eb84989c2b14bb0b58efd7fb65d80e881",
-    "backendBaseline": "1106272021ea0f733c1f610c177e85e907142cac",
+    "frontendBaseline": "2059240736907dcad1e382666a0646de24e504b7",
+    "backendBaseline": "4db48b235b499b3c51bc9f7ba11e5845281263ee",
     "handoverAvailable": true,
     "bulkAssignAvailable": false,
     "bulkHandoverAvailable": false,
@@ -139,11 +167,19 @@
     "frontendHandoverGate": "PASS",
     "frontendLintAndBuild": "PASS",
     "frontendInventoryCheck": "PASS",
-    "backendBuild": "MAIN_REPORTED_PASS",
-    "backendSqlRecoveryAcceptance": "MAIN_REPORTED_PASS_192_O4_212_HTTP_9_RACES",
+    "backendBuild": "PASS",
+    "backendSqlRecoveryAcceptance": "PASS_222_O4_223_HTTP_9_RACES",
     "connectedBrowserAcceptance": "NOT_EXECUTED",
     "overallO4Pass": true,
-    "report": "docs/quality/lead-ownership-distribution-acceptance.md"
+    "report": "docs/quality/lead-ownership-distribution-acceptance.md",
+    "tasksParticipantChecks": 48,
+    "tasksSqlChecks": 8,
+    "workspaceChecks": 43,
+    "accessControlChecks": 567,
+    "assignChecks": 34,
+    "ownInitialSuccess": "PASS",
+    "historicalCompletedReplay": "PASS",
+    "readOnlyOwnerReplay": "PASS"
   },
   "localO2Implementation": {
     "status": "LOCAL_VERIFIED_PENDING_REVIEW",

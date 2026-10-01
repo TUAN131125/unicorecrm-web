@@ -1,5 +1,4 @@
 import { useLeadHandover } from "./useLeadHandover";
-import type { LeadHandoverOpenTaskPolicy } from "../../application/ports/LeadApiRuntime";
 import { describePartialCommit, executeSequentialCommits, formatApplicationError } from "@/shared/operations";
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
@@ -105,17 +104,17 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
   const canArchive = isLeadOperationAvailable(LEAD_OPERATION.ARCHIVE)
     && access.can(CAPABILITIES.LEADS_DELETE)
     && !lead?.archivedAt;
-  const handoverOwnership = useRecordOwnershipContext("leads", CAPABILITIES.LEADS_HANDOVER);
+  const handoverOwnership = useRecordOwnershipContext("leads", CAPABILITIES.LEADS_ASSIGN);
   const handover = useLeadHandover(lead);
   const handoverAccess = useEffectiveRecordAccess({ resourceKey: "leads", recordId: lead?.id, record: lead,
-    requestedCommands: ["lead.handover"], requestedFields: ["ownerId"], enabled: Boolean(lead?.ownerId) });
-  const canMoveHandoverTasks = access.can(CAPABILITIES.TASKS_ASSIGN);
-  const canHandover = (Boolean(lead?.ownerId) || handover.ambiguous) && access.can(CAPABILITIES.LEADS_HANDOVER)
+    requestedCommands: ["lead.assign-owner"], requestedFields: ["ownerId"], enabled: Boolean(lead?.ownerId) });
+  const canStartNewHandover = !handover.ambiguous && Boolean(lead?.ownerId) && access.can(CAPABILITIES.LEADS_ASSIGN)
+    && access.can(CAPABILITIES.TASKS_ASSIGN)
     && access.can(CAPABILITIES.TASKS_CREATE)
-    && Boolean(handoverAccess.data?.canRead && handoverAccess.data.allowedCommands.includes("lead.handover"))
-    && (handover.ambiguous || handoverAccess.data?.fieldAccess.ownerId === "READ_WRITE")
+    && Boolean(handoverAccess.data?.canRead && handoverAccess.data.allowedCommands.includes("lead.assign-owner"))
+    && handoverAccess.data?.fieldAccess.ownerId === "READ_WRITE"
     && isLeadOperationAvailable(LEAD_OPERATION.HANDOVER_WITH_TASKS)
-    && (!lead?.archivedAt || handover.ambiguous);
+    && !lead?.archivedAt;
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [showVerificationReadiness, setShowVerificationReadiness] = useState(false);
@@ -158,6 +157,10 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
     emailForm, setEmailForm,
     smsForm, setSmsForm,
   } = dialogs;
+  const canRetryExactAmbiguousHandover = handover.isAmbiguousRetry({
+    nextOwnerId: handoverOwnerId, reason: handoverReason,
+  });
+  const canHandover = canStartNewHandover || canRetryExactAmbiguousHandover;
   if (!lead) return null;
 
 
@@ -457,11 +460,13 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
     ? careCases.filter((item) => item.relationshipRef && relationshipRefKey(item.relationshipRef) === relationshipRefKey(lead.relationshipRef!))
     : [];
 
-  const handleConfirmHandover = async (newOwnerId: string, reason: string, openTaskPolicy: LeadHandoverOpenTaskPolicy) => {
-    if (!canHandover || (newOwnerId === lead.ownerId && !handover.isAmbiguousRetry({ newOwnerId, reason, openTaskPolicy })) || (openTaskPolicy === "MOVE_LEAD_OPEN_TASKS_TO_NEW_OWNER" && !canMoveHandoverTasks)) return;
-    const result = await handover.submit({ newOwnerId, reason, openTaskPolicy });
+  const handleConfirmHandover = async (nextOwnerId: string, reason: string) => {
+    const exactRetry = handover.isAmbiguousRetry({ nextOwnerId, reason });
+    if (!(canStartNewHandover || exactRetry) || (nextOwnerId === lead.ownerId && !exactRetry)) return;
+    const result = await handover.submit({ nextOwnerId, reason });
     if (!result) return;
     setShowHandoverModal(false);
+    setHandoverOwnerId("");
     setHandoverReason("");
     showToast(locale === "vi"
       ? `Đã bàn giao, chuyển ${result.reassignedTaskIds.length} công việc. Hạn tiếp nhận: ${result.handoverTaskDueAt}.`
@@ -528,7 +533,6 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
     canQualify,
     canArchive,
     canHandover,
-    canMoveHandoverTasks,
     handover,
     handoverMembers: handoverOwnership?.assignableOwners ?? [],
     members,
