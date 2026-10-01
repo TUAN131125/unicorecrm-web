@@ -21,6 +21,7 @@ interface LeadWorkPanelProps {
   campaignName?: string;
   canHandover: boolean;
   canQualify: boolean;
+  onAssigned?: (leadId: string) => void;
   onHandover(): void;
   onQualify(): void;
   onOpenWork(): void;
@@ -29,7 +30,7 @@ interface LeadWorkPanelProps {
 }
 
 export function LeadWorkPanel({ lead, locale, isVisible, workResources, ownerName, sourceName, campaignName,
-  canHandover, canQualify, onHandover, onQualify, onOpenWork, onOpenTask, onQuickAction }: LeadWorkPanelProps) {
+  canHandover, canQualify, onAssigned, onHandover, onQualify, onOpenWork, onOpenTask, onQuickAction }: LeadWorkPanelProps) {
   const reduceMotion = useReducedMotion();
   const [contextOpen, setContextOpen] = useState(false);
   const railRef = useRef<HTMLDivElement>(null);
@@ -111,7 +112,7 @@ export function LeadWorkPanel({ lead, locale, isVisible, workResources, ownerNam
                 <div className="flex items-center gap-2">
                   <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-xs font-bold text-indigo-600">{ownerName && ownerName !== "—" ? ownerName.trim().split(/\s+/).slice(-2).map((part) => part[0]).join("") : "?"}</span>
                   <span className="min-w-0 flex-1 truncate text-xs font-semibold text-slate-700" title={owner}>{owner}</span>
-                  <LeadOwnerAssignAction lead={lead} />
+                  <LeadOwnerAssignAction lead={lead} onAssigned={onAssigned} />
                   {canHandover && <Button size="xs" onClick={onHandover}>{text("Bàn giao", "Handover")}</Button>}
                 </div>
               </section>

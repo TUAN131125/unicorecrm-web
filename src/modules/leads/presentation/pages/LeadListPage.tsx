@@ -1,3 +1,4 @@
+import { LeadOwnerAssignDialog } from "../components/LeadOwnerAssignAction";
 import { useLeadQueueClaim } from "../hooks/useLeadQueueClaim";
 import { AuthoritativeQueryBoundary, formatApplicationError } from "@/shared/operations";
 import React, { useState, useEffect, useMemo } from "react";
@@ -119,6 +120,8 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
   // Toast management
   const [toast, setToast] = useState<{ message: string; actionLabel?: string; onAction?: () => void } | null>(null);
   const [verificationLeadId, setVerificationLeadId] = useState<string | null>(null);
+  const [leadToAssign, setLeadToAssign] = useState<Lead | null>(null);
+  const [assignOpen, setAssignOpen] = useState(false);
   const [showStatistics, setShowStatistics] = useState(false);
   const [archivePending, setArchivePending] = useState(false);
   const archiveSubmittingRef = React.useRef(false);
@@ -176,6 +179,14 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
     project: projectServerLeadPage,
     evictProjection: clearLeadProjection,
   });
+
+  useEffect(() => {
+    if (!leadToAssign) return;
+    const observed = serverPagination.items.find((lead) => lead.id === leadToAssign.id);
+    if (observed && (observed.resourceVersion ?? -1) > (leadToAssign.resourceVersion ?? -1)) {
+      setLeadToAssign(observed);
+    }
+  }, [serverPagination.items, leadToAssign]);
 
   const canArchiveLeads = isLeadOperationAvailable(LEAD_OPERATION.ARCHIVE)
     && access.can(CAPABILITIES.LEADS_DELETE);
@@ -983,8 +994,12 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
         campaigns={referenceData.campaigns}
         memberById={referenceData.memberById}
         productById={referenceData.productById}
-        onAssigned={(leadId) => selection.toggleSelection(leadId, false)}
-        refreshAfterAssign={serverPagination.refresh}
+        {...(access.can(CAPABILITIES.LEADS_ASSIGN) && isLeadOperationAvailable(LEAD_OPERATION.ASSIGN_OWNER) ? {
+          onAssign: (lead: Lead) => {
+            setLeadToAssign((current) => current?.id === lead.id && (current.resourceVersion ?? -1) > (lead.resourceVersion ?? -1) ? current : lead);
+            setAssignOpen(true);
+          },
+        } : {})}
         canClaim={canClaim}
         claimPendingIds={queueClaim.pendingIds}
         onClaim={(leadId) => {
@@ -1027,6 +1042,18 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
         onViewDetails={(leadId) => navigate(`/leads/${leadId}`, { state: { returnTo: getReturnToUrl(viewMode), tab: "overview" } })}
       />
       </AuthoritativeQueryBoundary>
+
+      {leadToAssign && <LeadOwnerAssignDialog
+        key={leadToAssign.id}
+        lead={leadToAssign}
+        isOpen={assignOpen}
+        onClose={() => setAssignOpen(false)}
+        onAssigned={(leadId) => {
+          selection.toggleSelection(leadId, false);
+          showToast(locale === "vi" ? "Đã phân công Lead." : "Lead owner assigned.");
+        }}
+        refresh={serverPagination.refresh}
+      />}
 
       <LeadStatisticsModal
         isOpen={showStatistics}

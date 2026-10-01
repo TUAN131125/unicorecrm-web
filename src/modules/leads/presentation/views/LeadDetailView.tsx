@@ -1008,6 +1008,7 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
         </main>
 
         <LeadWorkPanel
+          onAssigned={() => showToast(locale === "vi" ? "Đã phân công Lead." : "Lead owner assigned.")}
           key={lead.id}
           lead={lead}
           locale={locale}

@@ -23,7 +23,7 @@
   "summary": {
     "repositoryFiles": 2072,
     "sourceFiles": 1384,
-    "sourceLines": 212730,
+    "sourceLines": 212797,
     "modules": 15,
     "routes": 80,
     "loadableRouteModules": 64,
@@ -17009,7 +17009,7 @@
         "operation": "workspace-resource",
         "owner": "leads",
         "path": "src/modules/leads/presentation/components/LeadOwnerAssignAction.tsx",
-        "line": 17,
+        "line": 32,
         "browserGlobal": false
       },
       {
@@ -30281,16 +30281,16 @@
       "bytes": 56536
     },
     {
+      "path": "src/modules/leads/presentation/pages/LeadListPage.tsx",
+      "owner": "leads",
+      "lines": 1251,
+      "bytes": 55628
+    },
+    {
       "path": "src/modules/deals/presentation/pages/DealPipelinePage.tsx",
       "owner": "deals",
       "lines": 1233,
       "bytes": 58629
-    },
-    {
-      "path": "src/modules/leads/presentation/pages/LeadListPage.tsx",
-      "owner": "leads",
-      "lines": 1224,
-      "bytes": 54451
     },
     {
       "path": "src/modules/contacts/presentation/hooks/useContactListController.tsx",
@@ -30313,8 +30313,8 @@
     {
       "path": "src/modules/leads/presentation/views/LeadDetailView.tsx",
       "owner": "leads",
-      "lines": 1073,
-      "bytes": 62584
+      "lines": 1074,
+      "bytes": 62692
     },
     {
       "path": "src/modules/quotes/presentation/hooks/useQuoteBuilderController.tsx",
@@ -30505,8 +30505,8 @@
     {
       "path": "src/modules/leads/presentation/components/LeadTable.tsx",
       "owner": "leads",
-      "lines": 507,
-      "bytes": 23152
+      "lines": 504,
+      "bytes": 22951
     }
   ],
   "circularDependencies": [],
@@ -40227,8 +40227,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "leads",
-      "bytes": 6168,
-      "lines": 186,
+      "bytes": 6648,
+      "lines": 196,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -40448,8 +40448,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "leads",
-      "bytes": 6451,
-      "lines": 203,
+      "bytes": 6350,
+      "lines": 201,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -40474,8 +40474,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "leads",
-      "bytes": 8106,
-      "lines": 192,
+      "bytes": 8195,
+      "lines": 195,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -40487,8 +40487,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "leads",
-      "bytes": 5609,
-      "lines": 62,
+      "bytes": 7906,
+      "lines": 92,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -40539,8 +40539,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "leads",
-      "bytes": 23152,
-      "lines": 507,
+      "bytes": 22951,
+      "lines": 504,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -40565,8 +40565,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "leads",
-      "bytes": 11904,
-      "lines": 151,
+      "bytes": 11981,
+      "lines": 152,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -40890,8 +40890,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "leads",
-      "bytes": 54451,
-      "lines": 1224,
+      "bytes": 55628,
+      "lines": 1251,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -40916,8 +40916,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "leads",
-      "bytes": 62584,
-      "lines": 1073,
+      "bytes": 62692,
+      "lines": 1074,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -56282,8 +56282,8 @@
       "classification": "active-test",
       "reason": "Test source.",
       "owner": "test",
-      "bytes": 18367,
-      "lines": 223,
+      "bytes": 37316,
+      "lines": 458,
       "usage": {
         "runtimeReachable": false,
         "scriptReachable": false,
@@ -58274,5 +58274,5 @@
       "quality.work-operations-ux"
     ]
   },
-  "inventoryFingerprint": "653425ba8de079d43b1522c967bc266b4e29c384a0791326f51e4207c1cdce3e"
+  "inventoryFingerprint": "f1cf8a418540da16ed985a2f578e6635a22e2ab6bcee73faebbb81430f233ed4"
 }

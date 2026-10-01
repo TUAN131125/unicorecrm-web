@@ -1,5 +1,5 @@
 import React from "react";
-import { Archive, Eye, Phone, CheckSquare, Clock, CheckCircle2, ArrowUpRight, Unlock, X } from "lucide-react";
+import { Archive, Eye, Phone, CheckSquare, Clock, CheckCircle2, ArrowUpRight, Unlock, X, UserPlus } from "lucide-react";
 import type { Lead } from "../../domain/model/lead.types";
 import { LeadWorkState, QualificationOutcome } from "../../domain/model/leadLifecycle.canonical";
 
@@ -10,6 +10,7 @@ import { evaluateLeadContactPolicy, getLeadContactPolicyMessage, LeadContactChan
 interface LeadActionMenuProps {
   lead: Lead;
   onClose: () => void;
+  onAssign?: (lead: Lead) => void;
   onCall?: (lead: Lead) => void;
   onMarkContacted?: (leadId: string) => void;
   onQualify?: (leadId: string) => void;
@@ -24,6 +25,7 @@ interface LeadActionMenuProps {
 export const LeadActionMenu: React.FC<LeadActionMenuProps> = ({
   lead,
   onClose,
+  onAssign,
   onCall,
   onMarkContacted,
   onQualify,
@@ -49,6 +51,14 @@ export const LeadActionMenu: React.FC<LeadActionMenuProps> = ({
       >
         {tx("leads.actionMenu.view", "Xem chi tiết")}
       </MenuItemButton>
+
+      {!lead.archivedAt && onAssign && <MenuItemButton
+        data-guidance-id="leads.owner.assign"
+        onClick={(event) => { event.stopPropagation(); onClose(); onAssign(lead); }}
+        icon={<UserPlus size={14} className="text-indigo-600" />}
+      >
+        {lead.ownerId ? (locale === "vi" ? "Đổi phụ trách" : "Change owner") : (locale === "vi" ? "Phân công" : "Assign owner")}
+      </MenuItemButton>}
 
       {(lead.leadWorkState === LeadWorkState.NEW || lead.leadWorkState === LeadWorkState.CONTACTING) && lead.phone && onCall && (
         <MenuItemButton 

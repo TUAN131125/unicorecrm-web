@@ -26,6 +26,7 @@ interface LeadMobileCardListProps {
   canClaim?: boolean;
   claimPendingIds?: ReadonlySet<string>;
   onClaim?: (leadId: string) => void;
+  onAssign?: (lead: Lead) => void;
   onCall?: (lead: Lead) => void;
   onMarkContacted?: (leadId: string) => void;
   onQualify?: (leadId: string) => void;
@@ -49,6 +50,7 @@ export const LeadMobileCardList: React.FC<LeadMobileCardListProps> = ({
   canClaim = false,
   claimPendingIds = new Set(),
   onClaim,
+  onAssign,
   onCall,
   onMarkContacted,
   onQualify,
@@ -122,6 +124,7 @@ export const LeadMobileCardList: React.FC<LeadMobileCardListProps> = ({
                     <LeadActionMenu
                       lead={lead}
                       onClose={() => setOpenRowActionId(null)}
+                      onAssign={onAssign}
                       onCall={onCall}
                       onMarkContacted={onMarkContacted}
                       onQualify={onQualify}
