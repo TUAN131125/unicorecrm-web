@@ -72,6 +72,11 @@ function createLeadDetailResource(leadId: string): AuthoritativeResource<Lead> {
     const record = await getLeadApiRuntime().queries.get(leadId, signal);
     runBackendProjection("leads", () => saveLeadSnapshot(record));
     return record;
+  }, {
+    shouldRetainDataOnError: (error) => error.status !== 403
+      && error.status !== 404
+      && error.category !== "AUTHORIZATION"
+      && error.category !== "NOT_FOUND",
   });
   subscribeModuleQueryInvalidation("leads", async () => {
     if (resource.getSnapshot().state !== "IDLE") await resource.refresh();

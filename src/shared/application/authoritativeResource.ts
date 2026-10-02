@@ -20,7 +20,10 @@ export interface AuthoritativeResource<T> {
   reset(): void;
 }
 
-export function createAuthoritativeResource<T>(loader: (signal: AbortSignal) => Promise<T>): AuthoritativeResource<T> {
+export function createAuthoritativeResource<T>(
+  loader: (signal: AbortSignal) => Promise<T>,
+  options: { shouldRetainDataOnError?: (error: ApplicationError) => boolean } = {},
+): AuthoritativeResource<T> {
   let snapshot: AuthoritativeResourceSnapshot<T> = { state: "IDLE" };
   let controller: AbortController | undefined;
   let inFlight: Promise<T | undefined> | undefined;
@@ -64,11 +67,13 @@ export function createAuthoritativeResource<T>(loader: (signal: AbortSignal) => 
       .catch((error: unknown) => {
         if (currentVersion !== requestVersion || currentController.signal.aborted) return undefined;
         const currentData = snapshot.data;
+        const normalizedError = normalizeApplicationError(error);
+        const retainData = options.shouldRetainDataOnError?.(normalizedError) ?? true;
         setSnapshot({
           state: "ERROR",
-          error: normalizeApplicationError(error),
+          error: normalizedError,
           requestedAt,
-          ...(currentData === undefined ? {} : { data: currentData }),
+          ...(!retainData || currentData === undefined ? {} : { data: currentData }),
         });
         return undefined;
       })

@@ -59525,7 +59525,6 @@
         "type": "object",
         "additionalProperties": false,
         "required": [
-          "lead",
           "reassignedTaskIds",
           "handoverTaskId",
           "handoverTaskVersion",
@@ -59533,9 +59532,6 @@
           "resolvedHandoverAcceptanceSlaHours"
         ],
         "properties": {
-          "lead": {
-            "$ref": "#/components/schemas/LeadDocument"
-          },
           "reassignedTaskIds": {
             "type": "array",
             "items": {

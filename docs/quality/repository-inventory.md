@@ -17,9 +17,9 @@ Do not delete a dead, compatibility, deprecated or duplicate candidate based on 
 
 | Metric | Count |
 |---|---:|
-| Repository files | 2075 |
+| Repository files | 2076 |
 | Source files | 1385 |
-| Source lines | 212965 |
+| Source lines | 213015 |
 | Registered modules | 15 |
 | Route keys | 80 |
 | Loadable route modules | 64 |
@@ -37,7 +37,7 @@ Do not delete a dead, compatibility, deprecated or duplicate candidate based on 
 | Quality groups | 11 |
 | Verify gates | 339 |
 
-Inventory fingerprint: `e1c0bb184bdb1a1c5763219fd6b0565e87a4561b9700c66b919fbefaee094d6a`
+Inventory fingerprint: `ab65534b674b3d9903235c1dcea63cd90631313717b162ddec9dd078703525c0`
 
 
 ## Quality pipeline
@@ -62,7 +62,7 @@ Inventory fingerprint: `e1c0bb184bdb1a1c5763219fd6b0565e87a4561b9700c66b919fbefa
 |---|---:|
 | `active-runtime` | 1301 |
 | `active-script` | 80 |
-| `active-test` | 444 |
+| `active-test` | 445 |
 | `compatibility` | 53 |
 | `documentation` | 192 |
 | `fixture` | 3 |
@@ -177,7 +177,7 @@ The JSON manifest includes each detected key pattern, operation, path, line and 
 | File | Lines | Owner |
 |---|---:|---|
 | `src/platform/api/catalog/generatedApiOperationCatalog.ts` | 32466 | `platform:api` |
-| `src/platform/api/generated/commercialApi.ts` | 6035 | `platform:api` |
+| `src/platform/api/generated/commercialApi.ts` | 6034 | `platform:api` |
 | `src/i18n/translations/en.ts` | 4989 | `shared:i18n` |
 | `src/i18n/translations/vi.ts` | 4989 | `shared:i18n` |
 | `src/i18n/types.ts` | 2036 | `shared:i18n` |
@@ -200,7 +200,7 @@ The JSON manifest includes each detected key pattern, operation, path, line and 
 | `src/guidance/content/crm/extendedScreens.ts` | 701 | `shared:guidance` |
 | `src/modules/organizations/presentation/pages/OrganizationAccountDetailPage.tsx` | 695 | `organizations` |
 | `src/modules/products/presentation/pages/ProductDetailPage.tsx` | 695 | `products` |
-| `src/modules/leads/infrastructure/http/LeadHttpCommandAdapter.ts` | 691 | `leads` |
+| `src/modules/leads/infrastructure/http/LeadHttpCommandAdapter.ts` | 692 | `leads` |
 | `src/modules/leads/presentation/hooks/useLeadFormController.tsx` | 649 | `leads` |
 | `src/modules/customers/presentation/detail/CustomerOverviewTab.tsx` | 640 | `customers` |
 | `src/modules/products/presentation/components/ProductFormModal.tsx` | 637 | `products` |

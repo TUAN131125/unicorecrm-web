@@ -247,7 +247,7 @@ export function createLeadDemoApiRuntime(repository: LeadRepository): LeadApiRun
             nextOwnerId, reason, dueAt: handoverTaskDueAt, actorId: context.memberId, now }, proof => {
             const updated = { ...current, ownerId: nextOwnerId, resourceVersion: options.expectedVersion + 1, updatedAt: now };
             replaceProjectedLeads(repository, [updated]);
-            result = { lead: structuredClone(updated), ...proof, handoverTaskDueAt,
+            result = { ...proof, handoverTaskDueAt,
               resolvedHandoverAcceptanceSlaHours, evidence: mutationResult(updated, options, now, "demo").evidence };
           });
           if (!result) throw new Error("Tasks handover participant did not commit.");

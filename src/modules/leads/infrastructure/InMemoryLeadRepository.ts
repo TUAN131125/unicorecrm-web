@@ -1,6 +1,8 @@
 import type { AppEventBus } from "@/platform/events";
 import type { LeadRepository } from "../application/ports/LeadRepository";
 import type { Lead } from "../domain/model/lead.types";
+import { isBackendProjectionActive, isWorkspaceScopeResetActive } from "@/shared/application";
+import { retainNewestLeadProjection } from "../application/commands/leadRepositoryCommands";
 
 export const LEADS_CHANGED_EVENT = "unicore.leads.changed";
 
@@ -24,7 +26,10 @@ export class InMemoryLeadRepository implements LeadRepository {
   }
 
   replace(leads: Lead[]): void {
-    this.leads = cloneLeads(leads);
+    // Check the stored projection too: read authorization can hide it from callers.
+    const current = new Map(this.leads.map(lead => [lead.id, lead]));
+    this.leads = cloneLeads(isBackendProjectionActive("leads") && !isWorkspaceScopeResetActive()
+      ? leads.map(lead => retainNewestLeadProjection(lead, current.get(lead.id))) : leads);
     this.events.publish<Lead[]>(LEADS_CHANGED_EVENT, this.list());
   }
 

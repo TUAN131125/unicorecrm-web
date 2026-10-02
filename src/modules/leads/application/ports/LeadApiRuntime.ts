@@ -224,7 +224,8 @@ export type AnonymizeLeadResult = LeadMutationResult;
 export type RecordLeadConsentResult = LeadMutationResult;
 export type AssignLeadOwnerResult = LeadMutationResult;
 
-export interface HandoverLeadWithTasksResult extends LeadMutationResult {
+export interface HandoverLeadWithTasksResult {
+  evidence: LeadMutationEvidence;
   reassignedTaskIds: string[];
   handoverTaskId: string;
   handoverTaskVersion: number;

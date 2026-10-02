@@ -28165,9 +28165,6 @@
           "minimum": 1,
           "type": "integer"
         },
-        "lead": {
-          "$ref": "#/components/schemas/LeadDocument"
-        },
         "openTaskPolicy": {
           "$ref": "#/components/schemas/LeadHandoverOpenTaskPolicy"
         },
@@ -28184,7 +28181,6 @@
         }
       },
       "required": [
-        "lead",
         "reassignedTaskIds",
         "handoverTaskId",
         "openTaskPolicy",

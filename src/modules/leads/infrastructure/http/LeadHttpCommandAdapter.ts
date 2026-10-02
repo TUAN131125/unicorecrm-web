@@ -268,7 +268,7 @@ export class LeadHttpCommandAdapter implements LeadCommandPort {
     const response = await this.api.handoverLeadWithTasks<LeadHandoverResponse>(aggregateId, body, versionedOptions("handoverLeadWithTasks", options));
     assertEnvelope("handoverLeadWithTasks", response);
     const result = response.result;
-    if (!result || !result.lead
+    if (!result
       || !Array.isArray(result.reassignedTaskIds) || result.reassignedTaskIds.some((id) => typeof id !== "string" || !id.trim())
       || new Set(result.reassignedTaskIds).size !== result.reassignedTaskIds.length
       || typeof result.handoverTaskId !== "string" || !result.handoverTaskId.trim()
@@ -277,11 +277,12 @@ export class LeadHttpCommandAdapter implements LeadCommandPort {
       || !Number.isInteger(result.resolvedHandoverAcceptanceSlaHours) || result.resolvedHandoverAcceptanceSlaHours < 1 || result.resolvedHandoverAcceptanceSlaHours > 168) {
       throw contractViolation("handoverLeadWithTasks", "result", "Handover must return its complete authoritative Task identity/version, due date and frozen SLA.");
     }
-    const lead = mapLeadDocumentToApplication(result.lead);
-    if (response.aggregateId !== aggregateId || lead.id !== aggregateId || lead.ownerId !== nextOwnerId || lead.resourceVersion !== response.version) {
-      throw contractViolation("handoverLeadWithTasks", "result.lead", "Handover returned an inconsistent authoritative Lead.");
+    if (response.aggregateId !== aggregateId) {
+      throw contractViolation("handoverLeadWithTasks", "aggregateId", "Handover returned an inconsistent command receipt.");
     }
-    return { ...result, lead, reassignedTaskIds: [...result.reassignedTaskIds], evidence: mapEvidence(response) };
+    return { reassignedTaskIds: [...result.reassignedTaskIds], handoverTaskId: result.handoverTaskId,
+      handoverTaskVersion: result.handoverTaskVersion, handoverTaskDueAt: result.handoverTaskDueAt,
+      resolvedHandoverAcceptanceSlaHours: result.resolvedHandoverAcceptanceSlaHours, evidence: mapEvidence(response) };
   }
 
   async archiveLeadBatch(

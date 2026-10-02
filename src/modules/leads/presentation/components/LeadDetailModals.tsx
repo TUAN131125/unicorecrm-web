@@ -210,6 +210,9 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
             onChange={(event) => setHandoverReason(event.target.value)}
             placeholder={locale === "vi" ? "Ví dụ: chuyển theo khu vực hoặc chuyên môn phụ trách" : "For example: territory or expertise reassignment"}
           />
+          {handover.resolutionAccessDenied && <p role="alert" className="text-sm text-amber-700">{locale === "vi"
+            ? "Chưa thể xác minh kết quả bàn giao vì quyền truy cập của bạn đã thay đổi. Yêu cầu gốc được giữ lại và có thể thử lại mà không tạo lần bàn giao mới."
+            : "The Handover outcome cannot currently be verified because your access has changed. The original request is retained and can be retried without creating a new Handover."}</p>}
           {handover.blocked && <Button type="button" variant="secondary" onClick={() => { void handover.recover().catch((failure: unknown) => showToast(formatApplicationError(failure, { locale }))); }}>{locale === "vi" ? "Tải lại Lead để đối chiếu" : "Refresh Lead to reconcile"}</Button>}
 
         </div>

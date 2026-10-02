@@ -214,16 +214,8 @@ export async function handoverLeadWithTasksViaApi(
   attempt: { idempotencyKey: string; expectedVersion: number },
 ): Promise<HandoverLeadWithTasksResult> {
   const result = await getLeadApiRuntime().commands.handoverLeadWithTasks(leadId, input, attempt);
-  projectHandoverLeadIfNewer(result.lead);
   await invalidateModuleQueries({ moduleKeys: ["leads", "tasks"], commandType: "lead.handover", aggregateId: leadId, occurredAt: result.evidence.occurredAt });
   return result;
-}
-
-function projectHandoverLeadIfNewer(lead: Lead): void {
-  const current = leadRepository.getById(lead.id);
-  // Equal versions retain the existing projection, including any richer read data.
-  if (current && (lead.resourceVersion ?? -1) <= (current.resourceVersion ?? -1)) return;
-  runBackendProjection("leads", () => saveLead(leadRepository, lead));
 }
 
 export async function importLeadCsvPlanViaApi(

@@ -89,9 +89,9 @@ Body:
 
 Frozen O4 canonical operation: `POST /workflows/lead-handover/{leadId}`, operation ID `handoverLeadWithTasks`. Require If-Match, Idempotency-Key, X-Request-Id and X-Correlation-Id. The closed body is `{ nextOwnerId, reason }`; reason is trimmed and capped at 1000. No public Task targets or Task versions.
 
-`leads.assign` and writable Lead owner field are required for new admission. Admission requires `tasks.create` and `tasks.assign` and authority over the complete eligible snapshot. The Lead record authority is `lead.assign-owner`. Current read/capability/record authorization applies to exact replay without requiring a new owner-field write admission.
+`leads.assign` and writable Lead owner field are required for new admission. Admission requires `tasks.create` and `tasks.assign` and authority over the complete eligible snapshot. The Lead record authority is `lead.assign-owner`. Completed exact replay requires current command capabilities and visibility of the Task proof fields in the receipt, without post-transfer Lead or Task ownership admission.
 
-The response uses the existing mutation envelope and LeadDocument, plus policy, reassigned IDs, takeover Task ID, numeric nonnegative Task version (native create starts at 0), ISO due-at and resolved SLA hours.
+The response is a durable command receipt: the existing aggregate/version envelope plus reassigned IDs, takeover Task ID, numeric nonnegative Task version (native create starts at 0), ISO due-at and resolved SLA hours. It contains no LeadDocument or Task policy. Lead and Task queries are invalidated after success; the current Lead read model is reacquired through GET with current read authority.
 
 ### Bulk Assign
 

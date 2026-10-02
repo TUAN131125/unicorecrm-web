@@ -9268,6 +9268,15 @@
             "tsx"
           ],
           "args": []
+        },
+        {
+          "type": "node",
+          "entry": "tests/quality/integration/check-lead-detail-confidentiality.mts",
+          "nodeArgs": [
+            "--import",
+            "tsx"
+          ],
+          "args": []
         }
       ]
     }

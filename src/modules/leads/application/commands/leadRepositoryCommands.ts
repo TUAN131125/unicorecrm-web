@@ -10,6 +10,12 @@ import { anonymizedRecordLabel, assertDestructiveActionAllowed, isBackendProject
 
 export type LeadCollectionUpdater = Lead[] | ((current: Lead[]) => Lead[]);
 
+export function retainNewestLeadProjection(incoming: Lead, existing: Lead | undefined): Lead {
+  if (existing?.resourceVersion !== undefined
+    && (incoming.resourceVersion === undefined || incoming.resourceVersion <= existing.resourceVersion)) return existing;
+  return incoming;
+}
+
 export function updateLeadCollection(
   repository: LeadRepository,
   updater: LeadCollectionUpdater,
@@ -19,7 +25,11 @@ export function updateLeadCollection(
   // every reader can switch workspace, and no lead is being changed. All other
   // callers keep the full authorization, ownership and lifecycle checks below.
   if (isWorkspaceScopeResetActive() || isBackendProjectionActive("leads")) {
-    const evicted = typeof updater === "function" ? updater(repository.list()) : updater;
+    const current = repository.list();
+    const incoming = typeof updater === "function" ? updater(current) : updater;
+    const existing = new Map(current.map(lead => [lead.id, lead]));
+    const evicted = isWorkspaceScopeResetActive() ? incoming
+      : incoming.map(lead => retainNewestLeadProjection(lead, existing.get(lead.id)));
     repository.replace(evicted);
     return evicted;
   }
@@ -46,8 +56,8 @@ export function updateLeadCollection(
 
 export function saveLead(repository: LeadRepository, lead: Lead): Lead {
   if (isBackendProjectionActive("leads")) {
-    const projected = structuredClone(lead);
     const current = repository.list();
+    const projected = structuredClone(retainNewestLeadProjection(lead, current.find(item => item.id === lead.id)));
     const exists = current.some((item) => item.id === projected.id);
     repository.replace(
       exists

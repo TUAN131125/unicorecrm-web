@@ -9,6 +9,7 @@ export function useLeadHandover(lead: Lead | undefined) {
   const [pending, setPending] = useState(false);
   const [blocked, setBlocked] = useState(false);
   const [ambiguous, setAmbiguous] = useState(false);
+  const [resolutionAccessDenied, setResolutionAccessDenied] = useState(false);
   const busy = useRef(false);
   const attempt = useRef<{ leadId: string; idempotencyKey: string; expectedVersion: number; input: HandoverLeadWithTasksInput } | undefined>(undefined);
   const refreshed = useRef<Lead | undefined>(undefined);
@@ -24,6 +25,7 @@ export function useLeadHandover(lead: Lead | undefined) {
     setPending(false);
     setBlocked(false);
     setAmbiguous(false);
+    setResolutionAccessDenied(false);
   }, [lead?.id]);
   const newest = refreshed.current?.id === lead?.id
     && (refreshed.current?.resourceVersion ?? -1) > (lead?.resourceVersion ?? -1)
@@ -51,6 +53,7 @@ export function useLeadHandover(lead: Lead | undefined) {
     const observed = newest;
     if (!observed) return;
     const payload = { nextOwnerId: input.nextOwnerId.trim(), reason: input.reason.trim() };
+    const exactAmbiguousReplay = isAmbiguousRetry(payload);
     if (!attempt.current && (!observed.ownerId || observed.archivedAt || observed.resourceVersion === undefined
       || payload.nextOwnerId === observed.ownerId || !payload.nextOwnerId || !payload.reason || payload.reason.length > 1000)) return;
     if (!attempt.current && observed.resourceVersion !== undefined) attempt.current = { leadId: lead.id, idempotencyKey: `lead-handover-${crypto.randomUUID()}`, expectedVersion: observed.resourceVersion, input: payload };
@@ -66,13 +69,16 @@ export function useLeadHandover(lead: Lead | undefined) {
       const result = await handoverLeadWithTasksViaApi(intent.leadId, intent.input, intent);
       if (startedEpoch !== epoch.current) return;
       attempt.current = undefined;
-      if (refreshed.current?.id !== result.lead.id || (result.lead.resourceVersion ?? -1) >= (refreshed.current.resourceVersion ?? -1)) refreshed.current = result.lead;
       setAmbiguous(false);
+      setResolutionAccessDenied(false);
       return result;
     } catch (failure) {
       if (startedEpoch !== epoch.current) return;
       const error = normalizeApplicationError(failure);
-      if (error.status === 412 || error.code === "VERSION_CONFLICT") {
+      if (exactAmbiguousReplay && (error.status === 403 || error.category === "AUTHORIZATION")) {
+        setAmbiguous(true);
+        setResolutionAccessDenied(true);
+      } else if (error.status === 412 || error.code === "VERSION_CONFLICT") {
         setBlocked(true);
         setAmbiguous(false);
       } else if (error.category === "NETWORK" || error.status === undefined || error.status >= 500) {
@@ -80,6 +86,7 @@ export function useLeadHandover(lead: Lead | undefined) {
       } else {
         attempt.current = undefined;
         setAmbiguous(false);
+        setResolutionAccessDenied(false);
       }
       throw failure;
     } finally {
@@ -89,5 +96,5 @@ export function useLeadHandover(lead: Lead | undefined) {
       }
     }
   };
-  return { pending, blocked, ambiguous, isAmbiguousRetry, submit, recover };
+  return { pending, blocked, ambiguous, resolutionAccessDenied, isAmbiguousRetry, submit, recover };
 }
