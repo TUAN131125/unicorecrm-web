@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ApplicationError, normalizeApplicationError } from "@/shared/domain";
+import { invalidateModuleQueries } from "@/shared/application";
 import { handoverLeadWithTasksViaApi } from "../../application/commands/leadApiCommands";
 import { getLeadDetailResource } from "../../application/vertical-slice/leadAuthoritativeQueries";
 import type { HandoverLeadWithTasksInput } from "../../application/ports/LeadApiRuntime";
@@ -83,6 +84,7 @@ export function useLeadHandover({ leadId, observedLead: lead }: { leadId: string
         setAmbiguous(false);
       } else if (error.category === "NETWORK" || error.status === undefined || error.status >= 500) {
         setAmbiguous(true);
+        revalidateAfterAmbiguousHandover(intent.leadId);
       } else {
         attempt.current = undefined;
         setAmbiguous(false);
@@ -97,4 +99,13 @@ export function useLeadHandover({ leadId, observedLead: lead }: { leadId: string
     }
   };
   return { pending, blocked, ambiguous, resolutionAccessDenied, isAmbiguousRetry, submit, recover };
+}
+
+function revalidateAfterAmbiguousHandover(leadId: string): void {
+  // Reconcile reads independently; neither a read failure nor a denial resolves
+  // the retained command, and the original POST error remains the submit error.
+  void invalidateModuleQueries({
+    moduleKeys: ["leads", "tasks"], commandType: "lead.handover.ambiguous",
+    aggregateId: leadId, occurredAt: new Date().toISOString(),
+  }).catch(() => undefined);
 }

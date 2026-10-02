@@ -34,7 +34,7 @@ const shared = await import("@/shared/application");
 const source = (path: string) => readFileSync(path, "utf8");
 const document: LeadDocument = { id: "lead_handover", displayName: "Handover Lead", ownerId: "member_old", version: 5, createdAt: "2026-09-30T00:00:00Z", updatedAt: "2026-09-30T00:00:00Z", leadWorkState: "NEW", score: 0, interestedProducts: [], activityProjection: "NOT_INCLUDED" };
 const requests: HttpRequest[] = [];
-let mode: "SUCCESS" | "NETWORK" | "VERSION" | "DENIED" | "PENDING" = "SUCCESS";
+let mode: "SUCCESS" | "NETWORK" | "SERVER" | "UNKNOWN" | "VERSION" | "DENIED" | "PENDING" = "SUCCESS";
 let release: (() => void) | undefined;
 function completePendingResponse() { assert.ok(release); release(); }
 let version = 5;
@@ -46,6 +46,8 @@ const client: HttpClient = { async request<TResponse, TBody = unknown>(input: Ht
   if (input.operationId === "getLead") return { ...document, version } as TResponse;
   if (input.operationId === "listLeads") return { items: [], pageInfo: { hasNextPage: false, totalCount: 0 } } as TResponse;
   if (mode === "PENDING") await new Promise<void>(resolve => { release = resolve; });
+  if (mode === "SERVER") throw new ApplicationError({ code: "SERVER_AMBIGUOUS", status: 503, message: "ambiguous server outcome" });
+  if (mode === "UNKNOWN") throw new ApplicationError({ code: "UNKNOWN_OUTCOME", message: "unknown outcome" });
   if (mode === "NETWORK") throw new ApplicationError({ code: "NETWORK_ERROR", category: "NETWORK", message: "ambiguous", retryable: true });
   if (mode === "VERSION") throw new ApplicationError({ code: "VERSION_CONFLICT", category: "CONFLICT", message: "stale", status: 412 });
   if (mode === "DENIED") throw new ApplicationError({ code: "ACCESS_DENIED", category: "AUTHORIZATION", message: "denied", status: 403 });
@@ -176,6 +178,43 @@ function Fixture() { current = useLeadHandover({ leadId: observed.id, observedLe
 let fixtureKey = crypto.randomUUID();
 async function rerender() { await act(async () => root.render(React.createElement(Fixture, { key: fixtureKey }))); }
 async function mount() { fixtureKey = crypto.randomUUID(); await rerender(); }
+// Read reconciliation is independent and cannot mask the POST error or replay it.
+for (const ambiguousMode of ["NETWORK", "SERVER", "UNKNOWN"] as const) {
+  await mount(); mode = ambiguousMode;
+  const events: string[] = [];
+  let finishRead: (() => void) | undefined;
+  const stopLead = shared.subscribeModuleQueryInvalidation("leads", async event => {
+    if (event.commandType !== "lead.handover.ambiguous") return;
+    events.push("leads");
+    await new Promise<void>(resolve => { finishRead = resolve; });
+    throw new ApplicationError({ code: "SECONDARY_READ_FAILURE", status: 500, message: "read failed" });
+  });
+  const stopTasks = shared.subscribeModuleQueryInvalidation("tasks", event => { events.push(event.commandType); });
+  const beforePosts = requests.filter(request => request.operationId === "handoverLeadWithTasks").length;
+  const expectedCode = ambiguousMode === "NETWORK" ? "NETWORK_ERROR" : ambiguousMode === "SERVER" ? "SERVER_AMBIGUOUS" : "UNKNOWN_OUTCOME";
+  await act(async () => { await assert.rejects(() => current.submit(input), { code: expectedCode }); });
+  assert.equal(current.ambiguous, true, "Ambiguity is set before read reconciliation finishes");
+  assert.equal(current.pending, false, "Slow GET cannot hold command pending");
+  assert.equal(current.isAmbiguousRetry(input), true, "Original intent survives every ambiguous error class");
+  assert.deepEqual(events, ["leads", "lead.handover.ambiguous"]);
+  assert.ok(finishRead);
+  // A late A read must not affect B's command state after the route changes.
+  const originalObserved = observed;
+  observed = { ...observed, id: "lead_late_read_b" }; await rerender();
+  await act(async () => { finishRead?.(); await Promise.resolve(); });
+  assert.equal(current.ambiguous, false);
+  assert.equal(current.pending, false);
+  assert.equal(requests.filter(request => request.operationId === "handoverLeadWithTasks").length, beforePosts + 1);
+  stopLead(); stopTasks();
+  observed = originalObserved;
+}
+await mount(); mode = "SUCCESS";
+const successEvents: string[] = [];
+const stopSuccessLead = shared.subscribeModuleQueryInvalidation("leads", event => { successEvents.push(`leads:${event.commandType}`); });
+const stopSuccessTasks = shared.subscribeModuleQueryInvalidation("tasks", event => { successEvents.push(`tasks:${event.commandType}`); });
+await act(async () => { await current.submit(input); });
+assert.deepEqual(successEvents, ["leads:lead.handover", "tasks:lead.handover"], "Normal success invalidates each module once without ambiguity revalidation");
+stopSuccessLead(); stopSuccessTasks();
 await mount(); mode = "NETWORK";
 await act(async () => { await assert.rejects(() => current.submit(input)); });
 const ambiguous = requests.filter(request => request.operationId === "handoverLeadWithTasks").at(-1);

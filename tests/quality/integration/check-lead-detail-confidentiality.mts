@@ -32,7 +32,7 @@ const { I18nProvider } = await import("@/i18n");
 const { PlatformStateProvider } = await import("@/app/providers");
 const { GuidanceProvider } = await import("@/guidance/presentation/GuidanceProvider");
 const { ApplicationError } = await import("@/shared/domain");
-const { createAuthoritativeResource, invalidateModuleQueries } = await import("@/shared/application");
+const { createAuthoritativeResource, invalidateModuleQueries, subscribeModuleQueryInvalidation } = await import("@/shared/application");
 const { configureLeadApplication, getLeadApplicationServices } = await import("@/modules/leads/application/composition/leadApplicationServices");
 const { getLeadDetailResource, getLeadCollectionResource } = await import("@/modules/leads/application/vertical-slice/leadAuthoritativeQueries");
 const { LeadDetailPage } = await import("@/modules/leads/presentation/pages/LeadDetailPage");
@@ -210,19 +210,33 @@ try {
   let receiptLost = true;
   let receiptPermissionDenied = false;
   let queryDenied = false;
+  let ambiguityCommits = true;
+  let automaticReadFailure: InstanceType<typeof ApplicationError> | undefined;
+  let automaticReads = 0;
+  const ambiguityInvalidations: string[] = [];
+  const stopAmbiguousLead = subscribeModuleQueryInvalidation("leads", event => {
+    if (event.commandType === "lead.handover.ambiguous") ambiguityInvalidations.push("leads");
+  });
+  const stopAmbiguousTasks = subscribeModuleQueryInvalidation("tasks", event => {
+    if (event.commandType === "lead.handover.ambiguous") ambiguityInvalidations.push("tasks");
+  });
   let committedOwner = lead.ownerId;
   serverRecord = richEqualVersion;
   configureLeadApplication({ ...getLeadApplicationServices(), api: { ...getLeadApplicationServices().api,
-    queries: { ...base.api.queries, async get() {
+    queries: { ...base.api.queries,
+    async list() { return { items: queryDenied ? [] : [serverRecord], pageInfo: { hasNextPage: false }, loadedAt: lead.createdAt, authority: "backend" }; },
+    async get() {
+      automaticReads++;
+      if (automaticReadFailure) throw automaticReadFailure;
       if (queryDenied) throw new ApplicationError({ code: "RESOURCE_NOT_FOUND", message: "current OWN read denied", status: 404 });
       return serverRecord;
     } },
     commands: { ...base.api.commands, async handoverLeadWithTasks(id, input, options) {
       attempts.push({ id, input: { ...input }, idempotencyKey: options.idempotencyKey, expectedVersion: options.expectedVersion });
-      committedOwner = input.nextOwnerId;
+      if (ambiguityCommits) committedOwner = input.nextOwnerId;
       if (receiptPermissionDenied) throw new ApplicationError({ code: "ACCESS_DENIED", message: "private receipt diagnostics", status: 403 });
       if (receiptLost) {
-        queryDenied = true;
+        queryDenied = ambiguityCommits;
         throw new ApplicationError({ code: "NETWORK_ERROR", message: "receipt lost after commit", category: "NETWORK" });
       }
       return { evidence: { authority: "backend", commandId: "retained-command", correlationId: "retained-correlation", aggregateId: id, aggregateType: "LEAD", version: 9, occurredAt: lead.createdAt, outcome: "REPLAYED", warnings: [], emittedEventIds: [], auditEvidenceIds: [] }, reassignedTaskIds: [], handoverTaskId: "retained-takeover", handoverTaskVersion: 1, handoverTaskDueAt: "2026-10-04T00:00:00Z", resolvedHandoverAcceptanceSlaHours: 24 };
@@ -252,14 +266,20 @@ try {
     assert.equal(button.disabled, false);
     await act(async () => button.click());
   };
+  const readsBeforeAmbiguity = automaticReads;
   await submitHandover();
-  assert.equal(attempts.length, 1);
+  for (let turn = 0; resource.getSnapshot().data !== undefined && turn < 20; turn++) {
+    await act(async () => { await new Promise(resolve => setTimeout(resolve, 0)); });
+  }
+  assert.ok(automaticReads > readsBeforeAmbiguity, "Production ambiguity automatically invokes Lead GET");
+  assert.deepEqual(ambiguityInvalidations, ["leads", "tasks"]);
+  assert.equal(attempts.length, 1, "Automatic revalidation never POSTs again");
   assert.equal(committedOwner, recipient.value, "Backend committed before the network reply was lost");
-  assert.equal(window.document.querySelector<HTMLTextAreaElement>("#lead-handover-form textarea")?.disabled, true, "Actual controller retains ambiguous intent");
-  await act(async () => { await resource.refresh(); });
   assert.equal(resource.getSnapshot().data, undefined);
-  await act(async () => { stored.replace([]); });
-  assert.equal(stored.list().length, 0, "Regression explicitly evicts the retained repository Lead");
+  assert.equal(stored.getById(lead.id), undefined, "Automatic denied read evicts the repository target projection");
+  for (const secret of [lead.name, lead.companyName, lead.email, lead.phone]) {
+    assert.ok(!rootElement.innerHTML.includes(secret), "Automatic denial removes protected detail");
+  }
   assert.ok(!rootElement.innerHTML.includes(lead.email));
   assert.equal(window.document.getElementById("lead-handover-form"), null, "Protected dialog disappears during denial");
   receiptLost = false;
@@ -285,6 +305,55 @@ try {
   assert.equal(queryDenied, true);
   assert.equal(resource.getSnapshot().error?.status, 404);
   assert.equal(rootElement.querySelector("[data-lead-handover-receipt-retry]"), null, "Successful receipt resolves the retained attempt");
+  // An uncertain POST is not proof of success: current read authority decides.
+  for (const readFailure of [undefined,
+    new ApplicationError({ code: "SERVER_UNAVAILABLE", message: "GET failed", status: 500 }),
+    new ApplicationError({ code: "NETWORK_ERROR", message: "GET failed", category: "NETWORK" }),
+  ]) {
+    queryDenied = false;
+    receiptLost = true;
+    ambiguityCommits = false;
+    committedOwner = lead.ownerId;
+    automaticReadFailure = undefined;
+    serverRecord = richEqualVersion;
+    await act(async () => { await resource.refresh(); }); // Arrange the next independent scenario.
+    const open = rootElement.querySelector<HTMLButtonElement>("#header-more-actions-btn");
+    assert.ok(open);
+    await act(async () => open.click());
+    const action = [...window.document.querySelectorAll<HTMLButtonElement>("button")].find(button => /^(Bàn giao|Handover)/.test(button.textContent?.trim() ?? ""));
+    assert.ok(action);
+    await act(async () => action.click());
+    const owner = window.document.querySelector<HTMLSelectElement>("#lead-handover-form select");
+    const reason = window.document.querySelector<HTMLTextAreaElement>("#lead-handover-form textarea");
+    assert.ok(owner); assert.ok(reason);
+    await act(async () => {
+      owner.value = recipient.value; owner.dispatchEvent(new window.Event("change", { bubbles: true }));
+      Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value")?.set?.call(reason, "Uncertain original intent");
+      reason.dispatchEvent(new window.Event("input", { bubbles: true }));
+    });
+    automaticReadFailure = readFailure;
+    const beforeReads = automaticReads;
+    const beforePosts: number = attempts.length;
+    await submitHandover();
+    await act(async () => { await Promise.resolve(); });
+    assert.ok(automaticReads > beforeReads, "Non-committed/transient case revalidates automatically");
+    assert.equal(attempts.length, beforePosts + 1, "Read reconciliation cannot auto-replay POST");
+    assert.equal(committedOwner, lead.ownerId);
+    assert.ok(rootElement.innerHTML.includes(lead.email));
+    assert.ok(rootElement.innerHTML.includes(lead.phone));
+    assert.equal(resource.getSnapshot().data?.ownerId, lead.ownerId);
+    assert.equal(window.document.querySelector<HTMLTextAreaElement>("#lead-handover-form textarea")?.disabled, true);
+    const original = attempts.at(-1);
+    assert.ok(original);
+    // Explicit user retry resolves the original attempt; GET failure never masks POST.
+    automaticReadFailure = undefined;
+    receiptLost = false;
+    await submitHandover();
+    assert.deepEqual(attempts.at(-1), original);
+    assert.equal(ambiguityInvalidations.at(-1), "tasks");
+  }
+  ambiguityCommits = true;
+  stopAmbiguousLead(); stopAmbiguousTasks();
   // Create another ambiguous A attempt, then change the actual route to B.
   queryDenied = false;
   receiptLost = true;
@@ -307,7 +376,7 @@ try {
     resetReason.dispatchEvent(new window.Event("input", { bubbles: true }));
   });
   await submitHandover();
-  await act(async () => { await resource.refresh(); stored.replace([]); });
+  await act(async () => { await Promise.resolve(); });
   assert.ok(rootElement.querySelector("[data-lead-handover-receipt-retry]"));
   const attemptCount = attempts.length;
   const changeRoute = rootElement.querySelector<HTMLButtonElement>("[data-change-lead-route]");
