@@ -23,7 +23,7 @@
   "summary": {
     "repositoryFiles": 2077,
     "sourceFiles": 1385,
-    "sourceLines": 213088,
+    "sourceLines": 213103,
     "modules": 15,
     "routes": 80,
     "loadableRouteModules": 64,
@@ -45655,8 +45655,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "tasks",
-      "bytes": 10221,
-      "lines": 213,
+      "bytes": 10934,
+      "lines": 228,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -56315,8 +56315,8 @@
       "classification": "active-test",
       "reason": "Test source.",
       "owner": "test",
-      "bytes": 24672,
-      "lines": 294,
+      "bytes": 28334,
+      "lines": 339,
       "usage": {
         "runtimeReachable": false,
         "scriptReachable": false,
@@ -58360,5 +58360,5 @@
       "quality.work-operations-ux"
     ]
   },
-  "inventoryFingerprint": "d7ffb1934e38f823fdaa792cf23b325d62efc171874af2aab7a2d6a924ee4de3"
+  "inventoryFingerprint": "d7477fd3818f04b4b2d52e1a5fe19462723f4ca70fa363a5e6f0eeea59f315c3"
 }

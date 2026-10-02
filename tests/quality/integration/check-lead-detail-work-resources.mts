@@ -257,6 +257,51 @@ try {
     assert.doesNotMatch(source, /lead\.activities|onCompleteActivity|Trạng thái: Hoàn thành|Status: Completed/);
   }
   await act(async () => root.unmount());
+  // Use the same authoritative record query as the Lead Work Panel, not an event spy.
+  records = [makeTask("open-a", "OPEN"), makeTask("open-b", "OPEN"), makeTask("unrelated", "OPEN", "lead-y")];
+  const globalTasks = getTaskCollectionResource();
+  const detail = getTaskDetailResource("open-a");
+  const unrelatedDetail = getTaskDetailResource("unrelated");
+  const unloadedDetail = getTaskDetailResource("never-loaded");
+  await Promise.all([resource.refresh(), otherResource.refresh(), globalTasks.refresh(), detail.refresh(), unrelatedDetail.refresh(), activityResource.refresh()]);
+  const emit = (commandType: string, aggregateId = lead.id) => shared.invalidateModuleQueries({ moduleKeys: ["tasks"], commandType, aggregateId, occurredAt: lead.createdAt });
+  for (const commandType of ["lead.handover", "lead.handover.ambiguous"]) {
+    records = records.filter((task) => task.id !== "takeover").map((task) => task.recordRef?.recordId === lead.id ? { ...task, assigneeId: "u1" } : task);
+    await Promise.all([resource.refresh(), globalTasks.refresh(), detail.refresh()]);
+    const before = requests.length;
+    records = records.map((task) => task.recordRef?.recordId === lead.id ? { ...task, assigneeId: "u2", resourceVersion: 2 } : task);
+    records.push({ ...makeTask("takeover", "OPEN"), assigneeId: "u2" });
+    await emit(commandType);
+    const reads = requests.slice(before);
+    assert.ok(reads.some((request) => request.operationId === "listTasks" && request.query?.recordId === lead.id));
+    assert.ok(reads.some((request) => request.operationId === "listTasks" && !request.query?.recordId));
+    assert.ok(reads.some((request) => request.operationId === "getTask" && request.path.endsWith("open-a")));
+    assert.equal(reads.some((request) => request.query?.recordId === "lead-y" || request.path.endsWith("unrelated") || request.operationId === "listActivities"), false);
+    assert.equal(unloadedDetail.getSnapshot().state, "IDLE");
+    assert.deepEqual(resource.getSnapshot().data?.items.map((task) => task.assigneeId), ["u2", "u2", "u2"]);
+    assert.ok(resource.getSnapshot().data?.items.some((task) => task.id === "takeover"));
+    assert.equal(detail.getSnapshot().data?.assigneeId, "u2");
+    assert.equal(globalTasks.getSnapshot().data?.items.find((task) => task.id === "open-a")?.assigneeId, "u2");
+  }
+  const unchanged = structuredClone(resource.getSnapshot().data?.items);
+  const beforeAmbiguity = countRequests("listTasks", lead.id);
+  await emit("lead.handover.ambiguous");
+  assert.ok(countRequests("listTasks", lead.id) > beforeAmbiguity);
+  assert.deepEqual(resource.getSnapshot().data?.items, unchanged, "Non-committed ambiguity discovers unchanged backend truth");
+  for (const commandType of ["task.create", "task.complete", "task.cancel", "task.assign", "task.reschedule", "task.archive"]) {
+    const before = requests.length;
+    await emit(commandType, "open-a");
+    const reads = requests.slice(before);
+    assert.ok(reads.some((request) => request.operationId === "listTasks" && request.query?.recordId === lead.id));
+    assert.ok(reads.some((request) => request.operationId === "getTask" && request.path.endsWith("open-a")));
+    assert.equal(reads.some((request) => request.operationId === "listActivities"), false);
+  }
+  const beforeActivity = countRequests("listActivities", lead.id);
+  await emit("task.log-activity", activities[0].id);
+  assert.ok(countRequests("listActivities", lead.id) > beforeActivity);
+  const beforeOtherLeadMutation = requests.length;
+  await emit("lead.assign-owner");
+  assert.equal(requests.length, beforeOtherLeadMutation, "Only Handover crosses into Task invalidation");
   const originalWorkspace = workspace.getWorkspaceContextSnapshot().workspaceKey;
   const nextWorkspace = workspace.listWorkspaceMemberships().find((item) => item.workspaceId !== workspace.getWorkspaceContextSnapshot().workspaceId);
   assert.ok(nextWorkspace, "Workspace reset requires a second membership");

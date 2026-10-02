@@ -66,7 +66,13 @@ export function getScopedTaskCollectionResource(
     });
     const created = resource;
     subscribeModuleQueryInvalidation("tasks", async (event) => {
-      if (!isTaskMutation(event.commandType) || created.getSnapshot().state === "IDLE") return;
+      if (created.getSnapshot().state === "IDLE") return;
+      if (isLeadHandoverInvalidation(event.commandType)) {
+        if (scopedQuery.filters?.recordModuleKey === "leads"
+          && scopedQuery.filters.recordId === event.aggregateId) await created.refresh();
+        return;
+      }
+      if (!isTaskMutation(event.commandType)) return;
       const projected = taskActivityRepository.findTaskById(event.aggregateId);
       if (created.getSnapshot().data?.items.some((task) => task.id === event.aggregateId)
         || (projected && matchesTaskScope(projected, scopedQuery))) await created.refresh();
@@ -101,7 +107,8 @@ function createTaskCollectionResource(): AuthoritativeResource<AuthoritativePage
     return page;
   });
   subscribeModuleQueryInvalidation("tasks", async (event) => {
-    if (isTaskMutation(event.commandType) && resource.getSnapshot().state !== "IDLE") await resource.refresh();
+    if ((isTaskMutation(event.commandType) || isLeadHandoverInvalidation(event.commandType))
+      && resource.getSnapshot().state !== "IDLE") await resource.refresh();
   });
   return resource;
 }
@@ -120,8 +127,12 @@ function createTaskDetailResource(taskId: string): AuthoritativeResource<Task> {
     return task;
   });
   subscribeModuleQueryInvalidation("tasks", async (event) => {
-    if (isTaskMutation(event.commandType) && event.aggregateId === taskId
-      && resource.getSnapshot().state !== "IDLE") await resource.refresh();
+    const snapshot = resource.getSnapshot();
+    if (snapshot.state === "IDLE") return;
+    const matchesLead = isLeadHandoverInvalidation(event.commandType)
+      && snapshot.data?.recordRef?.moduleKey === "leads"
+      && snapshot.data.recordRef.recordId === event.aggregateId;
+    if (matchesLead || (isTaskMutation(event.commandType) && event.aggregateId === taskId)) await resource.refresh();
   });
   return resource;
 }
@@ -187,6 +198,10 @@ function assertTaskIdentityQuery(query: Omit<TaskListQuery, "cursor" | "limit">)
 
 function isTaskMutation(commandType: string): boolean {
   return ["task.create", "task.complete", "task.cancel", "task.assign", "task.reschedule", "task.archive"].includes(commandType);
+}
+
+function isLeadHandoverInvalidation(commandType: string): boolean {
+  return commandType === "lead.handover" || commandType === "lead.handover.ambiguous";
 }
 
 function matchesTaskScope(task: Task, query: TaskListQuery): boolean {
