@@ -7,7 +7,7 @@ import {
 } from "@/shared/application";
 import type { Lead } from "../../domain/model/lead.types";
 import { getLeadApiRuntime } from "../composition/leadApplicationServices";
-import { replaceLeads, saveLeadSnapshot } from "../../public/leads";
+import { evictLeadProjection, replaceLeads, saveLeadSnapshot } from "../../public/leads";
 
 const COLLECTION_PAGE_SIZE = 250;
 const COLLECTION_MAX_PAGES = 20;
@@ -70,13 +70,15 @@ function createLeadCollectionResource(): AuthoritativeResource<AuthoritativePage
 function createLeadDetailResource(leadId: string): AuthoritativeResource<Lead> {
   const resource = createAuthoritativeResource(async (signal) => {
     const record = await getLeadApiRuntime().queries.get(leadId, signal);
-    runBackendProjection("leads", () => saveLeadSnapshot(record));
+    runBackendProjection("leads", () => saveLeadSnapshot(record, "AUTHORITATIVE_READ"));
     return record;
   }, {
-    shouldRetainDataOnError: (error) => error.status !== 403
-      && error.status !== 404
-      && error.category !== "AUTHORIZATION"
-      && error.category !== "NOT_FOUND",
+    shouldRetainDataOnError: (error) => {
+      const retain = error.status !== 403 && error.status !== 404
+        && error.category !== "AUTHORIZATION" && error.category !== "NOT_FOUND";
+      if (!retain) evictLeadProjection(leadId);
+      return retain;
+    },
   });
   subscribeModuleQueryInvalidation("leads", async () => {
     if (resource.getSnapshot().state !== "IDLE") await resource.refresh();

@@ -21,9 +21,9 @@
     ]
   },
   "summary": {
-    "repositoryFiles": 2076,
+    "repositoryFiles": 2077,
     "sourceFiles": 1385,
-    "sourceLines": 213015,
+    "sourceLines": 213077,
     "modules": 15,
     "routes": 80,
     "loadableRouteModules": 64,
@@ -31,7 +31,7 @@
     "workspaceFlags": 13,
     "workflows": 23,
     "publicBoundaryFiles": 107,
-    "publicExportStatements": 951,
+    "publicExportStatements": 952,
     "persistenceEntries": 3013,
     "repositoryImplementations": 146,
     "browserEventEntries": 13,
@@ -47,7 +47,7 @@
     "fileClassifications": {
       "active-runtime": 1301,
       "active-script": 80,
-      "active-test": 445,
+      "active-test": 446,
       "compatibility": 53,
       "documentation": 192,
       "fixture": 3,
@@ -2009,7 +2009,7 @@
     {
       "path": "src/modules/leads/public/leads.ts",
       "owner": "leads",
-      "statementCount": 25,
+      "statementCount": 26,
       "exportedNames": [
         "LEAD_OPERATION",
         "advanceEligibleLeadsToVerifyingSnapshot",
@@ -2029,6 +2029,7 @@
         "createLeadFromFormViaApi",
         "disqualifyLeadBatchViaApi",
         "disqualifyLeadViaApi",
+        "evictLeadProjection",
         "exportLeadsSnapshot",
         "getLeadPreference",
         "getLeadSnapshot",
@@ -17002,7 +17003,7 @@
         "operation": "workspace-resource",
         "owner": "leads",
         "path": "src/modules/leads/application/commands/leadRepositoryCommands.ts",
-        "line": 94,
+        "line": 107,
         "browserGlobal": false
       },
       {
@@ -17026,7 +17027,7 @@
         "operation": "workspace-resource",
         "owner": "leads",
         "path": "src/modules/leads/presentation/hooks/useLeadDetailController.tsx",
-        "line": 109,
+        "line": 142,
         "browserGlobal": false
       },
       {
@@ -30308,8 +30309,8 @@
     {
       "path": "src/modules/leads/presentation/pages/LeadListPage.tsx",
       "owner": "leads",
-      "lines": 1251,
-      "bytes": 55628
+      "lines": 1245,
+      "bytes": 55456
     },
     {
       "path": "src/modules/deals/presentation/pages/DealPipelinePage.tsx",
@@ -30414,6 +30415,12 @@
       "bytes": 33970
     },
     {
+      "path": "src/modules/leads/presentation/hooks/useLeadDetailController.tsx",
+      "owner": "leads",
+      "lines": 667,
+      "bytes": 29062
+    },
+    {
       "path": "src/modules/leads/presentation/hooks/useLeadFormController.tsx",
       "owner": "leads",
       "lines": 649,
@@ -30430,12 +30437,6 @@
       "owner": "products",
       "lines": 637,
       "bytes": 26624
-    },
-    {
-      "path": "src/modules/leads/presentation/hooks/useLeadDetailController.tsx",
-      "owner": "leads",
-      "lines": 635,
-      "bytes": 27501
     },
     {
       "path": "src/modules/payments/presentation/pages/PaymentOperationsPage.tsx",
@@ -33304,7 +33305,7 @@
       "classification": "active-script",
       "reason": "Repository tooling or build configuration.",
       "owner": "tooling",
-      "bytes": 290031,
+      "bytes": 290226,
       "lines": null,
       "usage": {
         "runtimeReachable": false,
@@ -39726,8 +39727,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "leads",
-      "bytes": 21638,
-      "lines": 479,
+      "bytes": 22563,
+      "lines": 492,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -39791,8 +39792,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "leads",
-      "bytes": 12442,
-      "lines": 308,
+      "bytes": 13312,
+      "lines": 321,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -39882,8 +39883,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "leads",
-      "bytes": 251,
-      "lines": 9,
+      "bytes": 399,
+      "lines": 11,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -39960,8 +39961,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "leads",
-      "bytes": 2951,
-      "lines": 86,
+      "bytes": 3083,
+      "lines": 88,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -40181,8 +40182,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "leads",
-      "bytes": 1566,
-      "lines": 44,
+      "bytes": 1180,
+      "lines": 43,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -40649,8 +40650,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "leads",
-      "bytes": 27501,
-      "lines": 635,
+      "bytes": 29062,
+      "lines": 667,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -40662,7 +40663,7 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "leads",
-      "bytes": 4550,
+      "bytes": 4594,
       "lines": 112,
       "usage": {
         "runtimeReachable": true,
@@ -40714,8 +40715,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "leads",
-      "bytes": 8347,
-      "lines": 214,
+      "bytes": 8466,
+      "lines": 216,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -40740,7 +40741,7 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "leads",
-      "bytes": 5076,
+      "bytes": 5180,
       "lines": 101,
       "usage": {
         "runtimeReachable": true,
@@ -40818,7 +40819,7 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "leads",
-      "bytes": 874,
+      "bytes": 964,
       "lines": 20,
       "usage": {
         "runtimeReachable": true,
@@ -40922,8 +40923,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "leads",
-      "bytes": 3623,
-      "lines": 67,
+      "bytes": 3528,
+      "lines": 65,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -40935,8 +40936,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "leads",
-      "bytes": 55628,
-      "lines": 1251,
+      "bytes": 55456,
+      "lines": 1245,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -40987,8 +40988,8 @@
       "classification": "compatibility",
       "reason": "compatibility-content",
       "owner": "leads",
-      "bytes": 7547,
-      "lines": 164,
+      "bytes": 7974,
+      "lines": 171,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -56288,8 +56289,8 @@
       "classification": "active-test",
       "reason": "Test source.",
       "owner": "test",
-      "bytes": 20092,
-      "lines": 291,
+      "bytes": 22751,
+      "lines": 328,
       "usage": {
         "runtimeReachable": false,
         "scriptReachable": false,
@@ -56340,8 +56341,21 @@
       "classification": "active-test",
       "reason": "Test source.",
       "owner": "test",
-      "bytes": 49909,
-      "lines": 679,
+      "bytes": 53494,
+      "lines": 725,
+      "usage": {
+        "runtimeReachable": false,
+        "scriptReachable": false,
+        "testReachable": true
+      }
+    },
+    {
+      "path": "tests/quality/integration/check-lead-list-confidentiality.mts",
+      "classification": "active-test",
+      "reason": "Test source.",
+      "owner": "test",
+      "bytes": 8317,
+      "lines": 132,
       "usage": {
         "runtimeReachable": false,
         "scriptReachable": false,
@@ -58346,5 +58360,5 @@
       "quality.work-operations-ux"
     ]
   },
-  "inventoryFingerprint": "ab65534b674b3d9903235c1dcea63cd90631313717b162ddec9dd078703525c0"
+  "inventoryFingerprint": "860aec474a600c7cd7f5c8dbc91eece0e893b33658ad11e47ae7e34e758fa540"
 }

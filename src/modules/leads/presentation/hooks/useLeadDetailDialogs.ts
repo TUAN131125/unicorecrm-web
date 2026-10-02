@@ -3,7 +3,7 @@ import type { Lead } from "../../domain/model/lead.types";
 import { useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
 import { toDateKeyInTimeZone } from "@/shared/lib/datetime/workspaceDateTime";
 
-export function useLeadDetailDialogs(lead?: Lead) {
+export function useLeadDetailDialogs(lead: Lead | undefined, routeLeadId: string) {
   const configuration = useWorkspaceOperationalConfiguration();
   const today = toDateKeyInTimeZone(new Date(), configuration.localeRegion.timezone);
   const [showDisqualifyModal, setShowDisqualifyModal] = useState(false);
@@ -25,14 +25,14 @@ export function useLeadDetailDialogs(lead?: Lead) {
   const [tagsAnchor, setTagsAnchor] = useState<HTMLElement | null>(null);
   const [handoverOwnerId, setHandoverOwnerId] = useState("");
   const [handoverReason, setHandoverReason] = useState("");
-  const handoverLeadId = useRef(lead?.id);
+  const handoverLeadId = useRef(routeLeadId);
   useEffect(() => {
-    if (handoverLeadId.current === lead?.id) return;
-    handoverLeadId.current = lead?.id;
+    if (handoverLeadId.current === routeLeadId) return;
+    handoverLeadId.current = routeLeadId;
     setActiveForm((current) => current === "handover" ? null : current);
     setHandoverOwnerId("");
     setHandoverReason("");
-  }, [lead?.id]);
+  }, [routeLeadId]);
 
   const showCallModal = activeForm === "call";
   const setShowCallModal = useCallback((open: boolean) => setForm("call", open), [setForm]);

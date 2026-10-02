@@ -5,7 +5,7 @@ import { getLeadDetailResource } from "../../application/vertical-slice/leadAuth
 import type { HandoverLeadWithTasksInput } from "../../application/ports/LeadApiRuntime";
 import type { Lead } from "../../domain/model/lead.types";
 
-export function useLeadHandover(lead: Lead | undefined) {
+export function useLeadHandover({ leadId, observedLead: lead }: { leadId: string; observedLead: Lead | undefined }) {
   const [pending, setPending] = useState(false);
   const [blocked, setBlocked] = useState(false);
   const [ambiguous, setAmbiguous] = useState(false);
@@ -13,11 +13,11 @@ export function useLeadHandover(lead: Lead | undefined) {
   const busy = useRef(false);
   const attempt = useRef<{ leadId: string; idempotencyKey: string; expectedVersion: number; input: HandoverLeadWithTasksInput } | undefined>(undefined);
   const refreshed = useRef<Lead | undefined>(undefined);
-  const recordId = useRef(lead?.id);
+  const recordId = useRef(leadId);
   const epoch = useRef(0);
   useEffect(() => {
-    if (recordId.current === lead?.id) return;
-    recordId.current = lead?.id;
+    if (recordId.current === leadId) return;
+    recordId.current = leadId;
     epoch.current++;
     attempt.current = undefined;
     refreshed.current = undefined;
@@ -26,7 +26,7 @@ export function useLeadHandover(lead: Lead | undefined) {
     setBlocked(false);
     setAmbiguous(false);
     setResolutionAccessDenied(false);
-  }, [lead?.id]);
+  }, [leadId]);
   const newest = refreshed.current?.id === lead?.id
     && (refreshed.current?.resourceVersion ?? -1) > (lead?.resourceVersion ?? -1)
     ? refreshed.current : lead;
@@ -34,13 +34,13 @@ export function useLeadHandover(lead: Lead | undefined) {
     if (newest?.id === recordId.current) refreshed.current = newest;
   }, [newest]);
   const isAmbiguousRetry = (input: HandoverLeadWithTasksInput) => Boolean(ambiguous
-    && attempt.current?.leadId === lead?.id
+    && attempt.current?.leadId === leadId
     && attempt.current?.input.nextOwnerId === input.nextOwnerId.trim()
     && attempt.current?.input.reason === input.reason.trim());
   const recover = async () => {
-    if (!lead || busy.current || ambiguous) return;
+    if (!leadId || busy.current || ambiguous) return;
     const startedEpoch = epoch.current;
-    const resource = getLeadDetailResource(lead.id);
+    const resource = getLeadDetailResource(leadId);
     const next = await resource.refresh();
     if (startedEpoch !== epoch.current) return;
     if (!next) throw resource.getSnapshot().error ?? new ApplicationError({ code: "RESOURCE_NOT_FOUND", category: "NOT_FOUND", message: "Lead refresh failed" });
@@ -49,17 +49,17 @@ export function useLeadHandover(lead: Lead | undefined) {
     setBlocked(false);
   };
   const submit = async (input: HandoverLeadWithTasksInput) => {
-    if (!lead || busy.current || blocked) return;
+    if (!leadId || busy.current || blocked) return;
     const observed = newest;
-    if (!observed) return;
+    if (!attempt.current && (!observed || observed.id !== leadId)) return;
     const payload = { nextOwnerId: input.nextOwnerId.trim(), reason: input.reason.trim() };
     const exactAmbiguousReplay = isAmbiguousRetry(payload);
-    if (!attempt.current && (!observed.ownerId || observed.archivedAt || observed.resourceVersion === undefined
+    if (!attempt.current && observed && (!observed.ownerId || observed.archivedAt || observed.resourceVersion === undefined
       || payload.nextOwnerId === observed.ownerId || !payload.nextOwnerId || !payload.reason || payload.reason.length > 1000)) return;
-    if (!attempt.current && observed.resourceVersion !== undefined) attempt.current = { leadId: lead.id, idempotencyKey: `lead-handover-${crypto.randomUUID()}`, expectedVersion: observed.resourceVersion, input: payload };
+    if (!attempt.current && observed?.resourceVersion !== undefined) attempt.current = { leadId, idempotencyKey: `lead-handover-${crypto.randomUUID()}`, expectedVersion: observed.resourceVersion, input: payload };
     const intent = attempt.current;
     if (!intent) return;
-    if (intent.leadId !== lead.id || JSON.stringify(intent.input) !== JSON.stringify(payload)) {
+    if (intent.leadId !== leadId || JSON.stringify(intent.input) !== JSON.stringify(payload)) {
       throw new ApplicationError({ code: "IDEMPOTENCY_KEY_REUSED", category: "CONFLICT", message: "Retry the original handover before changing its intent.", userMessage: "Retry the original handover before changing its intent." });
     }
     busy.current = true;

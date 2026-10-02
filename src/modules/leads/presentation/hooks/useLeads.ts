@@ -15,5 +15,5 @@ export function useLeads(options: { loadAuthoritative?: boolean } = {}) {
 
   useEffect(() => subscribeToLeads(setLeadsState), []);
 
-  return { leads, query };
+  return { leads: query.connected && (options.loadAuthoritative ?? true) ? query.data?.items ?? [] : leads, query };
 }

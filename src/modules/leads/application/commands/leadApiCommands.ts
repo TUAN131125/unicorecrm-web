@@ -1,4 +1,4 @@
-import { invalidateModuleQueries, runBackendProjection } from "@/shared/application";
+import { invalidateModuleQueries, isBusinessOperationUnavailable, runBackendProjection } from "@/shared/application";
 import { ApplicationError } from "@/shared/domain";
 import { money } from "@/shared/money";
 import type {
@@ -31,7 +31,7 @@ import type {
   ScheduleLeadFollowUpBatchResult,
   ReplaceLeadProfileResult,
 } from "../ports/LeadApiRuntime";
-import { getLeadApiRuntime, leadRepository } from "../composition/leadApplicationServices";
+import { getLeadApiRuntime, isLeadConnectedApiRuntime, leadRepository } from "../composition/leadApplicationServices";
 import type { Lead } from "../../domain/model/lead.types";
 import type { LeadCsvImportPlan } from "../import/leadCsvImport";
 import { saveLead } from "./leadRepositoryCommands";
@@ -49,7 +49,7 @@ export async function replaceLeadProfileFromFormViaApi(
   leadId: string,
   input: Partial<Lead>,
 ): Promise<ReplaceLeadProfileResult> {
-  const current = leadRepository.getById(leadId);
+  const current = await readLeadForCommand(leadId);
   const expectedVersion = input.resourceVersion ?? current?.resourceVersion;
   if (expectedVersion === undefined) {
     throw new ApplicationError({
@@ -74,7 +74,7 @@ export async function advanceLeadWorkStateViaApi(
   leadId: string,
   input: AdvanceLeadWorkStateInput,
 ): Promise<AdvanceLeadWorkStateResult> {
-  const expectedVersion = requireLeadVersion(leadId, "advanceLeadWorkState");
+  const expectedVersion = await requireLeadVersion(leadId, "advanceLeadWorkState");
   const result = await getLeadApiRuntime().commands.advanceLeadWorkState(leadId, input, {
     idempotencyKey: createAttemptKey(`lead:advance-work-state:${leadId}:${input.targetWorkState}`),
     expectedVersion,
@@ -87,7 +87,7 @@ export async function disqualifyLeadViaApi(
   leadId: string,
   input: DisqualifyLeadInput,
 ): Promise<DisqualifyLeadResult> {
-  const expectedVersion = requireLeadVersion(leadId, "disqualifyLead");
+  const expectedVersion = await requireLeadVersion(leadId, "disqualifyLead");
   const result = await getLeadApiRuntime().commands.disqualifyLead(leadId, input, {
     idempotencyKey: createAttemptKey(`lead:disqualify:${leadId}`),
     expectedVersion,
@@ -97,7 +97,7 @@ export async function disqualifyLeadViaApi(
 }
 
 export async function reopenDisqualifiedLeadViaApi(leadId: string): Promise<ReopenDisqualifiedLeadResult> {
-  const expectedVersion = requireLeadVersion(leadId, "reopenDisqualifiedLead");
+  const expectedVersion = await requireLeadVersion(leadId, "reopenDisqualifiedLead");
   const result = await getLeadApiRuntime().commands.reopenDisqualifiedLead(leadId, {
     idempotencyKey: createAttemptKey(`lead:reopen:${leadId}`),
     expectedVersion,
@@ -111,7 +111,7 @@ export async function replaceLeadViaTransformViaApi(
   leadId: string,
   transform: (lead: Lead) => Lead,
 ): Promise<ReplaceLeadProfileResult> {
-  const current = leadRepository.getById(leadId);
+  const current = await readLeadForCommand(leadId);
   if (!current) throw profileViolation("leadId", `Lead ${leadId} was not found in the authoritative projection.`);
   return replaceLeadProfileFromFormViaApi(leadId, transform(structuredClone(current)));
 }
@@ -120,7 +120,7 @@ export async function advanceLeadWorkStateBatchViaApi(
   leadIds: readonly string[],
   targetWorkState: "CONTACTING" | "VERIFYING",
 ): Promise<Lead[]> {
-  const items = versionedLeadTargets(leadIds, "advanceLeadWorkStateBatch");
+  const items = await versionedLeadTargets(leadIds, "advanceLeadWorkStateBatch");
   const result: AdvanceLeadWorkStateBatchResult = await getLeadApiRuntime().commands.advanceLeadWorkStateBatch({ items, targetWorkState }, {
     idempotencyKey: createAttemptKey(`lead:advance-work-state-batch:${targetWorkState}:${items.map((item) => item.leadId).sort().join(",")}`),
   });
@@ -132,7 +132,7 @@ export async function assignLeadOwnerBatchViaApi(
   leadIds: readonly string[],
   input: { ownerId: string; reason: string },
 ): Promise<AssignLeadOwnerBatchResult> {
-  const items = versionedLeadTargets(leadIds, "assignLeadOwnerBatch");
+  const items = await versionedLeadTargets(leadIds, "assignLeadOwnerBatch");
   const result = await getLeadApiRuntime().commands.assignLeadOwnerBatch({ items, ownerId: input.ownerId, reason: input.reason }, {
     idempotencyKey: createAttemptKey(`lead:assign-owner-batch:${input.ownerId}:${items.map((item) => item.leadId).sort().join(",")}`),
   });
@@ -144,7 +144,7 @@ export async function disqualifyLeadBatchViaApi(
   leadIds: readonly string[],
   input: { reason: string; evidence?: string },
 ): Promise<DisqualifyLeadBatchResult> {
-  const items = versionedLeadTargets(leadIds, "disqualifyLeadBatch");
+  const items = await versionedLeadTargets(leadIds, "disqualifyLeadBatch");
   const result = await getLeadApiRuntime().commands.disqualifyLeadBatch({ items, reason: input.reason, evidence: input.evidence }, {
     idempotencyKey: createAttemptKey(`lead:disqualify-batch:${items.map((item) => item.leadId).sort().join(",")}`),
   });
@@ -156,7 +156,7 @@ export async function applyLeadTagBatchViaApi(
   leadIds: readonly string[],
   tag: string,
 ): Promise<ApplyLeadTagBatchResult> {
-  const items = versionedLeadTargets(leadIds, "applyLeadTagBatch");
+  const items = await versionedLeadTargets(leadIds, "applyLeadTagBatch");
   const result = await getLeadApiRuntime().commands.applyLeadTagBatch({ items, tag }, {
     idempotencyKey: createAttemptKey(`lead:apply-tag-batch:${tag}:${items.map((item) => item.leadId).sort().join(",")}`),
   });
@@ -168,7 +168,7 @@ export async function scheduleLeadFollowUpBatchViaApi(
   leadIds: readonly string[],
   input: { followUpAt: string; note: string },
 ): Promise<ScheduleLeadFollowUpBatchResult> {
-  const items = versionedLeadTargets(leadIds, "scheduleLeadFollowUpBatch");
+  const items = await versionedLeadTargets(leadIds, "scheduleLeadFollowUpBatch");
   const result = await getLeadApiRuntime().commands.scheduleLeadFollowUpBatch({ items, followUpAt: input.followUpAt, note: input.note }, {
     idempotencyKey: createAttemptKey(`lead:schedule-follow-up-batch:${input.followUpAt}:${items.map((item) => item.leadId).sort().join(",")}`),
   });
@@ -177,7 +177,7 @@ export async function scheduleLeadFollowUpBatchViaApi(
 }
 
 export async function claimLeadFromQueueViaApi(leadId: string, attempt?: { idempotencyKey: string; expectedVersion: number }): Promise<ClaimLeadFromQueueResult> {
-  const expectedVersion = attempt?.expectedVersion ?? requireLeadVersion(leadId, "claimLeadFromQueue");
+  const expectedVersion = attempt?.expectedVersion ?? await requireLeadVersion(leadId, "claimLeadFromQueue");
   const result = await getLeadApiRuntime().commands.claimLeadFromQueue(leadId, {}, {
     idempotencyKey: attempt?.idempotencyKey ?? createAttemptKey(`lead:claim-from-queue:${leadId}`),
     expectedVersion,
@@ -199,7 +199,7 @@ export async function assignLeadOwnerViaApi(
   input: { ownerId: string; reason: string },
   attempt?: { idempotencyKey: string; expectedVersion: number },
 ): Promise<AssignLeadOwnerResult> {
-  const expectedVersion = attempt?.expectedVersion ?? requireLeadVersion(leadId, "assignLeadOwner");
+  const expectedVersion = attempt?.expectedVersion ?? await requireLeadVersion(leadId, "assignLeadOwner");
   const result = await getLeadApiRuntime().commands.assignLeadOwner(leadId, input, {
     idempotencyKey: attempt?.idempotencyKey ?? createAttemptKey(`lead:assign-owner:${leadId}:${input.ownerId}`),
     expectedVersion,
@@ -250,7 +250,7 @@ export async function importLeadCsvPlanViaApi(
 }
 
 export async function archiveLeadViaApi(leadId: string): Promise<ArchiveLeadResult> {
-  const expectedVersion = requireLeadVersion(leadId, "archiveLead");
+  const expectedVersion = await requireLeadVersion(leadId, "archiveLead");
   const result = await getLeadApiRuntime().commands.archiveLead(leadId, {}, {
     idempotencyKey: createAttemptKey(`lead:archive:${leadId}`),
     expectedVersion,
@@ -260,7 +260,7 @@ export async function archiveLeadViaApi(leadId: string): Promise<ArchiveLeadResu
 }
 
 export async function archiveLeadsViaApi(leadIds: readonly string[]): Promise<ArchiveLeadBatchResult> {
-  const items = uniqueLeadIds(leadIds).map((leadId) => ({ leadId, expectedVersion: requireLeadVersion(leadId, "archiveLeadBatch") }));
+  const items = await versionedLeadTargets(leadIds, "archiveLeadBatch");
   const result = await getLeadApiRuntime().commands.archiveLeadBatch({ items }, {
     idempotencyKey: createAttemptKey(`lead:archive-batch:${items.map((item) => item.leadId).sort().join(",")}`),
   });
@@ -269,7 +269,7 @@ export async function archiveLeadsViaApi(leadIds: readonly string[]): Promise<Ar
 }
 
 export async function anonymizeLeadViaApi(leadId: string, reason: string): Promise<AnonymizeLeadResult> {
-  const expectedVersion = requireLeadVersion(leadId, "anonymizeLead");
+  const expectedVersion = await requireLeadVersion(leadId, "anonymizeLead");
   const result = await getLeadApiRuntime().commands.anonymizeLead(leadId, { reason }, {
     idempotencyKey: createAttemptKey(`lead:anonymize:${leadId}`),
     expectedVersion,
@@ -282,7 +282,7 @@ export async function recordLeadConsentViaApi(
   leadId: string,
   input: RecordLeadConsentInput,
 ): Promise<RecordLeadConsentResult> {
-  const expectedVersion = requireLeadVersion(leadId, "recordLeadConsent");
+  const expectedVersion = await requireLeadVersion(leadId, "recordLeadConsent");
   const result = await getLeadApiRuntime().commands.recordLeadConsent(leadId, input, {
     idempotencyKey: createAttemptKey(`lead:consent:${leadId}:${input.channel}:${input.decision}`),
     expectedVersion,
@@ -296,9 +296,8 @@ export async function mergeLeadDuplicatesViaApi(input: {
   duplicateLeadIds: readonly string[];
   reason: string;
 }): Promise<MergeLeadDuplicatesResult> {
-  const survivor = { leadId: input.survivorLeadId, expectedVersion: requireLeadVersion(input.survivorLeadId, "mergeLeadDuplicates") };
-  const duplicates = uniqueLeadIds(input.duplicateLeadIds).filter((leadId) => leadId !== input.survivorLeadId)
-    .map((leadId) => ({ leadId, expectedVersion: requireLeadVersion(leadId, "mergeLeadDuplicates") }));
+  const survivor = { leadId: input.survivorLeadId, expectedVersion: await requireLeadVersion(input.survivorLeadId, "mergeLeadDuplicates") };
+  const duplicates = await versionedLeadTargets(input.duplicateLeadIds.filter(leadId => leadId !== input.survivorLeadId), "mergeLeadDuplicates");
   const result = await getLeadApiRuntime().commands.mergeLeadDuplicates({ survivor, duplicates, reason: input.reason }, {
     idempotencyKey: createAttemptKey(`lead:merge-duplicates:${[survivor.leadId, ...duplicates.map((item) => item.leadId)].sort().join(",")}`),
   });
@@ -311,9 +310,8 @@ export async function confirmLeadDuplicatesDistinctViaApi(input: {
   candidateLeadIds: readonly string[];
   reason: string;
 }): Promise<ConfirmLeadDuplicatesDistinctResult> {
-  const primary = { leadId: input.leadId, expectedVersion: requireLeadVersion(input.leadId, "confirmLeadDuplicatesDistinct") };
-  const candidates = uniqueLeadIds(input.candidateLeadIds).filter((leadId) => leadId !== input.leadId)
-    .map((leadId) => ({ leadId, expectedVersion: requireLeadVersion(leadId, "confirmLeadDuplicatesDistinct") }));
+  const primary = { leadId: input.leadId, expectedVersion: await requireLeadVersion(input.leadId, "confirmLeadDuplicatesDistinct") };
+  const candidates = await versionedLeadTargets(input.candidateLeadIds.filter(leadId => leadId !== input.leadId), "confirmLeadDuplicatesDistinct");
   const result = await getLeadApiRuntime().commands.confirmLeadDuplicatesDistinct({ primary, candidates, reason: input.reason }, {
     idempotencyKey: createAttemptKey(`lead:confirm-distinct:${[primary.leadId, ...candidates.map((item) => item.leadId)].sort().join(",")}`),
   });
@@ -355,8 +353,8 @@ async function projectManyAndInvalidate(
   await invalidateModuleQueries({ moduleKeys: ["leads"], commandType, aggregateId, occurredAt });
 }
 
-function versionedLeadTargets(leadIds: readonly string[], operationId: string): Array<{ leadId: string; expectedVersion: number }> {
-  return uniqueLeadIds(leadIds).map((leadId) => ({ leadId, expectedVersion: requireLeadVersion(leadId, operationId) }));
+async function versionedLeadTargets(leadIds: readonly string[], operationId: string): Promise<Array<{ leadId: string; expectedVersion: number }>> {
+  return Promise.all(uniqueLeadIds(leadIds).map(async leadId => ({ leadId, expectedVersion: await requireLeadVersion(leadId, operationId) })));
 }
 
 function uniqueLeadIds(values: readonly string[]): string[] {
@@ -364,8 +362,23 @@ function uniqueLeadIds(values: readonly string[]): string[] {
   return [...new Set(normalized)];
 }
 
-function requireLeadVersion(leadId: string, operationId: string): number {
-  const version = leadRepository.getById(leadId)?.resourceVersion;
+// A paged read is not a repository snapshot. Resolve only a requested command's
+// missing record through the authoritative query, never by merging whole pages.
+async function readLeadForCommand(leadId: string): Promise<Lead | undefined> {
+  const cached = leadRepository.getById(leadId);
+  if (cached || !isLeadConnectedApiRuntime()) return cached;
+  const observed = await getLeadApiRuntime().queries.get(leadId);
+  runBackendProjection("leads", () => saveLead(leadRepository, observed, "AUTHORITATIVE_READ"));
+  return observed;
+}
+
+async function requireLeadVersion(leadId: string, operationId: string): Promise<number> {
+  if (isLeadConnectedApiRuntime() && isBusinessOperationUnavailable(operationId)) {
+    throw new ApplicationError({ code: "LEAD_CONNECTED_OPERATION_NOT_IMPLEMENTED", category: "INFRASTRUCTURE",
+      message: `${operationId} is not implemented by the current backend runtime.`, retryable: false,
+      userMessage: "This Lead action is not available in connected mode." });
+  }
+  const version = (await readLeadForCommand(leadId))?.resourceVersion;
   if (!Number.isInteger(version) || Number(version) < 0) {
     throw new ApplicationError({
       code: "LEAD_LIFECYCLE_VERSION_REQUIRED",

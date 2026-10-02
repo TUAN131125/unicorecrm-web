@@ -11,10 +11,12 @@ import {
   advanceEligibleLeadsToVerifying,
   advanceNewLeadsToContacting,
   saveLead,
+  replaceLeadProjection,
   updateLead,
   updateLeadCollection,
   updateManyLeads,
   type LeadCollectionUpdater,
+  type LeadProjectionSource,
 } from "../application/commands/leadRepositoryCommands";
 import {
   importLeadCsvPlanAtomically,
@@ -38,12 +40,17 @@ export function getLeadSnapshot(leadId: string): Lead | undefined {
 }
 
 /**
- * Read-model projection only. Replacing the whole collection either commits a backend
- * page or evicts the previous one, so it declares the projection scope itself rather
+ * Read-model projection only. Replacing the whole collection either commits a full
+ * authoritative collection or evicts the previous one, so it declares the projection scope itself rather
  * than relying on every caller to remember to.
  */
-export function replaceLeads(leads: Lead[]): void {
-  runBackendProjection("leads", () => updateLeadCollection(leadRepository, leads));
+export function replaceLeads(leads: Lead[], source: LeadProjectionSource = "AUTHORITATIVE_READ"): void {
+  runBackendProjection("leads", () => updateLeadCollection(leadRepository, leads, source));
+}
+
+/** Local read-model eviction only; no business command, audit or transport. */
+export function evictLeadProjection(leadId: string): void {
+  replaceLeadProjection(leadRepository, stored => stored.filter(lead => lead.id !== leadId));
 }
 
 export function updateLeads(updater: LeadCollectionUpdater): Lead[] {
@@ -54,8 +61,8 @@ export function subscribeToLeads(listener: (leads: Lead[]) => void): () => void 
   return leadRepository.subscribe((leads) => listener(leads.filter((lead) => !lead.archivedAt)));
 }
 
-export function saveLeadSnapshot(lead: Lead): Lead {
-  return saveLead(leadRepository, lead);
+export function saveLeadSnapshot(lead: Lead, source: LeadProjectionSource = "MUTATION_RESULT"): Lead {
+  return saveLead(leadRepository, lead, source);
 }
 
 export function updateLeadSnapshot(leadId: string, transform: (lead: Lead) => Lead): Lead | undefined {

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { Lead } from "../../domain/model/lead.types";
 
 import type { RecordOwnershipContext } from "@/platform/record-ownership";
@@ -94,7 +94,7 @@ export const useLeadFilters = (leads: Lead[], activeView: string, ownership: Rec
     filters.duplicate !== null ? "duplicate" : "",
   ].filter(Boolean).length, [filters]);
 
-  const filteredLeads = useMemo(() => {
+  const filterLeads = useCallback((items: Lead[]) => {
     const normalizedSearch = searchTerm.trim().toLocaleLowerCase();
     const now = Date.now();
     const todayStr = toDateKeyInTimeZone(new Date(), workspaceTimeZone);
@@ -107,9 +107,9 @@ export const useLeadFilters = (leads: Lead[], activeView: string, ownership: Rec
       }
     };
 
-    const duplicateIndex = buildLeadDuplicateIndex(leads, { excludePositiveOutcomes: true });
+    const duplicateIndex = buildLeadDuplicateIndex(items, { excludePositiveOutcomes: true });
 
-    const result = leads.filter((lead) => {
+    const result = items.filter((lead) => {
       const matchesSearch = !normalizedSearch ||
         lead.name.toLocaleLowerCase().includes(normalizedSearch) ||
         (lead.companyName || "").toLocaleLowerCase().includes(normalizedSearch) ||
@@ -196,7 +196,8 @@ export const useLeadFilters = (leads: Lead[], activeView: string, ownership: Rec
       const comparison = compareNullable(leftValue as string | number | undefined, rightValue as string | number | undefined);
       return sort.direction === "asc" ? comparison : -comparison;
     });
-  }, [leads, searchTerm, filters, activeView, ownership, sort, workspaceTimeZone]);
+  }, [searchTerm, filters, activeView, ownership, sort, workspaceTimeZone]);
+  const filteredLeads = useMemo(() => filterLeads(leads), [leads, filterLeads]);
 
   return {
     searchTerm,
@@ -209,5 +210,6 @@ export const useLeadFilters = (leads: Lead[], activeView: string, ownership: Rec
     hasActiveFilters,
     activeFiltersCount,
     filteredLeads,
+    filterLeads,
   };
 };

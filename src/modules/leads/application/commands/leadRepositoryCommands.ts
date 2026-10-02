@@ -10,28 +10,41 @@ import { anonymizedRecordLabel, assertDestructiveActionAllowed, isBackendProject
 
 export type LeadCollectionUpdater = Lead[] | ((current: Lead[]) => Lead[]);
 
-export function retainNewestLeadProjection(incoming: Lead, existing: Lead | undefined): Lead {
+export type LeadProjectionSource = "AUTHORITATIVE_READ" | "MUTATION_RESULT";
+
+// Storage applies the callback against its raw snapshot; all freshness and
+// disclosure policy remains here, even when repository reads are scope-filtered.
+export function replaceLeadProjection(repository: LeadRepository, updater: (stored: Lead[]) => Lead[]): Lead[] {
+  let result: Lead[] = [];
+  const update = (stored: Lead[]) => { result = updater(stored); return result; };
+  if (repository.replaceProjection) repository.replaceProjection(update);
+  else repository.replace(update(repository.list()));
+  return result;
+}
+
+export function retainNewestLeadProjection(incoming: Lead, existing: Lead | undefined, source: LeadProjectionSource = "MUTATION_RESULT"): Lead {
   if (existing?.resourceVersion !== undefined
-    && (incoming.resourceVersion === undefined || incoming.resourceVersion <= existing.resourceVersion)) return existing;
+    && (incoming.resourceVersion === undefined || incoming.resourceVersion < existing.resourceVersion
+      || (source === "MUTATION_RESULT" && incoming.resourceVersion === existing.resourceVersion))) return existing;
   return incoming;
 }
 
 export function updateLeadCollection(
   repository: LeadRepository,
   updater: LeadCollectionUpdater,
+  source: LeadProjectionSource = "MUTATION_RESULT",
 ): Lead[] {
   // A workspace/scope change evicts the previous scope's cached Leads. That is a
   // projection eviction, not a business update, so it is not gated on leads.update:
   // every reader can switch workspace, and no lead is being changed. All other
   // callers keep the full authorization, ownership and lifecycle checks below.
   if (isWorkspaceScopeResetActive() || isBackendProjectionActive("leads")) {
-    const current = repository.list();
-    const incoming = typeof updater === "function" ? updater(current) : updater;
-    const existing = new Map(current.map(lead => [lead.id, lead]));
-    const evicted = isWorkspaceScopeResetActive() ? incoming
-      : incoming.map(lead => retainNewestLeadProjection(lead, existing.get(lead.id)));
-    repository.replace(evicted);
-    return evicted;
+    return replaceLeadProjection(repository, current => {
+      const incoming = typeof updater === "function" ? updater(current) : updater;
+      const existing = new Map(current.map(lead => [lead.id, lead]));
+      return isWorkspaceScopeResetActive() ? incoming
+        : incoming.map(lead => retainNewestLeadProjection(lead, existing.get(lead.id), source));
+    });
   }
   assertRuntimeCapability(CAPABILITIES.LEADS_UPDATE);
   const current = repository.list();
@@ -54,16 +67,16 @@ export function updateLeadCollection(
   return next;
 }
 
-export function saveLead(repository: LeadRepository, lead: Lead): Lead {
+export function saveLead(repository: LeadRepository, lead: Lead, source: LeadProjectionSource = "MUTATION_RESULT"): Lead {
   if (isBackendProjectionActive("leads")) {
-    const current = repository.list();
-    const projected = structuredClone(retainNewestLeadProjection(lead, current.find(item => item.id === lead.id)));
-    const exists = current.some((item) => item.id === projected.id);
-    repository.replace(
-      exists
+    let projected: Lead = lead;
+    replaceLeadProjection(repository, current => {
+      projected = structuredClone(retainNewestLeadProjection(lead, current.find(item => item.id === lead.id), source));
+      const exists = current.some((item) => item.id === projected.id);
+      return exists
         ? current.map((item) => item.id === projected.id ? projected : item)
-        : [projected, ...current],
-    );
+        : [projected, ...current];
+    });
     return structuredClone(projected);
   }
 

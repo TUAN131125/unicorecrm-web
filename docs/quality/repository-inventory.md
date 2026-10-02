@@ -17,9 +17,9 @@ Do not delete a dead, compatibility, deprecated or duplicate candidate based on 
 
 | Metric | Count |
 |---|---:|
-| Repository files | 2076 |
+| Repository files | 2077 |
 | Source files | 1385 |
-| Source lines | 213015 |
+| Source lines | 213077 |
 | Registered modules | 15 |
 | Route keys | 80 |
 | Loadable route modules | 64 |
@@ -37,7 +37,7 @@ Do not delete a dead, compatibility, deprecated or duplicate candidate based on 
 | Quality groups | 11 |
 | Verify gates | 339 |
 
-Inventory fingerprint: `ab65534b674b3d9903235c1dcea63cd90631313717b162ddec9dd078703525c0`
+Inventory fingerprint: `860aec474a600c7cd7f5c8dbc91eece0e893b33658ad11e47ae7e34e758fa540`
 
 
 ## Quality pipeline
@@ -62,7 +62,7 @@ Inventory fingerprint: `ab65534b674b3d9903235c1dcea63cd90631313717b162ddec9dd078
 |---|---:|
 | `active-runtime` | 1301 |
 | `active-script` | 80 |
-| `active-test` | 445 |
+| `active-test` | 446 |
 | `compatibility` | 53 |
 | `documentation` | 192 |
 | `fixture` | 3 |
@@ -183,7 +183,7 @@ The JSON manifest includes each detected key pattern, operation, path, line and 
 | `src/i18n/types.ts` | 2036 | `shared:i18n` |
 | `src/platform/api/generated/financialApi.ts` | 1757 | `platform:api` |
 | `src/modules/contacts/presentation/hooks/useContactDetailController.tsx` | 1272 | `contacts` |
-| `src/modules/leads/presentation/pages/LeadListPage.tsx` | 1251 | `leads` |
+| `src/modules/leads/presentation/pages/LeadListPage.tsx` | 1245 | `leads` |
 | `src/modules/deals/presentation/pages/DealPipelinePage.tsx` | 1233 | `deals` |
 | `src/modules/contacts/presentation/hooks/useContactListController.tsx` | 1179 | `contacts` |
 | `src/modules/quotes/presentation/views/QuoteBuilderView.tsx` | 1106 | `quotes` |
@@ -201,10 +201,10 @@ The JSON manifest includes each detected key pattern, operation, path, line and 
 | `src/modules/organizations/presentation/pages/OrganizationAccountDetailPage.tsx` | 695 | `organizations` |
 | `src/modules/products/presentation/pages/ProductDetailPage.tsx` | 695 | `products` |
 | `src/modules/leads/infrastructure/http/LeadHttpCommandAdapter.ts` | 692 | `leads` |
+| `src/modules/leads/presentation/hooks/useLeadDetailController.tsx` | 667 | `leads` |
 | `src/modules/leads/presentation/hooks/useLeadFormController.tsx` | 649 | `leads` |
 | `src/modules/customers/presentation/detail/CustomerOverviewTab.tsx` | 640 | `customers` |
 | `src/modules/products/presentation/components/ProductFormModal.tsx` | 637 | `products` |
-| `src/modules/leads/presentation/hooks/useLeadDetailController.tsx` | 635 | `leads` |
 | `src/modules/payments/presentation/pages/PaymentOperationsPage.tsx` | 634 | `payments` |
 
 ## Circular dependency groups

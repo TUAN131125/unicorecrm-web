@@ -1,3 +1,4 @@
+import { isLeadConnectedApiRuntime } from "../../application/composition/leadApplicationServices";
 import { useLeadHandover } from "./useLeadHandover";
 import { describePartialCommit, executeSequentialCommits, formatApplicationError } from "@/shared/operations";
 import React, { useState, useEffect } from "react";
@@ -72,7 +73,39 @@ export interface LeadDetailPageProps {
   crmConfig?: CrmWorkspaceConfig;
   authoritativeLead?: Lead;
 }
+export function useLeadDetailRouteFeature(leadId: string, observedLead: Lead | undefined) {
+  const { leads } = useLeads({ loadAuthoritative: false });
+  const lead = observedLead ?? (!isLeadConnectedApiRuntime() ? leads.find(item => item.id === leadId) : undefined);
+  const handover = useLeadHandover({ leadId, observedLead: lead });
+  const dialogs = useLeadDetailDialogs(lead, leadId);
+  const [receiptError, setReceiptError] = useState<string | null>(null);
+  const { locale } = useI18n();
+  useEffect(() => setReceiptError(null), [leadId]);
+  const retryReceipt = async () => {
+    const input = { nextOwnerId: dialogs.handoverOwnerId, reason: dialogs.handoverReason };
+    if (!handover.isAmbiguousRetry(input)) return;
+    try {
+      if (await handover.submit(input)) {
+        dialogs.setShowHandoverModal(false);
+        dialogs.setHandoverOwnerId("");
+        dialogs.setHandoverReason("");
+        setReceiptError(null);
+      }
+    } catch (error) {
+      setReceiptError(formatApplicationError(error, { locale }));
+    }
+  };
+  return { handover, dialogs, retryReceipt, receiptError };
+}
+
 export function useLeadDetailController(props: LeadDetailPageProps) {
+  const { leadId = "" } = useParams();
+  const { leads } = useLeads({ loadAuthoritative: false });
+  const feature = useLeadDetailRouteFeature(leadId, props.authoritativeLead ?? leads.find(lead => lead.id === leadId));
+  return useLeadDetailReadController(props, feature);
+}
+
+export function useLeadDetailReadController(props: LeadDetailPageProps, feature: ReturnType<typeof useLeadDetailRouteFeature>) {
   const {
   sources = [],
   campaigns = [],
@@ -105,7 +138,7 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
     && access.can(CAPABILITIES.LEADS_DELETE)
     && !lead?.archivedAt;
   const handoverOwnership = useRecordOwnershipContext("leads", CAPABILITIES.LEADS_ASSIGN);
-  const handover = useLeadHandover(lead);
+  const { handover, dialogs } = feature;
   const handoverAccess = useEffectiveRecordAccess({ resourceKey: "leads", recordId: lead?.id, record: lead,
     requestedCommands: ["lead.assign-owner"], requestedFields: ["ownerId"], enabled: Boolean(lead?.ownerId) });
   const canStartNewHandover = !handover.ambiguous && Boolean(lead?.ownerId) && access.can(CAPABILITIES.LEADS_ASSIGN)
@@ -136,7 +169,6 @@ export function useLeadDetailController(props: LeadDetailPageProps) {
     showMoreMenu, setShowMoreMenu,
   } = viewState;
 
-  const dialogs = useLeadDetailDialogs(lead);
   const {
     showDisqualifyModal, setShowDisqualifyModal,
     disqualifyCategory, setDisqualifyCategory,

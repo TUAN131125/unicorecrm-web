@@ -9277,6 +9277,12 @@
             "tsx"
           ],
           "args": []
+        },
+        {
+          "type": "node",
+          "entry": "tests/quality/integration/check-lead-list-confidentiality.mts",
+          "nodeArgs": ["--import", "tsx"],
+          "args": []
         }
       ]
     }

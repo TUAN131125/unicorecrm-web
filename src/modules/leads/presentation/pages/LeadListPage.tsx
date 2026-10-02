@@ -6,7 +6,7 @@ import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { Archive, Plus, CheckCircle2, Target, ArrowUpRight, UserPlus, RefreshCw, Tag, Sliders, Printer, FileSpreadsheet } from "lucide-react";
 import { normalizeApplicationError, type CRMActivity } from "@/shared/domain";
 import type { Lead, LeadSource, LeadCampaign } from "../../domain/model/lead.types";
-import { getRetainedLeadsSnapshot, isLeadOperationAvailable, LEAD_OPERATION, replaceLeads } from "../../public/leads";
+import { isLeadOperationAvailable, LEAD_OPERATION, replaceLeads } from "../../public/leads";
 import { LeadWorkState } from "../../domain/model/leadLifecycle.canonical";
 
 import { useI18n } from "@/i18n";
@@ -81,7 +81,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
   const [searchParams, setSearchParams] = useSearchParams();
   const { t, locale } = useI18n();
   const viewMode = !queueOnly && searchParams.get("view") === "kanban" ? "kanban" : "table";
-  const { leads, query: fullCollectionQuery } = useLeads({ loadAuthoritative: viewMode === "kanban" });
+  const { leads: retainedLeads, query: fullCollectionQuery } = useLeads({ loadAuthoritative: viewMode === "kanban" });
   const leadActions = useLeadActions();
   const referenceData = useLeadReferenceData(sources, campaigns);
   const access = useEffectiveAccess();
@@ -99,8 +99,8 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
   // Keep the base data set at the complete allowed scope so the duplicated scope
   // selector does not compete with the view and layout controls.
   const scopedLeads = useMemo(
-    () => filterRuntimeRecordsByOwnership("leads", CAPABILITIES.LEADS_ASSIGN, leads, "ALLOWED"),
-    [leads, ownership?.workspaceId, ownership?.memberId, ownership?.dataScope],
+    () => filterRuntimeRecordsByOwnership("leads", CAPABILITIES.LEADS_ASSIGN, retainedLeads, "ALLOWED"),
+    [retainedLeads, ownership?.workspaceId, ownership?.memberId, ownership?.dataScope],
   );
 
   // View mode management
@@ -179,6 +179,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
     project: projectServerLeadPage,
     evictProjection: clearLeadProjection,
   });
+  const leads = serverPagination.connected && viewMode === "table" ? serverPagination.items : retainedLeads;
 
   useEffect(() => {
     if (!leadToAssign) return;
@@ -202,13 +203,9 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
     && isLeadOperationAvailable(LEAD_OPERATION.SCHEDULE_FOLLOW_UP_BATCH);
   const canArchiveLeadBatch = access.can(CAPABILITIES.LEADS_DELETE)
     && isLeadOperationAvailable(LEAD_OPERATION.ARCHIVE_BATCH);
-  const serverPageLeadIds = useMemo(
-    () => new Set(serverPagination.items.map((lead) => lead.id)),
-    [serverPagination.items],
-  );
   const serverPageItems = useMemo(
-    () => savedViews.activeView === "unassigned" ? serverPagination.items : filters.filteredLeads.filter((lead) => serverPageLeadIds.has(lead.id)),
-    [filters.filteredLeads, serverPageLeadIds, savedViews.activeView, serverPagination.items],
+    () => savedViews.activeView === "unassigned" ? serverPagination.items : filters.filterLeads(serverPagination.items),
+    [filters.filterLeads, savedViews.activeView, serverPagination.items],
   );
   const localPagination = useLeadPagination(filters.filteredLeads, 50);
   const pagination = serverPagination.connected && viewMode === "table"
@@ -1239,11 +1236,8 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
   );
 };
 
-function projectServerLeadPage(records: readonly Lead[]): void {
-  const byId = new Map(getRetainedLeadsSnapshot().map((lead) => [lead.id, lead]));
-  for (const lead of records) byId.set(lead.id, lead);
-  replaceLeads([...byId.values()]);
-}
+// A page is its own read snapshot, never a global repository collection.
+function projectServerLeadPage(_records: readonly Lead[]): void {}
 
 function clearLeadProjection(): void {
   replaceLeads([]);

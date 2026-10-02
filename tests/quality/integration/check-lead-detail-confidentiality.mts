@@ -27,7 +27,7 @@ await loadAccessGovernance(workspace.getWorkspaceContextSnapshot().workspaceId);
 const React = await import("react");
 const { act } = React;
 const { createRoot } = await import("react-dom/client");
-const { MemoryRouter, Routes, Route } = await import("react-router-dom");
+const { MemoryRouter, Routes, Route, useNavigate } = await import("react-router-dom");
 const { I18nProvider } = await import("@/i18n");
 const { PlatformStateProvider } = await import("@/app/providers");
 const { GuidanceProvider } = await import("@/guidance/presentation/GuidanceProvider");
@@ -44,11 +44,12 @@ const { mapLeadDocumentToApplication } = await import("@/modules/leads/infrastru
 
 const lead: Lead = { id: "lead-confidentiality", name: "Protected Profile Sentinel", title: "", companyName: "Protected Company Sentinel", phone: "0901234567", email: "protected@example.test", source: "WEB", score: 0, ownerId: "u1", leadWorkState: "NEW", interestedProducts: [], activities: [], activitiesAuthority: "NOT_INCLUDED", resourceVersion: 3, createdAt: "2026-07-01T00:00:00Z" };
 let records: Lead[] = [lead];
+const repositoryListeners = new Set<(leads: Lead[]) => void>();
 const base = getLeadApplicationServices();
 let failure: InstanceType<typeof ApplicationError> | undefined;
 configureLeadApplication({
   ...base,
-  repository: { list: () => [...records], getById: (id) => records.find(record => record.id === id), replace: (next) => { records = next; }, subscribe: () => () => {} },
+  repository: { list: () => [...records], getById: (id) => records.find(record => record.id === id), replace: (next) => { records = next; for (const listener of repositoryListeners) listener([...records]); }, subscribe: (listener) => { repositoryListeners.add(listener); return () => { repositoryListeners.delete(listener); }; } },
   api: { ...base.api, mode: "connected", queries: { ...base.api.queries, async get() {
     if (failure) throw failure;
     return lead;
@@ -58,10 +59,14 @@ const resource = getLeadDetailResource(lead.id);
 const rootElement = window.document.getElementById("root");
 assert.ok(rootElement);
 const root = createRoot(rootElement);
+function RouteChangeProbe() {
+  const navigate = useNavigate();
+  return React.createElement("button", { "data-change-lead-route": true, onClick: () => navigate("/leads/lead-route-b") }, "Change Lead route");
+}
 const render = async () => act(async () => root.render(React.createElement(I18nProvider, null,
   React.createElement(MemoryRouter, { initialEntries: [`/leads/${lead.id}`] },
     React.createElement(PlatformStateProvider, null, React.createElement(GuidanceProvider, null,
-      React.createElement(Routes, null, React.createElement(Route, { path: "/leads/:leadId", element: React.createElement(LeadDetailPage) }))))))));
+      React.createElement(RouteChangeProbe), React.createElement(Routes, null, React.createElement(Route, { path: "/leads/:leadId", element: React.createElement(LeadDetailPage) }))))))));
 const text = () => rootElement.textContent ?? "";
 
 try {
@@ -129,7 +134,7 @@ try {
     assert.equal(deniedReads, 1, "Real command invalidation reacquires the detail exactly once");
     assert.equal(resource.getSnapshot().state, "ERROR");
     assert.equal(resource.getSnapshot().data, undefined, "Denial evicts all protected detail fields");
-    assert.ok(records.some(record => record.email === lead.email), "Stale repository deliberately remains available to catch fallback");
+    assert.equal(records.some(record => record.id === lead.id), false, "Definitive denial evicts the shared repository Lead");
     for (const secret of [lead.name, lead.companyName, lead.phone, lead.email]) {
       assert.ok(!rootElement.innerHTML.includes(secret), `Actual page must hide ${secret}`);
     }
@@ -193,7 +198,7 @@ try {
   serverRecord = redacted;
   await act(async () => { await resource.refresh(); await getLeadCollectionResource().refresh(); });
   assert.equal(stored.getById(lead.id)?.resourceVersion, 8);
-  assert.equal(scoped.getById(lead.id)?.email, lead.email, "Equal-version rich cache remains available to detect resurrection");
+  assert.equal(scoped.getById(lead.id)?.email, redacted.email, "Equal-version authoritative read also redacts the shared cache");
   assert.deepEqual(resource.getSnapshot().data, redacted, "Detail uses server redaction rather than richer cache");
   assert.deepEqual(getLeadCollectionResource().getSnapshot().data?.items, [redacted], "Collection uses server redaction rather than richer cache");
   assert.ok(!rootElement.innerHTML.includes(lead.email), "Actual page does not resurrect revoked email");
@@ -253,6 +258,8 @@ try {
   assert.equal(window.document.querySelector<HTMLTextAreaElement>("#lead-handover-form textarea")?.disabled, true, "Actual controller retains ambiguous intent");
   await act(async () => { await resource.refresh(); });
   assert.equal(resource.getSnapshot().data, undefined);
+  await act(async () => { stored.replace([]); });
+  assert.equal(stored.list().length, 0, "Regression explicitly evicts the retained repository Lead");
   assert.ok(!rootElement.innerHTML.includes(lead.email));
   assert.equal(window.document.getElementById("lead-handover-form"), null, "Protected dialog disappears during denial");
   receiptLost = false;
@@ -278,6 +285,36 @@ try {
   assert.equal(queryDenied, true);
   assert.equal(resource.getSnapshot().error?.status, 404);
   assert.equal(rootElement.querySelector("[data-lead-handover-receipt-retry]"), null, "Successful receipt resolves the retained attempt");
+  // Create another ambiguous A attempt, then change the actual route to B.
+  queryDenied = false;
+  receiptLost = true;
+  serverRecord = richEqualVersion;
+  await act(async () => { stored.replace([richEqualVersion]); await resource.refresh(); });
+  const reopenMore = rootElement.querySelector<HTMLButtonElement>("#header-more-actions-btn");
+  assert.ok(reopenMore);
+  await act(async () => reopenMore.click());
+  const reopenHandover = [...window.document.querySelectorAll<HTMLButtonElement>("button")].find(button => /^(Bàn giao|Handover)/.test(button.textContent?.trim() ?? ""));
+  assert.ok(reopenHandover);
+  await act(async () => reopenHandover.click());
+  const resetOwner = window.document.querySelector<HTMLSelectElement>("#lead-handover-form select");
+  const resetReason = window.document.querySelector<HTMLTextAreaElement>("#lead-handover-form textarea");
+  assert.ok(resetOwner); assert.ok(resetReason);
+  assert.equal(resetOwner.value, "", "Resolved attempt clears owner draft");
+  assert.equal(resetReason.value, "", "Resolved attempt clears reason draft");
+  await act(async () => {
+    resetOwner.value = recipient.value; resetOwner.dispatchEvent(new window.Event("change", { bubbles: true }));
+    Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype, "value")?.set?.call(resetReason, "Route A attempt");
+    resetReason.dispatchEvent(new window.Event("input", { bubbles: true }));
+  });
+  await submitHandover();
+  await act(async () => { await resource.refresh(); stored.replace([]); });
+  assert.ok(rootElement.querySelector("[data-lead-handover-receipt-retry]"));
+  const attemptCount = attempts.length;
+  const changeRoute = rootElement.querySelector<HTMLButtonElement>("[data-change-lead-route]");
+  assert.ok(changeRoute);
+  await act(async () => changeRoute.click());
+  assert.equal(rootElement.querySelector("[data-lead-handover-receipt-retry]"), null, "Route A to B clears A retry state");
+  assert.equal(attempts.length, attemptCount, "Changing route never replays A's attempt");
   console.log("Lead detail resource and actual page confidentiality regression PASS");
 } finally {
   await act(async () => root.unmount());

@@ -115,17 +115,52 @@ shared.runBackendProjection("leads", () => saveLead(repository, incoming));
 assert.deepEqual(records, [rich]);
 shared.runBackendProjection("leads", () => updateLeadCollection(repository, [{ ...incoming, resourceVersion: 6 }]));
 assert.deepEqual(records, [rich], "Collection projections use the same guard");
+// READ disclosure is authoritative even when the business version is unchanged.
+shared.runBackendProjection("leads", () => saveLead(repository, incoming, "AUTHORITATIVE_READ"));
+assert.deepEqual(records, [incoming], "Equal-version read removes richer cached fields");
+records = [newerProjection];
+shared.runBackendProjection("leads", () => saveLead(repository, incoming, "AUTHORITATIVE_READ"));
+assert.deepEqual(records, [newerProjection], "Older read cannot downgrade business version");
+shared.runBackendProjection("leads", () => updateLeadCollection(repository, [{ ...newerProjection, email: "", phone: "" }], "AUTHORITATIVE_READ"));
+assert.equal(records[0]?.email, "", "Collection read replaces equal-version disclosure");
 const { InMemoryLeadRepository } = await import("@/modules/leads/infrastructure/InMemoryLeadRepository");
 const { BrowserEventBus } = await import("@/platform/events");
 const stored = new InMemoryLeadRepository([newerProjection], new BrowserEventBus());
-shared.runBackendProjection("leads", () => stored.replace([incoming]));
-assert.equal(stored.getById(document.id)?.resourceVersion, 9, "Stored boundary also guards data hidden from scoped reads");
-shared.runBackendProjection("leads", () => stored.replace([{ ...incoming, resourceVersion: undefined }]));
-assert.equal(stored.getById(document.id)?.resourceVersion, 9, "An unversioned projection cannot erase a known version");
-shared.runBackendProjection("leads", () => stored.replace([]));
-assert.deepEqual(stored.list(), [], "Stored projection guard does not obstruct scope eviction");
+shared.runBackendProjection("leads", () => saveLead(stored, incoming));
+assert.equal(stored.getById(document.id)?.resourceVersion, 9, "Application boundary owns mutation freshness");
+shared.runBackendProjection("leads", () => saveLead(stored, { ...incoming, resourceVersion: undefined }));
+assert.equal(stored.getById(document.id)?.resourceVersion, 9);
+// Read authorization may hide v9 from list()/getById(), but the storage
+// callback still applies the single application policy to the raw projection.
+const hiddenStored = new InMemoryLeadRepository([newerProjection], new BrowserEventBus());
+const hiddenRepository = {
+  list: () => [], getById: () => undefined,
+  replace: (next: typeof records) => hiddenStored.replace(next),
+  replaceProjection: (updater: (stored: typeof records) => typeof records) => hiddenStored.replaceProjection(updater),
+  subscribe: () => () => {},
+};
+shared.runBackendProjection("leads", () => saveLead(hiddenRepository, incoming));
+assert.equal(hiddenStored.getById(document.id)?.resourceVersion, 9, "Scoped read denial cannot bypass mutation freshness");
+shared.runBackendProjection("leads", () => updateLeadCollection(hiddenRepository, [incoming], "AUTHORITATIVE_READ"));
+assert.equal(hiddenStored.getById(document.id)?.resourceVersion, 9, "Scoped read denial cannot bypass read business freshness");
+const otherHidden = { ...newerProjection, id: "unrelated-hidden-projection", resourceVersion: 12 };
+hiddenStored.replace([newerProjection, otherHidden]);
+const { evictLeadProjection } = await import("@/modules/leads/public/leads");
+configureLeadApplication({ ...base, repository: hiddenRepository, api });
+const transportBeforeEviction = requests.length;
+evictLeadProjection(document.id);
+assert.equal(hiddenStored.getById(document.id), undefined);
+assert.deepEqual(hiddenStored.getById(otherHidden.id), otherHidden, "Eviction preserves unrelated hidden projections");
+assert.equal(requests.length, transportBeforeEviction, "Projection eviction creates no business transport");
+configureLeadApplication({ ...base, repository, api });
+stored.replace([]);
+assert.deepEqual(stored.list(), [], "Storage accepts explicit projection eviction");
 shared.runBackendProjection("leads", () => updateLeadCollection(repository, []));
 assert.deepEqual(records, [], "Scope eviction still removes records");
+const { assignLeadOwnerBatchViaApi } = await import("@/modules/leads/application/commands/leadApiCommands");
+const beforeUnavailable = requests.length;
+await assert.rejects(() => assignLeadOwnerBatchViaApi([document.id], { ownerId: "member_target", reason: "Closed future operation" }), { code: "LEAD_CONNECTED_OPERATION_NOT_IMPLEMENTED" });
+assert.equal(requests.length, beforeUnavailable, "Unavailable Bulk Assign cannot trigger a missing-target GET");
 await handoverLeadWithTasksViaApi(document.id, input, { idempotencyKey: "receipt-only", expectedVersion: 7 });
 assert.deepEqual(records, [], "Receipt does not reconstruct a missing Lead");
 assert.equal(invalidations.length, 4);
@@ -136,7 +171,8 @@ const rootElement = window.document.getElementById("root");
 assert.ok(rootElement);
 const root = createRoot(rootElement);
 let observed = mapLeadDocumentToApplication(document);
-function Fixture() { current = useLeadHandover(observed); return null; }
+let hideObserved = false;
+function Fixture() { current = useLeadHandover({ leadId: observed.id, observedLead: hideObserved ? undefined : observed }); return null; }
 let fixtureKey = crypto.randomUUID();
 async function rerender() { await act(async () => root.render(React.createElement(Fixture, { key: fixtureKey }))); }
 async function mount() { fixtureKey = crypto.randomUUID(); await rerender(); }
@@ -159,6 +195,9 @@ assert.equal(requests.filter(request => request.operationId === "handoverLeadWit
 count = requests.length;
 await act(async () => { await assert.rejects(() => current.submit(move), { code: "IDEMPOTENCY_KEY_REUSED" }); await current.recover(); });
 assert.equal(requests.length, count, "Ambiguous intent cannot refresh into a fresh command");
+hideObserved = true;
+await rerender();
+assert.equal(current.isAmbiguousRetry(input), true, "Route identity retains exact retry without a read model");
 mode = "DENIED";
 await act(async () => { await assert.rejects(() => current.submit(input), { status: 403 }); });
 assert.equal(current.ambiguous, true);
@@ -173,6 +212,7 @@ await act(async () => { assert.equal((await current.submit(input))?.handoverTask
 assert.equal(current.resolutionAccessDenied, false);
 assert.equal(current.ambiguous, false);
 assert.equal(requests.filter(request => request.operationId === "handoverLeadWithTasks").at(-1)?.idempotencyKey, stable?.idempotencyKey);
+hideObserved = false;
 // A newer authoritative prop must win over the previous successful result for a new intent.
 observed = { ...mapLeadDocumentToApplication(document), resourceVersion: 112 };
 await rerender();
@@ -245,8 +285,8 @@ let dialogs!: ReturnType<typeof useLeadDetailDialogs>;
 let canAdmit = true;
 observed = mapLeadDocumentToApplication(document);
 function DialogFixture() {
-  dialogs = useLeadDetailDialogs(observed);
-  current = useLeadHandover(observed);
+  dialogs = useLeadDetailDialogs(hideObserved ? undefined : observed, observed.id);
+  current = useLeadHandover({ leadId: observed.id, observedLead: hideObserved ? undefined : observed });
   const { t } = useI18n();
   const actions = useLeadActions();
   return React.createElement(LeadDetailModals, { screen: {
@@ -289,6 +329,12 @@ assert.equal(current.ambiguous, true);
 await act(async () => dialogs.setShowHandoverModal(false));
 await act(async () => dialogs.setShowHandoverModal(true));
 assert.equal(current.ambiguous, true, "Closing/reopening the same Lead retains intent");
+hideObserved = true;
+await act(async () => root.render(React.createElement(I18nProvider, null, React.createElement(DialogFixture))));
+assert.equal(dialogs.handoverOwnerId, input.nextOwnerId, "Read eviction preserves owner draft");
+assert.equal(dialogs.handoverReason, input.reason, "Read eviction preserves reason draft");
+assert.equal(current.isAmbiguousRetry(input), true, "Read eviction preserves original intent");
+hideObserved = false;
 observed = { ...observed, ownerId: input.nextOwnerId, resourceVersion: 99 };
 await act(async () => root.render(React.createElement(I18nProvider, null, React.createElement(DialogFixture))));
 assert.equal(window.document.querySelector<HTMLButtonElement>('button[form="lead-handover-form"]')?.disabled, false, "Retained ambiguous intent can replay after target ownership is observed");
