@@ -32,7 +32,7 @@ export const EFFECTIVE_RECORD_ACCESS_PROFILES = {
   },
   contacts: {
     requestedCommands: ["contact.create", "contact.update", "contact.archive", "contact.delete"],
-    requestedFields: ["fullName", "email", "phone", "organizationId", "ownerId", "consentStatus"],
+    requestedFields: ["fullName", "workEmail", "personalEmail", "mobilePhone", "workPhone", "otherPhone", "organizationRelationships", "ownerId", "consent"],
     includeExport: true,
   },
   organizations: {

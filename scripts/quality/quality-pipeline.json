@@ -262,6 +262,7 @@
         "quality.reports-runtime",
         "quality.workspace-governance-contracts",
         "quality.access-control-contracts",
+    "quality.contact-effective-field-profile",
         "quality.people-account-provisioning",
         "quality.contact-visual-baseline",
         "quality.connected-backend-integration",
@@ -4663,6 +4664,32 @@
             "tsx",
             "--import",
             "./tests/fixtures/runtime/bootstrap-demo-application-composition.mjs"
+          ],
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "quality.contact-effective-field-profile",
+      "commandName": "test:contact-effective-field-profile",
+      "groupId": "integration",
+      "kind": "integration",
+      "owner": "quality-integration",
+      "entry": "tests/quality/integration/check-contact-effective-field-profile.mts",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node",
+        "tsx"
+      ],
+      "shardKey": "quality.contact-effective-field-profile",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/integration/check-contact-effective-field-profile.mts",
+          "nodeArgs": [
+            "--import",
+            "tsx"
           ],
           "args": []
         }
