@@ -407,13 +407,13 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
       </div>
 
       {/* CORE WORKSPACE WITH THREE MAIN AREAS: LEFT CONTENT AREA / RIGHT PANEL */}
-      <div className="relative min-w-0 lg:min-h-[calc(100vh-170px)]">
-        <div className="flex min-w-0 flex-col gap-3 lg:min-h-[calc(100vh-170px)] lg:flex-row lg:items-start">
+      <div className="relative min-w-0 xl:min-h-[calc(100vh-170px)]">
+        <div className="flex min-w-0 flex-col gap-3 xl:min-h-[calc(100vh-170px)] xl:flex-row xl:items-start">
         {/* MAIN / LEFT CONTAINER AREA */}
-        <main className="w-full min-w-0 lg:flex-1">
+        <main className="w-full min-w-0 xl:flex-1">
           
           {/* MAIN TABS SELECTOR SYSTEM */}
-          <div className="relative z-10 min-h-[580px] overflow-visible rounded-xl border border-slate-200 bg-white lg:min-h-[calc(100vh-170px)]">
+          <div className="relative z-10 min-h-[580px] overflow-visible rounded-xl border border-slate-200 bg-white xl:min-h-[calc(100vh-170px)]">
             <div className="flex min-w-0 items-center gap-2 border-b border-slate-100 bg-slate-50/50 pr-2">
               <div className="min-w-0 flex-1">
                 <ResponsiveTabs

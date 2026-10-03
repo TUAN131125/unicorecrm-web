@@ -1,10 +1,35 @@
 import { repositoryRoot } from "../../../scripts/quality/core/repo-context.mjs";
 import assert from "node:assert/strict";
 import path from "node:path";
+import { readFileSync } from "node:fs";
 import { readPresentationComposition } from "../../../scripts/lib/presentationCompositionSource.mts";
 
 const root = repositoryRoot;
 const read = (file: string) => readPresentationComposition(path.join(root, file), "utf8");
+const raw = (file: string) => readFileSync(path.join(root, file), "utf8");
+const shell = raw("src/components/crm/relationship-panel/RelationshipWorkPanelShell.tsx");
+for (const token of ["AnimatePresence", "motion.aside", "useReducedMotion", 'initial={false}', 'mode="popLayout"', 'layout="position"',
+  "xl:sticky", "xl:top-4", "xl:h-[calc(100vh-140px)]", "xl:w-[350px]", "xl:shrink-0", 'data-relationship-work-panel="v1"',
+  "min-h-0 flex-1", "{header}", "{controls}", "{footer}", "{children}"]) {
+  assert.ok(shell.includes(token), `Shared panel shell must own ${token}.`);
+}
+for (const file of ["src/modules/leads/presentation/components/LeadWorkPanel.tsx", "src/modules/contacts/presentation/detail/ContactInsightPanel.tsx"]) {
+  const source = raw(file);
+  assert.match(source, /<RelationshipWorkPanelShell\b/u);
+  assert.doesNotMatch(source, /motion\.aside|(?:lg|xl):(?:sticky|w-\[350px\])/u, "Consumers must delegate outer geometry/motion.");
+}
+const contactView = raw("src/modules/contacts/presentation/views/ContactDetailView.tsx");
+assert.doesNotMatch(contactView, /motion\.aside|AnimatePresence|xl:sticky|xl:w-\[350px\]/u);
+assert.match(contactView, /isVisible=\{isPanelOpen\}/u);
+const contactPanel = raw("src/modules/contacts/presentation/detail/ContactInsightPanel.tsx");
+assert.match(contactPanel, /<motion\.button\s+type="button"/u);
+assert.match(contactPanel, /onClick=\{\(\) => setSelectedActivity\(act\)\}/u);
+const leadView = raw("src/modules/leads/presentation/views/LeadDetailView.tsx");
+for (const suffix of ["flex-row", "items-start", "flex-1", "min-h-[calc(100vh-170px)]"]) {
+  assert.ok(!leadView.includes(`lg:${suffix}`), `Lead workspace must no longer own lg:${suffix}.`);
+  assert.ok(leadView.includes(`xl:${suffix}`), `Lead workspace must use xl:${suffix}.`);
+}
+console.log("B1 shared panel shell and responsive contracts: PASS");
 
 const panelToggle = read("src/components/detail/DetailPanelToggle.tsx");
 const relationshipTabs = read("src/components/crm/relationship-detail/RelationshipDetailTabs.tsx");

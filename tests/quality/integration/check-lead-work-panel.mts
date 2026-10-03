@@ -57,7 +57,9 @@ try {
   await render();
   for (const label of ["Công việc Lead", "Cần xử lý", "Việc tiếp theo", "Phụ trách", "Nguyễn An", "Ngữ cảnh nhanh"]) assert.match(panel().textContent ?? "", new RegExp(label));
   assert.doesNotMatch(panel().textContent ?? "", /Lịch sử hoạt động|Activity History|Email chưa đọc|Zalo chưa đọc|Tin nhắn chưa đọc/);
-  assert.ok(panel().className.includes("lg:w-[350px]"));
+  assert.ok(panel().className.includes("xl:w-[350px]"));
+  assert.ok(!panel().className.includes("lg:"));
+  assert.equal(panel().getAttribute("data-relationship-work-panel"), "v1");
   assert.equal(panel().querySelectorAll('section[aria-label="Cần xử lý"] button[title]').length, 2, "Attention caps Task rows at two");
   await click("Xem tất cả"); assert.equal(calls.pop(), "open-work");
   await click("Mở công việc"); assert.equal(calls.pop(), task.id);
@@ -124,8 +126,41 @@ try {
     assert.doesNotMatch(readFileSync(`src/modules/leads/presentation/${path}`, "utf8"), /LeadDetailActivityPanel|timelineFilter|selectedActivity|isFilterExpanded/);
   }
   const source = readFileSync("src/modules/leads/presentation/components/LeadWorkPanel.tsx", "utf8");
+  assert.match(source, /<RelationshipWorkPanelShell/u);
   assert.doesNotMatch(source, /fetch\(|useEffect\(|workResources\.activities|Activity History|Lịch sử hoạt động/);
   console.log("Lead work panel: PASS (authority inputs, compact attention, next work, owner, context, rail, anchored menu, failure isolation)");
+  const { ContactInsightPanel } = await import("@/modules/contacts/presentation/detail/ContactInsightPanel");
+  const contactProps = {
+    isVisible: true, contact: { id: "contact-panel-fixture", name: "Fixture", status: "active" }, tasks: [],
+    onAddTask() {}, onAddAppointment() {}, onAddNote() {}, onCompleteTask() {}, showToast() {},
+    recentActivities: [{ id: "activity-fixture", type: "note", title: "Keyboard activity", description: "Activity detail body", date: "2026-10-03", author: "Fixture" }],
+  };
+  const renderContact = async () => act(async () => root.render(React.createElement(I18nProvider, null, React.createElement(ContactInsightPanel, contactProps))));
+  await renderContact();
+  const card = container.querySelector("#activities-panel-scroll button");
+  assert.ok(card instanceof window.HTMLButtonElement, "Activity must have native keyboard button semantics.");
+  assert.equal(card.type, "button");
+  assert.equal(card.tabIndex, 0);
+  assert.equal(card.querySelector("button, a, input, select, textarea"), null);
+  card.focus();
+  assert.equal(document.activeElement, card);
+  await act(async () => card.click());
+  assert.match(document.querySelector('[role="dialog"]')?.textContent ?? "", /Activity detail body/u);
+  await click("Đóng");
+  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 300)); });
+  assert.equal(document.querySelector('[role="dialog"]'), null);
+  await click("Bộ lọc hoạt động");
+  await click("Gọi");
+  assert.equal(container.querySelector("#activities-panel-scroll button"), null);
+  contactProps.isVisible = false;
+  await renderContact();
+  assert.equal(container.querySelector("aside"), null);
+  contactProps.isVisible = true;
+  await renderContact();
+  assert.ok(container.querySelector("#activities-panel-scroll button"), "Hiding resets local filter as prior unmount did.");
+  console.log("Contact panel accessibility: PASS (native button, focus, activation, detail close, visibility/filter reset)");
+  // Native button semantics own Enter/Space activation; JSDOM verifies focus and the actual click path.
+
 } finally {
   await act(async () => root.unmount());
   window.close();

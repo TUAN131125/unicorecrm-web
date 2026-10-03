@@ -18,9 +18,11 @@ import { Contact } from "../../domain/model/contact.types";
 import { useI18n } from "@/i18n";
 import { IconButton, Button, FilterChip, Modal } from "@/shared/components/ui";
 import { RelationshipPanelActionBar, type RelationshipPanelAction } from "@/components/crm/relationship-panel/RelationshipPanelActionBar";
+import { RelationshipWorkPanelShell } from "@/components/crm/relationship-panel/RelationshipWorkPanelShell";
 import { formatPhone } from "@/shared/lib/format/phone";
 
 interface ContactInsightPanelProps {
+  isVisible: boolean;
   contact: Contact;
   tasks: Array<{
     id: string;
@@ -51,6 +53,7 @@ interface ContactInsightPanelProps {
 }
 
 export const ContactInsightPanel: React.FC<ContactInsightPanelProps> = ({
+  isVisible,
   contact,
   tasks,
   onAddTask,
@@ -70,6 +73,14 @@ export const ContactInsightPanel: React.FC<ContactInsightPanelProps> = ({
   const [isFilterExpanded, setIsFilterExpanded] = useState(false);
   const [timelineFilter, setTimelineFilter] = useState<string>("all");
   const [selectedActivity, setSelectedActivity] = useState<any | null>(null);
+
+  React.useEffect(() => {
+    if (!isVisible) {
+      setIsFilterExpanded(false);
+      setTimelineFilter("all");
+      setSelectedActivity(null);
+    }
+  }, [isVisible]);
 
   const isArchived = contact.status === "archived";
   const isDoNotContact = contact.status === "do_not_contact" || contact.doNotContact;
@@ -148,150 +159,161 @@ export const ContactInsightPanel: React.FC<ContactInsightPanelProps> = ({
   };
 
   return (
-    <div
-      id="contact-right-work-panel"
-      className="flex h-full min-h-0 w-full flex-col space-y-4 rounded-xl border border-slate-200 bg-white p-4 text-left shadow-sm select-none lg:w-[350px]"
-    >
-      {/* 1. TOP TITLE AREA: LINE WITH FILTER AND RESET */}
-      <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-        <div className="flex items-center gap-1.5 text-slate-700">
-          <Clock size={13} className="text-slate-400 mt-0.5 shrink-0" />
-          <h4 className="text-xs font-black uppercase tracking-wide">
-            {tx("contactDetail.activityPanel.title", "Lịch sử tương tác")}
-          </h4>
-        </div>
-        <div className="flex items-center gap-2">
-          <IconButton
-            onClick={() => setIsFilterExpanded(prev => !prev)}
-            variant={isFilterExpanded ? "primary" : "secondary"}
-            size="sm"
-            title={tx("contactDetail.activityPanel.filterTitle", "Bộ lọc hoạt động")}
-            aria-label={tx("contactDetail.activityPanel.filterTitle", "Bộ lọc hoạt động")}
-          >
-            <Filter size={12} />
-          </IconButton>
-          <Button
-            onClick={() => {
-              setTimelineFilter("all");
-              showToast(tx("contactDetail.toast.activityFilterReset", "Đã khôi phục bộ lọc tương tác mặc định."));
-            }}
-            variant="ghost"
-            size="sm"
-            className="text-[10px]"
-          >
-            {tx("contactDetail.activityPanel.reset", "Reset")}
-          </Button>
-        </div>
-      </div>
-
-      {/* 2. EXPANDABLE CHIPS */}
-      <AnimatePresence initial={false}>
-        {isFilterExpanded ? (
-        <motion.div
-          initial={reduceMotion ? false : { opacity: 0, height: 0, y: -6 }}
-          animate={{ opacity: 1, height: "auto", y: 0 }}
-          exit={reduceMotion ? { opacity: 0 } : { opacity: 0, height: 0, y: -4 }}
-          transition={reduceMotion ? { duration: 0 } : { duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-          className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50/50 p-2"
-        >
-          <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">
-            {tx("contactDetail.activityPanel.filterPool", "BỘ LỌC TƯƠNG TÁC DẢI RỘNG")}
-          </span>
-          <div className="flex gap-1 overflow-x-auto crm-scroll-x flex-wrap">
-            {[
-              { id: "all", label: tx("contactDetail.activityPanel.filters.all", "Tất cả") },
-              { id: "call", label: tx("contactDetail.activityPanel.filters.call", "Gọi") },
-              { id: "email", label: "Email" },
-              { id: "sms", label: "SMS" },
-              { id: "task", label: tx("contactDetail.activityPanel.filters.task", "Việc") },
-              { id: "meeting", label: tx("contactDetail.activityPanel.filters.meeting", "Hẹn") },
-              { id: "note", label: "Note" },
-              { id: "system", label: tx("contactDetail.activityPanel.filters.system", "Hệ thống") }
-            ].map(chip => (
-              <FilterChip
-                key={chip.id}
-                label={chip.label}
-                active={timelineFilter === chip.id}
-                onClick={() => setTimelineFilter(chip.id)}
-              />
-            ))}
-          </div>
-        </motion.div>
-        ) : null}
-      </AnimatePresence>
-
-      {/* 3. SHARED RELATIONSHIP ACTION RAIL */}
-      <RelationshipPanelActionBar
-        label={tx("contactDetail.activityPanel.quick.label", "Tác vụ nhanh")}
-        actions={[
-          { id: "call", label: tx("contactDetail.activityPanel.quick.call", "Ghi cuộc gọi"), icon: <Phone size={12} className="text-emerald-600" />, disabled: isArchived || isDoNotContact, disabledReason: isArchived ? tx("contactDetail.toast.archivedActionBlocked", "Hồ sơ đã lưu trữ.") : tx("contactDetail.toast.directOutreachRestricted", "Liên hệ đang hạn chế liên hệ trực tiếp.") },
-          { id: "task", label: tx("contactDetail.activityPanel.quick.task", "Thêm việc"), icon: <CheckSquare size={12} className="text-amber-600" />, disabled: isArchived, disabledReason: tx("contactDetail.toast.archivedActionBlocked", "Hồ sơ đã lưu trữ.") },
-          { id: "meeting", label: tx("contactDetail.activityPanel.quick.meeting", "Thêm lịch hẹn"), icon: <Calendar size={12} className="text-rose-600" />, disabled: isArchived, disabledReason: tx("contactDetail.toast.archivedActionBlocked", "Hồ sơ đã lưu trữ.") },
-          { id: "email", label: tx("contactDetail.activityPanel.quick.email", "Gửi Email"), icon: <Mail size={12} className="text-indigo-600" />, disabled: isArchived || isDoNotContact, disabledReason: isArchived ? tx("contactDetail.toast.archivedActionBlocked", "Hồ sơ đã lưu trữ.") : tx("contactDetail.toast.directOutreachRestricted", "Liên hệ đang hạn chế liên hệ trực tiếp.") },
-          { id: "sms", label: tx("contactDetail.activityPanel.quick.sms", "Gửi SMS"), icon: <MessageCircle size={12} className="text-blue-600" />, disabled: isArchived || isDoNotContact, disabledReason: isArchived ? tx("contactDetail.toast.archivedActionBlocked", "Hồ sơ đã lưu trữ.") : tx("contactDetail.toast.directOutreachRestricted", "Liên hệ đang hạn chế liên hệ trực tiếp.") },
-          { id: "note", label: tx("contactDetail.activityPanel.quick.note", "Ghi chú nhanh"), icon: <FileText size={12} className="text-slate-600" /> },
-          ...(onCreateOpportunity ? [{ id: "opportunity" as const, label: tx("contactDetail.activityPanel.quick.opportunity", "Tạo cơ hội"), icon: <Sparkles size={12} className="text-purple-600" />, disabled: isArchived, disabledReason: tx("contactDetail.toast.archivedActionBlocked", "Hồ sơ đã lưu trữ.") }] : []),
-        ] satisfies readonly RelationshipPanelAction<ContactPanelAction>[]}
-        onAction={runQuickAction}
-      />
-
-      {/* 4. CONTENT SCROLL CONTAINER - REAL CHRONOLOGICAL CRM ACTIVITY CARDS */}
-      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto pr-1 crm-scroll-y" id="activities-panel-scroll">
-        <div className="space-y-2 text-left">
-          <AnimatePresence mode="popLayout" initial={false}>
-          {filteredActivities.map(act => {
-            const config = getActTypeConfig(act.type);
-
-            return (
+    <>
+      <RelationshipWorkPanelShell
+        isVisible={isVisible}
+        motionKey="contact-interaction-panel"
+        panelId="contact-right-work-panel"
+        ariaLabel={tx("contactDetail.activityPanel.title", "Lịch sử tương tác")}
+        bodyClassName="flex flex-col overflow-y-auto pr-1 crm-scroll-y"
+        header={(
+          <>
+            {/* 1. TOP TITLE AREA: LINE WITH FILTER AND RESET */}
+            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div className="flex items-center gap-1.5 text-slate-700">
+                <Clock size={13} className="text-slate-400 mt-0.5 shrink-0" />
+                <h4 className="text-xs font-black uppercase tracking-wide">
+                  {tx("contactDetail.activityPanel.title", "Lịch sử tương tác")}
+                </h4>
+              </div>
+              <div className="flex items-center gap-2">
+                <IconButton
+                  onClick={() => setIsFilterExpanded(prev => !prev)}
+                  variant={isFilterExpanded ? "primary" : "secondary"}
+                  size="sm"
+                  title={tx("contactDetail.activityPanel.filterTitle", "Bộ lọc hoạt động")}
+                  aria-label={tx("contactDetail.activityPanel.filterTitle", "Bộ lọc hoạt động")}
+                >
+                  <Filter size={12} />
+                </IconButton>
+                <Button
+                  onClick={() => {
+                    setTimelineFilter("all");
+                    showToast(tx("contactDetail.toast.activityFilterReset", "Đã khôi phục bộ lọc tương tác mặc định."));
+                  }}
+                  variant="ghost"
+                  size="sm"
+                  className="text-[10px]"
+                >
+                  {tx("contactDetail.activityPanel.reset", "Reset")}
+                </Button>
+              </div>
+            </div>
+          </>
+        )}
+        controls={(
+          <>
+            {/* 2. EXPANDABLE CHIPS */}
+            <AnimatePresence initial={false}>
+              {isFilterExpanded ? (
               <motion.div
-                layout
-                key={act.id}
-                initial={reduceMotion ? false : { opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.985 }}
-                transition={reduceMotion ? { duration: 0 } : { duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
-                onClick={() => setSelectedActivity(act)}
-                className="cursor-pointer space-y-2 rounded-xl border border-slate-200/70 bg-white p-3 text-left transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-px hover:border-slate-300 hover:shadow-sm"
+                initial={reduceMotion ? false : { opacity: 0, height: 0, y: -6 }}
+                animate={{ opacity: 1, height: "auto", y: 0 }}
+                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, height: 0, y: -4 }}
+                transition={reduceMotion ? { duration: 0 } : { duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                className="overflow-hidden rounded-xl border border-slate-200 bg-slate-50/50 p-2"
               >
-                <div className="flex items-center justify-between gap-1.5">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div className={`p-1.5 rounded-lg ${config.color} border shrink-0`}>
-                      {config.icon}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-bold text-slate-800 text-[11px] crm-text-wrap leading-tight">
-                        {act.title}
-                      </p>
-                      <div className="flex items-center gap-1 text-[9px] text-slate-400 font-bold uppercase tracking-wider">
-                        <span>{config.label}</span>
-                        <span>•</span>
-                        <span className="crm-text-wrap">{act.author || "CRM User"}</span>
+                <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">
+                  {tx("contactDetail.activityPanel.filterPool", "BỘ LỌC TƯƠNG TÁC DẢI RỘNG")}
+                </span>
+                <div className="flex gap-1 overflow-x-auto crm-scroll-x flex-wrap">
+                  {[
+                    { id: "all", label: tx("contactDetail.activityPanel.filters.all", "Tất cả") },
+                    { id: "call", label: tx("contactDetail.activityPanel.filters.call", "Gọi") },
+                    { id: "email", label: "Email" },
+                    { id: "sms", label: "SMS" },
+                    { id: "task", label: tx("contactDetail.activityPanel.filters.task", "Việc") },
+                    { id: "meeting", label: tx("contactDetail.activityPanel.filters.meeting", "Hẹn") },
+                    { id: "note", label: "Note" },
+                    { id: "system", label: tx("contactDetail.activityPanel.filters.system", "Hệ thống") }
+                  ].map(chip => (
+                    <FilterChip
+                      key={chip.id}
+                      label={chip.label}
+                      active={timelineFilter === chip.id}
+                      onClick={() => setTimelineFilter(chip.id)}
+                    />
+                  ))}
+                </div>
+              </motion.div>
+              ) : null}
+            </AnimatePresence>
+
+            {/* 3. SHARED RELATIONSHIP ACTION RAIL */}
+            <RelationshipPanelActionBar
+              label={tx("contactDetail.activityPanel.quick.label", "Tác vụ nhanh")}
+              actions={[
+                { id: "call", label: tx("contactDetail.activityPanel.quick.call", "Ghi cuộc gọi"), icon: <Phone size={12} className="text-emerald-600" />, disabled: isArchived || isDoNotContact, disabledReason: isArchived ? tx("contactDetail.toast.archivedActionBlocked", "Hồ sơ đã lưu trữ.") : tx("contactDetail.toast.directOutreachRestricted", "Liên hệ đang hạn chế liên hệ trực tiếp.") },
+                { id: "task", label: tx("contactDetail.activityPanel.quick.task", "Thêm việc"), icon: <CheckSquare size={12} className="text-amber-600" />, disabled: isArchived, disabledReason: tx("contactDetail.toast.archivedActionBlocked", "Hồ sơ đã lưu trữ.") },
+                { id: "meeting", label: tx("contactDetail.activityPanel.quick.meeting", "Thêm lịch hẹn"), icon: <Calendar size={12} className="text-rose-600" />, disabled: isArchived, disabledReason: tx("contactDetail.toast.archivedActionBlocked", "Hồ sơ đã lưu trữ.") },
+                { id: "email", label: tx("contactDetail.activityPanel.quick.email", "Gửi Email"), icon: <Mail size={12} className="text-indigo-600" />, disabled: isArchived || isDoNotContact, disabledReason: isArchived ? tx("contactDetail.toast.archivedActionBlocked", "Hồ sơ đã lưu trữ.") : tx("contactDetail.toast.directOutreachRestricted", "Liên hệ đang hạn chế liên hệ trực tiếp.") },
+                { id: "sms", label: tx("contactDetail.activityPanel.quick.sms", "Gửi SMS"), icon: <MessageCircle size={12} className="text-blue-600" />, disabled: isArchived || isDoNotContact, disabledReason: isArchived ? tx("contactDetail.toast.archivedActionBlocked", "Hồ sơ đã lưu trữ.") : tx("contactDetail.toast.directOutreachRestricted", "Liên hệ đang hạn chế liên hệ trực tiếp.") },
+                { id: "note", label: tx("contactDetail.activityPanel.quick.note", "Ghi chú nhanh"), icon: <FileText size={12} className="text-slate-600" /> },
+                ...(onCreateOpportunity ? [{ id: "opportunity" as const, label: tx("contactDetail.activityPanel.quick.opportunity", "Tạo cơ hội"), icon: <Sparkles size={12} className="text-purple-600" />, disabled: isArchived, disabledReason: tx("contactDetail.toast.archivedActionBlocked", "Hồ sơ đã lưu trữ.") }] : []),
+              ] satisfies readonly RelationshipPanelAction<ContactPanelAction>[]}
+              onAction={runQuickAction}
+            />
+          </>
+        )}
+      >
+        {/* 4. CONTENT SCROLL CONTAINER - REAL CHRONOLOGICAL CRM ACTIVITY CARDS */}
+        <div id="activities-panel-scroll">
+          <div className="space-y-2 text-left">
+            <AnimatePresence mode="popLayout" initial={false}>
+            {filteredActivities.map(act => {
+              const config = getActTypeConfig(act.type);
+
+              return (
+                <motion.button
+                  type="button"
+                  layout
+                  key={act.id}
+                  initial={reduceMotion ? false : { opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -6, scale: 0.985 }}
+                  transition={reduceMotion ? { duration: 0 } : { duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
+                  onClick={() => setSelectedActivity(act)}
+                  className="w-full cursor-pointer space-y-2 rounded-xl border border-slate-200/70 bg-white p-3 text-left transition-[transform,border-color,box-shadow] duration-200 hover:-translate-y-px hover:border-slate-300 hover:shadow-sm"
+                >
+                  <div className="flex items-center justify-between gap-1.5">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <div className={`p-1.5 rounded-lg ${config.color} border shrink-0`}>
+                        {config.icon}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-bold text-slate-800 text-[11px] crm-text-wrap leading-tight">
+                          {act.title}
+                        </p>
+                        <div className="flex items-center gap-1 text-[9px] text-slate-400 font-bold uppercase tracking-wider">
+                          <span>{config.label}</span>
+                          <span>•</span>
+                          <span className="crm-text-wrap">{act.author || "CRM User"}</span>
+                        </div>
                       </div>
                     </div>
+                    <div className="text-right shrink-0">
+                      <span className="text-[9px] font-semibold text-slate-400 block">{act.date}</span>
+                    </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <span className="text-[9px] font-semibold text-slate-400 block">{act.date}</span>
-                  </div>
-                </div>
 
-                {act.description && (
-                  <p className="text-[11px] text-slate-500 font-medium leading-normal crm-text-wrap">
-                    {act.description}
-                  </p>
-                )}
-              </motion.div>
-            );
-          })}
-          </AnimatePresence>
+                  {act.description && (
+                    <p className="text-[11px] text-slate-500 font-medium leading-normal crm-text-wrap">
+                      {act.description}
+                    </p>
+                  )}
+                </motion.button>
+              );
+            })}
+            </AnimatePresence>
 
-          {filteredActivities.length === 0 && (
-            <p className="text-center text-slate-400 py-8 text-[10px] font-semibold italic">
-              {tx("contactDetail.activityPanel.empty", "Chưa thu nhận tương tác tương ứng.")}
-            </p>
-          )}
+            {filteredActivities.length === 0 && (
+              <p className="text-center text-slate-400 py-8 text-[10px] font-semibold italic">
+                {tx("contactDetail.activityPanel.empty", "Chưa thu nhận tương tác tương ứng.")}
+              </p>
+            )}
+          </div>
         </div>
-      </div>
-
+      </RelationshipWorkPanelShell>
       {/* ACTIVITY DETAIL DIALOG / MODAL */}
       {selectedActivity && (
         <Modal
@@ -323,6 +345,6 @@ export const ContactInsightPanel: React.FC<ContactInsightPanelProps> = ({
           </div>
         </Modal>
       )}
-    </div>
+    </>
   );
 };

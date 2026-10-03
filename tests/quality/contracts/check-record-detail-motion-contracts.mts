@@ -14,6 +14,7 @@ const contactPage = read("src/modules/contacts/presentation/pages/ContactDetailP
 const contactTabs = read("src/modules/contacts/presentation/detail/ContactDetailTabs.tsx");
 const relationshipTabs = read("src/components/crm/relationship-detail/RelationshipDetailTabs.tsx");
 const contactPanel = read("src/modules/contacts/presentation/detail/ContactInsightPanel.tsx");
+const panelShell = read("src/components/crm/relationship-panel/RelationshipWorkPanelShell.tsx");
 const customerPage = read("src/modules/customers/presentation/pages/Customer360Page.tsx");
 const customerTabs = read("src/modules/customers/presentation/detail/CustomerDetailTabs.tsx");
 const customerContent = read("src/modules/customers/presentation/detail/CustomerDetailTabContent.tsx");
@@ -70,7 +71,7 @@ assert.ok(organizationTabs.includes('motionId="organization-primary-tabs"'), "Or
 for (const marker of [
   'overflowMode="dropdown"',
   'motionId="lead-primary-tabs"',
-  'lg:min-h-[calc(100vh-170px)]',
+  'xl:min-h-[calc(100vh-170px)]',
 ]) assert.ok(leadPage.includes(marker), `Lead detail motion contract missing ${marker}`);
 for (const marker of [
   "AnimatePresence",
@@ -87,8 +88,10 @@ for (const marker of ["RelationshipDetailTabs", 'motionId="contact-primary-tabs"
   assert.ok(contactTabs.includes(marker), `Contact relationship-tab wrapper missing ${marker}`);
 }
 for (const marker of ["AnimatePresence", "motion.aside", "useReducedMotion", 'mode="popLayout"']) {
-  assert.ok(contactPage.includes(marker), `Contact side-panel motion contract missing ${marker}`);
+  assert.ok(panelShell.includes(marker), `Shared Contact side-panel motion contract missing ${marker}`);
 }
+assert.ok(contactPanel.includes("RelationshipWorkPanelShell"), "Contact must delegate outer panel motion to the shared shell.");
+assert.ok(contactPage.includes("isVisible={isPanelOpen}"), "Contact detail must pass visibility to its panel.");
 assert.ok(contactPage.includes("const isPanelOpen = isRightPanelVisible;"), "Contact action modals must keep the interaction panel mounted.");
 assert.equal(contactPage.includes("isRightPanelVisible && !isAnyContactModalOpen"), false, "Contact action modals must not collapse the interaction panel.");
 for (const marker of ["AnimatePresence", "motion.div", "useReducedMotion", 'mode="popLayout"']) {

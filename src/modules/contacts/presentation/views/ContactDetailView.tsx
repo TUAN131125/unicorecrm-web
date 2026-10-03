@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ShieldAlert, Sparkles } from "lucide-react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { formatVnd } from "@/shared/lib/format/currency";
@@ -85,7 +84,6 @@ export function ContactDetailView({ controller }: { controller: Controller }) {
     careCases,
     tx,
     locale,
-    reduceMotion,
     currentMemberId,
     members,
     productCatalog,
@@ -369,18 +367,8 @@ export function ContactDetailView({ controller }: { controller: Controller }) {
         </main>
 
         {/* Right Interaction Panel (MISA Insight sidebar layout) */}
-        <AnimatePresence initial={false} mode="popLayout">
-          {isPanelOpen ? (
-            <motion.aside
-              layout="position"
-              key="contact-interaction-panel"
-              initial={reduceMotion ? false : { opacity: 0, x: 30, scale: 0.985, filter: "blur(3px)" }}
-              animate={{ opacity: 1, x: 0, scale: 1, filter: "blur(0px)" }}
-              exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: 22, scale: 0.99, filter: "blur(2px)" }}
-              transition={reduceMotion ? { duration: 0 } : { type: "spring", stiffness: 330, damping: 34, mass: 0.78 }}
-              className="relative z-10 w-full min-w-0 xl:sticky xl:top-4 xl:h-[calc(100vh-140px)] xl:w-[350px] xl:shrink-0"
-            >
               <ContactInsightPanel
+                isVisible={isPanelOpen}
                 contact={contact}
                 tasks={tasks}
                 onAddTask={() => setShowTaskModal(true)}
@@ -395,9 +383,6 @@ export function ContactDetailView({ controller }: { controller: Controller }) {
                 recentActivities={careTimelineItems}
                 showToast={showToast}
               />
-            </motion.aside>
-          ) : null}
-        </AnimatePresence>
         </div>
 
       </div>
