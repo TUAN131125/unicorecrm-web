@@ -73,6 +73,7 @@ export const ContactNotesTab: React.FC<ContactNotesTabProps> = ({
 
       {/* Canonical note create form; edit remains record-local. */}
       <NoteActivityCreateModal
+        guardChanges
         isOpen={showAddForm}
         onClose={() => setShowAddForm(false)}
         formId="contact-notes-tab-create-form"

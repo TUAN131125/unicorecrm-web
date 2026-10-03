@@ -360,18 +360,18 @@ export function SmsActivityCreateModal({ guardChanges, titleOverride, submitLabe
   );
 }
 
-export interface NoteActivityCreateModalProps extends Omit<BaseActivityModalProps, "contactPolicy" | "guardChanges" | "titleOverride"> {
+export interface NoteActivityCreateModalProps extends Omit<BaseActivityModalProps, "contactPolicy" | "titleOverride"> {
   defaults?: Partial<NoteActivityDraft>;
-  onSubmit(draft: NoteActivityDraft): void;
+  onSubmit(draft: NoteActivityDraft): void | Promise<void>;
 }
 
-export function NoteActivityCreateModal({ isOpen, onClose, defaults, onSubmit, formId = "canonical-note-activity-form" }: NoteActivityCreateModalProps) {
+export function NoteActivityCreateModal({ guardChanges = false, isOpen, onClose, defaults, onSubmit, formId = "canonical-note-activity-form" }: NoteActivityCreateModalProps) {
   const { locale } = useI18n();
   const vi = locale === "vi";
   const createDraft = React.useCallback((): NoteActivityDraft => ({ title: defaults?.title ?? "", body: defaults?.body ?? "", category: defaults?.category ?? "care", pinned: defaults?.pinned ?? false, occurredAt: normalizeLocalDateTime(defaults?.occurredAt) }), [defaults]);
-  const [draft, setDraft] = useDraftOnOpen(isOpen, createDraft);
+  const [draft, setDraft, dirty] = useDraftOnOpen(isOpen, createDraft);
   return (
-    <RelationshipQuickActionModal isOpen={isOpen} onClose={onClose} title={vi ? "Ghi chú nhanh" : "Quick note"} formId={formId} cancelLabel={vi ? "Hủy" : "Cancel"} submitLabel={vi ? "Lưu ghi chú" : "Save note"} submitDisabled={!draft.title.trim() || !draft.body.trim()} onSubmit={(event) => { event.preventDefault(); onSubmit({ ...draft, title: draft.title.trim(), body: draft.body.trim() }); }}>
+    <RelationshipQuickActionModal guardChanges={guardChanges} dirty={dirty} isOpen={isOpen} onClose={onClose} title={vi ? "Ghi chú nhanh" : "Quick note"} formId={formId} cancelLabel={vi ? "Hủy" : "Cancel"} submitLabel={vi ? "Lưu ghi chú" : "Save note"} submitDisabled={!draft.title.trim() || !draft.body.trim()} onSubmit={(event) => { event.preventDefault(); return onSubmit({ ...draft, title: draft.title.trim(), body: draft.body.trim() }); }}>
       <Input label={vi ? "Tiêu đề ghi chú" : "Note title"} value={draft.title} onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))} required />
       <Select label={vi ? "Phân loại" : "Category"} value={draft.category} onChange={(event) => setDraft((current) => ({ ...current, category: event.target.value as NoteActivityDraft["category"] }))}>
         <option value="care">{vi ? "Chăm sóc" : "Care"}</option>

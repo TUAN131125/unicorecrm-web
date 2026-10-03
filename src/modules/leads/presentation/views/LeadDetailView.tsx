@@ -1030,6 +1030,7 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
       </div>
 
       <NoteActivityCreateModal
+        guardChanges
         isOpen={showNoteForm}
         onClose={() => setShowNoteForm(false)}
         formId="lead-quick-note-form"

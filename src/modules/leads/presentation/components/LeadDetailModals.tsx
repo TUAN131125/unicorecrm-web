@@ -41,7 +41,7 @@ export interface LeadDetailModalScreen {
   showToast: (message: string) => void;
   navigate: NavigateFunction;
   leadActions: LeadActions;
-  handleConfirmDisqualify: () => void;
+  handleConfirmDisqualify: () => void | Promise<void>;
   handleSaveEditFromForm: (formData: Partial<Lead>) => void;
   handleSavePhoneCall: (draft: CallActivityDraft) => void;
   handleSaveMeeting: (draft: MeetingActivityDraft) => void;
@@ -80,6 +80,49 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
     emailForm, setEmailForm, smsForm, setSmsForm,
   } = dialogs;
 
+  const [disqualifySubmitting, setDisqualifySubmitting] = React.useState(false);
+  const [disqualifyError, setDisqualifyError] = React.useState("");
+  const disqualifyPending = React.useRef(false);
+  const disqualifyWasOpen = React.useRef(false);
+  const disqualifyOpening = React.useRef({ category: disqualifyCategory, reason: disqualifyReasonText });
+  const closeDisqualify = React.useCallback(() => {
+    setShowDisqualifyModal(false);
+    setDisqualifyReasonText("");
+  }, [setShowDisqualifyModal, setDisqualifyReasonText]);
+  const disqualifyGuard = useUnsavedChangesGuard(closeDisqualify);
+  React.useEffect(() => {
+    if (showDisqualifyModal && !disqualifyWasOpen.current) {
+      disqualifyOpening.current = { category: disqualifyCategory, reason: disqualifyReasonText };
+      setDisqualifyError("");
+    }
+    disqualifyWasOpen.current = showDisqualifyModal;
+    disqualifyGuard.setIsDirty(showDisqualifyModal && (
+      disqualifyCategory !== disqualifyOpening.current.category
+      || disqualifyReasonText !== disqualifyOpening.current.reason
+    ));
+    if (!showDisqualifyModal) {
+      disqualifyGuard.setIsConfirmOpen(false);
+      setDisqualifyError("");
+    }
+  }, [showDisqualifyModal, disqualifyCategory, disqualifyReasonText, disqualifyGuard.setIsDirty, disqualifyGuard.setIsConfirmOpen]);
+  const requestDisqualifyClose = () => {
+    if (!disqualifyPending.current) disqualifyGuard.requestClose();
+  };
+  const submitDisqualify = async () => {
+    if (disqualifyPending.current) return;
+    disqualifyPending.current = true;
+    setDisqualifySubmitting(true);
+    setDisqualifyError("");
+    try {
+      await handleConfirmDisqualify();
+    } catch (failure) {
+      setDisqualifyError(formatApplicationError(normalizeApplicationError(failure), { locale }));
+    } finally {
+      disqualifyPending.current = false;
+      setDisqualifySubmitting(false);
+    }
+  };
+
   const closeEditModal = React.useCallback(() => setShowEditModal(false), [setShowEditModal]);
   const editUnsavedChanges = useUnsavedChangesGuard(closeEditModal);
   const editPending = React.useRef(false);
@@ -100,15 +143,15 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
       <Modal
         variant="form"
         isOpen={showDisqualifyModal}
-        onClose={() => { setShowDisqualifyModal(false); setDisqualifyReasonText(""); }}
+        onClose={requestDisqualifyClose}
         title={locale === "vi" ? "Xác nhận không đạt" : "Confirm disqualification"}
         size="sm"
         footer={(
           <>
-            <Button onClick={() => { setShowDisqualifyModal(false); setDisqualifyReasonText(""); }} variant="secondary" size="sm">
+            <Button onClick={requestDisqualifyClose} disabled={disqualifySubmitting} variant="secondary" size="sm">
               {locale === "vi" ? "Bỏ qua" : "Cancel"}
             </Button>
-            <Button onClick={handleConfirmDisqualify} variant="danger" size="sm">
+            <Button onClick={submitDisqualify} disabled={disqualifySubmitting} loading={disqualifySubmitting} variant="danger" size="sm">
               {locale === "vi" ? "Xác nhận không đạt" : "Confirm disqualification"}
             </Button>
           </>
@@ -122,6 +165,7 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
           </p>
           <Select
             label={locale === "vi" ? "Danh mục nguyên nhân *" : "Reason category *"}
+            disabled={disqualifySubmitting}
             value={disqualifyCategory}
             onChange={(event) => setDisqualifyCategory(event.target.value)}
           >
@@ -136,12 +180,25 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
           </Select>
           <Textarea
             label={locale === "vi" ? "Ghi chú cụ thể lý do *" : "Reason details *"}
+            disabled={disqualifySubmitting}
             value={disqualifyReasonText}
             onChange={(event) => setDisqualifyReasonText(event.target.value)}
             placeholder={locale === "vi" ? "Cung cấp chi tiết ngắn để phục vụ báo cáo phễu..." : "Add a short explanation for funnel reporting..."}
           />
+          {disqualifyError && <p role="alert" className="text-xs text-rose-600">{disqualifyError}</p>}
         </div>
       </Modal>
+
+      <ConfirmDialog
+        isOpen={disqualifyGuard.isConfirmOpen}
+        onClose={() => disqualifyGuard.setIsConfirmOpen(false)}
+        onConfirm={() => { if (!disqualifyPending.current) disqualifyGuard.confirmDiscard(); }}
+        title={locale === "vi" ? "Bỏ thay đổi chưa lưu?" : "Discard unsaved changes?"}
+        message={locale === "vi" ? "Các thay đổi chưa được lưu. Bạn có muốn đóng biểu mẫu?" : "Your changes have not been saved. Close the form?"}
+        confirmText={locale === "vi" ? "Bỏ thay đổi" : "Discard changes"}
+        cancelText={locale === "vi" ? "Tiếp tục chỉnh sửa" : "Keep editing"}
+        type="warning"
+      />
 
       {/* CONFIRM MODAL: ARCHIVE CONFIRMATION */}
       <LeadArchiveConfirmationModal

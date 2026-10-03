@@ -398,6 +398,142 @@ assert.ok(window.document.querySelector('[role="alert"]'), "Meeting async reject
 assert.equal(meetingTitle.value, "Meeting draft");
 assert.equal(closes, 2);
 console.log("Contact Edit safety and actual Meeting Promise rejection: PASS");
+// A2A exercises real presentation components with deferred commands; no business writes.
+const { NoteActivityCreateModal } = await import("../../../src/modules/tasks/presentation/components/ActivityCreateModals.tsx");
+const { LeadDetailModals } = await import("../../../src/modules/leads/presentation/components/LeadDetailModals.tsx");
+const setField = async (field, value) => {
+  const prototype = field instanceof window.HTMLTextAreaElement ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype;
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(prototype, "value").set.call(field, value);
+    field.dispatchEvent(new window.Event("input", { bubbles: true }));
+  });
+};
+let noteCloses = 0;
+let noteCalls = 0;
+let rejectNote;
+const mountNote = async (key, onSubmit = async () => {}) => {
+  await act(async () => root.render(React.createElement(I18nProvider, null, React.createElement(NoteActivityCreateModal, {
+    key, guardChanges: true, isOpen: true, onClose: () => { noteCloses++; }, onSubmit,
+    defaults: { title: "Opening note", body: "Opening body" },
+  }))));
+};
+await mountNote("pristine");
+await escape();
+assert.equal(noteCloses, 1);
+await mountNote("dirty", () => { noteCalls++; return new Promise((_resolve, reject) => { rejectNote = reject; }); });
+await setField(window.document.querySelector('form input'), "Edited note");
+await escape();
+assert.equal(noteCloses, 1);
+assert.equal(window.document.querySelectorAll('[role="dialog"]').length, 2);
+await clickText(/Tiếp tục chỉnh sửa|Keep editing/u);
+assert.equal(window.document.querySelector('form input').value, "Edited note");
+const noteForm = window.document.getElementById("canonical-note-activity-form");
+await act(async () => noteForm.dispatchEvent(new window.Event("submit", { bubbles: true, cancelable: true })));
+await escape();
+await act(async () => noteForm.dispatchEvent(new window.Event("submit", { bubbles: true, cancelable: true })));
+assert.equal(noteCalls, 1);
+assert.equal(noteCloses, 1);
+assert.equal(window.document.querySelectorAll('[role="dialog"]').length, 1);
+await act(async () => rejectNote({ code: "VALIDATION_FAILED", category: "validation" }));
+assert.ok(window.document.querySelector('[role="alert"]'));
+assert.equal(window.document.querySelector('form input').value, "Edited note");
+assert.equal(window.document.querySelector('button[type="submit"]').disabled, false);
+await escape();
+await clickText(/^Bỏ thay đổi$|^Discard changes$/u);
+assert.equal(noteCloses, 2);
+console.log("A2A Note runtime N1-N5: PASS");
+
+let disqualifyCloses = 0;
+let disqualifyCalls = 0;
+let resolveDisqualify;
+let rejectDisqualify;
+const noop = () => {};
+function DisqualifyHarness() {
+  const [open, setOpen] = React.useState(true);
+  const [category, setCategory] = React.useState("Không có ngân sách");
+  const [reason, setReason] = React.useState("Opening reason");
+  const close = (value) => { if (!value) disqualifyCloses++; setOpen(value); };
+  const dialogs = {
+    showDisqualifyModal: open, setShowDisqualifyModal: close,
+    disqualifyCategory: category, setDisqualifyCategory: setCategory,
+    disqualifyReasonText: reason, setDisqualifyReasonText: setReason,
+    callForm: {}, meetingForm: { location: "" }, emailForm: {}, smsForm: {},
+    handoverOwnerId: "", handoverReason: "",
+  };
+  for (const name of ["Edit", "ArchiveConfirm", "Handover", "Tags", "Call", "Task", "Meeting", "Email", "Sms"]) {
+    dialogs[`show${name}${name === "ArchiveConfirm" ? "" : "Modal"}`] = false;
+    dialogs[`setShow${name}${name === "ArchiveConfirm" ? "" : "Modal"}`] = noop;
+  }
+  return React.createElement(I18nProvider, null,
+    React.createElement("button", { onClick: () => setOpen(true) }, "Reopen fixture"),
+    React.createElement("output", { id: "disqualify-fixture-state" }, JSON.stringify({ open, category, reason })),
+    React.createElement(LeadDetailModals, { screen: {
+      dialogs, lead: { id: "lead-safety-fixture", name: "Fixture", tags: [] }, locale: "vi", t: (key) => key,
+      sources: [], campaigns: [], products: [], members: [], handoverMembers: [],
+      showToast: noop, navigate: noop, leadActions: {}, archiveListPath: "/leads", canHandover: false,
+      handover: { isAmbiguousRetry: () => false }, handleConfirmHandover: noop,
+      handleSaveEditFromForm: noop, handleSavePhoneCall: noop, handleSaveMeeting: noop,
+      handleLogExternalEmail: noop, handleLogExternalSms: noop,
+      handleConfirmDisqualify: async () => {
+        disqualifyCalls++;
+        await new Promise((resolve, reject) => { resolveDisqualify = resolve; rejectDisqualify = reject; });
+        close(false); setReason("");
+      },
+    } }),
+  );
+}
+const mountDisqualify = async (key) => {
+  await act(async () => root.render(React.createElement(DisqualifyHarness, { key })));
+};
+await mountDisqualify("pristine");
+await escape();
+assert.equal(disqualifyCloses, 1, "Non-default opening category/reason is pristine.");
+await mountDisqualify("dirty");
+await act(async () => {
+  const category = window.document.querySelector("select");
+  Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, "value").set.call(category, "Khác");
+  category.dispatchEvent(new window.Event("change", { bubbles: true }));
+});
+await setField(window.document.querySelector("textarea"), "Changed reason");
+await escape();
+assert.equal(disqualifyCloses, 1);
+assert.equal(window.document.querySelectorAll('[role="dialog"]').length, 2);
+await clickText(/Tiếp tục chỉnh sửa|Keep editing/u);
+assert.equal(window.document.querySelector("textarea").value, "Changed reason");
+assert.equal(window.document.querySelector("select").value, "Khác");
+await escape();
+await clickText(/^Bỏ thay đổi$|^Discard changes$/u);
+assert.equal(disqualifyCloses, 2);
+assert.deepEqual(JSON.parse(window.document.getElementById("disqualify-fixture-state").textContent), { open: false, category: "Khác", reason: "" });
+await clickText(/^Reopen fixture$/u);
+await setField(window.document.querySelector("textarea"), "Pending reason");
+await clickText(/^Xác nhận không đạt$/u);
+await clickText(/^Xác nhận không đạt$/u);
+await clickText(/^Bỏ qua$/u);
+await escape();
+await act(async () => {
+  window.document.querySelector('div.absolute.inset-0[aria-hidden="true"]').click();
+  window.document.querySelector('[role="dialog"] button[aria-label]').click();
+});
+assert.equal(disqualifyCalls, 1);
+assert.equal(disqualifyCloses, 2);
+assert.equal(window.document.querySelectorAll('[role="dialog"]').length, 1);
+await act(async () => rejectDisqualify({ code: "VALIDATION_FAILED", category: "validation" }));
+assert.ok(window.document.querySelector('[role="alert"]'));
+assert.equal(window.document.querySelector("textarea").value, "Pending reason");
+assert.equal(window.document.querySelector("select").value, "Khác");
+await clickText(/^Xác nhận không đạt$/u);
+assert.equal(disqualifyCalls, 2, "Rejected command permits retry.");
+await act(async () => resolveDisqualify());
+await act(async () => { await new Promise((resolve) => setTimeout(resolve, 300)); });
+assert.equal(disqualifyCloses, 3);
+assert.equal(window.document.querySelectorAll('[role="dialog"]').length, 0);
+await clickText(/^Reopen fixture$/u);
+assert.equal(window.document.querySelector("textarea").value, "");
+assert.equal(window.document.querySelector('[role="alert"]'), null);
+await escape();
+assert.equal(disqualifyCloses, 4, "Successful save leaves fresh pristine opening state.");
+console.log("A2A Disqualify runtime D1-D7: PASS");
 await act(async () => root.unmount());
 
 console.log("CRM UI interaction runtime: PASS");

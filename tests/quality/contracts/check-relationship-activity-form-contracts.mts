@@ -72,6 +72,21 @@ for (const [name, component, callback] of [
   assert.match(adapter, new RegExp(`(?:=>\\s*|return\\s+)${callback}\\(`, "u"), `${name} must return the callback result.`);
 }
 
+const noteSource = canonical.slice(canonical.indexOf("export interface NoteActivityCreateModalProps"));
+assert.ok(noteSource.includes('Omit<BaseActivityModalProps, "contactPolicy" | "titleOverride">'));
+for (const token of ["guardChanges = false", "void | Promise<void>", "[draft, setDraft, dirty]", "guardChanges={guardChanges} dirty={dirty}", "return onSubmit("]) {
+  assert.ok(noteSource.includes(token), `Note safety must retain ${token}.`);
+}
+for (const caller of [
+  "src/modules/contacts/presentation/detail/actions/ContactQuickNoteModal.tsx",
+  "src/modules/contacts/presentation/detail/tabs/ContactNotesTab.tsx",
+  "src/modules/leads/presentation/views/LeadDetailView.tsx",
+]) assert.match(read(caller), /<NoteActivityCreateModal\s+guardChanges\b/u);
+const quickNote = read("src/modules/contacts/presentation/detail/actions/ContactQuickNoteModal.tsx");
+assert.ok(quickNote.includes("void | Promise<void>"));
+assert.match(quickNote, /=>\s*onSave\(/u);
+console.log("A2A Note contracts: PASS");
+
 const leadModalSource = read("src/modules/leads/presentation/components/LeadDetailModals.tsx");
 assert.ok(!leadModalSource.includes("RelationshipQuickActionModal"), "Lead quick activities must not own duplicate modal form markup.");
 assert.ok(!leadModalSource.includes('<form id="lead-quick-'), "Lead quick activities must not recreate local form elements.");
