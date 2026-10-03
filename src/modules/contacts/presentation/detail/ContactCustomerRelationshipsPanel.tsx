@@ -3,7 +3,7 @@ import { Link2, Pencil, Unlink, UsersRound } from "lucide-react";
 import { Button, Modal } from "@/shared/components/ui";
 import { formatApplicationError, useAuthoritativeResource } from "@/shared/operations";
 import { useI18n } from "@/i18n";
-import { getCustomerCollectionResource } from "@/modules/customers/application/vertical-slice/customerAuthoritativeQueries";
+import { getCustomerCollectionResource } from "@/modules/customers";
 import { getContactApiRuntime } from "../../application/composition/contactApplicationServices";
 import { getContactRelationshipSummaryResource } from "../../application/vertical-slice/contactAuthoritativeQueries";
 import type { Contact, ContactCustomerRelationship, ContactCustomerRelationshipRole } from "../../domain/model/contact.types";

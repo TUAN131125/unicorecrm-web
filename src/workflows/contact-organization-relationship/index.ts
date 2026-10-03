@@ -2,6 +2,7 @@ import {
   endContactOrganizationRelationship,
   getContactOrganizationRelationships,
   getContactsSnapshot,
+  isContactConnectedMode,
   saveContactSnapshot,
   setContactOrganizationPrimaryFlag,
   upsertContactOrganizationRelationship,
@@ -18,10 +19,9 @@ import {
 } from "@/modules/organizations";
 import { replaceContacts } from "@/modules/contacts";
 import { assertMutationCommandSupported, createMutationMetadata, executeMutationCommand, isMutationCommandUnavailable, type MutationCommandMetadata, type MutationOutcome } from "@/shared/application";
-import { isContactConnectedApiRuntime } from "@/modules/contacts/application/composition/contactApplicationServices";
 
 function assertLegacyRelationshipWriteMode(): void {
-  if (isContactConnectedApiRuntime()) {
+  if (isContactConnectedMode()) {
     throw new Error("CONTACT_ORGANIZATION_LEGACY_WRITE_DISABLED_IN_CONNECTED_MODE");
   }
 }
@@ -266,7 +266,7 @@ export function createOrganizationRepresentativeWorkflow(
  * can refuse before starting a mutation the boundary would reject.
  */
 export function isContactOrganizationRelationshipUnavailable(): boolean {
-  return isContactConnectedApiRuntime()
+  return isContactConnectedMode()
     || isMutationCommandUnavailable("contact-organization.upsert-relationship");
 }
 

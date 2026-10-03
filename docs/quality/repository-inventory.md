@@ -17,16 +17,16 @@ Do not delete a dead, compatibility, deprecated or duplicate candidate based on 
 
 | Metric | Count |
 |---|---:|
-| Repository files | 2077 |
-| Source files | 1385 |
-| Source lines | 213103 |
+| Repository files | 2080 |
+| Source files | 1387 |
+| Source lines | 213247 |
 | Registered modules | 15 |
 | Route keys | 80 |
 | Loadable route modules | 64 |
 | Capabilities | 131 |
 | Workspace module flags | 13 |
 | Cross-module workflows | 23 |
-| Public boundary files | 107 |
+| Public boundary files | 108 |
 | Persistence entries | 3013 |
 | Repository/store/adapter files | 146 |
 | Compatibility candidates | 53 |
@@ -35,9 +35,9 @@ Do not delete a dead, compatibility, deprecated or duplicate candidate based on 
 | Circular dependency groups | 0 |
 | Package scripts | 23 |
 | Quality groups | 11 |
-| Verify gates | 339 |
+| Verify gates | 340 |
 
-Inventory fingerprint: `d7477fd3818f04b4b2d52e1a5fe19462723f4ca70fa363a5e6f0eeea59f315c3`
+Inventory fingerprint: `c82a1f4078f87b402a3d9e5238b1b41063d018c5da17d7a7276bcd0c88d2c377`
 
 
 ## Quality pipeline
@@ -49,7 +49,7 @@ Inventory fingerprint: `d7477fd3818f04b4b2d52e1a5fe19462723f4ca70fa363a5e6f0eeea
 | `architecture` | 66 |
 | `unit` | 32 |
 | `contract` | 64 |
-| `integration` | 49 |
+| `integration` | 50 |
 | `route-smoke` | 8 |
 | `critical-e2e` | 5 |
 | `backend-contract-hardening` | 90 |
@@ -60,9 +60,9 @@ Inventory fingerprint: `d7477fd3818f04b4b2d52e1a5fe19462723f4ca70fa363a5e6f0eeea
 
 | Classification | Count |
 |---|---:|
-| `active-runtime` | 1301 |
+| `active-runtime` | 1302 |
 | `active-script` | 80 |
-| `active-test` | 446 |
+| `active-test` | 448 |
 | `compatibility` | 53 |
 | `documentation` | 192 |
 | `fixture` | 3 |
@@ -188,7 +188,7 @@ The JSON manifest includes each detected key pattern, operation, path, line and 
 | `src/modules/contacts/presentation/hooks/useContactListController.tsx` | 1179 | `contacts` |
 | `src/modules/quotes/presentation/views/QuoteBuilderView.tsx` | 1106 | `quotes` |
 | `src/modules/quotes/presentation/pages/QuoteListPage.tsx` | 1103 | `quotes` |
-| `src/modules/leads/presentation/views/LeadDetailView.tsx` | 1077 | `leads` |
+| `src/modules/leads/presentation/views/LeadDetailView.tsx` | 1078 | `leads` |
 | `src/modules/quotes/presentation/hooks/useQuoteBuilderController.tsx` | 997 | `quotes` |
 | `src/modules/deals/presentation/hooks/useDealPipelineController.ts` | 966 | `deals` |
 | `src/modules/orders/presentation/hooks/useOrderFormController.tsx` | 935 | `orders` |

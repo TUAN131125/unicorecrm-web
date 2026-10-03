@@ -112,7 +112,12 @@ assert.deepEqual(calls.map(({ args }) => (args.at(-1) as { expectedVersion?: num
 
 const legacyWorkflow = read("src/workflows/contact-organization-relationship/index.ts");
 assert.ok(legacyWorkflow.includes("assertLegacyRelationshipWriteMode"), "Connected mode must fail closed before any legacy dual-write workflow executes.");
-assert.ok(legacyWorkflow.includes("isContactConnectedApiRuntime"), "Legacy workflow guard must bind to the actual Contact runtime mode.");
+assert.ok(legacyWorkflow.includes("isContactConnectedMode"), "Legacy workflow guard must bind through the Contact public runtime-mode boundary.");
+assert.equal(
+  legacyWorkflow.includes("@/modules/contacts/application/composition/contactApplicationServices"),
+  false,
+  "Contact-organization workflow must not import Contact composition internals.",
+);
 
 configureContactApplication({ api: { mode: "connected" } } as unknown as ContactApplicationServices);
 try {

@@ -29,11 +29,11 @@ Protected repository inventory:
 
 ```text
 15 registered modules
-79 route keys
-63 loadable route modules
-123 capabilities
+80 route keys
+64 loadable route modules
+131 capabilities
 13 workspace module flags
-22 cross-module workflows
+23 cross-module workflows
 ```
 
 `docs/quality/repository-inventory.json` is the machine-readable structural inventory. Regenerate it with `npm run repo:inventory` after an intentional structural change and protect it with `npm run repo:check`.

@@ -1,4 +1,5 @@
 export * from "./api";
+export { getCustomerCollectionResource } from "../application/vertical-slice/customerAuthoritativeQueries";
 
 export type {
   CustomerDisplay,

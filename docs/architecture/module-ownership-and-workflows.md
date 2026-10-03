@@ -67,7 +67,7 @@ A workflow must:
 
 ## Current workflows
 
-The source currently contains 22 cross-module workflow directories:
+The source currently contains 23 cross-module workflow directories:
 
 ```text
 accepted-quote-order-conversion
@@ -80,6 +80,7 @@ customer-identity
 customer-onboarding
 customer-relationship-integrity
 deal-recycle
+lead-customer-conversion
 lead-qualification
 order-cancellation
 order-closing
