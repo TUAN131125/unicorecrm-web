@@ -9,8 +9,9 @@ import { repositoryRoot } from "../../../scripts/quality/core/repo-context.mjs";
 // This fixture tests frontend transport and response preservation, not server policy evaluation.
 const profile = EFFECTIVE_RECORD_ACCESS_PROFILES.contacts;
 assert.deepEqual([...profile.requestedFields], ["fullName", "workEmail", "personalEmail", "mobilePhone", "workPhone", "otherPhone", "organizationRelationships", "ownerId", "consent"]);
+const requestedFields = new Set<string>(profile.requestedFields);
 for (const alias of ["email", "phone", "organizationId", "consentStatus"]) {
-  assert.ok(!profile.requestedFields.includes(alias), `Stale Contact alias: ${alias}`);
+  assert.ok(!requestedFields.has(alias), `Stale Contact alias: ${alias}`);
 }
 const response = {
   workspaceId: "fixture-workspace", resourceKey: "contacts",
@@ -35,7 +36,7 @@ const http = new FetchHttpClient({
     return new Response(JSON.stringify(response), { status: 200, headers: { "Content-Type": "application/json" } });
   },
 });
-const decision = await new HttpEffectiveRecordAccessAuthority(http).evaluate({ resourceKey: "contacts", requestedFields: profile.requestedFields });
+const decision = await new HttpEffectiveRecordAccessAuthority(http).evaluate({ workspaceId: "fixture-workspace", resourceKey: "contacts", requestedFields: profile.requestedFields });
 assert.equal(requests, 1);
 assert.deepEqual(decision.fieldAccess, response.fieldAccess);
 assert.equal(decision.fieldAccess.fullName, "READ_WRITE");

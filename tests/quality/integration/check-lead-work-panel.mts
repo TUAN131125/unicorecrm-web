@@ -131,7 +131,7 @@ try {
   console.log("Lead work panel: PASS (authority inputs, compact attention, next work, owner, context, rail, anchored menu, failure isolation)");
   const { ContactInsightPanel } = await import("@/modules/contacts/presentation/detail/ContactInsightPanel");
   const contactProps = {
-    isVisible: true, contact: { id: "contact-panel-fixture", name: "Fixture", status: "active" }, tasks: [],
+    isVisible: true, contact: { id: "contact-panel-fixture", name: "Fixture", fullName: "Fixture", createdAt: "2026-10-03T00:00:00Z", status: "active" as const }, tasks: [],
     onAddTask() {}, onAddAppointment() {}, onAddNote() {}, onCompleteTask() {}, showToast() {},
     recentActivities: [{ id: "activity-fixture", type: "note", title: "Keyboard activity", description: "Activity detail body", date: "2026-10-03", author: "Fixture" }],
   };
