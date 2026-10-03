@@ -1,27 +1,19 @@
-import { getApplicationHttpClient } from "@/app/composition/applicationComposition";
-import {
-  CommercialApiClient,
-  type ConvertLeadToCustomerRequest,
-  type LeadCustomerConversionResponse,
-} from "@/platform/api/generated/commercialApi";
-import { ApiClientError } from "@/platform/api/errors";
+import type { CommercialApiClient } from "@/platform/api/generated/commercialApi";
+import type { LeadCustomerConversionGateway } from "../application/ports/LeadCustomerConversionGateway";
 
-export type LeadConversionOutcome = LeadCustomerConversionResponse;
-export function isLeadConversionInProgress(error: unknown): boolean {
-  return error instanceof ApiClientError && error.code === "LEAD_CONVERSION_IN_PROGRESS";
-}
-
-export async function convertLeadToCustomer(
-  leadId: string,
-  expectedVersion: number,
-  idempotencyKey: string,
-  request: ConvertLeadToCustomerRequest,
-): Promise<LeadCustomerConversionResponse> {
-  const http = getApplicationHttpClient();
-  if (!http) throw new Error("Lead conversion requires the connected backend runtime.");
-  return new CommercialApiClient(http).convertLeadToCustomer(leadId, request, {
-    expectedVersion,
-    idempotencyKey,
-    retry: "idempotent",
-  });
+export function createLeadCustomerConversionGateway(client: CommercialApiClient): LeadCustomerConversionGateway {
+  return {
+    async convertLeadToCustomer(leadId, expectedVersion, idempotencyKey, request) {
+      const response = await client.convertLeadToCustomer(leadId, request, {
+        expectedVersion,
+        idempotencyKey,
+        retry: "idempotent",
+      });
+      return {
+        outcome: response.outcome,
+        occurredAt: response.occurredAt,
+        result: { customerResolution: response.result.customerResolution, customerId: response.result.customerId },
+      };
+    },
+  };
 }

@@ -1,3 +1,9 @@
+import { CommercialApiClient } from "@/platform/api/generated/commercialApi";
+import { IntegrationConfigurationApiClient } from "@/platform/api/generated/integrationConfigurationApi";
+import { configureLeadCustomerConversionGateway, resetLeadCustomerConversionGateway } from "@/workflows/lead-customer-conversion/application/composition/leadCustomerConversionApplicationServices";
+import { createLeadCustomerConversionGateway } from "@/workflows/lead-customer-conversion/infrastructure/convertLeadToCustomer";
+import { configureOutboundWebhookGateway, resetOutboundWebhookGateway } from "@/workspaces/studio/application/composition/outboundWebhookApplicationServices";
+import { createConnectedOutboundWebhookGateway } from "@/workspaces/studio/infrastructure/ConnectedOutboundWebhookApi";
 import { configureCommercialEvidenceApplication } from "@/modules/commercial-evidence/application/composition/commercialEvidenceApplicationServices";
 import { configureContactApplication } from "@/modules/contacts/application/composition/contactApplicationServices";
 import { configureCustomerApplication } from "@/modules/customers/application/composition/customerApplicationServices";
@@ -37,7 +43,7 @@ import { WorkspaceConfigurationApiClient } from "@/platform/api/generated/worksp
 import { StudioQuickSetupApiClient } from "@/platform/api/generated/studioQuickSetupApi";
 import { AiApiClient } from "@/platform/api/generated/aiApi";
 import { AiConfigurationHttpAdapter } from "@/workspaces/studio/infrastructure/AiConfigurationHttpAdapter";
-import { configureAiConfigurationGateway, resetAiConfigurationGateway } from "@/workspaces/studio/runtime/aiConfigurationRuntime";
+import { configureAiConfigurationGateway, resetAiConfigurationGateway } from "@/workspaces/studio/application/composition/aiConfigurationApplicationServices";
 import { StudioCoreHttpAdapter } from "@/workspaces/studio/infrastructure/StudioCoreHttpAdapter";
 import { configureConnectedStudioCoreGateway, resetStudioCoreRuntime } from "@/workspaces/studio/runtime/studioCoreRuntime";
 import { configureConnectedAiRuntime, resetAiRuntime } from "@/ai/runtime/aiRuntimeBinding";
@@ -198,7 +204,9 @@ export async function initializeApplicationComposition(
   configureLeadQualificationApiRuntime(mode === "connected"
     ? createLeadQualificationConnectedApiRuntime(connectedHttpClient as HttpClient)
     : createLeadQualificationDemoApiRuntime());
-  if (mode === "connected") {
+  if (mode === "connected" && connectedHttpClient) {
+    configureLeadCustomerConversionGateway(createLeadCustomerConversionGateway(new CommercialApiClient(connectedHttpClient)));
+    configureOutboundWebhookGateway(createConnectedOutboundWebhookGateway(new IntegrationConfigurationApiClient(connectedHttpClient)));
     configureConnectedStudioCoreGateway(new StudioCoreHttpAdapter(
       new WorkspaceConfigurationApiClient(connectedHttpClient as HttpClient),
       new StudioQuickSetupApiClient(connectedHttpClient as HttpClient),
@@ -207,6 +215,8 @@ export async function initializeApplicationComposition(
   } else {
     resetStudioCoreRuntime();
     resetAiConfigurationGateway();
+    resetLeadCustomerConversionGateway();
+    resetOutboundWebhookGateway();
   }
   // AI is a cross-cutting CRM capability, not one of the 15 business modules.
   // Connected mode binds the HTTP-backed runtime; demo mode falls back to the

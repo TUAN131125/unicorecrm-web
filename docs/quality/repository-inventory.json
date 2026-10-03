@@ -21,9 +21,9 @@
     ]
   },
   "summary": {
-    "repositoryFiles": 2062,
-    "sourceFiles": 1387,
-    "sourceLines": 213248,
+    "repositoryFiles": 2084,
+    "sourceFiles": 1391,
+    "sourceLines": 213381,
     "modules": 15,
     "routes": 80,
     "loadableRouteModules": 64,
@@ -31,7 +31,7 @@
     "workspaceFlags": 13,
     "workflows": 23,
     "publicBoundaryFiles": 108,
-    "publicExportStatements": 956,
+    "publicExportStatements": 958,
     "persistenceEntries": 3013,
     "repositoryImplementations": 146,
     "browserEventEntries": 13,
@@ -45,11 +45,11 @@
     "verifyGates": 340,
     "qualityGroups": 11,
     "fileClassifications": {
-      "active-runtime": 1302,
-      "active-script": 66,
-      "active-test": 448,
+      "active-runtime": 1307,
+      "active-script": 80,
+      "active-test": 447,
       "compatibility": 53,
-      "documentation": 188,
+      "documentation": 192,
       "fixture": 3,
       "generated": 2
     }
@@ -3727,14 +3727,18 @@
     {
       "path": "src/workflows/lead-customer-conversion/index.ts",
       "owner": "workflow:lead-customer-conversion",
-      "statementCount": 2,
+      "statementCount": 4,
       "exportedNames": [
+        "convertLeadToCustomer",
         "editableLeadCustomerConversionFields",
+        "isLeadConversionInProgress",
         "isLeadCustomerConversionSuppressed",
         "retainOrCreateConversionIntent"
       ],
       "reExportSources": [
-        "./application/conversionIntent"
+        "./application/composition/leadCustomerConversionApplicationServices",
+        "./application/conversionIntent",
+        "./application/ports/LeadCustomerConversionGateway"
       ]
     },
     {
@@ -32903,6 +32907,19 @@
       }
     },
     {
+      "path": "o4-verification.log",
+      "classification": "active-script",
+      "reason": "Repository support file.",
+      "owner": "repository",
+      "bytes": 3371,
+      "lines": null,
+      "usage": {
+        "runtimeReachable": false,
+        "scriptReachable": false,
+        "testReachable": false
+      }
+    },
+    {
       "path": "package-lock.json",
       "classification": "active-script",
       "reason": "Repository tooling or build configuration.",
@@ -33843,8 +33860,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "shared:app",
-      "bytes": 18108,
-      "lines": 315,
+      "bytes": 19288,
+      "lines": 325,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": false,
@@ -49920,12 +49937,38 @@
       }
     },
     {
+      "path": "src/workflows/lead-customer-conversion/application/composition/leadCustomerConversionApplicationServices.ts",
+      "classification": "active-runtime",
+      "reason": "Reachable from src/main.tsx.",
+      "owner": "workflow:lead-customer-conversion",
+      "bytes": 1115,
+      "lines": 17,
+      "usage": {
+        "runtimeReachable": true,
+        "scriptReachable": true,
+        "testReachable": true
+      }
+    },
+    {
       "path": "src/workflows/lead-customer-conversion/application/conversionIntent.ts",
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "workflow:lead-customer-conversion",
       "bytes": 797,
       "lines": 23,
+      "usage": {
+        "runtimeReachable": true,
+        "scriptReachable": true,
+        "testReachable": true
+      }
+    },
+    {
+      "path": "src/workflows/lead-customer-conversion/application/ports/LeadCustomerConversionGateway.ts",
+      "classification": "active-runtime",
+      "reason": "Reachable from src/main.tsx.",
+      "owner": "workflow:lead-customer-conversion",
+      "bytes": 538,
+      "lines": 14,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -49947,13 +49990,13 @@
     },
     {
       "path": "src/workflows/lead-customer-conversion/index.ts",
-      "classification": "active-test",
-      "reason": "Referenced by repository verification or tests but not by the runtime entry graph.",
+      "classification": "active-runtime",
+      "reason": "Reachable from src/main.tsx.",
       "owner": "workflow:lead-customer-conversion",
-      "bytes": 247,
-      "lines": 8,
+      "bytes": 543,
+      "lines": 11,
       "usage": {
-        "runtimeReachable": false,
+        "runtimeReachable": true,
         "scriptReachable": true,
         "testReachable": true
       }
@@ -49963,8 +50006,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "workflow:lead-customer-conversion",
-      "bytes": 1018,
-      "lines": 28,
+      "bytes": 793,
+      "lines": 20,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -49976,7 +50019,7 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "workflow:lead-customer-conversion",
-      "bytes": 5120,
+      "bytes": 5117,
       "lines": 56,
       "usage": {
         "runtimeReachable": true,
@@ -51298,12 +51341,51 @@
       }
     },
     {
+      "path": "src/workspaces/studio/application/composition/aiConfigurationApplicationServices.ts",
+      "classification": "active-runtime",
+      "reason": "Reachable from src/main.tsx.",
+      "owner": "workspace:studio",
+      "bytes": 2179,
+      "lines": 17,
+      "usage": {
+        "runtimeReachable": true,
+        "scriptReachable": false,
+        "testReachable": true
+      }
+    },
+    {
+      "path": "src/workspaces/studio/application/composition/outboundWebhookApplicationServices.ts",
+      "classification": "active-runtime",
+      "reason": "Reachable from src/main.tsx.",
+      "owner": "workspace:studio",
+      "bytes": 748,
+      "lines": 12,
+      "usage": {
+        "runtimeReachable": true,
+        "scriptReachable": false,
+        "testReachable": true
+      }
+    },
+    {
       "path": "src/workspaces/studio/application/connectedOutboundWebhookBehavior.ts",
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "workspace:studio",
       "bytes": 2071,
       "lines": 27,
+      "usage": {
+        "runtimeReachable": true,
+        "scriptReachable": false,
+        "testReachable": true
+      }
+    },
+    {
+      "path": "src/workspaces/studio/application/OutboundWebhookGateway.ts",
+      "classification": "active-runtime",
+      "reason": "Reachable from src/main.tsx.",
+      "owner": "workspace:studio",
+      "bytes": 2924,
+      "lines": 63,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": false,
@@ -51419,8 +51501,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "workspace:studio",
-      "bytes": 440,
-      "lines": 6,
+      "bytes": 2109,
+      "lines": 27,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": false,
@@ -51549,7 +51631,7 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "workspace:studio",
-      "bytes": 14101,
+      "bytes": 14129,
       "lines": 60,
       "usage": {
         "runtimeReachable": true,
@@ -51575,7 +51657,7 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "workspace:studio",
-      "bytes": 14975,
+      "bytes": 14991,
       "lines": 400,
       "usage": {
         "runtimeReachable": true,
@@ -51753,19 +51835,6 @@
       }
     },
     {
-      "path": "src/workspaces/studio/runtime/aiConfigurationRuntime.ts",
-      "classification": "active-runtime",
-      "reason": "Reachable from src/main.tsx.",
-      "owner": "workspace:studio",
-      "bytes": 2087,
-      "lines": 16,
-      "usage": {
-        "runtimeReachable": true,
-        "scriptReachable": false,
-        "testReachable": true
-      }
-    },
-    {
       "path": "src/workspaces/studio/runtime/quickSetupRuntime.ts",
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
@@ -51789,6 +51858,227 @@
         "runtimeReachable": true,
         "scriptReachable": false,
         "testReachable": true
+      }
+    },
+    {
+      "path": "test-results/.last-run.json",
+      "classification": "active-script",
+      "reason": "Repository support file.",
+      "owner": "repository",
+      "bytes": 243,
+      "lines": null,
+      "usage": {
+        "runtimeReachable": false,
+        "scriptReachable": false,
+        "testReachable": false
+      }
+    },
+    {
+      "path": "test-results/lead-scale-experience-Lead-2bbc0-ifecycle-safe-drag-and-drop-chromium/error-context.md",
+      "classification": "documentation",
+      "reason": "Markdown documentation.",
+      "owner": "repository",
+      "bytes": 10369,
+      "lines": 218,
+      "usage": {
+        "runtimeReachable": false,
+        "scriptReachable": false,
+        "testReachable": false
+      }
+    },
+    {
+      "path": "test-results/lead-scale-experience-Lead-2bbc0-ifecycle-safe-drag-and-drop-chromium/test-failed-1.png",
+      "classification": "active-script",
+      "reason": "Repository support file.",
+      "owner": "repository",
+      "bytes": 86034,
+      "lines": null,
+      "usage": {
+        "runtimeReachable": false,
+        "scriptReachable": false,
+        "testReachable": false
+      }
+    },
+    {
+      "path": "test-results/lead-scale-experience-Lead-2bbc0-ifecycle-safe-drag-and-drop-chromium/trace.zip",
+      "classification": "active-script",
+      "reason": "Repository support file.",
+      "owner": "repository",
+      "bytes": 2772649,
+      "lines": null,
+      "usage": {
+        "runtimeReachable": false,
+        "scriptReachable": false,
+        "testReachable": false
+      }
+    },
+    {
+      "path": "test-results/lead-scale-experience-Lead-2bbc0-ifecycle-safe-drag-and-drop-chromium/video.webm",
+      "classification": "active-script",
+      "reason": "Repository support file.",
+      "owner": "repository",
+      "bytes": 319438,
+      "lines": null,
+      "usage": {
+        "runtimeReachable": false,
+        "scriptReachable": false,
+        "testReachable": false
+      }
+    },
+    {
+      "path": "test-results/lead-scale-experience-Lead-3e4dc-d-responsive-filter-popover-chromium/error-context.md",
+      "classification": "documentation",
+      "reason": "Markdown documentation.",
+      "owner": "repository",
+      "bytes": 10111,
+      "lines": 214,
+      "usage": {
+        "runtimeReachable": false,
+        "scriptReachable": false,
+        "testReachable": false
+      }
+    },
+    {
+      "path": "test-results/lead-scale-experience-Lead-3e4dc-d-responsive-filter-popover-chromium/test-failed-1.png",
+      "classification": "active-script",
+      "reason": "Repository support file.",
+      "owner": "repository",
+      "bytes": 85974,
+      "lines": null,
+      "usage": {
+        "runtimeReachable": false,
+        "scriptReachable": false,
+        "testReachable": false
+      }
+    },
+    {
+      "path": "test-results/lead-scale-experience-Lead-3e4dc-d-responsive-filter-popover-chromium/trace.zip",
+      "classification": "active-script",
+      "reason": "Repository support file.",
+      "owner": "repository",
+      "bytes": 2574049,
+      "lines": null,
+      "usage": {
+        "runtimeReachable": false,
+        "scriptReachable": false,
+        "testReachable": false
+      }
+    },
+    {
+      "path": "test-results/lead-scale-experience-Lead-3e4dc-d-responsive-filter-popover-chromium/video.webm",
+      "classification": "active-script",
+      "reason": "Repository support file.",
+      "owner": "repository",
+      "bytes": 381055,
+      "lines": null,
+      "usage": {
+        "runtimeReachable": false,
+        "scriptReachable": false,
+        "testReachable": false
+      }
+    },
+    {
+      "path": "test-results/lead-scale-experience-Lead-68120-ter-outside-the-scroll-body-chromium/error-context.md",
+      "classification": "documentation",
+      "reason": "Markdown documentation.",
+      "owner": "repository",
+      "bytes": 16904,
+      "lines": 328,
+      "usage": {
+        "runtimeReachable": false,
+        "scriptReachable": false,
+        "testReachable": false
+      }
+    },
+    {
+      "path": "test-results/lead-scale-experience-Lead-68120-ter-outside-the-scroll-body-chromium/test-failed-1.png",
+      "classification": "active-script",
+      "reason": "Repository support file.",
+      "owner": "repository",
+      "bytes": 86014,
+      "lines": null,
+      "usage": {
+        "runtimeReachable": false,
+        "scriptReachable": false,
+        "testReachable": false
+      }
+    },
+    {
+      "path": "test-results/lead-scale-experience-Lead-68120-ter-outside-the-scroll-body-chromium/trace.zip",
+      "classification": "active-script",
+      "reason": "Repository support file.",
+      "owner": "repository",
+      "bytes": 1519693,
+      "lines": null,
+      "usage": {
+        "runtimeReachable": false,
+        "scriptReachable": false,
+        "testReachable": false
+      }
+    },
+    {
+      "path": "test-results/lead-scale-experience-Lead-68120-ter-outside-the-scroll-body-chromium/video.webm",
+      "classification": "active-script",
+      "reason": "Repository support file.",
+      "owner": "repository",
+      "bytes": 227410,
+      "lines": null,
+      "usage": {
+        "runtimeReachable": false,
+        "scriptReachable": false,
+        "testReachable": false
+      }
+    },
+    {
+      "path": "test-results/lead-scale-experience-Lead-c1449-usable-at-a-mobile-viewport-chromium/error-context.md",
+      "classification": "documentation",
+      "reason": "Markdown documentation.",
+      "owner": "repository",
+      "bytes": 11134,
+      "lines": 229,
+      "usage": {
+        "runtimeReachable": false,
+        "scriptReachable": false,
+        "testReachable": false
+      }
+    },
+    {
+      "path": "test-results/lead-scale-experience-Lead-c1449-usable-at-a-mobile-viewport-chromium/test-failed-1.png",
+      "classification": "active-script",
+      "reason": "Repository support file.",
+      "owner": "repository",
+      "bytes": 39321,
+      "lines": null,
+      "usage": {
+        "runtimeReachable": false,
+        "scriptReachable": false,
+        "testReachable": false
+      }
+    },
+    {
+      "path": "test-results/lead-scale-experience-Lead-c1449-usable-at-a-mobile-viewport-chromium/trace.zip",
+      "classification": "active-script",
+      "reason": "Repository support file.",
+      "owner": "repository",
+      "bytes": 1468000,
+      "lines": null,
+      "usage": {
+        "runtimeReachable": false,
+        "scriptReachable": false,
+        "testReachable": false
+      }
+    },
+    {
+      "path": "test-results/lead-scale-experience-Lead-c1449-usable-at-a-mobile-viewport-chromium/video.webm",
+      "classification": "active-script",
+      "reason": "Repository support file.",
+      "owner": "repository",
+      "bytes": 182067,
+      "lines": null,
+      "usage": {
+        "runtimeReachable": false,
+        "scriptReachable": false,
+        "testReachable": false
       }
     },
     {
@@ -54110,8 +54400,8 @@
       "classification": "active-test",
       "reason": "Test source.",
       "owner": "test",
-      "bytes": 12102,
-      "lines": 253,
+      "bytes": 20871,
+      "lines": 361,
       "usage": {
         "runtimeReachable": false,
         "scriptReachable": false,
@@ -54864,7 +55154,7 @@
       "classification": "active-test",
       "reason": "Test source.",
       "owner": "test",
-      "bytes": 2685,
+      "bytes": 2748,
       "lines": 28,
       "usage": {
         "runtimeReachable": false,
@@ -56827,7 +57117,7 @@
       "classification": "active-test",
       "reason": "Test source.",
       "owner": "test",
-      "bytes": 2245,
+      "bytes": 2358,
       "lines": 24,
       "usage": {
         "runtimeReachable": false,
@@ -58184,5 +58474,5 @@
       "quality.work-operations-ux"
     ]
   },
-  "inventoryFingerprint": "17598c07f6dbe2eb279aae132d44e77478cde3699dea701467a2043a57d07570"
+  "inventoryFingerprint": "b2e2219e584efd19d523edc4fc80736a7af47b98fe0f52dfb82276c257988f60"
 }

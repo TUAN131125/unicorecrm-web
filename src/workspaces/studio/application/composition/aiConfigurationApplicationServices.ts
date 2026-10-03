@@ -1,9 +1,10 @@
-import type { AiConfiguration, AiConfigurationDraft, AiConfigurationGateway, AiProviderEntry } from "../application/AiConfigurationGateway";
+import { createApplicationServiceBinding } from "@/shared/application/applicationServiceBinding";
+import type { AiConfiguration, AiConfigurationDraft, AiConfigurationGateway, AiProviderEntry } from "../AiConfigurationGateway";
 
-let gateway: AiConfigurationGateway | undefined;
-export function configureAiConfigurationGateway(value: AiConfigurationGateway): void { gateway = value; }
-export function resetAiConfigurationGateway(): void { gateway = undefined; }
-function required(): AiConfigurationGateway { if (!gateway) throw new Error("AI_CONFIGURATION_RUNTIME_UNAVAILABLE"); return gateway; }
+const binding = createApplicationServiceBinding<AiConfigurationGateway>("AI Configuration");
+export const configureAiConfigurationGateway = binding.configure;
+export const resetAiConfigurationGateway = binding.reset;
+function required(): AiConfigurationGateway { if (!binding.isConfigured()) throw new Error("AI_CONFIGURATION_RUNTIME_UNAVAILABLE"); return binding.get(); }
 const key = (purpose: string) => `ai-${purpose}-${typeof crypto !== "undefined" && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`}`;
 export const loadAiProviderCatalog = (signal?: AbortSignal): Promise<AiProviderEntry[]> => required().getCatalog(signal);
 export const loadAiConfiguration = (signal?: AbortSignal): Promise<AiConfiguration> => required().getConfiguration(signal);

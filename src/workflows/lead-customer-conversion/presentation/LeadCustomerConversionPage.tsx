@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { getLeadDetailResource, useLeadAuthoritativeResource } from "@/modules/leads";
 import { invalidateModuleQueries } from "@/shared/application";
 import { AuthoritativeQueryBoundary, formatApplicationError } from "@/shared/operations";
-import { convertLeadToCustomer, isLeadConversionInProgress, type LeadConversionOutcome } from "../infrastructure/convertLeadToCustomer";
+import { convertLeadToCustomer, isLeadConversionInProgress, type LeadConversionOutcome } from "@/workflows/lead-customer-conversion";
 import { isLeadCustomerConversionSuppressed, retainOrCreateConversionIntent, type LeadCustomerConversionIntent as ConversionIntent } from "../application/conversionIntent";
 
 

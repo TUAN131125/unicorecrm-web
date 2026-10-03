@@ -3,7 +3,7 @@ import { Bot, CheckCircle2, KeyRound, Play, Power, Save } from "lucide-react";
 import { useI18n } from "@/i18n";
 import { CAPABILITIES, useEffectiveAccess } from "@/platform/access-control";
 import type { AiConfiguration, AiConfigurationDraft, AiProviderEntry, AiUsageSummary } from "../../application/AiConfigurationGateway";
-import { activateAiConfiguration, disableAiConfiguration, loadAiConfiguration, loadAiProviderCatalog, loadAiUsageSummary, saveAiConfiguration, setAiCredential, testAiConfiguration } from "../../runtime/aiConfigurationRuntime";
+import { activateAiConfiguration, disableAiConfiguration, loadAiConfiguration, loadAiProviderCatalog, loadAiUsageSummary, saveAiConfiguration, setAiCredential, testAiConfiguration } from "../../application/composition/aiConfigurationApplicationServices";
 import { StudioButton, StudioPageFrame, StudioSection } from "../components/StudioPrimitives";
 
 export function AiConfigurationView() {

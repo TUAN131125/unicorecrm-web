@@ -6,7 +6,7 @@ import {
   type IntegrationEventCatalogItem,
   type OutboundWebhookDelivery,
   type OutboundWebhookSubscription,
-} from "../../infrastructure/ConnectedOutboundWebhookApi";
+} from "../../application/composition/outboundWebhookApplicationServices";
 import {
   StudioButton,
   StudioEmpty,

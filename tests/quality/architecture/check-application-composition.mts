@@ -250,3 +250,111 @@ assert.match(bootstrapSource, /logout/u);
 assert.match(bootstrapSource, /telemetry/u);
 
 console.log("Application composition contracts: PASS (15 self-composed connected modules, 5 workflows, fail-closed projection writes, narrow host bindings)");
+
+// Exercise the composition-owned boundaries against the actual generated clients.
+const { convertLeadToCustomer, isLeadConversionInProgress } = await import("../../../src/workflows/lead-customer-conversion/index.ts");
+const { getConnectedOutboundWebhookApi } = await import("../../../src/workspaces/studio/application/composition/outboundWebhookApplicationServices.ts");
+const aiConfiguration = await import("../../../src/workspaces/studio/application/composition/aiConfigurationApplicationServices.ts");
+const { ApplicationError } = await import("../../../src/shared/domain/applicationError.ts");
+const requests: import("../../../src/platform/api/client/HttpClient.ts").HttpRequest[] = [];
+let failure: Error | undefined;
+const subscription = { subscriptionId: "subscription/1", workspaceId: "workspace-test", name: "CRM", eventType: "crm.contact.changed", endpointUrl: "https://example.test/hook", status: "PAUSED", version: 4, createdAt: "2026-10-03T00:00:00Z", updatedAt: "2026-10-03T00:00:00Z" };
+const aiDraft = { primaryProvider: "OPENAI" as const, primaryModel: "fixture-model", primaryCredentialSource: "WORKSPACE" as const, fallbackEnabled: false, retryRateLimited: true };
+const aiState = { ...aiDraft, status: "DRAFT", primaryCredentialConfigured: true, fallbackCredentialConfigured: false, isValidated: false, version: 9, createdAt: "2026-10-03T00:00:00Z", updatedAt: "2026-10-03T00:00:00Z" };
+const boundaryHttp: import("../../../src/platform/api/client/HttpClient.ts").HttpClient = {
+  async request<TResponse, TBody = unknown>(request: import("../../../src/platform/api/client/HttpClient.ts").HttpRequest<TBody>): Promise<TResponse> {
+    requests.push(request);
+    if (failure) throw failure;
+    const response: unknown = request.operationId === "convertLeadToCustomer"
+      ? { outcome: "COMMITTED", occurredAt: "2026-10-03T00:00:00Z", result: { customerResolution: "CREATED", customerId: "customer-1" } }
+      : request.operationId === "getIntegrationEventCatalog" || request.operationId === "listOutboundWebhookSubscriptions" || request.operationId === "listOutboundWebhookDeliveries"
+        ? [] : request.operationId === "getAiProviderCatalog" ? { providers: [] }
+          : request.operationId === "getAiConfiguration" ? aiState
+            : request.operationId === "getAiUsageSummary" ? { executions: 0 }
+              : request.path.startsWith("/ai/") ? { configuration: aiState }
+                : { subscription, outcome: "COMMITTED", signingSecret: "one-time" };
+    return response as TResponse;
+  },
+};
+await initializeApplicationComposition({ mode: "connected", http: { client: boundaryHttp } });
+const leadRequest = { accountSubject: { type: "CONTACT" as const, mode: "EXISTING" as const, id: "contact-1" } };
+const leadResult = await convertLeadToCustomer("lead/1", 7, "lead-intent-1", leadRequest);
+assert.equal(leadResult.result.customerId, "customer-1");
+assert.equal(leadResult.result.customerResolution, "CREATED");
+assert.equal(leadResult.outcome, "COMMITTED");
+assert.equal(leadResult.occurredAt, "2026-10-03T00:00:00Z");
+assert.equal(requests.at(-1)?.expectedVersion, 7);
+assert.equal(requests.at(-1)?.idempotencyKey, "lead-intent-1");
+assert.equal(requests.at(-1)?.retry, "idempotent");
+assert.deepEqual(requests.at(-1)?.body, leadRequest);
+for (const code of ["LEAD_CONVERSION_IN_PROGRESS", "VERSION_CONFLICT", "ACCESS_DENIED", "RATE_LIMITED"]) {
+  failure = new ApplicationError({ code, message: "authoritative failure", correlationId: "correlation-1" });
+  const original = failure;
+  await assert.rejects(() => convertLeadToCustomer("lead/1", 7, "lead-intent-1", leadRequest), error => error === original);
+  assert.equal(isLeadConversionInProgress(original), code === "LEAD_CONVERSION_IN_PROGRESS");
+}
+failure = undefined;
+const webhook = getConnectedOutboundWebhookApi();
+assert.equal(getConnectedOutboundWebhookApi(), webhook, "Gateway identity must remain stable within a composition.");
+await webhook.getIntegrationEventCatalog();
+await webhook.listOutboundWebhookSubscriptions();
+await webhook.listOutboundWebhookDeliveries();
+assert.deepEqual(requests.slice(-3).map(request => request.operationId), ["getIntegrationEventCatalog", "listOutboundWebhookSubscriptions", "listOutboundWebhookDeliveries"]);
+const form = { name: subscription.name, eventType: subscription.eventType, endpointUrl: subscription.endpointUrl };
+const createdWebhook = await webhook.createOutboundWebhookSubscription(form, { idempotencyKey: "create-intent" });
+assert.equal(createdWebhook.signingSecret, "one-time");
+assert.equal(requests.at(-1)?.idempotencyKey, "create-intent");
+assert.equal(requests.at(-1)?.expectedVersion, undefined);
+await webhook.updateOutboundWebhookSubscription(subscription.subscriptionId, form, { expectedVersion: 4, idempotencyKey: "update-intent" });
+assert.deepEqual(requests.at(-1)?.body, form);
+assert.equal(requests.at(-1)?.expectedVersion, 4);
+assert.equal(requests.at(-1)?.idempotencyKey, "update-intent");
+for (const operation of ["activateOutboundWebhookSubscription", "pauseOutboundWebhookSubscription", "resumeOutboundWebhookSubscription", "archiveOutboundWebhookSubscription", "rotateOutboundWebhookSecret"] as const) {
+  await webhook[operation](subscription.subscriptionId, {}, { expectedVersion: 4, idempotencyKey: operation });
+  assert.equal(requests.at(-1)?.operationId, operation);
+  assert.equal(requests.at(-1)?.expectedVersion, 4);
+  assert.equal(requests.at(-1)?.idempotencyKey, operation);
+  assert.equal(requests.at(-1)?.retry, "never");
+}
+await webhook.replayOutboundWebhookDelivery("delivery/1", {}, { idempotencyKey: "replay-intent" });
+assert.equal(requests.at(-1)?.operationId, "replayOutboundWebhookDelivery");
+assert.equal(requests.at(-1)?.idempotencyKey, "replay-intent");
+assert.equal(requests.at(-1)?.expectedVersion, undefined);
+failure = new ApplicationError({ code: "VERSION_CONFLICT", message: "authoritative failure" });
+const webhookFailure = failure;
+await assert.rejects(() => webhook.updateOutboundWebhookSubscription(subscription.subscriptionId, form, { expectedVersion: 4, idempotencyKey: "update-intent" }), error => error === webhookFailure);
+failure = undefined;
+const signal = new AbortController().signal;
+await aiConfiguration.loadAiProviderCatalog(signal);
+assert.equal(requests.at(-1)?.signal, signal);
+await aiConfiguration.loadAiConfiguration(signal);
+assert.equal(requests.at(-1)?.operationId, "getAiConfiguration");
+await aiConfiguration.loadAiUsageSummary(signal);
+assert.equal(requests.at(-1)?.operationId, "getAiUsageSummary");
+await aiConfiguration.saveAiConfiguration(aiDraft, 9, signal);
+assert.deepEqual(requests.at(-1)?.body, aiDraft);
+assert.equal(requests.at(-1)?.expectedVersion, 9);
+assert.equal(requests.at(-1)?.signal, signal);
+assert.match(requests.at(-1)?.idempotencyKey ?? "", /^ai-draft-/u);
+await aiConfiguration.setAiCredential("credential-test", true, 9, signal);
+assert.equal(requests.at(-1)?.expectedVersion, 9);
+assert.match(requests.at(-1)?.idempotencyKey ?? "", /^ai-credential-/u);
+assert.equal(requests.at(-1)?.signal, signal);
+assert.deepEqual(requests.at(-1)?.body, { credential: "credential-test", fallback: true });
+for (const [operation, purpose] of [[aiConfiguration.testAiConfiguration, "test"], [aiConfiguration.activateAiConfiguration, "activate"], [aiConfiguration.disableAiConfiguration, "disable"]] as const) {
+  await operation(9, signal);
+  assert.equal(requests.at(-1)?.expectedVersion, 9);
+  assert.equal(requests.at(-1)?.signal, signal);
+  assert.match(requests.at(-1)?.idempotencyKey ?? "", new RegExp(`^ai-${purpose}-`, "u"));
+}
+await initializeApplicationComposition({ mode: "demo", services: created });
+await assert.rejects(() => convertLeadToCustomer("lead/1", 7, "lead-intent-1", leadRequest), /requires the connected backend runtime/u);
+assert.throws(() => getConnectedOutboundWebhookApi(), /available only in connected mode/u);
+assert.throws(() => aiConfiguration.loadAiConfiguration(), /AI_CONFIGURATION_RUNTIME_UNAVAILABLE/u);
+for (const file of ["src/workflows/lead-customer-conversion/presentation/LeadCustomerConversionPage.tsx", "src/workspaces/studio/presentation/views/AiConfigurationView.tsx", "src/workspaces/studio/presentation/views/ConnectedOutboundWebhooksView.tsx"]) {
+  assert.doesNotMatch(fs.readFileSync(path.join(root, file), "utf8"), /from\s+["'][^"']*(?:\/infrastructure\/|\/runtime\/|@\/app\/)/u);
+}
+for (const file of ["src/workflows/lead-customer-conversion/infrastructure/convertLeadToCustomer.ts", "src/workspaces/studio/infrastructure/ConnectedOutboundWebhookApi.ts"]) {
+  assert.doesNotMatch(fs.readFileSync(path.join(root, file), "utf8"), /@\/app\//u);
+}
+console.log("Composition boundary gateways: PASS (connected transport metadata, error identity, demo reset)");
