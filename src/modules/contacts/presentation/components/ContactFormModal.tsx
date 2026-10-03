@@ -1,6 +1,7 @@
 import React from "react";
 import { ChevronDown, ChevronUp, Zap } from "lucide-react";
-import { Button, Checkbox, Input, Modal, Select, Textarea } from "@/shared/components/ui";
+import { Button, Checkbox, ConfirmDialog, Input, Modal, Select, Textarea } from "@/shared/components/ui";
+import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
 import { useI18n } from "@/i18n";
 import { normalizeApplicationError } from "@/shared/domain";
 import { formatOperationUnavailableError } from "@/shared/operations";
@@ -47,6 +48,7 @@ export interface ContactFormDraft {
 }
 
 export interface ContactFormModalProps {
+  guardChanges?: boolean;
   isOpen: boolean;
   onClose(): void;
   mode: ContactFormMode;
@@ -127,7 +129,7 @@ function createDraft(contact: Contact | undefined, defaultOwnerId: string): Cont
   };
 }
 
-export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit }: ContactFormModalProps) {
+export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit, guardChanges = false }: ContactFormModalProps) {
   const { t, locale } = useI18n();
   const vi = locale === "vi";
   const ownership = useRecordOwnershipContext("contacts", CAPABILITIES.CONTACTS_ASSIGN);
@@ -139,10 +141,21 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit }: C
   const [formError, setFormError] = React.useState("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const wasOpen = React.useRef(false);
+  const initialDraft = React.useRef(draft);
+  const unsavedChanges = useUnsavedChangesGuard(onClose);
+  React.useEffect(() => {
+    unsavedChanges.setIsDirty(isOpen && JSON.stringify(draft) !== JSON.stringify(initialDraft.current));
+    if (!isOpen) unsavedChanges.setIsConfirmOpen(false);
+  }, [draft, isOpen, unsavedChanges.setIsDirty, unsavedChanges.setIsConfirmOpen]);
+  const requestClose = () => {
+    if (!guardChanges) { onClose(); return; }
+    if (!isSubmitting) unsavedChanges.requestClose();
+  };
 
   React.useEffect(() => {
     if (isOpen && !wasOpen.current) {
-      setDraft(draftFactory());
+      initialDraft.current = draftFactory();
+      setDraft(initialDraft.current);
       setShowAdvanced(mode === "edit");
       setErrors({});
       setFormError("");
@@ -226,10 +239,11 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit }: C
 
   const showComplete = mode === "edit" || showAdvanced;
   return (
+    <>
     <Modal
       variant="form"
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={requestClose}
       title={mode === "create" ? t("contactList.actions.addContact") : t("contact.edit.title")}
       size="md"
     >
@@ -313,10 +327,20 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit }: C
 
         <div className="crm-form-action-bar sticky bottom-0 z-10 flex justify-end gap-2 border-t border-slate-100 bg-white pt-4">
           {formError ? <p role="alert" className="mr-auto text-sm font-medium text-rose-700">{formError}</p> : null}
-          <Button variant="secondary" onClick={onClose} type="button" disabled={isSubmitting}>{t("common.cancel")}</Button>
+          <Button variant="secondary" onClick={requestClose} type="button" disabled={isSubmitting}>{t("common.cancel")}</Button>
           <Button variant="primary" type="submit" loading={isSubmitting} disabled={isSubmitting}>{mode === "create" ? t("contactList.form.btnSave", "Lưu liên hệ") : t("common.save")}</Button>
         </div>
       </form>
     </Modal>
+    {guardChanges && <ConfirmDialog
+      isOpen={unsavedChanges.isConfirmOpen}
+      onClose={() => unsavedChanges.setIsConfirmOpen(false)}
+      onConfirm={unsavedChanges.confirmDiscard}
+      title={vi ? "Bỏ thay đổi chưa lưu?" : "Discard unsaved changes?"}
+      message={vi ? "Các thay đổi chưa được lưu. Bạn có muốn đóng biểu mẫu?" : "Your changes have not been saved. Close the form?"}
+      confirmText={vi ? "Bỏ thay đổi" : "Discard changes"}
+      cancelText={vi ? "Tiếp tục chỉnh sửa" : "Keep editing"} type="warning"
+    />}
+    </>
   );
 }

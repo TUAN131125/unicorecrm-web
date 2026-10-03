@@ -4,13 +4,14 @@ import { SmsActivityCreateModal, type SmsActivityDraft } from "@/modules/tasks";
 interface ContactSendSmsModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSend: (sms: { phone: string; body: string }) => void;
+  onSend: (sms: { phone: string; body: string }) => void | Promise<void>;
   prefilledPhone: string;
   isDoNotContact?: boolean;
 }
 
 export const ContactSendSmsModal: React.FC<ContactSendSmsModalProps> = ({ isOpen, onClose, onSend, prefilledPhone, isDoNotContact }) => (
   <SmsActivityCreateModal
+    guardChanges
     isOpen={isOpen}
     onClose={onClose}
     formId="contact-send-sms-form"

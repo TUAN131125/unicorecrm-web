@@ -79,3 +79,5 @@ for (const file of taskPresentationFiles) {
 assert.ok(!canonical.includes("createTaskSnapshot("), `${canonicalPath} must not write through the retired browser snapshot boundary.`);
 
 console.log(`Task create form contracts PASS: 1 canonical form, ${callers.length} standardized callers, zero duplicate create-state tokens.`);
+
+assert.match(read("src/modules/contacts/presentation/detail/actions/ContactTaskModal.tsx"), /<TaskCreateModal\s+guardChanges\b/u);

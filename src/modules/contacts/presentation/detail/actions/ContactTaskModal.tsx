@@ -22,6 +22,7 @@ export const ContactTaskModal: React.FC<ContactTaskModalProps> = ({
   onCreated,
 }) => (
   <TaskCreateModal
+    guardChanges
     isOpen={isOpen}
     onClose={onClose}
     context={context}

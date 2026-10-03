@@ -15,7 +15,7 @@ interface ContactMeetingModalProps {
     owner: string;
     agenda?: string;
     reminder?: boolean;
-  }) => void;
+  }) => void | Promise<void>;
   isDoNotContact?: boolean;
 }
 
@@ -27,6 +27,7 @@ function splitLocalDateTime(value?: string): { date: string; time: string } {
 
 export const ContactMeetingModal: React.FC<ContactMeetingModalProps> = ({ isOpen, onClose, onSave, isDoNotContact }) => (
   <MeetingActivityCreateModal
+    guardChanges
     isOpen={isOpen}
     onClose={onClose}
     formId="contact-meeting-form"
@@ -35,7 +36,7 @@ export const ContactMeetingModal: React.FC<ContactMeetingModalProps> = ({ isOpen
     onSubmit={(draft: MeetingActivityDraft) => {
       const start = splitLocalDateTime(draft.startAt);
       const end = splitLocalDateTime(draft.endAt);
-      onSave({
+      return onSave({
         title: draft.title,
         startDate: start.date,
         startTime: start.time,

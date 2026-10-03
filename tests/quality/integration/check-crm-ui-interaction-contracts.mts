@@ -1,4 +1,6 @@
 // @ts-nocheck -- Cross-surface browser-like interaction contract.
+import { spawnSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
@@ -7,6 +9,7 @@ import { readPresentationComposition } from "../../../scripts/lib/presentationCo
 
 const read = (relativePath: string) => readPresentationComposition(path.resolve(relativePath), "utf8");
 
+function verifyExistingSourceContracts() {
 const overlay = read("src/shared/components/ui/useAccessibleOverlay.ts");
 assert.ok(overlay.includes("const onCloseRef = React.useRef(onClose)"), "Overlay close callbacks must be stored in a stable ref.");
 assert.ok(overlay.includes("onCloseRef.current = onClose"), "Overlay close ref must track the latest callback.");
@@ -224,6 +227,17 @@ for (const relativePath of [
   assert.equal(source.includes("motion.main"), false, `${relativePath} must not run a competing layout animation on the main tab container.`);
 }
 
+}
+
+// Run browser-like regressions in a fresh process: the gate preloads composition,
+// which otherwise imports React DOM before JSDOM installs browser globals.
+if (!process.argv.includes("--contact-runtime-only")) {
+  const runtime = spawnSync(process.execPath, ["--import", "tsx", fileURLToPath(import.meta.url), "--contact-runtime-only"], { encoding: "utf8" });
+  process.stdout.write(runtime.stdout);
+  process.stderr.write(runtime.stderr);
+  assert.equal(runtime.status, 0, "Contact interaction runtime regression failed.");
+  verifyExistingSourceContracts();
+} else {
 // Runtime regression: a controlled field inside a Modal whose parent creates a new
 // onClose callback every render must retain focus and accept continuous typing.
 const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', {
@@ -303,8 +317,91 @@ for (const next of ["N", "Ng", "Ngu", "Nguy", "Nguyen"]) {
   assert.equal(window.document.activeElement, input, `Input lost focus while typing ${next}.`);
 }
 assert.equal(input.value, "Nguyen");
+
+// Repository-local workspace fixture also works when the pipeline preloads composition before JSDOM.
+const workspace = await import("@/platform/workspace-context");
+const { listAllDevelopmentMemberships } = await import("@/platform/workspace-membership");
+const member = listAllDevelopmentMemberships().find((item) => item.accountId === "acct_admin");
+assert.ok(member);
+workspace.resetWorkspaceRuntimeParticipant();
+workspace.configureConnectedWorkspaceBootstrapGateway({
+  listMyWorkspaces: async () => [member],
+  ensureInitialWorkspace: async () => "EXISTING_MEMBERSHIP",
+  getWorkspaceBootstrap: async () => ({ workspace: member, contextVersion: 1, capabilities: [],
+    configuration: { configurationVersion: 1, locale: "vi", timeZone: "Asia/Ho_Chi_Minh", baseCurrency: "VND", enabledModuleKeys: ["contacts"], availableProductSpaces: ["crm"] }, resolvedAt: "2026-01-01T00:00:00Z" }),
+});
+await workspace.loadWorkspaceMemberships();
+await workspace.enterWorkspace(member.workspaceId);
+const { ContactFormModal } = await import("../../../src/modules/contacts/presentation/components/ContactFormModal.tsx");
+const { ContactMeetingModal } = await import("../../../src/modules/contacts/presentation/detail/actions/ContactMeetingModal.tsx");
+let closes = 0;
+let submissions = 0;
+let rejectSubmit;
+const fixtureContact = { id: "contact-safety-fixture", name: "Original", fullName: "Original", ownerId: "", status: "active", tags: [] };
+const mountEdit = async (submit = async () => {}) => {
+  await act(async () => root.render(React.createElement(I18nProvider, null, React.createElement(ContactFormModal, {
+    key: String(closes), mode: "edit", guardChanges: true, contact: fixtureContact,
+    isOpen: true, onClose: () => { closes++; }, onSubmit: submit,
+  }))));
+};
+const escape = async () => { await act(async () => window.dispatchEvent(new window.KeyboardEvent("keydown", { key: "Escape", bubbles: true }))); };
+const clickText = async (pattern) => {
+  const button = [...window.document.querySelectorAll("button")].find((node) => pattern.test(node.textContent));
+  assert.ok(button, String(pattern));
+  await act(async () => button.click());
+  await act(async () => { await new Promise((resolve) => setTimeout(resolve, 300)); });
+};
+const changeName = async (value) => {
+  const field = window.document.getElementById("contact-edit-name");
+  await act(async () => { setNativeValue.call(field, value); field.dispatchEvent(new window.Event("input", { bubbles: true })); });
+};
+await mountEdit();
+await escape();
+assert.equal(closes, 1, "Pristine edit closes without discard.");
+assert.equal(window.document.querySelectorAll('[role="dialog"]').length, 1);
+await mountEdit();
+await changeName("Edited name");
+await escape();
+assert.equal(closes, 1);
+assert.equal(window.document.querySelectorAll('[role="dialog"]').length, 2);
+await clickText(/Tiếp tục chỉnh sửa|Keep editing/u);
+assert.equal(window.document.querySelectorAll('[role="dialog"]').length, 1);
+assert.equal(window.document.getElementById("contact-edit-name").value, "Edited name");
+await escape();
+await clickText(/^Bỏ thay đổi$|^Discard changes$/u);
+assert.equal(closes, 2);
+await mountEdit(() => { submissions++; return new Promise((_resolve, reject) => { rejectSubmit = reject; }); });
+await changeName("Pending edit");
+const form = window.document.getElementById("contact-edit-form");
+await act(async () => { form.dispatchEvent(new window.Event("submit", { bubbles: true, cancelable: true })); });
+await escape();
+await act(async () => { form.dispatchEvent(new window.Event("submit", { bubbles: true, cancelable: true })); });
+assert.equal(closes, 2);
+assert.equal(submissions, 1);
+assert.equal(window.document.querySelectorAll('[role="dialog"]').length, 1);
+await act(async () => { rejectSubmit({ code: "VALIDATION_FAILED", category: "validation", fieldErrors: { fullName: ["Check name"] } }); });
+assert.equal(window.document.getElementById("contact-edit-name").value, "Pending edit");
+assert.ok(window.document.querySelector('[role="alert"]'));
+assert.ok(window.document.body.textContent.includes("Check name"));
+assert.equal(window.document.querySelector('button[type="submit"]').disabled, false);
+await escape();
+assert.equal(window.document.querySelectorAll('[role="dialog"]').length, 2, "Failure keeps edit dirty.");
+await clickText(/Tiếp tục chỉnh sửa|Keep editing/u);
+await act(async () => root.render(React.createElement(I18nProvider, null, React.createElement(ContactMeetingModal, {
+  isOpen: true, onClose: () => { closes++; },
+  onSave: async () => { throw { code: "VALIDATION_FAILED", category: "validation" }; },
+}))));
+const meetingTitle = window.document.querySelector('form input');
+await act(async () => { setNativeValue.call(meetingTitle, "Meeting draft"); meetingTitle.dispatchEvent(new window.Event("input", { bubbles: true })); });
+await act(async () => window.document.getElementById("contact-meeting-form").dispatchEvent(new window.Event("submit", { bubbles: true, cancelable: true })));
+assert.ok(window.document.querySelector('[role="alert"]'), "Meeting async rejection must reach canonical shell.");
+assert.equal(meetingTitle.value, "Meeting draft");
+assert.equal(closes, 2);
+console.log("Contact Edit safety and actual Meeting Promise rejection: PASS");
 await act(async () => root.unmount());
 
-console.log("CRM UI interaction contracts: PASS");
+console.log("CRM UI interaction runtime: PASS");
 console.log("- Continuous modal typing retains focus across controlled rerenders.");
-console.log("- Lead toolbar, filters, modal footer, pagination, tab motion and task handover match the approved interaction model.");
+
+
+}

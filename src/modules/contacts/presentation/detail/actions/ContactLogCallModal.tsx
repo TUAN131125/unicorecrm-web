@@ -10,12 +10,13 @@ interface ContactLogCallModalProps {
     summary: string;
     nextFollowUpDate?: string;
     createFollowUpTask?: boolean;
-  }) => void;
+  }) => void | Promise<void>;
   isDoNotContact?: boolean;
 }
 
 export const ContactLogCallModal: React.FC<ContactLogCallModalProps> = ({ isOpen, onClose, onSave, isDoNotContact }) => (
   <CallActivityCreateModal
+    guardChanges
     isOpen={isOpen}
     onClose={onClose}
     formId="contact-log-call-form"

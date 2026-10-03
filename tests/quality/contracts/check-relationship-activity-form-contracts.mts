@@ -58,6 +58,20 @@ for (const adapter of directCallers.filter(([file]) => file.includes("contacts/p
   assert.ok(!source.includes("RelationshipQuickActionModal"), `${adapter} must not recreate the relationship activity form shell.`);
 }
 
+
+for (const [name, component, callback] of [
+  ["ContactLogCallModal", "CallActivityCreateModal", "onSave"],
+  ["ContactMeetingModal", "MeetingActivityCreateModal", "onSave"],
+  ["ContactSendEmailModal", "EmailActivityCreateModal", "onSend"],
+  ["ContactSendSmsModal", "SmsActivityCreateModal", "onSend"],
+]) {
+  const adapter = read(`src/modules/contacts/presentation/detail/actions/${name}.tsx`);
+  assert.match(adapter, new RegExp(`<${component}\\s+guardChanges\\b`, "u"));
+  assert.ok(adapter.includes("void | Promise<void>"));
+  assert.ok(!adapter.includes("useState") && !adapter.includes("RelationshipQuickActionModal"));
+  assert.match(adapter, new RegExp(`(?:=>\\s*|return\\s+)${callback}\\(`, "u"), `${name} must return the callback result.`);
+}
+
 const leadModalSource = read("src/modules/leads/presentation/components/LeadDetailModals.tsx");
 assert.ok(!leadModalSource.includes("RelationshipQuickActionModal"), "Lead quick activities must not own duplicate modal form markup.");
 assert.ok(!leadModalSource.includes('<form id="lead-quick-'), "Lead quick activities must not recreate local form elements.");

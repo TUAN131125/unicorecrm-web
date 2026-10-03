@@ -4,13 +4,14 @@ import { EmailActivityCreateModal, type EmailActivityDraft } from "@/modules/tas
 interface ContactSendEmailModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSend: (email: { to: string; subject: string; body: string; attachProposal?: boolean }) => void;
+  onSend: (email: { to: string; subject: string; body: string; attachProposal?: boolean }) => void | Promise<void>;
   prefilledEmail: string;
   isDoNotContact?: boolean;
 }
 
 export const ContactSendEmailModal: React.FC<ContactSendEmailModalProps> = ({ isOpen, onClose, onSend, prefilledEmail, isDoNotContact }) => (
   <EmailActivityCreateModal
+    guardChanges
     isOpen={isOpen}
     onClose={onClose}
     formId="contact-send-email-form"

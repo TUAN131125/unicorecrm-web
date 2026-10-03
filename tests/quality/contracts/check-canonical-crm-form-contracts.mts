@@ -137,3 +137,10 @@ assert.ok(!orderColumnAdapter.includes("<Modal"), "Order column settings must no
 assert.ok(!orderColumnAdapter.includes("onToggleColumn"), "Order column settings must save the canonical ordered selection atomically.");
 
 console.log("Canonical CRM form contracts PASS: Contact, Organization, Deal/Opportunity and Saved View, Quote entry and column settings families are centralized; callers are adapters/context owners only.");
+
+const guardedContactEdit = read("src/modules/contacts/presentation/detail/ContactEditModal.tsx");
+assert.match(guardedContactEdit, /<ContactFormModal\s+guardChanges\b/u);
+assert.ok(guardedContactEdit.includes('mode="edit"'));
+const guardedContactForm = read("src/modules/contacts/presentation/components/ContactFormModal.tsx");
+for (const token of ["guardChanges = false", "useUnsavedChangesGuard", "<ConfirmDialog", "initialDraft", "loading={isSubmitting}", "fieldErrors", "focusFirstInvalidField", "contacts.form.canonical"]) assert.ok(guardedContactForm.includes(token), token);
+assert.ok(!read("src/modules/contacts/presentation/list/ContactCreateModal.tsx").includes("guardChanges"));

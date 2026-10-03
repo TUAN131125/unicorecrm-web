@@ -33,5 +33,5 @@ export const ContactEditModal: React.FC<ContactEditModalProps> = ({ isOpen, onCl
     });
   };
 
-  return <ContactFormModal isOpen={isOpen} onClose={onClose} mode="edit" contact={contact} onSubmit={submit} />;
+  return <ContactFormModal guardChanges isOpen={isOpen} onClose={onClose} mode="edit" contact={contact} onSubmit={submit} />;
 };
