@@ -1,5 +1,6 @@
 import type { StoragePort } from "@/platform/persistence";
-import { CAPABILITIES, assertRuntimeCapability, assertRuntimeCommandAccess, assertRuntimeWorkspaceAccess, getFieldAccess } from "@/platform/access-control";
+import { CAPABILITIES, assertRuntimeCapability, assertRuntimeCommandAccess, assertRuntimeWorkspaceAccess } from "@/platform/access-control/authorization";
+import { getFieldAccess } from "@/platform/access-control/runtime/accessControlRuntime";
 import { createTask, reassignTask } from "../application/commands/taskCommands";
 import type { LeadHandoverTaskSnapshotCommand, LeadHandoverTaskSnapshotProof, TaskActivityRepository } from "../application/ports/TaskActivityRepository";
 import type { Activity, Task, TaskActivitySnapshot } from "../domain/model/task.types";

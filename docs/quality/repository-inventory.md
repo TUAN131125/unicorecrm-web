@@ -17,9 +17,9 @@ Do not delete a dead, compatibility, deprecated or duplicate candidate based on 
 
 | Metric | Count |
 |---|---:|
-| Repository files | 2080 |
+| Repository files | 2062 |
 | Source files | 1387 |
-| Source lines | 213247 |
+| Source lines | 213248 |
 | Registered modules | 15 |
 | Route keys | 80 |
 | Loadable route modules | 64 |
@@ -37,7 +37,7 @@ Do not delete a dead, compatibility, deprecated or duplicate candidate based on 
 | Quality groups | 11 |
 | Verify gates | 340 |
 
-Inventory fingerprint: `c82a1f4078f87b402a3d9e5238b1b41063d018c5da17d7a7276bcd0c88d2c377`
+Inventory fingerprint: `17598c07f6dbe2eb279aae132d44e77478cde3699dea701467a2043a57d07570`
 
 
 ## Quality pipeline
@@ -61,10 +61,10 @@ Inventory fingerprint: `c82a1f4078f87b402a3d9e5238b1b41063d018c5da17d7a7276bcd0c
 | Classification | Count |
 |---|---:|
 | `active-runtime` | 1302 |
-| `active-script` | 80 |
+| `active-script` | 66 |
 | `active-test` | 448 |
 | `compatibility` | 53 |
-| `documentation` | 192 |
+| `documentation` | 188 |
 | `fixture` | 3 |
 | `generated` | 2 |
 

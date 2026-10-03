@@ -3,7 +3,7 @@ import type { RelationshipRef } from "@/platform/identity";
 import type { TaskActivityRepository } from "../ports/TaskActivityRepository";
 import type { Activity, ActivityType, RecordRef, Task, TaskPriority, TaskSourceRef } from "../../domain/model/task.types";
 import { canTransitionTask } from "../../domain/rules/taskLifecycle";
-import { CAPABILITIES, assertRuntimeCommandAccess, assertRuntimeCapability, assertRuntimeWorkspaceAccess } from "@/platform/access-control";
+import { CAPABILITIES, assertRuntimeCommandAccess, assertRuntimeCapability, assertRuntimeWorkspaceAccess } from "@/platform/access-control/authorization";
 import { assertDestructiveActionAllowed } from "@/shared/application";
 import { publishNotification } from "@/platform/notifications";
 

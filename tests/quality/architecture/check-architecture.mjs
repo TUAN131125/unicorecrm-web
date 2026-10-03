@@ -708,7 +708,7 @@ function validateSourceStructureContracts() {
 
   const architectureDocument = fs.readFileSync(path.join(root, "ARCHITECTURE.md"), "utf8");
   const agentsDocument = fs.readFileSync(path.join(root, "AGENTS.md"), "utf8");
-  const workflowDocument = fs.readFileSync(path.join(root, "docs/architecture/module-ownership-and-workflows.md"), "utf8");
+  const workflowDocument = fs.readFileSync(path.join(root, "docs/architecture/module-ownership-and-workflows.md"), "utf8").replace(/\r\n?/gu, "\n");
   const compatibilityDocument = fs.readFileSync(path.join(root, "docs/architecture/compatibility-and-migration.md"), "utf8");
   const routingDocument = fs.readFileSync(path.join(root, "docs/architecture/routing-shell-and-access-control.md"), "utf8");
   const inventory = JSON.parse(fs.readFileSync(path.join(root, "docs/quality/repository-inventory.json"), "utf8"));
