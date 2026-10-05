@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { registerUnsavedWork } from "@/platform/unsaved-work";
 import type { Lead } from "../../domain/model/lead.types";
 import { useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
 import { toDateKeyInTimeZone } from "@/shared/lib/datetime/workspaceDateTime";
@@ -11,11 +12,43 @@ export function useLeadDetailDialogs(lead: Lead | undefined, routeLeadId: string
   const [disqualifyReasonText, setDisqualifyReasonText] = useState("");
 
   type FormKind = "edit" | "handover" | "call" | "task" | "meeting" | "email" | "sms";
-  const [activeForm, setActiveForm] = useState<FormKind | null>(null);
-  // Background triggers cannot replace a live draft; close the current surface first.
+  const latestLead = useRef(lead);
+  latestLead.current = lead;
+  const [formIntent, setFormIntent] = useState<{ kind: FormKind; lead: Lead } | null>(null);
+  const [editDirty, setEditDirty] = useState(false);
+  const [editSubmitting, setEditSubmitting] = useState(false);
+  const activeForm = formIntent?.kind ?? null;
+  const boundLead = formIntent?.lead;
+  const submitting = useRef(false);
+  submitting.current = editSubmitting;
+  const callbackTargetId = boundLead?.id ?? routeLeadId;
   const setForm = useCallback((kind: FormKind, open: boolean) => {
-    setActiveForm((current) => open ? current ?? kind : current === kind ? null : current);
+    setFormIntent((current) => {
+      if (!open) return current?.kind === kind && current.lead.id === callbackTargetId ? null : current;
+      if (current || !latestLead.current) return current;
+      return { kind, lead: structuredClone(latestLead.current) };
+    });
+  }, [callbackTargetId]);
+  const discardActiveForm = useCallback(() => {
+    // An in-flight operation keeps its opening target until its own completion.
+    if (!submitting.current) setFormIntent(null);
   }, []);
+  useEffect(() => {
+    if (!formIntent) return;
+    return registerUnsavedWork({
+      id: `lead-form:${formIntent.lead.id}`, title: formIntent.lead.name,
+      // Sibling forms own their local drafts. Require explicit resolution while
+      // one is open; never assume their draft is clean from screen state alone.
+      isDirty: formIntent.kind !== "edit" || editDirty || editSubmitting,
+      save: async () => false, discard: discardActiveForm,
+    });
+  }, [discardActiveForm, editDirty, editSubmitting, formIntent]);
+  useEffect(() => {
+    if (formIntent?.kind === "edit" && formIntent.lead.id !== routeLeadId && !editDirty && !editSubmitting) setFormIntent(null);
+  }, [editDirty, editSubmitting, formIntent, routeLeadId]);
+  useEffect(() => {
+    if (!formIntent) { setEditDirty(false); setEditSubmitting(false); }
+  }, [formIntent]);
   const showEditModal = activeForm === "edit";
   const setShowEditModal = useCallback((open: boolean) => setForm("edit", open), [setForm]);
   const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
@@ -25,15 +58,6 @@ export function useLeadDetailDialogs(lead: Lead | undefined, routeLeadId: string
   const [tagsAnchor, setTagsAnchor] = useState<HTMLElement | null>(null);
   const [handoverOwnerId, setHandoverOwnerId] = useState("");
   const [handoverReason, setHandoverReason] = useState("");
-  const handoverLeadId = useRef(routeLeadId);
-  useEffect(() => {
-    if (handoverLeadId.current === routeLeadId) return;
-    handoverLeadId.current = routeLeadId;
-    setActiveForm((current) => current === "handover" ? null : current);
-    setHandoverOwnerId("");
-    setHandoverReason("");
-  }, [routeLeadId]);
-
   const showCallModal = activeForm === "call";
   const setShowCallModal = useCallback((open: boolean) => setForm("call", open), [setForm]);
   const showTaskModal = activeForm === "task";
@@ -86,7 +110,25 @@ export function useLeadDetailDialogs(lead: Lead | undefined, routeLeadId: string
     to: lead?.phone || "",
   });
 
+  const defaults = useRef({ callForm, meetingForm, emailForm, smsForm });
+  const draftTarget = useRef(lead?.id);
+  useEffect(() => {
+    // Reset only after the previous opening intent has been resolved. A refresh
+    // of the same record must never replace an active draft.
+    if (formIntent || !lead || draftTarget.current === lead.id) return;
+    draftTarget.current = lead.id;
+    setCallForm({ ...defaults.current.callForm, phone: lead.phone || "", potential: lead.name,
+      campaignId: lead.campaignId || "", ownerId: lead.ownerId || "" });
+    setMeetingForm({ ...defaults.current.meetingForm, performer: lead.ownerId || "" });
+    setEmailForm({ ...defaults.current.emailForm, to: lead.email || "" });
+    setSmsForm({ ...defaults.current.smsForm, to: lead.phone || "" });
+    setHandoverOwnerId("");
+    setHandoverReason("");
+  }, [formIntent, lead]);
+
   return {
+    boundLead, activeForm, setEditDirty, setEditSubmitting, discardActiveForm,
+    targetChangeRequested: Boolean(boundLead && boundLead.id !== routeLeadId),
     showDisqualifyModal, setShowDisqualifyModal,
     disqualifyCategory, setDisqualifyCategory,
     disqualifyReasonText, setDisqualifyReasonText,

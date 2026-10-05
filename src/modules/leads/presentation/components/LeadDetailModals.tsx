@@ -127,6 +127,13 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
   const editUnsavedChanges = useUnsavedChangesGuard(closeEditModal);
   const editPending = React.useRef(false);
   const requestEditClose = () => { if (!editPending.current) editUnsavedChanges.requestClose(); };
+  React.useEffect(() => {
+    if (dialogs.targetChangeRequested && showEditModal && !editPending.current) editUnsavedChanges.requestClose();
+  }, [dialogs.targetChangeRequested, showEditModal]);
+  const reportEditDirty = React.useCallback((dirty: boolean) => {
+    editUnsavedChanges.setIsDirty(dirty);
+    dialogs.setEditDirty(dirty);
+  }, [editUnsavedChanges.setIsDirty, dialogs.setEditDirty]);
   const [tagDraft, setTagDraft] = React.useState("");
   const [archivePending, setArchivePending] = React.useState(false);
   React.useEffect(() => { if (!showTagsModal) setTagDraft(""); }, [showTagsModal]);
@@ -363,6 +370,7 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
       >
         <React.Suspense fallback={<div className="p-6 text-sm text-slate-500">{locale === "vi" ? "Đang tải biểu mẫu…" : "Loading form…"}</div>}>
         <LeadForm
+          key={lead.id}
           initialLead={lead}
           ownerOptions={members}
           sources={sources}
@@ -372,11 +380,12 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
           canAssignOwner={false}
           onSubmit={async (draft) => {
             editPending.current = true;
+            dialogs.setEditSubmitting(true);
             try { await handleSaveEditFromForm(draft); }
-            finally { editPending.current = false; }
+            finally { editPending.current = false; dialogs.setEditSubmitting(false); }
           }}
           onCancel={requestEditClose}
-          onDirtyChange={editUnsavedChanges.setIsDirty}
+          onDirtyChange={reportEditDirty}
           isEdit={true}
           footerPortalId="lead-edit-modal-footer"
         />

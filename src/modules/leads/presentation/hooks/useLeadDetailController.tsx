@@ -75,9 +75,9 @@ export interface LeadDetailPageProps {
 }
 export function useLeadDetailRouteFeature(leadId: string, observedLead: Lead | undefined) {
   const { leads } = useLeads({ loadAuthoritative: false });
-  const lead = observedLead ?? (!isLeadConnectedApiRuntime() ? leads.find(item => item.id === leadId) : undefined);
-  const handover = useLeadHandover({ leadId, observedLead: lead });
+  const lead = observedLead?.id === leadId ? observedLead : (!isLeadConnectedApiRuntime() ? leads.find(item => item.id === leadId) : undefined);
   const dialogs = useLeadDetailDialogs(lead, leadId);
+  const handover = useLeadHandover({ leadId: dialogs.boundLead?.id ?? leadId, observedLead: dialogs.boundLead ?? lead });
   const [receiptError, setReceiptError] = useState<string | null>(null);
   const { locale } = useI18n();
   useEffect(() => setReceiptError(null), [leadId]);
@@ -118,7 +118,7 @@ export function useLeadDetailReadController(props: LeadDetailPageProps, feature:
   const { leads } = useLeads({ loadAuthoritative: false });
   const leadActions = useLeadActions();
   const referenceData = useLeadReferenceData(sources, campaigns);
-  const workResources = useLeadDetailWorkResources(leadId ?? "");
+  const workResources = useLeadDetailWorkResources(feature.dialogs.boundLead?.id ?? leadId ?? "");
   const careCases = useSubscribableSnapshot(getSupportCasesSnapshot, subscribeToSupportCases);
   const ownership = useRecordOwnershipContext("leads", CAPABILITIES.LEADS_ASSIGN);
   const access = useEffectiveAccess();
@@ -128,9 +128,9 @@ export function useLeadDetailReadController(props: LeadDetailPageProps, feature:
   const workspace = useWorkspaceContextSnapshot();
   const configurationRuntime = useConfigurationRuntime();
   const lt = (viText: string, enText: string) => (locale === "vi" ? viText : enText);
-  const lead = authoritativeLead?.id === leadId
+  const lead = feature.dialogs.boundLead ?? (authoritativeLead?.id === leadId
     ? authoritativeLead
-    : leads.find(l => l.id === leadId);
+    : leads.find(l => l.id === leadId));
   const canEdit = canUpdatePermission && !lead?.archivedAt;
   const canRecordConsent = canEdit && isLeadOperationAvailable(LEAD_OPERATION.RECORD_CONSENT);
   const canQualify = canQualifyPermission && !lead?.archivedAt;
