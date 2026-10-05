@@ -3,6 +3,8 @@ export interface UnsavedWorkEntry {
   title: string;
   isDirty: boolean;
   save(): Promise<boolean>;
+  /** Non-mutating preflight; absent means discard is allowed. */
+  canDiscard?(): boolean;
   discard(): void;
 }
 
@@ -47,6 +49,9 @@ export async function saveDirtyUnsavedWork(): Promise<boolean> {
   return true;
 }
 
-export function discardDirtyUnsavedWork(): void {
-  getDirtyUnsavedWork().forEach((entry) => entry.discard());
+export function discardDirtyUnsavedWork(): boolean {
+  const dirtyEntries = getDirtyUnsavedWork();
+  if (dirtyEntries.some((entry) => entry.canDiscard?.() === false)) return false;
+  dirtyEntries.forEach((entry) => entry.discard());
+  return true;
 }

@@ -168,7 +168,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
       });
       if (decision === "stay" || decision === null) return;
       if (decision === "save" && !(await saveDirtyUnsavedWork())) return;
-      if (decision === "discard") discardDirtyUnsavedWork();
+      if (decision === "discard" && !discardDirtyUnsavedWork()) return;
     }
 
     const currentContext = parseCanonicalRoute(location.pathname);
@@ -309,8 +309,8 @@ const UnsavedNavigationGuard: React.FC<{
         if (await saveDirtyUnsavedWork()) blocker.proceed();
         else blocker.reset();
       } else if (decision === "discard") {
-        discardDirtyUnsavedWork();
-        blocker.proceed();
+        if (discardDirtyUnsavedWork()) blocker.proceed();
+        else blocker.reset();
       } else {
         blocker.reset();
       }

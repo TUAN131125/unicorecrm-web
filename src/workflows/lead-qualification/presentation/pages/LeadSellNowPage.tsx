@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useTargetBoundWorkflow } from "@/shared/presentation/useTargetBoundWorkflow";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, FileText, PackageCheck, Plus, ShoppingCart, Trash2 } from "lucide-react";
 import { Button, Input, Select } from "@/shared/components/ui";
@@ -59,7 +60,8 @@ export const LeadSellNowPage: React.FC = () => {
   const crmConfig = useWorkspaceConfigSnapshot();
   const operationalConfiguration = useWorkspaceOperationalConfiguration();
   const access = useEffectiveAccess();
-  const [lead, setLead] = useState<Lead | undefined>(() => leadId ? getLeadSnapshot(leadId) : undefined);
+  const lifecycle = useTargetBoundWorkflow(leadId, "Lead direct sale");
+  const [lead, setLead] = useState<Lead | undefined>(() => lifecycle.targetId ? getLeadSnapshot(lifecycle.targetId) : undefined);
   const [contacts, setContacts] = useState<Contact[]>(() => getContactsSnapshot());
   const [organizations, setOrganizations] = useState<OrganizationAccount[]>(() => getOrganizationAccountsSnapshot());
   const [products, setProducts] = useState<Product[]>(() => getProductCatalogSnapshot());
@@ -71,29 +73,38 @@ export const LeadSellNowPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ quoteId?: string; orderId?: string } | null>(null);
 
-  useEffect(() => subscribeToLeads(() => setLead(leadId ? getLeadSnapshot(leadId) : undefined)), [leadId]);
+  useEffect(() => { const refresh = () => setLead(current => current?.id === lifecycle.targetId ? current : lifecycle.targetId ? getLeadSnapshot(lifecycle.targetId) : undefined); refresh(); return subscribeToLeads(refresh); }, [lifecycle.targetId]);
   useEffect(() => subscribeToContacts(setContacts), []);
   useEffect(() => subscribeToOrganizationAccounts(setOrganizations), []);
   useEffect(() => subscribeToProductCatalog(setProducts), []);
-  useEffect(() => {
-    if (!lead) return;
-    setRelationship((current) => current ?? createRelationshipInput(lead));
-    setTitle((current) => current || `${vi ? "Bán trực tiếp" : "Direct Sale"} - ${lead.companyName || lead.name}`);
-  }, [lead, vi]);
-  useEffect(() => {
-    if (!lead || selectedItems.length > 0 || products.length === 0) return;
-    const seeded = leadInterestToSelectedItems(lead, products);
-    if (seeded.length > 0) setSelectedItems(seeded);
-  }, [lead, products, selectedItems.length]);
 
   const quoteEnabled = crmConfig.modules.quotes && crmConfig.workflow.quoteUsageMode !== "DISABLED";
   const orderEnabled = crmConfig.modules.orders !== false;
   const eligible = lead?.leadWorkState === LeadWorkState.VERIFYING;
   const actorCanSellNow = access.canPerform("orders", "create");
 
+  const initialized = useRef<string | undefined>(undefined);
+  const canonical = useRef("");
+  const fingerprint = JSON.stringify({ relationship, path, title, selectedItems });
+  const reset = () => {
+    if (!lead || lead.id !== lifecycle.targetId) return;
+    const defaults = { relationship: createRelationshipInput(lead), path: quoteEnabled ? "QUOTE" as const : "ORDER" as const,
+      title: `${vi ? "Bán trực tiếp" : "Direct Sale"} - ${lead.companyName || lead.name}`,
+      selectedItems: leadInterestToSelectedItems(lead, products) };
+    canonical.current = JSON.stringify(defaults);
+    setRelationship(defaults.relationship); setPath(defaults.path); setTitle(defaults.title); setSelectedItems(defaults.selectedItems);
+    setPickerOpen(false); setError(null); setResult(null);
+  };
   useEffect(() => {
-    if (!quoteEnabled) setPath("ORDER");
-  }, [quoteEnabled]);
+    const identity = `${lifecycle.targetId}:${lifecycle.cycle}`;
+    if (lead && lead.id === lifecycle.targetId && initialized.current !== identity) { initialized.current = identity; reset(); }
+    else if (lead && lead.id === lifecycle.targetId && fingerprint === canonical.current && selectedItems.length === 0 && leadInterestToSelectedItems(lead, products).length > 0) {
+      // Late catalog availability may initialize untouched defaults, never a user-cleared draft.
+      reset();
+    }
+  });
+  const saveRef = useRef<() => Promise<boolean>>(async () => false);
+  lifecycle.register(Boolean(canonical.current && fingerprint !== canonical.current && !result), reset, () => saveRef.current());
 
   const total = useMemo(() => selectedItems.reduce((sum, item) => {
     const unitPrice = item.customPrice ?? item.product.listPrice;
@@ -104,10 +115,11 @@ export const LeadSellNowPage: React.FC = () => {
     return <div className="max-w-3xl mx-auto bg-white border border-slate-200 rounded-xl p-8 text-center text-sm text-slate-500">{vi ? "Không tìm thấy Lead." : "Lead not found."}</div>;
   }
 
-  const execute = async () => {
+  const execute = async (): Promise<boolean> => {
+    if (lead.id !== lifecycle.targetId || !lifecycle.begin()) return false;
     setError(null);
     try {
-      if (!relationship) { setError(vi ? "Thiếu buyer relationship." : "Buyer relationship is missing."); return; }
+      if (!relationship) { setError(vi ? "Thiếu buyer relationship." : "Buyer relationship is missing."); return false; }
       const workflowOutcome = await executeLeadDirectSaleCommand({
         leadId: lead.id,
         relationship,
@@ -131,13 +143,19 @@ export const LeadSellNowPage: React.FC = () => {
           billingCycle: item.billingCycle || item.product.billingCycle,
         })),
       });
+      if (!lifecycle.isCurrent()) return true;
       setResult({ quoteId: workflowOutcome.data.quoteId, orderId: workflowOutcome.data.orderId });
+      return true;
     } catch (caught) {
+      if (!lifecycle.isCurrent()) return false;
       // MA-08: the direct-sale workflow refusal is an internal diagnostic; the central
       // formatter decides what the user may see.
       setError(formatApplicationError(caught, { locale }));
-    }
+      return false;
+    } finally { lifecycle.finish(); }
   };
+
+  saveRef.current = execute;
 
   if (result) {
     return (
@@ -170,7 +188,7 @@ export const LeadSellNowPage: React.FC = () => {
       {!eligible && <div className="p-4 rounded-xl border border-amber-200 bg-amber-50 text-amber-800 font-semibold">{vi ? "Lead phải ở bước Đang xác minh trước khi Bán trực tiếp." : "Lead must be in Verifying before Sell Now."}</div>}
       {!actorCanSellNow && <div className="p-4 rounded-xl border border-rose-200 bg-rose-50 text-rose-700 font-semibold">{vi ? "Vai trò hiện tại không có quyền tạo giao dịch Bán trực tiếp." : "The current role is not permitted to create a Sell Now transaction."}</div>}
 
-      <div className="bg-white rounded-xl border border-slate-200 p-6 space-y-6 shadow-sm">
+      <fieldset disabled={lifecycle.pending} className="bg-white rounded-xl border border-slate-200 p-6 space-y-6 shadow-sm">
         {relationship && <RelationshipResolutionFields value={relationship} onChange={setRelationship} contacts={contacts} organizations={organizations} locale={locale} />}
 
         <div className="pt-5 border-t border-slate-100 space-y-4">
@@ -215,15 +233,15 @@ export const LeadSellNowPage: React.FC = () => {
 
         {error && <div className="p-3 rounded-lg border border-rose-200 bg-rose-50 text-rose-700 font-semibold">{error}</div>}
         <div className="flex justify-end">
-          <Button variant="primary" icon={<ShoppingCart size={14} />} onClick={execute} disabled={!eligible || !actorCanSellNow || selectedItems.length === 0 || (path === "QUOTE" ? !quoteEnabled : !orderEnabled)}>{vi ? "Bắt đầu Direct Sale" : "Start Direct Sale"}</Button>
+          <Button variant="primary" icon={<ShoppingCart size={14} />} onClick={execute} disabled={lifecycle.pending || !eligible || !actorCanSellNow || selectedItems.length === 0 || (path === "QUOTE" ? !quoteEnabled : !orderEnabled)}>{vi ? "Bắt đầu Direct Sale" : "Start Direct Sale"}</Button>
         </div>
-      </div>
+      </fieldset>
 
       <ProductPickerModal
         id="lead-sell-now-product-picker"
-        isOpen={pickerOpen}
+        isOpen={pickerOpen && !lifecycle.pending}
         onClose={() => setPickerOpen(false)}
-        onApply={(items) => { setSelectedItems(items); setPickerOpen(false); }}
+        onApply={(items) => { if (!lifecycle.isCurrent() || lifecycle.pending) return; setSelectedItems(items); setPickerOpen(false); }}
         products={products}
         initialSelected={selectedItems}
         context={path === "QUOTE" ? "quote" : "order"}

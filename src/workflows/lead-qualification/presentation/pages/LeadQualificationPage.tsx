@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { useTargetBoundWorkflow } from "@/shared/presentation/useTargetBoundWorkflow";
 import { useNavigate, useParams } from "react-router-dom";
 import { ArrowLeft, Ban, HeartHandshake, ShoppingCart, TrendingUp } from "lucide-react";
 import { Button, Checkbox, Input, Textarea } from "@/shared/components/ui";
@@ -156,7 +157,8 @@ export const LeadQualificationPage: React.FC = () => {
   const operationalConfiguration = useWorkspaceOperationalConfiguration();
   const organizationAvailable = !isLeadOrganizationQualificationUnavailable();
   const directSaleAvailable = !isLeadDirectSaleQualificationUnavailable();
-  const [lead, setLead] = useState<Lead | undefined>(() => leadId ? getLeadSnapshot(leadId) : undefined);
+  const lifecycle = useTargetBoundWorkflow(leadId, "Lead qualification");
+  const [lead, setLead] = useState<Lead | undefined>(() => lifecycle.targetId ? getLeadSnapshot(lifecycle.targetId) : undefined);
   const [contacts, setContacts] = useState<Contact[]>(() => getContactsSnapshot());
   const [organizations, setOrganizations] = useState<OrganizationAccount[]>(() => getOrganizationAccountsSnapshot());
   const [products, setProducts] = useState<Product[]>(() => getProductCatalogSnapshot());
@@ -177,23 +179,46 @@ export const LeadQualificationPage: React.FC = () => {
   const [operationError, setOperationError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<LeadQualificationFieldErrors>({});
   const [submitting, setSubmitting] = useState(false);
+  const [resolvedTarget, setResolvedTarget] = useState<string>();
   const [completion, setCompletion] = useState<{
     result: LeadQualificationResult;
     outcome?: "COMMITTED" | "REPLAYED" | "DEMO_COMMITTED";
   } | null>(null);
 
-  useEffect(() => subscribeToLeads(() => setLead(leadId ? getLeadSnapshot(leadId) : undefined)), [leadId]);
+  useEffect(() => { const refresh = () => setLead(current => current?.id === lifecycle.targetId ? current : lifecycle.targetId ? getLeadSnapshot(lifecycle.targetId) : undefined); refresh(); return subscribeToLeads(refresh); }, [lifecycle.targetId]);
   useEffect(() => subscribeToContacts(setContacts), []);
   useEffect(() => subscribeToOrganizationAccounts(setOrganizations), []);
   useEffect(() => subscribeToProductCatalog(setProducts), []);
+  const initialized = useRef<string | undefined>(undefined);
+  const canonical = useRef("");
+  const fingerprint = JSON.stringify({ selectedOutcome, relationship, reason, evidence, revisitAt, dealName, needSummary, estimatedValue, expectedCloseDate, createFollowUpTask, followUpTaskTitle, followUpTaskDueAt, interestedProductIds });
+  const reset = () => {
+    if (!lead || lead.id !== lifecycle.targetId) return;
+    const defaults = {
+      selectedOutcome: null, relationship: createRelationshipInput(lead, organizationAvailable),
+      reason: "", evidence: "", revisitAt: "",
+      dealName: `${vi ? "Cơ hội" : "Opportunity"} - ${lead.companyName || lead.name}`,
+      needSummary: lead.painPoint || lead.qualificationNotes || "",
+      estimatedValue: lead.expectedValue === undefined ? "" : String(lead.expectedValue),
+      expectedCloseDate: "", createFollowUpTask: false, followUpTaskTitle: "", followUpTaskDueAt: "",
+      interestedProductIds: leadInterestedProductIds(lead),
+    };
+    canonical.current = JSON.stringify(defaults);
+    setSelectedOutcome(null); setRelationship(defaults.relationship); setReason(""); setEvidence(""); setRevisitAt("");
+    setDealName(defaults.dealName); setNeedSummary(defaults.needSummary); setEstimatedValue(defaults.estimatedValue);
+    setExpectedCloseDate(""); setCreateFollowUpTask(false); setFollowUpTaskTitle(""); setFollowUpTaskDueAt("");
+    setInterestedProductIds(defaults.interestedProductIds); setProductPickerOpen(false); setOperationError(null); setFieldErrors({}); setCompletion(null); setResolvedTarget(undefined);
+  };
   useEffect(() => {
-    if (!lead) return;
-    setRelationship((current) => current ?? createRelationshipInput(lead, organizationAvailable));
-    setDealName((current) => current || `${vi ? "Cơ hội" : "Opportunity"} - ${lead.companyName || lead.name}`);
-    setNeedSummary((current) => current || lead.painPoint || lead.qualificationNotes || "");
-    setEstimatedValue((current) => current || (lead.expectedValue === undefined ? "" : String(lead.expectedValue)));
-    setInterestedProductIds((current) => current.length > 0 ? current : leadInterestedProductIds(lead));
-  }, [lead, organizationAvailable, vi]);
+    const identity = `${lifecycle.targetId}:${lifecycle.cycle}`;
+    if (lead && lead.id === lifecycle.targetId && initialized.current !== identity) { initialized.current = identity; reset(); }
+  });
+  const saveRef = useRef<() => Promise<boolean>>(async () => false);
+  lifecycle.register(Boolean(canonical.current && fingerprint !== canonical.current && !completion), reset, () => saveRef.current());
+
+  useEffect(() => {
+    if (resolvedTarget && !lifecycle.pending && leadId === resolvedTarget) navigate(`/leads/${resolvedTarget}`);
+  }, [resolvedTarget, lifecycle.pending, leadId, navigate]);
 
   const dealEnabled = crmConfig.modules.deals && crmConfig.workflow.dealUsageMode !== "DISABLED";
   const eligible = lead?.leadWorkState === LeadWorkState.VERIFYING;
@@ -215,9 +240,8 @@ export const LeadQualificationPage: React.FC = () => {
     setFieldErrors((current) => ({ ...current, [key]: undefined }));
   };
 
-  const run = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (submitting) return;
+  const submitQualification = async (navigateOnSuccess = false): Promise<boolean> => {
+    if (lead.id !== lifecycle.targetId || !lifecycle.begin()) return false;
     setOperationError(null);
     setFieldErrors({});
 
@@ -248,24 +272,28 @@ export const LeadQualificationPage: React.FC = () => {
     if (Object.keys(localErrors).length > 0) {
       setFieldErrors(localErrors);
       focusFirstInvalidField(localErrors);
-      return;
+      lifecycle.finish();
+      return false;
     }
 
     setSubmitting(true);
     try {
-      if (!eligible) { setOperationError(vi ? "Tiềm năng phải ở bước Đang xác minh." : "Lead must be in Verifying."); return; }
+      if (!eligible) { setOperationError(vi ? "Tiềm năng phải ở bước Đang xác minh." : "Lead must be in Verifying."); return false; }
       if (selectedOutcome === "DISQUALIFIED") {
         await disqualifyLeadViaApi(lead.id, { reason, evidence });
-        navigate(`/leads/${lead.id}`);
+        if (!lifecycle.isCurrent()) return true;
+        canonical.current = fingerprint;
+        if (navigateOnSuccess) setResolvedTarget(lead.id);
       } else if (selectedOutcome === "NURTURE") {
-        if (!lead.ownerId) { setOperationError(vi ? "Lead chưa có người phụ trách." : "The Lead has no owner."); return; }
-        if (!relationship) { setOperationError(vi ? "Thiếu thông tin quan hệ khách hàng." : "Relationship input is missing."); return; }
+        if (!lead.ownerId) { setOperationError(vi ? "Lead chưa có người phụ trách." : "The Lead has no owner."); return false; }
+        if (!relationship) { setOperationError(vi ? "Thiếu thông tin quan hệ khách hàng." : "Relationship input is missing."); return false; }
         const outcome = await executeLeadNurtureCommand({ leadId: lead.id, relationship, revisitAt, reason, note: evidence, ownerId: lead.ownerId });
+        if (!lifecycle.isCurrent()) return true;
         setCompletion({ result: outcome.data, ...(outcome.outcome === undefined ? {} : { outcome: outcome.outcome }) });
         setSelectedOutcome(null);
       } else if (selectedOutcome === "OPPORTUNITY") {
-        if (!lead.ownerId) { setOperationError(vi ? "Lead chưa có người phụ trách." : "The Lead has no owner."); return; }
-        if (!relationship) { setOperationError(vi ? "Thiếu thông tin quan hệ khách hàng." : "Relationship input is missing."); return; }
+        if (!lead.ownerId) { setOperationError(vi ? "Lead chưa có người phụ trách." : "The Lead has no owner."); return false; }
+        if (!relationship) { setOperationError(vi ? "Thiếu thông tin quan hệ khách hàng." : "Relationship input is missing."); return false; }
         const outcome = await executeLeadOpportunityCommand({
           leadId: lead.id,
           relationship,
@@ -285,13 +313,16 @@ export const LeadQualificationPage: React.FC = () => {
             } : undefined,
           },
         });
+        if (!lifecycle.isCurrent()) return true;
         setCompletion({ result: outcome.data, ...(outcome.outcome === undefined ? {} : { outcome: outcome.outcome }) });
         setSelectedOutcome(null);
       } else {
         setOperationError(vi ? "Chọn một kết quả xử lý." : "Choose a qualification outcome.");
-        return;
+        return false;
       }
+      return true;
     } catch (caught) {
+      if (!lifecycle.isCurrent()) return false;
       if (caught instanceof LeadQualificationValidationError) {
         const localizedErrors = localizeQualificationErrors(caught.fieldErrors, vi);
         setFieldErrors(localizedErrors);
@@ -308,10 +339,15 @@ export const LeadQualificationPage: React.FC = () => {
         // command classifications). The central formatter owns what a user may see.
         setOperationError(formatApplicationError(caught, { locale }));
       }
+      return false;
     } finally {
-      setSubmitting(false);
+      lifecycle.finish();
+      if (lifecycle.isCurrent()) setSubmitting(false);
     }
   };
+
+  saveRef.current = submitQualification;
+  const run = (event: React.FormEvent) => { event.preventDefault(); void submitQualification(true); };
 
   return (
     <div className="mx-auto max-w-5xl space-y-6 p-2 text-xs">
@@ -348,7 +384,7 @@ export const LeadQualificationPage: React.FC = () => {
             <button
               key={card.key}
               type="button"
-              disabled={unavailable}
+              disabled={unavailable || lifecycle.pending}
               onClick={() => { setSelectedOutcome(card.key); setFieldErrors({}); setOperationError(null); }}
               className={`rounded-xl border p-4 text-left transition ${selectedOutcome === card.key ? "border-indigo-400 bg-indigo-50" : "border-slate-200 bg-white hover:border-indigo-200"} disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-60`}
             >
@@ -359,7 +395,7 @@ export const LeadQualificationPage: React.FC = () => {
             </button>
           );
         })}
-        <button type="button" disabled={!directSaleAvailable} onClick={() => navigate(`/leads/${lead.id}/sell-now`)} className="rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:border-emerald-300 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-60">
+        <button type="button" disabled={!directSaleAvailable || lifecycle.pending} onClick={() => navigate(`/leads/${lead.id}/sell-now`)} className="rounded-xl border border-slate-200 bg-white p-4 text-left transition hover:border-emerald-300 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-60">
           <ShoppingCart size={18} className="text-emerald-600" />
           <div className="mt-3 font-semibold text-slate-900">{vi ? "Bán trực tiếp" : "Sell now"}</div>
           <div className="mt-1 text-[11px] leading-relaxed text-slate-500">{vi ? "Tạo báo giá hoặc đơn hàng mà không tạo cơ hội ngầm." : "Create a quote or order without a hidden opportunity."}</div>
@@ -369,6 +405,7 @@ export const LeadQualificationPage: React.FC = () => {
 
       {selectedOutcome && (
         <form onSubmit={run} className="crm-form-surface space-y-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm" noValidate>
+          <fieldset disabled={lifecycle.pending} className="space-y-5">
           {selectedOutcome === "DISQUALIFIED" && (
             <div className="grid grid-cols-1 gap-4">
               <Input id="qualification-disqualified-reason" label={vi ? "Lý do không phù hợp" : "Disqualification reason"} value={reason} onChange={(event) => { setReason(event.target.value); clearFieldError("disqualified.reason"); }} error={fieldErrors["disqualified.reason"]} required />
@@ -487,17 +524,19 @@ export const LeadQualificationPage: React.FC = () => {
           <div className="flex justify-end">
             <Button type="submit" variant="primary" loading={submitting} disabled={!eligible || (selectedOutcome === "OPPORTUNITY" && !dealEnabled)}>{vi ? "Xác nhận kết quả" : "Commit outcome"}</Button>
           </div>
+          </fieldset>
         </form>
       )}
 
       <ProductPickerModal
         id="qualification-product-picker"
-        isOpen={productPickerOpen}
+        isOpen={productPickerOpen && !lifecycle.pending}
         onClose={() => setProductPickerOpen(false)}
         products={products}
         context="lead_interest"
         initialSelected={selectedProductItems}
         onApply={(items) => {
+          if (!lifecycle.isCurrent() || lifecycle.pending) return;
           setInterestedProductIds(items.map((item) => item.product.id));
           clearFieldError("deal.interestedProducts");
           clearFieldError("deal.needSummary");
