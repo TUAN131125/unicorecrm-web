@@ -87,8 +87,7 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
   const disqualifyOpening = React.useRef({ category: disqualifyCategory, reason: disqualifyReasonText });
   const closeDisqualify = React.useCallback(() => {
     setShowDisqualifyModal(false);
-    setDisqualifyReasonText("");
-  }, [setShowDisqualifyModal, setDisqualifyReasonText]);
+  }, [setShowDisqualifyModal]);
   const disqualifyGuard = useUnsavedChangesGuard(closeDisqualify);
   React.useEffect(() => {
     if (showDisqualifyModal && !disqualifyWasOpen.current) {
@@ -108,17 +107,22 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
   const requestDisqualifyClose = () => {
     if (!disqualifyPending.current) disqualifyGuard.requestClose();
   };
+  React.useEffect(() => {
+    if (dialogs.targetChangeRequested && showDisqualifyModal && !disqualifyPending.current) disqualifyGuard.requestClose();
+  }, [dialogs.targetChangeRequested, showDisqualifyModal]);
   const submitDisqualify = async () => {
     if (disqualifyPending.current) return;
+    if (!dialogs.setActiveInteractionPending(true)) return;
     disqualifyPending.current = true;
     setDisqualifySubmitting(true);
     setDisqualifyError("");
     try {
       await handleConfirmDisqualify();
     } catch (failure) {
-      setDisqualifyError(formatApplicationError(normalizeApplicationError(failure), { locale }));
+      if (dialogs.isCurrentInteraction()) setDisqualifyError(formatApplicationError(normalizeApplicationError(failure), { locale }));
     } finally {
       disqualifyPending.current = false;
+      dialogs.setActiveInteractionPending(false);
       setDisqualifySubmitting(false);
     }
   };
@@ -219,8 +223,9 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
         onConfirm={() => {
           if (archivePending) return;
           setArchivePending(true);
+          dialogs.setActiveInteractionPending(true);
           void leadActions.archive(lead.id).then(() => {
-            setShowArchiveConfirm(false);
+            dialogs.resolveInteraction("archive");
             showToast(locale === "vi" ? `Đã lưu trữ tiềm năng ${lead.name}.` : `Archived lead ${lead.name}.`);
             navigate(archiveListPath);
           }).catch(async (error: unknown) => {
@@ -229,7 +234,7 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
               await getLeadDetailResource(lead.id).refresh();
             }
             showToast(formatApplicationError(applicationError, { locale }));
-          }).finally(() => setArchivePending(false));
+          }).finally(() => { setArchivePending(false); dialogs.setActiveInteractionPending(false); });
         }}
       />
 

@@ -150,7 +150,7 @@ export function useLeadDetailReadController(props: LeadDetailPageProps, feature:
     && !lead?.archivedAt;
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [showVerificationReadiness, setShowVerificationReadiness] = useState(false);
+  const { showVerificationReadiness, setShowVerificationReadiness } = dialogs;
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3000);
@@ -229,6 +229,7 @@ export function useLeadDetailReadController(props: LeadDetailPageProps, feature:
   };
 
   const commitStartVerification = async (input?: LeadTransitionProfileInput) => {
+    if (showVerificationReadiness && !dialogs.setActiveInteractionPending(true)) return;
     const activity: CRMActivity = {
       id: `act_work_state_${Date.now()}`,
       title: locale === "vi" ? "Lead đạt chất lượng sơ bộ" : "Lead is ready for verification",
@@ -239,10 +240,12 @@ export function useLeadDetailReadController(props: LeadDetailPageProps, feature:
     };
     try {
       await leadActions.startVerification(lead.id, { ...input, activity });
-      setShowVerificationReadiness(false);
+      dialogs.resolveInteraction("verification");
       showToast(locale === "vi" ? "Đã chuyển Lead sang Đang xác minh." : "Lead moved to Verifying.");
     } catch (error) {
       showToast(formatApplicationError(error, { locale }));
+    } finally {
+      if (showVerificationReadiness) dialogs.setActiveInteractionPending(false);
     }
   };
 
@@ -321,6 +324,8 @@ export function useLeadDetailReadController(props: LeadDetailPageProps, feature:
 
   // Disqualification handler
   const handleConfirmDisqualify = async () => {
+    const target = dialogs.activeForm === "disqualify" ? dialogs.boundLead : undefined;
+    if (!target || !dialogs.isCurrentInteraction()) return;
     if (!disqualifyReasonText.trim()) {
       showToast("Vui lòng nhập lý do cụ thể!");
       return;
@@ -334,14 +339,15 @@ export function useLeadDetailReadController(props: LeadDetailPageProps, feature:
       author: "Hệ thống",
       type: "system",
     };
-    await leadActions.disqualify(lead.id, {
+    // Lifecycle commands resolve the authoritative version at command time for
+    // this bound ID. Profile editing retains its separate opening-version rule.
+    await leadActions.disqualify(target.id, {
       reason: disqualifyReasonText.trim(),
       evidence: fullDesc,
-      actorId: lead.ownerId,
+      actorId: target.ownerId,
       activity,
     });
-    setShowDisqualifyModal(false);
-    setDisqualifyReasonText("");
+    dialogs.resolveInteraction("disqualify");
     showToast(locale === "vi" ? "Đã lưu trạng thái Không đủ điều kiện." : "Disqualified status saved.");
   };
 
