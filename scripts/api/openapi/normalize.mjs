@@ -225,7 +225,12 @@ export function buildBreakingBaseline(normalized) {
       operationId: operation.operationId,
       method: operation.method,
       path: operation.route,
-      parameters: operation.parameters,
+      // Compatibility snapshots retain complete input schemas without altering
+      // transport/catalog projections that use the compact parameter metadata.
+      parameters: operationParameters(normalized.document, operation).all.map((parameter) => ({
+        name: parameter.name, in: parameter.in, required: parameter.required === true,
+        schema: normalizeSchema(parameter.schema),
+      })),
       requestBody: operation.requestBodySchema === null ? null : {
         required: operation.operation.requestBody?.required === true,
         schema: operation.requestBodySchema,
