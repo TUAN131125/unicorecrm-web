@@ -1,0 +1,596 @@
+{
+  "results": [
+    {
+      "name": "empty patch",
+      "expected": "INVALID",
+      "actual": "INVALID",
+      "result": "PASS"
+    },
+    {
+      "name": "notes only",
+      "expected": "VALID",
+      "actual": "VALID",
+      "result": "PASS"
+    },
+    {
+      "name": "notes null",
+      "expected": "VALID",
+      "actual": "VALID",
+      "result": "PASS"
+    },
+    {
+      "name": "owner null",
+      "expected": "VALID",
+      "actual": "VALID",
+      "result": "PASS"
+    },
+    {
+      "name": "fullName value",
+      "expected": "VALID",
+      "actual": "VALID",
+      "result": "PASS"
+    },
+    {
+      "name": "fullName null",
+      "expected": "INVALID",
+      "actual": "INVALID",
+      "result": "PASS"
+    },
+    {
+      "name": "unknown field",
+      "expected": "INVALID",
+      "actual": "INVALID",
+      "result": "PASS"
+    },
+    {
+      "name": "fullName empty",
+      "expected": "INVALID",
+      "actual": "INVALID",
+      "result": "PASS"
+    },
+    {
+      "name": "fullName max",
+      "expected": "VALID",
+      "actual": "VALID",
+      "result": "PASS"
+    },
+    {
+      "name": "fullName over max",
+      "expected": "INVALID",
+      "actual": "INVALID",
+      "result": "PASS"
+    },
+    {
+      "name": "owner value",
+      "expected": "VALID",
+      "actual": "VALID",
+      "result": "PASS"
+    },
+    {
+      "name": "owner empty",
+      "expected": "INVALID",
+      "actual": "INVALID",
+      "result": "PASS"
+    },
+    {
+      "name": "owner over max",
+      "expected": "INVALID",
+      "actual": "INVALID",
+      "result": "PASS"
+    },
+    {
+      "name": "email valid",
+      "expected": "VALID",
+      "actual": "VALID",
+      "result": "PASS"
+    },
+    {
+      "name": "email invalid format",
+      "expected": "INVALID",
+      "actual": "INVALID",
+      "result": "PASS"
+    },
+    {
+      "name": "email over max",
+      "expected": "INVALID",
+      "actual": "INVALID",
+      "result": "PASS"
+    },
+    {
+      "name": "channel enum",
+      "expected": "VALID",
+      "actual": "VALID",
+      "result": "PASS"
+    },
+    {
+      "name": "channel unknown",
+      "expected": "INVALID",
+      "actual": "INVALID",
+      "result": "PASS"
+    },
+    {
+      "name": "notes max",
+      "expected": "VALID",
+      "actual": "VALID",
+      "result": "PASS"
+    },
+    {
+      "name": "notes over max",
+      "expected": "INVALID",
+      "actual": "INVALID",
+      "result": "PASS"
+    },
+    {
+      "name": "tags null",
+      "expected": "VALID",
+      "actual": "VALID",
+      "result": "PASS"
+    },
+    {
+      "name": "tags item max",
+      "expected": "VALID",
+      "actual": "VALID",
+      "result": "PASS"
+    },
+    {
+      "name": "tags item over max",
+      "expected": "INVALID",
+      "actual": "INVALID",
+      "result": "PASS"
+    },
+    {
+      "name": "tags invalid item",
+      "expected": "INVALID",
+      "actual": "INVALID",
+      "result": "PASS"
+    },
+    {
+      "name": "displayName null",
+      "expected": "VALID",
+      "actual": "VALID",
+      "result": "PASS"
+    },
+    {
+      "name": "displayName over max",
+      "expected": "INVALID",
+      "actual": "INVALID",
+      "result": "PASS"
+    },
+    {
+      "name": "ownerId nullable",
+      "expected": "VALID",
+      "actual": "VALID",
+      "result": "PASS"
+    },
+    {
+      "name": "salutation nullable",
+      "expected": "VALID",
+      "actual": "VALID",
+      "result": "PASS"
+    },
+    {
+      "name": "jobTitle nullable",
+      "expected": "VALID",
+      "actual": "VALID",
+      "result": "PASS"
+    },
+    {
+      "name": "department nullable",
+      "expected": "VALID",
+      "actual": "VALID",
+      "result": "PASS"
+    },
+    {
+      "name": "roleAtCompany nullable",
+      "expected": "VALID",
+      "actual": "VALID",
+      "result": "PASS"
+    },
+    {
+      "name": "workEmail nullable",
+      "expected": "VALID",
+      "actual": "VALID",
+      "result": "PASS"
+    },
+    {
+      "name": "personalEmail nullable",
+      "expected": "VALID",
+      "actual": "VALID",
+      "result": "PASS"
+    },
+    {
+      "name": "mobilePhone nullable",
+      "expected": "VALID",
+      "actual": "VALID",
+      "result": "PASS"
+    },
+    {
+      "name": "workPhone nullable",
+      "expected": "VALID",
+      "actual": "VALID",
+      "result": "PASS"
+    },
+    {
+      "name": "otherPhone nullable",
+      "expected": "VALID",
+      "actual": "VALID",
+      "result": "PASS"
+    },
+    {
+      "name": "zaloId nullable",
+      "expected": "VALID",
+      "actual": "VALID",
+      "result": "PASS"
+    },
+    {
+      "name": "facebook nullable",
+      "expected": "VALID",
+      "actual": "VALID",
+      "result": "PASS"
+    },
+    {
+      "name": "preferredContactChannel nullable",
+      "expected": "VALID",
+      "actual": "VALID",
+      "result": "PASS"
+    },
+    {
+      "name": "address nullable",
+      "expected": "VALID",
+      "actual": "VALID",
+      "result": "PASS"
+    },
+    {
+      "name": "source nullable",
+      "expected": "VALID",
+      "actual": "VALID",
+      "result": "PASS"
+    },
+    {
+      "name": "decisionRole nullable",
+      "expected": "VALID",
+      "actual": "VALID",
+      "result": "PASS"
+    },
+    {
+      "name": "relationshipLevel nullable",
+      "expected": "VALID",
+      "actual": "VALID",
+      "result": "PASS"
+    },
+    {
+      "name": "painPoint nullable",
+      "expected": "VALID",
+      "actual": "VALID",
+      "result": "PASS"
+    },
+    {
+      "name": "needSummary nullable",
+      "expected": "VALID",
+      "actual": "VALID",
+      "result": "PASS"
+    },
+    {
+      "name": "notes nullable",
+      "expected": "VALID",
+      "actual": "VALID",
+      "result": "PASS"
+    },
+    {
+      "name": "tags nullable",
+      "expected": "VALID",
+      "actual": "VALID",
+      "result": "PASS"
+    },
+    {
+      "name": "displayName nullable",
+      "expected": "VALID",
+      "actual": "VALID",
+      "result": "PASS"
+    }
+  ],
+  "genericResults": [
+    {
+      "name": "existing UpdateOrganizationRequest empty",
+      "expected": "INVALID",
+      "actual": "INVALID",
+      "result": "PASS"
+    },
+    {
+      "name": "existing UpdateOrganizationRequest notes",
+      "expected": "VALID",
+      "actual": "VALID",
+      "result": "PASS"
+    }
+  ],
+  "constraintsPreserved": true,
+  "unrelatedApiDrift": "NONE",
+  "beforeType": "export interface UpdateContactRequest {\n  fullName: string;\n  ownerId?: EntityId;\n  salutation?: string;\n  jobTitle?: string;\n  department?: string;\n  roleAtCompany?: string;\n  workEmail?: string;\n  personalEmail?: string;\n  mobilePhone?: string;\n  workPhone?: string;\n  otherPhone?: string;\n  zaloId?: string;\n  facebook?: string;\n  preferredContactChannel?: \"phone\" | \"email\" | \"zalo\" | \"facebook\" | \"sms\";\n  address?: string;\n  source?: string;\n  decisionRole?: string;\n  relationshipLevel?: string;\n  painPoint?: string;\n  needSummary?: string;\n  notes?: string;\n  tags?: Array<string>;\n}",
+  "afterType": "export interface UpdateContactRequest {\n  fullName?: string;\n  ownerId?: EntityId | null;\n  salutation?: string | null;\n  jobTitle?: string | null;\n  department?: string | null;\n  roleAtCompany?: string | null;\n  workEmail?: string | null;\n  personalEmail?: string | null;\n  mobilePhone?: string | null;\n  workPhone?: string | null;\n  otherPhone?: string | null;\n  zaloId?: string | null;\n  facebook?: string | null;\n  preferredContactChannel?: \"phone\" | \"email\" | \"zalo\" | \"facebook\" | \"sms\" | null;\n  address?: string | null;\n  source?: string | null;\n  decisionRole?: string | null;\n  relationshipLevel?: string | null;\n  painPoint?: string | null;\n  needSummary?: string | null;\n  notes?: string | null;\n  tags?: Array<string> | null;\n  displayName?: string | null;\n}",
+  "schema": {
+    "type": "object",
+    "additionalProperties": false,
+    "minProperties": 1,
+    "properties": {
+      "fullName": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 200
+      },
+      "ownerId": {
+        "anyOf": [
+          {
+            "$ref": "#/components/schemas/EntityId"
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "salutation": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 40
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "jobTitle": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 160
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "department": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 160
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "roleAtCompany": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 160
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "workEmail": {
+        "anyOf": [
+          {
+            "type": "string",
+            "format": "email",
+            "maxLength": 320
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "personalEmail": {
+        "anyOf": [
+          {
+            "type": "string",
+            "format": "email",
+            "maxLength": 320
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "mobilePhone": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 50
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "workPhone": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 50
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "otherPhone": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 50
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "zaloId": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 120
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "facebook": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 500
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "preferredContactChannel": {
+        "anyOf": [
+          {
+            "type": "string",
+            "enum": [
+              "phone",
+              "email",
+              "zalo",
+              "facebook",
+              "sms"
+            ]
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "address": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 700
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "source": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 160
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "decisionRole": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 80
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "relationshipLevel": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 80
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "painPoint": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 5000
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "needSummary": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 5000
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "notes": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 5000
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "tags": {
+        "anyOf": [
+          {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "maxLength": 100
+            }
+          },
+          {
+            "type": "null"
+          }
+        ]
+      },
+      "displayName": {
+        "anyOf": [
+          {
+            "type": "string",
+            "maxLength": 200
+          },
+          {
+            "type": "null"
+          }
+        ]
+      }
+    }
+  },
+  "files": [
+    "docs/api/api-operation-catalog.json",
+    "docs/api/generated-client-manifest.json",
+    "docs/api/openapi.json",
+    "docs/api/openapi.sha256",
+    "docs/api/operation-coverage-ledger.json",
+    "src/platform/api/contracts/generatedOpenApiRuntimeContract.ts",
+    "src/platform/api/contracts/openApiRuntimeValidation.ts",
+    "src/platform/api/generated/accessGovernanceApi.ts",
+    "src/platform/api/generated/aiApi.ts",
+    "src/platform/api/generated/commercialApi.ts",
+    "src/platform/api/generated/crmConfigurationApi.ts",
+    "src/platform/api/generated/financialApi.ts",
+    "src/platform/api/generated/financialConfigurationApi.ts",
+    "src/platform/api/generated/identityApi.ts",
+    "src/platform/api/generated/integrationConfigurationApi.ts",
+    "src/platform/api/generated/productConfigurationApi.ts",
+    "src/platform/api/generated/receivablesApi.ts",
+    "src/platform/api/generated/studioQuickSetupApi.ts",
+    "src/platform/api/generated/workspaceBootstrapApi.ts",
+    "src/platform/api/generated/workspaceConfigurationApi.ts"
+  ]
+}

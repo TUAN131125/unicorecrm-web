@@ -115,6 +115,10 @@ function validateSchema(
 }
 
 function validateObject(schema: JsonSchema, value: Record<string, unknown>, path: string, issues: OpenApiValidationIssue[], refStack: Set<string>): void {
+  const minProperties = numberValue(schema.minProperties);
+  if (minProperties !== undefined && Object.keys(value).length < minProperties) {
+    issues.push({ path, message: `Expected at least ${minProperties} properties.` });
+  }
   const properties = asSchemaRecord(schema.properties);
   for (const required of stringArray(schema.required)) {
     if (!Object.prototype.hasOwnProperty.call(value, required) || value[required] === undefined) {

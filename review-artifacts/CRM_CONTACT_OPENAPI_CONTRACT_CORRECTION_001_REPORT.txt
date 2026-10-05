@@ -1,0 +1,224 @@
+CRM_CONTACT_OPENAPI_CONTRACT_CORRECTION_001
+frontend base SHA: c43df01cee942ca2c3e4197b31ba866c5dd687dd
+backend authority SHA: baaf15023f2e35d8ab0e2e1f9c33861d56c83c47
+source-of-truth file: docs/api/openapi.json
+Authority established by AGENTS.md and scripts/api/openapi/load.mjs; official generation writes runtime schemas and commercialApi.ts.
+Backend public request authority: src/UnicoreCRM.Crm/Contacts/Contracts/ContactContracts.cs at frozen SHA.
+displayName is a public UpdateContactRequest property; TryPatch forwards supplied displayName and TryProfile validates nullable text with ContactNameBound.MaxLength=200. Added only to UpdateContactRequest.
+files changed / generated files:
+docs/api/api-operation-catalog.json
+docs/api/generated-client-manifest.json
+docs/api/openapi.json
+docs/api/openapi.sha256
+docs/api/operation-coverage-ledger.json
+src/platform/api/contracts/generatedOpenApiRuntimeContract.ts
+src/platform/api/generated/accessGovernanceApi.ts
+src/platform/api/generated/aiApi.ts
+src/platform/api/generated/commercialApi.ts
+src/platform/api/generated/crmConfigurationApi.ts
+src/platform/api/generated/financialApi.ts
+src/platform/api/generated/financialConfigurationApi.ts
+src/platform/api/generated/identityApi.ts
+src/platform/api/generated/integrationConfigurationApi.ts
+src/platform/api/generated/productConfigurationApi.ts
+src/platform/api/generated/receivablesApi.ts
+src/platform/api/generated/studioQuickSetupApi.ts
+src/platform/api/generated/workspaceBootstrapApi.ts
+src/platform/api/generated/workspaceConfigurationApi.ts
+Proof artifacts: contact-contract-proof.mts, contact-validator-results.json, contact-api-check.log, contact-typecheck.log, contact-api-boundaries.log, this report, exact patch.
+UpdateContactRequest BEFORE:
+export interface UpdateContactRequest {
+  fullName: string;
+  ownerId?: EntityId;
+  salutation?: string;
+  jobTitle?: string;
+  department?: string;
+  roleAtCompany?: string;
+  workEmail?: string;
+  personalEmail?: string;
+  mobilePhone?: string;
+  workPhone?: string;
+  otherPhone?: string;
+  zaloId?: string;
+  facebook?: string;
+  preferredContactChannel?: "phone" | "email" | "zalo" | "facebook" | "sms";
+  address?: string;
+  source?: string;
+  decisionRole?: string;
+  relationshipLevel?: string;
+  painPoint?: string;
+  needSummary?: string;
+  notes?: string;
+  tags?: Array<string>;
+}
+UpdateContactRequest AFTER:
+export interface UpdateContactRequest {
+  fullName?: string;
+  ownerId?: EntityId | null;
+  salutation?: string | null;
+  jobTitle?: string | null;
+  department?: string | null;
+  roleAtCompany?: string | null;
+  workEmail?: string | null;
+  personalEmail?: string | null;
+  mobilePhone?: string | null;
+  workPhone?: string | null;
+  otherPhone?: string | null;
+  zaloId?: string | null;
+  facebook?: string | null;
+  preferredContactChannel?: "phone" | "email" | "zalo" | "facebook" | "sms" | null;
+  address?: string | null;
+  source?: string | null;
+  decisionRole?: string | null;
+  relationshipLevel?: string | null;
+  painPoint?: string | null;
+  needSummary?: string | null;
+  notes?: string | null;
+  tags?: Array<string> | null;
+  displayName?: string | null;
+}
+OpenAPI fullName schema:
+{
+  "type": "string",
+  "minLength": 1,
+  "maxLength": 200
+}
+OpenAPI ownerId schema:
+{
+  "anyOf": [
+    {
+      "$ref": "#/components/schemas/EntityId"
+    },
+    {
+      "type": "null"
+    }
+  ]
+}
+OpenAPI notes schema:
+{
+  "anyOf": [
+    {
+      "type": "string",
+      "maxLength": 5000
+    },
+    {
+      "type": "null"
+    }
+  ]
+}
+OpenAPI tags schema:
+{
+  "anyOf": [
+    {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "maxLength": 100
+      }
+    },
+    {
+      "type": "null"
+    }
+  ]
+}
+runtime validator cases:
+notes only: expected VALID; actual VALID; PASS
+notes null: expected VALID; actual VALID; PASS
+owner null: expected VALID; actual VALID; PASS
+fullName value: expected VALID; actual VALID; PASS
+fullName null: expected INVALID; actual INVALID; PASS
+unknown field: expected INVALID; actual INVALID; PASS
+fullName empty: expected INVALID; actual INVALID; PASS
+fullName max: expected VALID; actual VALID; PASS
+fullName over max: expected INVALID; actual INVALID; PASS
+owner value: expected VALID; actual VALID; PASS
+owner empty: expected INVALID; actual INVALID; PASS
+owner over max: expected INVALID; actual INVALID; PASS
+email valid: expected VALID; actual VALID; PASS
+email invalid format: expected INVALID; actual INVALID; PASS
+email over max: expected INVALID; actual INVALID; PASS
+channel enum: expected VALID; actual VALID; PASS
+channel unknown: expected INVALID; actual INVALID; PASS
+notes max: expected VALID; actual VALID; PASS
+notes over max: expected INVALID; actual INVALID; PASS
+tags null: expected VALID; actual VALID; PASS
+tags item max: expected VALID; actual VALID; PASS
+tags item over max: expected INVALID; actual INVALID; PASS
+tags invalid item: expected INVALID; actual INVALID; PASS
+displayName null: expected VALID; actual VALID; PASS
+displayName over max: expected INVALID; actual INVALID; PASS
+ownerId nullable: expected VALID; actual VALID; PASS
+salutation nullable: expected VALID; actual VALID; PASS
+jobTitle nullable: expected VALID; actual VALID; PASS
+department nullable: expected VALID; actual VALID; PASS
+roleAtCompany nullable: expected VALID; actual VALID; PASS
+workEmail nullable: expected VALID; actual VALID; PASS
+personalEmail nullable: expected VALID; actual VALID; PASS
+mobilePhone nullable: expected VALID; actual VALID; PASS
+workPhone nullable: expected VALID; actual VALID; PASS
+otherPhone nullable: expected VALID; actual VALID; PASS
+zaloId nullable: expected VALID; actual VALID; PASS
+facebook nullable: expected VALID; actual VALID; PASS
+preferredContactChannel nullable: expected VALID; actual VALID; PASS
+address nullable: expected VALID; actual VALID; PASS
+source nullable: expected VALID; actual VALID; PASS
+decisionRole nullable: expected VALID; actual VALID; PASS
+relationshipLevel nullable: expected VALID; actual VALID; PASS
+painPoint nullable: expected VALID; actual VALID; PASS
+needSummary nullable: expected VALID; actual VALID; PASS
+notes nullable: expected VALID; actual VALID; PASS
+tags nullable: expected VALID; actual VALID; PASS
+displayName nullable: expected VALID; actual VALID; PASS
+constraints preservation proof: PASS
+Deep equality of every original non-null property schema with new anyOf[0]; fullName schema unchanged and removed from required. EntityId ref retained (minLength 1, maxLength 128). workEmail email format/maxLength 320, channel enum, notes maxLength 5000, tags string items/maxLength 100 preserved and runtime tested. Object additionalProperties=false retained.
+Full OpenAPI deep equality after restoring only UpdateContactRequest proves paths, parameters, responses and all other schemas unchanged. Runtime schema map likewise equals previous version except UpdateContactRequest. Commercial client equals previous version after excluding only UpdateContactRequest and generated checksum metadata. Other changed generated outputs differ only by checksum metadata.
+commands run / results:
+git fetch origin: PASS
+git status: clean initial tree, main
+git rev-parse HEAD / origin/main: equal c43df01cee942ca2c3e4197b31ba866c5dd687dd
+Backend authority fetched into isolated temporary bare repository; backend checkout unchanged
+npm run api:generate: PASS (23 official generated outputs)
+npm run api:check: PASS (301 operations; 273 ready; 28 blocked)
+npm run typecheck: PASS (3/3 gates: strict-core, strict-type-regions, type-safety-budget)
+npm run quality:gate -- --gate quality.api-management-boundaries: PASS
+npx tsx review-artifacts/contact-contract-proof.mts: PASS (48 Contact cases + 2 existing-schema cases)
+git diff --check: PASS
+Initial source-edit tooling attempts failed locally (JSON parse / buffer / block matching); corrected before successful final official generation. No generator/detector changes.
+unrelated changes: NO (official shared checksum metadata updates only)
+unrelated API drift: NONE
+breaking baseline modified: NO
+accepted baseline modified: NO
+historical debt / governance finding set modified: NO
+governance detector modified: NO
+backend modified: NO
+B2 resumed: NO
+Contact forms/UI modified: NO
+Round2B final review / B-C differential governance decision: NOT RUN
+READY_FOR_TECH_LEAD_REVIEW: YES
+COMMIT: NO
+PUSH: NO
+
+TECHNICAL LEAD REVIEW ADDENDUM: EMPTY PATCH
+UpdateContactRequest.minProperties: 1
+Schema fullName/owner/profile/displayName properties unchanged from approved correction. required fullName not restored.
+Generic runtime validateObject counts own enumerable string properties using Object.keys(value).length and applies schema.minProperties; no Contact-specific branches.
+Source file added to changed-file list: src/platform/api/contracts/openApiRuntimeValidation.ts
+updateContact {}: expected INVALID; actual INVALID; PASS
+existing UpdateOrganizationRequest empty: expected INVALID; actual INVALID; PASS
+existing UpdateOrganizationRequest notes: expected VALID; actual VALID; PASS
+Existing 47 Contact cases remain PASS; added empty case gives 48 Contact cases.
+Final npm run api:generate: PASS
+Final npm run api:check: PASS
+Final npm run typecheck: PASS
+Final npx tsx review-artifacts/contact-contract-proof.mts: PASS
+Final git diff --check: PASS
+Unrelated OpenAPI semantic drift: NONE (deep equality proof)
+Runtime implementation diff: four generic object validation lines only.
+Initial proof-edit syntax error corrected before final passing proof.
+BREAKING_BASELINE_MODIFIED: NO
+GOVERNANCE_DETECTOR_MODIFIED: NO
+BACKEND_CHANGED: NO
+B2_RESUMED: NO
+READY_FOR_TECH_LEAD_FINAL_APPROVAL: YES
+COMMIT: NO
+PUSH: NO

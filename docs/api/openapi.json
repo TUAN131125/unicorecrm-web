@@ -66790,9 +66790,7 @@
       "UpdateContactRequest": {
         "type": "object",
         "additionalProperties": false,
-        "required": [
-          "fullName"
-        ],
+        "minProperties": 1,
         "properties": {
           "fullName": {
             "type": "string",
@@ -66800,98 +66798,256 @@
             "maxLength": 200
           },
           "ownerId": {
-            "$ref": "#/components/schemas/EntityId"
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EntityId"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "salutation": {
-            "type": "string",
-            "maxLength": 40
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "jobTitle": {
-            "type": "string",
-            "maxLength": 160
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 160
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "department": {
-            "type": "string",
-            "maxLength": 160
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 160
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "roleAtCompany": {
-            "type": "string",
-            "maxLength": 160
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 160
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "workEmail": {
-            "type": "string",
-            "format": "email",
-            "maxLength": 320
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "email",
+                "maxLength": 320
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "personalEmail": {
-            "type": "string",
-            "format": "email",
-            "maxLength": 320
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "email",
+                "maxLength": 320
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "mobilePhone": {
-            "type": "string",
-            "maxLength": 50
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "workPhone": {
-            "type": "string",
-            "maxLength": 50
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "otherPhone": {
-            "type": "string",
-            "maxLength": 50
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 50
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "zaloId": {
-            "type": "string",
-            "maxLength": 120
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 120
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "facebook": {
-            "type": "string",
-            "maxLength": 500
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "preferredContactChannel": {
-            "type": "string",
-            "enum": [
-              "phone",
-              "email",
-              "zalo",
-              "facebook",
-              "sms"
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "phone",
+                  "email",
+                  "zalo",
+                  "facebook",
+                  "sms"
+                ]
+              },
+              {
+                "type": "null"
+              }
             ]
           },
           "address": {
-            "type": "string",
-            "maxLength": 700
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 700
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "source": {
-            "type": "string",
-            "maxLength": 160
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 160
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "decisionRole": {
-            "type": "string",
-            "maxLength": 80
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "relationshipLevel": {
-            "type": "string",
-            "maxLength": 80
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "painPoint": {
-            "type": "string",
-            "maxLength": 5000
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "needSummary": {
-            "type": "string",
-            "maxLength": 5000
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "notes": {
-            "type": "string",
-            "maxLength": 5000
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 5000
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "tags": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "maxLength": 100
-            }
+            "anyOf": [
+              {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "maxLength": 100
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "displayName": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         }
       },
