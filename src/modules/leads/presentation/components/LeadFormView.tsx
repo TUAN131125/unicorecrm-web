@@ -876,12 +876,12 @@ export function LeadFormView({ controller }: { controller: LeadFormViewControlle
             
           </div>
         )}
+          </>
+        )}
         {formError && (
           <p id="lead-form-error-summary" role="alert" aria-live="polite" tabIndex={-1} className="text-xs font-medium text-rose-700">
             {formError}
           </p>
-        )}
-          </>
         )}
       </div>
 

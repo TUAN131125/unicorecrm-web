@@ -42,6 +42,7 @@ import { useLeadDialogs } from "../hooks/useLeadDialogs";
 import { useLeads } from "../hooks/useLeads";
 import { useLeadActions } from "../hooks/useLeadActions";
 import { useLeadServerPagedCollection } from "../hooks/useLeadServerPagedCollection";
+import { registerUnsavedWork } from "@/platform/unsaved-work";
 import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
 import { useLeadReferenceData } from "../hooks/useLeadReferenceData";
 import { useLeadPagination } from "../hooks/useLeadPagination";
@@ -313,18 +314,71 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
 
   // 7. Dialogs Custom Hook
   const dialogs = useLeadDialogs(selection.selectedLeadIds, showToast, locale, ownership?.memberId || "");
-  const closeNewLeadModal = React.useCallback(() => dialogs.setIsNewLeadOpen(false), [dialogs.setIsNewLeadOpen]);
+  const [createCycle, setCreateCycle] = useState(0);
+  const [createPending, setCreatePending] = useState(false);
+  const createLifecycle = React.useRef({ open: false, pending: false, cycle: 0 });
+  const createMounted = React.useRef(true);
+  useEffect(() => {
+    createMounted.current = true;
+    return () => { createMounted.current = false; };
+  }, []);
+  const releaseNewLeadModal = React.useCallback(() => {
+    createLifecycle.current.open = false;
+    dialogs.setIsNewLeadOpen(false);
+  }, [dialogs.setIsNewLeadOpen]);
+  const closeNewLeadModal = React.useCallback(() => {
+    if (!createLifecycle.current.pending) releaseNewLeadModal();
+  }, [releaseNewLeadModal]);
   const newLeadUnsavedChanges = useUnsavedChangesGuard(closeNewLeadModal);
   const openNewLeadModal = React.useCallback(() => {
+    if (createLifecycle.current.open || createLifecycle.current.pending) return;
+    createLifecycle.current = { open: true, pending: false, cycle: createLifecycle.current.cycle + 1 };
+    setCreateCycle(createLifecycle.current.cycle);
+    setCreatePending(false);
     newLeadUnsavedChanges.setIsDirty(false);
+    newLeadUnsavedChanges.setIsConfirmOpen(false);
     dialogs.setIsNewLeadOpen(true);
-  }, [dialogs.setIsNewLeadOpen, newLeadUnsavedChanges.setIsDirty]);
+  }, [dialogs.setIsNewLeadOpen, newLeadUnsavedChanges.setIsDirty, newLeadUnsavedChanges.setIsConfirmOpen]);
+  const reportCreateDirty = React.useCallback((dirty: boolean) => {
+    if (createMounted.current && createLifecycle.current.open && createLifecycle.current.cycle === createCycle) {
+      newLeadUnsavedChanges.setIsDirty(dirty);
+    }
+  }, [createCycle, newLeadUnsavedChanges.setIsDirty]);
+  const reportCreateSubmitting = React.useCallback((pending: boolean) => {
+    if (!createMounted.current || createLifecycle.current.cycle !== createCycle) return;
+    // Set the preflight authority synchronously, before the application command starts.
+    createLifecycle.current.pending = pending;
+    setCreatePending(pending);
+  }, [createCycle]);
+  const requestCreateClose = () => {
+    if (!createLifecycle.current.pending) newLeadUnsavedChanges.requestClose();
+  };
   useEffect(() => {
     if (!dialogs.isNewLeadOpen) {
       newLeadUnsavedChanges.setIsDirty(false);
       newLeadUnsavedChanges.setIsConfirmOpen(false);
     }
   }, [dialogs.isNewLeadOpen, newLeadUnsavedChanges.setIsConfirmOpen, newLeadUnsavedChanges.setIsDirty]);
+  useEffect(() => {
+    if (!dialogs.isNewLeadOpen) return;
+    const canDiscard = () => createMounted.current && createLifecycle.current.open
+      && createLifecycle.current.cycle === createCycle && !createLifecycle.current.pending;
+    return registerUnsavedWork({
+      id: "lead-create:list",
+      title: locale === "vi" ? "Tạo Lead" : "Create Lead",
+      isDirty: newLeadUnsavedChanges.isDirty || createPending,
+      // The event-driven form exposes no truthful programmatic save capability yet.
+      save: async () => false,
+      canDiscard,
+      discard: () => {
+        if (!canDiscard()) return;
+        newLeadUnsavedChanges.setIsConfirmOpen(false);
+        newLeadUnsavedChanges.setIsDirty(false);
+        releaseNewLeadModal();
+      },
+    });
+  }, [dialogs.isNewLeadOpen, newLeadUnsavedChanges.isDirty, newLeadUnsavedChanges.setIsConfirmOpen,
+    newLeadUnsavedChanges.setIsDirty, createPending, createCycle, locale, releaseNewLeadModal]);
 
   // Helper helper to bulk update individual filters
   const setFilterValue = (key: keyof LeadFiltersState, value: any) => {
@@ -528,7 +582,10 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
     const saved = await leadActions.createFromForm(formData);
     const ownerName = ownership?.visibleOwners.find((owner) => owner.memberId === saved.ownerId)?.displayName
       || (locale === "vi" ? "người phụ trách hiện tại" : "the current owner");
-    dialogs.setIsNewLeadOpen(false);
+    if (!createMounted.current || !createLifecycle.current.open || createLifecycle.current.cycle !== createCycle) return;
+    newLeadUnsavedChanges.setIsDirty(false);
+    newLeadUnsavedChanges.setIsConfirmOpen(false);
+    releaseNewLeadModal();
     showActionToast(
       locale === "vi" ? `Đã tạo Lead và giao cho ${ownerName}.` : `Lead created and assigned to ${ownerName}.`,
       locale === "vi" ? "Mở chi tiết" : "Open record",
@@ -1072,7 +1129,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
       {/* 5. ADD NEW LEAD MANUALLY MODAL */}
       <Modal variant="form"
         isOpen={dialogs.isNewLeadOpen}
-        onClose={newLeadUnsavedChanges.requestClose}
+        onClose={requestCreateClose}
         title={t("leadForm.addTitle")}
         size="lg"
         scrollBody={false}
@@ -1081,9 +1138,11 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
       >
         <React.Suspense fallback={<div className="p-6 text-sm text-slate-500">{locale === "vi" ? "Đang tải biểu mẫu…" : "Loading form…"}</div>}>
         <LeadForm
+          key={createCycle}
           onSubmit={handleCreateLeadFromForm}
-          onCancel={newLeadUnsavedChanges.requestClose}
-          onDirtyChange={newLeadUnsavedChanges.setIsDirty}
+          onCancel={requestCreateClose}
+          onDirtyChange={reportCreateDirty}
+          onSubmittingChange={reportCreateSubmitting}
           ownerOptions={ownership?.assignableOwners || []}
           sources={referenceData.sources}
           campaigns={referenceData.campaigns}
@@ -1098,7 +1157,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
       <ConfirmDialog
         isOpen={newLeadUnsavedChanges.isConfirmOpen}
         onClose={() => newLeadUnsavedChanges.setIsConfirmOpen(false)}
-        onConfirm={newLeadUnsavedChanges.confirmDiscard}
+        onConfirm={() => { if (!createLifecycle.current.pending) newLeadUnsavedChanges.confirmDiscard(); }}
         title={locale === "vi" ? "Bỏ thay đổi chưa lưu?" : "Discard unsaved changes?"}
         message={locale === "vi"
           ? "Thông tin khách hàng tiềm năng bạn vừa nhập chưa được lưu. Bạn có chắc chắn muốn đóng biểu mẫu?"

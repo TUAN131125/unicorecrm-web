@@ -49,6 +49,7 @@ export interface LeadFormProps {
   onSubmit: (data: Partial<Lead>) => void | Promise<void>;
   onCancel: () => void;
   onDirtyChange?: (isDirty: boolean) => void;
+  onSubmittingChange?: (submitting: boolean) => void;
   isEdit?: boolean;
   ownerOptions?: LeadOwnerOption[];
   sources?: LeadSource[];
@@ -85,6 +86,7 @@ export function useLeadFormController(props: LeadFormProps) {
     defaultOwnerId,
     canAssignOwner = true,
     onDirtyChange,
+    onSubmittingChange,
     formId,
     footerPortalId,
   } = props;
@@ -482,6 +484,7 @@ export function useLeadFormController(props: LeadFormProps) {
     submitInFlightRef.current = true;
     setIsSubmitting(true);
     try {
+      onSubmittingChange?.(true);
       await onSubmit(finalLeadData);
       initialSnapshotRef.current = formSnapshot;
       onDirtyChange?.(false);
@@ -491,6 +494,7 @@ export function useLeadFormController(props: LeadFormProps) {
       window.requestAnimationFrame(() => document.getElementById("lead-form-error-summary")?.focus());
     } finally {
       submitInFlightRef.current = false;
+      onSubmittingChange?.(false);
       setIsSubmitting(false);
     }
   };
