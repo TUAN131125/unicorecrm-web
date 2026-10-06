@@ -48,6 +48,7 @@ export function DealDetailDialogs({
     setIsWonModalOpen,
     isProductPickerOpen,
     setIsProductPickerOpen,
+    interactionPending,
     isLostModalOpen,
     setIsLostModalOpen,
     lostReason,
@@ -170,14 +171,7 @@ export function DealDetailDialogs({
       </Modal>
 
       {/* 5. MODAL: Mark LOST with Reason Required */}
-      <Modal variant="form" isOpen={isLostModalOpen} onClose={() => {
-        setIsLostModalOpen(false);
-        setLostError("");
-        setLostReason("");
-        setLostNotes("");
-        setLostRecycleDecision("DO_NOT_RECYCLE");
-        setLostRevisitAt("");
-      }} title={t("deals.lostModal.title")} size="sm">
+      <Modal variant="form" isOpen={isLostModalOpen} onClose={() => setIsLostModalOpen(false)} title={t("deals.lostModal.title")} size="sm">
         <div className="space-y-4 text-xs font-semibold">
               {lostError && (
                 <div className="bg-red-50 text-red-700 border border-red-200 p-2.5 rounded-lg flex items-center gap-1">
@@ -188,6 +182,8 @@ export function DealDetailDialogs({
 
               <div className="space-y-4">
                 <Select
+                  id="deal-lost-reason"
+                  disabled={interactionPending}
                   label={t("deals.lostModal.reasonLabel")}
                   value={lostReason}
                   onChange={(e) => setLostReason(e.target.value)}
@@ -203,6 +199,8 @@ export function DealDetailDialogs({
                 </Select>
 
                 <Textarea
+                  id="deal-lost-notes"
+                  disabled={interactionPending}
                   label={t("deals.lostModal.notesLabel")}
                   rows={3}
                   placeholder={t("deals.lostModal.notesPlaceholder")}
@@ -211,6 +209,7 @@ export function DealDetailDialogs({
                 />
 
                 <Select
+                  disabled={interactionPending}
                   label={locale === "vi" ? "Quyết định recycle" : "Recycle decision"}
                   value={lostRecycleDecision}
                   onChange={(e) => setLostRecycleDecision(e.target.value as "RECYCLE" | "CONDITIONAL" | "DO_NOT_RECYCLE")}
@@ -224,6 +223,8 @@ export function DealDetailDialogs({
                   <div className="space-y-1">
                     <label className="block text-[10px] font-bold text-slate-500 uppercase">{locale === "vi" ? "Ngày revisit bắt buộc" : "Required revisit date"}</label>
                     <Input
+                      id="deal-lost-revisit"
+                      disabled={interactionPending}
                       type="date"
                       value={lostRevisitAt}
                       onChange={(e) => setLostRevisitAt(e.target.value)}
@@ -235,21 +236,16 @@ export function DealDetailDialogs({
               <div className="flex justify-end gap-2 pt-1 border-t border-slate-100">
                 <Button
                   type="button"
-                  onClick={() => {
-                    setIsLostModalOpen(false);
-                    setLostError("");
-                    setLostReason("");
-                    setLostNotes("");
-                    setLostRecycleDecision("DO_NOT_RECYCLE");
-                    setLostRevisitAt("");
-                  }}
+                  onClick={() => setIsLostModalOpen(false)}
+                  disabled={interactionPending}
                   variant="secondary"
                 >
                   {t("common.cancel")}
                 </Button>
                 <Button
                   type="button"
-                  onClick={handleConfirmLost}
+                  onClick={() => { void handleConfirmLost(); }}
+                  loading={interactionPending}
                   variant="danger"
                 >
                   {t("deals.lostModal.confirm")}

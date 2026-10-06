@@ -264,3 +264,7 @@ reports:       separate and only when requested
 
 
 The canonical implementation and CI ordering are documented in [CI and Source Release Contract](./ci-and-release.md).
+
+## Non-product verification evidence
+
+The root directories listed in docs/document-status.json nonProductEvidenceDirectories contain review evidence or transient test output, not product documentation. Documentation governance and repository inventory exclude these classified directories; all product docs remain scanned. New test output uses the external OS temporary directory unicorecrm-playwright-evidence, overridable by UNICORE_TEST_EVIDENCE_DIR. Review logs and replay evidence belong in an external review workspace. Preserve existing review evidence; archive transient outputs outside the source repository before removing them.

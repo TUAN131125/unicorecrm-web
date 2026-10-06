@@ -2,6 +2,7 @@ import React from "react";
 import { CallActivityCreateModal, type CallActivityDraft } from "@/modules/tasks";
 
 interface ContactLogCallModalProps {
+  targetId?: string;
   isOpen: boolean;
   onClose: () => void;
   onSave: (call: {
@@ -14,8 +15,10 @@ interface ContactLogCallModalProps {
   isDoNotContact?: boolean;
 }
 
-export const ContactLogCallModal: React.FC<ContactLogCallModalProps> = ({ isOpen, onClose, onSave, isDoNotContact }) => (
+export const ContactLogCallModal: React.FC<ContactLogCallModalProps> = ({ targetId, isOpen, onClose, onSave, isDoNotContact }) => (
   <CallActivityCreateModal
+    targetId={targetId}
+    recordingOnly
     guardChanges
     isOpen={isOpen}
     onClose={onClose}
@@ -25,7 +28,7 @@ export const ContactLogCallModal: React.FC<ContactLogCallModalProps> = ({ isOpen
     onSubmit={(draft: CallActivityDraft) => onSave({
       direction: draft.direction,
       result: draft.result,
-      summary: [draft.subject, draft.body].filter(Boolean).join(" — "),
+      summary: [draft.subject, draft.recipient, `${draft.durationMinutes} min`, draft.body].filter(Boolean).join(" — "),
       nextFollowUpDate: draft.nextFollowUpAt,
       createFollowUpTask: draft.createFollowUpTask,
     })}

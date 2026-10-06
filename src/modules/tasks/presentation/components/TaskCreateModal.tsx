@@ -1,4 +1,7 @@
+import { useWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import React from "react";
+import { normalizeApplicationError } from "@/shared/domain";
+import { registerUnsavedWork } from "@/platform/unsaved-work";
 import { RelationshipQuickActionModal } from "@/components/crm/relationship-panel/RelationshipQuickActionModal";
 import { Button, Input, Modal, SearchableSelect, Select, Textarea } from "@/shared/components/ui";
 import { useI18n } from "@/i18n";
@@ -28,6 +31,8 @@ export interface TaskCreateDefaults {
 }
 
 export interface TaskCreateModalProps {
+  targetId?: string;
+  formId?: string;
   guardChanges?: boolean;
   isOpen: boolean;
   onClose: () => void;
@@ -82,7 +87,9 @@ function createTaskId(): string {
 }
 
 export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
-  guardChanges = false,
+  guardChanges = true,
+  targetId,
+  formId = "canonical-task-create-form",
   isOpen,
   onClose,
   context,
@@ -107,24 +114,39 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
   const [submitting, setSubmitting] = React.useState(false);
   const previousOpen = React.useRef(false);
   const initialDraft = React.useRef(draft);
+  const pending = React.useRef(false);
+  const mounted = React.useRef(true);
+  const cycle = React.useRef(0);
+  const openRef = React.useRef(isOpen);
+  openRef.current = isOpen;
+  const registration = React.useRef<object | undefined>(undefined);
+  const workspaceId = useWorkspaceContextSnapshot().workspaceId;
+  const liveWorkspace = React.useRef(workspaceId);
+  liveWorkspace.current = workspaceId;
+  const targetKey = targetId ?? JSON.stringify(context?.recordRef ?? context?.relationshipRef ?? context?.sourceRef ?? "new");
+  const opening = React.useRef({ workspaceId, targetKey, context: structuredClone(context), onClose, onCreated, onError, taskId: createTaskId() });
+  const fingerprint = (value: TaskCreateDraft) => JSON.stringify({ ...value, title: value.title.trim(), description: value.description.trim() });
+  const dirty = fingerprint(draft) !== fingerprint(initialDraft.current);
+  React.useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
 
   React.useEffect(() => {
-    if (isOpen && !previousOpen.current) {
+    if (isOpen && !pending.current && (!previousOpen.current || (opening.current.targetKey !== targetKey && !dirty))) {
+      cycle.current += 1;
+      opening.current = { workspaceId, targetKey, context: structuredClone(context), onClose, onCreated, onError, taskId: createTaskId() };
       initialDraft.current = createDraft(defaults, currentMemberId);
       setDraft(initialDraft.current);
       setErrorMessage("");
       setFieldErrors({});
       setSubmitting(false);
     }
-    previousOpen.current = isOpen;
-  }, [currentMemberId, defaults, isOpen]);
+    if (!isOpen || !pending.current) previousOpen.current = isOpen;
+  });
 
-  const submit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (submitting) return;
+  const save = async (): Promise<boolean> => {
+    if (pending.current || !mounted.current || !isOpen || !canCreate) return false;
     if (!currentMemberId || !currentActorName) {
       setErrorMessage(vi ? "Không xác định được thành viên Workspace hiện tại." : "The current Workspace member could not be resolved.");
-      return;
+      return false;
     }
     setErrorMessage("");
     const nextErrors: Record<string, string> = {};
@@ -140,12 +162,17 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
         control?.scrollIntoView({ behavior: "smooth", block: "center" });
         control?.focus({ preventScroll: true });
       });
-      return;
+      return false;
     }
     setFieldErrors({});
+    const bound = opening.current;
+    if (bound.workspaceId !== liveWorkspace.current) { setErrorMessage(vi ? "Workspace đã thay đổi. Đóng bản nháp và mở lại." : "Workspace changed. Close this draft and reopen it."); return false; }
+    pending.current = true;
     setSubmitting(true);
+    const capturedCycle = cycle.current;
+    const context = bound.context;
     try {
-      const taskId = createTaskId();
+      const taskId = bound.taskId;
       const outcome = await createTaskCommand({
         id: taskId,
         title: draft.title,
@@ -163,22 +190,52 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
         idempotencyKey: `task.create:${taskId}`,
         actor: { id: currentMemberId, name: currentActorName },
       });
-      onCreated?.(outcome.data);
-      onClose();
+      if (!mounted.current || capturedCycle !== cycle.current || bound.workspaceId !== liveWorkspace.current) return false;
+      initialDraft.current = draft;
+      bound.onCreated?.(outcome.data);
+      bound.onClose();
+      return true;
     } catch (error) {
-      setErrorMessage(formatApplicationError(error, { locale }));
-      onError?.(error);
+      if (mounted.current && capturedCycle === cycle.current) {
+        const normalized = normalizeApplicationError(error);
+        const errors = Object.fromEntries(Object.entries(normalized.fieldErrors ?? {}).map(([field, messages]) => [field, messages.join(" ")]));
+        setFieldErrors(errors);
+        const first = ["title", "assigneeId", "dueAt"].find(field => errors[field]);
+        if (first) requestAnimationFrame(() => document.getElementById(`task-create-${first}`)?.focus());
+        setErrorMessage(formatApplicationError(normalized, { locale }));
+        bound.onError?.(error);
+      }
+      return false;
     } finally {
-      setSubmitting(false);
+      if (mounted.current && capturedCycle === cycle.current) { pending.current = false; setSubmitting(false); }
     }
   };
+  const submit = async (event: React.FormEvent) => { event.preventDefault(); await save(); };
+  const close = () => { if (!pending.current) opening.current.onClose(); };
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const capturedCycle = cycle.current;
+    const entryToken = {};
+    registration.current = entryToken;
+    const currentEntry = () => mounted.current && openRef.current && capturedCycle === cycle.current && registration.current === entryToken;
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
+    if (dirty || submitting) window.addEventListener("beforeunload", warn);
+    const unregister = registerUnsavedWork({
+      id: `${formId}:${opening.current.targetKey}:${capturedCycle}`,
+      title: title ?? formId, isDirty: dirty || submitting,
+      save: () => currentEntry() && !pending.current ? save() : Promise.resolve(false),
+      canDiscard: () => currentEntry() && !pending.current,
+      discard: () => { if (currentEntry() && !pending.current) { setDraft(initialDraft.current); opening.current.onClose(); } },
+    });
+    return () => { unregister(); if (registration.current === entryToken) registration.current = undefined; window.removeEventListener("beforeunload", warn); };
+  });
 
   const canCreate = Boolean(currentMemberId) && access.canPerform("tasks", "create");
 
   const fields = (
-      <>
+      <fieldset disabled={submitting} className="contents">
         <div className="sm:col-span-2">
-          <Input
+          <Input disabled={submitting}
             id="task-create-title"
             label={vi ? "Tên công việc" : "Task title"}
             value={draft.title}
@@ -187,7 +244,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
             error={fieldErrors.title}
           />
         </div>
-        <SearchableSelect
+        <SearchableSelect disabled={submitting}
           id="task-create-assigneeId"
           label={vi ? "Người phụ trách" : "Assignee"}
           value={draft.assigneeId}
@@ -203,7 +260,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
             keywords: member.email,
           }))}
         />
-        <Select
+        <Select disabled={submitting}
           label={vi ? "Mức ưu tiên" : "Priority"}
           value={draft.priority}
           onChange={(event) => setDraft((current) => ({ ...current, priority: event.target.value as TaskPriority }))}
@@ -214,7 +271,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
           <option value="URGENT">{vi ? "Khẩn cấp" : "Urgent"}</option>
         </Select>
         <div className="sm:col-span-2">
-          <Input
+          <Input disabled={submitting}
             id="task-create-dueAt"
             label={vi ? "Hạn xử lý" : "Due at"}
             type="datetime-local"
@@ -225,16 +282,16 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
           />
         </div>
         <div className="sm:col-span-2">
-          <Textarea
+          <Textarea disabled={submitting}
             label={vi ? "Mô tả / kết quả mong đợi" : "Description / expected outcome"}
             value={draft.description}
             onChange={(event) => setDraft((current) => ({ ...current, description: event.target.value }))}
             rows={4}
           />
         </div>
-        {context?.label ? (
+        {opening.current.context?.label ? (
           <p className="sm:col-span-2 text-xs text-slate-500">
-            {vi ? "Liên kết với" : "Linked to"}: {context.label}
+            {vi ? "Liên kết với" : "Linked to"}: {opening.current.context?.label}
           </p>
         ) : null}
         {!currentMemberId ? (
@@ -251,13 +308,13 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
             {errorMessage}
           </p>
         ) : null}
-      </>
+      </fieldset>
   );
   if (guardChanges) return (
-    <RelationshipQuickActionModal guardChanges isOpen={isOpen} onClose={onClose}
-      dirty={JSON.stringify(draft) !== JSON.stringify(initialDraft.current)}
+    <RelationshipQuickActionModal guardChanges isOpen={isOpen} onClose={close}
+      dirty={dirty}
       title={title ?? (vi ? "Tạo công việc" : "Create task")}
-      formId="canonical-task-create-form" cancelLabel={vi ? "Hủy" : "Cancel"}
+      formId={formId} cancelLabel={vi ? "Hủy" : "Cancel"}
       submitLabel={submitLabel ?? (vi ? "Tạo công việc" : "Create task")}
       submitDisabled={!canCreate || submitting} onSubmit={submit}
     >
@@ -269,19 +326,19 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
     <Modal
       variant="form"
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={close}
       title={title ?? (vi ? "Tạo công việc" : "Create task")}
       size="md"
       footer={(
         <>
-          <Button type="button" variant="secondary" onClick={onClose}>{vi ? "Hủy" : "Cancel"}</Button>
-          <Button type="submit" variant="primary" form="canonical-task-create-form" disabled={!canCreate || submitting}>
+          <Button type="button" variant="secondary" onClick={close}>{vi ? "Hủy" : "Cancel"}</Button>
+          <Button type="submit" variant="primary" form={formId} disabled={!canCreate || submitting}>
             {submitLabel ?? (vi ? "Tạo công việc" : "Create task")}
           </Button>
         </>
       )}
     >
-      <form id="canonical-task-create-form" className="crm-form-surface grid gap-4 sm:grid-cols-2" onSubmit={submit}>{fields}</form>
+      <form id={formId} className="crm-form-surface grid gap-4 sm:grid-cols-2" onSubmit={submit}>{fields}</form>
     </Modal>
   );
 };

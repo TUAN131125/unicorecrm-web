@@ -373,9 +373,10 @@ export const CustomerDetailTabContent: React.FC<
         return (
           <RecordAttachmentsTab
             idPrefix="customer"
+            recordId={customerId}
             attachments={attachments}
-            onUploadAttachment={onUploadAttachment}
-            onDeleteAttachment={onDeleteAttachment}
+            onUploadAttachment={connected ? undefined : onUploadAttachment}
+            onDeleteAttachment={connected ? undefined : onDeleteAttachment}
             onDownloadAttachment={onDownloadAttachment}
           />
         );

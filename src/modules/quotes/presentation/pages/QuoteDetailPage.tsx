@@ -124,6 +124,8 @@ export const QuoteDetailPage: React.FC = () => {
   const [toast, setToast] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isDeliveryConfirmationOpen, setIsDeliveryConfirmationOpen] = useState(false);
+  const deliveryIdentity = useRef({ quoteId, open: isDeliveryConfirmationOpen, cycle: 0, workspaceId: workspace.workspaceId });
+  if (deliveryIdentity.current.quoteId !== quoteId || deliveryIdentity.current.open !== isDeliveryConfirmationOpen || deliveryIdentity.current.workspaceId !== workspace.workspaceId) deliveryIdentity.current = { quoteId, open: isDeliveryConfirmationOpen, cycle: deliveryIdentity.current.cycle + 1, workspaceId: workspace.workspaceId };
   const [isDocumentPreviewOpen, setIsDocumentPreviewOpen] = useState(false);
   const [exportBusy, setExportBusy] = useState(false);
   const [creatingOrder, setCreatingOrder] = useState(false);
@@ -413,9 +415,10 @@ export const QuoteDetailPage: React.FC = () => {
     }
   };
 
-  const confirmDelete = async () => {
+  const confirmDelete = async (isCurrent: () => boolean = () => true) => {
     try {
       await archiveQuoteCommand(quote.id, { reason: locale === "vi" ? "Lưu trữ từ trang chi tiết Báo giá." : "Archived from Quote detail.", actorId });
+      if (!isCurrent()) return;
       setIsDeleteConfirmOpen(false);
       navigate("/quotes");
     } catch (error) {
@@ -447,13 +450,16 @@ export const QuoteDetailPage: React.FC = () => {
     }
   };
 
+  const renderedDeliveryCycle = deliveryIdentity.current.cycle;
   const confirmQuoteSent = async (value: QuoteDeliveryConfirmationValue) => {
-    const updated = (await recordQuoteDeliveryCommand(quote.id, {
+    const deliveryCycle = renderedDeliveryCycle;
+    await recordQuoteDeliveryCommand(quote.id, {
       id: createDurableId("quote_delivery"),
       ...value,
       evidenceType: "USER_CONFIRMED_SENT",
       sentBy: actorId,
-    })).data;
+    });
+    if (deliveryIdentity.current.cycle !== deliveryCycle) return;
     setIsDeliveryConfirmationOpen(false);
     triggerToast("success", locale === "vi" ? "Đã xác nhận Báo giá được gửi và lưu kênh liên hệ." : "Quote delivery was confirmed with its contact channel.");
   };

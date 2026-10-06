@@ -1,6 +1,6 @@
 import { getProductCatalogSnapshot, type SelectedPickerItem } from "@/modules/products";
 import { useDealPipelineController } from "../hooks/useDealPipelineController";
-import { DealFormModal, type DealFormDraft } from "./DealFormModal";
+import { DealFormModal } from "./DealFormModal";
 
 function toSelectedPickerItems(deal: {
   lineItems: Array<{
@@ -80,7 +80,7 @@ export function DealPipelineModals({ controller }: DealPipelineModalsProps) {
         owners={ownership?.assignableOwners || []}
         stages={stageConfigs}
         canAssign={ownership?.canAssign}
-        onSubmit={(draft: DealFormDraft) => { void handleAddDealSubmit(draft); }}
+        onSubmit={handleAddDealSubmit}
       />
 
       <DealFormModal
@@ -90,6 +90,7 @@ export function DealPipelineModals({ controller }: DealPipelineModalsProps) {
           setEditingDeal(null);
         }}
         mode="edit"
+        target={editingDeal}
         initialValues={editingDeal ? {
           name: editingDeal.name,
           customerName: editingDeal.customerName || editingDeal.organizationAccountName || editingDeal.contactName || "",
@@ -108,7 +109,7 @@ export function DealPipelineModals({ controller }: DealPipelineModalsProps) {
         stages={stageConfigs}
         canAssign={ownership?.canAssign}
         customerNameLocked
-        onSubmit={(draft: DealFormDraft) => { void handleEditDealSubmit(draft); }}
+        onSubmit={handleEditDealSubmit}
       />
     </>
   );

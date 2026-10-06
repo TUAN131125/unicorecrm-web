@@ -1,5 +1,4 @@
 import React from "react";
-import { formatApplicationError } from "@/shared/operations";
 import { recordOperationalAudit } from "@/platform/operational-audit";
 import { useWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import { createPostalAddressFromLine } from "@/platform/identity";
@@ -25,14 +24,7 @@ export const OrganizationCreateModal: React.FC<OrganizationCreateModalProps> = (
   onCreated,
 }) => {
   const workspace = useWorkspaceContextSnapshot();
-  const [error, setError] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    if (isOpen) setError(null);
-  }, [isOpen]);
-
-  const submit = async (draft: OrganizationAccountFormDraft) => {
-    setError(null);
+  const submit = async (draft: OrganizationAccountFormDraft, _opening: OrganizationAccount | undefined, isCurrent: () => boolean, intentId: string) => {
     try {
       if (isOrganizationConnectedMode()) {
         const organization = await createOrganizationViaApi({
@@ -43,9 +35,8 @@ export const OrganizationCreateModal: React.FC<OrganizationCreateModalProps> = (
           email: draft.email.trim() || undefined, address: draft.address.trim() || undefined,
           source: draft.source.trim() || "manual", relationshipLevel: draft.relationshipLevel,
           notes: draft.notes.trim() || undefined, status: draft.status === "archived" ? undefined : draft.status,
-        });
-        onCreated(organization);
-        onClose();
+        }, { idempotencyKey: intentId });
+        if (isCurrent()) { onCreated(organization); }
         return;
       }
       const suffix = `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -131,10 +122,9 @@ export const OrganizationCreateModal: React.FC<OrganizationCreateModalProps> = (
         actorName: "CRM Operator",
         after: { organization: created.organization, primaryContactId: created.contact.id },
       });
-      onCreated(created.organization);
-      onClose();
+      if (isCurrent()) { onCreated(created.organization); }
     } catch (caught) {
-      setError(formatApplicationError(caught));
+      throw caught;
     }
   };
 
@@ -143,8 +133,8 @@ export const OrganizationCreateModal: React.FC<OrganizationCreateModalProps> = (
       isOpen={isOpen}
       onClose={onClose}
       mode="create"
+      connected={isOrganizationConnectedMode()}
       onSubmit={submit}
-      error={error}
     />
   );
 };

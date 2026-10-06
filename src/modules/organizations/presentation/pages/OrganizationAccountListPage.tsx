@@ -44,7 +44,7 @@ export const OrganizationAccountListPage: React.FC = () => {
 
   const actorId = access.memberId || access.accountId || "current-user";
   const connected = isOrganizationConnectedMode();
-  const canCreateOrganizationWithRepresentative = access.canPerform("organizations", "create") && access.canPerform("contacts", "create");
+  const canCreateOrganizationWithRepresentative = access.canPerform("organizations", "create") && (connected || access.canPerform("contacts", "create"));
 
   const industries = useMemo(
     () => Array.from(new Set(accounts.map((account) => account.industry).filter((value): value is string => Boolean(value)))).sort((a, b) => a.localeCompare(b)),
@@ -256,7 +256,7 @@ export const OrganizationAccountListPage: React.FC = () => {
         onClose={() => setShowCreate(false)}
         actorId={actorId}
         onCreated={(account) => {
-          setMessage(`Đã tạo tổ chức ${account.displayName} cùng cá nhân đại diện chính.`);
+          setMessage(connected ? `Đã tạo tổ chức ${account.displayName}.` : `Đã tạo tổ chức ${account.displayName} cùng cá nhân đại diện chính.`);
           navigate(account.id);
         }}
       />

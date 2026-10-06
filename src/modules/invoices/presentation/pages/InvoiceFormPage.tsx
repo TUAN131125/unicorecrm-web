@@ -1,3 +1,6 @@
+import { useRef as useWorkspaceBindingRef } from "react";
+import { useWorkspaceContextSnapshot as useWorkflowWorkspace } from "@/platform/workspace-context";
+import { useTargetBoundWorkflow } from "@/shared/presentation/useTargetBoundWorkflow";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Eye, Plus, Save, Trash2 } from "lucide-react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
@@ -111,8 +114,25 @@ function lineAmounts(line: EditableLine, currency: string): { subtotal: MoneyDto
 }
 
 export const InvoiceFormPage: React.FC = () => {
-  const { invoiceId } = useParams();
-  const [searchParams] = useSearchParams();
+  const { invoiceId: routeTargetId } = useParams();
+  const [routeSearchParams] = useSearchParams();
+  const targetLifecycle = useTargetBoundWorkflow(`${routeTargetId ?? ""}|${routeSearchParams.toString()}`, "invoice-form");
+  const workflowWorkspace = useWorkflowWorkspace().workspaceId;
+  const currentWorkflowWorkspace = useWorkspaceBindingRef(workflowWorkspace);
+  currentWorkflowWorkspace.current = workflowWorkspace;
+  const openingWorkspace = useWorkspaceBindingRef({ cycle: targetLifecycle.cycle, id: workflowWorkspace });
+  if (openingWorkspace.current.cycle !== targetLifecycle.cycle) openingWorkspace.current = { cycle: targetLifecycle.cycle, id: workflowWorkspace };
+  const ownsWorkspace = () => openingWorkspace.current.id === currentWorkflowWorkspace.current;
+  const lifecycle = { ...targetLifecycle,
+    begin: () => ownsWorkspace() && targetLifecycle.begin(),
+    isCurrent: () => ownsWorkspace() && targetLifecycle.isCurrent(),
+    register: (dirty: boolean, reset: () => void, save: () => Promise<boolean>) => {
+      targetLifecycle.register(dirty, reset, () => ownsWorkspace() ? save() : Promise.resolve(false));
+    },
+  };
+  const separator = lifecycle.targetId?.indexOf("|") ?? 0;
+  const invoiceId = lifecycle.targetId?.slice(0, separator) || undefined;
+  const searchParams = useMemo(() => new URLSearchParams(lifecycle.targetId?.slice(separator + 1) ?? ""), [lifecycle.targetId, separator]);
   const navigate = useNavigate();
   const { locale } = useI18n();
   const { activeWorkspace } = usePlatformState();
@@ -122,7 +142,10 @@ export const InvoiceFormPage: React.FC = () => {
   const text = (vi: string, en: string) => locale === "vi" ? vi : en;
   const path = (value: string) => toWorkspacePath(activeWorkspace.workspaceKey, "crm", value);
   const invoiceQuery = useInvoiceWorkspaceQuery();
-  const existing = invoiceId ? invoiceQuery.data?.invoices.find((invoice) => invoice.id === invoiceId) : undefined;
+  const liveInvoice = invoiceId ? invoiceQuery.data?.invoices.find((invoice) => invoice.id === invoiceId) : undefined;
+  const openingInvoice = useRef(liveInvoice);
+  if (openingInvoice.current?.id !== invoiceId) openingInvoice.current = liveInvoice ? structuredClone(liveInvoice) : undefined;
+  const existing = openingInvoice.current;
   const hydratedInvoiceRef = useRef<string | null>(null);
   const hydratedSourceOrderRef = useRef<string | null>(null);
   const contextSelectionRef = useRef<string | null>(null);
@@ -163,6 +186,8 @@ export const InvoiceFormPage: React.FC = () => {
   const [dueDate, setDueDate] = useState(dateAfterDays(invoiceSettings.defaultDueDays));
   const [paymentTerms, setPaymentTerms] = useState(`NET ${invoiceSettings.defaultDueDays}`);
   const [lines, setLines] = useState<EditableLine[]>([]);
+  const [hydrated, setHydrated] = useState(false);
+  const creationIntent = useRef(createDurableId("invoice_creation_intent"));
   const [previewOpen, setPreviewOpen] = useState(false);
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const mutation = useMutationTask<{ id: string }>({
@@ -189,11 +214,13 @@ export const InvoiceFormPage: React.FC = () => {
     setDueDate(existing.dueDate ?? dateAfterDays(invoiceSettings.defaultDueDays));
     setPaymentTerms(existing.paymentTerms ?? `NET ${invoiceSettings.defaultDueDays}`);
     setLines(existing.lines.map(asEditable));
-  }, [existing, invoiceSettings.defaultDueDays]);
+    setHydrated(true);
+  }, [hydrated, existing, invoiceSettings.defaultDueDays]);
 
   useEffect(() => {
     if (invoiceId || existing || !sourceOrder || hydratedSourceOrderRef.current === sourceOrder.id) return;
     hydratedSourceOrderRef.current = sourceOrder.id;
+    setHydrated(true);
     const nextBuyer = buyerLegalSnapshot(sourceOrder);
     if (nextBuyer) setBuyer(nextBuyer);
     const invoiceable = getInvoiceableOrderLinesSnapshot(sourceOrder.id);
@@ -214,7 +241,7 @@ export const InvoiceFormPage: React.FC = () => {
       taxRate: line.taxRate,
       notes: "",
     })));
-  }, [existing, invoiceId, sourceOrder]);
+  }, [hydrated, existing, invoiceId, sourceOrder]);
 
   const computed = useMemo(() => {
     const values = lines.map((line) => lineAmounts(line, currency));
@@ -265,8 +292,19 @@ export const InvoiceFormPage: React.FC = () => {
     }));
   };
 
-  const onSubmit = async (event: React.FormEvent) => {
-    event.preventDefault();
+  const fingerprint = JSON.stringify({ sourceOrderId, seller, buyer, dueDate, paymentTerms, lines }, (_key, field: unknown) => typeof field === "string" ? field.trim() : field);
+  const baseline = useRef<string | null>(null);
+  useEffect(() => { if (baseline.current === null && (hydrated || (!invoiceId && !sourceOrderId))) baseline.current = fingerprint; }, [fingerprint, hydrated, invoiceId, sourceOrderId]);
+  const baselineCycle = useRef(lifecycle.cycle);
+  useEffect(() => {
+    if (baselineCycle.current === lifecycle.cycle) return;
+    baselineCycle.current = lifecycle.cycle; baseline.current = null; setHydrated(false);
+    hydratedInvoiceRef.current = null; hydratedSourceOrderRef.current = null; contextSelectionRef.current = null;
+    creationIntent.current = createDurableId("invoice_creation_intent");
+    setSourceOrderId(searchParams.get("orderId") ?? ""); setLines([]); setSubmitAttempted(false);
+  }, [lifecycle.cycle, searchParams]);
+  const save = async (navigateAfterSave = true): Promise<boolean> => {
+    if (lifecycle.pending) return false;
     setSubmitAttempted(true);
     if (blockers.length) {
       window.requestAnimationFrame(() => {
@@ -274,8 +312,10 @@ export const InvoiceFormPage: React.FC = () => {
         firstInvalid?.scrollIntoView({ behavior: "smooth", block: "center" });
         firstInvalid?.focus({ preventScroll: true });
       });
-      return;
+      return false;
     }
+    if (!lifecycle.begin()) return false;
+    try {
     const saved = await mutation.run(async (signal) => {
       const resolvedLines = buildLines();
       if (existing) {
@@ -291,7 +331,7 @@ export const InvoiceFormPage: React.FC = () => {
         }, signal).then((outcome) => outcome.data);
       }
       if (!sourceOrder) throw new Error("INVOICE_SOURCE_ORDER_REQUIRED");
-      const creationIntentId = createDurableId("invoice_creation_intent");
+      const creationIntentId = creationIntent.current;
       return createInvoiceDraftCanonical({
         buyerRef: sourceOrder.buyerRef,
         sellerSnapshot: seller,
@@ -305,8 +345,21 @@ export const InvoiceFormPage: React.FC = () => {
         idempotencyKey: creationIntentId,
       }, signal).then((outcome) => outcome.data);
     });
-    if (saved) navigate(path(`invoices/${saved.id}`));
+    if (!saved || !lifecycle.isCurrent()) return false;
+    baseline.current = fingerprint;
+    if (navigateAfterSave) navigate(path(`invoices/${saved.id}`));
+    return true;
+    } finally { lifecycle.finish(); }
   };
+  const onSubmit = async (event: React.FormEvent) => { event.preventDefault(); await save(); };
+  lifecycle.register(baseline.current !== null && baseline.current !== fingerprint, () => {
+    hydratedInvoiceRef.current = null;
+    hydratedSourceOrderRef.current = null;
+    baseline.current = null;
+    setHydrated(false);
+    setSubmitAttempted(false);
+    mutation.reset();
+  }, () => save(false));
 
 
   if (invoiceId && invoiceQuery.loading && !invoiceQuery.data) {
@@ -331,23 +384,23 @@ export const InvoiceFormPage: React.FC = () => {
     <form onSubmit={onSubmit} className="crm-form-surface space-y-5">
       {mutation.snapshot.failure && !mutation.conflicted && <Card className="border border-rose-200 bg-rose-50"><p role="alert" className="text-sm font-semibold text-slate-800">{mutation.snapshot.failure.message}</p></Card>}
       <Card className="space-y-5">
-        {!existing && <label className="block space-y-2 text-sm font-semibold text-slate-700"><span>{text("Đơn hàng nguồn", "Source order")}</span><select id="invoice-source-order" required value={sourceOrderId} onChange={(event) => { hydratedSourceOrderRef.current = null; setSourceOrderId(event.target.value); }} aria-invalid={submitAttempted && !sourceOrder} data-invoice-invalid={submitAttempted && !sourceOrder ? "true" : undefined} className={`h-11 w-full rounded-xl border bg-white px-4 font-normal outline-none focus:ring-2 focus:ring-violet-100 ${submitAttempted && !sourceOrder ? "border-rose-500" : "border-slate-300"}`}><option value="">{text("Chọn đơn hàng đã xác nhận", "Select a confirmed order")}</option>{eligibleOrders.map((order) => <option key={order.id} value={order.id}>{order.orderNumber} · {order.customerName || order.contactName || order.buyerRef.id}</option>)}</select>{submitAttempted && !sourceOrder && <span className="block text-xs font-medium text-rose-600">{text("Chọn đơn hàng nguồn.", "Select a source order.")}</span>}</label>}
+        {!existing && <label className="block space-y-2 text-sm font-semibold text-slate-700"><span>{text("Đơn hàng nguồn", "Source order")}</span><select disabled={lifecycle.pending} id="invoice-source-order" required value={sourceOrderId} onChange={(event) => { hydratedSourceOrderRef.current = null; setSourceOrderId(event.target.value); }} aria-invalid={submitAttempted && !sourceOrder} data-invoice-invalid={submitAttempted && !sourceOrder ? "true" : undefined} className={`h-11 w-full rounded-xl border bg-white px-4 font-normal outline-none focus:ring-2 focus:ring-violet-100 ${submitAttempted && !sourceOrder ? "border-rose-500" : "border-slate-300"}`}><option value="">{text("Chọn đơn hàng đã xác nhận", "Select a confirmed order")}</option>{eligibleOrders.map((order) => <option key={order.id} value={order.id}>{order.orderNumber} · {order.customerName || order.contactName || order.buyerRef.id}</option>)}</select>{submitAttempted && !sourceOrder && <span className="block text-xs font-medium text-rose-600">{text("Chọn đơn hàng nguồn.", "Select a source order.")}</span>}</label>}
         {sourceOrder && <p className="text-sm text-slate-600">{text("Đơn hàng nguồn", "Source order")}: <strong className="font-semibold text-slate-900">{sourceOrder.orderNumber}</strong>. {text("Số lượng có thể xuất được tính từ các hóa đơn còn hiệu lực.", "Invoiceable quantity is calculated from active invoices.")}</p>}
         {!existing && (customerIdParam || contactIdParam || organizationIdParam) && eligibleOrders.length !== 1 && <p className="text-sm text-slate-600">{eligibleOrders.length === 0 ? text("Không có đơn hàng đã xác nhận phù hợp. Hãy tạo hoặc xác nhận đơn hàng trước khi lập hóa đơn.", "No confirmed order matches this context. Create or confirm an order before invoicing.") : text(`Có ${eligibleOrders.length} đơn hàng phù hợp. Hãy chọn đơn hàng cần xuất hóa đơn.`, `${eligibleOrders.length} eligible orders match this context. Select the order to invoice.`)}</p>}
       </Card>
 
       <div className="grid gap-5 xl:grid-cols-2">
-        <LegalPartyCard idPrefix="invoice-seller" title={text("Thông tin pháp lý bên bán", "Seller legal information")} value={seller} onChange={setSeller} text={text} attempted={submitAttempted} requireTaxCode />
-        <LegalPartyCard idPrefix="invoice-buyer" title={text("Thông tin pháp lý bên mua", "Buyer legal information")} value={buyer} onChange={setBuyer} text={text} attempted={submitAttempted} requireEmail />
+        <LegalPartyCard disabled={lifecycle.pending} idPrefix="invoice-seller" title={text("Thông tin pháp lý bên bán", "Seller legal information")} value={seller} onChange={setSeller} text={text} attempted={submitAttempted} requireTaxCode />
+        <LegalPartyCard disabled={lifecycle.pending} idPrefix="invoice-buyer" title={text("Thông tin pháp lý bên mua", "Buyer legal information")} value={buyer} onChange={setBuyer} text={text} attempted={submitAttempted} requireEmail />
       </div>
 
       <Card className="space-y-4">
         <div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="font-bold text-slate-900">{text("Dòng hóa đơn", "Invoice lines")}</h2><p className="mt-1 text-xs text-slate-500">{text("Có thể xuất một phần từng dòng; hệ thống chặn over-invoicing ngay trên form.", "Each line can be partially invoiced; over-invoicing is blocked in the form.")}</p></div><Button type="button" variant="secondary" icon={<Plus size={15} />} onClick={addManualLine}>{text("Thêm dòng", "Add line")}</Button></div>
-        <div id="invoice-lines" tabIndex={-1} data-invoice-invalid={submitAttempted && !lines.length ? "true" : undefined} className="overflow-x-auto outline-none">{submitAttempted && !lines.length && <p className="mb-3 text-xs font-medium text-rose-600">{text("Thêm ít nhất một dòng hóa đơn.", "Add at least one invoice line.")}</p>}<table className="min-w-[1380px] w-full text-left text-xs"><thead className="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-500"><tr><th className="px-3 py-3">{text("Hàng hóa / dịch vụ", "Goods / service")}</th><th className="px-3 py-3">{text("ĐVT", "UOM")}</th><th className="px-3 py-3 text-right">{text("Order", "Ordered")}</th><th className="px-3 py-3 text-right">{text("Đã xuất", "Invoiced")}</th><th className="px-3 py-3 text-right">{text("Còn lại", "Available")}</th><th className="px-3 py-3 text-right">{text("Đang xuất", "Quantity")}</th><th className="px-3 py-3 text-right">{text("Đơn giá", "Unit price")}</th><th className="px-3 py-3 text-right">{text("CK %", "Disc. %")}</th><th className="px-3 py-3 text-right">{text("Thuế %", "Tax %")}</th><th className="px-3 py-3 text-right">{text("Thành tiền", "Total")}</th><th className="px-3 py-3" /></tr></thead><tbody className="divide-y divide-slate-100">{lines.map((line, index) => { const invalidDescription = submitAttempted && !line.description.trim(); const invalidQuantity = submitAttempted && (!Number.isFinite(Number(line.quantity)) || Number(line.quantity) <= 0 || Number(line.quantity) > Number(line.invoiceableQuantity)); return <tr key={line.id}><td className="px-3 py-3"><input id={`invoice-line-description-${index}`} value={line.description} onChange={(event) => updateLine(line.id, { description: event.target.value })} aria-invalid={invalidDescription} data-invoice-invalid={invalidDescription ? "true" : undefined} className={`h-10 min-w-60 w-full rounded-lg border px-3 ${invalidDescription ? "border-rose-500" : "border-slate-300"}`} />{invalidDescription && <span className="mt-1 block text-[10px] text-rose-600">{text("Nhập mô tả dòng.", "Enter a line description.")}</span>}<input value={line.notes} onChange={(event) => updateLine(line.id, { notes: event.target.value })} placeholder={text("Ghi chú dòng", "Line note")} className="mt-2 h-9 min-w-60 w-full rounded-lg border border-slate-200 px-3 text-[11px]" /></td><td className="px-3 py-3"><input value={line.unitOfMeasure} onChange={(event) => updateLine(line.id, { unitOfMeasure: event.target.value })} className="h-10 w-20 rounded-lg border border-slate-300 px-2" /></td><td className="px-3 py-3 text-right font-semibold">{line.sourceOrderQuantity}</td><td className="px-3 py-3 text-right font-semibold text-slate-500">{line.alreadyInvoicedQuantity}</td><td className="px-3 py-3 text-right font-bold text-violet-700">{line.invoiceableQuantity}</td><td className="px-3 py-3"><input id={`invoice-line-quantity-${index}`} type="number" min="0" step="any" value={line.quantity} onChange={(event) => updateLine(line.id, { quantity: event.target.value })} aria-invalid={invalidQuantity} data-invoice-invalid={invalidQuantity ? "true" : undefined} className={`h-10 w-24 rounded-lg border px-2 text-right ${invalidQuantity ? "border-rose-500" : "border-slate-300"}`} aria-label={`${text("Số lượng dòng", "Line quantity")} ${index + 1}`} /></td><td className="px-3 py-3"><input type="number" min="0" step="any" value={line.unitPrice} onChange={(event) => updateLine(line.id, { unitPrice: event.target.value })} className="h-10 w-32 rounded-lg border border-slate-300 px-2 text-right" /></td><td className="px-3 py-3"><input type="number" min="0" max="100" step="any" value={line.discountRate} onChange={(event) => updateLine(line.id, { discountRate: event.target.value })} className="h-10 w-20 rounded-lg border border-slate-300 px-2 text-right" /></td><td className="px-3 py-3"><input type="number" min="0" max="100" step="any" value={line.taxRate} onChange={(event) => updateLine(line.id, { taxRate: event.target.value })} className="h-10 w-20 rounded-lg border border-slate-300 px-2 text-right" /></td><td className="px-3 py-3 text-right font-bold whitespace-nowrap">{formatMoneyDto(computed.values[index]?.total ?? money("0", currency), locale === "vi" ? "vi-VN" : "en-US")}</td><td className="px-3 py-3"><button type="button" onClick={() => removeLine(line.id)} className="rounded-lg p-2 text-rose-600 hover:bg-rose-50" aria-label={text("Xóa dòng", "Remove line")}><Trash2 size={16} /></button></td></tr>; })}</tbody></table></div>
+        <div id="invoice-lines" tabIndex={-1} data-invoice-invalid={submitAttempted && !lines.length ? "true" : undefined} className="overflow-x-auto outline-none">{submitAttempted && !lines.length && <p className="mb-3 text-xs font-medium text-rose-600">{text("Thêm ít nhất một dòng hóa đơn.", "Add at least one invoice line.")}</p>}<table className="min-w-[1380px] w-full text-left text-xs"><thead className="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-500"><tr><th className="px-3 py-3">{text("Hàng hóa / dịch vụ", "Goods / service")}</th><th className="px-3 py-3">{text("ĐVT", "UOM")}</th><th className="px-3 py-3 text-right">{text("Order", "Ordered")}</th><th className="px-3 py-3 text-right">{text("Đã xuất", "Invoiced")}</th><th className="px-3 py-3 text-right">{text("Còn lại", "Available")}</th><th className="px-3 py-3 text-right">{text("Đang xuất", "Quantity")}</th><th className="px-3 py-3 text-right">{text("Đơn giá", "Unit price")}</th><th className="px-3 py-3 text-right">{text("CK %", "Disc. %")}</th><th className="px-3 py-3 text-right">{text("Thuế %", "Tax %")}</th><th className="px-3 py-3 text-right">{text("Thành tiền", "Total")}</th><th className="px-3 py-3" /></tr></thead><tbody className="divide-y divide-slate-100">{lines.map((line, index) => { const invalidDescription = submitAttempted && !line.description.trim(); const invalidQuantity = submitAttempted && (!Number.isFinite(Number(line.quantity)) || Number(line.quantity) <= 0 || Number(line.quantity) > Number(line.invoiceableQuantity)); return <tr key={line.id}><td className="px-3 py-3"><input disabled={lifecycle.pending} id={`invoice-line-description-${index}`} value={line.description} onChange={(event) => updateLine(line.id, { description: event.target.value })} aria-invalid={invalidDescription} data-invoice-invalid={invalidDescription ? "true" : undefined} className={`h-10 min-w-60 w-full rounded-lg border px-3 ${invalidDescription ? "border-rose-500" : "border-slate-300"}`} />{invalidDescription && <span className="mt-1 block text-[10px] text-rose-600">{text("Nhập mô tả dòng.", "Enter a line description.")}</span>}<input disabled={lifecycle.pending} value={line.notes} onChange={(event) => updateLine(line.id, { notes: event.target.value })} placeholder={text("Ghi chú dòng", "Line note")} className="mt-2 h-9 min-w-60 w-full rounded-lg border border-slate-200 px-3 text-[11px]" /></td><td className="px-3 py-3"><input disabled={lifecycle.pending} value={line.unitOfMeasure} onChange={(event) => updateLine(line.id, { unitOfMeasure: event.target.value })} className="h-10 w-20 rounded-lg border border-slate-300 px-2" /></td><td className="px-3 py-3 text-right font-semibold">{line.sourceOrderQuantity}</td><td className="px-3 py-3 text-right font-semibold text-slate-500">{line.alreadyInvoicedQuantity}</td><td className="px-3 py-3 text-right font-bold text-violet-700">{line.invoiceableQuantity}</td><td className="px-3 py-3"><input disabled={lifecycle.pending} id={`invoice-line-quantity-${index}`} type="number" min="0" step="any" value={line.quantity} onChange={(event) => updateLine(line.id, { quantity: event.target.value })} aria-invalid={invalidQuantity} data-invoice-invalid={invalidQuantity ? "true" : undefined} className={`h-10 w-24 rounded-lg border px-2 text-right ${invalidQuantity ? "border-rose-500" : "border-slate-300"}`} aria-label={`${text("Số lượng dòng", "Line quantity")} ${index + 1}`} /></td><td className="px-3 py-3"><input disabled={lifecycle.pending} type="number" min="0" step="any" value={line.unitPrice} onChange={(event) => updateLine(line.id, { unitPrice: event.target.value })} className="h-10 w-32 rounded-lg border border-slate-300 px-2 text-right" /></td><td className="px-3 py-3"><input disabled={lifecycle.pending} type="number" min="0" max="100" step="any" value={line.discountRate} onChange={(event) => updateLine(line.id, { discountRate: event.target.value })} className="h-10 w-20 rounded-lg border border-slate-300 px-2 text-right" /></td><td className="px-3 py-3"><input disabled={lifecycle.pending} type="number" min="0" max="100" step="any" value={line.taxRate} onChange={(event) => updateLine(line.id, { taxRate: event.target.value })} className="h-10 w-20 rounded-lg border border-slate-300 px-2 text-right" /></td><td className="px-3 py-3 text-right font-bold whitespace-nowrap">{formatMoneyDto(computed.values[index]?.total ?? money("0", currency), locale === "vi" ? "vi-VN" : "en-US")}</td><td className="px-3 py-3"><button type="button" onClick={() => removeLine(line.id)} className="rounded-lg p-2 text-rose-600 hover:bg-rose-50" aria-label={text("Xóa dòng", "Remove line")}><Trash2 size={16} /></button></td></tr>; })}</tbody></table></div>
       </Card>
 
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_380px]">
-        <Card className="grid gap-4 sm:grid-cols-3"><Input type="date" label={text("Ngày đến hạn", "Due date")} value={dueDate} onChange={(event) => setDueDate(event.target.value)} /><label className="space-y-2 text-sm font-semibold text-slate-700"><span>{text("Điều khoản thanh toán", "Payment terms")}</span><input value={paymentTerms} onChange={(event) => setPaymentTerms(event.target.value)} className="h-11 w-full rounded-xl border border-slate-300 px-4 font-normal" /></label><label className="space-y-2 text-sm font-semibold text-slate-700"><span>{text("Tiền tệ", "Currency")}</span><input readOnly value={currency} className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 font-normal" /></label></Card>
+        <Card className="grid gap-4 sm:grid-cols-3"><Input disabled={lifecycle.pending} type="date" label={text("Ngày đến hạn", "Due date")} value={dueDate} onChange={(event) => setDueDate(event.target.value)} /><label className="space-y-2 text-sm font-semibold text-slate-700"><span>{text("Điều khoản thanh toán", "Payment terms")}</span><input disabled={lifecycle.pending} value={paymentTerms} onChange={(event) => setPaymentTerms(event.target.value)} className="h-11 w-full rounded-xl border border-slate-300 px-4 font-normal" /></label><label className="space-y-2 text-sm font-semibold text-slate-700"><span>{text("Tiền tệ", "Currency")}</span><input disabled={lifecycle.pending} readOnly value={currency} className="h-11 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 font-normal" /></label></Card>
         <Card className="space-y-3 text-sm"><Total label={text("Tạm tính", "Subtotal")} value={computed.totals.subtotal} locale={locale} /><Total label={text("Chiết khấu", "Discount")} value={computed.totals.discountTotal} locale={locale} /><Total label={text("Thuế", "Tax")} value={computed.totals.taxTotal} locale={locale} /><div className="border-t border-slate-200 pt-3"><Total label={text("Tổng thanh toán", "Grand total")} value={computed.totals.grandTotal} locale={locale} strong /></div></Card>
       </div>
 
@@ -369,6 +422,7 @@ export const InvoiceFormPage: React.FC = () => {
 };
 
 function LegalPartyCard({
+  disabled,
   idPrefix,
   title,
   value,
@@ -378,6 +432,7 @@ function LegalPartyCard({
   requireTaxCode = false,
   requireEmail = false,
 }: {
+  disabled: boolean;
   idPrefix: string;
   title: string;
   value: LegalPartySnapshot;
@@ -393,7 +448,7 @@ function LegalPartyCard({
   const emailMissing = attempted && requireEmail && !value.email?.trim();
   const addressMissing = attempted && !value.addressLines.some((item) => item.trim());
   const inputClass = (invalid: boolean) => `h-11 w-full rounded-xl border px-4 font-normal outline-none focus:ring-2 focus:ring-violet-100 ${invalid ? "border-rose-500" : "border-slate-300"}`;
-  return <Card className="space-y-4"><h2 className="font-semibold text-slate-900 [overflow-wrap:anywhere]">{title}</h2><div className="grid gap-4 sm:grid-cols-2"><label className="space-y-2 text-sm font-semibold text-slate-700"><span>{text("Tên hiển thị", "Display name")}</span><input id={`${idPrefix}-display-name`} value={value.displayName} onChange={(event) => field({ displayName: event.target.value })} className={inputClass(false)} /></label><label className="space-y-2 text-sm font-semibold text-slate-700"><span>{text("Tên pháp lý", "Legal name")} *</span><input id={`${idPrefix}-legal-name`} required value={value.legalName ?? ""} onChange={(event) => field({ legalName: event.target.value })} aria-invalid={legalNameMissing} data-invoice-invalid={legalNameMissing ? "true" : undefined} className={inputClass(legalNameMissing)} />{legalNameMissing && <span className="block text-xs font-medium text-rose-600">{text("Nhập tên pháp lý.", "Enter the legal name.")}</span>}</label><label className="space-y-2 text-sm font-semibold text-slate-700"><span>{text("Mã số thuế", "Tax code")}{requireTaxCode ? " *" : ""}</span><input id={`${idPrefix}-tax-code`} value={value.taxId ?? ""} onChange={(event) => field({ taxId: event.target.value })} aria-invalid={taxCodeMissing} data-invoice-invalid={taxCodeMissing ? "true" : undefined} className={inputClass(taxCodeMissing)} />{taxCodeMissing && <span className="block text-xs font-medium text-rose-600">{text("Nhập mã số thuế bên bán.", "Enter the seller tax code.")}</span>}</label><label className="space-y-2 text-sm font-semibold text-slate-700"><span>Email{requireEmail ? " *" : ""}</span><input id={`${idPrefix}-email`} type="email" value={value.email ?? ""} onChange={(event) => field({ email: event.target.value })} aria-invalid={emailMissing} data-invoice-invalid={emailMissing ? "true" : undefined} className={inputClass(emailMissing)} />{emailMissing && <span className="block text-xs font-medium text-rose-600">{text("Nhập email nhận hóa đơn.", "Enter the invoice recipient email.")}</span>}</label><label className="space-y-2 text-sm font-semibold text-slate-700"><span>{text("Liên hệ", "Contact")}</span><input value={value.phone ?? ""} onChange={(event) => field({ phone: event.target.value })} className={inputClass(false)} /></label><label className="space-y-2 text-sm font-semibold text-slate-700 sm:col-span-2"><span>{text("Địa chỉ pháp lý", "Legal address")} *</span><textarea id={`${idPrefix}-address`} required rows={3} value={value.addressLines.join("\n")} onChange={(event) => field({ addressLines: event.target.value.split("\n") })} aria-invalid={addressMissing} data-invoice-invalid={addressMissing ? "true" : undefined} className={`w-full rounded-xl border px-4 py-3 font-normal outline-none focus:ring-2 focus:ring-violet-100 ${addressMissing ? "border-rose-500" : "border-slate-300"}`} />{addressMissing && <span className="block text-xs font-medium text-rose-600">{text("Nhập địa chỉ pháp lý.", "Enter the legal address.")}</span>}</label></div></Card>;
+  return <Card className="space-y-4"><h2 className="font-semibold text-slate-900 [overflow-wrap:anywhere]">{title}</h2><div className="grid gap-4 sm:grid-cols-2"><label className="space-y-2 text-sm font-semibold text-slate-700"><span>{text("Tên hiển thị", "Display name")}</span><input disabled={disabled} id={`${idPrefix}-display-name`} value={value.displayName} onChange={(event) => field({ displayName: event.target.value })} className={inputClass(false)} /></label><label className="space-y-2 text-sm font-semibold text-slate-700"><span>{text("Tên pháp lý", "Legal name")} *</span><input disabled={disabled} id={`${idPrefix}-legal-name`} required value={value.legalName ?? ""} onChange={(event) => field({ legalName: event.target.value })} aria-invalid={legalNameMissing} data-invoice-invalid={legalNameMissing ? "true" : undefined} className={inputClass(legalNameMissing)} />{legalNameMissing && <span className="block text-xs font-medium text-rose-600">{text("Nhập tên pháp lý.", "Enter the legal name.")}</span>}</label><label className="space-y-2 text-sm font-semibold text-slate-700"><span>{text("Mã số thuế", "Tax code")}{requireTaxCode ? " *" : ""}</span><input disabled={disabled} id={`${idPrefix}-tax-code`} value={value.taxId ?? ""} onChange={(event) => field({ taxId: event.target.value })} aria-invalid={taxCodeMissing} data-invoice-invalid={taxCodeMissing ? "true" : undefined} className={inputClass(taxCodeMissing)} />{taxCodeMissing && <span className="block text-xs font-medium text-rose-600">{text("Nhập mã số thuế bên bán.", "Enter the seller tax code.")}</span>}</label><label className="space-y-2 text-sm font-semibold text-slate-700"><span>Email{requireEmail ? " *" : ""}</span><input disabled={disabled} id={`${idPrefix}-email`} type="email" value={value.email ?? ""} onChange={(event) => field({ email: event.target.value })} aria-invalid={emailMissing} data-invoice-invalid={emailMissing ? "true" : undefined} className={inputClass(emailMissing)} />{emailMissing && <span className="block text-xs font-medium text-rose-600">{text("Nhập email nhận hóa đơn.", "Enter the invoice recipient email.")}</span>}</label><label className="space-y-2 text-sm font-semibold text-slate-700"><span>{text("Liên hệ", "Contact")}</span><input disabled={disabled} value={value.phone ?? ""} onChange={(event) => field({ phone: event.target.value })} className={inputClass(false)} /></label><label className="space-y-2 text-sm font-semibold text-slate-700 sm:col-span-2"><span>{text("Địa chỉ pháp lý", "Legal address")} *</span><textarea disabled={disabled} id={`${idPrefix}-address`} required rows={3} value={value.addressLines.join("\n")} onChange={(event) => field({ addressLines: event.target.value.split("\n") })} aria-invalid={addressMissing} data-invoice-invalid={addressMissing ? "true" : undefined} className={`w-full rounded-xl border px-4 py-3 font-normal outline-none focus:ring-2 focus:ring-violet-100 ${addressMissing ? "border-rose-500" : "border-slate-300"}`} />{addressMissing && <span className="block text-xs font-medium text-rose-600">{text("Nhập địa chỉ pháp lý.", "Enter the legal address.")}</span>}</label></div></Card>;
 }
 
 function Total({ label, value, locale, strong = false }: { label: string; value: MoneyDto; locale: string; strong?: boolean }) {

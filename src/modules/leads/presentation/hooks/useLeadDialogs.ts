@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 
 export const useLeadDialogs = (
   selectedLeadIds: string[],
@@ -9,17 +9,29 @@ export const useLeadDialogs = (
   // Modal Boolean states
   const [isNewLeadOpen, setIsNewLeadOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
-  const [isDisqualifyModalOpen, setIsDisqualifyModalOpen] = useState(false);
+  const [isDisqualifyModalOpen, rawsetIsDisqualifyModalOpen] = useState(false);
+  const isDisqualifyModalOpenTargets = useRef<string[]>([]);
+  const setIsDisqualifyModalOpen = (open: boolean) => { if (open && !isDisqualifyModalOpen) isDisqualifyModalOpenTargets.current = [...selectedLeadIds]; rawsetIsDisqualifyModalOpen(open); };
   const [disqualifyLeadId, setDisqualifyLeadId] = useState<string | null>(null);
-  const [isFollowUpModalOpen, setIsFollowUpModalOpen] = useState(false);
+  const [isFollowUpModalOpen, rawsetIsFollowUpModalOpen] = useState(false);
+  const isFollowUpModalOpenTargets = useRef<string[]>([]);
+  const setIsFollowUpModalOpen = (open: boolean) => { if (open && !isFollowUpModalOpen) isFollowUpModalOpenTargets.current = [...selectedLeadIds]; rawsetIsFollowUpModalOpen(open); };
   const [followUpLeadId, setFollowUpLeadId] = useState<string | null>(null);
-  const [isBulkUpdateOpen, setIsBulkUpdateOpen] = useState(false);
+  const [isBulkUpdateOpen, rawsetIsBulkUpdateOpen] = useState(false);
+  const isBulkUpdateOpenTargets = useRef<string[]>([]);
+  const setIsBulkUpdateOpen = (open: boolean) => { if (open && !isBulkUpdateOpen) isBulkUpdateOpenTargets.current = [...selectedLeadIds]; rawsetIsBulkUpdateOpen(open); };
   const [bulkUpdateStatus, setBulkUpdateStatus] = useState("");
   const [bulkUpdateOwner, setBulkUpdateOwner] = useState("");
-  const [isManageTagsModalOpen, setIsManageTagsModalOpen] = useState(false);
-  const [showArchiveConfirm, setShowArchiveConfirm] = useState(false);
+  const [isManageTagsModalOpen, rawsetIsManageTagsModalOpen] = useState(false);
+  const isManageTagsModalOpenTargets = useRef<string[]>([]);
+  const setIsManageTagsModalOpen = (open: boolean) => { if (open && !isManageTagsModalOpen) isManageTagsModalOpenTargets.current = [...selectedLeadIds]; rawsetIsManageTagsModalOpen(open); };
+  const [showArchiveConfirm, rawsetShowArchiveConfirm] = useState(false);
+  const showArchiveConfirmTargets = useRef<string[]>([]);
+  const setShowArchiveConfirm = (open: boolean) => { if (open && !showArchiveConfirm) showArchiveConfirmTargets.current = [...selectedLeadIds]; rawsetShowArchiveConfirm(open); };
   const [leadToArchive, setLeadToArchive] = useState<string | null>(null);
-  const [isReassignModalOpen, setIsReassignModalOpen] = useState(false);
+  const [isReassignModalOpen, rawsetIsReassignModalOpen] = useState(false);
+  const isReassignModalOpenTargets = useRef<string[]>([]);
+  const setIsReassignModalOpen = (open: boolean) => { if (open && !isReassignModalOpen) isReassignModalOpenTargets.current = [...selectedLeadIds]; rawsetIsReassignModalOpen(open); };
   const [selectedReassignOwnerId, setSelectedReassignOwnerId] = useState("");
   const [reassignReason, setReassignReason] = useState("");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -33,12 +45,12 @@ export const useLeadDialogs = (
   const handleOpenDisqualify = useCallback((leadId: string | null) => {
     setDisqualifyLeadId(leadId);
     setIsDisqualifyModalOpen(true);
-  }, []);
+  }, [selectedLeadIds]);
 
   const handleOpenFollowUp = useCallback((leadId: string | null) => {
     setFollowUpLeadId(leadId);
     setIsFollowUpModalOpen(true);
-  }, []);
+  }, [selectedLeadIds]);
 
   const handleBulkReassign = useCallback(() => {
     if (selectedLeadIds.length === 0) {
@@ -51,6 +63,11 @@ export const useLeadDialogs = (
   }, [defaultReassignOwnerId, selectedLeadIds, showToast, locale]);
 
   return {
+    auxiliaryTargets: {
+      disqualify: isDisqualifyModalOpenTargets.current, followUp: isFollowUpModalOpenTargets.current,
+      update: isBulkUpdateOpenTargets.current, tags: isManageTagsModalOpenTargets.current,
+      archive: showArchiveConfirmTargets.current, reassign: isReassignModalOpenTargets.current,
+    },
     // New Lead
     isNewLeadOpen,
     setIsNewLeadOpen,

@@ -1,3 +1,4 @@
+import { useQuoteFormLifecycle } from "./useQuoteFormLifecycle";
 import { formatApplicationError } from "@/shared/operations";
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useSearchParams, useNavigate, useParams } from "react-router-dom";
@@ -34,7 +35,6 @@ import { createQuotePdfFromElement, downloadQuotePdf } from "../services/quotePd
 import { launchQuoteGmailDelivery } from "../services/quoteGmailDelivery";
 import { usePlatformState } from "@/platform/application-state";
 import { resolveWorkspaceMemberLabel } from "@/platform/member-directory";
-import { registerUnsavedWork } from "@/platform/unsaved-work";
 import { getPaymentMethodCatalogSnapshot } from "@/modules/payments";
 import { formatMoneyDto, money } from "@/shared/money";
 import { createDurableId } from "@/shared/ids";
@@ -193,15 +193,22 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
   const { deals } = useDeals();
   const products = getProductCatalogSnapshot();
   const setDeals: React.Dispatch<React.SetStateAction<Deal[]>> = (updater) => { updateDeals(updater); };
-  const { quoteId } = useParams();
-  const [searchParams] = useSearchParams();
+  const { quoteId: routeTargetId } = useParams();
+  const [routeSearchParams] = useSearchParams();
+  const lifecycle = useQuoteFormLifecycle(`${routeTargetId ?? ""}|${routeSearchParams.toString()}`);
+  const separator = lifecycle.targetId?.indexOf("|") ?? 0;
+  const quoteId = lifecycle.targetId?.slice(0, separator) || undefined;
+  const searchParams = useMemo(() => new URLSearchParams(lifecycle.targetId?.slice(separator + 1) ?? ""), [lifecycle.targetId, separator]);
   const dealIdParam = searchParams.get("dealId");
   const quoteIdParam = quoteId || searchParams.get("quoteId");
   const customerIdParam = searchParams.get("customerId");
   const organizationIdParam = searchParams.get("organizationId");
   const publishAction = searchParams.get("action");
 
-  const editingQuote = quotes.find(q => q.id === quoteIdParam);
+  const liveEditingQuote = quotes.find(q => q.id === quoteIdParam);
+  const openingQuote = useRef(liveEditingQuote);
+  if (openingQuote.current?.id !== quoteIdParam) openingQuote.current = liveEditingQuote ? structuredClone(liveEditingQuote) : undefined;
+  const editingQuote = openingQuote.current;
   const referencedOrganization = organizationIdParam ? getOrganizationAccountSnapshot(organizationIdParam) : undefined;
   const organizationCustomer = referencedOrganization
     ? findCustomerByRelationshipRefSnapshot({ type: "ORGANIZATION_ACCOUNT", id: referencedOrganization.id })
@@ -234,7 +241,9 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
   const isDealLocked = !!dealIdParam || !!editingQuote || !!customerIdParam || !!organizationIdParam;
 
   // Identity allocation belongs to the Quote application boundary, not collection length or component time.
-  const [newQuoteIdentity] = useState(() => allocateQuoteIdentitySnapshot());
+  const [newQuoteIdentity, setNewQuoteIdentity] = useState(() => allocateQuoteIdentitySnapshot());
+  const identityCycle = useRef(lifecycle.cycle);
+  useEffect(() => { if (identityCycle.current !== lifecycle.cycle) { identityCycle.current = lifecycle.cycle; setNewQuoteIdentity(allocateQuoteIdentitySnapshot()); setSavedDraftFingerprint(null); setDraftHydrated(false); initializedQuoteSourceRef.current = null; } }, [lifecycle.cycle]);
   const quoteNumber = editingQuote?.quoteNumber ?? newQuoteIdentity.quoteNumber;
 
   // Dynamic Quote fields
@@ -398,7 +407,7 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
 
     initializedQuoteSourceRef.current = quoteSourceInitializationKey;
     setDraftHydrated(true);
-  }, [quoteSourceInitializationKey, quoteIdParam, customerIdParam, organizationIdParam, selectedDealId, referencedDeal, editingQuote, t, locale, referencedCustomer, referencedOrganization, organizationPrimaryContact]);
+  }, [draftHydrated,quoteSourceInitializationKey, quoteIdParam, customerIdParam, organizationIdParam, selectedDealId, referencedDeal, editingQuote, t, locale, referencedCustomer, referencedOrganization, organizationPrimaryContact]);
 
   // Handle value modifications inside table
   const handleUpdateLineField = (id: string, field: keyof QuoteLineItem, value: any) => {
@@ -468,23 +477,11 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
 
   const hasUnsavedChanges = draftHydrated && savedDraftFingerprint !== null && savedDraftFingerprint !== currentDraftFingerprint;
 
-  useEffect(() => registerUnsavedWork({
-    id: `quote-builder:${editingQuote?.id ?? newQuoteIdentity.id}`,
-    title: locale === "vi" ? "Báo giá chưa lưu" : "Unsaved Quote",
-    isDirty: hasUnsavedChanges,
-    save: () => saveHandlerRef.current(),
-    discard: () => setSavedDraftFingerprint(currentDraftFingerprint),
-  }), [currentDraftFingerprint, editingQuote?.id, hasUnsavedChanges, locale, newQuoteIdentity.id]);
-
-  useEffect(() => {
-    const listener = (event: BeforeUnloadEvent) => {
-      if (!hasUnsavedChanges) return;
-      event.preventDefault();
-      event.returnValue = "";
-    };
-    window.addEventListener("beforeunload", listener);
-    return () => window.removeEventListener("beforeunload", listener);
-  }, [hasUnsavedChanges]);
+  lifecycle.register(hasUnsavedChanges, () => {
+    initializedQuoteSourceRef.current = null;
+    setSavedDraftFingerprint(null);
+    setDraftHydrated(false);
+  }, () => saveHandlerRef.current());
 
   const approvalPolicy = crmConfig.moduleSettings?.quotes?.approval ?? DEFAULT_QUOTE_APPROVAL_POLICY;
   const approvalAssessment = useMemo(() => evaluateQuoteApproval({
@@ -722,23 +719,26 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
   };
 
   const persistCurrentQuote = async (shouldNavigate = false): Promise<Quote | null> => {
-    if (saveBusy) return null;
+    if (lifecycle.pending) return null;
     const candidate = buildCurrentQuote();
     if (!candidate) return null;
+    if (!lifecycle.begin()) return null;
     setSaveBusy(true);
     try {
       const wasNew = !editingQuote;
       const saved = (await saveQuoteCommand(candidate)).data;
+      if (!lifecycle.isCurrent()) return null;
       appendDealActivity(saved, wasNew ? "created" : "updated");
       setSavedDraftFingerprint(currentDraftFingerprint);
       triggerToast(locale === "vi" ? "Đã lưu Báo giá." : "Quote saved.", "success");
-      if (shouldNavigate) window.setTimeout(() => navigateAfterSave(saved), 0);
+      if (shouldNavigate) navigateAfterSave(saved);
       return saved;
     } catch (error) {
-      setValidationError(locale === "vi" ? "Không thể lưu Báo giá. Dữ liệu đang nhập vẫn được giữ." : "The Quote could not be saved. Your entered data is still available.");
+      if (lifecycle.isCurrent()) setValidationError(formatApplicationError(error, { locale }));
       return null;
     } finally {
-      setSaveBusy(false);
+      if (lifecycle.isCurrent()) setSaveBusy(false);
+      lifecycle.finish();
     }
   };
 
@@ -870,6 +870,7 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
     return () => window.cancelAnimationFrame(frame);
   }, [publishAction, editingQuote?.id, quoteSourceInitializationKey, quoteTitle, quoteLines.length]);
   return {
+    formPending: lifecycle.pending,
     crmConfig,
     customers,
     allocateAgreementLineId,

@@ -48,9 +48,12 @@ for (const section of STUDIO_SECTIONS) {
   assert.ok(resolved?.guidance, `Studio section ${section.id} must resolve guidance`);
 }
 
-assert.equal(SCREEN_GUIDANCE.length, 65, "the contextual guidance catalog must cover all 65 unique workspace screens");
+assert.deepEqual(new Set(SCREEN_GUIDANCE.map(screen => screen.id)), new Set(Object.values(ROUTE_METADATA).map(meta => meta.guidanceId)), "every routed workspace screen must have exactly one canonical guide");
+assert.equal(SCREEN_GUIDANCE.length, new Set(Object.values(ROUTE_METADATA).map(meta => meta.guidanceId)).size, "duplicate screen guides are forbidden");
 assert.equal(SCREEN_GUIDANCE.filter((screen) => screen.productSpace === "crm").length, 51, "CRM guidance inventory must cover 51 screens");
-assert.equal(SCREEN_GUIDANCE.filter((screen) => screen.productSpace === "studio").length, 11, "Studio guidance inventory must cover 11 screens");
+assert.equal(SCREEN_GUIDANCE.filter((screen) => screen.productSpace === "studio").length, STUDIO_SECTIONS.length, "Studio guidance must cover each canonical section");
+assert.equal(resolveGuidanceContext("/w/demo/studio/settings/ai", allowAll)?.guidance?.id, "studio.ai");
+assert.deepEqual(SCREEN_GUIDANCE.find(screen => screen.id === "studio.ai")?.requiredCapabilities, ["ai.configuration.read"]);
 assert.equal(SCREEN_GUIDANCE.filter((screen) => screen.productSpace === "people").length, 3, "People & Access guidance inventory must cover 3 screens");
 
 for (const screen of SCREEN_GUIDANCE) {

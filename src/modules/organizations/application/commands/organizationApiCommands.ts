@@ -1,11 +1,11 @@
 import { invalidateModuleQueries, runBackendProjection } from "@/shared/application";
 import type { OrganizationAccount } from "../../domain/model/organizationAccount.types";
 import { getOrganizationApiRuntime, organizationAccountRepository } from "../composition/organizationApplicationServices";
-import type { OrganizationArchiveCommand, OrganizationCreateCommand, OrganizationUpdateCommand } from "../ports/OrganizationApiRuntime";
+import type { OrganizationArchiveCommand, OrganizationCommandOptions, OrganizationCreateCommand, OrganizationUpdateCommand } from "../ports/OrganizationApiRuntime";
 import { saveOrganizationAccount } from "./organizationAccountRepositoryCommands";
 
-export const createOrganizationViaApi = (input: OrganizationCreateCommand) => execute("organization.create", (commands) => commands.create(input));
-export const updateOrganizationViaApi = (input: OrganizationUpdateCommand) => execute("organization.update", (commands) => commands.update(input));
+export const createOrganizationViaApi = (input: OrganizationCreateCommand, options: OrganizationCommandOptions = {}) => execute("organization.create", (commands) => commands.create(input, options));
+export const updateOrganizationViaApi = (input: OrganizationUpdateCommand, options: OrganizationCommandOptions = {}) => execute("organization.update", (commands) => commands.update(input, options));
 export const archiveOrganizationViaApi = (input: OrganizationArchiveCommand) => execute("organization.archive", (commands) => commands.archive(input));
 
 async function execute(commandType: string, call: (commands: NonNullable<ReturnType<typeof getOrganizationApiRuntime>["commands"]>) => Promise<OrganizationAccount>): Promise<OrganizationAccount> {

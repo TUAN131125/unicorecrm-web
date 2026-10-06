@@ -58,6 +58,12 @@ const PRESENTATION_COMPOSITIONS: Record<string, readonly string[]> = {
   "src/modules/contacts/presentation/pages/ContactDetailPage.tsx": [
     "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
     "src/modules/contacts/presentation/views/ContactDetailView.tsx",
+    "src/modules/contacts/presentation/detail/ContactInsightPanel.tsx",
+    "src/components/crm/relationship-panel/RelationshipWorkPanelShell.tsx",
+  ],
+  "src/modules/contacts/presentation/views/ContactDetailView.tsx": [
+    "src/modules/contacts/presentation/detail/ContactInsightPanel.tsx",
+    "src/components/crm/relationship-panel/RelationshipWorkPanelShell.tsx",
   ],
   "src/modules/orders/presentation/pages/OrderListPage.tsx": [
     "src/modules/orders/presentation/hooks/useOrderListController.tsx",

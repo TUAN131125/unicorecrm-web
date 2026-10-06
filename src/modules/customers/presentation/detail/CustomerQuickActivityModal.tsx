@@ -5,6 +5,7 @@ export type CustomerQuickAction = RelationshipActivityAction;
 export type CustomerQuickActivityDraft = RelationshipActivityDraft;
 
 interface CustomerQuickActivityModalProps {
+  targetId?: string;
   action: CustomerQuickAction | null;
   isVi: boolean;
   email?: string;
@@ -15,6 +16,6 @@ interface CustomerQuickActivityModalProps {
   onSave(draft: CustomerQuickActivityDraft): void;
 }
 
-export const CustomerQuickActivityModal: React.FC<CustomerQuickActivityModalProps> = ({ action, email, phone, recordLabel, ownerName, onClose, onSave }) => (
-  <RelationshipActivityCreateModal action={action} email={email} phone={phone} recordLabel={recordLabel} ownerName={ownerName} onClose={onClose} onSave={onSave} />
+export const CustomerQuickActivityModal: React.FC<CustomerQuickActivityModalProps> = ({ action, targetId, email, phone, recordLabel, ownerName, onClose, onSave }) => (
+  <RelationshipActivityCreateModal targetId={targetId} formId="customers-activity" action={action} email={email} phone={phone} recordLabel={recordLabel} ownerName={ownerName} onClose={onClose} onSave={onSave} />
 );

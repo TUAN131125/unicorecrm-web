@@ -1,8 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { registerUnsavedWork } from "@/platform/unsaved-work";
+import { requestDecision } from "@/components/feedback/ProductDialogService";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { useI18n } from "@/i18n";
 import { formatOperationUnavailableError, backendUnavailableMessage } from "@/shared/operations";
 import { useModuleAuthoritativeResource } from "@/shared/operations";
-import { useWorkspaceContextSnapshot } from "@/platform/workspace-context";
+import { getWorkspaceContextSnapshot, useWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import { useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
 import { getProductCollectionResource } from "../../application/vertical-slice/productAuthoritativeQueries";
 import { normalizeApplicationError } from "@/shared/domain";
@@ -228,17 +230,17 @@ export function useProductListController({
     triggerToast(tx("products.filters.clear", "Đã xóa toàn bộ bộ lọc chủ động"), "info");
   };
 
-  const handleFormSubmit = async (data: Partial<Product>) => {
+  const handleFormSubmit = async (data: Product, opening: Product | null, intentId: string, isCurrent: () => boolean): Promise<boolean> => {
     try {
-      const draft = { ...(activeFormProduct ?? {}), ...data } as Product;
-      await saveProductCommand(draft);
-      triggerToast(activeFormProduct?.id
+      const draft = data;
+      await saveProductCommand(draft, { idempotencyKey: intentId });
+      if (!isCurrent()) return false;
+      triggerToast(opening?.id
         ? tx("products.toast.updateSuccess", "Cập nhật sản phẩm thành công.")
         : tx("products.toast.createSuccess", "Tạo sản phẩm mới thành công."));
-      setIsFormOpen(false);
-      setActiveFormProduct(null);
+      return true;
     } catch (error) {
-      triggerToast(formatOperationUnavailableError(error, { locale }), "error");
+      throw error;
     }
   };
 
@@ -282,7 +284,7 @@ export function useProductListController({
     });
   };
 
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = async (isCurrent: () => boolean = () => true) => {
     const productIds = deleteDialog.isBulk
       ? selectedProductIds
       : deleteDialog.product ? [deleteDialog.product.id] : [];
@@ -293,6 +295,7 @@ export function useProductListController({
       actorId,
       actorName,
     });
+    if (!isCurrent()) return;
     setSelectedProductIds((current) => current.filter((id) => !productIds.includes(id)));
     triggerToast(tx("products.toast.archiveSuccess", "Sản phẩm đã được lưu trữ và lịch sử sử dụng được giữ lại."));
     setDeleteDialog({ isOpen: false, product: null, isBulk: false });
@@ -330,31 +333,73 @@ export function useProductListController({
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [pastedCsvData, setPastedCsvData] = useState("");
 
-  const parseAndImportCSV = (csvText: string) => {
+  const importPending = useRef(false);
+  const importCycle = useRef(0);
+  const importWorkspace = useRef(workspace.workspaceId);
+  useEffect(() => { importCycle.current += 1; if (isImportModalOpen) importWorkspace.current = getWorkspaceContextSnapshot().workspaceId; }, [isImportModalOpen]);
+  const importMounted = useRef(true);
+  useEffect(() => { importMounted.current = true; return () => { importMounted.current = false; }; }, []);
+  const closeImport = () => {
+    if (importPending.current) return;
+    importCycle.current += 1;
+    setPastedCsvData(""); setIsImportModalOpen(false);
+  };
+  useEffect(() => { if (isImportModalOpen && workspace.workspaceId !== importWorkspace.current && !pastedCsvData.trim() && !importPending.current) closeImport(); });
+  const requestImportClose = async () => {
+    if (importPending.current) return;
+    if (pastedCsvData.trim()) {
+      const decision = await requestDecision({ title: locale === "vi" ? "Bỏ thay đổi chưa lưu?" : "Discard unsaved changes?",
+        message: locale === "vi" ? "Dữ liệu CSV chưa được nhập." : "CSV data has not been imported.", tone: "warning",
+        actions: [{ id: "keep", label: locale === "vi" ? "Tiếp tục chỉnh sửa" : "Keep editing", variant: "secondary" },
+          { id: "discard", label: locale === "vi" ? "Bỏ thay đổi" : "Discard changes", variant: "danger" }],
+      });
+      if (decision !== "discard" || !importMounted.current || importPending.current) return;
+    }
+    closeImport();
+  };
+  useEffect(() => {
+    if (!isImportModalOpen) return;
+    const registeredCycle = importCycle.current;
+    const unregister = registerUnsavedWork({ id: "product-import", title: locale === "vi" ? "Nhập sản phẩm" : "Import products",
+      isDirty: Boolean(pastedCsvData.trim()), save: async () => !importMounted.current || importPending.current || importCycle.current !== registeredCycle || getWorkspaceContextSnapshot().workspaceId !== importWorkspace.current ? false : parseAndImportCSV(pastedCsvData),
+      canDiscard: () => !importPending.current && importMounted.current && importCycle.current === registeredCycle,
+      discard: closeImport,
+    });
+    const warn = (event: BeforeUnloadEvent) => { if (pastedCsvData.trim()) { event.preventDefault(); event.returnValue = ""; } };
+    window.addEventListener("beforeunload", warn);
+    return () => { unregister(); window.removeEventListener("beforeunload", warn); };
+  });
+  const parseAndImportCSV = (csvText: string): boolean => {
+    if (importPending.current || !importMounted.current || getWorkspaceContextSnapshot().workspaceId !== importWorkspace.current) return false;
     if (!csvText.trim()) {
       triggerToast("Dữ liệu CSV trống. Vui lòng nhập dữ liệu.", "error");
-      return;
+      document.getElementById("product-import-csv-textarea")?.focus();
+      return false;
     }
 
+    importPending.current = true;
     try {
       assertProductCatalogImportAvailable();
       const importedList = parseProductsCsv(csvText, workspaceConfiguration.localeRegion.currencies.baseCurrency);
       if (importedList.length === 0) {
         triggerToast("Không tìm thấy dòng sản phẩm hợp lệ nào.", "error");
-        return;
+        document.getElementById("product-import-csv-textarea")?.focus();
+      return false;
       }
 
       saveCatalogState([...importedList, ...products]);
       setIsImportModalOpen(false);
       setPastedCsvData("");
       triggerToast(`Đồng bộ thành công ${importedList.length} sản phẩm mới từ danh sách CSV sheets!`, "success");
+      return true;
     } catch (error) {
       const applicationError = normalizeApplicationError(error);
       const message = applicationError.code === "CSV_EMPTY"
         ? "Cấu trúc CSV không hợp lệ (cần tối thiểu dòng tiêu đề và 1 dòng dữ liệu)."
         : "Không thể đọc file CSV. Hãy kiểm tra định dạng và thử lại.";
       triggerToast(message, "error");
-    }
+      return false;
+    } finally { importPending.current = false; }
   };
 
   // Actions: Restore the module-owned demo catalog
@@ -438,6 +483,7 @@ export function useProductListController({
     setIsImportModalOpen,
     pastedCsvData,
     setPastedCsvData,
+    requestImportClose,
     parseAndImportCSV,
     handleRefresh,
     columnWidths,

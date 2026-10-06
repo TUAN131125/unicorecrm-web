@@ -274,6 +274,7 @@ export function QuoteBuilderView({ controller }: { controller: QuoteBuilderViewC
   }
 
   return (
+    <fieldset disabled={controller.formPending} className="contents">
     <div id="quote-builder-page" className="crm-form-page !max-w-7xl space-y-5 text-xs">
       
       {/* Toast Alert Mock */}
@@ -1101,5 +1102,6 @@ export function QuoteBuilderView({ controller }: { controller: QuoteBuilderViewC
       />
 
     </div>
+    </fieldset>
   );
 }

@@ -29,6 +29,7 @@ import { CAPABILITIES } from "@/platform/access-control";
 import { filterRuntimeRecordsByOwnership, useRecordOwnershipContext, type OwnershipScopeView } from "@/platform/record-ownership";
 import { mapSelectedPickerItemsToDealLineItems, type DealFormDraft } from "../components/DealFormModal";
 import { createCreateCommandTarget, createDurableId } from "@/shared/ids";
+import { getWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import { getAuthSessionSnapshot } from "@/platform/identity-auth";
 import { backendUnavailableMessage, describePartialCommit, executeSequentialCommits, formatApplicationError } from "@/shared/operations";
 
@@ -297,7 +298,7 @@ export function useDealPipelineController() {
   };
 
   // Add Deal action
-  const handleAddDealSubmit = async (form: DealFormDraft) => {
+  const handleAddDealSubmit = async (form: DealFormDraft, _opening: Deal | null, intentId: string): Promise<boolean> => {
     const normalizedName = form.customerName.trim().toLowerCase();
     const organization = getOrganizationAccountsSnapshot().find((account) =>
       [account.displayName, account.legalName].some((name) => name?.trim().toLowerCase() === normalizedName),
@@ -331,7 +332,7 @@ export function useDealPipelineController() {
         tone: "warning",
         actions: [{ id: "back", label: locale === "vi" ? "Quay lại biểu mẫu" : "Back to form", variant: "secondary" }],
       });
-      return;
+      return false;
     }
 
     const selectedStage = stageConfigs.find((stage) => stage.code === form.stage);
@@ -342,7 +343,7 @@ export function useDealPipelineController() {
         tone: "warning",
         actions: [{ id: "back", label: locale === "vi" ? "Chọn lại giai đoạn" : "Choose stage", variant: "secondary" }],
       });
-      return;
+      return false;
     }
 
     const now = new Date().toISOString();
@@ -361,7 +362,7 @@ export function useDealPipelineController() {
           : "An opportunity with a follow-up task cannot be created yet: work activation is not supported by the server. Clear the follow-up task to create the opportunity only.",
         "warning",
       );
-      return;
+      return false;
     }
     const validationDraft = {
       name: form.name,
@@ -382,11 +383,11 @@ export function useDealPipelineController() {
         tone: "warning",
         actions: [{ id: "back", label: locale === "vi" ? "Quay lại biểu mẫu" : "Back to form", variant: "secondary" }],
       });
-      return;
+      return false;
     }
 
     const lineItems = mapSelectedPickerItemsToDealLineItems(form.lineItems);
-    const dealId = createCreateCommandTarget("deal");
+    const dealId = `${intentId}:deal`;
     const createdOutcome = await createDealCommand({
       id: dealId,
       name: form.name,
@@ -420,7 +421,7 @@ export function useDealPipelineController() {
         createdAt: now,
         author: t("common.system"),
       }],
-    });
+    }, { idempotencyKey: `${intentId}:create` });
     const created = createdOutcome.data;
     // Deal is already committed. Task activation is a separate authoritative command
     // (no atomic Deal+Task backend workflow exists), so a failure here must be
@@ -436,8 +437,7 @@ export function useDealPipelineController() {
           "danger",
           { actionLabel: locale === "vi" ? "Mở chi tiết" : "Open record", onAction: () => navigate(`/deals/${created.id}`), durationMs: 10000 },
         );
-        setIsAddModalOpen(false);
-        return;
+        return false;
       }
     }
     const ownerName = ownership?.visibleOwners.find((owner) => owner.memberId === created.ownerId)?.displayName || created.ownerId;
@@ -446,7 +446,7 @@ export function useDealPipelineController() {
       "success",
       { actionLabel: locale === "vi" ? "Mở chi tiết" : "Open record", onAction: () => navigate(`/deals/${created.id}`), durationMs: 6000 },
     );
-    setIsAddModalOpen(false);
+    return true;
   };
 
   // Edit Opportunity Modal Action Open
@@ -456,8 +456,8 @@ export function useDealPipelineController() {
   };
 
   // Save changes to opportunity
-  const handleEditDealSubmit = async (form: DealFormDraft) => {
-    if (!editingDeal) return;
+  const handleEditDealSubmit = async (form: DealFormDraft, opening: Deal | null, intentId: string): Promise<boolean> => {
+    if (!opening) return false;
     const nextActionAt = form.createFollowUpTask && form.nextActionAt
       ? new Date(form.nextActionAt).toISOString()
       : undefined;
@@ -472,10 +472,10 @@ export function useDealPipelineController() {
           : "This opportunity cannot be updated with a follow-up task yet: work activation is not supported by the server. Clear the follow-up task to save the remaining changes.",
         "warning",
       );
-      return;
+      return false;
     }
     const editDraft = {
-      ...editingDeal,
+      ...opening,
       name: form.name,
       ownerId: form.ownerId,
       amount: form.amount,
@@ -493,7 +493,7 @@ export function useDealPipelineController() {
         tone: "warning",
         actions: [{ id: "back", label: locale === "vi" ? "Quay lại chỉnh sửa" : "Back to editing", variant: "secondary" }],
       });
-      return;
+      return false;
     }
 
     const targetStage = stageConfigs.find((stage) => stage.code === form.stage);
@@ -504,15 +504,15 @@ export function useDealPipelineController() {
         tone: "warning",
         actions: [{ id: "back", label: locale === "vi" ? "Quay lại chỉnh sửa" : "Back to editing", variant: "secondary" }],
       });
-      return;
+      return false;
     }
 
     let handoverReason: string | null = null;
-    const ownerChanged = editingDeal.ownerId !== form.ownerId;
+    const ownerChanged = opening.ownerId !== form.ownerId;
     if (ownerChanged) {
       if (!ownership?.canAssign) {
         notifyProduct(locale === "vi" ? "Bạn không có quyền bàn giao cơ hội." : "You do not have permission to reassign opportunities.", "danger");
-        return;
+        return false;
       }
       handoverReason = await requestTextInput({
         title: locale === "vi" ? "Lý do bàn giao cơ hội" : "Opportunity handover reason",
@@ -523,10 +523,10 @@ export function useDealPipelineController() {
         cancelLabel: locale === "vi" ? "Giữ người hiện tại" : "Keep current owner",
         requiredMessage: locale === "vi" ? "Hãy nhập lý do bàn giao." : "Enter a handover reason.",
       });
-      if (!handoverReason) return;
+      if (!handoverReason) return false;
     }
 
-    const stageChanged = editingDeal.stage !== form.stage;
+    const stageChanged = opening.stage !== form.stage;
     const lineItems = mapSelectedPickerItemsToDealLineItems(form.lineItems);
     // No backend operation updates profile, forecast, next action, ownership and stage
     // together, so this is several authoritative commands. An earlier one can commit and a
@@ -535,7 +535,7 @@ export function useDealPipelineController() {
     const report = await executeSequentialCommits([
       {
         step: "profile",
-        run: () => updateDealCommand(editingDeal.id, {
+        run: () => updateDealCommand(opening.id, {
           name: form.name,
           amount: form.amount,
           currency: form.currency,
@@ -548,36 +548,36 @@ export function useDealPipelineController() {
             nextActionRef: undefined,
           } : {}),
           updatedAt: new Date().toISOString(),
-        }),
+        }, { idempotencyKey: `${intentId}:profile` }),
       },
       {
         step: "forecast",
-        run: () => updateDealForecastCommand(editingDeal.id, {
+        run: () => updateDealForecastCommand(opening.id, {
           expectedCloseDate: form.expectedCloseDate,
           opportunityScore: form.probability,
           forecastCategory: form.forecastCategory,
           actor: ownership?.displayName,
-        }),
+        }, { idempotencyKey: `${intentId}:forecast` }),
       },
       // `taskId` is omitted deliberately: the Task id is server-assigned, so there is no
       // authoritative Task reference to send. A deterministic client key here would persist
       // a Task foreign reference that matches no Task.
       ...(nextActionAt ? [{
         step: "nextAction",
-        run: () => updateDealNextActionCommand(editingDeal.id, {
+        run: () => updateDealNextActionCommand(opening.id, {
           nextActionAt,
           nextActionSummary: form.nextActionSummary,
-        }),
+        }, { idempotencyKey: `${intentId}:next-action` }),
       }, {
         // WF-21. Unreachable in connected mode (the guard above returns first); demo owns
         // its own activation, and a failure there is now a reported partial outcome rather
         // than a special case.
         step: "activation",
-        run: () => ensureDealNextActionTask({ ...editingDeal, nextActionAt, nextActionSummary: form.nextActionSummary }),
+        run: () => ensureDealNextActionTask({ ...opening, nextActionAt, nextActionSummary: form.nextActionSummary }),
       }] : []),
       ...(ownerChanged && handoverReason ? [{
         step: "owner",
-        run: () => reassignDealCommand(editingDeal.id, {
+        run: () => reassignDealCommand(opening.id, {
           ownerId: form.ownerId,
           reason: handoverReason,
           activity: {
@@ -588,19 +588,19 @@ export function useDealPipelineController() {
             createdAt: new Date().toISOString(),
             author: ownership?.displayName || t("common.system"),
           },
-        }),
+        }, { idempotencyKey: `${intentId}:owner` }),
       }] : []),
       ...(stageChanged ? [{
         step: "stage",
-        run: () => transitionDealStageCommand(editingDeal.id, form.stage, {
+        run: () => transitionDealStageCommand(opening.id, form.stage, {
           id: createDurableId("deal_activity_stage"),
           type: "stage" as const,
           title: t("deals.activities.stageChangedTitle"),
-          description: t("deals.activities.stageChangedDescription", { from: getDealStageLabel(editingDeal.stage), to: getDealStageLabel(form.stage) }),
+          description: t("deals.activities.stageChangedDescription", { from: getDealStageLabel(opening.stage), to: getDealStageLabel(form.stage) }),
           createdAt: new Date().toISOString(),
           author: t("common.system"),
-          metadata: { fromStage: editingDeal.stage, toStage: form.stage },
-        }),
+          metadata: { fromStage: opening.stage, toStage: form.stage },
+        }, { idempotencyKey: `${intentId}:stage` }),
       }] : []),
     ]);
 
@@ -628,7 +628,7 @@ export function useDealPipelineController() {
         );
         notifyProduct(`${summary} ${failureText}`, "danger", {
           actionLabel: locale === "vi" ? "Mở chi tiết" : "Open record",
-          onAction: () => navigate(`/deals/${editingDeal.id}`),
+          onAction: () => navigate(`/deals/${opening.id}`),
           durationMs: 10000,
         });
       } else {
@@ -637,11 +637,10 @@ export function useDealPipelineController() {
       // Whatever committed is authoritative and the local projection is now stale. The
       // commands already project their own authoritative results; the modal stays open so
       // the user can retry only what failed.
-      return;
+      throw report.error;
     }
 
-    setIsEditModalOpen(false);
-    setEditingDeal(null);
+    return true;
   };
 
   // Clone opportunity
@@ -679,6 +678,7 @@ export function useDealPipelineController() {
 
   // Delete opportunity
   const handleDeleteDeal = async (dealId: string) => {
+    const openingWorkspace = getWorkspaceContextSnapshot().workspaceId;
     const confirmed = await requestConfirmation({
       title: locale === "vi" ? "Xóa cơ hội?" : "Delete opportunity?",
       message: t("opportunities.confirmDelete", (locale === "vi" ? "Cơ hội sẽ bị xóa khỏi danh sách. Hành động này không thể hoàn tác." : "The opportunity will be removed. This action cannot be undone.")),
@@ -686,7 +686,7 @@ export function useDealPipelineController() {
       cancelLabel: locale === "vi" ? "Giữ cơ hội" : "Keep opportunity",
       tone: "danger",
     });
-    if (!confirmed) return;
+    if (!confirmed || getWorkspaceContextSnapshot().workspaceId !== openingWorkspace) return;
     const session = getAuthSessionSnapshot();
     if (!session) {
       notifyProduct(locale === "vi" ? "Phiên đăng nhập không còn hợp lệ." : "The authenticated session is no longer available.", "danger");
@@ -716,6 +716,7 @@ export function useDealPipelineController() {
 
   // Mark Lost with an explicit recycle decision.
   const handleMarkLostDirect = async (deal: Deal) => {
+    const openingWorkspace = getWorkspaceContextSnapshot().workspaceId;
     const reason = await requestTextInput({
       title: locale === "vi" ? "Đánh dấu cơ hội Thua" : "Mark opportunity as Lost",
       description: locale === "vi" ? "Ghi rõ lý do để đội bán hàng có thể phân tích và cải thiện các cơ hội tiếp theo." : "Record the reason so the sales team can analyze and improve future opportunities.",
@@ -725,7 +726,7 @@ export function useDealPipelineController() {
       cancelLabel: locale === "vi" ? "Quay lại" : "Go back",
       requiredMessage: locale === "vi" ? "Hãy nhập lý do thua." : "Enter a loss reason.",
     });
-    if (!reason) return;
+    if (!reason || getWorkspaceContextSnapshot().workspaceId !== openingWorkspace) return;
     const recycle = await requestConfirmation({
       title: locale === "vi" ? "Lập kế hoạch chăm sóc lại?" : "Plan future follow-up?",
       message: locale === "vi" ? "Đưa cơ hội này vào kế hoạch chăm sóc lại sau 30 ngày?" : "Add this opportunity to a follow-up plan in 30 days?",
@@ -733,6 +734,7 @@ export function useDealPipelineController() {
       cancelLabel: locale === "vi" ? "Không chăm sóc lại" : "No follow-up",
       tone: "info",
     });
+    if (getWorkspaceContextSnapshot().workspaceId !== openingWorkspace) return;
     const revisitAt = recycle
       ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
       : undefined;

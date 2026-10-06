@@ -6,7 +6,7 @@ interface QuoteDeleteConfirmDialogProps {
   quote: Quote | null;
   isOpen: boolean;
   onClose(): void;
-  onConfirm(): void;
+  onConfirm(isCurrent: () => boolean): void | Promise<unknown>;
   locale: string;
 }
 

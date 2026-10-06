@@ -1,3 +1,4 @@
+import { useLeadAuxiliaryLifecycle } from "../hooks/useLeadAuxiliaryLifecycle";
 import React, { useEffect, useState } from "react";
 import { useI18n } from "@/i18n";
 import { Modal, Select, Textarea, Button } from "@/shared/components/ui";
@@ -28,11 +29,9 @@ export const LeadDisqualifyModal: React.FC<LeadDisqualifyModalProps> = ({ isOpen
     }
   }, [isOpen]);
 
-  const close = () => {
-    setReason("");
-    setEvidence("");
-    onClose();
-  };
+  const lifecycle = useLeadAuxiliaryLifecycle(isOpen, "list-disqualify", Boolean(reason || evidence.trim()),
+    () => { setReason(""); setEvidence(""); }, onClose, pending);
+  const close = lifecycle.requestClose;
 
   const confirm = async () => {
     if (submittingRef.current || !reason.trim()) return;
@@ -51,7 +50,7 @@ export const LeadDisqualifyModal: React.FC<LeadDisqualifyModalProps> = ({ isOpen
   };
 
   return (
-    <Modal variant="form" isOpen={isOpen} onClose={close} title={locale === "vi" ? "Xác nhận Lead không phù hợp" : "Confirm Lead as disqualified"} size="sm">
+    <>{lifecycle.confirmation}<Modal variant="form" isOpen={isOpen} onClose={close} title={locale === "vi" ? "Xác nhận Lead không phù hợp" : "Confirm Lead as disqualified"} size="sm">
       <div className="space-y-4 text-left font-sans">
         <p className="text-[11px] text-slate-500">
           {locale === "vi"
@@ -85,7 +84,7 @@ export const LeadDisqualifyModal: React.FC<LeadDisqualifyModalProps> = ({ isOpen
           <Button variant="secondary" onClick={close} disabled={pending}>{t("common.cancel", "Hủy")}</Button>
           <Button
             variant="primary"
-            onClick={() => { void confirm(); }}
+            onClick={() => { void lifecycle.run(confirm); }}
             disabled={pending || !reason.trim()}
             className="bg-red-600 hover:bg-red-700 border-red-600 text-white disabled:opacity-50"
           >
@@ -93,6 +92,6 @@ export const LeadDisqualifyModal: React.FC<LeadDisqualifyModalProps> = ({ isOpen
           </Button>
         </div>
       </div>
-    </Modal>
+    </Modal></>
   );
 };

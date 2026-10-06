@@ -1,3 +1,4 @@
+import { useLeadAuxiliaryLifecycle } from "../hooks/useLeadAuxiliaryLifecycle";
 import { LeadOwnerAssignDialog } from "../components/LeadOwnerAssignAction";
 import { useLeadQueueClaim } from "../hooks/useLeadQueueClaim";
 import { AuthoritativeQueryBoundary, formatApplicationError } from "@/shared/operations";
@@ -314,6 +315,12 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
 
   // 7. Dialogs Custom Hook
   const dialogs = useLeadDialogs(selection.selectedLeadIds, showToast, locale, ownership?.memberId || "");
+  const reassignLifecycle = useLeadAuxiliaryLifecycle(dialogs.isReassignModalOpen, "bulk-reassign",
+    Boolean(dialogs.selectedReassignOwnerId || dialogs.reassignReason.trim()),
+    () => { dialogs.setSelectedReassignOwnerId(""); dialogs.setReassignReason(""); }, () => dialogs.setIsReassignModalOpen(false));
+  const archiveLifecycle = useLeadAuxiliaryLifecycle(dialogs.showArchiveConfirm, "list-archive", false, () => {},
+    () => { dialogs.setShowArchiveConfirm(false); dialogs.setLeadToArchive(null); }, archivePending);
+
   const [createCycle, setCreateCycle] = useState(0);
   const [createPending, setCreatePending] = useState(false);
   const createLifecycle = React.useRef({ open: false, pending: false, cycle: 0 });
@@ -463,9 +470,9 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
   const handleBulkUpdateConfirm = async (data: { status: string }) => {
     try {
       const targetIds = data.status === LeadWorkState.CONTACTING
-        ? selection.selectedLeadIds.filter((leadId) => leads.some((lead) => lead.id === leadId && lead.leadWorkState === LeadWorkState.NEW))
+        ? dialogs.auxiliaryTargets.update.filter((leadId) => leads.some((lead) => lead.id === leadId && lead.leadWorkState === LeadWorkState.NEW))
         : data.status === LeadWorkState.VERIFYING
-          ? selection.selectedLeadIds.filter((leadId) => leads.some((lead) => lead.id === leadId && lead.leadWorkState === LeadWorkState.CONTACTING))
+          ? dialogs.auxiliaryTargets.update.filter((leadId) => leads.some((lead) => lead.id === leadId && lead.leadWorkState === LeadWorkState.CONTACTING))
           : [];
       const updated = data.status === LeadWorkState.CONTACTING
         ? await leadActions.advanceNewToContacting(targetIds)
@@ -478,6 +485,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
         : `Moved ${updatedCount} Leads through valid lifecycle transitions.`);
     } catch (error) {
       showToast(formatApplicationError(error, { locale }));
+      throw error;
     }
   };
 
@@ -489,7 +497,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
     recontactDate?: string;
     recontactNote?: string;
   }): Promise<boolean> => {
-    const targetIds = dialogs.disqualifyLeadId ? [dialogs.disqualifyLeadId] : selection.selectedLeadIds;
+    const targetIds = dialogs.disqualifyLeadId ? [dialogs.disqualifyLeadId] : dialogs.auxiliaryTargets.disqualify;
     if (targetIds.length === 0) return false;
 
     if (data.needRecontact) {
@@ -525,7 +533,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
     note: string;
   }) => {
     try {
-      const targetIds = dialogs.followUpLeadId ? [dialogs.followUpLeadId] : selection.selectedLeadIds;
+      const targetIds = dialogs.followUpLeadId ? [dialogs.followUpLeadId] : dialogs.auxiliaryTargets.followUp;
       if (targetIds.length === 0) return;
 
       const activeTargetIds = targetIds.filter((leadId) => leads.some((lead) => lead.id === leadId && lead.leadWorkState !== LeadWorkState.CLOSED));
@@ -545,6 +553,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
       showToast(t("leads.followUp.success"));
     } catch (error) {
       showToast(formatApplicationError(error, { locale }));
+      throw error;
     }
   };
 
@@ -568,7 +577,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
       showToast(locale === "vi" ? "Hãy chọn người nhận và nhập lý do bàn giao." : "Select the new owner and enter a handover reason.");
       return;
     }
-    await leadActions.reassignMany(selection.selectedLeadIds, {
+    await leadActions.reassignMany(dialogs.auxiliaryTargets.reassign, {
       ownerId: dialogs.selectedReassignOwnerId,
       reason: dialogs.reassignReason,
     });
@@ -774,7 +783,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
 
   const handleArchiveConfirm = async () => {
     if (archiveSubmittingRef.current) return;
-    const targetIds = dialogs.leadToArchive ? [dialogs.leadToArchive] : selection.selectedLeadIds;
+    const targetIds = dialogs.leadToArchive ? [dialogs.leadToArchive] : dialogs.auxiliaryTargets.archive;
     if (targetIds.length === 0) return;
 
     archiveSubmittingRef.current = true;
@@ -784,7 +793,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
         await leadActions.archive(dialogs.leadToArchive);
         showToast(t("leads.archive.success", "Đã lưu trữ Lead; hồ sơ và lịch sử vẫn được giữ lại."));
       } else {
-        await leadActions.archiveMany(selection.selectedLeadIds);
+        await leadActions.archiveMany(dialogs.auxiliaryTargets.archive);
         selection.clearSelection();
         showToast(t("leads.bulkArchiveSuccess", "Đã lưu trữ các Lead đã chọn."));
       }
@@ -1199,7 +1208,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
       <LeadBulkUpdateModal
         isOpen={dialogs.isBulkUpdateOpen}
         onClose={() => dialogs.setIsBulkUpdateOpen(false)}
-        selectedCount={selection.selectedLeadIds.length}
+        selectedCount={dialogs.auxiliaryTargets.update.length}
         onConfirm={handleBulkUpdateConfirm}
       />
       </React.Suspense>
@@ -1208,9 +1217,9 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
       <LeadManageTagsModal
         isOpen={dialogs.isManageTagsModalOpen}
         onClose={() => dialogs.setIsManageTagsModalOpen(false)}
-        selectedCount={selection.selectedLeadIds.length}
+        selectedCount={dialogs.auxiliaryTargets.tags.length}
         onApply={async (tag) => {
-          await leadActions.applyTagMany(selection.selectedLeadIds, tag);
+          await leadActions.applyTagMany(dialogs.auxiliaryTargets.tags, tag);
           showToast(locale === "vi" ? `Đã gắn nhãn “${tag}” cho ${selection.selectedLeadIds.length} Lead.` : `Applied “${tag}” to ${selection.selectedLeadIds.length} Leads.`);
         }}
       />
@@ -1241,22 +1250,24 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
       <LeadArchiveConfirmationModal
         isOpen={dialogs.showArchiveConfirm}
         bulk={!dialogs.leadToArchive}
-        selectedCount={dialogs.leadToArchive ? 1 : selection.selectedLeadIds.length}
+        selectedCount={dialogs.leadToArchive ? 1 : dialogs.auxiliaryTargets.archive.length}
         pending={archivePending}
         onClose={closeArchiveModal}
-        onConfirm={() => { void handleArchiveConfirm(); }}
+        onConfirm={() => archiveLifecycle.run(handleArchiveConfirm)}
       />
 
+      {reassignLifecycle.confirmation}
       {/* BULK REASSIGN OWNER MODAL */}
       <ConfirmDialog
         isOpen={dialogs.isReassignModalOpen}
-        onClose={() => dialogs.setIsReassignModalOpen(false)}
-        onConfirm={executeBulkReassign}
+        onClose={reassignLifecycle.requestClose}
+        editable onConfirm={() => reassignLifecycle.run(executeBulkReassign)}
         title={locale === "vi" ? "Bàn giao khách hàng tiềm năng hàng loạt" : "Bulk Lead Handover"}
         confirmText={t("common.confirm")}
         cancelText={t("common.cancel")}
       >
         <div className="space-y-4 pt-2 text-left font-sans">
+          {reassignLifecycle.error && <p role="alert">{reassignLifecycle.error}</p>}
           <p className="text-xs text-slate-500">
             {locale === "vi" ? `Chọn nhân viên nhận bàn giao cho ${selection.selectedLeadIds.length} Lead đã chọn.` : `Select the receiver personnel for the ${selection.selectedLeadIds.length} selected lead records.`}
           </p>

@@ -1,7 +1,12 @@
 import React, { useRef, useState } from "react";
 import { Download, Paperclip, Plus, Trash2, UploadCloud } from "lucide-react";
 import { useI18n } from "@/i18n";
-import { Button, DetailTabActionButton, Modal } from "@/shared/components/ui";
+import { Button, ConfirmDialog, DetailTabActionButton, Modal } from "@/shared/components/ui";
+
+import { getWorkspaceContextSnapshot, useWorkspaceContextSnapshot } from "@/platform/workspace-context";
+import { registerUnsavedWork } from "@/platform/unsaved-work";
+import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
+import { formatApplicationError } from "@/shared/operations";
 
 export interface RecordAttachmentItem {
   id: string;
@@ -23,8 +28,10 @@ export interface RecordAttachmentUploadData {
 
 interface RecordAttachmentsTabProps {
   idPrefix: string;
+  /** Aggregate identity, independent of visual DOM prefix. */
+  recordId?: string;
   attachments: RecordAttachmentItem[];
-  onUploadAttachment?(data: RecordAttachmentUploadData): void;
+  onUploadAttachment?(data: RecordAttachmentUploadData): void | boolean | Promise<void | boolean>;
   onDeleteAttachment?(id: string): void;
   onDownloadAttachment?(id: string): void;
   isArchived?: boolean;
@@ -42,6 +49,7 @@ function formatFileSize(bytes: number): string {
 
 export const RecordAttachmentsTab: React.FC<RecordAttachmentsTabProps> = ({
   idPrefix,
+  recordId,
   attachments = [],
   onUploadAttachment,
   onDeleteAttachment,
@@ -50,13 +58,19 @@ export const RecordAttachmentsTab: React.FC<RecordAttachmentsTabProps> = ({
   onModalStateChange,
   title,
 }) => {
-  const { tx } = useI18n();
+  const { tx, locale } = useI18n();
+  const workspaceId = useWorkspaceContextSnapshot().workspaceId;
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showModal, setShowModal] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [category, setCategory] = useState<RecordAttachmentUploadData["category"]>("proposal");
   const [description, setDescription] = useState("");
   const [validationMessage, setValidationMessage] = useState("");
+  const pending = useRef(false);
+  const mounted = useRef(true);
+  const cycle = useRef(0);
+  const opening = useRef<{ workspaceId: string; targetId: string; upload: NonNullable<RecordAttachmentsTabProps["onUploadAttachment"]> } | undefined>(undefined);
+  const [submitting, setSubmitting] = useState(false);
   const canUpload = !isArchived && onUploadAttachment !== undefined;
 
   React.useEffect(() => {
@@ -67,14 +81,21 @@ export const RecordAttachmentsTab: React.FC<RecordAttachmentsTabProps> = ({
   }, [showModal, onModalStateChange]);
 
   const requestFile = () => {
+    if (pending.current) return;
     if (canUpload) fileInputRef.current?.click();
   };
 
   const prepareFile = (file?: File) => {
-    if (!file || !canUpload) return;
+    if (!file || !canUpload || !onUploadAttachment || pending.current) return;
+    if (showModal && opening.current?.workspaceId !== getWorkspaceContextSnapshot().workspaceId) return;
+    if (showModal && opening.current?.targetId !== (recordId ?? idPrefix)) return;
     if (file.size > MAX_FILE_SIZE) {
       setValidationMessage(tx("contactDetail.attachments.fileTooLarge", "Tệp vượt quá giới hạn 25 MB. Vui lòng chọn tệp nhỏ hơn."));
       return;
+    }
+    if (!showModal) {
+      cycle.current += 1;
+      opening.current = { workspaceId, targetId: recordId ?? idPrefix, upload: onUploadAttachment };
     }
     setSelectedFile(file);
     setCategory("proposal");
@@ -84,27 +105,67 @@ export const RecordAttachmentsTab: React.FC<RecordAttachmentsTabProps> = ({
   };
 
   const closeModal = () => {
+    if (pending.current) return;
+    cycle.current += 1;
+    opening.current = undefined;
     setShowModal(false);
     setSelectedFile(null);
     setDescription("");
     setValidationMessage("");
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!selectedFile || !canUpload || !onUploadAttachment) {
-      setValidationMessage(tx("contactDetail.attachments.selectFileRequired", "Vui lòng chọn một tệp để tải lên."));
-      return;
+  const guard = useUnsavedChangesGuard(closeModal);
+  const dirty = showModal && selectedFile !== null;
+  React.useEffect(() => { guard.setIsDirty(dirty); }, [dirty, guard.setIsDirty]);
+  React.useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  React.useEffect(() => {
+    if (showModal && opening.current?.workspaceId !== workspaceId && !dirty && !pending.current) closeModal();
+  }, [showModal, workspaceId, dirty]);
+  const save = async (): Promise<boolean> => {
+    if (pending.current || !mounted.current || !showModal || !selectedFile || !opening.current) return false;
+    if (opening.current.workspaceId !== getWorkspaceContextSnapshot().workspaceId) { setValidationMessage(locale === "vi" ? "Hãy trở lại workspace đang mở để tải tệp lên." : "Return to the opening workspace to upload."); return false; }
+    if (opening.current.targetId !== (recordId ?? idPrefix)) {
+      setValidationMessage(locale === "vi" ? "Hãy trở lại hồ sơ đang mở để tải tệp lên, hoặc bỏ thay đổi." : "Return to the opening record to upload, or discard the draft.");
+      return false;
     }
-    onUploadAttachment({
-      name: selectedFile.name,
-      category,
-      size: formatFileSize(selectedFile.size),
-      description: description.trim(),
-      file: selectedFile,
-    });
-    closeModal();
+    const interaction = opening.current;
+    const submittingCycle = cycle.current;
+    pending.current = true;
+    setSubmitting(true);
+    setValidationMessage("");
+    try {
+      const result = await interaction.upload({ name: selectedFile.name, category, size: formatFileSize(selectedFile.size), description: description.trim(), file: selectedFile });
+      if (result === false) return false;
+      if (!mounted.current || cycle.current !== submittingCycle || interaction.workspaceId !== getWorkspaceContextSnapshot().workspaceId) return false;
+      pending.current = false;
+      closeModal();
+      guard.setIsDirty(false);
+      return true;
+    } catch (failure) {
+      if (mounted.current && cycle.current === submittingCycle) setValidationMessage(formatApplicationError(failure, { locale }));
+      return false;
+    } finally {
+      if (mounted.current && cycle.current === submittingCycle) { pending.current = false; setSubmitting(false); }
+      // Successful close ends this cycle but still releases its own pending state.
+      if (mounted.current && opening.current === undefined) { pending.current = false; setSubmitting(false); }
+    }
   };
+  React.useEffect(() => {
+    if (!showModal) return;
+    const registeredCycle = cycle.current;
+    return registerUnsavedWork({ id: `${idPrefix}:attachment:${opening.current?.targetId}:${registeredCycle}`, title: tx("contactDetail.attachments.modalTitle", "Tải tài liệu đính kèm"), isDirty: dirty || submitting,
+      save: () => !mounted.current || pending.current || cycle.current !== registeredCycle ? Promise.resolve(false) : save(), canDiscard: () => mounted.current && !pending.current && cycle.current === registeredCycle,
+      discard: () => { if (mounted.current && !pending.current && cycle.current === registeredCycle) guard.confirmDiscard(); },
+    });
+  });
+  React.useEffect(() => {
+    if (!dirty && !submitting) return;
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty, submitting]);
+  const requestClose = () => { if (!pending.current) guard.requestClose(); };
+  const handleSubmit = (event: React.FormEvent) => { event.preventDefault(); void save(); };
 
   const categoryLabel = (value: string) => tx(
     `contactDetail.attachments.category.${value}`,
@@ -184,14 +245,14 @@ export const RecordAttachmentsTab: React.FC<RecordAttachmentsTabProps> = ({
       <Modal
         id={`${idPrefix}-attachment-upload-modal`}
         isOpen={showModal}
-        onClose={closeModal}
+        onClose={requestClose}
         title={tx("contactDetail.attachments.modalTitle", "Tải tài liệu đính kèm")}
         size="sm"
         variant="form"
         footer={(
           <>
-            <Button type="button" variant="secondary" onClick={closeModal}>{tx("common.cancel", "Hủy")}</Button>
-            <Button type="submit" form={`${idPrefix}-attachment-upload-form`} variant="primary" disabled={!selectedFile}>{tx("contactDetail.attachments.uploadAction", "Tải lên")}</Button>
+            <Button type="button" variant="secondary" onClick={requestClose} disabled={submitting}>{tx("common.cancel", "Hủy")}</Button>
+            <Button type="submit" form={`${idPrefix}-attachment-upload-form`} variant="primary" disabled={!selectedFile || submitting}>{tx("contactDetail.attachments.uploadAction", "Tải lên")}</Button>
           </>
         )}
       >
@@ -203,7 +264,7 @@ export const RecordAttachmentsTab: React.FC<RecordAttachmentsTabProps> = ({
           </div>
           <label className="block space-y-1.5">
             <span className="text-xs font-semibold text-slate-700">{tx("contactDetail.attachments.categoryLabel", "Phân loại tài liệu")}</span>
-            <select value={category} onChange={(event) => setCategory(event.target.value as RecordAttachmentUploadData["category"])} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20">
+            <select disabled={submitting} value={category} onChange={(event) => setCategory(event.target.value as RecordAttachmentUploadData["category"])} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20">
               <option value="proposal">{tx("contactDetail.attachments.category.proposal", "Đề xuất")}</option>
               <option value="contract">{tx("contactDetail.attachments.category.contract", "Hợp đồng")}</option>
               <option value="quotation">{tx("contactDetail.attachments.category.quotation", "Báo giá")}</option>
@@ -214,11 +275,12 @@ export const RecordAttachmentsTab: React.FC<RecordAttachmentsTabProps> = ({
           </label>
           <label className="block space-y-1.5">
             <span className="text-xs font-semibold text-slate-700">{tx("contactDetail.attachments.descriptionLabel", "Mô tả / Ghi chú")}</span>
-            <textarea value={description} onChange={(event) => setDescription(event.target.value)} placeholder={tx("contactDetail.attachments.descPlaceholder", "Thêm thông tin giúp đồng nghiệp nhận biết tài liệu này")} rows={3} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20" />
+            <textarea disabled={submitting} value={description} onChange={(event) => setDescription(event.target.value)} placeholder={tx("contactDetail.attachments.descPlaceholder", "Thêm thông tin giúp đồng nghiệp nhận biết tài liệu này")} rows={3} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-violet-500 focus:outline-none focus:ring-2 focus:ring-violet-500/20" />
           </label>
           {validationMessage && <p role="alert" className="text-xs font-semibold text-rose-600">{validationMessage}</p>}
         </form>
       </Modal>
+      <ConfirmDialog isOpen={guard.isConfirmOpen} onClose={() => guard.setIsConfirmOpen(false)} onConfirm={() => { if (!pending.current) guard.confirmDiscard(); }} title={locale === "vi" ? "Bỏ thay đổi chưa lưu?" : "Discard unsaved changes?"} message={locale === "vi" ? "Tệp chưa được tải lên. Đóng biểu mẫu?" : "The file has not been uploaded. Close the form?"} confirmText={locale === "vi" ? "Bỏ thay đổi" : "Discard changes"} cancelText={locale === "vi" ? "Tiếp tục chỉnh sửa" : "Keep editing"} type="warning" />
     </div>
   );
 };

@@ -41,9 +41,11 @@ export interface OrganizationQueryPort {
   getOverview(organizationId: string, signal?: AbortSignal): Promise<OrganizationOverviewProjection>;
 }
 
+export interface OrganizationCommandOptions { idempotencyKey?: string }
+
 export interface OrganizationCommandPort {
-  create(input: OrganizationCreateCommand): Promise<OrganizationAccount>;
-  update(input: OrganizationUpdateCommand): Promise<OrganizationAccount>;
+  create(input: OrganizationCreateCommand, options?: OrganizationCommandOptions): Promise<OrganizationAccount>;
+  update(input: OrganizationUpdateCommand, options?: OrganizationCommandOptions): Promise<OrganizationAccount>;
   archive(input: OrganizationArchiveCommand): Promise<OrganizationAccount>;
 }
 

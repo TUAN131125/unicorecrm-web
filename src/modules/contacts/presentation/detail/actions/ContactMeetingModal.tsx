@@ -1,7 +1,9 @@
 import React from "react";
+import { getAuthSessionSnapshot } from "@/platform/identity-auth";
 import { MeetingActivityCreateModal, type MeetingActivityDraft } from "@/modules/tasks";
 
 interface ContactMeetingModalProps {
+  targetId?: string;
   isOpen: boolean;
   onClose: () => void;
   onSave: (meeting: {
@@ -25,13 +27,15 @@ function splitLocalDateTime(value?: string): { date: string; time: string } {
   return { date, time };
 }
 
-export const ContactMeetingModal: React.FC<ContactMeetingModalProps> = ({ isOpen, onClose, onSave, isDoNotContact }) => (
+export const ContactMeetingModal: React.FC<ContactMeetingModalProps> = ({ targetId, isOpen, onClose, onSave, isDoNotContact }) => (
   <MeetingActivityCreateModal
+    targetId={targetId}
+    recordingOnly
     guardChanges
     isOpen={isOpen}
     onClose={onClose}
     formId="contact-meeting-form"
-    defaults={{ owner: "Sales Representative" }}
+    defaults={{ owner: getAuthSessionSnapshot()?.principal.memberId ?? "", reminder: false }}
     contactPolicy={{ restricted: isDoNotContact }}
     onSubmit={(draft: MeetingActivityDraft) => {
       const start = splitLocalDateTime(draft.startAt);
@@ -44,7 +48,7 @@ export const ContactMeetingModal: React.FC<ContactMeetingModalProps> = ({ isOpen
         channel: draft.channel,
         location: draft.location,
         attendees: draft.attendees,
-        owner: draft.owner || "Sales Representative",
+        owner: draft.owner || "",
         agenda: draft.agenda,
         reminder: draft.reminder,
       });

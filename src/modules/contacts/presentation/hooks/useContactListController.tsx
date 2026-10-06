@@ -1,3 +1,5 @@
+import type { ContactCommandOptions } from "../../application/ports/ContactApiRuntime";
+import { buildContactCreateCommand } from "../model/contactFormCommands";
 import { backendUnavailableMessage, formatOperationUnavailableError } from "@/shared/operations";
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
@@ -481,25 +483,9 @@ export function useContactListController({
     return true;
   };
   // 1. Core Logic: Add New Contact callback
-  const handleSaveContact = async (data: ContactCreateInput) => {
-    if (refuseUnavailableContactWrite(locale === "vi" ? "Tạo liên hệ" : "Creating a Contact", !contactCreateAvailable)) return;
-    const tagArray = data.tagsString.split(",").map((tag) => tag.trim()).filter(Boolean);
-    const preferredContactChannel = data.preferredChannel || undefined;
-    const createdContact = await createContactViaApi({
-      fullName: data.name,
-      jobTitle: data.title || undefined,
-      department: data.department || undefined,
-      decisionRole: data.decisionRole || undefined,
-      workEmail: data.email || undefined,
-      mobilePhone: data.phone || undefined,
-      zaloId: data.zaloId || undefined,
-      address: data.address || undefined,
-      preferredContactChannel,
-      source: data.source || undefined,
-      ownerId: data.ownerId || undefined,
-      tags: tagArray.length > 0 ? tagArray : undefined,
-      notes: data.notes || undefined,
-    });
+  const handleSaveContact = async (data: ContactCreateInput, options?: ContactCommandOptions) => {
+    if (refuseUnavailableContactWrite(locale === "vi" ? "Tạo liên hệ" : "Creating a Contact", !contactCreateAvailable)) throw new Error("CONTACT_CREATE_UNAVAILABLE");
+    const createdContact = await createContactViaApi(buildContactCreateCommand(data), options);
     setShowAddForm(false);
     notifyProduct(t("contactList.quickCreate.created", { name: data.name }), "success", {
       actionLabel: t("contactList.quickCreate.openRecord"),
@@ -583,8 +569,7 @@ export function useContactListController({
   }) => {
     if (!selectedContactForDeal) return;
     if (refuseUnavailableContactOpportunity(locale === "vi" ? "Tạo cơ hội từ Liên hệ" : "Creating an opportunity from this Contact")) {
-      setSelectedContactForDeal(null);
-      return;
+      return false;
     }
     const newDealId = `deal_${Date.now()}`;
     const dealOwner = getWorkspaceMemberOptions().find(u => u.id === oppData.dealOwnerId)?.name || t("contactList.preview.unassigned");
@@ -705,8 +690,7 @@ export function useContactListController({
       showToast(locale === "vi"
         ? `Đã tạo cơ hội "${createdDeal.name}". Chưa cập nhật được trạng thái Liên hệ vì máy chủ chưa hỗ trợ.`
         : `Opportunity "${createdDeal.name}" was created. The Contact status could not be updated yet because server support has not been released.`);
-      setSelectedContactForDeal(null);
-      return;
+      return false;
     }
     // Update contact status after creating an opportunity.
     const createOppAct: CRMActivity = {

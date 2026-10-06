@@ -1,3 +1,7 @@
+import { useRef as useWorkspaceBindingRef } from "react";
+import { useWorkspaceContextSnapshot as useWorkflowWorkspace } from "@/platform/workspace-context";
+import { useTargetBoundWorkflow } from "@/shared/presentation/useTargetBoundWorkflow";
+import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
 import { formatApplicationError } from "@/shared/operations";
 import React, { useMemo, useState } from "react";
 import { ArrowLeft, CalendarClock, CheckCircle2, FileClock, History, Link2, ListTodo, RotateCcw, UserRound, XCircle } from "lucide-react";
@@ -5,7 +9,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { toWorkspacePath } from "@/platform/navigation";
 import { RecordDetailFrame } from "@/components/crm/detail-archetype";
 import { OperationDetailTabs, OperationLifecycleRail } from "@/components/crm/operations";
-import { Button, Input, Modal, RecordTabTransition, SearchableSelect, Textarea } from "@/shared/components/ui";
+import { Button, ConfirmDialog, Input, Modal, RecordTabTransition, SearchableSelect, Textarea } from "@/shared/components/ui";
 import { useI18n } from "@/i18n";
 import { getContactsSnapshot, subscribeToContacts } from "@/modules/contacts";
 import { getOrganizationAccountsSnapshot, subscribeToOrganizationAccounts } from "@/modules/organizations";
@@ -53,7 +57,22 @@ const relatedRoute = (moduleKey?: string, recordId?: string): string | undefined
 };
 
 export const TaskDetailPage: React.FC = () => {
-  const { taskId = "" } = useParams();
+  const { taskId: routeTaskId = "" } = useParams();
+  const targetLifecycle = useTargetBoundWorkflow(routeTaskId, "task-detail-action");
+  const workflowWorkspace = useWorkflowWorkspace().workspaceId;
+  const currentWorkflowWorkspace = useWorkspaceBindingRef(workflowWorkspace);
+  currentWorkflowWorkspace.current = workflowWorkspace;
+  const openingWorkspace = useWorkspaceBindingRef({ cycle: targetLifecycle.cycle, id: workflowWorkspace });
+  if (openingWorkspace.current.cycle !== targetLifecycle.cycle) openingWorkspace.current = { cycle: targetLifecycle.cycle, id: workflowWorkspace };
+  const ownsWorkspace = () => openingWorkspace.current.id === currentWorkflowWorkspace.current;
+  const workflow = { ...targetLifecycle,
+    begin: () => ownsWorkspace() && targetLifecycle.begin(),
+    isCurrent: () => ownsWorkspace() && targetLifecycle.isCurrent(),
+    register: (dirty: boolean, reset: () => void, save: () => Promise<boolean>) => {
+      targetLifecycle.register(dirty, reset, () => ownsWorkspace() ? save() : Promise.resolve(false));
+    },
+  };
+  const taskId = workflow.targetId ?? "";
   const navigate = useNavigate();
   const workspace = useWorkspaceContextSnapshot();
   const { locale } = useI18n();
@@ -63,15 +82,26 @@ export const TaskDetailPage: React.FC = () => {
   const snapshot = useSubscribableSnapshot(getTaskActivitySnapshot, subscribeToTaskActivity);
   const contacts = useSubscribableSnapshot(getContactsSnapshot, subscribeToContacts);
   const organizations = useSubscribableSnapshot(getOrganizationAccountsSnapshot, subscribeToOrganizationAccounts);
-  const audit = useSubscribableSnapshot(() => getOperationalAuditSnapshot("tasks", taskId), subscribeToOperationalAudit);
-  const task = snapshot.tasks.find((item) => item.id === taskId);
+  const getAudit = React.useCallback(() => getOperationalAuditSnapshot("tasks", taskId), [taskId]);
+  const audit = useSubscribableSnapshot(getAudit, subscribeToOperationalAudit);
+  const liveTask = snapshot.tasks.find((item) => item.id === taskId);
   const [activeTab, setActiveTab] = useState<TaskDetailTab>("overview");
   const [showComplete, setShowComplete] = useState(false);
   const [showReschedule, setShowReschedule] = useState(false);
   const [outcome, setOutcome] = useState("");
-  const [newDueAt, setNewDueAt] = useState(task?.dueAt.slice(0, 16) ?? "");
+  const [newDueAt, setNewDueAt] = useState(liveTask?.dueAt.slice(0, 16) ?? "");
   const [message, setMessage] = useState<string | null>(null);
 
+  const openingTask = React.useRef(liveTask);
+  if (openingTask.current?.id !== taskId || (!showComplete && !showReschedule && !workflow.pending)) openingTask.current = liveTask ? structuredClone(liveTask) : undefined;
+  const task = openingTask.current;
+  const dirty = (showComplete && Boolean(outcome.trim())) || (showReschedule && newDueAt !== (task?.dueAt.slice(0, 16) ?? ""));
+  const closeActions = () => { setShowComplete(false); setShowReschedule(false); setOutcome(""); setNewDueAt(task?.dueAt.slice(0, 16) ?? ""); };
+  const guard = useUnsavedChangesGuard(closeActions);
+  React.useEffect(() => guard.setIsDirty(dirty), [dirty, guard.setIsDirty]);
+  const close = () => { if (!workflow.pending) guard.requestClose(); };
+  workflow.register(dirty, closeActions, async () => false);
+  React.useEffect(() => { closeActions(); setMessage(null); }, [taskId]);
   if (!task) return <div className="rounded-2xl border border-slate-200 bg-white p-8 text-sm text-slate-600">{vi ? "Không tìm thấy công việc." : "Task not found."}</div>;
 
   const actorId = session?.principal.memberId || access.memberId || undefined;
@@ -83,43 +113,47 @@ export const TaskDetailPage: React.FC = () => {
   const route = relatedRoute(task.recordRef?.moduleKey, task.recordRef?.recordId);
   const overdue = task.status === "OPEN" && new Date(task.dueAt).getTime() < Date.now();
   const assigneeLabel = resolveWorkspaceMemberName(task.assigneeId);
-  const activities = useMemo(
-    () => snapshot.activities.filter((activity) => activity.recordRef?.moduleKey === task.recordRef?.moduleKey && activity.recordRef?.recordId === task.recordRef?.recordId),
-    [snapshot.activities, task.recordRef?.moduleKey, task.recordRef?.recordId],
-  );
+  const activities = snapshot.activities.filter((activity) => activity.recordRef?.moduleKey === task.recordRef?.moduleKey && activity.recordRef?.recordId === task.recordRef?.recordId);
 
   const complete = async () => {
-    if (!actorId || !actorName) return;
+    if (!actorId || !actorName || !workflow.begin()) return;
     try {
-      await completeTaskCommand(task.id, { actorId, actorName, outcome: outcome.trim() || (vi ? "Đã hoàn thành công việc." : "Task completed.") });
+      await completeTaskCommand(task.id, { actorId, actorName, outcome: outcome.trim() || (vi ? "Đã hoàn thành công việc." : "Task completed.") }, { expectedVersion: task.resourceVersion });
+      if (!workflow.isCurrent()) return;
+      setOutcome("");
       setShowComplete(false);
       setMessage(vi ? "Đã hoàn thành công việc." : "Task completed.");
-    } catch (error) { setMessage(formatApplicationError(error, { locale })); }
+    } catch (error) { if (workflow.isCurrent()) setMessage(formatApplicationError(error, { locale })); }
+    finally { workflow.finish(); }
   };
 
   const cancel = async () => {
-    if (!actorId || !actorName) return;
+    if (!actorId || !actorName || !workflow.begin()) return;
     try {
       await cancelTaskCommand(task.id, { actorId, actorName, reason: vi ? "Đã hủy từ trang chi tiết Công việc" : "Cancelled from Task detail" });
       setMessage(vi ? "Đã hủy công việc." : "Task cancelled.");
-    } catch (error) { setMessage(formatApplicationError(error, { locale })); }
+    } catch (error) { if (workflow.isCurrent()) setMessage(formatApplicationError(error, { locale })); }
+    finally { workflow.finish(); }
   };
 
   const reschedule = async () => {
-    if (!actorId || !actorName) return;
+    if (!actorId || !actorName || !workflow.begin()) return;
     try {
-      await rescheduleTaskCommand(task.id, { actorId, actorName, dueAt: new Date(newDueAt).toISOString() });
+      await rescheduleTaskCommand(task.id, { actorId, actorName, dueAt: new Date(newDueAt).toISOString() }, { expectedVersion: task.resourceVersion });
+      if (!workflow.isCurrent()) return;
       setShowReschedule(false);
       setMessage(vi ? "Đã đổi lịch công việc." : "Task rescheduled.");
-    } catch (error) { setMessage(formatApplicationError(error, { locale })); }
+    } catch (error) { if (workflow.isCurrent()) setMessage(formatApplicationError(error, { locale })); }
+    finally { workflow.finish(); }
   };
 
   const reassign = async (nextAssigneeId: string) => {
-    if (!actorId || !actorName || !nextAssigneeId || nextAssigneeId === task.assigneeId) return;
+    if (!actorId || !actorName || !nextAssigneeId || nextAssigneeId === task.assigneeId || showComplete || showReschedule || !workflow.begin()) return;
     try {
       await reassignTaskCommand(task.id, { assigneeId: nextAssigneeId, actorId, actorName });
       setMessage(vi ? "Đã chuyển người phụ trách." : "Task reassigned.");
-    } catch (error) { setMessage(formatApplicationError(error, { locale })); }
+    } catch (error) { if (workflow.isCurrent()) setMessage(formatApplicationError(error, { locale })); }
+    finally { workflow.finish(); }
   };
 
   const tabs = [
@@ -223,14 +257,14 @@ export const TaskDetailPage: React.FC = () => {
               <Row label={vi ? "Người phụ trách" : "Assignee"} value={assigneeLabel || "—"} />
               <Row label={vi ? "Hạn" : "Due"} value={new Date(task.dueAt).toLocaleString(vi ? "vi-VN" : "en-US")} />
                 {task.status === "OPEN" && canUpdate && (
-                  <SearchableSelect label={vi ? "Chuyển người phụ trách" : "Reassign"} value={task.assigneeId} onChange={(value) => void reassign(value)} clearable={false} placeholder={vi ? "Chọn nhân viên" : "Select member"} searchPlaceholder={vi ? "Tìm tên hoặc email..." : "Search name or email..."} options={members.map((member) => ({ value: member.memberId, label: member.displayName, description: member.email, keywords: member.email }))} />
+                  <SearchableSelect disabled={workflow.pending} label={vi ? "Chuyển người phụ trách" : "Reassign"} value={task.assigneeId} onChange={(value) => void reassign(value)} clearable={false} placeholder={vi ? "Chọn nhân viên" : "Select member"} searchPlaceholder={vi ? "Tìm tên hoặc email..." : "Search name or email..."} options={members.map((member) => ({ value: member.memberId, label: member.displayName, description: member.email, keywords: member.email }))} />
                 )}
               {overdue && <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2.5 text-xs font-semibold text-rose-700">{vi ? "Công việc đã quá hạn." : "Task is overdue."}</div>}
 
               {task.status === "OPEN" && (
                 <div className="grid gap-2 pt-1">
-                  {canComplete && <Button type="button" actionIntent="complete" size="sm" icon={<CheckCircle2 size={15} />} className="text-white [&_svg]:stroke-white" onClick={() => setShowComplete(true)}>{vi ? "Hoàn thành" : "Complete"}</Button>}
-                  {canUpdate && <Button type="button" actionIntent="retry" size="sm" icon={<RotateCcw size={15} />} onClick={() => setShowReschedule(true)}>{vi ? "Đổi lịch" : "Reschedule"}</Button>}
+                  {canComplete && <Button type="button" actionIntent="complete" size="sm" icon={<CheckCircle2 size={15} />} className="text-white [&_svg]:stroke-white" onClick={() => { if (!workflow.pending && !showReschedule) { setOutcome(""); setShowComplete(true); } }}>{vi ? "Hoàn thành" : "Complete"}</Button>}
+                  {canUpdate && <Button type="button" actionIntent="retry" size="sm" icon={<RotateCcw size={15} />} onClick={() => { if (!workflow.pending && !showComplete) { setNewDueAt(task.dueAt.slice(0, 16)); setShowReschedule(true); } }}>{vi ? "Đổi lịch" : "Reschedule"}</Button>}
                   {canUpdate && <Button type="button" actionIntent="destructive" size="sm" icon={<XCircle size={15} />} className="text-white [&_svg]:stroke-white" onClick={() => void cancel()}>{vi ? "Hủy công việc" : "Cancel task"}</Button>}
                 </div>
               )}
@@ -244,19 +278,22 @@ export const TaskDetailPage: React.FC = () => {
         </aside>
       </div>
 
-      <Modal isOpen={showComplete} onClose={() => setShowComplete(false)} title={vi ? "Hoàn thành công việc" : "Complete task"} size="sm" variant="form">
+      <Modal isOpen={showComplete} onClose={close} title={vi ? "Hoàn thành công việc" : "Complete task"} size="sm" variant="form">
         <div className="space-y-4 text-left">
-          <label className="block"><span className="text-[10px] font-semibold uppercase text-slate-400">{vi ? "Kết quả" : "Outcome"}</span><Textarea rows={4} value={outcome} onChange={(event) => setOutcome(event.target.value)} /></label>
-          <div className="flex justify-end gap-2"><Button type="button" actionIntent="neutral" size="sm" onClick={() => setShowComplete(false)}>{vi ? "Hủy" : "Cancel"}</Button><Button type="button" actionIntent="confirm" size="sm" onClick={() => void complete()}>{vi ? "Xác nhận" : "Confirm"}</Button></div>
+          <label className="block"><span className="text-[10px] font-semibold uppercase text-slate-400">{vi ? "Kết quả" : "Outcome"}</span><Textarea disabled={workflow.pending} rows={4} value={outcome} onChange={(event) => setOutcome(event.target.value)} /></label>
+          <div className="flex justify-end gap-2"><Button type="button" actionIntent="neutral" size="sm" onClick={close}>{vi ? "Hủy" : "Cancel"}</Button><Button type="button" actionIntent="confirm" size="sm" disabled={workflow.pending} onClick={() => void complete()}>{vi ? "Xác nhận" : "Confirm"}</Button></div>
         </div>
       </Modal>
 
-      <Modal isOpen={showReschedule} onClose={() => setShowReschedule(false)} title={vi ? "Đổi lịch công việc" : "Reschedule task"} size="sm" variant="form">
+      <Modal isOpen={showReschedule} onClose={close} title={vi ? "Đổi lịch công việc" : "Reschedule task"} size="sm" variant="form">
         <div className="space-y-4 text-left">
-          <label className="block"><span className="text-[10px] font-semibold uppercase text-slate-400">{vi ? "Hạn mới" : "New due date"}</span><Input type="datetime-local" value={newDueAt} onChange={(event) => setNewDueAt(event.target.value)} /></label>
-          <div className="flex justify-end gap-2"><Button type="button" actionIntent="neutral" size="sm" onClick={() => setShowReschedule(false)}>{vi ? "Hủy" : "Cancel"}</Button><Button type="button" actionIntent="save" size="sm" onClick={() => void reschedule()}>{vi ? "Lưu lịch" : "Save"}</Button></div>
+          <label className="block"><span className="text-[10px] font-semibold uppercase text-slate-400">{vi ? "Hạn mới" : "New due date"}</span><Input disabled={workflow.pending} type="datetime-local" value={newDueAt} onChange={(event) => setNewDueAt(event.target.value)} /></label>
+          <div className="flex justify-end gap-2"><Button type="button" actionIntent="neutral" size="sm" onClick={close}>{vi ? "Hủy" : "Cancel"}</Button><Button type="button" actionIntent="save" size="sm" disabled={workflow.pending} onClick={() => void reschedule()}>{vi ? "Lưu lịch" : "Save"}</Button></div>
         </div>
       </Modal>
+      <ConfirmDialog isOpen={guard.isConfirmOpen} onClose={() => guard.setIsConfirmOpen(false)} onConfirm={() => { if (!workflow.pending) guard.confirmDiscard(); }}
+        title={vi ? "Bỏ thay đổi chưa lưu?" : "Discard unsaved changes?"} message={vi ? "Các thay đổi chưa được lưu. Bạn có muốn đóng biểu mẫu?" : "Your changes have not been saved. Close the form?"}
+        confirmText={vi ? "Bỏ thay đổi" : "Discard changes"} cancelText={vi ? "Tiếp tục chỉnh sửa" : "Keep editing"} type="warning" />
     </RecordDetailFrame>
   );
 };

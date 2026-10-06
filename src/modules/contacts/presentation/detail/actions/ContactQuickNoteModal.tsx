@@ -10,13 +10,16 @@ interface Note {
 }
 
 interface ContactQuickNoteModalProps {
+  targetId?: string;
   isOpen: boolean;
   onClose: () => void;
   onSave: (note: Omit<Note, "id" | "date"> & { type: string; occurredAt: string }) => void | Promise<void>;
 }
 
-export const ContactQuickNoteModal: React.FC<ContactQuickNoteModalProps> = ({ isOpen, onClose, onSave }) => (
+export const ContactQuickNoteModal: React.FC<ContactQuickNoteModalProps> = ({ targetId, isOpen, onClose, onSave }) => (
   <NoteActivityCreateModal
+    targetId={targetId}
+    recordingOnly
     guardChanges
     isOpen={isOpen}
     onClose={onClose}

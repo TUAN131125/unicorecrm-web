@@ -75,7 +75,9 @@ export function useLeadDetailDialogs(lead: Lead | undefined, routeLeadId: string
       // one is open; never assume their draft is clean from screen state alone.
       isDirty: (formIntent.kind === "edit" ? editDirty || editSubmitting
         : formIntent.kind === "disqualify" ? disqualifyDirty : true) || interactionPending,
-      save: async () => false, discard: discardActiveForm,
+      save: async () => false,
+      canDiscard: () => currentIntent.current?.cycle === callbackCycle && !submitting.current && pendingCycle.current === null,
+      discard: discardActiveForm,
     });
   }, [discardActiveForm, disqualifyDirty, editDirty, editSubmitting, formIntent, interactionPending]);
   useEffect(() => {

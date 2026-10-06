@@ -1,4 +1,6 @@
 import React from "react";
+import { getWorkspaceContextSnapshot, useWorkspaceContextSnapshot } from "@/platform/workspace-context";
+import { getDirtyUnsavedWork } from "@/platform/unsaved-work";
 import { CAPABILITIES } from "@/platform/access-control";
 import { useRecordOwnershipContext } from "@/platform/record-ownership";
 import { useI18n } from "@/i18n";
@@ -36,7 +38,19 @@ export function OrganizationCreateOpportunityModal({
   onClose,
   onCreated,
 }: OrganizationCreateOpportunityModalProps) {
+  const workspace = useWorkspaceContextSnapshot();
+  const opening = React.useRef({ workspaceId: workspace.workspaceId, account: structuredClone(account), primaryContact: primaryContact ? structuredClone(primaryContact) : undefined, linkedCustomerId });
+  const wasOpen = React.useRef(false);
+  const cycle = React.useRef(0);
+  React.useEffect(() => {
+    if (isOpen && !wasOpen.current) { cycle.current += 1; opening.current = { workspaceId: workspace.workspaceId, account: structuredClone(account), primaryContact: primaryContact ? structuredClone(primaryContact) : undefined, linkedCustomerId }; }
+    if (!isOpen && wasOpen.current) cycle.current += 1;
+    wasOpen.current = isOpen;
+  }, [isOpen, account, primaryContact, linkedCustomerId, workspace.workspaceId]);
   const { locale } = useI18n();
+  React.useEffect(() => {
+    if (isOpen && (account.id !== opening.current.account.id || workspace.workspaceId !== opening.current.workspaceId) && !getDirtyUnsavedWork().some(entry => entry.id.startsWith("deal-form:"))) onClose();
+  }, [isOpen, account.id, onClose, workspace.workspaceId]);
   const ownership = useRecordOwnershipContext("deals", CAPABILITIES.DEALS_ASSIGN);
   const owners = ownership?.assignableOwners ?? [];
   const stages = React.useMemo(() => getDealStagesSnapshot(), [account.id]);
@@ -50,7 +64,11 @@ export function OrganizationCreateOpportunityModal({
     demandSummary: account.notes || "",
   }), [account, locale, owners, ownership?.memberId]);
 
-  const submit = async (draft: DealFormDraft) => {
+  const submit = async (draft: DealFormDraft, _openingDeal: Deal | null, intentId: string) => {
+    if (opening.current.workspaceId !== getWorkspaceContextSnapshot().workspaceId) return false;
+    const commandWorkspace = opening.current.workspaceId;
+    const activeCycle = cycle.current;
+    const { account, primaryContact, linkedCustomerId } = opening.current;
     const now = new Date().toISOString();
     const dealId = createDurableId("deal");
     const lineItems = mapSelectedPickerItemsToDealLineItems(draft.lineItems);
@@ -67,7 +85,7 @@ export function OrganizationCreateOpportunityModal({
           : "An opportunity with a follow-up task cannot be created yet: work activation is not supported by the server. Clear the follow-up task to create the opportunity only.",
         "warning",
       );
-      return;
+      return false;
     }
     const deal = (await createDealCommand({
       id: dealId,
@@ -110,7 +128,7 @@ export function OrganizationCreateOpportunityModal({
         createdAt: now,
         author: actorName,
       }],
-    })).data;
+    }, { idempotencyKey: intentId })).data;
     // Separate authoritative command; WF-21 has no atomic Deal+Task workflow. The Deal
     // is already committed, so a Task failure is a partial outcome, not total failure.
     if (nextActionAt) {
@@ -120,11 +138,12 @@ export function OrganizationCreateOpportunityModal({
         notifyProduct(locale === "vi"
           ? `Đã tạo cơ hội "${deal.name}". Chưa tạo được công việc kế tiếp: ${formatApplicationError(error, { locale })}`
           : `Opportunity "${deal.name}" was created. Its next-action Task was not created: ${formatApplicationError(error, { locale })}`, "danger");
-        onCreated(deal);
-        return;
+        if (wasOpen.current && cycle.current === activeCycle && commandWorkspace === getWorkspaceContextSnapshot().workspaceId) onCreated(deal);
+        return true;
       }
     }
-    onCreated(deal);
+    if (wasOpen.current && cycle.current === activeCycle && commandWorkspace === getWorkspaceContextSnapshot().workspaceId) onCreated(deal);
+    return true;
   };
 
   return (
@@ -132,6 +151,7 @@ export function OrganizationCreateOpportunityModal({
       isOpen={isOpen}
       onClose={onClose}
       mode="create"
+      sourceKey={isOpen && !wasOpen.current ? account.id : opening.current.account.id}
       initialValues={initialValues}
       owners={owners}
       stages={stages}

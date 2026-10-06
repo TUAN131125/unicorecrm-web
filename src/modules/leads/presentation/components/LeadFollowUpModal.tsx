@@ -1,14 +1,15 @@
+import { useLeadAuxiliaryLifecycle } from "../hooks/useLeadAuxiliaryLifecycle";
 import React, { useState, useEffect } from "react";
 import { useI18n } from "@/i18n";
 import { Modal, Input, Textarea, Button } from "@/shared/components/ui";
 
 interface LeadFollowUpModalProps {
   isOpen: boolean;
-  onClose: () => void;
+  onClose: () => void | Promise<unknown>;
   onConfirm: (data: {
     date: string;
     note: string;
-  }) => void;
+  }) => void | Promise<unknown>;
 }
 
 export const LeadFollowUpModal: React.FC<LeadFollowUpModalProps> = ({
@@ -22,6 +23,8 @@ export const LeadFollowUpModal: React.FC<LeadFollowUpModalProps> = ({
   const [followUpNote, setFollowUpNote] = useState("");
 
   // Reset states on open
+  const lifecycle = useLeadAuxiliaryLifecycle(isOpen, "LeadFollowUpModal", Boolean(followUpDate || followUpNote.trim()), () => { setFollowUpDate(""); setFollowUpNote(""); }, onClose);
+
   useEffect(() => {
     if (isOpen) {
       setFollowUpDate("");
@@ -29,22 +32,23 @@ export const LeadFollowUpModal: React.FC<LeadFollowUpModalProps> = ({
     }
   }, [isOpen]);
 
-  const handleExecute = () => {
-    onConfirm({
-      date: followUpDate,
-      note: followUpNote,
-    });
+  const handleExecute = async () => {
+    if (!followUpDate) return;
+    if (await lifecycle.run(() => onConfirm({ date: followUpDate, note: followUpNote }))) {
+      setFollowUpDate(""); setFollowUpNote("");
+    }
   };
 
   return (
-    <Modal variant="form"
+    <> <Modal variant="form"
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={lifecycle.requestClose}
       title={t("leads.followUp.title", "Đặt lịch liên hệ lại")}
       size="sm"
     >
       <div className="space-y-4 text-left font-sans">
-        <Input
+        {lifecycle.error && <p role="alert">{lifecycle.error}</p>}
+        <Input disabled={lifecycle.pending}
           label={t("leads.followUp.dateLabel", "Ngày liên hệ lại *")}
           type="date"
           required
@@ -53,7 +57,7 @@ export const LeadFollowUpModal: React.FC<LeadFollowUpModalProps> = ({
           className="rounded-xl border-slate-200 text-xs"
         />
 
-        <Textarea
+        <Textarea disabled={lifecycle.pending}
           label={t("leads.followUp.noteLabel", "Nội dung ghi chú")}
           placeholder={locale === "vi" ? "Ghi nội dung trao đổi, kịch bản, thời gian gọi lại..." : "Outreach guidelines, questions to cover and agenda..."}
           value={followUpNote}
@@ -63,14 +67,14 @@ export const LeadFollowUpModal: React.FC<LeadFollowUpModalProps> = ({
         />
 
         <div className="pt-3 border-t border-slate-100 flex justify-end gap-2">
-          <Button variant="secondary" onClick={onClose}>
+          <Button variant="secondary" onClick={lifecycle.requestClose}>
             {t("common.cancel", "Hủy")}
           </Button>
-          <Button variant="primary" onClick={handleExecute} disabled={!followUpDate}>
+          <Button variant="primary" onClick={handleExecute} disabled={lifecycle.pending || !followUpDate}>
             {locale === "vi" ? "Đặt lịch" : "Schedule"}
           </Button>
         </div>
       </div>
-    </Modal>
+    </Modal>{lifecycle.confirmation}</>
   );
 };

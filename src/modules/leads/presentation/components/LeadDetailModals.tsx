@@ -220,11 +220,11 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
         onClose={() => {
           if (!archivePending) setShowArchiveConfirm(false);
         }}
-        onConfirm={() => {
-          if (archivePending) return;
+        onConfirm={(isCurrent) => {
+          if (archivePending || !dialogs.setActiveInteractionPending(true)) return;
           setArchivePending(true);
-          dialogs.setActiveInteractionPending(true);
-          void leadActions.archive(lead.id).then(() => {
+          return leadActions.archive(lead.id).then(() => {
+            if (!isCurrent() || !dialogs.isCurrentInteraction()) return;
             dialogs.resolveInteraction("archive");
             showToast(locale === "vi" ? `Đã lưu trữ tiềm năng ${lead.name}.` : `Archived lead ${lead.name}.`);
             navigate(archiveListPath);

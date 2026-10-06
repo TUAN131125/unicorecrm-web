@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { writeValidatedInventory } from "../../../scripts/repository-inventory/writeValidatedInventory.mjs";
 import {
   buildRepositoryInventory,
   INVENTORY_JSON_PATH,
@@ -14,8 +17,9 @@ assert.ok(fs.existsSync(INVENTORY_MARKDOWN_PATH), "Missing docs/quality/reposito
 const inventory = buildRepositoryInventory();
 const expectedJson = serializeInventory(inventory);
 const expectedMarkdown = renderRepositoryInventoryMarkdown(inventory);
-const actualJson = fs.readFileSync(INVENTORY_JSON_PATH, "utf8");
-const actualMarkdown = fs.readFileSync(INVENTORY_MARKDOWN_PATH, "utf8");
+// Match the generator's canonical text bytes across LF/CRLF Git checkouts.
+const actualJson = fs.readFileSync(INVENTORY_JSON_PATH, "utf8").replace(/\r\n?/gu, "\n");
+const actualMarkdown = fs.readFileSync(INVENTORY_MARKDOWN_PATH, "utf8").replace(/\r\n?/gu, "\n");
 
 assert.equal(actualJson, expectedJson, "Repository inventory JSON drifted. Run npm run repo:inventory and review the change.");
 assert.equal(actualMarkdown, expectedMarkdown, "Repository inventory Markdown drifted. Run npm run repo:inventory and review the change.");
@@ -25,6 +29,24 @@ assert.ok(inventory.summary.loadableRouteModules > 0, "Repository inventory must
 assert.ok(inventory.summary.capabilities > 0, "Repository inventory must contain capabilities.");
 assert.ok(inventory.summary.workspaceFlags > 0, "Repository inventory must contain workspace flags.");
 assert.ok(inventory.summary.workflows > 0, "Repository inventory must contain cross-module workflows.");
+
+const temporaryDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "unicore-inventory-validation-"));
+try {
+  const jsonPath = path.join(temporaryDirectory, "inventory.json");
+  const markdownPath = path.join(temporaryDirectory, "inventory.md");
+  fs.writeFileSync(jsonPath, "previous-json");
+  fs.writeFileSync(markdownPath, "previous-markdown");
+  for (const invalid of ['{"broken":', JSON.stringify({ schemaVersion: 1 })]) {
+    assert.throws(() => writeValidatedInventory(jsonPath, markdownPath, invalid, "replacement"));
+    assert.equal(fs.readFileSync(jsonPath, "utf8"), "previous-json", "Failed generation must retain prior JSON");
+    assert.equal(fs.readFileSync(markdownPath, "utf8"), "previous-markdown", "Failed generation must retain prior Markdown");
+    assert.deepEqual(fs.readdirSync(temporaryDirectory).sort(), ["inventory.json", "inventory.md"]);
+  }
+  writeValidatedInventory(jsonPath, markdownPath, expectedJson, expectedMarkdown);
+  assert.equal(fs.readFileSync(jsonPath, "utf8"), expectedJson);
+} finally {
+  fs.rmSync(temporaryDirectory, { recursive: true, force: true });
+}
 
 for (const journey of inventory.criticalJourneys) {
   for (const evidence of journey.evidenceStatus) {

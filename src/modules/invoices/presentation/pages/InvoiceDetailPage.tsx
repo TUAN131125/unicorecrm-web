@@ -1,8 +1,12 @@
+import { useRef as useWorkspaceBindingRef } from "react";
+import { useWorkspaceContextSnapshot as useWorkflowWorkspace } from "@/platform/workspace-context";
+import { useTargetBoundWorkflow } from "@/shared/presentation/useTargetBoundWorkflow";
+import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
 import { formatApplicationError } from "@/shared/operations";
 import React from "react";
 import { Ban, Copy, Download, FileText, Link2, Mail, Pencil, Printer, ReceiptText, RotateCcw, Send, Trash2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Button, Card, Input, Modal, SectionHeader, Select, Textarea } from "@/shared/components/ui";
+import { ConfirmDialog, Button, Card, Input, Modal, SectionHeader, Select, Textarea } from "@/shared/components/ui";
 import { RecordDetailFrame, RecordDetailHeader } from "@/components/crm/detail-archetype";
 import { RecordHeaderActionMenu } from "@/components/crm/RecordHeaderActionMenu";
 import type { ActionDropdownItem, ActionDropdownSection } from "@/components/crm/ActionDropdown";
@@ -158,7 +162,22 @@ table{width:100%;border-collapse:collapse;font-size:12px}th{border-top:1px solid
 }
 
 export const InvoiceDetailPage: React.FC = () => {
-  const { invoiceId = "" } = useParams();
+  const { invoiceId: routeInvoiceId = "" } = useParams();
+  const targetLifecycle = useTargetBoundWorkflow(routeInvoiceId, "invoice-credit-draft");
+  const workflowWorkspace = useWorkflowWorkspace().workspaceId;
+  const currentWorkflowWorkspace = useWorkspaceBindingRef(workflowWorkspace);
+  currentWorkflowWorkspace.current = workflowWorkspace;
+  const openingWorkspace = useWorkspaceBindingRef({ cycle: targetLifecycle.cycle, id: workflowWorkspace });
+  if (openingWorkspace.current.cycle !== targetLifecycle.cycle) openingWorkspace.current = { cycle: targetLifecycle.cycle, id: workflowWorkspace };
+  const ownsWorkspace = () => openingWorkspace.current.id === currentWorkflowWorkspace.current;
+  const workflow = { ...targetLifecycle,
+    begin: () => ownsWorkspace() && targetLifecycle.begin(),
+    isCurrent: () => ownsWorkspace() && targetLifecycle.isCurrent(),
+    register: (dirty: boolean, reset: () => void, save: () => Promise<boolean>) => {
+      targetLifecycle.register(dirty, reset, () => ownsWorkspace() ? save() : Promise.resolve(false));
+    },
+  };
+  const invoiceId = workflow.targetId ?? "";
   const navigate = useNavigate();
   const { locale } = useI18n();
   const operationGuide = {
@@ -180,7 +199,7 @@ export const InvoiceDetailPage: React.FC = () => {
   const { activeWorkspace } = usePlatformState();
   const access = useEffectiveAccess();
   const invoiceQuery = useInvoiceDetailQuery(invoiceId);
-  const invoice = invoiceQuery.data?.invoice;
+  const liveInvoice = invoiceQuery.data?.invoice;
   const receivable = invoiceQuery.data?.receivable;
   const deliveries = invoiceQuery.data?.deliveries ?? [];
   const creditNotes = invoiceQuery.data?.creditNotes ?? [];
@@ -197,22 +216,38 @@ export const InvoiceDetailPage: React.FC = () => {
   const text = (vi: string, en: string) => locale === "vi" ? vi : en;
   const path = (value: string) => toWorkspacePath(activeWorkspace.workspaceKey, "crm", value);
 
+  const openingInvoice = React.useRef(liveInvoice);
+  if (openingInvoice.current?.id !== invoiceId || (!creditOpen && !workflow.pending)) openingInvoice.current = liveInvoice ? structuredClone(liveInvoice) : undefined;
+  const invoice = openingInvoice.current;
+  const dirty = creditOpen && Boolean(creditReason.trim() || Object.values(creditLineAmounts).some(value => value.trim()) || creditReasonCode !== (creditReasons[0]?.code ?? "COMMERCIAL_ADJUSTMENT"));
+  const resetCredit = () => { setCreditOpen(false); setCreditLineAmounts({}); setCreditReason(""); setCreditReasonCode(creditReasons[0]?.code ?? "COMMERCIAL_ADJUSTMENT"); setCreditError(""); };
+  const guard = useUnsavedChangesGuard(resetCredit);
+  React.useEffect(() => guard.setIsDirty(dirty), [dirty, guard.setIsDirty]);
+  workflow.register(dirty, resetCredit, async () => false);
+  React.useEffect(resetCredit, [invoiceId]);
+  const closeCredit = () => { if (!workflow.pending) guard.requestClose(); };
   if (!invoice) return <RecordDetailFrame id="invoice-detail-not-found"><Card><p className="text-sm text-slate-600">{invoiceQuery.loading ? text("Đang tải hóa đơn authoritative…", "Loading authoritative invoice…") : invoiceQuery.state === "ERROR" ? text("Không thể tải hóa đơn.", "Invoice could not be loaded.") : text("Không tìm thấy hóa đơn.", "Invoice not found.")}</p><div className="mt-4 flex gap-2">{invoiceQuery.state === "ERROR" && <Button variant="secondary" onClick={() => void invoiceQuery.refresh()}>{text("Thử lại", "Retry")}</Button>}<Button onClick={() => navigate(path("invoices"))}>{text("Quay lại", "Back")}</Button></div></Card></RecordDetailFrame>;
 
   const formatMoney = (value: typeof invoice.totals.grandTotal) => formatMoneyDto(value, locale === "vi" ? "vi-VN" : "en-US");
   const invoiceUrl = `${window.location.origin}${window.location.pathname}#${path(`invoices/${invoice.id}`)}`;
   const run = async (action: Exclude<BusyAction, null>, operation: () => Promise<unknown>, successMessage: string) => {
+    if (!workflow.begin()) return false;
     setBusyAction(action);
     setMutationFailure(null);
     try {
       await operation();
+      if (!workflow.isCurrent()) return false;
       notifyProduct(successMessage, "success");
+      return true;
     } catch (error) {
+      if (!workflow.isCurrent()) return false;
       const failure = classifyMutationFailure(error);
       setMutationFailure(failure);
       notifyProduct(failure.message, "danger");
+      return false;
     } finally {
-      setBusyAction(null);
+      if (workflow.isCurrent()) setBusyAction(null);
+      workflow.finish();
     }
   };
   const downloadDocument = () => {
@@ -265,8 +300,8 @@ export const InvoiceDetailPage: React.FC = () => {
       const total = sumMoney(lines.map((line) => line.amount), invoice.currency);
       if (receivable && compareMoney(total, receivable.outstandingAmount) > 0) throw new Error(text("Credit Note không được vượt số dư công nợ hiện tại.", "Credit Note cannot exceed the current outstanding balance."));
       if (!creditReason.trim()) throw new Error(text("Lý do điều chỉnh là bắt buộc.", "Adjustment reason is required."));
-      await run("credit", () => createCreditNoteCanonical({ invoiceId: invoice.id, expectedInvoiceVersion: invoice.version, reasonCode: creditReasonCode, reason: creditReason.trim(), lines, idempotencyKey: durableId(`credit_${invoice.id}`) }), text("Credit Note đã được phát hành.", "Credit Note issued."));
-      setCreditOpen(false); setCreditLineAmounts({}); setCreditReason("");
+      const saved = await run("credit", () => createCreditNoteCanonical({ invoiceId: invoice.id, expectedInvoiceVersion: invoice.version, reasonCode: creditReasonCode, reason: creditReason.trim(), lines, idempotencyKey: durableId(`credit_${invoice.id}`) }), text("Credit Note đã được phát hành.", "Credit Note issued."));
+      if (saved && workflow.isCurrent()) resetCredit();
     } catch (error) { setCreditError(formatApplicationError(error, { locale, fallbackMessage: text("Dữ liệu Credit Note không hợp lệ.", "Invalid Credit Note data.") })); }
   };
 
@@ -357,8 +392,11 @@ export const InvoiceDetailPage: React.FC = () => {
         className="h-[1280px] w-[920px] border-0 bg-white"
       />
     </CommercialDocumentPreviewModal>
-    <Modal isOpen={creditOpen} onClose={() => setCreditOpen(false)} title={text("Phát hành Credit Note theo dòng", "Issue line-level Credit Note")} size="sm" variant="form" footer={<><Button variant="secondary" onClick={() => setCreditOpen(false)}>{text("Hủy", "Cancel")}</Button><Button actionIntent="confirm" loading={busyAction === "credit"} onClick={() => { void handleCreditNote(); }}>{text("Phát hành", "Issue")}</Button></>}>
-      <div className="space-y-4"><p className="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-800">{text("Chỉ nhập giá trị cần điều chỉnh tại từng dòng. Hóa đơn gốc không bị sửa.", "Enter the adjustment amount per line. The original Invoice remains unchanged.")}</p><Select label={text("Mã lý do", "Reason code")} value={creditReasonCode} onChange={(event) => setCreditReasonCode(event.target.value)}>{creditReasons.length ? creditReasons.map((entry) => <option key={entry.code} value={entry.code}>{entry.code} · {locale === "vi" ? entry.labelVi : entry.labelEn}</option>) : <option value="COMMERCIAL_ADJUSTMENT">COMMERCIAL_ADJUSTMENT</option>}</Select><div className="space-y-2">{invoice.lines.map((line) => <div key={line.id} className="grid gap-3 rounded-xl border border-slate-200 p-3 md:grid-cols-[minmax(0,1fr)_180px]"><div><div className="font-semibold text-slate-900">{line.description}</div><div className="text-xs text-slate-500">{text("Giá trị dòng", "Line value")}: {formatMoney(line.lineTotal)}</div></div><Input label={text("Giá trị điều chỉnh", "Adjustment")} value={creditLineAmounts[line.id] ?? ""} onChange={(event) => { setCreditLineAmounts((current) => ({ ...current, [line.id]: event.target.value })); setCreditError(""); }} placeholder="0" /></div>)}</div><Textarea label={text("Ghi chú lý do", "Reason note")} value={creditReason} onChange={(event) => { setCreditReason(event.target.value); setCreditError(""); }} rows={3} />{creditError && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{creditError}</p>}</div>
+    <ConfirmDialog isOpen={guard.isConfirmOpen} onClose={() => guard.setIsConfirmOpen(false)} onConfirm={() => { if (!workflow.pending) guard.confirmDiscard(); }}
+      title={text("Bỏ thay đổi chưa lưu?", "Discard unsaved changes?")} message={text("Các thay đổi chưa được lưu. Bạn có muốn đóng biểu mẫu?", "Your changes have not been saved. Close the form?")}
+      confirmText={text("Bỏ thay đổi", "Discard changes")} cancelText={text("Tiếp tục chỉnh sửa", "Keep editing")} type="warning" />
+    <Modal isOpen={creditOpen} onClose={closeCredit} title={text("Phát hành Credit Note theo dòng", "Issue line-level Credit Note")} size="sm" variant="form" footer={<><Button variant="secondary" onClick={closeCredit}>{text("Hủy", "Cancel")}</Button><Button actionIntent="confirm" loading={busyAction === "credit"} onClick={() => { void handleCreditNote(); }}>{text("Phát hành", "Issue")}</Button></>}>
+      <div className="space-y-4"><p className="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm text-sky-800">{text("Chỉ nhập giá trị cần điều chỉnh tại từng dòng. Hóa đơn gốc không bị sửa.", "Enter the adjustment amount per line. The original Invoice remains unchanged.")}</p><Select disabled={workflow.pending} label={text("Mã lý do", "Reason code")} value={creditReasonCode} onChange={(event) => setCreditReasonCode(event.target.value)}>{creditReasons.length ? creditReasons.map((entry) => <option key={entry.code} value={entry.code}>{entry.code} · {locale === "vi" ? entry.labelVi : entry.labelEn}</option>) : <option value="COMMERCIAL_ADJUSTMENT">COMMERCIAL_ADJUSTMENT</option>}</Select><div className="space-y-2">{invoice.lines.map((line) => <div key={line.id} className="grid gap-3 rounded-xl border border-slate-200 p-3 md:grid-cols-[minmax(0,1fr)_180px]"><div><div className="font-semibold text-slate-900">{line.description}</div><div className="text-xs text-slate-500">{text("Giá trị dòng", "Line value")}: {formatMoney(line.lineTotal)}</div></div><Input disabled={workflow.pending} label={text("Giá trị điều chỉnh", "Adjustment")} value={creditLineAmounts[line.id] ?? ""} onChange={(event) => { setCreditLineAmounts((current) => ({ ...current, [line.id]: event.target.value })); setCreditError(""); }} placeholder="0" /></div>)}</div><Textarea disabled={workflow.pending} label={text("Ghi chú lý do", "Reason note")} value={creditReason} onChange={(event) => { setCreditReason(event.target.value); setCreditError(""); }} rows={3} />{creditError && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{creditError}</p>}</div>
     </Modal>
   </RecordDetailFrame>;
 };

@@ -223,19 +223,8 @@ const blockedPresentationMutations: Record<string, readonly { symbol: string; bl
   "src/modules/contacts/presentation/hooks/useContacts.ts": [
     { symbol: "updateContacts", blockedBy: "DEC-COMMAND-SEMANTICS / updateContact" },
   ],
-  "src/modules/contacts/presentation/hooks/useContactListController.tsx": [
-    { symbol: "upsertContactOrganizationRelationshipWorkflow", blockedBy: "DEC-WORKFLOW-CONTACT-ORGANIZATION-RELATIONSHIP (WF-02)" },
-  ],
   "src/modules/contacts/presentation/hooks/useContactDetailController.tsx": [
     { symbol: "executeContactOpportunityCreation", blockedBy: "DEC-WORKFLOW-CONTACT-OPPORTUNITY-CREATION (WF-01)" },
-  ],
-  "src/modules/customers/presentation/list/ExistingCustomerOnboardingModal.tsx": [
-    { symbol: "onboardExistingCustomerWorkflow", blockedBy: "DEC-WORKFLOW-CUSTOMER-ONBOARDING (WF-07)" },
-  ],
-  "src/modules/customers/presentation/pages/Customer360Page.tsx": [
-    { symbol: "updateCustomerLifecycleSnapshot", blockedBy: "DEC-COMMAND-SEMANTICS / updateCustomerLifecycle" },
-    { symbol: "completeCustomerOnboardingSnapshot", blockedBy: "DEC-COMMAND-SEMANTICS / completeCustomerOnboarding" },
-    { symbol: "updateCustomerIdentityFrom360", blockedBy: "DEC-WORKFLOW-CUSTOMER-IDENTITY (WF-06)" },
   ],
   "src/modules/organizations/presentation/detail/OrganizationEditModal.tsx": [
     { symbol: "saveOrganizationAccountSnapshot", blockedBy: "DEC-COMMAND-SEMANTICS / updateOrganization" },
@@ -248,6 +237,14 @@ const blockedPresentationMutations: Record<string, readonly { symbol: string; bl
   ],
 };
 const trackedBlockedSymbols = [...new Set(Object.values(blockedPresentationMutations).flatMap((entries) => entries.map((entry) => entry.symbol)))];
+// These legacy local writes were replaced by public persisted commands, or removed
+// where identity workflow authority is unavailable. They must never return to presentation.
+for (const file of presentationFiles) {
+  const source = fs.readFileSync(file, "utf8");
+  for (const symbol of ["upsertContactOrganizationRelationshipWorkflow", "onboardExistingCustomerWorkflow", "updateCustomerLifecycleSnapshot", "completeCustomerOnboardingSnapshot", "updateCustomerIdentityFrom360"]) {
+    assert.equal(source.includes(symbol), false, `${file} must not restore retired local mutation ${symbol}`);
+  }
+}
 const observedBlocked: string[] = [];
 for (const file of presentationFiles) {
   const source = fs.readFileSync(file, "utf8");
@@ -278,13 +275,21 @@ for (const item of Object.values(openApiDocument.paths)) {
     }
   }
 }
-for (const operationId of ["updateContact", "createOrganization", "updateOrganization", "onboardExistingCustomer", "updateCustomerLifecycle", "completeCustomerOnboarding"]) {
+// Legacy onboarding operations remain blocked; Contact/Organization create and
+// update now have dedicated public API commands. A demo-only snapshot branch is
+// not evidence that its replacement OpenAPI operation remains blocked.
+for (const operationId of ["onboardExistingCustomer", "completeCustomerOnboarding"]) {
   assert.equal(
     readyOperationIds.has(operationId),
     false,
     `${operationId} is now production-ready: rewire its presentation flow and remove it from the blocked inventory.`,
   );
 }
+for (const [file, command] of [
+  ["src/modules/organizations/presentation/detail/OrganizationEditModal.tsx", "updateOrganizationViaApi"],
+  ["src/modules/customers/presentation/pages/Customer360Page.tsx", "updateCustomerCommand"],
+  ["src/modules/customers/presentation/list/ExistingCustomerOnboardingModal.tsx", "createCustomerCommand"],
+] as const) assert.ok(read(file).includes(`await ${command}(`), `${file} must await its persisted public command`);
 
 // ---------------------------------------------------------------------------
 // Blocked-action UX: a backend-blocked business action must never fail silently and
@@ -307,10 +312,10 @@ assert.doesNotMatch(availabilityHelper, /DEC-[A-Z-]+/u, "User-facing copy must n
 
 const blockedUxEvidence: Record<string, RegExp[]> = {
   "src/modules/contacts/presentation/hooks/useContactListController.tsx": [
-    /isContactConnectedMode/, /refuseUnavailableContactWrite/, /backendUnavailableMessage/,
+    /isContactUpdateAvailable/, /refuseUnavailableContactWrite/, /backendUnavailableMessage/,
   ],
   "src/modules/contacts/presentation/hooks/useContactDetailController.tsx": [
-    /isContactConnectedMode/, /refuseUnavailableContactWrite/, /backendUnavailableMessage/,
+    /isContactUpdateAvailable/, /refuseUnavailableContactWrite/, /backendUnavailableMessage/,
   ],
   "src/modules/customers/presentation/pages/Customer360Page.tsx": [/formatOperationUnavailableError/],
 };

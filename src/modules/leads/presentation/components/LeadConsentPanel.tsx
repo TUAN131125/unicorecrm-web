@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useLeadAuxiliaryLifecycle } from "../hooks/useLeadAuxiliaryLifecycle";
+import { useMemo, useState, useRef } from "react";
 import { ShieldCheck } from "lucide-react";
 import { Button, Modal, Select, Textarea } from "@/shared/components/ui";
 import { useI18n } from "@/i18n";
@@ -28,26 +29,28 @@ export function LeadConsentPanel({ lead, actorId, actorName, onRecord }: LeadCon
   const [decision, setDecision] = useState<Exclude<LeadConsentDecision, "UNKNOWN">>("GRANTED");
   const [source, setSource] = useState("VERBAL_CONFIRMATION");
   const [evidence, setEvidence] = useState("");
-  const [saving, setSaving] = useState(false);
+  const openIntent = useRef(false);
+  const opening = useRef({ lead, actorId, actorName, onRecord });
+  const lifecycle = useLeadAuxiliaryLifecycle(open, `consent:${opening.current.lead.id}`,
+    channel !== "EMAIL" || decision !== "GRANTED" || source !== "VERBAL_CONFIRMATION" || Boolean(evidence.trim()),
+    () => { setChannel("EMAIL"); setDecision("GRANTED"); setSource("VERBAL_CONFIRMATION"); setEvidence(""); }, () => { openIntent.current = false; setOpen(false); }, false, lead.id);
   const latest = useMemo(() => lead.consent?.ledger?.[0], [lead.consent?.ledger]);
 
   const submit = async () => {
-    if (!source.trim() || saving) return;
-    setSaving(true);
-    try {
-      await onRecord({ channel, decision, source: source.trim(), evidence: evidence.trim() || undefined, actorId, actorName });
-      setOpen(false);
-      setEvidence("");
-    } finally {
-      setSaving(false);
+    if (!source.trim()) return;
+    const target = opening.current;
+    if (await lifecycle.run(() => target.onRecord({ channel, decision, source: source.trim(), evidence: evidence.trim() || undefined,
+      actorId: target.actorId, actorName: target.actorName }))) {
+      openIntent.current = false; setOpen(false); setEvidence("");
     }
   };
 
   return (
-    <>
+    <>{lifecycle.confirmation}
       <button
         type="button"
-        onClick={() => setOpen(true)}
+        disabled={open || lifecycle.pending}
+        onClick={() => { if (openIntent.current || open || lifecycle.pending) return; openIntent.current = true; opening.current = { lead: structuredClone(lead), actorId, actorName, onRecord }; setChannel("EMAIL"); setDecision("GRANTED"); setSource("VERBAL_CONFIRMATION"); setEvidence(""); setOpen(true); }}
         className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-[10px] font-bold text-emerald-700 hover:bg-emerald-100"
       >
         <ShieldCheck size={13} className="shrink-0" />
@@ -58,29 +61,29 @@ export function LeadConsentPanel({ lead, actorId, actorName, onRecord }: LeadCon
         </span>
       </button>
 
-      <Modal variant="form" isOpen={open} onClose={() => setOpen(false)} title={locale === "vi" ? "Khai báo đồng thuận liên hệ" : "Record communication consent"} size="sm">
-        <div className="space-y-4 text-left">
+      <Modal variant="form" isOpen={open} onClose={lifecycle.requestClose} title={locale === "vi" ? "Khai báo đồng thuận liên hệ" : "Record communication consent"} size="sm">
+        <div className="space-y-4 text-left">{lifecycle.error && <p role="alert">{lifecycle.error}</p>}
           <p className="text-[11px] leading-5 text-slate-500">
             {locale === "vi"
               ? "Mỗi thay đổi được ghi thêm vào sổ đồng thuận; lịch sử cũ không bị ghi đè."
               : "Each change is appended to the consent ledger; previous evidence is preserved."}
           </p>
-          <Select label={locale === "vi" ? "Kênh" : "Channel"} value={channel} onChange={(event) => setChannel(event.target.value as LeadConsentChannel)}>
+          <Select disabled={lifecycle.pending} label={locale === "vi" ? "Kênh" : "Channel"} value={channel} onChange={(event) => setChannel(event.target.value as LeadConsentChannel)}>
             {CHANNELS.map((item) => <option key={item} value={item}>{item}</option>)}
           </Select>
-          <Select label={locale === "vi" ? "Quyết định" : "Decision"} value={decision} onChange={(event) => setDecision(event.target.value as Exclude<LeadConsentDecision, "UNKNOWN">)}>
+          <Select disabled={lifecycle.pending} label={locale === "vi" ? "Quyết định" : "Decision"} value={decision} onChange={(event) => setDecision(event.target.value as Exclude<LeadConsentDecision, "UNKNOWN">)}>
             {DECISIONS.map((item) => <option key={item} value={item}>{item}</option>)}
           </Select>
-          <Select label={locale === "vi" ? "Nguồn bằng chứng" : "Evidence source"} value={source} onChange={(event) => setSource(event.target.value)}>
+          <Select disabled={lifecycle.pending} label={locale === "vi" ? "Nguồn bằng chứng" : "Evidence source"} value={source} onChange={(event) => setSource(event.target.value)}>
             <option value="VERBAL_CONFIRMATION">{locale === "vi" ? "Xác nhận bằng lời" : "Verbal confirmation"}</option>
             <option value="WEB_FORM">{locale === "vi" ? "Biểu mẫu web" : "Web form"}</option>
             <option value="SIGNED_DOCUMENT">{locale === "vi" ? "Tài liệu đã ký" : "Signed document"}</option>
             <option value="IMPORT">{locale === "vi" ? "Dữ liệu nhập khẩu" : "Imported evidence"}</option>
           </Select>
-          <Textarea label={locale === "vi" ? "Ghi chú bằng chứng" : "Evidence note"} value={evidence} onChange={(event) => setEvidence(event.target.value)} rows={3} />
+          <Textarea disabled={lifecycle.pending} label={locale === "vi" ? "Ghi chú bằng chứng" : "Evidence note"} value={evidence} onChange={(event) => setEvidence(event.target.value)} rows={3} />
           <div className="crm-form-action-bar flex justify-end gap-2 border-t border-slate-200 pt-3">
-            <Button type="button" variant="secondary" onClick={() => setOpen(false)}>{locale === "vi" ? "Hủy" : "Cancel"}</Button>
-            <Button type="button" variant="primary" disabled={!source.trim() || saving} onClick={submit}>{saving ? (locale === "vi" ? "Đang lưu..." : "Saving...") : (locale === "vi" ? "Ghi nhận" : "Record")}</Button>
+            <Button type="button" variant="secondary" onClick={lifecycle.requestClose}>{locale === "vi" ? "Hủy" : "Cancel"}</Button>
+            <Button type="button" variant="primary" disabled={!source.trim() || lifecycle.pending} onClick={submit}>{lifecycle.pending ? (locale === "vi" ? "Đang lưu..." : "Saving...") : (locale === "vi" ? "Ghi nhận" : "Record")}</Button>
           </div>
         </div>
       </Modal>

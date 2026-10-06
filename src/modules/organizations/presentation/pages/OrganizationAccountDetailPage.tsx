@@ -1,4 +1,7 @@
 import { backendUnavailableMessage, formatApplicationError } from "@/shared/operations";
+import { useBoundFormDraft } from "../hooks/useBoundFormDraft";
+import { getWorkspaceContextSnapshot } from "@/platform/workspace-context";
+import { getDirtyUnsavedWork } from "@/platform/unsaved-work";
 import React, { useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { AlertCircle, BriefcaseBusiness, Building2, CalendarClock, CheckCircle2, FileCheck2, FileText, Headphones, Package, Plus, Quote, RotateCcw, Truck, WalletCards } from "lucide-react";
@@ -109,16 +112,22 @@ export const OrganizationAccountDetailPage: React.FC = () => {
   const [isRightPanelVisible, setIsRightPanelVisible] = useState(() =>
     organizationPresentationPreferences.get(RIGHT_PANEL_PREFERENCE_KEY, true),
   );
-  const [attachments, setAttachments] = useState<RecordAttachmentItem[]>([]);
+  const [attachmentsByRecord, setAttachmentsByRecord] = useState<Record<string, RecordAttachmentItem[]>>({});
+  const attachmentTargetId = organizationId ?? "";
+  const attachments = attachmentsByRecord[attachmentTargetId] ?? [];
+  const setAttachments = (update: (current: RecordAttachmentItem[]) => RecordAttachmentItem[]) => setAttachmentsByRecord(current => ({ ...current, [attachmentTargetId]: update(current[attachmentTargetId] ?? []) }));
   const [message, setMessage] = useState<string | null>(null);
   const [savingActivity, setSavingActivity] = useState(false);
   const [endRepresentativeContactId, setEndRepresentativeContactId] = useState<string | null>(null);
-  const [endRepresentativeReason, setEndRepresentativeReason] = useState("");
+
   const [archiveOpen, setArchiveOpen] = useState(false);
 
   const account = accounts.find((item) => item.id === organizationId);
   const linkedCustomer = account ? findCustomerByRelationshipRefSnapshot({ type: "ORGANIZATION_ACCOUNT", id: account.id }) : undefined;
   const actorId = access.memberId || access.accountId || "current-user";
+  const endLifecycle = useBoundFormDraft(Boolean(endRepresentativeContactId), `${account?.id}:${endRepresentativeContactId}`, { account, contactId: endRepresentativeContactId, actorId }, () => ({ reason: "" }), "Organization representative relationship", () => setEndRepresentativeContactId(null));
+  const endRepresentativeReason = endLifecycle.draft.reason;
+  const setEndRepresentativeReason = (reason: string) => endLifecycle.setDraft({ reason });
   const canEdit = access.canPerform("organizations", "update");
   const canAddRepresentative = access.canPerform("organizations", "update")
     && access.canPerform("contacts", "create")
@@ -211,6 +220,19 @@ export const OrganizationAccountDetailPage: React.FC = () => {
   const communicationEmail = primaryContact?.workEmail || primaryContact?.email || account?.email || "";
   const canCommunicate = account?.status !== "archived" && account?.status !== "inactive";
 
+  const quickOpening = React.useRef<{ account: OrganizationAccount; customerId: string | undefined; workspaceId: string } | undefined>(undefined);
+  const quickWasOpen = React.useRef(false);
+  const currentQuickTarget = React.useRef(account?.id); currentQuickTarget.current = account?.id;
+  React.useEffect(() => {
+    if (quickAction && account && !quickWasOpen.current) quickOpening.current = { account: structuredClone(account), customerId: linkedCustomer?.id, workspaceId: getWorkspaceContextSnapshot().workspaceId };
+    if (!quickAction) quickOpening.current = undefined;
+    quickWasOpen.current = Boolean(quickAction);
+  }, [quickAction, account, linkedCustomer?.id]);
+
+  React.useEffect(() => {
+    if (quickAction && quickOpening.current && quickOpening.current.account.id !== account?.id && !getDirtyUnsavedWork().some(entry => entry.id.startsWith("organizations-activity:"))) setQuickAction(null);
+  }, [quickAction, account?.id]);
+
   if (!account) {
     return (
       <div className="mx-auto max-w-3xl rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
@@ -239,25 +261,29 @@ export const OrganizationAccountDetailPage: React.FC = () => {
   };
 
   const requestEndRepresentativeRelationship = (contactId: string) => {
+    if (endLifecycle.pending || endLifecycle.dirty) return;
     setEndRepresentativeContactId(contactId);
-    setEndRepresentativeReason("");
   };
 
-  const confirmEndRepresentativeRelationship = async () => {
-    if (!endRepresentativeContactId || !endRepresentativeReason.trim()) return;
+  const confirmEndRepresentativeRelationship = async (): Promise<boolean> => {
+    const opening = endLifecycle.opening.current;
+    if (!opening.account || !opening.contactId || !endRepresentativeReason.trim()) {
+      document.getElementById("organization-end-representative-reason")?.focus(); return false;
+    }
     if (isContactOrganizationRelationshipUnavailable()) {
-      setMessage(backendUnavailableMessage({ locale, action: text("Kết thúc quan hệ đại diện", "Ending the representative relationship") }));
-      return;
+      setMessage(backendUnavailableMessage({ locale, action: text("Kết thúc quan hệ đại diện", "Ending the representative relationship") })); return false;
     }
+    const operation = endLifecycle.begin(); if (!operation) return false;
     try {
-      await endContactOrganizationRelationshipCommand({ contactId: endRepresentativeContactId, organizationAccountId: account.id, actorId, reason: endRepresentativeReason.trim() });
-      setMessage(text("Đã kết thúc quan hệ đại diện và giữ lịch sử.", "The representative relationship ended and remains in history."));
-      setEndRepresentativeContactId(null);
-      setEndRepresentativeReason("");
+      await endContactOrganizationRelationshipCommand({ contactId: opening.contactId, organizationAccountId: opening.account.id, actorId: opening.actorId, reason: endRepresentativeReason.trim() });
+      if (!operation.isCurrent()) return false;
+      operation.complete(); setMessage(text("Đã kết thúc quan hệ đại diện và giữ lịch sử.", "The representative relationship ended and remains in history."));
+      setEndRepresentativeContactId(null); return true;
     } catch (caught) {
-      setMessage(formatApplicationError(caught, { locale }));
-    }
+      if (operation.isCurrent()) setMessage(formatApplicationError(caught, { locale })); return false;
+    } finally { operation.finish(); }
   };
+  endLifecycle.bindSave(confirmEndRepresentativeRelationship);
 
   const toggleRightPanel = () => {
     setIsRightPanelVisible((current) => {
@@ -270,10 +296,13 @@ export const OrganizationAccountDetailPage: React.FC = () => {
   const openTaskModal = () => setTaskOpen(true);
 
   const saveQuickActivity = async (draft: OrganizationQuickActivityDraft) => {
-    if (savingActivity) return;
+    const opening = quickOpening.current;
+    if (!opening) throw new Error("ORGANIZATION_ACTIVITY_TARGET_REQUIRED");
+    if (opening.workspaceId !== getWorkspaceContextSnapshot().workspaceId) throw new Error("WORKSPACE_CHANGED");
+    const account = opening.account;
     if (!currentMemberId) {
       setMessage(text("Phiên đăng nhập chưa có member hợp lệ.", "The active session has no valid member."));
-      return;
+      throw new Error("MEMBER_REQUIRED");
     }
     setSavingActivity(true);
     try {
@@ -285,15 +314,16 @@ export const OrganizationAccountDetailPage: React.FC = () => {
         actorId: currentMemberId,
         actorName: currentActorName,
         occurredAt: draft.occurredAt,
-        customerId: linkedCustomer?.id,
+        customerId: opening.customerId,
         relationshipRef: { type: "ORGANIZATION_ACCOUNT", id: account.id },
         recordRef: { moduleKey: "organizations", recordId: account.id, label: account.displayName },
         sourceRef: { type: "ORGANIZATION_DETAIL", id: account.id },
       });
+      if (opening.workspaceId !== getWorkspaceContextSnapshot().workspaceId || quickOpening.current !== opening || currentQuickTarget.current !== account.id) return;
       setQuickAction(null);
       setMessage(text("Đã ghi hoạt động vào timeline tổ chức.", "Activity added to the organization timeline."));
     } catch (error) {
-      setMessage(formatApplicationError(error, { locale }));
+      throw error;
     } finally {
       setSavingActivity(false);
     }
@@ -309,7 +339,7 @@ export const OrganizationAccountDetailPage: React.FC = () => {
       description: data.description,
       file: data.file,
     }, ...current]);
-    setMessage(text("Tài liệu đã được tải lên.", "Attachment uploaded."));
+    setMessage(text("Đã thêm tài liệu vào phiên làm việc này.", "Attachment added to this session."));
   };
 
   return (
@@ -484,7 +514,7 @@ export const OrganizationAccountDetailPage: React.FC = () => {
                 )}
 
                 {activeTab === "attachments" && (
-                  <RecordAttachmentsTab idPrefix="organization" attachments={attachments} onUploadAttachment={uploadAttachment} onDeleteAttachment={(id) => setAttachments((current) => current.filter((item) => item.id !== id))} onDownloadAttachment={(id) => { const attachment = attachments.find((item) => item.id === id); if (!attachment?.file) { setMessage(text("Tệp chưa có dữ liệu trên thiết bị hiện tại.", "The file is not available on this device.")); return; } const url = URL.createObjectURL(attachment.file); const anchor = document.createElement("a"); anchor.href = url; anchor.download = attachment.name; document.body.appendChild(anchor); anchor.click(); anchor.remove(); window.setTimeout(() => URL.revokeObjectURL(url), 0); }} isArchived={account.status === "archived"} title={text("Tài liệu của tổ chức", "Organization attachments")} />
+                  <RecordAttachmentsTab idPrefix="organization" recordId={account.id} attachments={attachments} onUploadAttachment={isOrganizationConnectedMode() ? undefined : uploadAttachment} onDeleteAttachment={isOrganizationConnectedMode() ? undefined : (id) => setAttachments((current) => current.filter((item) => item.id !== id))} onDownloadAttachment={(id) => { const attachment = attachments.find((item) => item.id === id); if (!attachment?.file) { setMessage(text("Tệp chưa có dữ liệu trên thiết bị hiện tại.", "The file is not available on this device.")); return; } const url = URL.createObjectURL(attachment.file); const anchor = document.createElement("a"); anchor.href = url; anchor.download = attachment.name; document.body.appendChild(anchor); anchor.click(); anchor.remove(); window.setTimeout(() => URL.revokeObjectURL(url), 0); }} isArchived={account.status === "archived"} title={text("Tài liệu của tổ chức", "Organization attachments")} />
                 )}
               </RecordTabTransition>
             </div>
@@ -518,19 +548,23 @@ export const OrganizationAccountDetailPage: React.FC = () => {
       </div>
 
       <OrganizationEditModal isOpen={showEdit} onClose={() => setShowEdit(false)} account={account} representatives={related.representatives} actorId={actorId} onSaved={(next) => setMessage(text(`Đã cập nhật ${next.displayName}.`, `${next.displayName} updated.`))} />
-      <ConfirmDialog isOpen={archiveOpen} onClose={() => setArchiveOpen(false)} title={text("Lưu trữ tổ chức", "Archive organization")} message={text("Tổ chức sẽ được lưu trữ trên backend.", "The organization will be archived by the backend.")} confirmText={text("Lưu trữ", "Archive")} variant="danger" onConfirm={async () => { try { if (account.resourceVersion === undefined) throw new Error("ORGANIZATION_VERSION_REQUIRED"); await archiveOrganizationViaApi({ organizationId: account.id, expectedVersion: account.resourceVersion }); setArchiveOpen(false); setMessage(text("Đã lưu trữ tổ chức.", "Organization archived.")); } catch (caught) { setMessage(formatApplicationError(caught, { locale })); } }} />
+      <ConfirmDialog isOpen={archiveOpen} onClose={() => setArchiveOpen(false)} title={text("Lưu trữ tổ chức", "Archive organization")} message={text("Tổ chức sẽ được lưu trữ trên backend.", "The organization will be archived by the backend.")} confirmText={text("Lưu trữ", "Archive")} variant="danger" onConfirm={async (isCurrent) => { try { if (account.resourceVersion === undefined) throw new Error("ORGANIZATION_VERSION_REQUIRED"); await archiveOrganizationViaApi({ organizationId: account.id, expectedVersion: account.resourceVersion }); if (!isCurrent()) return; setArchiveOpen(false); setMessage(text("Đã lưu trữ tổ chức.", "Organization archived.")); } catch (caught) { setMessage(formatApplicationError(caught, { locale })); } }} />
       {!isContactOrganizationRelationshipUnavailable() && <OrganizationRepresentativeModal isOpen={showAddRepresentative} onClose={() => setShowAddRepresentative(false)} account={account} actorId={actorId} onCreated={(contact) => { setMessage(text(`Đã liên kết ${contact.fullName || contact.name} làm cá nhân đại diện.`, `${contact.fullName || contact.name} linked as a representative.`)); setActiveTab("relationship"); setRelationshipView("people"); }} />}
-      <OrganizationQuickActivityModal action={quickAction} email={communicationEmail} phone={communicationPhone} onClose={() => setQuickAction(null)} onSave={saveQuickActivity} />
+      <OrganizationQuickActivityModal targetId={quickAction && !quickWasOpen.current ? account.id : quickOpening.current?.account.id ?? account.id} action={quickAction} email={communicationEmail} phone={communicationPhone} onClose={() => setQuickAction(null)} onSave={saveQuickActivity} />
       <ConfirmDialog
         isOpen={Boolean(endRepresentativeContactId)}
-        onClose={() => { setEndRepresentativeContactId(null); setEndRepresentativeReason(""); }}
-        onConfirm={() => void confirmEndRepresentativeRelationship()}
+        onClose={endLifecycle.requestClose}
+        editable onConfirm={confirmEndRepresentativeRelationship}
         title={text("Kết thúc quan hệ đại diện", "End representative relationship")}
-        message={<div className="space-y-3 text-left"><p>{text("Quan hệ sẽ được chuyển vào lịch sử; Contact và Organization không bị xóa.", "The relationship moves to history; neither Contact nor Organization is deleted.")}</p><Textarea label={text("Lý do *", "Reason *")} value={endRepresentativeReason} onChange={(event) => setEndRepresentativeReason(event.target.value)} /></div>}
+        message={<div className="space-y-3 text-left"><p>{text("Quan hệ sẽ được chuyển vào lịch sử; Contact và Organization không bị xóa.", "The relationship moves to history; neither Contact nor Organization is deleted.")}</p><Textarea id="organization-end-representative-reason" disabled={endLifecycle.pending} label={text("Lý do *", "Reason *")} value={endRepresentativeReason} onChange={(event) => setEndRepresentativeReason(event.target.value)} /></div>}
         confirmText={text("Kết thúc quan hệ", "End relationship")}
         cancelText={text("Quay lại", "Go back")}
         variant="danger"
       />
+
+      <ConfirmDialog isOpen={endLifecycle.confirmOpen} onClose={() => endLifecycle.setConfirmOpen(false)} onConfirm={endLifecycle.discard}
+        title={text("Bỏ thay đổi chưa lưu?", "Discard unsaved changes?")} message={text("Các thay đổi chưa được lưu.", "Your changes have not been saved.")}
+        confirmText={text("Bỏ thay đổi", "Discard changes")} cancelText={text("Tiếp tục chỉnh sửa", "Keep editing")} type="warning" />
 
       <OrganizationCreateOpportunityModal
         isOpen={dealOpen}

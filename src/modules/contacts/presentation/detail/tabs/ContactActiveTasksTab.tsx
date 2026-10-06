@@ -1,4 +1,9 @@
+import type { Contact } from "../../../domain/model/contact.types";
 import React, { useState } from "react";
+import { getWorkspaceContextSnapshot, useWorkspaceContextSnapshot } from "@/platform/workspace-context";
+import { registerUnsavedWork, getDirtyUnsavedWork } from "@/platform/unsaved-work";
+import { formatApplicationError } from "@/shared/operations";
+import { acquireContactInteraction, releaseContactInteraction } from "../../model/contactInteractionOwnership";
 import { CheckSquare, Calendar, User, CheckCircle2, Clock, Plus } from "lucide-react";
 import { useI18n } from "@/i18n";
 import { Modal, Button, Input, DetailTabActionButton } from "@/shared/components/ui";
@@ -22,7 +27,9 @@ interface ContactActiveTasksTabProps {
   onScheduleMeeting: () => void;
   onOpenModule: () => void;
   onCompleteTask: (id: string) => void;
-  onRescheduleTask?: (id: string, newDate: string) => void;
+  onRescheduleTask?: (id: string, newDate: string, options?: { idempotencyKey: string }) => void | boolean | Promise<void | boolean>;
+  contactTargetId?: string;
+  contact?: Contact;
   isArchived?: boolean;
   onModalStateChange?: (open: boolean) => void;
 }
@@ -34,18 +41,83 @@ export const ContactActiveTasksTab: React.FC<ContactActiveTasksTabProps> = ({
   onOpenModule,
   onCompleteTask,
   onRescheduleTask,
+  contactTargetId,
+  contact,
   isArchived = false,
   onModalStateChange
 }) => {
-  const { tx } = useI18n();
-  const [rescheduleTask, setRescheduleTask] = useState<{ id: string; date: string } | null>(null);
-
+  const { tx, locale } = useI18n();
+  const sourceKey = contactTargetId ?? contact?.id;
+  const { workspaceId } = useWorkspaceContextSnapshot();
+  type Intent = { task: TaskMocks; contactTargetId: string | undefined; workspaceId: string; initialDate: string; cycle: number; intentId: string; submit: NonNullable<ContactActiveTasksTabProps["onRescheduleTask"]>; notify: ContactActiveTasksTabProps["onModalStateChange"] };
+  const [intent, setIntent] = useState<Intent>();
+  const [date, setDate] = useState("");
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string>();
+  const [confirmClose, setConfirmClose] = useState(false);
+  const intentRef = React.useRef(intent); intentRef.current = intent;
+  const draftRef = React.useRef(date); draftRef.current = date;
+  const pendingRef = React.useRef(false);
+  const mounted = React.useRef(true);
+  const cycle = React.useRef(0);
+  const owner = React.useRef(Symbol("contact-task-reschedule"));
+  const errorFocusCycle = React.useRef<number | undefined>(undefined);
+  const formRef = React.useRef<HTMLFormElement>(null);
+  const dirty = Boolean(intent && intent.initialDate !== date.trim());
+  const finish = React.useCallback(() => {
+    const opening = intentRef.current;
+    errorFocusCycle.current = undefined;
+    intentRef.current = undefined;
+    releaseContactInteraction(owner.current);
+    setIntent(undefined); setDate(""); setError(undefined); setConfirmClose(false);
+    opening?.notify?.(false);
+  }, []);
+  React.useEffect(() => { mounted.current = true; return () => { mounted.current = false; releaseContactInteraction(owner.current); intentRef.current?.notify?.(false); }; }, []);
   React.useEffect(() => {
-    onModalStateChange?.(rescheduleTask !== null);
-    return () => {
-      if (rescheduleTask !== null) onModalStateChange?.(false);
-    };
-  }, [rescheduleTask, onModalStateChange]);
+    if (intent && (intent.contactTargetId !== sourceKey || intent.workspaceId !== workspaceId) && !dirty && !pendingRef.current) finish();
+  }, [intent, sourceKey, workspaceId, dirty, pending, finish]);
+  const requestClose = () => { if (pendingRef.current) return; if (dirty) setConfirmClose(true); else finish(); };
+  React.useEffect(() => {
+    if (error && !pending && errorFocusCycle.current === intentRef.current?.cycle) { formRef.current?.querySelector<HTMLElement>("#contact-task-reschedule-date")?.focus(); errorFocusCycle.current = undefined; }
+  }, [error, pending]);
+  const save = async (): Promise<boolean> => {
+    const opening = intentRef.current;
+    if (!opening || !mounted.current || pendingRef.current) return false;
+    if (opening.workspaceId !== getWorkspaceContextSnapshot().workspaceId) { setError(tx("contactDetail.tasks.workspaceChanged", "Không gian làm việc đã thay đổi. Quay lại không gian đã mở để tiếp tục.")); return false; }
+    const suppliedDate = draftRef.current.trim();
+    const parsedDate = new Date(`${suppliedDate}T00:00:00Z`);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(suppliedDate) || Number.isNaN(parsedDate.getTime()) || parsedDate.toISOString().slice(0,10) !== suppliedDate) {
+      setError(tx("contactDetail.tasks.invalidDate", "Chọn ngày hợp lệ.")); formRef.current?.querySelector<HTMLElement>("#contact-task-reschedule-date")?.focus(); return false;
+    }
+    if (suppliedDate === opening.initialDate) return false;
+    pendingRef.current = true; setPending(true); setError(undefined);
+    try {
+      const result = await opening.submit(opening.task.id, suppliedDate, { idempotencyKey: opening.intentId });
+      if (!mounted.current || intentRef.current?.cycle !== opening.cycle || opening.workspaceId !== getWorkspaceContextSnapshot().workspaceId) return false;
+      if (result === false) { setError(tx("contactDetail.tasks.rescheduleUnavailable", "Không thể cập nhật lịch công việc lúc này.")); return false; }
+      finish(); return true;
+    } catch (caught) {
+      if (mounted.current && intentRef.current?.cycle === opening.cycle) { setError(formatApplicationError(caught, { locale })); errorFocusCycle.current = opening.cycle; }
+      return false;
+    } finally {
+      pendingRef.current = false;
+      if (mounted.current && (!intentRef.current || intentRef.current.cycle === opening.cycle)) setPending(false);
+    }
+  };
+  const saveRef = React.useRef(save); saveRef.current = save;
+  React.useEffect(() => {
+    if (!intent) return;
+    const captured = intent;
+    const canDiscard = () => mounted.current && intentRef.current?.cycle === captured.cycle && !pendingRef.current;
+    const unregister = registerUnsavedWork({ id: `contact-task-reschedule:${captured.workspaceId}:${captured.contactTargetId ?? "context"}:${captured.task.id}:${captured.cycle}`,
+      title: tx("contactDetail.actions.rescheduleTitle", "Điều chỉnh hạn xử lý"), isDirty: dirty || pending,
+      canDiscard, discard: finish,
+      save: async () => { if (!canDiscard() || captured.workspaceId !== getWorkspaceContextSnapshot().workspaceId) return false; return saveRef.current(); },
+    });
+    const unload = (event: BeforeUnloadEvent) => { if (dirty || pendingRef.current) { event.preventDefault(); event.returnValue = ""; } };
+    window.addEventListener("beforeunload", unload);
+    return () => { unregister(); window.removeEventListener("beforeunload", unload); };
+  }, [intent, dirty, pending, tx, finish]);
 
   const activeTasks = tasks.filter(t => t.status !== "completed");
 
@@ -59,12 +131,12 @@ export const ContactActiveTasksTab: React.FC<ContactActiveTasksTabProps> = ({
   };
 
   const handleReschedule = (tkId: string, currentDueDate?: string) => {
-    if (isArchived) return;
-    if (!onRescheduleTask) return;
-    setRescheduleTask({
-      id: tkId,
-      date: currentDueDate || new Date().toISOString().split("T")[0]
-    });
+    if (isArchived || !onRescheduleTask || intentRef.current || pendingRef.current) return;
+    const task = tasks.find(item => item.id === tkId); if (!task) return;
+    if (getDirtyUnsavedWork().some(entry => entry.id.startsWith("contact-")) || !acquireContactInteraction(owner.current, contact)) return;
+    const initialDate = currentDueDate?.slice(0,10) || new Date().toISOString().slice(0,10);
+    const next: Intent = { task: structuredClone(task), initialDate, contactTargetId: sourceKey, workspaceId: getWorkspaceContextSnapshot().workspaceId, cycle: ++cycle.current, intentId: `contact-task-reschedule-${crypto.randomUUID()}`, submit: onRescheduleTask, notify: onModalStateChange };
+    intentRef.current = next; setIntent(next); setDate(initialDate); setError(undefined); setConfirmClose(false); next.notify?.(true);
   };
 
   return (
@@ -138,48 +210,19 @@ export const ContactActiveTasksTab: React.FC<ContactActiveTasksTabProps> = ({
         </div>
       )}
 
-      {rescheduleTask && (
-        <Modal variant="form"
-          isOpen={true}
-          onClose={() => setRescheduleTask(null)}
-          title={tx("contactDetail.actions.rescheduleTitle", "Điều chỉnh hạn xử lý")}
-          size="sm"
-        >
-          <div className="space-y-4 text-left">
-            <div>
-              <label className="block text-[9px] font-semibold text-slate-400 uppercase tracking-wide mb-1.5">
-                {tx("contactDetail.actions.dueDateLabel", "Hạn xử lý mới")}
-              </label>
-              <Input
-                type="date"
-                value={rescheduleTask.date}
-                onChange={(e) => setRescheduleTask({ ...rescheduleTask, date: e.target.value })}
-                className="text-[11px] font-mono"
-              />
-            </div>
-            
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-              <Button
-                variant="ghost"
-                onClick={() => setRescheduleTask(null)}
-              >
-                {tx("common.cancel", "Hủy bỏ")}
-              </Button>
-              <Button
-                variant="primary"
-                onClick={() => {
-                  if (onRescheduleTask && rescheduleTask.date.trim()) {
-                    onRescheduleTask(rescheduleTask.id, rescheduleTask.date.trim());
-                  }
-                  setRescheduleTask(null);
-                }}
-              >
-                {tx("common.save", "Cập nhật")}
-              </Button>
-            </div>
+      {intent && <Modal variant="form" isOpen onClose={requestClose} title={tx("contactDetail.actions.rescheduleTitle", "Điều chỉnh hạn xử lý")} size="sm">
+        <form ref={formRef} noValidate data-contact-target-id={intent.contactTargetId} data-task-target-id={intent.task.id} className="space-y-4 text-left" onSubmit={event => { event.preventDefault(); void save(); }}>
+          <Input id="contact-task-reschedule-date" label={tx("contactDetail.actions.dueDateLabel", "Hạn xử lý mới")} type="date" value={date} disabled={pending} onChange={event => setDate(event.target.value)} className="text-[11px] font-mono" />
+          {error && <p role="alert" className="text-[10px] text-rose-700">{error}</p>}
+          <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+            <Button type="button" variant="ghost" disabled={pending} onClick={requestClose}>{tx("common.cancel", "Hủy bỏ")}</Button>
+            <Button type="submit" variant="primary" disabled={pending || !dirty}>{tx("common.save", "Cập nhật")}</Button>
           </div>
-        </Modal>
-      )}
+        </form>
+      </Modal>}
+      <Modal isOpen={confirmClose} onClose={() => setConfirmClose(false)} size="sm" title={tx("common.discardChanges", "Bỏ thay đổi?")}>
+        <div className="flex justify-end gap-2"><Button type="button" variant="secondary" onClick={() => setConfirmClose(false)}>{tx("common.keepEditing", "Tiếp tục chỉnh sửa")}</Button><Button type="button" variant="danger" disabled={pending} onClick={() => { if (!pendingRef.current) finish(); }}>{tx("common.discard", "Bỏ thay đổi")}</Button></div>
+      </Modal>
 
     </div>
   );

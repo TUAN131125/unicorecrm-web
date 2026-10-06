@@ -1,4 +1,4 @@
-import fs from "node:fs";
+import { writeValidatedInventory } from "./repository-inventory/writeValidatedInventory.mjs";
 import {
   buildRepositoryInventory,
   INVENTORY_JSON_PATH,
@@ -8,8 +8,8 @@ import {
 } from "./repository-inventory/repositoryInventory.mjs";
 
 const inventory = buildRepositoryInventory();
-fs.writeFileSync(INVENTORY_JSON_PATH, serializeInventory(inventory), "utf8");
-fs.writeFileSync(INVENTORY_MARKDOWN_PATH, renderRepositoryInventoryMarkdown(inventory), "utf8");
+writeValidatedInventory(INVENTORY_JSON_PATH, INVENTORY_MARKDOWN_PATH,
+  serializeInventory(inventory), renderRepositoryInventoryMarkdown(inventory));
 
 console.log(`[repository-inventory] wrote ${INVENTORY_JSON_PATH}`);
 console.log(`[repository-inventory] wrote ${INVENTORY_MARKDOWN_PATH}`);

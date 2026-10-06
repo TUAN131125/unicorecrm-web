@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import {
@@ -65,11 +66,14 @@ assert.equal(legacyRelationships[0]?.organizationAccountId, "legacy-org");
 assert.equal(legacyRelationships[0]?.isPrimaryRepresentative, true);
 
 const contactUi = read("src/modules/contacts/presentation/detail/ContactOrganizationRelationshipsPanel.tsx");
-for (const marker of ["effectiveFrom", "isPrimaryAffiliation", "createOrganizationRelationship", "updateOrganizationRelationship", "endOrganizationRelationship"]) assert.ok(contactUi.includes(marker), `Contact relationship UI is missing ${marker}.`);
-assert.equal((contactUi.match(/await summary\.refresh\(\)/gu) ?? []).length, 4, "Organization panel must refetch after success and failure so stale-version retry is usable without losing the draft.");
+for (const marker of ["effectiveFrom", "isPrimaryAffiliation", "createContactOrganizationRelationshipViaApi", "updateContactOrganizationRelationshipViaApi", "endContactOrganizationRelationshipViaApi", "useContactRelationshipForm", "expectedVersion: target.version"]) assert.ok(contactUi.includes(marker), `Contact relationship UI is missing ${marker}.`);
 const customerUi = read("src/modules/contacts/presentation/detail/ContactCustomerRelationshipsPanel.tsx");
-for (const marker of ["primary_contact", "createCustomerRelationship", "updateCustomerRelationship", "endCustomerRelationship"]) assert.ok(customerUi.includes(marker), `Contact Customer stakeholder UI is missing ${marker}.`);
-assert.equal((customerUi.match(/await summary\.refresh\(\)/gu) ?? []).length, 4, "Customer panel must refetch after success and failure so stale-version retry is usable without losing the draft.");
+for (const marker of ["primary_contact", "createContactCustomerRelationshipViaApi", "updateContactCustomerRelationshipViaApi", "endContactCustomerRelationshipViaApi", "useContactRelationshipForm", "expectedVersion: target.version"]) assert.ok(customerUi.includes(marker), `Contact Customer stakeholder UI is missing ${marker}.`);
+const relationshipCommands = read("src/modules/contacts/application/commands/contactRelationshipCommands.ts");
+assert.ok(relationshipCommands.includes("projectContactApiResult"), "Application commands must reconcile successful relationship writes.");
+for (const ui of [contactUi, customerUi]) assert.ok(!ui.includes("getContactApiRuntime"), "Relationship presentation must not call runtime ports directly.");
+const relationshipLifecycle = read("src/modules/contacts/presentation/detail/useContactRelationshipForm.tsx");
+for (const marker of ["structuredClone(contact)", "canDiscard", "pendingRef", "normalizeApplicationError"]) assert.ok(relationshipLifecycle.includes(marker), `Target-bound relationship lifecycle must retain ${marker}.`);
 const commandPort = read("src/modules/contacts/application/ports/ContactApiRuntime.ts");
 for (const operation of ["createOrganizationRelationship", "updateOrganizationRelationship", "endOrganizationRelationship", "createCustomerRelationship", "updateCustomerRelationship", "endCustomerRelationship"]) assert.ok(commandPort.includes(operation), `Generated-client command boundary is missing ${operation}.`);
 const httpAdapter = read("src/modules/contacts/infrastructure/http/ContactHttpCommandAdapter.ts");
@@ -133,4 +137,13 @@ try {
   resetContactApplication();
 }
 
-console.log("Contact–Organization relationships: PASS");
+assert.ok(relationshipLifecycle.includes('normalized.code === "RESOURCE_VERSION_CONFLICT"'), "Only the structured version-conflict code may trigger a version rebase.");
+assert.ok(relationshipLifecycle.includes("getContactRelationshipSummaryResource(target.contact.id)"), "Recovery must query the opening Contact, never the currently rendered Contact.");
+assert.ok(relationshipLifecycle.includes("{ ...target, version: summary.projectionVersion }"), "Recovery changes concurrency only, retaining draft baseline, identity, cycle and intent.");
+for (const file of ["ContactOrganizationRelationshipsPanel", "ContactCustomerRelationshipsPanel"]) {
+  const source = read(`src/modules/contacts/presentation/detail/${file}.tsx`);
+  assert.ok(source.includes("lifecycle.opening?.contact.id ?? contact.id"), "Active relationship summary ownership follows its opening target.");
+}
+// Protect usable stale-version retries with actual production panels/commands, not refresh counts.
+execFileSync(process.execPath, ["--import", "tsx", path.resolve("tests/quality/integration/check-contact-relationship-form-parity.mts")], { stdio: "inherit" });
+console.log("Contact–Organization relationships: PASS (same-target conflict recovery and explicit retry runtime included)");

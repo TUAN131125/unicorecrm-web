@@ -1,3 +1,7 @@
+import { useRef as useWorkspaceBindingRef } from "react";
+import { useWorkspaceContextSnapshot as useWorkflowWorkspace } from "@/platform/workspace-context";
+import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
+import { useTargetBoundWorkflow } from "@/shared/presentation/useTargetBoundWorkflow";
 import { formatApplicationError } from "@/shared/operations";
 import { formatMoneyDto } from "@/shared/money";
 import { createCreateCommandTarget, createProvisionalDocumentNumber } from "@/shared/ids";
@@ -57,7 +61,22 @@ const Info: React.FC<{ label: string; value: React.ReactNode; hint?: React.React
 type ShippingDetailTab = "OVERVIEW" | "PARTIES" | "PACKAGE" | "JOURNEY" | "ATTEMPTS";
 
 export const ShippingBookingDetailPage: React.FC = () => {
-  const { shippingBookingId = "" } = useParams();
+  const { shippingBookingId: routeTargetId = "" } = useParams();
+  const targetLifecycle = useTargetBoundWorkflow(routeTargetId, "shipping-detail-draft");
+  const workflowWorkspace = useWorkflowWorkspace().workspaceId;
+  const currentWorkflowWorkspace = useWorkspaceBindingRef(workflowWorkspace);
+  currentWorkflowWorkspace.current = workflowWorkspace;
+  const openingWorkspace = useWorkspaceBindingRef({ cycle: targetLifecycle.cycle, id: workflowWorkspace });
+  if (openingWorkspace.current.cycle !== targetLifecycle.cycle) openingWorkspace.current = { cycle: targetLifecycle.cycle, id: workflowWorkspace };
+  const ownsWorkspace = () => openingWorkspace.current.id === currentWorkflowWorkspace.current;
+  const workflow = { ...targetLifecycle,
+    begin: () => ownsWorkspace() && targetLifecycle.begin(),
+    isCurrent: () => ownsWorkspace() && targetLifecycle.isCurrent(),
+    register: (dirty: boolean, reset: () => void, save: () => Promise<boolean>) => {
+      targetLifecycle.register(dirty, reset, () => ownsWorkspace() ? save() : Promise.resolve(false));
+    },
+  };
+  const shippingBookingId = workflow.targetId ?? "";
   const navigate = useNavigate();
   const { locale } = useI18n();
   const text = (vi: string, en: string) => locale === "vi" ? vi : en;
@@ -66,7 +85,8 @@ export const ShippingBookingDetailPage: React.FC = () => {
   const records = useSubscribableSnapshot(getShippingSnapshot, subscribeToShipping);
   const orders = useSubscribableSnapshot(getOrderListSnapshot, subscribeToOrderList);
   const returnsSnapshot = useSubscribableSnapshot(getReturnsSnapshot, subscribeToReturns);
-  const audit = useSubscribableSnapshot(() => getOperationalAuditSnapshot("shipping", shippingBookingId), subscribeToOperationalAudit);
+  const getAudit = React.useCallback(() => getOperationalAuditSnapshot("shipping", shippingBookingId), [shippingBookingId]);
+  const audit = useSubscribableSnapshot(getAudit, subscribeToOperationalAudit);
   const record = records.find((item) => item.id === shippingBookingId);
   const [activeTab, setActiveTab] = useState<ShippingDetailTab>("OVERVIEW");
   const [providerId, setProviderId] = useState(record?.providerId ?? "manual");
@@ -79,6 +99,13 @@ export const ShippingBookingDetailPage: React.FC = () => {
   const actorId = access.memberId || access.accountId || "current-user";
   const actorName = getAuthSessionSnapshot()?.principal.displayName || actorId;
 
+  const dirty = Boolean(cancelOpen && (cancelNote.trim() || cancelReasonCode !== (cancellationReasons[0]?.code ?? ""))) || providerId !== (record?.providerId ?? "manual");
+  const resetDraft = () => { setCancelOpen(false); setCancelNote(""); setCancelReasonCode(cancellationReasons[0]?.code ?? ""); setProviderId(record?.providerId ?? "manual"); setMessage(null); };
+  const guard = useUnsavedChangesGuard(resetDraft);
+  React.useEffect(() => guard.setIsDirty(dirty), [dirty, guard.setIsDirty]);
+  workflow.register(dirty, resetDraft, async () => false);
+  React.useEffect(resetDraft, [shippingBookingId]);
+  const closeCancellation = () => { if (!workflow.pending) guard.requestClose(); };
   if (!record) return <div className="rounded-2xl border border-slate-200 bg-white p-8 text-sm text-slate-600">Không tìm thấy vận đơn.</div>;
 
   const shipmentGroupId = record.shipmentGroupId;
@@ -98,7 +125,9 @@ export const ShippingBookingDetailPage: React.FC = () => {
   const configuredProvider = getShippingProviderSnapshot(record.providerId);
   const actionIds = resolveShippingHeaderActionIds(record, permissions, configuredProvider);
   const run = async (action: () => unknown | Promise<unknown>, success: string) => {
-    try { await action(); setMessage(success); } catch (error) { setMessage(formatApplicationError(error, { locale })); }
+    if (!workflow.begin()) return;
+    try { await action(); if (workflow.isCurrent()) setMessage(success); } catch (error) { if (workflow.isCurrent()) setMessage(formatApplicationError(error, { locale })); }
+    finally { workflow.finish(); }
   };
   const deliveryEvidence: EvidenceItem[] = [
     ...(record.deliveredAt ? [{
@@ -237,7 +266,7 @@ export const ShippingBookingDetailPage: React.FC = () => {
           blockers={blockers}
           nextAction={nextAction}
         >
-          {actionIds.includes("change-provider") && <div className="border-t border-slate-100 pt-4"><div className="mb-2 flex items-center gap-2 text-xs font-medium text-slate-700"><Settings2 size={14} />Provider recovery</div><SearchableSelect value={providerId} onChange={setProviderId} clearable={false} placeholder={locale === "vi" ? "Chọn đơn vị vận chuyển" : "Select carrier"} searchPlaceholder={locale === "vi" ? "Tìm đơn vị vận chuyển..." : "Search carriers..."} options={providers.map((provider) => ({ value: provider.id, label: provider.name, description: provider.id }))} /><div className="mt-2 text-[11px] font-medium leading-relaxed text-slate-500">Đổi provider tạo attempt mới, không sửa hoặc mất lịch sử booking cũ.</div></div>}
+          {actionIds.includes("change-provider") && <div className="border-t border-slate-100 pt-4"><div className="mb-2 flex items-center gap-2 text-xs font-medium text-slate-700"><Settings2 size={14} />Provider recovery</div><SearchableSelect disabled={workflow.pending} value={providerId} onChange={setProviderId} clearable={false} placeholder={locale === "vi" ? "Chọn đơn vị vận chuyển" : "Select carrier"} searchPlaceholder={locale === "vi" ? "Tìm đơn vị vận chuyển..." : "Search carriers..."} options={providers.map((provider) => ({ value: provider.id, label: provider.name, description: provider.id }))} /><div className="mt-2 text-[11px] font-medium leading-relaxed text-slate-500">Đổi provider tạo attempt mới, không sửa hoặc mất lịch sử booking cũ.</div></div>}
           <div className="border-t border-slate-100 pt-4"><div className="mb-3 flex items-center gap-2 text-[10px] font-medium uppercase tracking-[0.14em] text-slate-400"><ClipboardList size={13} />Booking checklist</div><div className="space-y-2">{[
             ["Người nhận", Boolean(record.recipientSnapshot.name && record.recipientSnapshot.phone)],
             ["Địa chỉ giao", Boolean(record.recipientSnapshot.address.line1 && record.recipientSnapshot.address.city)],
@@ -249,7 +278,10 @@ export const ShippingBookingDetailPage: React.FC = () => {
         </OperationInsightPanel>
       </div>
 
-      <ConfirmDialog isOpen={cancelOpen} onClose={() => { setCancelOpen(false); setCancelReasonCode(cancellationReasons[0]?.code ?? ""); setCancelNote(""); }} onConfirm={() => run(async () => { if (!cancelReasonCode || !cancelNote.trim()) throw new Error(text("Mã lý do và ghi chú hủy là bắt buộc.", "Reason code and cancellation note are required.")); await cancelShippingBookingCommandBoundary(record.id, { reason: `${cancelReasonCode}: ${cancelNote.trim()}`, actorId, actorName }); setCancelOpen(false); setCancelNote(""); }, "Đã hủy booking; record và lịch sử vẫn được giữ lại.")} title={text("Hủy vận đơn", "Cancel shipping booking")} message={<div className="space-y-3 text-left"><p>{text(`Hủy booking ${record.code}. Đây không phải trạng thái Order FAILED và không xóa record.`, `Cancel booking ${record.code}. This does not set the Order to FAILED and does not delete the record.`)}</p><Select label={text("Mã lý do *", "Reason code *")} value={cancelReasonCode} onChange={(event) => setCancelReasonCode(event.target.value)}><option value="">{text("Chọn lý do", "Select reason")}</option>{cancellationReasons.map((reason) => <option key={reason.code} value={reason.code}>{locale === "vi" ? reason.labelVi : reason.labelEn}</option>)}</Select><Textarea label={text("Ghi chú hủy *", "Cancellation note *")} value={cancelNote} onChange={(event) => setCancelNote(event.target.value)} /></div>} confirmText={text("Hủy vận đơn", "Cancel booking")} cancelText={text("Quay lại", "Go back")} variant="danger" />
+      <ConfirmDialog isOpen={guard.isConfirmOpen} onClose={() => guard.setIsConfirmOpen(false)} onConfirm={() => { if (!workflow.pending) guard.confirmDiscard(); }}
+        title={text("Bỏ thay đổi chưa lưu?", "Discard unsaved changes?")} message={text("Các thay đổi chưa được lưu. Bạn có muốn đóng biểu mẫu?", "Your changes have not been saved. Close the form?")}
+        confirmText={text("Bỏ thay đổi", "Discard changes")} cancelText={text("Tiếp tục chỉnh sửa", "Keep editing")} type="warning" />
+      <ConfirmDialog isOpen={cancelOpen} onClose={closeCancellation} onConfirm={() => run(async () => { if (!cancelReasonCode || !cancelNote.trim()) throw new Error(text("Mã lý do và ghi chú hủy là bắt buộc.", "Reason code and cancellation note are required.")); await cancelShippingBookingCommandBoundary(record.id, { reason: `${cancelReasonCode}: ${cancelNote.trim()}`, actorId, actorName }); setCancelOpen(false); setCancelNote(""); }, "Đã hủy booking; record và lịch sử vẫn được giữ lại.")} title={text("Hủy vận đơn", "Cancel shipping booking")} message={<div className="space-y-3 text-left"><p>{text(`Hủy booking ${record.code}. Đây không phải trạng thái Order FAILED và không xóa record.`, `Cancel booking ${record.code}. This does not set the Order to FAILED and does not delete the record.`)}</p><Select disabled={workflow.pending} label={text("Mã lý do *", "Reason code *")} value={cancelReasonCode} onChange={(event) => setCancelReasonCode(event.target.value)}><option value="">{text("Chọn lý do", "Select reason")}</option>{cancellationReasons.map((reason) => <option key={reason.code} value={reason.code}>{locale === "vi" ? reason.labelVi : reason.labelEn}</option>)}</Select><Textarea disabled={workflow.pending} label={text("Ghi chú hủy *", "Cancellation note *")} value={cancelNote} onChange={(event) => setCancelNote(event.target.value)} /></div>} confirmText={text("Hủy vận đơn", "Cancel booking")} cancelText={text("Quay lại", "Go back")} variant="danger" />
       <CommercialLineagePanel anchorType="SHIPPING" anchorId={record.id} locale={locale} />
     </RecordDetailFrame>
   );

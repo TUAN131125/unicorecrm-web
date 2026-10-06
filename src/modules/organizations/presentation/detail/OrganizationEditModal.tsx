@@ -1,5 +1,4 @@
 import React from "react";
-import { formatApplicationError } from "@/shared/operations";
 import type { Contact } from "@/modules/contacts";
 import { recordOperationalAudit } from "@/platform/operational-audit";
 import {
@@ -30,24 +29,19 @@ export const OrganizationEditModal: React.FC<OrganizationEditModalProps> = ({
   actorId,
   onSaved,
 }) => {
-  const [error, setError] = React.useState<string | null>(null);
-
-  React.useEffect(() => {
-    if (isOpen) setError(null);
-  }, [isOpen]);
-
-  const submit = async (draft: OrganizationAccountFormDraft) => {
-    setError(null);
+  const submit = async (draft: OrganizationAccountFormDraft, opening: OrganizationAccount | undefined, isCurrent: () => boolean, intentId: string) => {
+    if (!opening) throw new Error("ORGANIZATION_TARGET_REQUIRED");
+    const account = opening;
     try {
       if (isOrganizationConnectedMode()) {
         if (account.resourceVersion === undefined) throw new Error("ORGANIZATION_VERSION_REQUIRED");
         const updated = await updateOrganizationViaApi({ organizationId: account.id, expectedVersion: account.resourceVersion,
-          displayName: draft.displayName, legalName: draft.legalName.trim() || undefined, taxCode: draft.taxCode.trim() || undefined,
-          industry: draft.industry.trim() || undefined, sizeBand: draft.sizeBand.trim() || undefined,
-          website: draft.website.trim() || undefined, domain: draft.domain || undefined, phone: draft.phone.trim() || undefined,
-          email: draft.email.trim() || undefined, address: draft.address.trim() || undefined, source: draft.source.trim() || undefined,
-          status: draft.status === "archived" ? undefined : draft.status, relationshipLevel: draft.relationshipLevel, notes: draft.notes.trim() || undefined });
-        onSaved(updated); onClose(); return;
+          displayName: draft.displayName, legalName: draft.legalName.trim(), taxCode: draft.taxCode.trim(),
+          industry: draft.industry.trim(), sizeBand: draft.sizeBand.trim(),
+          website: draft.website.trim(), domain: draft.domain, phone: draft.phone.trim(),
+          email: draft.email.trim() || undefined, address: draft.address.trim(), source: draft.source.trim(),
+          status: draft.status === "archived" ? undefined : draft.status, relationshipLevel: draft.relationshipLevel, notes: draft.notes.trim() }, { idempotencyKey: intentId });
+        if (isCurrent()) { onSaved(updated); } return;
       }
       const next: OrganizationAccount = {
         ...account,
@@ -78,10 +72,9 @@ export const OrganizationEditModal: React.FC<OrganizationEditModalProps> = ({
         before: account,
         after: next,
       });
-      onSaved(next);
-      onClose();
+      if (isCurrent()) { onSaved(next); }
     } catch (caught) {
-      setError(formatApplicationError(caught));
+      throw caught;
     }
   };
 
@@ -90,10 +83,10 @@ export const OrganizationEditModal: React.FC<OrganizationEditModalProps> = ({
       isOpen={isOpen}
       onClose={onClose}
       mode="edit"
+      connected={isOrganizationConnectedMode()}
       account={account}
       representatives={representatives}
       onSubmit={submit}
-      error={error}
     />
   );
 };

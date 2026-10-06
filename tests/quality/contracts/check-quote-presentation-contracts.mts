@@ -153,12 +153,16 @@ assert.ok(sharedTable.includes('overflow-x-auto'), "Shared Table must own the ho
 assert.equal(listPage.includes('id="quote-list-page" className="relative overflow-x-auto"'), false);
 
 // Floating menu ownership prevents table/card clipping and returns focus on close.
-assert.ok(actionDropdown.includes("createPortal"));
-assert.ok(actionDropdown.includes("document.body"));
-assert.ok(actionDropdown.includes("openAbove"));
-assert.ok(actionDropdown.includes('window.addEventListener("scroll", updatePosition, true)'));
+assert.ok(actionDropdown.includes("<RowActionPortal"), "ActionDropdown must delegate floating geometry to the shared portal");
+const rowActionPortal = source("src/shared/components/ui/Dialog.tsx").split("export const RowActionPortal")[1];
+assert.ok(rowActionPortal, "The shared row action portal must exist");
+assert.ok(rowActionPortal.includes("createPortal"));
+assert.ok(rowActionPortal.includes("document.body"));
+assert.ok(rowActionPortal.includes("openAbove"));
+assert.ok(rowActionPortal.includes('window.addEventListener("scroll", updatePosition, true)'));
 assert.ok(actionDropdown.includes("anchorEl?.focus()"));
-assert.ok(actionDropdown.includes('e.key === "Escape"'));
+assert.ok(rowActionPortal.includes('e.key === "Escape"'));
+assert.ok(rowActionPortal.includes("trigger.focus({ preventScroll: true })"));
 
 // Delete uses the shared confirmation dialog, never browser-native confirm.
 assert.equal(listPage.includes("window.confirm"), false);

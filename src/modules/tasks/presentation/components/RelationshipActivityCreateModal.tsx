@@ -25,19 +25,21 @@ export interface RelationshipActivityDraft {
 
 export interface RelationshipActivityCreateModalProps {
   action: RelationshipActivityAction | null;
+  targetId?: string;
+  formId?: string;
   email?: string;
   phone?: string;
   recordLabel?: string;
   ownerName?: string;
   onClose(): void;
-  onSave(draft: RelationshipActivityDraft): void;
+  onSave(draft: RelationshipActivityDraft): void | Promise<void>;
 }
 
 function nowIso(): string {
   return new Date().toISOString();
 }
 
-export function RelationshipActivityCreateModal({ action, email, phone, recordLabel, ownerName, onClose, onSave }: RelationshipActivityCreateModalProps) {
+export function RelationshipActivityCreateModal({ action, targetId, formId, email, phone, recordLabel, ownerName, onClose, onSave }: RelationshipActivityCreateModalProps) {
   const { locale } = useI18n();
   const vi = locale === "vi";
   if (!action) return null;
@@ -47,6 +49,9 @@ export function RelationshipActivityCreateModal({ action, email, phone, recordLa
     return (
       <CallActivityCreateModal
         isOpen
+        recordingOnly
+        targetId={targetId}
+        formId={formId}
         onClose={onClose}
         defaults={{ subject: vi ? `Cuộc gọi với ${label}` : `Call with ${label}`, recipient: phone ?? "" }}
         onSubmit={(draft: CallActivityDraft) => onSave({
@@ -68,14 +73,18 @@ export function RelationshipActivityCreateModal({ action, email, phone, recordLa
   if (action === "meeting") {
     return (
       <MeetingActivityCreateModal
+        recordingTaskBacked={false}
         isOpen
+        recordingOnly
+        targetId={targetId}
+        formId={formId}
         onClose={onClose}
         defaults={{ title: vi ? `Lịch hẹn với ${label}` : `Meeting with ${label}`, owner: ownerName }}
         onSubmit={(draft: MeetingActivityDraft) => onSave({
           type: "MEETING",
           subject: draft.title,
           occurredAt: new Date(draft.startAt).toISOString(),
-          body: [draft.channel, draft.location, draft.attendees, draft.owner, draft.agenda].filter(Boolean).join(" · "),
+          body: [`Start: ${draft.startAt}`, draft.endAt ? `End: ${draft.endAt}` : "", draft.channel, draft.location, draft.attendees, draft.owner, draft.agenda].filter(Boolean).join(" · "),
         })}
       />
     );
@@ -85,6 +94,9 @@ export function RelationshipActivityCreateModal({ action, email, phone, recordLa
     return (
       <EmailActivityCreateModal
         isOpen
+        recordingOnly
+        targetId={targetId}
+        formId={formId}
         onClose={onClose}
         defaults={{ to: email ?? "", subject: vi ? `Email với ${label}` : `Email with ${label}` }}
         onSubmit={(draft: EmailActivityDraft) => onSave({
@@ -101,6 +113,9 @@ export function RelationshipActivityCreateModal({ action, email, phone, recordLa
     return (
       <SmsActivityCreateModal
         isOpen
+        recordingOnly
+        targetId={targetId}
+        formId={formId}
         onClose={onClose}
         defaults={{ phone: phone ?? "" }}
         onSubmit={(draft: SmsActivityDraft) => onSave({
@@ -116,6 +131,9 @@ export function RelationshipActivityCreateModal({ action, email, phone, recordLa
   return (
     <NoteActivityCreateModal
       isOpen
+      recordingOnly
+      targetId={targetId}
+      formId={formId}
       onClose={onClose}
       defaults={{ title: vi ? `Ghi chú ${label}` : `${label} note` }}
       onSubmit={(draft: NoteActivityDraft) => onSave({

@@ -6,6 +6,7 @@ import { Button, Checkbox } from "@/shared/components/ui";
 import { useI18n } from "../../i18n";
 import { useBodyScrollLock } from "@/shared/hooks/useBodyScrollLock";
 import { OVERLAY_Z } from "../overlay/overlayLayers";
+import { useAccessibleOverlay } from "@/shared/components/ui/useAccessibleOverlay";
 
 interface ColumnSettingsDrawerProps {
   isOpen: boolean;
@@ -43,6 +44,9 @@ export const ColumnSettingsDrawer: React.FC<ColumnSettingsDrawerProps> = ({
   getFieldLabel
 }) => {
   const { t, tx, locale } = useI18n();
+  const { rootRef, surfaceRef } = useAccessibleOverlay({ isOpen, onClose });
+  const titleId = React.useId();
+  const wasOpen = React.useRef(false);
 
   useBodyScrollLock(isOpen);
 
@@ -67,9 +71,13 @@ export const ColumnSettingsDrawer: React.FC<ColumnSettingsDrawerProps> = ({
 
   // Sync state when open
   useEffect(() => {
-    if (isOpen) {
+    if (isOpen && !wasOpen.current) {
       setTempColumns([...visibleColumns]);
+      setColSearchQuery("");
+      setDraggedIndex(null);
+      setDragOverIndex(null);
     }
+    wasOpen.current = isOpen;
   }, [isOpen, visibleColumns]);
 
   // Drag-and-drop states
@@ -112,7 +120,7 @@ export const ColumnSettingsDrawer: React.FC<ColumnSettingsDrawerProps> = ({
   return createPortal(
     <AnimatePresence>
       {isOpen && (
-        <>
+        <div ref={rootRef}>
           {/* Backdrop wrapper */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -125,6 +133,11 @@ export const ColumnSettingsDrawer: React.FC<ColumnSettingsDrawerProps> = ({
           
           {/* Drawer container body */}
           <motion.div
+            ref={surfaceRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={titleId}
+            tabIndex={-1}
             initial={{ x: "100%" }}
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
@@ -136,7 +149,7 @@ export const ColumnSettingsDrawer: React.FC<ColumnSettingsDrawerProps> = ({
             <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
               <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-800 uppercase tracking-wider">
                 <Settings size={14} className="text-indigo-600" />
-                <span>{defaultTitle || getTranslation("columnSettings.title", undefined, locale === "vi" ? "Tùy chỉnh cột" : "Customize Columns")}</span>
+                <span id={titleId}>{defaultTitle || getTranslation("columnSettings.title", undefined, locale === "vi" ? "Tùy chỉnh cột" : "Customize Columns")}</span>
               </div>
               <button
                 type="button"
@@ -310,7 +323,7 @@ export const ColumnSettingsDrawer: React.FC<ColumnSettingsDrawerProps> = ({
               </Button>
             </div>
           </motion.div>
-        </>
+        </div>
       )}
     </AnimatePresence>,
     document.body

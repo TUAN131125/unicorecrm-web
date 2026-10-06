@@ -1,3 +1,7 @@
+import { useRef as useWorkspaceBindingRef } from "react";
+import { useWorkspaceContextSnapshot as useWorkflowWorkspace } from "@/platform/workspace-context";
+import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
+import { useTargetBoundWorkflow } from "@/shared/presentation/useTargetBoundWorkflow";
 import React, { useState } from "react";
 import { CheckCircle2, ExternalLink, FileText, Landmark, Link2, ReceiptText, RefreshCw, RotateCcw, ShieldCheck, Undo2 } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -29,7 +33,22 @@ import { usePaymentRecordDetailQuery, usePaymentWorkspaceQuery } from "../hooks/
 type PaymentDetailTab = "OVERVIEW" | "ALLOCATIONS" | "EVIDENCE" | "AUDIT";
 
 export const PaymentDetailPage: React.FC = () => {
-  const { paymentId = "" } = useParams();
+  const { paymentId: routeTargetId = "" } = useParams();
+  const targetLifecycle = useTargetBoundWorkflow(routeTargetId, "payment-detail-draft");
+  const workflowWorkspace = useWorkflowWorkspace().workspaceId;
+  const currentWorkflowWorkspace = useWorkspaceBindingRef(workflowWorkspace);
+  currentWorkflowWorkspace.current = workflowWorkspace;
+  const openingWorkspace = useWorkspaceBindingRef({ cycle: targetLifecycle.cycle, id: workflowWorkspace });
+  if (openingWorkspace.current.cycle !== targetLifecycle.cycle) openingWorkspace.current = { cycle: targetLifecycle.cycle, id: workflowWorkspace };
+  const ownsWorkspace = () => openingWorkspace.current.id === currentWorkflowWorkspace.current;
+  const workflow = { ...targetLifecycle,
+    begin: () => ownsWorkspace() && targetLifecycle.begin(),
+    isCurrent: () => ownsWorkspace() && targetLifecycle.isCurrent(),
+    register: (dirty: boolean, reset: () => void, save: () => Promise<boolean>) => {
+      targetLifecycle.register(dirty, reset, () => ownsWorkspace() ? save() : Promise.resolve(false));
+    },
+  };
+  const paymentId = workflow.targetId ?? "";
   const navigate = useNavigate();
   const { activeWorkspace } = usePlatformState();
   const { locale } = useI18n();
@@ -59,6 +78,13 @@ export const PaymentDetailPage: React.FC = () => {
   });
   const path = (value: string) => toWorkspacePath(activeWorkspace.workspaceKey, "crm", value);
 
+  const resetDraft = () => { setNote(""); setRefundOpen(false); setReversalTarget(null); setReversalNote(""); setReversalReasonCode(reversalReasons[0]?.code ?? ""); };
+  const dirty = Boolean(note.trim() || (reversalTarget && (reversalNote.trim() || reversalReasonCode !== (reversalReasons[0]?.code ?? ""))));
+  const guard = useUnsavedChangesGuard(resetDraft);
+  React.useEffect(() => guard.setIsDirty(dirty), [dirty, guard.setIsDirty]);
+  workflow.register(dirty, resetDraft, async () => false);
+  React.useEffect(resetDraft, [paymentId]);
+  const closeDraft = () => { if (!workflow.pending) guard.requestClose(); };
   if (!detail) {
     return <RecordDetailFrame>
       <RecordDetailHeader backLabel={text("Thanh toán", "Payments")} onBack={() => navigate(path("payments"))} identityIcon={<ReceiptText size={20} />} identityToneClassName="border-rose-200 bg-rose-50 text-rose-700" title={text("Không tìm thấy Payment Record", "Payment Record not found")} metadata={text("Legacy transaction không còn được dùng làm màn hình chi tiết vận hành.", "Legacy transactions are no longer used for the operational detail screen.")} />
@@ -84,14 +110,19 @@ export const PaymentDetailPage: React.FC = () => {
   const readinessScore = Math.max(0, 100 - blockers.length * 25 - (detail.evidence.length === 0 && method?.requiresEvidence ? 20 : 0));
 
   const runReconcile = async (state: "MATCHED" | "MISMATCH") => {
+    if (!workflow.begin()) return;
+    try {
     await mutation.run((signal) => reconcilePaymentRecordCanonical(detail.id, {
       expectedVersion: detail.version,
       state,
       note,
     }, signal));
+    } finally { workflow.finish(); }
   };
 
   const refund = async () => {
+    if (!workflow.begin()) return;
+    try {
     const result = await mutation.run((signal) => createRefundIntentCanonical({
       id: createDurableId("refund_intent"),
       buyerRef: detail.buyerRef,
@@ -105,10 +136,12 @@ export const PaymentDetailPage: React.FC = () => {
       idempotencyKey: createDurableId(`refund_${detail.id}`),
       now: new Date().toISOString(),
     }, signal));
-    if (result) setRefundOpen(false);
+    if (result && workflow.isCurrent()) { setRefundOpen(false); setNote(""); }
+    } finally { workflow.finish(); }
   };
 
   const openReversal = (allocationId: string, version: number) => {
+    if (workflow.pending || refundOpen || reversalTarget) return;
     setReversalTarget({ allocationId, version });
     setReversalReasonCode(reversalReasons[0]?.code ?? "");
     setReversalNote("");
@@ -116,13 +149,16 @@ export const PaymentDetailPage: React.FC = () => {
 
   const reverse = async () => {
     if (!reversalTarget || !reversalReasonCode || !reversalNote.trim()) return;
+    if (!workflow.begin()) return;
+    try {
     const result = await mutation.run((signal) => reversePaymentAllocationCanonical(reversalTarget.allocationId, {
       expectedVersion: reversalTarget.version,
       reasonCode: reversalReasonCode,
       reason: reversalNote.trim(),
       actorId,
     }, signal));
-    if (result) setReversalTarget(null);
+    if (result && workflow.isCurrent()) { setReversalTarget(null); setReversalNote(""); }
+    } finally { workflow.finish(); }
   };
 
   const lifecycle = [
@@ -195,7 +231,7 @@ export const PaymentDetailPage: React.FC = () => {
         nextAction={compareMoney(detail.unallocatedAmount, money("0", detail.amount.currency)) > 0 ? { label: text("Phân bổ số tiền còn lại", "Allocate the remaining amount"), actionLabel: text("Mở công nợ", "Open receivables"), onClick: () => navigate(path("receivables")) } : undefined}
       >
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4"><div className="mb-3 text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-400">{text("Vòng đời", "Lifecycle")}</div><OperationLifecycleRail steps={lifecycle} /></div>
-        <label className="block space-y-2 text-sm font-semibold text-slate-700"><span>{text("Ghi chú đối soát / hoàn tiền", "Reconciliation / refund note")}</span><textarea value={note} onChange={(event) => setNote(event.target.value)} rows={4} className="w-full rounded-xl border border-slate-300 px-3 py-2 font-normal" /></label>
+        <label className="block space-y-2 text-sm font-semibold text-slate-700"><span>{text("Ghi chú đối soát / hoàn tiền", "Reconciliation / refund note")}</span><textarea disabled={workflow.pending} value={note} onChange={(event) => setNote(event.target.value)} rows={4} className="w-full rounded-xl border border-slate-300 px-3 py-2 font-normal" /></label>
         <div className="space-y-2"><Button fullWidth variant="secondary" icon={<FileText size={15} />} onClick={() => window.print()}>{text("In phiếu thu", "Print receipt")}</Button>{detail.evidence.some((item) => item.url) && <Button fullWidth variant="secondary" icon={<ExternalLink size={15} />} onClick={() => window.open(detail.evidence.find((item) => item.url)?.url, "_blank", "noopener,noreferrer")}>{text("Tải chứng từ", "Download evidence")}</Button>}{effectiveAllocations[0] && <Button fullWidth variant="secondary" icon={<ExternalLink size={15} />} onClick={() => navigate(path(`invoices/${effectiveAllocations[0].invoiceId}`))}>{text("Mở Invoice liên quan", "Open related invoice")}</Button>}</div>
       </OperationInsightPanel>
     </div>
@@ -208,11 +244,14 @@ export const PaymentDetailPage: React.FC = () => {
       onClose={mutation.dismissFailure}
     />
 
-    <Modal isOpen={Boolean(reversalTarget)} onClose={() => setReversalTarget(null)} title={text("Đảo phân bổ", "Reverse allocation")} size="sm" variant="form" footer={<><Button variant="secondary" onClick={() => setReversalTarget(null)}>{text("Hủy", "Cancel")}</Button><Button variant="danger" loading={mutation.busy} disabled={!reversalReasonCode || !reversalNote.trim()} onClick={() => void reverse()}>{text("Đảo phân bổ", "Reverse allocation")}</Button></>}>
-      <div className="space-y-4"><p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{text("Allocation sẽ chuyển sang REVERSED; công nợ và phần chưa phân bổ được tính lại từ ledger.", "The allocation will move to REVERSED; receivables and the unallocated amount will be recalculated from the ledger.")}</p><Select label={text("Mã lý do", "Reason code")} value={reversalReasonCode} onChange={(event) => setReversalReasonCode(event.target.value)}><option value="">{text("Chọn lý do", "Select a reason")}</option>{reversalReasons.map((reason) => <option key={reason.code} value={reason.code}>{reason.labelVi}</option>)}</Select><label className="block space-y-2 text-sm font-semibold text-slate-700"><span>{text("Ghi chú bắt buộc", "Required note")}</span><textarea value={reversalNote} onChange={(event) => setReversalNote(event.target.value)} rows={4} className="w-full rounded-xl border border-slate-300 px-3 py-2 font-normal" /></label></div>
+    <Modal isOpen={Boolean(reversalTarget)} onClose={closeDraft} title={text("Đảo phân bổ", "Reverse allocation")} size="sm" variant="form" footer={<><Button variant="secondary" onClick={closeDraft}>{text("Hủy", "Cancel")}</Button><Button variant="danger" loading={mutation.busy} disabled={!reversalReasonCode || !reversalNote.trim()} onClick={() => void reverse()}>{text("Đảo phân bổ", "Reverse allocation")}</Button></>}>
+      <div className="space-y-4"><p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{text("Allocation sẽ chuyển sang REVERSED; công nợ và phần chưa phân bổ được tính lại từ ledger.", "The allocation will move to REVERSED; receivables and the unallocated amount will be recalculated from the ledger.")}</p><Select disabled={workflow.pending} label={text("Mã lý do", "Reason code")} value={reversalReasonCode} onChange={(event) => setReversalReasonCode(event.target.value)}><option value="">{text("Chọn lý do", "Select a reason")}</option>{reversalReasons.map((reason) => <option key={reason.code} value={reason.code}>{reason.labelVi}</option>)}</Select><label className="block space-y-2 text-sm font-semibold text-slate-700"><span>{text("Ghi chú bắt buộc", "Required note")}</span><textarea disabled={workflow.pending} value={reversalNote} onChange={(event) => setReversalNote(event.target.value)} rows={4} className="w-full rounded-xl border border-slate-300 px-3 py-2 font-normal" /></label></div>
     </Modal>
 
-    <ConfirmDialog isOpen={refundOpen} onClose={() => setRefundOpen(false)} onConfirm={() => void refund()} title={text("Xác nhận hoàn tiền", "Confirm refund")} message={`Tạo Refund Intent authoritative cho ${formatMoneyDto(detail.refundableAmount)}. Khoản đã phân bổ phải được đảo trước khi hoàn.`} confirmText={text("Tạo và hoàn tiền", "Create and refund")} cancelText={text("Hủy", "Cancel")} variant="danger" />
+    <ConfirmDialog isOpen={guard.isConfirmOpen} onClose={() => guard.setIsConfirmOpen(false)} onConfirm={() => { if (!workflow.pending) guard.confirmDiscard(); }}
+      title={text("Bỏ thay đổi chưa lưu?", "Discard unsaved changes?")} message={text("Các thay đổi chưa được lưu. Bạn có muốn đóng biểu mẫu?", "Your changes have not been saved. Close the form?")}
+      confirmText={text("Bỏ thay đổi", "Discard changes")} cancelText={text("Tiếp tục chỉnh sửa", "Keep editing")} type="warning" />
+    <ConfirmDialog isOpen={refundOpen} onClose={closeDraft} editable onConfirm={refund} title={text("Xác nhận hoàn tiền", "Confirm refund")} message={`Tạo Refund Intent authoritative cho ${formatMoneyDto(detail.refundableAmount)}. Khoản đã phân bổ phải được đảo trước khi hoàn.`} confirmText={text("Tạo và hoàn tiền", "Create and refund")} cancelText={text("Hủy", "Cancel")} variant="danger" />
   </RecordDetailFrame>;
 };
 

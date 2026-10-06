@@ -7,8 +7,8 @@ import {
 
 interface ContactAttachmentsTabProps {
   contactAttachments: RecordAttachmentItem[];
-  onUploadAttachment(data: RecordAttachmentUploadData): void;
-  onDeleteAttachment(id: string): void;
+  onUploadAttachment?(data: RecordAttachmentUploadData): void;
+  onDeleteAttachment?(id: string): void;
   onDownloadAttachment(id: string): void;
   isArchived?: boolean;
   onModalStateChange?(open: boolean): void;

@@ -1,8 +1,9 @@
+import { useLeadAuxiliaryLifecycle } from "../hooks/useLeadAuxiliaryLifecycle";
 import { formatApplicationError } from "@/shared/operations";
 import React from "react";
 import { AlertCircle, CheckCircle2, FileSpreadsheet, Upload } from "lucide-react";
 import { useI18n } from "@/i18n";
-import { Button, ConfirmDialog, Modal } from "@/shared/components/ui";
+import { Button, Modal } from "@/shared/components/ui";
 import { buildLeadCsvImportPlan, type LeadCsvImportPlan } from "../../application/import/leadCsvImport";
 import { importLeadCsvPlanViaApi } from "../../public/leads";
 
@@ -44,7 +45,6 @@ export const LeadImportDialog: React.FC<LeadImportDialogProps> = ({
   const [error, setError] = React.useState<string | null>(null);
   const [isParsing, setIsParsing] = React.useState(false);
   const [isImporting, setIsImporting] = React.useState(false);
-  const [showDiscardConfirm, setShowDiscardConfirm] = React.useState(false);
 
   const reset = React.useCallback(() => {
     setFile(null);
@@ -59,14 +59,12 @@ export const LeadImportDialog: React.FC<LeadImportDialogProps> = ({
     if (!isOpen) reset();
   }, [isOpen, reset]);
 
-  const requestClose = () => {
-    if (isParsing || isImporting) return;
-    if (file || plan) {
-      setShowDiscardConfirm(true);
-      return;
-    }
-    onClose();
-  };
+  const openingOwner = React.useRef(defaultOwnerId);
+  const wasOpen = React.useRef(false);
+  if (isOpen && !wasOpen.current) openingOwner.current = defaultOwnerId;
+  wasOpen.current = isOpen;
+  const lifecycle = useLeadAuxiliaryLifecycle(isOpen, "import", Boolean(file || plan), reset, onClose, isParsing || isImporting);
+  const requestClose = lifecycle.requestClose;
 
   const parseFile = async (selectedFile: File) => {
     setFile(selectedFile);
@@ -92,32 +90,36 @@ export const LeadImportDialog: React.FC<LeadImportDialogProps> = ({
     setIsParsing(true);
     try {
       const text = await selectedFile.text();
-      setPlan(buildLeadCsvImportPlan(text));
+      if (lifecycle.isCurrent()) setPlan(buildLeadCsvImportPlan(text));
     } catch (caught) {
-      setError(formatApplicationError(caught, { locale }));
+      if (lifecycle.isCurrent()) setError(formatApplicationError(caught, { locale }));
     } finally {
-      setIsParsing(false);
+      if (lifecycle.isCurrent()) setIsParsing(false);
     }
   };
 
-  const commit = async () => {
-    if (!plan || plan.invalidRowCount > 0 || isImporting) return;
+  const commitWork = async () => {
+    if (!plan || plan.invalidRowCount > 0 || isImporting) return false;
     setIsImporting(true);
     setError(null);
     try {
-      const result = await importLeadCsvPlanViaApi(plan, { defaultOwnerId });
+      const result = await importLeadCsvPlanViaApi(plan, { defaultOwnerId: openingOwner.current });
+      if (!lifecycle.isCurrent()) return false;
       reset();
       onImported(result.importedCount);
       onClose();
     } catch (caught) {
-      setError(formatApplicationError(caught, { locale }));
+      if (lifecycle.isCurrent()) setError(formatApplicationError(caught, { locale }));
+      return false;
     } finally {
-      setIsImporting(false);
+      if (lifecycle.isCurrent()) setIsImporting(false);
     }
   };
 
+  const commit = () => lifecycle.run(commitWork);
+
   return (
-    <>
+    <>{lifecycle.confirmation}
       <Modal
         isOpen={isOpen}
         onClose={requestClose}
@@ -201,20 +203,7 @@ export const LeadImportDialog: React.FC<LeadImportDialogProps> = ({
         </div>
       </Modal>
 
-      <ConfirmDialog
-        isOpen={showDiscardConfirm}
-        onClose={() => setShowDiscardConfirm(false)}
-        onConfirm={() => {
-          setShowDiscardConfirm(false);
-          reset();
-          onClose();
-        }}
-        title={vi ? "Bỏ kế hoạch nhập?" : "Discard import plan?"}
-        message={vi ? "Tệp và kết quả kiểm tra hiện tại sẽ bị xóa khỏi hộp thoại." : "The selected file and current validation result will be cleared."}
-        confirmText={vi ? "Bỏ thay đổi" : "Discard"}
-        cancelText={vi ? "Tiếp tục kiểm tra" : "Keep reviewing"}
-        type="warning"
-      />
+
     </>
   );
 };

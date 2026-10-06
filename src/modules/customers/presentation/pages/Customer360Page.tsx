@@ -1,4 +1,6 @@
 import { backendUnavailableMessage, formatApplicationError, formatOperationUnavailableError } from "@/shared/operations";
+import { getWorkspaceContextSnapshot } from "@/platform/workspace-context";
+import { getDirtyUnsavedWork } from "@/platform/unsaved-work";
 import React, { useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useNavigate } from "react-router-dom";
@@ -16,7 +18,6 @@ import {
 } from "@/modules/tasks";
 import { createDealForCustomer, isCustomerCommercialActionsUnavailable } from "@/workflows/customer-commercial-actions";
 import { DealFormModal, getDealStagesSnapshot, mapSelectedPickerItemsToDealLineItems, type DealFormDraft } from "@/modules/deals";
-import { updateCustomerIdentityFrom360 } from "@/workflows/customer-identity";
 import {
   archiveCustomerProductionCommand,
   updateCustomerCommand,
@@ -99,7 +100,10 @@ export const Customer360Page: React.FC<Customer360PageProps> = ({
   const [creatingDeal, setCreatingDeal] = useState(false);
   const [savingIdentity, setSavingIdentity] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
-  const [customerAttachments, setCustomerAttachments] = useState<RecordAttachmentItem[]>([]);
+  const [attachmentsByCustomer, setAttachmentsByCustomer] = useState<Record<string, RecordAttachmentItem[]>>({});
+  const customerAttachments = attachmentsByCustomer[customer.id] ?? [];
+  const attachmentTargetId = customer.id;
+  const setCustomerAttachments = (update: (current: RecordAttachmentItem[]) => RecordAttachmentItem[]) => setAttachmentsByCustomer(current => ({ ...current, [attachmentTargetId]: update(current[attachmentTargetId] ?? []) }));
 
   const noteCount = model.timeline.filter(
     (item) => item.kind === "NOTE",
@@ -128,91 +132,58 @@ export const Customer360Page: React.FC<Customer360PageProps> = ({
 
   const openTaskModal = () => setTaskOpen(true);
 
-  const saveCustomerProfile = async (draft: CustomerEditDraft) => {
-    if (savingIdentity) return;
+  const saveCustomerProfile = async (draft: CustomerEditDraft, opening: Customer360PageModel, isCurrent: () => boolean, intentId: string) => {
+    const customer = opening.customer;
     setSavingIdentity(true);
     try {
-      if (!isCustomerConnectedApiRuntime()) updateCustomerIdentityFrom360(customer.id, {
-      displayName: draft.displayName,
-      email: draft.email,
-      phone: draft.phone,
-      address: draft.address,
-      source: draft.source,
-      salutation: draft.salutation,
-      title: draft.title,
-      department: draft.department,
-      roleAtCompany: draft.roleAtCompany,
-      workEmail: draft.workEmail,
-      personalEmail: draft.personalEmail,
-      mobilePhone: draft.mobilePhone,
-      workPhone: draft.workPhone,
-      otherPhone: draft.otherPhone,
-      zalo: draft.zalo,
-      facebook: draft.facebook,
-      preferredContactChannel: draft.preferredContactChannel,
-      communicationConsent: draft.communicationConsent,
-      doNotCall: draft.doNotCall,
-      doNotEmail: draft.doNotEmail,
-      doNotSms: draft.doNotSms,
-      doNotZalo: draft.doNotZalo,
-      doNotContact: draft.doNotContact,
-      doNotContactReason: draft.doNotContactReason,
-      decisionRole: draft.decisionRole,
-      relationshipLevel: draft.relationshipLevel,
-      painPoint: draft.painPoint,
-      needSummary: draft.needSummary,
-      consultingNote: draft.consultingNote,
-      followUpNote: draft.followUpNote,
-      contactNotes: draft.contactNotes,
-      legalName: draft.legalName,
-      taxCode: draft.taxCode,
-      domain: draft.domain,
-      website: draft.website,
-      industry: draft.industry,
-      sizeBand: draft.sizeBand,
-      employeeCount: parseOptionalNumber(draft.employeeCount),
-      annualRevenue: parseOptionalNumber(draft.annualRevenue),
-      organizationStatus: draft.organizationStatus,
-      organizationRelationshipLevel: draft.organizationRelationshipLevel,
-      organizationNotes: draft.organizationNotes,
-      actorId: currentMemberId || "system",
-      });
       await updateCustomerCommand(customer.id, {
         status: draft.status === "ACTIVE" || draft.status === "INACTIVE" ? draft.status : undefined,
-        segment: draft.segment.trim() || undefined,
+        segment: draft.segment.trim(),
         tags: splitTags(draft.tags),
         tier: draft.tier,
         serviceLevel: draft.serviceLevel,
-      });
-      setEditOpen(false);
+      }, { expectedVersion: customer.resourceVersion, idempotencyKey: intentId });
+      if (!isCurrent()) return;
       showToast(
         isVi
           ? "Đã cập nhật hồ sơ Customer."
           : "Customer profile updated.",
       );
     } catch (error) {
-      showToast(formatOperationUnavailableError(error, {
-        locale,
-        action: isVi ? "Cập nhật hồ sơ Customer" : "Updating the Customer profile",
-      }));
+      throw error;
     } finally {
       setSavingIdentity(false);
     }
   };
 
+  const dealOpening = React.useRef<Customer | undefined>(undefined);
+  const dealWasOpen = React.useRef(false);
+  const dealWorkspace = React.useRef(getWorkspaceContextSnapshot().workspaceId);
+  React.useEffect(() => {
+    if (dealOpen && !dealWasOpen.current) { dealOpening.current = structuredClone(customer); dealWorkspace.current = getWorkspaceContextSnapshot().workspaceId; }
+    if (!dealOpen) dealOpening.current = undefined;
+    dealWasOpen.current = dealOpen;
+  }, [dealOpen, customer]);
+
+  React.useEffect(() => {
+    if (dealOpen && dealOpening.current && dealOpening.current.id !== customer.id && !getDirtyUnsavedWork().some(entry => entry.id.startsWith("deal-form:"))) setDealOpen(false);
+  }, [dealOpen, customer.id]);
+
   const createDeal = async (draft: DealFormDraft) => {
-    if (creatingDeal) return;
+    const opening = dealOpening.current;
+    if (!opening || dealWorkspace.current !== getWorkspaceContextSnapshot().workspaceId) return false;
+    const commandWorkspace = dealWorkspace.current;
+    const customer = opening;
     // WF-04 customer-commercial-actions is BLOCKED with
     // `connectedFrontendCoordinatorAllowed: false`. `deal.create` and `task.create` are both
     // ready, so nothing else would stop this from committing a Deal and then a Task for a
     // workflow the backend owns. Refuse on WF-04 itself, before the first command.
     if (isCustomerCommercialActionsUnavailable()) {
-      setDealOpen(false);
       showToast(backendUnavailableMessage({
         locale,
         action: isVi ? "Tạo cơ hội thương mại cho khách hàng" : "Creating a commercial opportunity for this Customer",
       }));
-      return;
+      return false;
     }
     const lineItems = mapSelectedPickerItemsToDealLineItems(draft.lineItems);
     setCreatingDeal(true);
@@ -237,25 +208,42 @@ export const Customer360Page: React.FC<Customer360PageProps> = ({
         interestedProducts: draft.lineItems.map((item) => item.product.id),
         lineItems,
       });
+      if (dealOpening.current !== opening || commandWorkspace !== getWorkspaceContextSnapshot().workspaceId) return true;
       setDealOpen(false);
       navigate(`/deals/${deal.id}`);
+      return true;
     } catch (error) {
-      showToast(formatApplicationError(error, { locale }));
+      throw error;
     } finally {
       setCreatingDeal(false);
     }
   };
 
 
+  const quickOpening = React.useRef<{ customer: Customer; label: string; workspaceId: string } | undefined>(undefined);
+  const quickWasOpen = React.useRef(false);
+  const currentQuickTarget = React.useRef(customer.id); currentQuickTarget.current = customer.id;
+  React.useEffect(() => {
+    if (quickAction && !quickWasOpen.current) quickOpening.current = { customer: structuredClone(customer), label: model.identity.displayName, workspaceId: getWorkspaceContextSnapshot().workspaceId };
+    if (!quickAction) quickOpening.current = undefined;
+    quickWasOpen.current = Boolean(quickAction);
+  }, [quickAction, customer, model.identity.displayName]);
+  React.useEffect(() => {
+    if (quickAction && quickOpening.current && quickOpening.current.customer.id !== customer.id && !getDirtyUnsavedWork().some(entry => entry.id.startsWith("customers-activity:"))) setQuickAction(null);
+  }, [quickAction, customer.id]);
+
   const saveQuickActivity = async (draft: CustomerQuickActivityDraft) => {
-    if (savingActivity) return;
+    const opening = quickOpening.current;
+    if (!opening) throw new Error("CUSTOMER_ACTIVITY_TARGET_REQUIRED");
+    if (opening.workspaceId !== getWorkspaceContextSnapshot().workspaceId) throw new Error("WORKSPACE_CHANGED");
+    const customer = opening.customer;
     if (!currentMemberId) {
       showToast(
         isVi
           ? "Phiên đăng nhập chưa có member hợp lệ."
           : "The active session has no valid member.",
       );
-      return;
+      throw new Error("MEMBER_REQUIRED");
     }
     setSavingActivity(true);
     try {
@@ -272,10 +260,11 @@ export const Customer360Page: React.FC<Customer360PageProps> = ({
         recordRef: {
           moduleKey: "customers",
           recordId: customer.id,
-          label: model.identity.displayName,
+          label: opening.label,
         },
         sourceRef: { type: "CUSTOMER_360", id: customer.id },
       });
+      if (opening.workspaceId !== getWorkspaceContextSnapshot().workspaceId || quickOpening.current !== opening || currentQuickTarget.current !== customer.id) return;
       setQuickAction(null);
       showToast(
         isVi
@@ -283,7 +272,7 @@ export const Customer360Page: React.FC<Customer360PageProps> = ({
           : "Activity logged to the Customer 360 timeline.",
       );
     } catch (error) {
-      showToast(formatApplicationError(error, { locale }));
+      throw error;
     } finally {
       setSavingActivity(false);
     }
@@ -409,7 +398,7 @@ export const Customer360Page: React.FC<Customer360PageProps> = ({
                       description: data.description,
                       file: data.file,
                     }, ...current]);
-                    setToastMessage(isVi ? "Tài liệu đã được tải lên." : "Attachment uploaded.");
+                    setToastMessage(isVi ? "Đã thêm tài liệu vào phiên làm việc này." : "Attachment added to this session.");
                   }}
                   onDeleteAttachment={(id) => {
                     setCustomerAttachments((current) => current.filter((item) => item.id !== id));
@@ -495,12 +484,13 @@ export const Customer360Page: React.FC<Customer360PageProps> = ({
         isOpen={editOpen}
         model={model}
         isVi={isVi}
-        customerFieldsOnly={Boolean(authoritativeProjection)}
+        customerFieldsOnly
         onClose={() => setEditOpen(false)}
         onSave={saveCustomerProfile}
       />
 
       <CustomerQuickActivityModal
+        targetId={quickAction && !quickWasOpen.current ? customer.id : quickOpening.current?.customer.id ?? customer.id}
         action={quickAction}
         isVi={isVi}
         email={model.identity.email}
@@ -522,6 +512,7 @@ export const Customer360Page: React.FC<Customer360PageProps> = ({
         owners={members.map((member) => ({ memberId: member.memberId, displayName: member.displayName }))}
         stages={getDealStagesSnapshot()}
         customerNameLocked
+        sourceKey={dealOpen && !dealWasOpen.current ? customer.id : dealOpening.current?.id ?? customer.id}
         onSubmit={createDeal}
       />
 
@@ -549,8 +540,9 @@ export const Customer360Page: React.FC<Customer360PageProps> = ({
       <ConfirmDialog
         isOpen={archiveOpen}
         onClose={() => setArchiveOpen(false)}
-        onConfirm={async () => {
+        onConfirm={async (isCurrent) => {
           await archiveCustomerProductionCommand(customer.id);
+          if (!isCurrent()) return;
           setArchiveOpen(false);
           showToast(isVi ? "Đã lưu trữ khách hàng." : "Customer archived.");
         }}

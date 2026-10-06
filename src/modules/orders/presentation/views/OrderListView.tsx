@@ -49,6 +49,7 @@ export function OrderListView({ controller }: { controller: OrderListViewControl
     setOrderMenuAnchorEl,
     selectedOrder,
     setSelectedOrder,
+    closeCancellation, cancellationGuard, cancellation,
     cancelTarget,
     setCancelTarget,
     cancelReason,
@@ -787,18 +788,19 @@ export function OrderListView({ controller }: { controller: OrderListViewControl
 
       <ConfirmDialog
         isOpen={Boolean(cancelTarget)}
-        onClose={() => { setCancelTarget(null); setCancelReason(""); }}
+        onClose={closeCancellation}
         onConfirm={confirmOrderCancellation}
         title={locale === "vi" ? "Hủy đơn hàng" : "Cancel order"}
-        message={<div className="space-y-3 text-left"><p>{cancelTarget ? `${cancelTarget.orderNumber} sẽ được đánh dấu Đã hủy và không thể tiếp tục giao hàng. Lịch sử giao dịch vẫn được giữ lại.` : ""}</p><textarea autoFocus rows={3} value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} placeholder={locale === "vi" ? "Nhập lý do hủy" : "Cancellation reason"} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100" /></div>}
+        message={<div className="space-y-3 text-left"><p>{cancelTarget ? `${cancelTarget.orderNumber} sẽ được đánh dấu Đã hủy và không thể tiếp tục giao hàng. Lịch sử giao dịch vẫn được giữ lại.` : ""}</p><textarea disabled={cancellation.pending} autoFocus rows={3} value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} placeholder={locale === "vi" ? "Nhập lý do hủy" : "Cancellation reason"} className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800 outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100" /></div>}
         confirmText={locale === "vi" ? "Hủy đơn hàng" : "Cancel order"}
         cancelText={locale === "vi" ? "Quay lại" : "Back"}
         variant="danger"
       />
+      <ConfirmDialog isOpen={cancellationGuard.isConfirmOpen} onClose={() => cancellationGuard.setIsConfirmOpen(false)} onConfirm={() => { if (!cancellation.pending) cancellationGuard.confirmDiscard(); }} title={locale === "vi" ? "Bỏ thay đổi?" : "Discard changes?"} message={locale === "vi" ? "Lý do hủy chưa được lưu." : "The cancellation reason has not been saved."} confirmText={locale === "vi" ? "Bỏ thay đổi" : "Discard changes"} cancelText={locale === "vi" ? "Tiếp tục chỉnh sửa" : "Keep editing"} />
       <ConfirmDialog
         isOpen={bulkCancelOpen}
         onClose={() => setBulkCancelOpen(false)}
-        onConfirm={() => { executeBulkAction("cancel"); setBulkCancelOpen(false); }}
+        onConfirm={async (isCurrent) => { if (await executeBulkAction("cancel") && isCurrent()) setBulkCancelOpen(false); }}
         title={locale === "vi" ? "Hủy các đơn hàng đã chọn" : "Cancel selected orders"}
         message={locale === "vi" ? "Chỉ các đơn hàng đã xác nhận mới được hủy. Những đơn đã hoàn tất hoặc đã hủy sẽ được bỏ qua." : "Only confirmed orders will be cancelled. Completed or cancelled orders will be skipped."}
         confirmText={locale === "vi" ? "Hủy đơn" : "Cancel orders"}

@@ -45,49 +45,54 @@ export function RelationshipQuickActionModal({
   const { locale } = useI18n();
   const guard = useUnsavedChangesGuard(onClose);
   const pending = React.useRef(false);
+  const mounted = React.useRef(true);
+  const cycle = React.useRef(0);
+  const wasOpen = React.useRef(false);
+  if (isOpen !== wasOpen.current) { cycle.current += 1; wasOpen.current = isOpen; }
+  React.useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState("");
   React.useEffect(() => { guard.setIsDirty(isOpen && dirty); }, [dirty, isOpen, guard.setIsDirty]);
   React.useEffect(() => { if (!isOpen) { guard.setIsConfirmOpen(false); setError(""); } }, [isOpen, guard.setIsConfirmOpen]);
-  const close = guardChanges ? () => { if (!pending.current) guard.requestClose(); } : onClose;
+  const close = () => { if (!pending.current) { if (guardChanges) guard.requestClose(); else onClose(); } };
   const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (pending.current) return;
+    if (pending.current || submitDisabled || !isOpen || !mounted.current) return;
+    const submittingCycle = cycle.current;
     pending.current = true;
     setSubmitting(true);
     setError("");
     try { await onSubmit(event); }
-    catch (failure) { setError(formatApplicationError(failure, { locale })); }
-    finally { pending.current = false; setSubmitting(false); }
+    catch (failure) { if (mounted.current && cycle.current === submittingCycle) setError(formatApplicationError(failure, { locale })); }
+    finally { pending.current = false; if (mounted.current) setSubmitting(false); }
   };
-  return (
-    <>
-    <Modal
-      variant="form"
-      containPopovers={guardChanges}
-      isOpen={isOpen}
-      onClose={close}
-      title={title}
-      size={size}
-      bodyClassName={bodyClassName || undefined}
-      footer={(
+  const modalProps = {
+      variant: "form" as const,
+      containPopovers: guardChanges,
+      isOpen,
+      onClose: close,
+      title,
+      bodyClassName: bodyClassName || undefined,
+      footer: (
         <>
-          <Button type="button" variant="secondary" onClick={close} disabled={guardChanges && submitting}>{cancelLabel}</Button>
-          <Button type="submit" variant="primary" form={formId} disabled={submitDisabled || (guardChanges && submitting)}>{submitLabel}</Button>
+          <Button type="button" variant="secondary" onClick={close} disabled={submitting}>{cancelLabel}</Button>
+          <Button type="submit" variant="primary" form={formId} disabled={submitDisabled || submitting}>{submitLabel}</Button>
         </>
-      )}
-    >
-      <form
+      ),
+  };
+  const form = <form
         id={formId}
         className="crm-form-surface space-y-4 text-left"
-        onSubmit={guardChanges ? submit : onSubmit}
+        onSubmit={submit}
       >
         {children}
-        {guardChanges && error && <p role="alert" className="text-xs text-rose-600">{error}</p>}
-      </form>
-    </Modal>
+        {error && <p role="alert" className="text-xs text-rose-600">{error}</p>}
+      </form>;
+  return (
+    <>
+    {size === "sm" ? <Modal {...modalProps} variant="form" size="sm" footer={(modalProps.footer)}>{form}</Modal> : <Modal {...modalProps} variant="form" size="md" footer={(modalProps.footer)}>{form}</Modal>}
     {guardChanges && <ConfirmDialog
-      isOpen={guard.isConfirmOpen} onClose={() => guard.setIsConfirmOpen(false)} onConfirm={guard.confirmDiscard}
+      isOpen={guard.isConfirmOpen} onClose={() => guard.setIsConfirmOpen(false)} onConfirm={() => { if (!pending.current) guard.confirmDiscard(); }}
       title={locale === "vi" ? "Bỏ thay đổi chưa lưu?" : "Discard unsaved changes?"}
       message={locale === "vi" ? "Các thay đổi chưa được lưu. Bạn có muốn đóng biểu mẫu?" : "Your changes have not been saved. Close the form?"}
       confirmText={locale === "vi" ? "Bỏ thay đổi" : "Discard changes"}

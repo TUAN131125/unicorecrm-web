@@ -78,6 +78,7 @@ export const ProductListPage: React.FC<ProductListPageProps> = (props) => {
     setIsImportModalOpen,
     pastedCsvData,
     setPastedCsvData,
+    requestImportClose,
     parseAndImportCSV,
     handleRefresh,
     columnWidths,
@@ -389,12 +390,12 @@ export const ProductListPage: React.FC<ProductListPageProps> = (props) => {
       <Modal
         variant="form"
         isOpen={isImportModalOpen}
-        onClose={() => setIsImportModalOpen(false)}
+        onClose={() => { void requestImportClose(); }}
         title={isVi ? "Nhập danh mục sản phẩm từ CSV" : "Import products from CSV"}
         size="sm"
         footer={(
           <>
-            <Button variant="secondary" onClick={() => setIsImportModalOpen(false)}>{isVi ? "Đóng" : "Close"}</Button>
+            <Button variant="secondary" onClick={() => { void requestImportClose(); }}>{isVi ? "Đóng" : "Close"}</Button>
             <Button variant="primary" onClick={() => parseAndImportCSV(pastedCsvData)}>{isVi ? "Nhập dữ liệu" : "Import data"}</Button>
           </>
         )}

@@ -106,3 +106,8 @@ export function setContactPreference<T>(key: string, value: T): void {
 export function removeContactPreference(key: string): void {
   contactPreferences.remove(key);
 }
+
+export {
+  createContactOrganizationRelationshipViaApi, updateContactOrganizationRelationshipViaApi, endContactOrganizationRelationshipViaApi,
+  createContactCustomerRelationshipViaApi, updateContactCustomerRelationshipViaApi, endContactCustomerRelationshipViaApi,
+} from "../application/commands/contactRelationshipCommands";

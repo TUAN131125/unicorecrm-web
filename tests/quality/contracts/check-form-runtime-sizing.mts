@@ -239,7 +239,7 @@ assert.match(quoteBuilderSource, /initializedQuoteSourceRef/, "Quote builder mus
 assert.match(quoteBuilderSource, /quoteSourceInitializationKey/, "Quote builder must initialize by source identity");
 
 const initializationContracts: Array<[string, RegExp, string]> = [
-  ["src/modules/products/presentation/components/ProductFormModal.tsx", /\[isOpen, product\?\.id\]/, "Product form"],
+  ["src/modules/products/presentation/components/ProductFormModal.tsx", /opening\.current = product \? structuredClone\(product\) : null/, "Product form"],
   ["src/workspaces/people-access/presentation/components/MemberOnboardingModals.tsx", /\[isOpen\]/, "Member onboarding forms"],
   ["src/workspaces/people-access/presentation/pages/UsersPermissionsPage.tsx", /\[isOpen, source\?\.roleId\]/, "Role form"],
 ];
@@ -249,7 +249,9 @@ for (const [file, pattern, label] of initializationContracts) {
 
 const canonicalDealFormSource = read("src/modules/deals/presentation/components/DealFormModal.tsx");
 assert.match(canonicalDealFormSource, /const wasOpen = React\.useRef\(false\)/, "Canonical Deal/Opportunity form must track modal open cycles.");
-assert.match(canonicalDealFormSource, /if \(isOpen && !wasOpen\.current\)/, "Canonical Deal/Opportunity form must initialize only on the closed-to-open transition.");
+assert.match(canonicalDealFormSource, /!wasOpen\.current \|\| \(\(target\?\.id !== opening\.current\?\.id[\s\S]*?&& !dirty && !pending\.current\)/, "Canonical Deal/Opportunity form may initialize only on opening or a clean idle target switch.");
+const productFormSource = read("src/modules/products/presentation/components/ProductFormModal.tsx");
+assert.match(productFormSource, /!wasOpen\.current \|\|[\s\S]*?opening\.current\?\.id[\s\S]*?&& !dirty && !pending\.current/, "Product initialization must protect dirty and pending opening targets.");
 assert.match(canonicalDealFormSource, /wasOpen\.current = isOpen/, "Canonical Deal/Opportunity form must preserve user edits across parent reference refreshes while open.");
 
 const memberOnboardingSource = read("src/workspaces/people-access/presentation/components/MemberOnboardingModals.tsx");

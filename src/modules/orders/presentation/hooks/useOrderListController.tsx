@@ -1,5 +1,7 @@
+import { useOrderFormLifecycle } from "./useOrderFormLifecycle";
+import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
 import { formatApplicationError, formatOperationUnavailableError, summarizeBulkCommits, unavailableFeatureMessage, useServerPagedModuleCollection } from "@/shared/operations";
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import type { CustomerOrder, OrderState } from "../../domain/model/order.types";
 import type { PaymentRepositorySnapshot, PaymentSummaryState } from "@/modules/payments";
@@ -138,7 +140,14 @@ export function useOrderListController({
   const [selectedOrder, setSelectedOrder] = useState<CustomerOrder | null>(null);
   const [cancelTarget, setCancelTarget] = useState<CustomerOrder | null>(null);
   const [cancelReason, setCancelReason] = useState("");
+  const cancellation = useOrderFormLifecycle(cancelTarget?.id ?? "list-cancellation");
+  const cancellationGuard = useUnsavedChangesGuard(() => { setCancelTarget(null); setCancelReason(""); });
+  React.useEffect(() => cancellationGuard.setIsDirty(Boolean(cancelTarget) && Boolean(cancelReason.trim())), [cancelTarget, cancelReason]);
+  const closeCancellation = () => { if (!cancellation.pending) cancellationGuard.requestClose(); };
   const [bulkCancelOpen, setBulkCancelOpen] = useState(false);
+  const bulkCancelTargets = useRef<string[]>([]);
+  const bulkCancelWasOpen = useRef(false);
+
 
   // Layout View: Table, Card, Kanban
   // Screen size check to override layout view to card-first on mobile/tablet
@@ -263,6 +272,10 @@ export function useOrderListController({
 
   // Selected Row items
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([]);
+  useEffect(() => {
+    if (bulkCancelOpen && !bulkCancelWasOpen.current) bulkCancelTargets.current = [...selectedOrderIds];
+    bulkCancelWasOpen.current = bulkCancelOpen;
+  }, [bulkCancelOpen, selectedOrderIds]);
 
   const resetFilters = () => {
     resetOrderFilters();
@@ -281,7 +294,7 @@ export function useOrderListController({
     if (!orderObj) { setAlertMessage({ type: "error", text: locale === "vi" ? "Không tìm thấy đơn hàng" : "Order not found" }); return; }
     if (orderObj.state === nextState) return;
 
-    if (nextState === "CANCELLED") { setCancelTarget(orderObj); setCancelReason(""); return; }
+    if (nextState === "CANCELLED") { if (cancelTarget || cancellation.pending) return; setCancelTarget(structuredClone(orderObj)); setCancelReason(""); return; }
     if (nextState === "CONFIRMED") {
       if (!canConfirmOrder || !access.canAccessRecord("orders", orderObj)) { setAlertMessage({ type: "error", text: locale === "vi" ? "Bạn chưa có quyền xác nhận hoặc Đơn hàng nằm ngoài phạm vi dữ liệu được giao." : "You lack confirmation permission or the Order is outside your assigned data scope." }); return; }
       try {
@@ -310,20 +323,23 @@ export function useOrderListController({
     setAlertMessage({ type: "error", text: locale === "vi" ? "Chuyển trạng thái Order không hợp lệ." : "Invalid Order lifecycle transition." });
   };
 
-  const confirmOrderCancellation = async () => {
-    if (!cancelTarget || !cancelReason.trim()) return;
+  const confirmOrderCancellation = async (): Promise<boolean> => {
+    if (!cancelTarget || !cancelReason.trim() || !cancellation.begin()) return false;
     try {
       await executeOrderCancellationCommand(
         { orderId: cancelTarget.id, reason: cancelReason.trim() },
         cancelTarget.resourceVersion === undefined ? {} : { expectedVersion: cancelTarget.resourceVersion },
       );
+      if (!cancellation.isCurrent()) return false;
+      setAlertMessage({ type: "success", text: locale === "vi" ? `Đã hủy ${cancelTarget.orderNumber} và đóng kế hoạch thanh toán liên quan.` : `Cancelled ${cancelTarget.orderNumber} and its related Payment Plan.` });
+      setCancelTarget(null); setCancelReason(""); cancellationGuard.setIsDirty(false);
+      return true;
     } catch (error) {
-      setAlertMessage({ type: "error", text: formatApplicationError(error, { locale }) });
-      return;
-    }
-    setAlertMessage({ type: "success", text: locale === "vi" ? `Đã hủy ${cancelTarget.orderNumber} và đóng kế hoạch thanh toán liên quan.` : `Cancelled ${cancelTarget.orderNumber} and its related Payment Plan.` });
-    setCancelTarget(null); setCancelReason("");
+      if (cancellation.isCurrent()) setAlertMessage({ type: "error", text: formatApplicationError(error, { locale }) });
+      return false;
+    } finally { cancellation.finish(); }
   };
+  cancellation.register(Boolean(cancelTarget) && Boolean(cancelReason.trim()), () => { setCancelTarget(null); setCancelReason(""); cancellationGuard.setIsDirty(false); }, confirmOrderCancellation);
 
   const archiveSingleOrder = async (id: string) => {
     await archiveOrderCommandBoundary(id, { reason: locale === "vi" ? "Lưu trữ từ danh sách Đơn hàng." : "Archived from Order list.", actorId, actorName });
@@ -356,16 +372,17 @@ export function useOrderListController({
 
   // Bulk execution
   const executeBulkAction = async (action: "complete" | "cancel" | "archive") => {
-    if (selectedOrderIds.length === 0) return;
+    const orderIds = action === "cancel" && bulkCancelOpen ? bulkCancelTargets.current : selectedOrderIds;
+    if (orderIds.length === 0) return false;
 
     if (action === "archive") {
-      await archiveOrdersCommandBoundary(selectedOrderIds, { reason: locale === "vi" ? "Lưu trữ hàng loạt từ danh sách Đơn hàng." : "Bulk archived from Order list.", actorId, actorName });
+      await archiveOrdersCommandBoundary(orderIds, { reason: locale === "vi" ? "Lưu trữ hàng loạt từ danh sách Đơn hàng." : "Bulk archived from Order list.", actorId, actorName });
       setAlertMessage({
         type: "success",
         text: locale === "vi" ? "Đã lưu trữ các đơn hàng. Trạng thái nghiệp vụ không thay đổi." : "Archived selected orders without changing business state."
       });
       setSelectedOrderIds([]);
-      return;
+      return true;
     }
 
     if (action === "complete") {
@@ -384,14 +401,14 @@ export function useOrderListController({
       // order. Settling per item keeps the outcomes of the orders that already cancelled;
       // reporting both halves is what stops a partial result from reading as a total
       // failure and inviting the user to retry orders that already committed.
-      const settled = await Promise.allSettled(selectedOrderIds.map((id) => {
+      const settled = await Promise.allSettled(orderIds.map((id) => {
         const order = flatOrders.find((item) => item.id === id);
         return executeOrderCancellationCommand(
           { orderId: id, reason: "Bulk cancellation" },
           order?.resourceVersion === undefined ? {} : { expectedVersion: order.resourceVersion },
         );
       }));
-      const bulk = summarizeBulkCommits(selectedOrderIds, settled);
+      const bulk = summarizeBulkCommits(orderIds, settled);
       if (bulk.status !== "FULL_SUCCESS") {
         const failureText = bulk.failed
           .map((entry) => `${entry.id}: ${formatApplicationError(entry.error, { locale })}`)
@@ -400,14 +417,15 @@ export function useOrderListController({
           type: "error",
           text: bulk.status === "PARTIAL_SUCCESS"
             ? (locale === "vi"
-              ? `Đã hủy ${bulk.committed.length}/${selectedOrderIds.length} đơn hàng. Chưa hủy được: ${failureText}`
-              : `Cancelled ${bulk.committed.length} of ${selectedOrderIds.length} orders. Not cancelled: ${failureText}`)
+              ? `Đã hủy ${bulk.committed.length}/${orderIds.length} đơn hàng. Chưa hủy được: ${failureText}`
+              : `Cancelled ${bulk.committed.length} of ${orderIds.length} orders. Not cancelled: ${failureText}`)
             : (failureText || "Bulk cancellation blocked."),
         });
         // The orders that did cancel stay cancelled; clear only those from the selection so
         // a retry targets what actually remains.
         setSelectedOrderIds((current) => current.filter((id) => !bulk.committed.includes(id)));
-        return;
+        bulkCancelTargets.current = bulk.failed.map(entry => entry.id);
+        return false;
       }
     }
 
@@ -418,6 +436,8 @@ export function useOrderListController({
         : `Successfully synchronized status for selected orders!`
     });
     setSelectedOrderIds([]);
+    bulkCancelTargets.current = [];
+    return true;
   };
 
   const handleBulkComplete = () => {
@@ -569,6 +589,7 @@ export function useOrderListController({
     getStatusLabel,
     executeOrderStateUpdate,
     confirmOrderCancellation,
+    closeCancellation, cancellationGuard, cancellation,
     archiveSingleOrder,
     duplicateOrder,
     executeBulkAction,

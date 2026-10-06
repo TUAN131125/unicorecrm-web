@@ -5,6 +5,7 @@ export type OrganizationQuickAction = RelationshipActivityAction;
 export type OrganizationQuickActivityDraft = RelationshipActivityDraft;
 
 interface OrganizationQuickActivityModalProps {
+  targetId?: string;
   action: OrganizationQuickAction | null;
   email?: string;
   phone?: string;
@@ -14,6 +15,6 @@ interface OrganizationQuickActivityModalProps {
   onSave(draft: OrganizationQuickActivityDraft): void;
 }
 
-export const OrganizationQuickActivityModal: React.FC<OrganizationQuickActivityModalProps> = ({ action, email, phone, recordLabel, ownerName, onClose, onSave }) => (
-  <RelationshipActivityCreateModal action={action} email={email} phone={phone} recordLabel={recordLabel} ownerName={ownerName} onClose={onClose} onSave={onSave} />
+export const OrganizationQuickActivityModal: React.FC<OrganizationQuickActivityModalProps> = ({ action, targetId, email, phone, recordLabel, ownerName, onClose, onSave }) => (
+  <RelationshipActivityCreateModal targetId={targetId} formId="organizations-activity" action={action} email={email} phone={phone} recordLabel={recordLabel} ownerName={ownerName} onClose={onClose} onSave={onSave} />
 );

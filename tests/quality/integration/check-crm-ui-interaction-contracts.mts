@@ -7,7 +7,7 @@ import path from "node:path";
 import { JSDOM } from "jsdom";
 import { readPresentationComposition } from "../../../scripts/lib/presentationCompositionSource.mts";
 
-const read = (relativePath: string) => readPresentationComposition(path.resolve(relativePath), "utf8");
+const read = (relativePath: string) => readPresentationComposition(path.resolve(relativePath), "utf8").replace(/\r\n?/g, "\n");
 
 function verifyExistingSourceContracts() {
 const overlay = read("src/shared/components/ui/useAccessibleOverlay.ts");
@@ -140,29 +140,37 @@ assert.ok(leadDetail.includes("<LeadDetailView controller={controller}"), "Lead 
 const leadDetailView = read("src/modules/leads/presentation/views/LeadDetailView.tsx");
 for (const marker of [
   '<IconButton\n              id="back-to-leads-btn"',
-  '"Đã liên hệ"',
-  '"Đạt chất lượng"',
+  '"Bắt đầu liên hệ"',
+  '"Bắt đầu xác minh"',
   '"Chốt kết quả"',
   "RecordTabTransition",
   'motionId="lead-primary-tabs"',
 ]) assert.ok(leadDetailView.includes(marker), `Lead detail view/motion contract missing ${marker}`);
+const lifecycleAction = leadDetailView.match(/<Button\s+id="lead-primary-lifecycle-action"[\s\S]*?<\/Button>/)?.[0];
+assert.ok(lifecycleAction, "Lead detail must retain its contextual primary lifecycle action.");
+assert.match(leadDetailView, /lead\.leadWorkState !== LeadWorkState\.CLOSED\s*&& \(lead\.leadWorkState === LeadWorkState\.VERIFYING \? canQualify : canEdit\)/, "Closed Leads must hide the action; verification requires qualification permission.");
+assert.match(lifecycleAction, /if \(lead\.leadWorkState === LeadWorkState\.NEW\) \{\s*updateWorkStateDirectly\(\s*LeadWorkState\.CONTACTING,[\s\S]*?return;\s*\}/, "NEW must start contact and return before subsequent lifecycle actions.");
+assert.match(lifecycleAction, /if \(lead\.leadWorkState === LeadWorkState\.CONTACTING\) \{\s*requestStartVerification\(\);\s*return;\s*\}/, "CONTACTING must request verification and return before qualification navigation.");
+assert.match(lifecycleAction, /if \(isQualificationBlocked\) \{[\s\S]*?return;\s*\}\s*navigate\(`\/leads\/\$\{lead\.id\}\/qualify`\);/, "The remaining verification action must guard eligibility before opening the Lead qualification route.");
+assert.match(lifecycleAction, /lead\.leadWorkState === LeadWorkState\.NEW\s*\? \(locale === "vi" \? "Bắt đầu liên hệ" : "Start contacting"\)\s*: lead\.leadWorkState === LeadWorkState\.CONTACTING\s*\? \(locale === "vi" \? "Bắt đầu xác minh" : "Start verifying"\)\s*: \(locale === "vi" \? "Chốt kết quả" : "Resolve outcome"\)/, "Lifecycle CTA labels must map to their corresponding action branches.");
 assert.equal(leadDetailView.includes("setShowQualifyModal"), false, "Lead quality transition must not open a redundant confirmation form.");
 assert.equal(leadDetailView.includes("motion.main"), false, "Lead tab content must not combine Organization-style transition with a layout-animated main element.");
 
 const leadDetailController = read("src/modules/leads/presentation/hooks/useLeadDetailController.tsx");
 for (const marker of [
   "handleConfirmHandover",
-  "taskTargets",
+  "useLeadHandover",
   "handover.submit",
   "createTaskCommand",
 ]) assert.ok(leadDetailController.includes(marker), `Lead detail workflow contract missing ${marker}`);
 assert.equal(leadDetailController.includes("reassignTaskSnapshot"), false, "Lead handover must not reassign tasks through the local snapshot boundary.");
+assert.match(leadDetailController, /const handleConfirmHandover = async \(nextOwnerId: string, reason: string\) => \{[\s\S]*?handover\.isAmbiguousRetry\(\{ nextOwnerId, reason \}\)[\s\S]*?const result = await handover\.submit\(\{ nextOwnerId, reason \}\);\s*if \(!result\) return;\s*setShowHandoverModal\(false\);/, "Handover must preserve exact ambiguous retry and await the canonical workflow result before closing.");
 
 const detailModals = read("src/modules/leads/presentation/components/LeadDetailModals.tsx");
 assert.equal(detailModals.includes("Xác nhận Lead đạt chất lượng"), false, "The redundant qualify confirmation dialog must stay removed.");
 for (const marker of [
   'title={locale === "vi" ? "Bàn giao Lead & công việc"',
-  "handleConfirmHandover(handoverOwnerId, handoverReason.trim(), handoverOpenTaskPolicy)",
+  "handleConfirmHandover(handoverOwnerId, handoverReason.trim())",
   'className="h-11 min-w-20"',
 ]) assert.ok(detailModals.includes(marker), `Lead modal alignment/work integration contract missing ${marker}`);
 
@@ -387,15 +395,44 @@ assert.equal(window.document.querySelector('button[type="submit"]').disabled, fa
 await escape();
 assert.equal(window.document.querySelectorAll('[role="dialog"]').length, 2, "Failure keeps edit dirty.");
 await clickText(/Tiếp tục chỉnh sửa|Keep editing/u);
+const { listWorkspaceMemberDirectory } = await import("@/platform/member-directory");
+const meetingMember = listWorkspaceMemberDirectory()[0];
+assert.ok(meetingMember, "Meeting fixture requires a real workspace directory member.");
+let meetingSubmitCalls = 0;
+let rejectMeeting: ((failure: unknown) => void) | undefined;
 await act(async () => root.render(React.createElement(I18nProvider, null, React.createElement(ContactMeetingModal, {
   isOpen: true, onClose: () => { closes++; },
-  onSave: async () => { throw { code: "VALIDATION_FAILED", category: "validation" }; },
+  onSave: async (meeting) => {
+    meetingSubmitCalls++;
+    assert.equal(meeting.owner, meetingMember.memberId);
+    assert.equal(meeting.title, "Meeting draft");
+    assert.ok(meeting.startDate && meeting.startTime, "Meeting must carry its valid canonical start date/time.");
+    await new Promise<void>((_resolve, reject) => { rejectMeeting = reject; });
+  },
 }))));
 const meetingTitle = window.document.querySelector('form input');
 await act(async () => { setNativeValue.call(meetingTitle, "Meeting draft"); meetingTitle.dispatchEvent(new window.Event("input", { bubbles: true })); });
-await act(async () => window.document.getElementById("contact-meeting-form").dispatchEvent(new window.Event("submit", { bubbles: true, cancelable: true })));
+const meetingOwner = window.document.getElementById("contact-meeting-form-owner");
+assert.ok(meetingOwner instanceof window.HTMLButtonElement);
+assert.equal(meetingOwner.getAttribute("aria-haspopup"), "listbox");
+await act(async () => meetingOwner.click());
+const meetingMemberOption = [...window.document.querySelectorAll<HTMLButtonElement>('[role="option"]')]
+  .find(option => option.textContent?.trim() === meetingMember.displayName);
+assert.ok(meetingMemberOption, "Canonical assignee picker must offer the directory member.");
+await act(async () => meetingMemberOption.click());
+const meetingForm = window.document.getElementById("contact-meeting-form");
+assert.ok(meetingForm);
+await act(async () => meetingForm.dispatchEvent(new window.Event("submit", { bubbles: true, cancelable: true })));
+await act(async () => meetingForm.dispatchEvent(new window.Event("submit", { bubbles: true, cancelable: true })));
+assert.equal(meetingSubmitCalls, 1, "Valid Meeting fixture must reach onSave exactly once.");
+const rejectMeetingFailure = rejectMeeting;
+assert.ok(rejectMeetingFailure, "Meeting submission must remain pending until the callback rejects.");
+await act(async () => { rejectMeetingFailure({ code: "VALIDATION_FAILED", category: "validation" }); });
 assert.ok(window.document.querySelector('[role="alert"]'), "Meeting async rejection must reach canonical shell.");
 assert.equal(meetingTitle.value, "Meeting draft");
+assert.ok(meetingOwner.textContent?.includes(meetingMember.displayName), "Meeting assignee draft survives rejection.");
+assert.ok(window.document.getElementById("contact-meeting-form"), "Meeting modal stays open after rejection.");
+assert.equal(meetingSubmitCalls, 1, "Async rejection must not automatically resubmit the Meeting.");
 assert.equal(closes, 2);
 console.log("Contact Edit safety and actual Meeting Promise rejection: PASS");
 // A2A exercises real presentation components with deferred commands; no business writes.
@@ -448,27 +485,24 @@ let disqualifyCalls = 0;
 let resolveDisqualify;
 let rejectDisqualify;
 const noop = () => {};
+const { useLeadDetailDialogs } = await import("../../../src/modules/leads/presentation/hooks/useLeadDetailDialogs");
+const disqualifyLead = { id: "lead-safety-fixture", name: "Fixture", tags: [] };
 function DisqualifyHarness() {
-  const [open, setOpen] = React.useState(true);
-  const [category, setCategory] = React.useState("Không có ngân sách");
-  const [reason, setReason] = React.useState("Opening reason");
-  const close = (value) => { if (!value) disqualifyCloses++; setOpen(value); };
-  const dialogs = {
-    showDisqualifyModal: open, setShowDisqualifyModal: close,
-    disqualifyCategory: category, setDisqualifyCategory: setCategory,
-    disqualifyReasonText: reason, setDisqualifyReasonText: setReason,
-    callForm: {}, meetingForm: { location: "" }, emailForm: {}, smsForm: {},
-    handoverOwnerId: "", handoverReason: "",
-  };
-  for (const name of ["Edit", "ArchiveConfirm", "Handover", "Tags", "Call", "Task", "Meeting", "Email", "Sms"]) {
-    dialogs[`show${name}${name === "ArchiveConfirm" ? "" : "Modal"}`] = false;
-    dialogs[`setShow${name}${name === "ArchiveConfirm" ? "" : "Modal"}`] = noop;
-  }
+  const dialogs = useLeadDetailDialogs(disqualifyLead, disqualifyLead.id);
+  const open = dialogs.showDisqualifyModal;
+  const category = dialogs.disqualifyCategory;
+  const reason = dialogs.disqualifyReasonText;
+  const wasOpen = React.useRef(false);
+  React.useEffect(() => { dialogs.setShowDisqualifyModal(true); }, []);
+  React.useEffect(() => {
+    if (wasOpen.current && !open) disqualifyCloses++;
+    wasOpen.current = open;
+  }, [open]);
   return React.createElement(I18nProvider, null,
-    React.createElement("button", { onClick: () => setOpen(true) }, "Reopen fixture"),
+    React.createElement("button", { onClick: () => dialogs.setShowDisqualifyModal(true) }, "Reopen fixture"),
     React.createElement("output", { id: "disqualify-fixture-state" }, JSON.stringify({ open, category, reason })),
     React.createElement(LeadDetailModals, { screen: {
-      dialogs, lead: { id: "lead-safety-fixture", name: "Fixture", tags: [] }, locale: "vi", t: (key) => key,
+      dialogs, lead: disqualifyLead, locale: "vi", t: (key) => key,
       sources: [], campaigns: [], products: [], members: [], handoverMembers: [],
       showToast: noop, navigate: noop, leadActions: {}, archiveListPath: "/leads", canHandover: false,
       handover: { isAmbiguousRetry: () => false }, handleConfirmHandover: noop,
@@ -477,7 +511,7 @@ function DisqualifyHarness() {
       handleConfirmDisqualify: async () => {
         disqualifyCalls++;
         await new Promise((resolve, reject) => { resolveDisqualify = resolve; rejectDisqualify = reject; });
-        close(false); setReason("");
+        dialogs.resolveInteraction("disqualify");
       },
     } }),
   );
@@ -487,7 +521,7 @@ const mountDisqualify = async (key) => {
 };
 await mountDisqualify("pristine");
 await escape();
-assert.equal(disqualifyCloses, 1, "Non-default opening category/reason is pristine.");
+assert.equal(disqualifyCloses, 1, "Canonical default opening is pristine and closes without confirmation.");
 await mountDisqualify("dirty");
 await act(async () => {
   const category = window.document.querySelector("select");
@@ -504,8 +538,15 @@ assert.equal(window.document.querySelector("select").value, "Khác");
 await escape();
 await clickText(/^Bỏ thay đổi$|^Discard changes$/u);
 assert.equal(disqualifyCloses, 2);
-assert.deepEqual(JSON.parse(window.document.getElementById("disqualify-fixture-state").textContent), { open: false, category: "Khác", reason: "" });
+assert.deepEqual(JSON.parse(window.document.getElementById("disqualify-fixture-state").textContent), { open: false, category: "Không có nhu cầu", reason: "" });
 await clickText(/^Reopen fixture$/u);
+assert.equal(window.document.querySelector("textarea").value, "", "Discarded reason cannot leak into a fresh intent.");
+assert.equal(window.document.querySelector("select").value, "Không có nhu cầu", "Discarded category resets to the canonical default.");
+await act(async () => {
+  const category = window.document.querySelector("select");
+  Object.getOwnPropertyDescriptor(window.HTMLSelectElement.prototype, "value").set.call(category, "Khác");
+  category.dispatchEvent(new window.Event("change", { bubbles: true }));
+});
 await setField(window.document.querySelector("textarea"), "Pending reason");
 await clickText(/^Xác nhận không đạt$/u);
 await clickText(/^Xác nhận không đạt$/u);
@@ -530,6 +571,7 @@ assert.equal(disqualifyCloses, 3);
 assert.equal(window.document.querySelectorAll('[role="dialog"]').length, 0);
 await clickText(/^Reopen fixture$/u);
 assert.equal(window.document.querySelector("textarea").value, "");
+assert.equal(window.document.querySelector("select").value, "Không có nhu cầu");
 assert.equal(window.document.querySelector('[role="alert"]'), null);
 await escape();
 assert.equal(disqualifyCloses, 4, "Successful save leaves fresh pristine opening state.");

@@ -1,6 +1,6 @@
 import React from "react";
 import { AlertCircle, ChevronDown, ChevronUp, Plus, Trash2, Zap } from "lucide-react";
-import { Button, Checkbox, Input, Modal, Select, Textarea } from "@/shared/components/ui";
+import { Button, Checkbox, Input, Modal, Select, Textarea, ConfirmDialog } from "@/shared/components/ui";
 import { FieldHelp } from "@/guidance/presentation/FieldHelp";
 import { useI18n } from "@/i18n";
 import {
@@ -15,6 +15,12 @@ import type {
   DealLineItem,
   OpportunityStageConfig,
 } from "../../domain/model/deal.types";
+
+import type { Deal } from "../../domain/model/deal.types";
+import { getWorkspaceContextSnapshot, useWorkspaceContextSnapshot } from "@/platform/workspace-context";
+import { registerUnsavedWork } from "@/platform/unsaved-work";
+import { normalizeApplicationError } from "@/shared/domain";
+import { formatApplicationError } from "@/shared/operations";
 
 export type DealFormMode = "create" | "edit";
 export type DealPriority = "LOW" | "MEDIUM" | "HIGH" | "URGENT";
@@ -59,7 +65,9 @@ export interface DealFormModalProps {
   canAssign?: boolean;
   customerNameLocked?: boolean;
   productsEnabled?: boolean;
-  onSubmit(draft: DealFormDraft): void;
+  target?: Deal | null;
+  sourceKey?: string;
+  onSubmit(draft: DealFormDraft, opening: Deal | null, intentId: string, openingSourceKey?: string): void | boolean | Promise<void | boolean>;
   submitting?: boolean;
   error?: string;
 }
@@ -160,8 +168,10 @@ function calculateLineItemTotal(items: readonly SelectedPickerItem[]): number {
 export function DealFormModal({
   isOpen,
   onClose,
-  mode,
+  mode: requestedMode,
   initialValues,
+  target,
+  sourceKey,
   owners,
   stages,
   canAssign = true,
@@ -173,7 +183,12 @@ export function DealFormModal({
 }: DealFormModalProps) {
   const { t, locale } = useI18n();
   const workspaceConfiguration = useWorkspaceOperationalConfiguration();
+  const workspace = useWorkspaceContextSnapshot();
+  const openingWorkspace = React.useRef(workspace.workspaceId);
   const vi = locale === "vi";
+  const openingMode = React.useRef(requestedMode);
+  const mode = openingMode.current;
+  const openingSubmit = React.useRef(onSubmit);
   const draftFactory = React.useCallback(() => createDraft(initialValues, owners, stages, workspaceConfiguration.localeRegion.currencies.baseCurrency), [initialValues, owners, stages, workspaceConfiguration.localeRegion.currencies.baseCurrency]);
   const [draft, setDraft] = React.useState<DealFormDraft>(draftFactory);
   const [showAdvanced, setShowAdvanced] = React.useState(mode === "edit");
@@ -182,15 +197,74 @@ export function DealFormModal({
   const wasOpen = React.useRef(false);
   const productCatalog = React.useMemo(() => getProductCatalogSnapshot(), [isOpen]);
 
+  const opening = React.useRef<Deal | null>(target ? structuredClone(target) : null);
+  const openingSourceKey = React.useRef(sourceKey);
+  const initial = React.useRef(draft);
+  const pending = React.useRef(false);
+  const mounted = React.useRef(true);
+  const cycle = React.useRef(0);
+  const intentId = React.useRef(createDurableId("deal-form"));
+  const [localPending, setLocalPending] = React.useState(false);
+  const [closeConfirm, setCloseConfirm] = React.useState(false);
+  const [saveError, setSaveError] = React.useState("");
+  const canonical = (value: DealFormDraft) => JSON.stringify({ ...value,
+    name: value.name.trim(), customerName: value.customerName.trim(), source: value.source.trim(),
+    pipeline: value.pipeline.trim(), demandSummary: value.demandSummary.trim(), painPoints: value.painPoints.trim(),
+    nextActionSummary: value.nextActionSummary.trim(), notes: value.notes.trim() });
+  const dirty = canonical(draft) !== canonical(initial.current);
+  React.useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   React.useEffect(() => {
-    if (isOpen && !wasOpen.current) {
-      setDraft(draftFactory());
-      setShowAdvanced(mode === "edit");
+    if (!isOpen) {
+      if (wasOpen.current) cycle.current += 1;
+      wasOpen.current = false;
+      return;
+    }
+    if (pending.current || (wasOpen.current && getWorkspaceContextSnapshot().workspaceId !== openingWorkspace.current)) return;
+    if (isOpen && (!wasOpen.current || ((target?.id !== opening.current?.id || requestedMode !== openingMode.current || sourceKey !== openingSourceKey.current) && !dirty && !pending.current))) {
+      opening.current = target ? structuredClone(target) : null;
+      openingMode.current = requestedMode;
+      openingSubmit.current = onSubmit;
+      openingWorkspace.current = getWorkspaceContextSnapshot().workspaceId;
+      openingSourceKey.current = sourceKey;
+      cycle.current += 1;
+      intentId.current = createDurableId("deal-form");
+      const next = structuredClone(draftFactory());
+      initial.current = next;
+      setDraft(next);
+      setShowAdvanced(requestedMode === "edit");
       setValidationErrors({});
+      setSaveError("");
+      setCloseConfirm(false);
       setIsPickerOpen(false);
     }
     wasOpen.current = isOpen;
-  }, [draftFactory, isOpen, mode]);
+  }, [draftFactory, isOpen, requestedMode, target?.id, sourceKey, dirty, localPending]);
+  React.useEffect(() => {
+    if (isOpen && workspace.workspaceId !== openingWorkspace.current && !dirty && !pending.current) onClose();
+  });
+  const discard = () => {
+    if (pending.current || submitting || !mounted.current) return;
+    setDraft(initial.current);
+    setIsPickerOpen(false);
+    setCloseConfirm(false);
+    onClose();
+  };
+  const requestClose = () => { if (!pending.current && !submitting) { if (dirty) setCloseConfirm(true); else discard(); } };
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const activeCycle = cycle.current;
+    const unregister = registerUnsavedWork({
+      id: `deal-form:${opening.current?.id ?? "new"}:${activeCycle}`,
+      title: opening.current?.name ?? (vi ? "Tạo cơ hội" : "Create opportunity"),
+      isDirty: dirty || localPending || submitting,
+      save: () => !mounted.current || pending.current || submitting || cycle.current !== activeCycle || getWorkspaceContextSnapshot().workspaceId !== openingWorkspace.current ? Promise.resolve(false) : save(),
+      canDiscard: () => !pending.current && !submitting && mounted.current && cycle.current === activeCycle,
+      discard,
+    });
+    const warn = (event: BeforeUnloadEvent) => { if (dirty || pending.current) { event.preventDefault(); event.returnValue = ""; } };
+    window.addEventListener("beforeunload", warn);
+    return () => { unregister(); window.removeEventListener("beforeunload", warn); };
+  });
 
   const update = React.useCallback(<K extends keyof DealFormDraft>(field: K, value: DealFormDraft[K]) => {
     setDraft((current) => ({ ...current, [field]: value }));
@@ -231,8 +305,8 @@ export function DealFormModal({
     setDraft((current) => ({ ...current, lineItems: items, amount, expectedBudget: items.length > 0 ? amount : current.expectedBudget }));
   };
 
-  const submit = (event: React.FormEvent) => {
-    event.preventDefault();
+  const save = async (): Promise<boolean> => {
+    if (pending.current || submitting || !mounted.current || !isOpen || getWorkspaceContextSnapshot().workspaceId !== openingWorkspace.current) return false;
     const nextErrors: Record<string, string> = {};
     if (!draft.name.trim()) nextErrors.name = vi ? "Vui lòng nhập tên cơ hội." : "Enter the opportunity name.";
     if (!draft.customerName.trim()) nextErrors.customerName = vi ? "Vui lòng chọn hoặc nhập khách hàng liên quan." : "Select or enter the related customer.";
@@ -261,10 +335,15 @@ export function DealFormModal({
     if (Object.keys(nextErrors).length > 0) {
       setValidationErrors(nextErrors);
       focusFirstInvalidField(nextErrors);
-      return;
+      return false;
     }
     setValidationErrors({});
-    onSubmit({
+    const activeCycle = cycle.current;
+    pending.current = true;
+    setLocalPending(true);
+    setSaveError("");
+    try {
+      const saved = await openingSubmit.current({
       ...draft,
       name: draft.name.trim(),
       customerName: draft.customerName.trim(),
@@ -274,8 +353,29 @@ export function DealFormModal({
       painPoints: draft.painPoints.trim(),
       nextActionSummary: draft.nextActionSummary.trim(),
       notes: draft.notes.trim(),
-    });
+      }, opening.current, intentId.current, openingSourceKey.current);
+      if (saved === false || !mounted.current || cycle.current !== activeCycle || getWorkspaceContextSnapshot().workspaceId !== openingWorkspace.current) return false;
+      initial.current = draft;
+      onClose();
+      return true;
+    } catch (error) {
+      if (mounted.current && cycle.current === activeCycle) {
+        const normalized = normalizeApplicationError(error);
+        const aliases: Record<string, string> = { buyerRef: "customerName", stageCode: "stage", opportunityScore: "probability", lineItems: "products", interestedProductIds: "products" };
+        const errors = Object.fromEntries(Object.entries(normalized.fieldErrors ?? {}).map(([field, messages]) => {
+          const root = field.split(/[.[\/]/)[0] ?? field;
+          return [aliases[root] ?? root, messages.join(" ")];
+        }));
+        setValidationErrors(errors);
+        focusFirstInvalidField(errors);
+        setSaveError(formatApplicationError(normalized, { locale }));
+      }
+      return false;
+    } finally {
+      if (mounted.current) { pending.current = false; setLocalPending(false); }
+    }
   };
+  const submit = (event: React.FormEvent) => { event.preventDefault(); void save(); };
 
   const activeStages = stages.filter((stage) => stage.isActive && (mode === "edit" || stage.category === "open")).sort((left, right) => left.order - right.order);
   return (
@@ -283,11 +383,13 @@ export function DealFormModal({
       <Modal
         variant="form"
         isOpen={isOpen}
-        onClose={onClose}
+        onClose={requestClose}
         title={mode === "create" ? (vi ? "Tạo cơ hội" : "Create opportunity") : (vi ? "Chỉnh sửa cơ hội" : "Edit opportunity")}
         size="lg"
       >
         <form id={`deal-${mode}-form`} onSubmit={submit} className="crm-form-surface space-y-5 text-left" data-guidance-id="deals.form.canonical">
+          {saveError ? <div role="alert" className="text-xs text-rose-600"><p>{saveError}</p><ul>{Object.entries(validationErrors).filter(([, message]) => message).map(([field, message]) => <li key={field}>{message}</li>)}</ul></div> : null}
+          <fieldset disabled={submitting || localPending} className="contents" data-deal-target-id={opening.current?.id ?? "new"} data-deal-source-key={openingSourceKey.current}>
           {error ? <p className="text-xs text-slate-600" role="alert">{error}</p> : null}
 
           {mode === "create" ? (
@@ -356,7 +458,7 @@ export function DealFormModal({
           ) : null}
 
           <section className="space-y-3 rounded-xl border border-slate-200 p-4" data-guidance-id="deals.form.next-step">
-            <Checkbox id={`deal-${mode}-follow-up-task`} label={vi ? "Tạo công việc theo dõi sau khi lưu" : "Create a follow-up task after saving"} checked={draft.createFollowUpTask} onChange={(event) => {
+            <Checkbox disabled={mode === "edit" && Boolean(initial.current.nextActionAt)} id={`deal-${mode}-follow-up-task`} label={vi ? "Tạo công việc theo dõi sau khi lưu" : "Create a follow-up task after saving"} checked={draft.createFollowUpTask} onChange={(event) => {
               update("createFollowUpTask", event.target.checked);
               if (!event.target.checked) setValidationErrors((current) => ({ ...current, nextActionSummary: "", nextActionAt: "" }));
             }} />
@@ -370,22 +472,29 @@ export function DealFormModal({
 
           {(mode === "edit" || showAdvanced) ? (
             <div className="space-y-4 border-t border-slate-100 pt-5">
+              <p className="text-xs text-slate-500">{vi ? "Nguồn, pipeline, mức ưu tiên, loại cơ hội và ngân sách tham chiếu chỉ đọc vì lệnh lưu hiện không hỗ trợ các trường này." : "Source, pipeline, priority, opportunity type and reference budget are read-only because the save contract does not support them."}</p>
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                <Input label={vi ? "Nguồn" : "Source"} value={draft.source} onChange={(event) => update("source", event.target.value)} />
-                <Input label="Pipeline" value={draft.pipeline} onChange={(event) => update("pipeline", event.target.value)} />
+                <Input disabled label={vi ? "Nguồn" : "Source"} value={draft.source} onChange={(event) => update("source", event.target.value)} />
+                <Input disabled label="Pipeline" value={draft.pipeline} onChange={(event) => update("pipeline", event.target.value)} />
                 <Select label={vi ? "Tiền tệ" : "Currency"} value={draft.currency} onChange={(event) => update("currency", event.target.value)}>{workspaceConfiguration.localeRegion.currencies.enabledCurrencies.map((code) => <option key={code} value={code}>{code}</option>)}</Select>
-                <Select label={vi ? "Mức ưu tiên" : "Priority"} value={draft.priority} onChange={(event) => update("priority", event.target.value as DealPriority)}><option value="LOW">{vi ? "Thấp" : "Low"}</option><option value="MEDIUM">{vi ? "Trung bình" : "Medium"}</option><option value="HIGH">{vi ? "Cao" : "High"}</option><option value="URGENT">{vi ? "Khẩn cấp" : "Urgent"}</option></Select>
-                <Select label={vi ? "Loại cơ hội" : "Opportunity type"} value={draft.opportunityType} onChange={(event) => update("opportunityType", event.target.value as DealOpportunityType)}><option value="new_sale">{vi ? "Bán mới" : "New sale"}</option><option value="upsell">Upsell</option><option value="cross_sell">Cross-sell</option><option value="renewal">{vi ? "Gia hạn" : "Renewal"}</option><option value="consulting">{vi ? "Tư vấn" : "Consulting"}</option></Select>
-                <Input label={vi ? "Ngân sách dự kiến" : "Expected budget"} type="number" min="0" value={String(draft.expectedBudget)} onChange={(event) => update("expectedBudget", Number(event.target.value) || 0)} />
+                <Select disabled label={vi ? "Mức ưu tiên" : "Priority"} value={draft.priority} onChange={(event) => update("priority", event.target.value as DealPriority)}><option value="LOW">{vi ? "Thấp" : "Low"}</option><option value="MEDIUM">{vi ? "Trung bình" : "Medium"}</option><option value="HIGH">{vi ? "Cao" : "High"}</option><option value="URGENT">{vi ? "Khẩn cấp" : "Urgent"}</option></Select>
+                <Select disabled label={vi ? "Loại cơ hội" : "Opportunity type"} value={draft.opportunityType} onChange={(event) => update("opportunityType", event.target.value as DealOpportunityType)}><option value="new_sale">{vi ? "Bán mới" : "New sale"}</option><option value="upsell">Upsell</option><option value="cross_sell">Cross-sell</option><option value="renewal">{vi ? "Gia hạn" : "Renewal"}</option><option value="consulting">{vi ? "Tư vấn" : "Consulting"}</option></Select>
+                <Input disabled label={vi ? "Ngân sách dự kiến" : "Expected budget"} type="number" min="0" value={String(draft.expectedBudget)} onChange={(event) => update("expectedBudget", Number(event.target.value) || 0)} />
               </div>
               <Input label={vi ? "Rào cản / pain points" : "Pain points"} value={draft.painPoints} onChange={(event) => update("painPoints", event.target.value)} />
               <Textarea label={vi ? "Ghi chú nội bộ" : "Internal notes"} value={draft.notes} onChange={(event) => update("notes", event.target.value)} rows={3} />
             </div>
           ) : null}
 
-          <div className="crm-form-action-bar flex justify-end gap-2 border-t border-slate-100 pt-4"><Button type="button" variant="secondary" onClick={onClose}>{vi ? "Hủy" : "Cancel"}</Button><Button type="submit" variant="primary" loading={submitting}>{mode === "create" ? (vi ? "Tạo cơ hội" : "Create opportunity") : (vi ? "Lưu thay đổi" : "Save changes")}</Button></div>
+          </fieldset>
+          <div className="crm-form-action-bar flex justify-end gap-2 border-t border-slate-100 pt-4"><Button type="button" variant="secondary" onClick={requestClose}>{vi ? "Hủy" : "Cancel"}</Button><Button type="submit" variant="primary" loading={submitting || localPending}>{mode === "create" ? (vi ? "Tạo cơ hội" : "Create opportunity") : (vi ? "Lưu thay đổi" : "Save changes")}</Button></div>
         </form>
       </Modal>
+      <ConfirmDialog isOpen={closeConfirm} onClose={() => setCloseConfirm(false)} onConfirm={discard}
+        title={vi ? "Bỏ thay đổi chưa lưu?" : "Discard unsaved changes?"}
+        message={vi ? "Các thay đổi chưa được lưu." : "Your changes have not been saved."}
+        confirmText={vi ? "Bỏ thay đổi" : "Discard changes"}
+        cancelText={vi ? "Tiếp tục chỉnh sửa" : "Keep editing"} type="warning" />
       <ProductPickerModal id={`deal-${mode}-product-picker`} isOpen={isPickerOpen} onClose={() => setIsPickerOpen(false)} onApply={(items) => { applyLineItems(items); setValidationErrors((current) => ({ ...current, demandSummary: "", products: "" })); }} products={productCatalog} initialSelected={draft.lineItems} context="deal" />
     </>
   );

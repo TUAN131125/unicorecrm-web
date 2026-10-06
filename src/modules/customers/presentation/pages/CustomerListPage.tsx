@@ -278,8 +278,9 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
     if (selectedRows.length > 0) setArchiveTargets(selectedRows.filter((row) => row.customer.status !== "ARCHIVED"));
   };
 
-  const confirmArchive = async () => {
+  const confirmArchive = async (isCurrent: () => boolean = () => true) => {
     await Promise.all(archiveTargets.map((row) => archiveCustomerProductionCommand(row.customer.id)));
+    if (!isCurrent()) return;
     setArchiveTargets([]);
     setSelectedCustomerIds([]);
     showToast(isVi ? "Đã lưu trữ khách hàng được chọn." : "Selected customers archived.");
@@ -450,6 +451,7 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
         isOpen={savedViewDialog !== null}
         onClose={() => setSavedViewDialog(null)}
         mode={savedViewDialog?.mode ?? "create"}
+        targetId={savedViewDialog?.mode === "edit" ? savedViewDialog.viewKey : undefined}
         name={viewName}
         onNameChange={(name) => { setViewName(name); if (viewNameError) setViewNameError(""); }}
         onSubmit={handleSubmitSavedView}

@@ -1,8 +1,12 @@
+import { useRef as useWorkspaceBindingRef } from "react";
+import { useWorkspaceContextSnapshot as useWorkflowWorkspace } from "@/platform/workspace-context";
+import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
+import { useTargetBoundWorkflow } from "@/shared/presentation/useTargetBoundWorkflow";
 import { backendUnavailableMessage, formatApplicationError } from "@/shared/operations";
 import React from "react";
 import { BellRing, BookOpenText, CalendarClock, CircleAlert, CreditCard, Landmark, Link2, MessageSquareText, ReceiptText, RotateCcw, ShieldAlert, UserRound } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Button, Card, Input, Modal, SectionHeader, Select } from "@/shared/components/ui";
+import { Button, Card, ConfirmDialog, Input, Modal, SectionHeader, Select } from "@/shared/components/ui";
 import { RecordDetailFrame, RecordDetailHeader } from "@/components/crm/detail-archetype";
 import {
   ListDataTable,
@@ -63,7 +67,22 @@ const emptyCollectionForm = (): CollectionForm => ({
 });
 
 export const ReceivableDetailPage: React.FC = () => {
-  const { invoiceId = "" } = useParams();
+  const { invoiceId: routeTargetId = "" } = useParams();
+  const targetLifecycle = useTargetBoundWorkflow(routeTargetId, "receivable-detail-draft");
+  const workflowWorkspace = useWorkflowWorkspace().workspaceId;
+  const currentWorkflowWorkspace = useWorkspaceBindingRef(workflowWorkspace);
+  currentWorkflowWorkspace.current = workflowWorkspace;
+  const openingWorkspace = useWorkspaceBindingRef({ cycle: targetLifecycle.cycle, id: workflowWorkspace });
+  if (openingWorkspace.current.cycle !== targetLifecycle.cycle) openingWorkspace.current = { cycle: targetLifecycle.cycle, id: workflowWorkspace };
+  const ownsWorkspace = () => openingWorkspace.current.id === currentWorkflowWorkspace.current;
+  const workflow = { ...targetLifecycle,
+    begin: () => ownsWorkspace() && targetLifecycle.begin(),
+    isCurrent: () => ownsWorkspace() && targetLifecycle.isCurrent(),
+    register: (dirty: boolean, reset: () => void, save: () => Promise<boolean>) => {
+      targetLifecycle.register(dirty, reset, () => ownsWorkspace() ? save() : Promise.resolve(false));
+    },
+  };
+  const invoiceId = workflow.targetId ?? "";
   const navigate = useNavigate();
   const { locale } = useI18n();
   const { activeWorkspace } = usePlatformState();
@@ -83,7 +102,9 @@ export const ReceivableDetailPage: React.FC = () => {
   const [busy, setBusy] = React.useState(false);
   const text = (vi: string, en: string) => locale === "vi" ? vi : en;
   const path = (value: string) => toWorkspacePath(activeWorkspace.workspaceKey, "crm", value);
-  const detail = receivableQuery.data;
+  const openingDetail = React.useRef(receivableQuery.data);
+  if (openingDetail.current?.invoice.id !== invoiceId || (!allocationOpen && !collectionOpen && !reversalTarget && !workflow.pending)) openingDetail.current = receivableQuery.data;
+  const detail = openingDetail.current;
   const receivable = detail?.receivable;
   const invoice = detail?.invoice;
   const buyerPresentation = receivable ? resolveBuyerPresentation(receivable.buyerRef, receivable.buyerName) : undefined;
@@ -114,6 +135,21 @@ export const ReceivableDetailPage: React.FC = () => {
     return [...paymentOptions, ...creditOptions];
   }, [allocations, customerCredits, invoice, locale, paymentRecords, receivable, text]);
 
+  const draftFingerprint = JSON.stringify({ sourceKey, amount, collectionForm, reversalReasonCode, reversalNote });
+  const [baseline, setBaseline] = React.useState(draftFingerprint);
+  const wasInteractionOpen = React.useRef(false);
+  const interactionOpen = allocationOpen || collectionOpen || Boolean(reversalTarget);
+  React.useEffect(() => {
+    if (interactionOpen && !wasInteractionOpen.current) setBaseline(draftFingerprint);
+    wasInteractionOpen.current = interactionOpen;
+  }, [draftFingerprint, interactionOpen]);
+  const dirty = interactionOpen && baseline !== draftFingerprint;
+  const resetDraft = () => { setAllocationOpen(false); setCollectionOpen(false); setReversalTarget(null); setSourceKey(""); setAmount(""); setCollectionForm(emptyCollectionForm()); setReversalNote(""); setReversalReasonCode(reversalReasons[0]?.code ?? ""); setError(""); };
+  const guard = useUnsavedChangesGuard(resetDraft);
+  React.useEffect(() => guard.setIsDirty(dirty), [dirty, guard.setIsDirty]);
+  workflow.register(dirty, resetDraft, async () => false);
+  React.useEffect(resetDraft, [invoiceId]);
+  const closeDraft = () => { if (!workflow.pending) guard.requestClose(); };
   if (receivableQuery.loading && !receivableQuery.data) {
     return <RecordDetailFrame id="receivable-detail-loading"><Card className="p-8 text-center text-sm text-slate-600"><p>{text("Đang tải công nợ authoritative...", "Loading the authoritative receivable...")}</p><Button className="mt-4" variant="secondary" onClick={receivableQuery.cancel}>{text("Hủy tải", "Cancel loading")}</Button></Card></RecordDetailFrame>;
   }
@@ -127,6 +163,7 @@ export const ReceivableDetailPage: React.FC = () => {
   }
 
   const openAllocation = () => {
+    if (interactionOpen || workflow.pending) return;
     const first = sourceOptions[0];
     setSourceKey(first?.key ?? "");
     setAmount(first ? minMoney(first.available, receivable.outstandingAmount).amount : "");
@@ -149,11 +186,14 @@ export const ReceivableDetailPage: React.FC = () => {
     }
     const source = sourceOptions.find((item) => item.key === sourceKey);
     if (!source) return setError(text("Chọn nguồn thanh toán còn khả dụng.", "Select an available payment source."));
+    let admitted = false;
     try {
       const allocationAmount = money(amount, invoice.currency);
       if (compareMoney(allocationAmount, money("0", invoice.currency)) <= 0) throw new Error(text("Số tiền phải lớn hơn 0.", "Amount must be greater than zero."));
       if (compareMoney(allocationAmount, source.available) > 0) throw new Error(text("Số tiền vượt phần còn khả dụng của nguồn.", "Amount exceeds the source availability."));
       if (compareMoney(allocationAmount, receivable.outstandingAmount) > 0) throw new Error(text("Số tiền vượt công nợ còn lại.", "Amount exceeds the outstanding receivable."));
+      if (!workflow.begin()) return;
+      admitted = true;
       setBusy(true);
       await allocateReceivableCanonical({
         invoiceId: invoice.id,
@@ -165,16 +205,19 @@ export const ReceivableDetailPage: React.FC = () => {
         idempotencyKey: `receivable_${invoice.id}_${crypto.randomUUID()}`,
         now: new Date().toISOString(),
       });
+      if (!workflow.isCurrent()) return;
       setAllocationOpen(false);
       notifyProduct(text("Đã phân bổ vào hóa đơn. Công nợ được tính lại từ ledger.", "Allocated to the invoice. Receivables were recalculated from the ledger."), "success");
     } catch (caught) {
       setError(formatApplicationError(caught, { locale, fallbackMessage: text("Không thể phân bổ thanh toán.", "Payment could not be allocated.") }));
     } finally {
-      setBusy(false);
+      if (workflow.isCurrent()) setBusy(false);
+      if (admitted) workflow.finish();
     }
   };
 
   const openReversal = (allocationId: string, version: number) => {
+    if (interactionOpen || workflow.pending) return;
     setReversalTarget({ allocationId, version });
     setReversalReasonCode(reversalReasons[0]?.code ?? "");
     setReversalNote("");
@@ -185,6 +228,7 @@ export const ReceivableDetailPage: React.FC = () => {
     if (!reversalTarget) return;
     if (!reversalReasonCode) return setError(text("Chọn mã lý do đảo phân bổ.", "Select an allocation reversal reason code."));
     if (!reversalNote.trim()) return setError(text("Ghi chú lý do đảo phân bổ là bắt buộc.", "An allocation reversal note is required."));
+    if (!workflow.begin()) return;
     try {
       setBusy(true);
       await reversePaymentAllocationCanonical(reversalTarget.allocationId, {
@@ -194,16 +238,19 @@ export const ReceivableDetailPage: React.FC = () => {
         actorId: access.memberId || access.accountId || "current-user",
       });
       await receivableQuery.refresh();
+      if (!workflow.isCurrent()) return;
       setReversalTarget(null);
       notifyProduct(text("Đã đảo phân bổ và lưu lý do audit.", "Allocation reversed with an audited reason."), "success");
     } catch (caught) {
       setError(formatApplicationError(caught, { locale, fallbackMessage: text("Không thể đảo phân bổ.", "Allocation could not be reversed.") }));
     } finally {
-      setBusy(false);
+      if (workflow.isCurrent()) setBusy(false);
+      workflow.finish();
     }
   };
 
   const openCollectionAction = (type: ReceivableCollectionActivityType) => {
+    if (interactionOpen || workflow.pending) return;
     setCollectionForm({ ...emptyCollectionForm(), type });
     setError("");
     setCollectionOpen(true);
@@ -324,21 +371,24 @@ export const ReceivableDetailPage: React.FC = () => {
         </div>}
       </Card>
 
-      <Modal isOpen={allocationOpen} onClose={() => setAllocationOpen(false)} title={text("Phân bổ vào hóa đơn", "Allocate to invoice")} size="sm" variant="form" footer={<><Button variant="secondary" onClick={() => setAllocationOpen(false)}>{text("Hủy", "Cancel")}</Button><Button actionIntent="confirm" loading={busy} onClick={submitAllocation}>{text("Xác nhận phân bổ", "Confirm allocation")}</Button></>}>
-        <div className="space-y-4"><p className="rounded-xl border border-violet-200 bg-violet-50 p-4 text-sm text-violet-800">{receivable.invoiceNumber} · {formatMoney(receivable.outstandingAmount)}</p><Select label={text("Nguồn thanh toán", "Payment source")} value={sourceKey} onChange={(event) => selectSource(event.target.value)}><option value="">{text("Chọn nguồn", "Select source")}</option>{sourceOptions.map((source) => <option key={source.key} value={source.key}>{source.label}</option>)}</Select><Input label={text(`Số tiền (${invoice.currency})`, `Amount (${invoice.currency})`)} value={amount} onChange={(event) => { setAmount(event.target.value); setError(""); }} />{sourceOptions.length === 0 && <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{text("Không có khoản thu hoặc tín dụng khách hàng phù hợp với người mua và tiền tệ của hóa đơn.", "No payment or customer credit matches the invoice buyer and currency.")}</p>}{error && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}</div>
+      <ConfirmDialog isOpen={guard.isConfirmOpen} onClose={() => guard.setIsConfirmOpen(false)} onConfirm={() => { if (!workflow.pending) guard.confirmDiscard(); }}
+        title={text("Bỏ thay đổi chưa lưu?", "Discard unsaved changes?")} message={text("Các thay đổi chưa được lưu. Bạn có muốn đóng biểu mẫu?", "Your changes have not been saved. Close the form?")}
+        confirmText={text("Bỏ thay đổi", "Discard changes")} cancelText={text("Tiếp tục chỉnh sửa", "Keep editing")} type="warning" />
+      <Modal isOpen={allocationOpen} onClose={closeDraft} title={text("Phân bổ vào hóa đơn", "Allocate to invoice")} size="sm" variant="form" footer={<><Button variant="secondary" onClick={closeDraft}>{text("Hủy", "Cancel")}</Button><Button actionIntent="confirm" loading={busy} onClick={submitAllocation}>{text("Xác nhận phân bổ", "Confirm allocation")}</Button></>}>
+        <div className="space-y-4"><p className="rounded-xl border border-violet-200 bg-violet-50 p-4 text-sm text-violet-800">{receivable.invoiceNumber} · {formatMoney(receivable.outstandingAmount)}</p><Select disabled={workflow.pending} label={text("Nguồn thanh toán", "Payment source")} value={sourceKey} onChange={(event) => selectSource(event.target.value)}><option value="">{text("Chọn nguồn", "Select source")}</option>{sourceOptions.map((source) => <option key={source.key} value={source.key}>{source.label}</option>)}</Select><Input disabled={workflow.pending} label={text(`Số tiền (${invoice.currency})`, `Amount (${invoice.currency})`)} value={amount} onChange={(event) => { setAmount(event.target.value); setError(""); }} />{sourceOptions.length === 0 && <p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{text("Không có khoản thu hoặc tín dụng khách hàng phù hợp với người mua và tiền tệ của hóa đơn.", "No payment or customer credit matches the invoice buyer and currency.")}</p>}{error && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}</div>
       </Modal>
 
-      <Modal isOpen={Boolean(reversalTarget)} onClose={() => setReversalTarget(null)} title={text("Đảo phân bổ", "Reverse allocation")} size="sm" variant="form" footer={<><Button variant="secondary" onClick={() => setReversalTarget(null)}>{text("Hủy", "Cancel")}</Button><Button actionIntent="destructive" loading={busy} onClick={reverseAllocation}>{text("Đảo phân bổ", "Reverse allocation")}</Button></>}>
-        <div className="space-y-4"><p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{text("Allocation sẽ chuyển sang REVERSED. Số dư công nợ và phần tiền khả dụng được tính lại từ ledger.", "The allocation will move to REVERSED. Receivables and source availability will be recalculated from the ledger.")}</p><Select label={text("Mã lý do", "Reason code")} value={reversalReasonCode} onChange={(event) => { setReversalReasonCode(event.target.value); setError(""); }}><option value="">{text("Chọn lý do", "Select a reason")}</option>{reversalReasons.map((reason) => <option key={reason.code} value={reason.code}>{locale === "vi" ? reason.labelVi : reason.labelEn}</option>)}</Select><label className="block"><span className="mb-1.5 block text-xs font-bold text-slate-700">{text("Ghi chú bắt buộc", "Required note")}</span><textarea className="min-h-28 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm" value={reversalNote} onChange={(event) => { setReversalNote(event.target.value); setError(""); }} /></label>{error && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}</div>
+      <Modal isOpen={Boolean(reversalTarget)} onClose={closeDraft} title={text("Đảo phân bổ", "Reverse allocation")} size="sm" variant="form" footer={<><Button variant="secondary" onClick={closeDraft}>{text("Hủy", "Cancel")}</Button><Button actionIntent="destructive" loading={busy} onClick={reverseAllocation}>{text("Đảo phân bổ", "Reverse allocation")}</Button></>}>
+        <div className="space-y-4"><p className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{text("Allocation sẽ chuyển sang REVERSED. Số dư công nợ và phần tiền khả dụng được tính lại từ ledger.", "The allocation will move to REVERSED. Receivables and source availability will be recalculated from the ledger.")}</p><Select disabled={workflow.pending} label={text("Mã lý do", "Reason code")} value={reversalReasonCode} onChange={(event) => { setReversalReasonCode(event.target.value); setError(""); }}><option value="">{text("Chọn lý do", "Select a reason")}</option>{reversalReasons.map((reason) => <option key={reason.code} value={reason.code}>{locale === "vi" ? reason.labelVi : reason.labelEn}</option>)}</Select><label className="block"><span className="mb-1.5 block text-xs font-bold text-slate-700">{text("Ghi chú bắt buộc", "Required note")}</span><textarea disabled={workflow.pending} className="min-h-28 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm" value={reversalNote} onChange={(event) => { setReversalNote(event.target.value); setError(""); }} /></label>{error && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}</div>
       </Modal>
 
-      <Modal isOpen={collectionOpen} onClose={() => setCollectionOpen(false)} title={actionLabel[collectionForm.type]} size="md" variant="form" footer={<><Button variant="secondary" onClick={() => setCollectionOpen(false)}>{text("Hủy", "Cancel")}</Button><Button actionIntent="save" onClick={submitCollectionAction}>{text("Ghi nhận", "Record")}</Button></>}>
+      <Modal isOpen={collectionOpen} onClose={closeDraft} title={actionLabel[collectionForm.type]} size="md" variant="form" footer={<><Button variant="secondary" onClick={closeDraft}>{text("Hủy", "Cancel")}</Button><Button actionIntent="save" onClick={submitCollectionAction}>{text("Ghi nhận", "Record")}</Button></>}>
         <div className="space-y-4">
-          <Select label={text("Loại hoạt động", "Activity type")} value={collectionForm.type} onChange={(event) => setCollectionForm((current) => ({ ...current, type: event.target.value as ReceivableCollectionActivityType }))}>{Object.entries(actionLabel).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select>
-          <label className="block"><span className="mb-1.5 block text-xs font-bold text-slate-700">{text("Nội dung / ghi chú", "Content / note")}</span><textarea className="min-h-28 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm" value={collectionForm.note} onChange={(event) => { setCollectionForm((current) => ({ ...current, note: event.target.value })); setError(""); }} /></label>
-          <Select label={text("Kênh", "Channel")} value={collectionForm.channel} onChange={(event) => setCollectionForm((current) => ({ ...current, channel: event.target.value as CollectionForm["channel"] }))}><option value="IN_APP">In-app</option><option value="EMAIL">Email</option><option value="SMS">SMS</option><option value="ZALO">Zalo</option><option value="PHONE">Phone</option><option value="OTHER">Other</option></Select>
-          <Input label={text("Người phụ trách", "Collection owner")} value={collectionForm.ownerId} onChange={(event) => setCollectionForm((current) => ({ ...current, ownerId: event.target.value }))} />
-          <Input type="date" label={text("Ngày theo dõi / cam kết", "Follow-up / promise date")} value={collectionForm.dueAt} onChange={(event) => setCollectionForm((current) => ({ ...current, dueAt: event.target.value }))} />
+          <Select disabled={workflow.pending} label={text("Loại hoạt động", "Activity type")} value={collectionForm.type} onChange={(event) => setCollectionForm((current) => ({ ...current, type: event.target.value as ReceivableCollectionActivityType }))}>{Object.entries(actionLabel).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select>
+          <label className="block"><span className="mb-1.5 block text-xs font-bold text-slate-700">{text("Nội dung / ghi chú", "Content / note")}</span><textarea disabled={workflow.pending} className="min-h-28 w-full rounded-xl border border-slate-300 bg-white p-3 text-sm" value={collectionForm.note} onChange={(event) => { setCollectionForm((current) => ({ ...current, note: event.target.value })); setError(""); }} /></label>
+          <Select disabled={workflow.pending} label={text("Kênh", "Channel")} value={collectionForm.channel} onChange={(event) => setCollectionForm((current) => ({ ...current, channel: event.target.value as CollectionForm["channel"] }))}><option value="IN_APP">In-app</option><option value="EMAIL">Email</option><option value="SMS">SMS</option><option value="ZALO">Zalo</option><option value="PHONE">Phone</option><option value="OTHER">Other</option></Select>
+          <Input disabled={workflow.pending} label={text("Người phụ trách", "Collection owner")} value={collectionForm.ownerId} onChange={(event) => setCollectionForm((current) => ({ ...current, ownerId: event.target.value }))} />
+          <Input disabled={workflow.pending} type="date" label={text("Ngày theo dõi / cam kết", "Follow-up / promise date")} value={collectionForm.dueAt} onChange={(event) => setCollectionForm((current) => ({ ...current, dueAt: event.target.value }))} />
           {error && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
         </div>
       </Modal>

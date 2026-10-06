@@ -1,3 +1,4 @@
+import { useOrderFormLifecycle } from "./useOrderFormLifecycle";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { ArrowLeft, CreditCard, FileText, Package, Plus, Save, ShoppingBag, Trash2, Truck, UserRound } from "lucide-react";
@@ -38,7 +39,6 @@ import { useCustomerSnapshots } from "../hooks/useCustomerSnapshots";
 import { useOrders } from "../hooks/useOrders";
 import { getQuoteConversionIssues } from "@/modules/quotes";
 import { getDealStagesSnapshot, isLostStage } from "@/modules/deals";
-import { registerUnsavedWork } from "@/platform/unsaved-work";
 import { useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
 import {
   buildOrderPaymentAgreement,
@@ -72,8 +72,12 @@ export interface OrderFormPageProps {
 
 export function useOrderFormController(props: OrderFormPageProps) {
   const { contacts, quotes = [], deals = [], products = [] } = props;
-  const { orderId } = useParams();
-  const [searchParams] = useSearchParams();
+  const { orderId: routeTargetId } = useParams();
+  const [routeSearchParams] = useSearchParams();
+  const lifecycle = useOrderFormLifecycle(`${routeTargetId ?? ""}|${routeSearchParams.toString()}`);
+  const separator = lifecycle.targetId?.indexOf("|") ?? 0;
+  const orderId = lifecycle.targetId?.slice(0, separator) || undefined;
+  const searchParams = useMemo(() => new URLSearchParams(lifecycle.targetId?.slice(separator + 1) ?? ""), [lifecycle.targetId, separator]);
   const navigate = useNavigate();
   const { t, locale } = useI18n();
   const access = useEffectiveAccess();
@@ -98,10 +102,14 @@ export function useOrderFormController(props: OrderFormPageProps) {
   const organizationIdParam = searchParams.get("organizationId") || "";
   const duplicateIdParam = searchParams.get("duplicateId") || "";
 
-  const orderToEdit = useMemo(() => {
+  const liveOrderToEdit = useMemo(() => {
     if (!orderId) return undefined;
     return Object.values(orders).flat().find((order) => order.id === orderId);
   }, [orderId, orders]);
+
+  const openingOrder = useRef(liveOrderToEdit);
+  if (openingOrder.current?.id !== orderId) openingOrder.current = liveOrderToEdit ? structuredClone(liveOrderToEdit) : undefined;
+  const orderToEdit = openingOrder.current;
 
   const [customerId, setCustomerId] = useState("");
   const [contactId, setContactId] = useState("");
@@ -251,6 +259,7 @@ export function useOrderFormController(props: OrderFormPageProps) {
   const prefillKey = isEditMode ? `edit:${orderId}` : `create:${searchParams.toString()}`;
   useEffect(() => {
     if (initializedPrefillKeyRef.current === prefillKey) return;
+    if (!orderToEdit && initializedPrefillKeyRef.current !== null) orderIdRef.current = nextOrderFormId("ord");
 
     if (isEditMode && orderToEdit) {
       setCustomerId(orderToEdit.customerId || "");
@@ -440,7 +449,7 @@ export function useOrderFormController(props: OrderFormPageProps) {
 
     initializedPrefillKeyRef.current = prefillKey;
     setDraftHydrated(true);
-  }, [contacts, customers, deals, duplicateIdParam, isEditMode, locale, orderToEdit, orders, organizationIdParam, prefillKey, products, quotes, searchParams]);
+  }, [draftHydrated, contacts, customers, deals, duplicateIdParam, isEditMode, locale, orderToEdit, orders, organizationIdParam, prefillKey, products, quotes, searchParams]);
 
   useEffect(() => {
     if (customerId && contactId && contacts.length > 0 && !filteredContacts.some((contact) => contact.id === contactId)) setContactId("");
@@ -553,27 +562,23 @@ export function useOrderFormController(props: OrderFormPageProps) {
     if (draftHydrated && baselineFingerprintRef.current === null) baselineFingerprintRef.current = draftFingerprint;
   }, [draftFingerprint, draftHydrated]);
 
-  const hasUnsavedChanges = !isEditMode && draftHydrated && !draftCommitted
+  const baselineCycle = useRef(lifecycle.cycle);
+  useEffect(() => {
+    if (baselineCycle.current === lifecycle.cycle) return;
+    baselineCycle.current = lifecycle.cycle; baselineFingerprintRef.current = null; initializedPrefillKeyRef.current = null;
+    if (!orderToEdit) orderIdRef.current = nextOrderFormId("ord");
+    setDraftCommitted(false); setDraftHydrated(false);
+  }, [lifecycle.cycle, orderToEdit]);
+  const hasUnsavedChanges = draftHydrated && !draftCommitted
     && baselineFingerprintRef.current !== null
     && baselineFingerprintRef.current !== draftFingerprint;
 
-  useEffect(() => registerUnsavedWork({
-    id: `order-form:${orderIdRef.current}`,
-    title: locale === "vi" ? "Đơn hàng chưa lưu" : "Unsaved Order",
-    isDirty: hasUnsavedChanges,
-    save: () => saveHandlerRef.current(),
-    discard: () => { baselineFingerprintRef.current = draftFingerprint; },
-  }), [draftFingerprint, hasUnsavedChanges, locale]);
-
-  useEffect(() => {
-    const listener = (event: BeforeUnloadEvent) => {
-      if (!hasUnsavedChanges) return;
-      event.preventDefault();
-      event.returnValue = "";
-    };
-    window.addEventListener("beforeunload", listener);
-    return () => window.removeEventListener("beforeunload", listener);
-  }, [hasUnsavedChanges]);
+  lifecycle.register(hasUnsavedChanges, () => {
+    baselineFingerprintRef.current = null;
+    initializedPrefillKeyRef.current = null;
+    setDraftCommitted(false);
+    setDraftHydrated(false);
+  }, () => saveHandlerRef.current());
 
   const paymentPlanTotal = paymentLines.reduce((sum, line) => sum + Math.max(0, Number(line.amountDue) || 0), 0);
   const codPlanned = paymentLines.some((line) => line.method === "COD" && line.amountDue > 0);
@@ -586,7 +591,7 @@ export function useOrderFormController(props: OrderFormPageProps) {
   };
 
   saveHandlerRef.current = () => new Promise<boolean>((resolve) => {
-    if (submitting) {
+    if (lifecycle.pending) {
       resolve(false);
       return;
     }
@@ -693,7 +698,7 @@ export function useOrderFormController(props: OrderFormPageProps) {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    if (submitting) {
+    if (lifecycle.pending) {
       resolvePendingSave(false);
       return;
     }
@@ -761,6 +766,7 @@ export function useOrderFormController(props: OrderFormPageProps) {
       idempotencyKey: `order-payment-plan:${order.id}:${line.localId}`,
     }));
 
+    if (!lifecycle.begin()) return;
     setSubmitting(true);
     try {
       const command = {
@@ -774,15 +780,17 @@ export function useOrderFormController(props: OrderFormPageProps) {
         ? await executeOrderDraftUpdateCommand(command)
         : await executeOrderDraftCreationCommand(command);
 
+      if (!lifecycle.isCurrent()) { resolvePendingSave(false); return; }
       baselineFingerprintRef.current = draftFingerprint;
       setDraftCommitted(true);
       const shouldNavigate = !suppressNavigateAfterSaveRef.current;
       resolvePendingSave(true);
-      if (shouldNavigate) window.setTimeout(() => navigate(`/orders/${outcome.data.order.id}`), 0);
+      if (shouldNavigate) navigate(`/orders/${outcome.data.order.id}`);
     } catch (error) {
-      showValidationError(safeOrderSaveError(error));
+      if (lifecycle.isCurrent()) showValidationError(safeOrderSaveError(error));
     } finally {
-      setSubmitting(false);
+      if (lifecycle.isCurrent()) setSubmitting(false);
+      lifecycle.finish();
     }
   };
   return {

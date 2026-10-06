@@ -1,3 +1,6 @@
+import { useRef as useWorkspaceBindingRef } from "react";
+import { useWorkspaceContextSnapshot as useWorkflowWorkspace } from "@/platform/workspace-context";
+import { useTargetBoundWorkflow } from "@/shared/presentation/useTargetBoundWorkflow";
 import { formatApplicationError } from "@/shared/operations";
 import { createCreateCommandTarget, createProvisionalDocumentNumber } from "@/shared/ids";
 import React from "react";
@@ -41,7 +44,7 @@ import {
 export function useShippingBookingCreateController(props: ShippingBookingCreatePageProps) {
   const {
   onCancel,
-  initialOrderId,
+  initialOrderId: routeInitialOrderId,
   initialOrderIssue,
   confirmedOrders,
   pickupLocations,
@@ -57,6 +60,23 @@ export function useShippingBookingCreateController(props: ShippingBookingCreateP
   customers = [],
   products = [],
 } = props;
+  const targetLifecycle = useTargetBoundWorkflow(routeInitialOrderId ?? "", "shipping-create");
+  const workflowWorkspace = useWorkflowWorkspace().workspaceId;
+  const currentWorkflowWorkspace = useWorkspaceBindingRef(workflowWorkspace);
+  currentWorkflowWorkspace.current = workflowWorkspace;
+  const openingWorkspace = useWorkspaceBindingRef({ cycle: targetLifecycle.cycle, id: workflowWorkspace });
+  if (openingWorkspace.current.cycle !== targetLifecycle.cycle) openingWorkspace.current = { cycle: targetLifecycle.cycle, id: workflowWorkspace };
+  const ownsWorkspace = () => openingWorkspace.current.id === currentWorkflowWorkspace.current;
+  const lifecycle = { ...targetLifecycle,
+    begin: () => ownsWorkspace() && targetLifecycle.begin(),
+    isCurrent: () => ownsWorkspace() && targetLifecycle.isCurrent(),
+    register: (dirty: boolean, reset: () => void, save: () => Promise<boolean>) => {
+      targetLifecycle.register(dirty, reset, () => ownsWorkspace() ? save() : Promise.resolve(false));
+    },
+  };
+  const initialOrderId = lifecycle.targetId || undefined;
+  const [hydrated, setHydrated] = React.useState(false);
+  const intentId = React.useRef(createCreateCommandTarget("shipping"));
   const text = React.useCallback((vi: string, en: string) => locale === "vi" ? vi : en, [locale]);
   const defaultPickup = React.useMemo(() => pickupLocations.find((item) => item.isDefault) ?? pickupLocations[0], [pickupLocations]);
   const defaultProvider = React.useMemo(() => providers.find((provider) => provider.isDefault) ?? providers[0], [providers]);
@@ -109,10 +129,13 @@ export function useShippingBookingCreateController(props: ShippingBookingCreateP
   const [submitError, setSubmitError] = React.useState("");
   const [hasSubmitAttempted, setHasSubmitAttempted] = React.useState(false);
 
-  const selectedOrder = React.useMemo(
+  const liveSelectedOrder = React.useMemo(
     () => confirmedOrders.find((order) => order.id === orderId),
     [confirmedOrders, orderId],
   );
+  const openingOrder = React.useRef(liveSelectedOrder);
+  if (openingOrder.current?.id !== orderId) openingOrder.current = liveSelectedOrder ? structuredClone(liveSelectedOrder) : undefined;
+  const selectedOrder = openingOrder.current;
   const selectedPickup = pickupLocations.find((item) => item.id === pickupLocationId) ?? defaultPickup;
   const selectedProvider = providers.find((provider) => provider.id === providerId) ?? defaultProvider;
   const configuredServices = React.useMemo(() => (selectedProvider?.services ?? [])
@@ -142,12 +165,8 @@ export function useShippingBookingCreateController(props: ShippingBookingCreateP
 
   const initializedContextRef = React.useRef("");
   const hydratedOrderRef = React.useRef("");
-  const initializationKey = React.useMemo(() => [
-    initialOrderId ?? "",
-    confirmedOrders.map((order) => `${order.id}:${order.updatedAt ?? order.createdAt ?? ""}`).join("|"),
-    defaultPickup?.id ?? "",
-    defaultProvider?.id ?? "",
-  ].join("::"), [confirmedOrders, defaultPickup?.id, defaultProvider?.id, initialOrderId]);
+  const initializationKey = initialOrderId ?? "new";
+
 
   React.useEffect(() => {
     if (initializedContextRef.current === initializationKey) return;
@@ -166,7 +185,7 @@ export function useShippingBookingCreateController(props: ShippingBookingCreateP
     setPickupWindow("");
     setDeliveryWindow("");
     setPromotionCode("");
-    hydratedOrderRef.current = preferredOrder ? `${preferredOrder.id}:${preferredOrder.updatedAt ?? preferredOrder.createdAt ?? ""}` : "";
+    hydratedOrderRef.current = preferredOrder?.id ?? "";
     resetFromOrder(preferredOrder);
     setGoodsType("PARCEL");
     setPackageCount(1);
@@ -186,11 +205,12 @@ export function useShippingBookingCreateController(props: ShippingBookingCreateP
     setDocumentNames([]);
     setSubmitError("");
     setHasSubmitAttempted(false);
-  }, [confirmedOrders, defaultPickup, defaultProvider, initialOrderId, initializationKey, resetFromOrder]);
+    setHydrated(true);
+  }, [hydrated, lifecycle.cycle, confirmedOrders, defaultPickup, defaultProvider, initialOrderId, initializationKey, resetFromOrder]);
 
   React.useEffect(() => {
     if (!selectedOrder) return;
-    const hydrationKey = `${selectedOrder.id}:${selectedOrder.updatedAt ?? selectedOrder.createdAt ?? ""}`;
+    const hydrationKey = selectedOrder.id;
     if (hydratedOrderRef.current === hydrationKey) return;
     hydratedOrderRef.current = hydrationKey;
     resetFromOrder(selectedOrder);
@@ -369,7 +389,20 @@ export function useShippingBookingCreateController(props: ShippingBookingCreateP
   }]);
   const removeGoods = (id: string) => setGoods((current) => current.filter((item) => item.id !== id));
 
+  const fingerprint = JSON.stringify({ mode, orderId, pickupLocationId, providerId, serviceCode, pickupMethod, deliveryMethod, pickupWindow, deliveryWindow, promotionCode, recipientName, recipientPhone, recipientEmail, recipientLine1, recipientLine2, recipientCity, recipientDistrict, recipientWard, recipientCountryCode, recipientPostalCode, recipientOverrideReason, goodsType, goods, packageCount, packageType, totalWeightGrams, lengthCm, widthCm, heightCm, declaredValue, insuranceRequested, handling, feePayer, inspectionPolicy, pickupNote, deliveryNote, customsDescription, invoiceNumber, taxIdentificationNumber, documentNames }, (_key, field: unknown) => typeof field === "string" ? field.trim() : field);
+  const baseline = React.useRef<string | null>(null);
+  React.useEffect(() => { if (hydrated && baseline.current === null) baseline.current = fingerprint; }, [fingerprint, hydrated]);
+  const baselineCycle = React.useRef(lifecycle.cycle);
+  React.useEffect(() => {
+    if (baselineCycle.current === lifecycle.cycle) return;
+    baselineCycle.current = lifecycle.cycle; baseline.current = null; setHydrated(false);
+    initializedContextRef.current = ""; hydratedOrderRef.current = ""; intentId.current = createCreateCommandTarget("shipping");
+  }, [lifecycle.cycle]);
+  lifecycle.register(baseline.current !== null && baseline.current !== fingerprint, () => {
+    initializedContextRef.current = ""; hydratedOrderRef.current = ""; baseline.current = null; setHydrated(false);
+  }, async () => false);
   const submit = async () => {
+    if (lifecycle.pending) return;
     setHasSubmitAttempted(true);
     setSubmitError("");
     if (!selectedOrder || !selectedPickup || !ready) {
@@ -383,10 +416,11 @@ export function useShippingBookingCreateController(props: ShippingBookingCreateP
       });
       return;
     }
+    if (!lifecycle.begin()) return;
     try {
       setSubmitting(true);
       const now = new Date().toISOString();
-      const id = createCreateCommandTarget("shipping");
+      const id = intentId.current;
       const shipmentGroupId = `shipment:${selectedOrder.id}:${id}`;
       const service = configuredServices.find((item) => item.code === serviceCode);
       const booking = await onCreate({
@@ -425,13 +459,16 @@ export function useShippingBookingCreateController(props: ShippingBookingCreateP
         actorName,
         now,
       });
+      if (!lifecycle.isCurrent()) return;
+      if (booking.bookingStatus === "BOOKED") baseline.current = fingerprint;
       onCreated(booking, booking.bookingStatus === "BOOKED"
         ? text("Đã tạo vận đơn và lưu đầy đủ snapshot gửi, nhận, hàng hóa, COD và yêu cầu xử lý.", "Shipment created with sender, recipient, goods, COD and handling snapshots.")
         : booking.lastErrorMessage || text("Tạo vận đơn thất bại.", "Shipment creation failed."));
     } catch (error) {
-      setSubmitError(formatApplicationError(error, { locale }));
+      if (lifecycle.isCurrent()) setSubmitError(formatApplicationError(error, { locale }));
     } finally {
-      setSubmitting(false);
+      if (lifecycle.isCurrent()) setSubmitting(false);
+      lifecycle.finish();
     }
   };
 

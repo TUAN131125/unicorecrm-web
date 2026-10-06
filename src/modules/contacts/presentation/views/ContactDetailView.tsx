@@ -164,12 +164,6 @@ export function ContactDetailView({ controller }: { controller: Controller }) {
     handleSaveLogCall,
     handleSendEmail,
     handleSendSms,
-    handleCreateNote,
-    handleUpdateNote,
-    handleDeleteNote,
-    handleTogglePinNote,
-    handleUploadAttachment,
-    handleDeleteAttachment,
     handleDownloadAttachment,
     handleAdvanceOpportunityStage,
     handleCreateQuoteFromTab,
@@ -261,11 +255,10 @@ export function ContactDetailView({ controller }: { controller: Controller }) {
                   onOpenCustomerDirectory: () => navigate("/customers"),
                 }}
                 notes={{
-                  contactNotes, onCreateNote: handleCreateNote, onUpdateNote: handleUpdateNote,
-                  onDeleteNote: handleDeleteNote, onTogglePinNote: handleTogglePinNote, isArchived: contact.status === "archived",
+                  contactNotes, onOpenComposer: () => setShowQuickNoteModal(true), isArchived: contact.status === "archived",
                 }}
                 attachments={{
-                  contactAttachments, onUploadAttachment: handleUploadAttachment, onDeleteAttachment: handleDeleteAttachment,
+                  contactAttachments,
                   onDownloadAttachment: handleDownloadAttachment, isArchived: contact.status === "archived", onModalStateChange: handleModalStateChange,
                 }}
                 purchasedProducts={{ contact, purchasedProducts: displayPurchasedProducts, onCreateOpportunityClick: openOpportunity, onOpenModule: () => navigate("/products") }}
@@ -334,7 +327,7 @@ export function ContactDetailView({ controller }: { controller: Controller }) {
                   onOpenOrders: () => navigate("/orders"),
                 }}
                 activeTasks={{
-                  tasks, onCreateTask: () => setShowTaskModal(true), onScheduleMeeting: () => setShowMeetingModal(true), onOpenModule: () => navigate("/tasks"),
+                  contact, contactTargetId: contactId, tasks, onCreateTask: () => setShowTaskModal(true), onScheduleMeeting: () => setShowMeetingModal(true), onOpenModule: () => navigate("/tasks"),
                   onCompleteTask: handleCompleteTask, onRescheduleTask: handleRescheduleTask, isArchived: contact.status === "archived",
                   onModalStateChange: handleModalStateChange,
                 }}
@@ -415,16 +408,16 @@ export function ContactDetailView({ controller }: { controller: Controller }) {
           onClose: () => setShowDeleteModal(false),
           onConfirm: confirmDeleteContact,
         }}
-        quickNote={{ isOpen: showQuickNoteModal, onClose: () => setShowQuickNoteModal(false), onSave: handleSaveQuickNote }}
+        quickNote={{ targetId: contact.id, isOpen: showQuickNoteModal, onClose: () => setShowQuickNoteModal(false), onSave: handleSaveQuickNote }}
         task={{
           isOpen: showTaskModal, onClose: () => setShowTaskModal(false), onCreated: handleSaveTask,
           defaults: { assigneeId: contact.ownerId || currentMemberId || undefined },
           context: { customerId: canonicalCustomer?.id, relationshipRef: contactRelationshipRef, recordRef: { moduleKey: "contacts", recordId: contact.id, label: contact.fullName || contact.name }, sourceRef: { type: "CONTACT_DETAIL", id: contact.id }, label: contact.fullName || contact.name },
         }}
-        meeting={{ isOpen: showMeetingModal, onClose: () => setShowMeetingModal(false), onSave: handleSaveMeeting, isDoNotContact: contact.status === "do_not_contact" || contact.doNotContact }}
-        logCall={{ isOpen: showLogCallModal, onClose: () => setShowLogCallModal(false), onSave: handleSaveLogCall, isDoNotContact: contact.status === "do_not_contact" || contact.doNotContact }}
-        email={{ isOpen: showSendEmailModal, onClose: () => setShowSendEmailModal(false), prefilledEmail: contact.email || contact.workEmail || "", onSend: handleSendEmail, isDoNotContact: contact.status === "do_not_contact" || contact.doNotContact }}
-        sms={{ isOpen: showSendSmsModal, onClose: () => setShowSendSmsModal(false), prefilledPhone: contact.phone || contact.mobilePhone || "", onSend: handleSendSms, isDoNotContact: contact.status === "do_not_contact" || contact.doNotContact }}
+        meeting={{ targetId: contact.id, isOpen: showMeetingModal, onClose: () => setShowMeetingModal(false), onSave: handleSaveMeeting, isDoNotContact: contact.status === "do_not_contact" || contact.doNotContact }}
+        logCall={{ targetId: contact.id, isOpen: showLogCallModal, onClose: () => setShowLogCallModal(false), onSave: handleSaveLogCall, isDoNotContact: contact.status === "do_not_contact" || contact.doNotContact }}
+        email={{ targetId: contact.id, isOpen: showSendEmailModal, onClose: () => setShowSendEmailModal(false), prefilledEmail: contact.email || contact.workEmail || "", onSend: handleSendEmail, isDoNotContact: contact.status === "do_not_contact" || contact.doNotContact }}
+        sms={{ targetId: contact.id, isOpen: showSendSmsModal, onClose: () => setShowSendSmsModal(false), prefilledPhone: contact.phone || contact.mobilePhone || "", onSend: handleSendSms, isDoNotContact: contact.status === "do_not_contact" || contact.doNotContact }}
       />
 
     </RecordDetailFrame>

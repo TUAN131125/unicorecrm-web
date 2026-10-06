@@ -21,7 +21,7 @@ interface ContactOpportunityModalProps {
     followUpTaskTitle: string;
     followUpTaskDueAt: string;
     lineItems?: unknown[];
-  }): void;
+  }): void | boolean | Promise<void | boolean>;
 }
 
 function initialLineItems(contact: Contact): SelectedPickerItem[] {
@@ -72,12 +72,15 @@ export const ContactOpportunityModal: React.FC<ContactOpportunityModalProps> = (
       isOpen
       onClose={onClose}
       mode="create"
+      sourceKey={contact.id}
       initialValues={initialValues}
       owners={owners}
       stages={stages}
       canAssign={ownership?.canAssign}
       customerNameLocked
-      onSubmit={(draft) => onConfirm({
+      onSubmit={(draft, _opening, _intentId, openingSourceKey) => {
+        if (openingSourceKey !== contact.id) return false;
+        return onConfirm({
         dealName: draft.name,
         dealAmount: draft.amount,
         dealOwnerId: draft.ownerId,
@@ -88,7 +91,7 @@ export const ContactOpportunityModal: React.FC<ContactOpportunityModalProps> = (
         followUpTaskTitle: draft.nextActionSummary,
         followUpTaskDueAt: draft.nextActionAt,
         lineItems: draft.lineItems,
-      })}
+      }); }}
     />
   );
 };

@@ -1,6 +1,8 @@
+import { getWorkspaceContextSnapshot, useWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import React from "react";
 import { ChevronDown, ChevronUp, Zap } from "lucide-react";
 import { Button, Checkbox, ConfirmDialog, Input, Modal, Select, Textarea } from "@/shared/components/ui";
+import { registerUnsavedWork } from "@/platform/unsaved-work";
 import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
 import { useI18n } from "@/i18n";
 import { normalizeApplicationError } from "@/shared/domain";
@@ -53,7 +55,7 @@ export interface ContactFormModalProps {
   onClose(): void;
   mode: ContactFormMode;
   contact?: Contact;
-  onSubmit(draft: ContactFormDraft): void | Promise<void>;
+  onSubmit(draft: ContactFormDraft, opening: { contact: Contact | undefined; draft: ContactFormDraft; intentId: string }): void | boolean | Promise<void | boolean>;
 }
 
 function localDateTimeInput(value: Date): string {
@@ -69,7 +71,7 @@ function normalizeDateTime(value?: string, fallback?: Date): string {
   return Number.isNaN(parsed.getTime()) ? "" : localDateTimeInput(parsed);
 }
 
-function createDraft(contact: Contact | undefined, defaultOwnerId: string): ContactFormDraft {
+export function createContactFormDraft(contact: Contact | undefined, defaultOwnerId: string): ContactFormDraft {
   if (!contact) {
     return {
       name: "",
@@ -120,7 +122,7 @@ function createDraft(contact: Contact | undefined, defaultOwnerId: string): Cont
     source: contact.source || "",
     status: contact.status || "active",
     priority: contact.priority || "MEDIUM",
-    ownerId: contact.ownerId || defaultOwnerId,
+    ownerId: contact.ownerId || "",
     tagsString: contact.tags?.join(", ") || "",
     lastContactedAt: normalizeDateTime(contact.lastContactedAt),
     nextFollowUpAt: normalizeDateTime(contact.nextFollowUpAt),
@@ -129,31 +131,57 @@ function createDraft(contact: Contact | undefined, defaultOwnerId: string): Cont
   };
 }
 
-export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit, guardChanges = false }: ContactFormModalProps) {
+function businessValues(draft: ContactFormDraft): string {
+  return JSON.stringify({
+    name: draft.name.trim(), title: draft.title.trim(), department: draft.department.trim(),
+    decisionRole: draft.decisionRole, email: draft.email.trim(), phone: draft.phone.trim(),
+    zaloId: draft.zaloId.trim(), address: draft.address.trim(), preferredChannel: draft.preferredChannel,
+    source: draft.source.trim(), ownerId: draft.ownerId.trim(),
+    tags: draft.tagsString.split(",").map(tag => tag.trim()).filter(Boolean), notes: draft.notes.trim(),
+  });
+}
+
+export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit, guardChanges = true }: ContactFormModalProps) {
   const { t, locale } = useI18n();
+  const workspace = useWorkspaceContextSnapshot();
+  const openingWorkspace = React.useRef(workspace.workspaceId);
   const vi = locale === "vi";
   const ownership = useRecordOwnershipContext("contacts", CAPABILITIES.CONTACTS_ASSIGN);
   const defaultOwnerId = ownership?.memberId || "";
-  const draftFactory = React.useCallback(() => createDraft(contact, defaultOwnerId), [contact, defaultOwnerId]);
+  const draftFactory = React.useCallback(() => createContactFormDraft(contact, defaultOwnerId), [contact, defaultOwnerId]);
   const [draft, setDraft] = React.useState<ContactFormDraft>(draftFactory);
   const [showAdvanced, setShowAdvanced] = React.useState(mode === "edit");
   const [errors, setErrors] = React.useState<Record<string, string>>({});
   const [formError, setFormError] = React.useState("");
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const wasOpen = React.useRef(false);
+  const openingContact = React.useRef(contact ? structuredClone(contact) : undefined);
+  const pending = React.useRef(false);
+  const openRef = React.useRef(isOpen); openRef.current = isOpen;
+  const mounted = React.useRef(true);
+  const cycle = React.useRef(0);
+  const intentId = React.useRef(`contact-${crypto.randomUUID()}`);
+  const activeCycle = cycle.current;
+  React.useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const initialDraft = React.useRef(draft);
   const unsavedChanges = useUnsavedChangesGuard(onClose);
+  const canonicalDirty = isOpen && businessValues(draft) !== businessValues(initialDraft.current);
   React.useEffect(() => {
-    unsavedChanges.setIsDirty(isOpen && JSON.stringify(draft) !== JSON.stringify(initialDraft.current));
+    unsavedChanges.setIsDirty(canonicalDirty);
     if (!isOpen) unsavedChanges.setIsConfirmOpen(false);
   }, [draft, isOpen, unsavedChanges.setIsDirty, unsavedChanges.setIsConfirmOpen]);
   const requestClose = () => {
+    if (pending.current) return;
     if (!guardChanges) { onClose(); return; }
     if (!isSubmitting) unsavedChanges.requestClose();
   };
 
   React.useEffect(() => {
-    if (isOpen && !wasOpen.current) {
+    if (isOpen && (!wasOpen.current || (openingContact.current?.id !== contact?.id && !canonicalDirty && !pending.current))) {
+      openingWorkspace.current = workspace.workspaceId;
+      cycle.current++;
+      intentId.current = `contact-${crypto.randomUUID()}`;
+      openingContact.current = contact ? structuredClone(contact) : undefined;
       initialDraft.current = draftFactory();
       setDraft(initialDraft.current);
       setShowAdvanced(mode === "edit");
@@ -161,7 +189,11 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit, gua
       setFormError("");
     }
     wasOpen.current = isOpen;
-  }, [draftFactory, isOpen, mode]);
+  }, [draftFactory, isOpen, mode, canonicalDirty, isSubmitting]);
+
+  React.useEffect(() => {
+    if (isOpen && openingWorkspace.current !== workspace.workspaceId && !canonicalDirty && !pending.current) onClose();
+  }, [isOpen, workspace.workspaceId, canonicalDirty, onClose]);
 
   const update = React.useCallback(<K extends keyof ContactFormDraft>(field: K, value: ContactFormDraft[K]) => {
     setDraft((current) => ({ ...current, [field]: value }));
@@ -176,7 +208,7 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit, gua
   }, [draft.ownerId, ownership?.assignableOwners]);
 
   const focusFirstInvalidField = React.useCallback((nextErrors: Record<string, string>) => {
-    const fieldOrder = ["name", "phone", "email", "ownerId"];
+    const fieldOrder = ["name", "title", "department", "decisionRole", "phone", "email", "zaloId", "preferredChannel", "address", "ownerId", "source", "tagsString", "notes"];
     const firstField = fieldOrder.find((field) => Boolean(nextErrors[field]));
     if (!firstField) return;
     requestAnimationFrame(() => {
@@ -186,9 +218,12 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit, gua
     });
   }, [mode]);
 
-  const submit = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (isSubmitting) return;
+  const save = async (): Promise<boolean> => {
+    if (pending.current || !isOpen || !openRef.current || !mounted.current || cycle.current !== activeCycle) return false;
+    if (openingWorkspace.current !== getWorkspaceContextSnapshot().workspaceId) {
+      setFormError(vi ? "Hãy trở lại không gian làm việc đang mở hoặc bỏ thay đổi." : "Return to the opening workspace or discard this draft.");
+      return false;
+    }
     const nextErrors: Record<string, string> = {};
     if (!draft.name.trim()) nextErrors.name = t("contact.edit.validationNameRequired");
     if (draft.name.trim().length > 200) nextErrors.name = vi ? "Họ tên không được vượt quá 200 ký tự." : "Full name must not exceed 200 characters.";
@@ -196,16 +231,25 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit, gua
     if (draft.email.trim().length > 320) nextErrors.email = vi ? "Email không được vượt quá 320 ký tự." : "Email must not exceed 320 characters.";
     if (draft.phone.trim().length > 50) nextErrors.phone = vi ? "Số điện thoại không được vượt quá 50 ký tự." : "Phone must not exceed 50 characters.";
 
+    for (const [field, value, limit] of [
+      ["title", draft.title, 160], ["department", draft.department, 160], ["zaloId", draft.zaloId, 120],
+      ["address", draft.address, 700], ["source", draft.source, 160], ["notes", draft.notes, 5000],
+    ] as const) {
+      if (value.trim().length > limit) nextErrors[field] = vi ? `Không được vượt quá ${limit} ký tự.` : `Must not exceed ${limit} characters.`;
+    }
+    if (draft.tagsString.split(",").some(tag => tag.trim().length > 100)) nextErrors.tagsString = vi ? "Mỗi nhãn không được vượt quá 100 ký tự." : "Each tag must not exceed 100 characters.";
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
       focusFirstInvalidField(nextErrors);
-      return;
+      return false;
     }
 
+    pending.current = true;
+    const submittingCycle = cycle.current;
     setIsSubmitting(true);
     setFormError("");
     try {
-      await onSubmit({
+      const saved = await onSubmit({
         ...draft,
         name: draft.name.trim(),
         contactCode: draft.contactCode.trim(),
@@ -221,21 +265,45 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit, gua
         tagsString: draft.tagsString.trim(),
         notes: draft.notes.trim(),
         internalNotes: draft.internalNotes.trim(),
-      });
+      }, { contact: openingContact.current, draft: initialDraft.current, intentId: intentId.current });
+      if (saved === false) return false;
+      if (!mounted.current || cycle.current !== submittingCycle) return false;
+      initialDraft.current = draft;
+      unsavedChanges.setIsDirty(false);
+      return true;
     } catch (error) {
+      if (!mounted.current || !openRef.current || cycle.current !== submittingCycle) return false;
       const normalized = normalizeApplicationError(error);
       const serverErrors: Record<string, string> = {};
       for (const [field, messages] of Object.entries(normalized.fieldErrors ?? {})) {
-        const localField = field === "fullName" ? "name" : field === "workEmail" ? "email" : field === "mobilePhone" ? "phone" : field;
+        const localField = field === "fullName" ? "name" : field === "workEmail" ? "email" : field === "mobilePhone" ? "phone" : field === "jobTitle" ? "title" : field === "preferredContactChannel" ? "preferredChannel" : field === "tags" ? "tagsString" : field;
         serverErrors[localField] = messages.join(" ");
       }
       setErrors((current) => ({ ...current, ...serverErrors }));
       setFormError(formatOperationUnavailableError(normalized, { locale }));
       focusFirstInvalidField(serverErrors);
+      return false;
     } finally {
-      setIsSubmitting(false);
+      pending.current = false;
+      if (mounted.current) setIsSubmitting(false);
     }
   };
+
+  React.useEffect(() => {
+    if (!isOpen) return;
+    const canDiscard = () => mounted.current && openRef.current && cycle.current === activeCycle && !pending.current;
+    const cleanup = registerUnsavedWork({
+      id: `contact-form:${mode}:${openingContact.current?.id ?? "new"}`,
+      title: mode === "edit" ? "Edit Contact" : "Create Contact",
+      isDirty: canonicalDirty || isSubmitting,
+      save,
+      canDiscard,
+      discard: () => { if (canDiscard()) unsavedChanges.confirmDiscard(); },
+    });
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
+    if (canonicalDirty || isSubmitting) window.addEventListener("beforeunload", warn);
+    return () => { cleanup(); window.removeEventListener("beforeunload", warn); };
+  });
 
   const showComplete = mode === "edit" || showAdvanced;
   return (
@@ -247,7 +315,7 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit, gua
       title={mode === "create" ? t("contactList.actions.addContact") : t("contact.edit.title")}
       size="md"
     >
-      <form id={`contact-${mode}-form`} onSubmit={submit} className="crm-form-surface space-y-5" data-guidance-id="contacts.form.canonical">
+      <form id={`contact-${mode}-form`} onSubmit={(event) => { event.preventDefault(); void save(); }} className="crm-form-surface space-y-5" data-guidance-id="contacts.form.canonical" data-contact-target-id={openingContact.current?.id}>
         {mode === "create" ? (
           <div className="rounded-2xl border border-violet-100 bg-violet-50/60 p-4" data-guidance-id="contacts.form.progressive-profile">
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -267,10 +335,10 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit, gua
           <h4 className="border-b border-indigo-50 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-indigo-700">{t("contact.edit.basicIdentity")}</h4>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Input id={`contact-${mode}-name`} label={`${t("contactList.form.fullName")} *`} required value={draft.name} onChange={(event) => update("name", event.target.value)} error={errors.name} />
-            {showComplete ? <Input label={t("contact.edit.jobTitle")} value={draft.title} onChange={(event) => update("title", event.target.value)} /> : null}
-            {showComplete ? <Input label={t("contact.edit.department")} value={draft.department} onChange={(event) => update("department", event.target.value)} /> : null}
+            {showComplete ? <Input id={`contact-${mode}-title`} error={errors.title} label={t("contact.edit.jobTitle")} value={draft.title} onChange={(event) => update("title", event.target.value)} /> : null}
+            {showComplete ? <Input id={`contact-${mode}-department`} error={errors.department} label={t("contact.edit.department")} value={draft.department} onChange={(event) => update("department", event.target.value)} /> : null}
             {showComplete ? (
-              <Select label={t("contact.edit.decisionRole")} value={draft.decisionRole} onChange={(event) => update("decisionRole", event.target.value as ContactDecisionRole | "")}>
+              <Select id={`contact-${mode}-decisionRole`} error={errors.decisionRole} label={t("contact.edit.decisionRole")} value={draft.decisionRole} onChange={(event) => update("decisionRole", event.target.value as ContactDecisionRole | "")}>
                 <option value="">{t("common.notSet")}</option>
                 <option value="decision_maker">{vi ? "Người quyết định" : "Decision maker"}</option>
                 <option value="influencer">{vi ? "Người ảnh hưởng" : "Influencer"}</option>
@@ -289,14 +357,14 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit, gua
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Input id={`contact-${mode}-phone`} label={t("contact.edit.phone")} value={draft.phone} onChange={(event) => update("phone", event.target.value)} error={errors.phone} />
             <Input id={`contact-${mode}-email`} label={t("contact.edit.email")} type="email" value={draft.email} onChange={(event) => update("email", event.target.value)} error={errors.email} />
-            {showComplete ? <Input label={t("contact.edit.zaloId")} value={draft.zaloId} onChange={(event) => update("zaloId", event.target.value)} /> : null}
+            {showComplete ? <Input id={`contact-${mode}-zaloId`} error={errors.zaloId} label={t("contact.edit.zaloId")} value={draft.zaloId} onChange={(event) => update("zaloId", event.target.value)} /> : null}
             {showComplete ? (
-              <Select label={t("contact.edit.preferredChannel")} value={draft.preferredChannel} onChange={(event) => update("preferredChannel", event.target.value as PreferredContactChannel | "")}>
+              <Select id={`contact-${mode}-preferredChannel`} error={errors.preferredChannel} label={t("contact.edit.preferredChannel")} value={draft.preferredChannel} onChange={(event) => update("preferredChannel", event.target.value as PreferredContactChannel | "")}>
                 <option value="">{t("common.notSet")}</option>
                 <option value="email">Email</option><option value="phone">Phone</option><option value="zalo">Zalo</option><option value="facebook">Facebook</option><option value="sms">SMS</option>
               </Select>
             ) : null}
-            {showComplete ? <div className="md:col-span-2"><Input label={t("contact.edit.address")} value={draft.address} onChange={(event) => update("address", event.target.value)} /></div> : null}
+            {showComplete ? <div className="md:col-span-2"><Input id={`contact-${mode}-address`} error={errors.address} label={t("contact.edit.address")} value={draft.address} onChange={(event) => update("address", event.target.value)} /></div> : null}
           </div>
         </section>
 
@@ -304,24 +372,26 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit, gua
           <h4 className="border-b border-indigo-50 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-indigo-700">{t("contact.edit.salesContext")}</h4>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <Select id={`contact-${mode}-ownerId`} label={t("contact.edit.ownerId")} value={draft.ownerId} onChange={(event) => update("ownerId", event.target.value)} disabled={!ownership?.canAssign} error={errors.ownerId}>
+              <option value="">{t("common.notSet")}</option>
               {ownerOptions.map((owner) => <option key={owner.memberId} value={owner.memberId}>{owner.displayName}</option>)}
             </Select>
             {showComplete ? (
-              <Select label={t("contactList.form.source")} value={draft.source} onChange={(event) => update("source", event.target.value)}>
+              <Select id={`contact-${mode}-source`} error={errors.source} label={t("contactList.form.source")} value={draft.source} onChange={(event) => update("source", event.target.value)}>
+                <option value="">{t("common.notSet")}</option>
                 <option value="Website">{getTranslatedSource("Website", t)}</option>
                 <option value="Hội thảo / Webinar">{getTranslatedSource("Hội thảo / Webinar", t)}</option>
                 <option value="Giới thiệu / Referral">{getTranslatedSource("Giới thiệu / Referral", t)}</option>
                 <option value="Facebook">Facebook</option><option value="Google Search">Google Search</option><option value="Direct">Direct</option>
               </Select>
             ) : null}
-            {showComplete ? <div className="md:col-span-2"><Input label={t("contact.edit.tags")} value={draft.tagsString} onChange={(event) => update("tagsString", event.target.value)} /></div> : null}
+            {showComplete ? <div className="md:col-span-2"><Input id={`contact-${mode}-tagsString`} error={errors.tagsString} label={t("contact.edit.tags")} value={draft.tagsString} onChange={(event) => update("tagsString", event.target.value)} /></div> : null}
           </div>
         </section>
 
         {showComplete ? (
           <section className="space-y-3">
             <h4 className="border-b border-indigo-50 pb-1 text-[10px] font-extrabold uppercase tracking-wider text-indigo-700">{t("contact.edit.notesSection")}</h4>
-            <Textarea label={t("contact.edit.notes")} value={draft.notes} onChange={(event) => update("notes", event.target.value)} />
+            <Textarea id={`contact-${mode}-notes`} error={errors.notes} label={t("contact.edit.notes")} value={draft.notes} onChange={(event) => update("notes", event.target.value)} />
           </section>
         ) : null}
 
@@ -335,7 +405,7 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit, gua
     {guardChanges && <ConfirmDialog
       isOpen={unsavedChanges.isConfirmOpen}
       onClose={() => unsavedChanges.setIsConfirmOpen(false)}
-      onConfirm={unsavedChanges.confirmDiscard}
+      onConfirm={() => { if (!pending.current) unsavedChanges.confirmDiscard(); }}
       title={vi ? "Bỏ thay đổi chưa lưu?" : "Discard unsaved changes?"}
       message={vi ? "Các thay đổi chưa được lưu. Bạn có muốn đóng biểu mẫu?" : "Your changes have not been saved. Close the form?"}
       confirmText={vi ? "Bỏ thay đổi" : "Discard changes"}

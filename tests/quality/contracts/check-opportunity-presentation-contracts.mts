@@ -147,7 +147,7 @@ assert.ok(quoteSectionHeader.includes('className="h-9 whitespace-nowrap rounded-
 
 // Opportunity Kanban cards keep the same information while using a calmer, balanced hierarchy.
 assert.ok(pipelinePage.includes('data-deal-kanban-card="balanced"'), "Opportunity cards must expose the balanced card contract");
-const balancedCardStart = pipelinePage.indexOf('data-deal-kanban-card="balanced"\n');
+const balancedCardStart = pipelinePage.search(/data-deal-kanban-card="balanced"\s*\r?\n/u);
 assert.ok(balancedCardStart >= 0, "Opportunity card JSX marker must remain discoverable");
 const balancedCardSurface = pipelinePage.slice(
   balancedCardStart,

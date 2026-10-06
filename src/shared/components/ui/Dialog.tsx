@@ -9,6 +9,7 @@ import { Button, ButtonVariant } from "./Button";
 import { OverlayLayerProvider, useOverlayLayer } from "../../../components/overlay/OverlayLayerContext";
 import { useI18n } from "../../../i18n";
 import { useAccessibleOverlay } from "./useAccessibleOverlay";
+import { formatApplicationError } from "../../operations/errorPresentation";
 
 export type ModalSize = "sm" | "md" | "lg";
 export type ModalVariant = "auto" | "standard" | "form";
@@ -219,7 +220,11 @@ export interface ConfirmDialogProps {
   id?: string;
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => void;
+  onConfirm: (isCurrent: () => boolean) => unknown | Promise<unknown>;
+  loading?: boolean;
+  confirmDisabled?: boolean;
+  /** Editable confirmation drafts stay controlled by their target-bound parent. */
+  editable?: boolean;
   title: string;
   message?: string | React.ReactNode;
   description?: string | React.ReactNode;
@@ -235,6 +240,9 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   isOpen,
   onClose,
   onConfirm,
+  loading = false,
+  confirmDisabled = false,
+  editable = false,
   title,
   message,
   description,
@@ -244,26 +252,53 @@ export const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   variant,
   children,
 }) => {
-  const resolvedType = variant || type;
+  const { locale } = useI18n();
+  const [pending, setPending] = React.useState(false);
+  const [error, setError] = React.useState("");
+  const busy = React.useRef(false);
+  const mounted = React.useRef(true);
+  const wasOpen = React.useRef(false);
+  const cycle = React.useRef(0);
+  const opening = React.useRef({ onConfirm, onClose, title, message, description, children, confirmText, cancelText, type, variant });
+  if (isOpen !== wasOpen.current) {
+    cycle.current += 1;
+    if (isOpen) opening.current = { onConfirm, onClose, title, message, description, children, confirmText, cancelText, type, variant };
+    wasOpen.current = isOpen;
+  }
+  React.useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  React.useEffect(() => { setError(""); }, [isOpen]);
+  const target = opening.current;
+  const close = () => { if (!busy.current && !loading) target.onClose(); };
+  const confirm = async () => {
+    if (busy.current || loading || confirmDisabled || !wasOpen.current || !mounted.current) return;
+    const activeCycle = cycle.current;
+    busy.current = true; setPending(true); setError("");
+    const isCurrent = () => mounted.current && wasOpen.current && cycle.current === activeCycle;
+    try { await (editable ? onConfirm : target.onConfirm)(isCurrent); }
+    catch (failure) { if (mounted.current && wasOpen.current && cycle.current === activeCycle) setError(formatApplicationError(failure, { locale })); }
+    finally { busy.current = false; if (mounted.current) setPending(false); }
+  };
+  const resolvedType = target.variant || target.type;
   const confirmBtnVariant: ButtonVariant = resolvedType === "danger" ? "danger" : resolvedType === "warning" ? "warning" : "primary";
 
   return (
     <Modal
       id={id}
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={close}
       size="sm"
       variant="form"
-      title={title}
+      title={target.title}
       footer={(
         <>
-          <Button variant="secondary" size="md" className="min-w-28" onClick={onClose} autoFocus>{cancelText}</Button>
-          <Button variant={confirmBtnVariant} size="md" className="min-w-28" onClick={onConfirm}>{confirmText}</Button>
+          <Button type="button" variant="secondary" size="md" className="min-w-28" onClick={close} disabled={pending || loading} autoFocus>{target.cancelText}</Button>
+          <Button type="button" variant={confirmBtnVariant} size="md" className="min-w-28" onClick={() => { void confirm(); }} loading={pending || loading} disabled={confirmDisabled}>{target.confirmText}</Button>
         </>
       )}
     >
       <div className="rounded-2xl border border-slate-200 bg-white px-5 py-5 text-sm leading-6 text-slate-700 shadow-sm">
-        {message ?? description ?? children}
+        {editable ? (message ?? description ?? children) : (target.message ?? target.description ?? target.children)}
+        {error && <p role="alert" className="mt-3 text-rose-700">{error}</p>}
       </div>
     </Modal>
   );

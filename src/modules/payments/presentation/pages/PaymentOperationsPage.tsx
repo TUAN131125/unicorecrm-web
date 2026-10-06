@@ -1,3 +1,6 @@
+import { useWorkspaceContextSnapshot } from "@/platform/workspace-context";
+import { useTargetBoundWorkflow } from "@/shared/presentation/useTargetBoundWorkflow";
+import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
 import { backendUnavailableMessage, formatApplicationError } from "@/shared/operations";
 import { useAuthoritativeResource } from "@/shared/operations";
 import React from "react";
@@ -38,7 +41,7 @@ import {
   useListPagination,
 } from "@/components/crm/list-archetype";
 import { OperationSavedViews } from "@/components/crm/operations";
-import { Badge, Button, Card, Input, Modal, SearchableSelect, Select } from "@/shared/components/ui";
+import { Badge, Button, Card, ConfirmDialog, Input, Modal, SearchableSelect, Select } from "@/shared/components/ui";
 import { useI18n } from "@/i18n";
 import { getInvoiceWorkspaceResource, getReceivablesWorkspaceResource } from "@/modules/invoices";
 import { getOrderListSnapshot, subscribeToOrderList } from "@/modules/orders";
@@ -151,6 +154,34 @@ export const PaymentOperationsPage: React.FC = () => {
   const [intentForm, setIntentForm] = React.useState<IntentForm>(() => emptyIntentForm(baseCurrency));
   const [error, setError] = React.useState("");
   const [busy, setBusy] = React.useState(false);
+  const workspaceId = useWorkspaceContextSnapshot().workspaceId;
+  const currentWorkspace = React.useRef(workspaceId); currentWorkspace.current = workspaceId;
+  const manualWorkspace = React.useRef(workspaceId);
+  const intentWorkspace = React.useRef(workspaceId);
+  const manualPaymentId = React.useRef(durableId("payment"));
+  const manualCreditId = React.useRef(durableId("customer_credit"));
+  const onlinePaymentId = React.useRef(durableId("intent"));
+  const manualLifecycle = useTargetBoundWorkflow("manual", "payment-manual-form");
+  const intentLifecycle = useTargetBoundWorkflow("intent", "payment-intent-form");
+  const manualGuard = useUnsavedChangesGuard(() => setManualOpen(false));
+  const intentGuard = useUnsavedChangesGuard(() => setIntentOpen(false));
+  const manualBaseline = React.useRef("");
+  const intentBaseline = React.useRef("");
+  const manualWasOpen = React.useRef(false);
+  const intentWasOpen = React.useRef(false);
+  const manualIntent = React.useRef(durableId("manual_payment"));
+  const onlineIntent = React.useRef(durableId("payment_intent"));
+  const manualFingerprint = JSON.stringify(manualForm);
+  const intentFingerprint = JSON.stringify(intentForm);
+  React.useEffect(() => {
+    if (manualOpen && !manualWasOpen.current) { manualBaseline.current = manualFingerprint; manualIntent.current = durableId("manual_payment"); }
+    if (intentOpen && !intentWasOpen.current) { intentBaseline.current = intentFingerprint; onlineIntent.current = durableId("payment_intent"); }
+    manualWasOpen.current = manualOpen; intentWasOpen.current = intentOpen;
+    manualGuard.setIsDirty(manualOpen && manualBaseline.current !== manualFingerprint);
+    intentGuard.setIsDirty(intentOpen && intentBaseline.current !== intentFingerprint);
+  });
+  const closeManual = () => { if (!manualLifecycle.pending) manualGuard.requestClose(); };
+  const closeIntent = () => { if (!intentLifecycle.pending) intentGuard.requestClose(); };
   const text = React.useCallback((vi: string, en: string) => locale === "vi" ? vi : en, [locale]);
   const path = React.useCallback((value: string) => toWorkspacePath(workspaceKey, "crm", value), [workspaceKey]);
   const format = React.useCallback((value: MoneyDto) => formatMoneyDto(value, locale === "vi" ? "vi-VN" : "en-US"), [locale]);
@@ -300,10 +331,12 @@ export const PaymentOperationsPage: React.FC = () => {
   }, [baseCurrency, intentMethods, visibleOrders]);
 
   React.useEffect(() => {
+    if (manualOpen || intentOpen || manualLifecycle.pending || intentLifecycle.pending) return;
     if (searchParams.get("action") !== "record" || !access.can(CAPABILITIES.PAYMENTS_RECORD_MANUAL)) return;
     const orderId = searchParams.get("orderId") ?? "";
     setManualForm(emptyManualForm(baseCurrency));
     if (orderId) applyOrderToManual(orderId);
+    manualWorkspace.current = workspaceId; manualPaymentId.current = durableId("payment"); manualCreditId.current = durableId("customer_credit");
     setManualOpen(true);
     const next = new URLSearchParams(searchParams);
     next.delete("action");
@@ -311,6 +344,7 @@ export const PaymentOperationsPage: React.FC = () => {
   }, [access, applyOrderToManual, searchParams, setSearchParams]);
 
   React.useEffect(() => {
+    if (manualOpen || intentOpen || manualLifecycle.pending || intentLifecycle.pending) return;
     if (searchParams.get("action") !== "request" || !access.can(CAPABILITIES.PAYMENTS_INTENT_CREATE)) return;
     const invoiceId = searchParams.get("invoiceId") ?? "";
     const requestedOrderId = searchParams.get("orderId") ?? "";
@@ -325,6 +359,7 @@ export const PaymentOperationsPage: React.FC = () => {
     } else if (requestedOrderId) applyOrderToIntent(requestedOrderId);
     setError("");
     setTab("INTENTS");
+    intentWorkspace.current = workspaceId; onlinePaymentId.current = durableId("intent");
     setIntentOpen(true);
     const next = new URLSearchParams(searchParams);
     next.delete("action");
@@ -337,19 +372,24 @@ export const PaymentOperationsPage: React.FC = () => {
   const selectedProvider = snapshot.providerCatalog.find((provider) => selectedIntentMethod?.providerCodes?.includes(provider.code) && provider.enabled);
 
   const openManual = (line?: PaymentScheduleLine) => {
+    if (manualOpen || intentOpen || manualLifecycle.pending || intentLifecycle.pending) return;
     setManualForm(emptyManualForm(baseCurrency));
     setError("");
     if (line) applyOrderToManual(line.orderId, line.outstandingAmount, line.preferredMethodCode ?? line.allowedMethodCodes[0]);
+    manualWorkspace.current = workspaceId; manualPaymentId.current = durableId("payment"); manualCreditId.current = durableId("customer_credit");
     setManualOpen(true);
   };
   const openIntent = (line?: PaymentScheduleLine) => {
+    if (manualOpen || intentOpen || manualLifecycle.pending || intentLifecycle.pending) return;
     setIntentForm(emptyIntentForm(baseCurrency));
     setError("");
     if (line) applyOrderToIntent(line.orderId, line.outstandingAmount, line.preferredMethodCode ?? line.allowedMethodCodes[0]);
+    intentWorkspace.current = workspaceId; onlinePaymentId.current = durableId("intent");
     setIntentOpen(true);
   };
 
-  const submitManual = async () => {
+  const submitManual = async (): Promise<boolean> => {
+    if (!manualOpen || manualWorkspace.current !== currentWorkspace.current || !manualLifecycle.begin()) return false;
     try {
       const amount = money(manualForm.amount, manualForm.currency);
       if (compareMoney(amount, money("0", amount.currency)) <= 0) throw new Error(text("Số tiền phải lớn hơn 0.", "Amount must be greater than zero."));
@@ -360,7 +400,7 @@ export const PaymentOperationsPage: React.FC = () => {
       setBusy(true);
       const now = new Date().toISOString();
       await recordManualPaymentCanonical({
-        id: durableId("payment"),
+        id: manualPaymentId.current,
         buyerRef: { type: manualForm.buyerType, id: manualForm.buyerId.trim() },
         orderId: manualForm.orderId || undefined,
         amount,
@@ -369,22 +409,29 @@ export const PaymentOperationsPage: React.FC = () => {
         occurredAt: now,
         externalReference: manualForm.externalReference.trim() || undefined,
         evidenceMetadata: isCod ? { customerCollectionEvidenceId: manualForm.codEvidenceReference.trim() } : undefined,
-        idempotencyKey: durableId("manual_payment"),
+        idempotencyKey: manualIntent.current,
         now,
         allowUnapplied: manualForm.convertToCredit,
-        customerCreditId: manualForm.convertToCredit ? durableId("customer_credit") : undefined,
+        customerCreditId: manualForm.convertToCredit ? manualCreditId.current : undefined,
       });
+      if (!manualLifecycle.isCurrent() || manualWorkspace.current !== currentWorkspace.current) return false;
+      manualBaseline.current = manualFingerprint;
+      manualGuard.setIsDirty(false);
       setManualOpen(false);
       setTab(manualForm.convertToCredit ? "CREDITS" : "PAYMENTS");
       notifyProduct(text("Đã ghi nhận tiền thu. Hãy phân bổ vào hóa đơn để giảm công nợ.", "Payment recorded. Allocate it to an invoice to reduce receivables."), "success");
+      return true;
     } catch (caught) {
       setError(formatApplicationError(caught, { locale, fallbackMessage: text("Không thể ghi nhận thanh toán.", "Payment could not be recorded.") }));
+      return false;
     } finally {
       setBusy(false);
+      manualLifecycle.finish();
     }
   };
 
-  const submitIntent = async () => {
+  const submitIntent = async (): Promise<boolean> => {
+    if (!intentOpen || intentWorkspace.current !== currentWorkspace.current || !intentLifecycle.begin()) return false;
     try {
       const amount = money(intentForm.amount, intentForm.currency);
       if (compareMoney(amount, money("0", amount.currency)) <= 0) throw new Error(text("Số tiền phải lớn hơn 0.", "Amount must be greater than zero."));
@@ -393,7 +440,7 @@ export const PaymentOperationsPage: React.FC = () => {
       setBusy(true);
       const now = new Date();
       await createPaymentIntentCanonical({
-        id: durableId("intent"),
+        id: onlinePaymentId.current,
         buyerRef: { type: intentForm.buyerType, id: intentForm.buyerId.trim() },
         orderId: intentForm.orderId || undefined,
         amount,
@@ -401,18 +448,31 @@ export const PaymentOperationsPage: React.FC = () => {
         providerCode: selectedProvider.code,
         returnContext: { routeKey: "payments" },
         expiresAt: new Date(now.getTime() + 30 * 60_000).toISOString(),
-        idempotencyKey: durableId("payment_intent"),
+        idempotencyKey: onlineIntent.current,
         now: now.toISOString(),
       });
+      if (!intentLifecycle.isCurrent() || intentWorkspace.current !== currentWorkspace.current) return false;
+      intentBaseline.current = intentFingerprint;
+      intentGuard.setIsDirty(false);
       setIntentOpen(false);
       setTab("INTENTS");
       notifyProduct(text("Đã tạo yêu cầu thanh toán. Trạng thái chỉ thay đổi theo kết quả từ nhà cung cấp.", "Payment request created. Its state changes only from provider evidence."), "success");
+      return true;
     } catch (caught) {
       setError(formatApplicationError(caught, { locale, fallbackMessage: text("Không thể tạo yêu cầu thanh toán.", "Payment request could not be created.") }));
+      return false;
     } finally {
       setBusy(false);
+      intentLifecycle.finish();
     }
   };
+
+  manualLifecycle.register(manualOpen && manualBaseline.current !== manualFingerprint, () => {
+    setManualForm(emptyManualForm(baseCurrency)); setManualOpen(false); setError(""); manualGuard.setIsDirty(false);
+  }, submitManual);
+  intentLifecycle.register(intentOpen && intentBaseline.current !== intentFingerprint, () => {
+    setIntentForm(emptyIntentForm(baseCurrency)); setIntentOpen(false); setError(""); intentGuard.setIsDirty(false);
+  }, submitIntent);
 
   const cancelIntent = async (intent: PaymentIntent) => {
     const confirmed = await requestConfirmation({
@@ -591,39 +651,45 @@ export const PaymentOperationsPage: React.FC = () => {
       ].map(([label, value, hint, icon]) => <div key={String(label)} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"><div className="flex items-start justify-between gap-3"><div><div className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">{label}</div><div className="mt-2 break-words text-xl font-semibold text-slate-950">{value}</div><div className="mt-1 text-xs text-slate-500">{hint}</div></div><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-violet-700">{icon}</span></div></div>)}</div>
     </Modal>
 
-    <Modal isOpen={manualOpen} onClose={() => setManualOpen(false)} title={text("Ghi nhận tiền đã thu", "Record collected funds")} size="md" variant="form" footer={<><Button variant="secondary" onClick={() => setManualOpen(false)}>{text("Hủy", "Cancel")}</Button><Button actionIntent="confirm" className="text-white [&_svg]:stroke-white" loading={busy} onClick={submitManual}>{text("Ghi nhận khoản thu", "Record payment")}</Button></>}>
+    <Modal isOpen={manualOpen} onClose={closeManual} title={text("Ghi nhận tiền đã thu", "Record collected funds")} size="md" variant="form" footer={<><Button variant="secondary" onClick={closeManual}>{text("Hủy", "Cancel")}</Button><Button actionIntent="confirm" className="text-white [&_svg]:stroke-white" loading={busy} onClick={() => { void submitManual(); }}>{text("Ghi nhận khoản thu", "Record payment")}</Button></>}>
       <div className="space-y-5">
         <p className="rounded-xl border border-sky-200 bg-sky-50 p-4 text-sm leading-6 text-sky-800"><FileText className="mr-2 inline" size={16} />{text("Chỉ ghi nhận khi đã có chứng từ hoặc bằng chứng tiền thực nhận. Sau đó phân bổ khoản thu vào hóa đơn tại Công nợ.", "Record only when actual cash evidence exists. Then allocate the funds to an invoice in Receivables.")}</p>
         <div className="grid gap-4 md:grid-cols-2">
-          <SearchableSelect label={text("Đơn hàng", "Order")} value={manualForm.orderId} onChange={applyOrderToManual} placeholder={text("Không gắn đơn hàng", "No linked order")} searchPlaceholder={text("Tìm mã đơn hoặc khách hàng...", "Search order or buyer...")} options={visibleOrders.map((order) => ({ value: order.id, label: order.orderNumber, description: displayBuyer(order.buyerRef.id, order.id), keywords: `${order.orderNumber} ${displayBuyer(order.buyerRef.id, order.id)}` }))} />
-          <Select label={text("Loại người mua", "Buyer type")} value={manualForm.buyerType} onChange={(event) => setManualForm((current) => ({ ...current, buyerType: event.target.value as ManualPaymentForm["buyerType"] }))}><option value="ORGANIZATION_ACCOUNT">{text("Tổ chức", "Organization")}</option><option value="CONTACT">{text("Cá nhân", "Contact")}</option></Select>
-          <Input label={text("Mã người mua", "Buyer ID")} value={manualForm.buyerId} onChange={(event) => setManualForm((current) => ({ ...current, buyerId: event.target.value }))} />
-          <Input label={text("Số tiền thực nhận", "Collected amount")} value={manualForm.amount} onChange={(event) => setManualForm((current) => ({ ...current, amount: event.target.value }))} />
-          <Select label={text("Tiền tệ", "Currency")} value={manualForm.currency} onChange={(event) => setManualForm((current) => ({ ...current, currency: event.target.value }))}>{enabledCurrencies.map((currency) => <option key={currency} value={currency}>{currency}</option>)}</Select>
-          <Select label={text("Phương thức thu", "Collection method")} value={manualForm.methodCode} onChange={(event) => setManualForm((current) => ({ ...current, methodCode: event.target.value, codEvidenceReference: "" }))}><option value="">{text("Chọn từ danh mục", "Select from catalog")}</option>{manualMethods.filter((item: PaymentMethodCatalogItem) => item.supportedCurrencies.includes(manualForm.currency)).map((item) => <option key={item.code} value={item.code}>{locale === "vi" ? item.displayNameVi : item.displayNameEn}</option>)}</Select>
-          <Input label={text("Số tham chiếu / chứng từ", "Reference / evidence number")} value={manualForm.externalReference} onChange={(event) => setManualForm((current) => ({ ...current, externalReference: event.target.value }))} />
-          {selectedManualMethod?.kind === "COD" && <Input label={text("Mã chứng từ đơn vị vận chuyển đã thu", "Carrier collection evidence ID")} value={manualForm.codEvidenceReference} onChange={(event) => setManualForm((current) => ({ ...current, codEvidenceReference: event.target.value }))} />}
+          <SearchableSelect disabled={manualLifecycle.pending || intentLifecycle.pending} label={text("Đơn hàng", "Order")} value={manualForm.orderId} onChange={applyOrderToManual} placeholder={text("Không gắn đơn hàng", "No linked order")} searchPlaceholder={text("Tìm mã đơn hoặc khách hàng...", "Search order or buyer...")} options={visibleOrders.map((order) => ({ value: order.id, label: order.orderNumber, description: displayBuyer(order.buyerRef.id, order.id), keywords: `${order.orderNumber} ${displayBuyer(order.buyerRef.id, order.id)}` }))} />
+          <Select disabled={manualLifecycle.pending || intentLifecycle.pending} label={text("Loại người mua", "Buyer type")} value={manualForm.buyerType} onChange={(event) => setManualForm((current) => ({ ...current, buyerType: event.target.value as ManualPaymentForm["buyerType"] }))}><option value="ORGANIZATION_ACCOUNT">{text("Tổ chức", "Organization")}</option><option value="CONTACT">{text("Cá nhân", "Contact")}</option></Select>
+          <Input disabled={manualLifecycle.pending || intentLifecycle.pending} label={text("Mã người mua", "Buyer ID")} value={manualForm.buyerId} onChange={(event) => setManualForm((current) => ({ ...current, buyerId: event.target.value }))} />
+          <Input disabled={manualLifecycle.pending || intentLifecycle.pending} label={text("Số tiền thực nhận", "Collected amount")} value={manualForm.amount} onChange={(event) => setManualForm((current) => ({ ...current, amount: event.target.value }))} />
+          <Select disabled={manualLifecycle.pending || intentLifecycle.pending} label={text("Tiền tệ", "Currency")} value={manualForm.currency} onChange={(event) => setManualForm((current) => ({ ...current, currency: event.target.value }))}>{enabledCurrencies.map((currency) => <option key={currency} value={currency}>{currency}</option>)}</Select>
+          <Select disabled={manualLifecycle.pending || intentLifecycle.pending} label={text("Phương thức thu", "Collection method")} value={manualForm.methodCode} onChange={(event) => setManualForm((current) => ({ ...current, methodCode: event.target.value, codEvidenceReference: "" }))}><option value="">{text("Chọn từ danh mục", "Select from catalog")}</option>{manualMethods.filter((item: PaymentMethodCatalogItem) => item.supportedCurrencies.includes(manualForm.currency)).map((item) => <option key={item.code} value={item.code}>{locale === "vi" ? item.displayNameVi : item.displayNameEn}</option>)}</Select>
+          <Input disabled={manualLifecycle.pending || intentLifecycle.pending} label={text("Số tham chiếu / chứng từ", "Reference / evidence number")} value={manualForm.externalReference} onChange={(event) => setManualForm((current) => ({ ...current, externalReference: event.target.value }))} />
+          {selectedManualMethod?.kind === "COD" && <Input disabled={manualLifecycle.pending || intentLifecycle.pending} label={text("Mã chứng từ đơn vị vận chuyển đã thu", "Carrier collection evidence ID")} value={manualForm.codEvidenceReference} onChange={(event) => setManualForm((current) => ({ ...current, codEvidenceReference: event.target.value }))} />}
         </div>
-        <label className="flex items-start gap-3 rounded-xl border border-slate-200 p-4 text-sm"><input type="checkbox" className="mt-1" checked={manualForm.convertToCredit} onChange={(event) => setManualForm((current) => ({ ...current, convertToCredit: event.target.checked }))} /><span><strong>{text("Giữ toàn bộ dưới dạng tín dụng khách hàng", "Keep the full amount as Customer Credit")}</strong><span className="mt-1 block leading-5 text-slate-500">{text("Dùng khi chưa xác định hóa đơn cần phân bổ; khoản thu sẽ không được phân bổ đồng thời để tránh ghi nhận hai lần.", "Use when the target invoice is not known; the payment source cannot also be allocated, preventing double counting.")}</span></span></label>
+        <label className="flex items-start gap-3 rounded-xl border border-slate-200 p-4 text-sm"><input disabled={manualLifecycle.pending || intentLifecycle.pending} type="checkbox" className="mt-1" checked={manualForm.convertToCredit} onChange={(event) => setManualForm((current) => ({ ...current, convertToCredit: event.target.checked }))} /><span><strong>{text("Giữ toàn bộ dưới dạng tín dụng khách hàng", "Keep the full amount as Customer Credit")}</strong><span className="mt-1 block leading-5 text-slate-500">{text("Dùng khi chưa xác định hóa đơn cần phân bổ; khoản thu sẽ không được phân bổ đồng thời để tránh ghi nhận hai lần.", "Use when the target invoice is not known; the payment source cannot also be allocated, preventing double counting.")}</span></span></label>
         {error && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
       </div>
     </Modal>
 
-    <Modal isOpen={intentOpen} onClose={() => setIntentOpen(false)} title={text("Gửi yêu cầu thanh toán", "Request customer payment")} size="md" variant="form" footer={<><Button variant="secondary" onClick={() => setIntentOpen(false)}>{text("Hủy", "Cancel")}</Button><Button actionIntent="confirm" loading={busy} onClick={submitIntent}>{text("Tạo yêu cầu", "Create request")}</Button></>}>
+    <Modal isOpen={intentOpen} onClose={closeIntent} title={text("Gửi yêu cầu thanh toán", "Request customer payment")} size="md" variant="form" footer={<><Button variant="secondary" onClick={closeIntent}>{text("Hủy", "Cancel")}</Button><Button actionIntent="confirm" loading={busy} onClick={() => { void submitIntent(); }}>{text("Tạo yêu cầu", "Create request")}</Button></>}>
       <div className="space-y-5">
         <p className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-800"><ShieldCheck className="mr-2 inline" size={16} />{text("Liên kết thanh toán dùng phương thức đã cấu hình. Chỉ trạng thái xác nhận từ nhà cung cấp mới ghi nhận thu tiền thành công.", "The checkout link uses a configured method. Only a confirmed provider state records a successful collection.")}</p>
         <div className="grid gap-4 md:grid-cols-2">
-          <SearchableSelect label={text("Đơn hàng", "Order")} value={intentForm.orderId} onChange={applyOrderToIntent} placeholder={text("Không gắn đơn hàng", "No linked order")} searchPlaceholder={text("Tìm mã đơn hoặc khách hàng...", "Search order or buyer...")} options={visibleOrders.map((order) => ({ value: order.id, label: order.orderNumber, description: displayBuyer(order.buyerRef.id, order.id), keywords: `${order.orderNumber} ${displayBuyer(order.buyerRef.id, order.id)}` }))} />
-          <Select label={text("Loại người mua", "Buyer type")} value={intentForm.buyerType} onChange={(event) => setIntentForm((current) => ({ ...current, buyerType: event.target.value as IntentForm["buyerType"] }))}><option value="ORGANIZATION_ACCOUNT">{text("Tổ chức", "Organization")}</option><option value="CONTACT">{text("Cá nhân", "Contact")}</option></Select>
-          <Input label={text("Mã người mua", "Buyer ID")} value={intentForm.buyerId} onChange={(event) => setIntentForm((current) => ({ ...current, buyerId: event.target.value }))} />
-          <Input label={text("Số tiền yêu cầu", "Requested amount")} value={intentForm.amount} onChange={(event) => setIntentForm((current) => ({ ...current, amount: event.target.value }))} />
-          <Select label={text("Tiền tệ", "Currency")} value={intentForm.currency} onChange={(event) => setIntentForm((current) => ({ ...current, currency: event.target.value }))}>{enabledCurrencies.map((currency) => <option key={currency} value={currency}>{currency}</option>)}</Select>
-          <Select label={text("Phương thức thanh toán trực tuyến", "Online payment method")} value={intentForm.methodCode} onChange={(event) => setIntentForm((current) => ({ ...current, methodCode: event.target.value }))}><option value="">{text("Chọn từ danh mục", "Select from catalog")}</option>{intentMethods.filter((item: PaymentMethodCatalogItem) => item.supportedCurrencies.includes(intentForm.currency)).map((item) => <option key={item.code} value={item.code}>{locale === "vi" ? item.displayNameVi : item.displayNameEn}</option>)}</Select>
+          <SearchableSelect disabled={manualLifecycle.pending || intentLifecycle.pending} label={text("Đơn hàng", "Order")} value={intentForm.orderId} onChange={applyOrderToIntent} placeholder={text("Không gắn đơn hàng", "No linked order")} searchPlaceholder={text("Tìm mã đơn hoặc khách hàng...", "Search order or buyer...")} options={visibleOrders.map((order) => ({ value: order.id, label: order.orderNumber, description: displayBuyer(order.buyerRef.id, order.id), keywords: `${order.orderNumber} ${displayBuyer(order.buyerRef.id, order.id)}` }))} />
+          <Select disabled={manualLifecycle.pending || intentLifecycle.pending} label={text("Loại người mua", "Buyer type")} value={intentForm.buyerType} onChange={(event) => setIntentForm((current) => ({ ...current, buyerType: event.target.value as IntentForm["buyerType"] }))}><option value="ORGANIZATION_ACCOUNT">{text("Tổ chức", "Organization")}</option><option value="CONTACT">{text("Cá nhân", "Contact")}</option></Select>
+          <Input disabled={manualLifecycle.pending || intentLifecycle.pending} label={text("Mã người mua", "Buyer ID")} value={intentForm.buyerId} onChange={(event) => setIntentForm((current) => ({ ...current, buyerId: event.target.value }))} />
+          <Input disabled={manualLifecycle.pending || intentLifecycle.pending} label={text("Số tiền yêu cầu", "Requested amount")} value={intentForm.amount} onChange={(event) => setIntentForm((current) => ({ ...current, amount: event.target.value }))} />
+          <Select disabled={manualLifecycle.pending || intentLifecycle.pending} label={text("Tiền tệ", "Currency")} value={intentForm.currency} onChange={(event) => setIntentForm((current) => ({ ...current, currency: event.target.value }))}>{enabledCurrencies.map((currency) => <option key={currency} value={currency}>{currency}</option>)}</Select>
+          <Select disabled={manualLifecycle.pending || intentLifecycle.pending} label={text("Phương thức thanh toán trực tuyến", "Online payment method")} value={intentForm.methodCode} onChange={(event) => setIntentForm((current) => ({ ...current, methodCode: event.target.value }))}><option value="">{text("Chọn từ danh mục", "Select from catalog")}</option>{intentMethods.filter((item: PaymentMethodCatalogItem) => item.supportedCurrencies.includes(intentForm.currency)).map((item) => <option key={item.code} value={item.code}>{locale === "vi" ? item.displayNameVi : item.displayNameEn}</option>)}</Select>
         </div>
         {selectedProvider && <p className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">{text("Nhà cung cấp xử lý", "Processing provider")}: <strong>{selectedProvider.displayName}</strong></p>}
         {error && <p role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
       </div>
     </Modal>
+    <ConfirmDialog isOpen={manualGuard.isConfirmOpen || intentGuard.isConfirmOpen}
+      title={text("Bỏ thay đổi chưa lưu?", "Discard unsaved changes?")}
+      message={text("Các thay đổi chưa được lưu. Bạn có muốn đóng biểu mẫu?", "Your changes have not been saved. Close the form?")}
+      confirmText={text("Bỏ thay đổi", "Discard changes")} cancelText={text("Tiếp tục chỉnh sửa", "Keep editing")} type="warning"
+      onClose={() => { manualGuard.setIsConfirmOpen(false); intentGuard.setIsConfirmOpen(false); }}
+      onConfirm={() => { if (manualLifecycle.pending || intentLifecycle.pending) return; if (manualGuard.isConfirmOpen) manualGuard.confirmDiscard(); else intentGuard.confirmDiscard(); }} />
     {composerIntentId && (() => {
       const composerIntent = snapshot.intents.find((item) => item.id === composerIntentId);
       if (!composerIntent) return null;

@@ -285,24 +285,25 @@ export const ProductDetailPage: React.FC<ProductDetailPageProps> = ({
     } catch (error) { showToast(formatOperationUnavailableError(error, { locale })); }
   };
 
-  const handleDeleteConfirm = async () => {
+  const handleDeleteConfirm = async (isCurrent: () => boolean = () => true) => {
     await archiveProductsCommand([product.id], {
       reason: "Archived from product detail",
       actorId,
       actorName,
     });
+    if (!isCurrent()) return;
     setIsDeleteOpen(false);
     navigate("/products");
   };
 
-  const handleFormSubmit = async (data: Partial<Product>) => {
+  const handleFormSubmit = async (data: Product, opening: Product | null, intentId: string, isCurrent: () => boolean): Promise<boolean> => {
     try {
-      const outcome = await saveProductCommand({ ...(activeFormProduct ?? {}), ...data } as Product);
-      showToast(activeFormProduct?.id ? (isVi ? "Đã cập nhật sản phẩm." : "Product updated.") : (isVi ? "Đã tạo bản sao sản phẩm." : "Product duplicate created."));
-      if (!activeFormProduct?.id) navigate(`/products/${outcome.data.id}`);
-      setIsFormOpen(false);
-      setActiveFormProduct(null);
-    } catch (error) { showToast(formatOperationUnavailableError(error, { locale })); }
+      const outcome = await saveProductCommand(data, { idempotencyKey: intentId });
+      if (!isCurrent()) return false;
+      showToast(opening?.id ? (isVi ? "Đã cập nhật sản phẩm." : "Product updated.") : (isVi ? "Đã tạo bản sao sản phẩm." : "Product duplicate created."));
+      if (!opening?.id) navigate(`/products/${outcome.data.id}`);
+      return true;
+    } catch (error) { throw error; }
   };
 
   const tabItems = [

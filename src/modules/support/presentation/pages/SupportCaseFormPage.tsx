@@ -1,3 +1,6 @@
+import { useRef as useWorkspaceBindingRef } from "react";
+import { useWorkspaceContextSnapshot as useWorkflowWorkspace } from "@/platform/workspace-context";
+import { useTargetBoundWorkflow } from "@/shared/presentation/useTargetBoundWorkflow";
 import { formatApplicationError } from "@/shared/operations";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, CalendarClock, Link2, Save, UserRound } from "lucide-react";
@@ -11,7 +14,6 @@ import { getOrganizationAccountSnapshot } from "@/modules/organizations";
 import { relationshipRefKey } from "@/platform/identity";
 import { getAuthSessionSnapshot } from "@/platform/identity-auth";
 import { listWorkspaceMemberDirectory } from "@/platform/member-directory";
-import { registerUnsavedWork } from "@/platform/unsaved-work";
 import { useWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import {
   calculateCareCommitmentDueDates,
@@ -35,14 +37,31 @@ interface SupportCaseFormPageProps {
 
 export const SupportCaseFormPage: React.FC<SupportCaseFormPageProps> = ({ customers = [], contacts = [], products = [], orders = [] }) => {
   const { cases } = useSupportCases();
-  const { caseId } = useParams();
+  const { caseId: routeTargetId } = useParams();
   const navigate = useNavigate();
   const workspace = useWorkspaceContextSnapshot();
   const workspaceConfig = useWorkspaceConfigSnapshot();
   const carePolicy = useMemo(() => getCustomerCarePolicy(workspaceConfig), [workspaceConfig]);
   const careCategories = carePolicy.enabledCategories as SupportCaseCategory[];
   const careSources = carePolicy.enabledSources as SupportCaseSource[];
-  const [searchParams] = useSearchParams();
+  const [routeSearchParams] = useSearchParams();
+  const targetLifecycle = useTargetBoundWorkflow(`${routeTargetId ?? ""}|${routeSearchParams.toString()}`, "support-case-form");
+  const workflowWorkspace = useWorkflowWorkspace().workspaceId;
+  const currentWorkflowWorkspace = useWorkspaceBindingRef(workflowWorkspace);
+  currentWorkflowWorkspace.current = workflowWorkspace;
+  const openingWorkspace = useWorkspaceBindingRef({ cycle: targetLifecycle.cycle, id: workflowWorkspace });
+  if (openingWorkspace.current.cycle !== targetLifecycle.cycle) openingWorkspace.current = { cycle: targetLifecycle.cycle, id: workflowWorkspace };
+  const ownsWorkspace = () => openingWorkspace.current.id === currentWorkflowWorkspace.current;
+  const lifecycle = { ...targetLifecycle,
+    begin: () => ownsWorkspace() && targetLifecycle.begin(),
+    isCurrent: () => ownsWorkspace() && targetLifecycle.isCurrent(),
+    register: (dirty: boolean, reset: () => void, save: () => Promise<boolean>) => {
+      targetLifecycle.register(dirty, reset, () => ownsWorkspace() ? save() : Promise.resolve(false));
+    },
+  };
+  const separator = lifecycle.targetId?.indexOf("|") ?? 0;
+  const caseId = lifecycle.targetId?.slice(0, separator) || undefined;
+  const searchParams = useMemo(() => new URLSearchParams(lifecycle.targetId?.slice(separator + 1) ?? ""), [lifecycle.targetId, separator]);
   const organizationIdParam = searchParams.get("organizationId") ?? "";
   const sourceOrganization = organizationIdParam ? getOrganizationAccountSnapshot(organizationIdParam) : undefined;
   const sourceOrganizationCustomer = sourceOrganization
@@ -55,7 +74,10 @@ export const SupportCaseFormPage: React.FC<SupportCaseFormPageProps> = ({ custom
   const vi = locale === "vi";
   const session = getAuthSessionSnapshot();
   const members = listWorkspaceMemberDirectory();
-  const existingCase = caseId ? cases.find((item) => item.id === caseId) : undefined;
+  const liveCase = caseId ? cases.find((item) => item.id === caseId) : undefined;
+  const openingCase = useRef(liveCase);
+  if (openingCase.current?.id !== caseId) openingCase.current = liveCase ? structuredClone(liveCase) : undefined;
+  const existingCase = openingCase.current;
   const isEditMode = Boolean(caseId);
 
   const [title, setTitle] = useState("");
@@ -77,6 +99,7 @@ export const SupportCaseFormPage: React.FC<SupportCaseFormPageProps> = ({ custom
   const [message, setMessage] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{ title?: string; customerId?: string }>({});
   const [saving, setSaving] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
   const titleRef = useRef<HTMLInputElement>(null);
   const saveHandlerRef = useRef<(navigateAfterSave?: boolean) => Promise<boolean>>(async () => false);
   const unregisterUnsavedWorkRef = useRef<() => void>(() => undefined);
@@ -159,7 +182,8 @@ export const SupportCaseFormPage: React.FC<SupportCaseFormPageProps> = ({ custom
     resolutionManualRef.current = false;
     nextFollowUpManualRef.current = false;
     initializedFormKeyRef.current = formInitializationKey;
-  }, [careCategories, carePolicy, careSources, existingCase, formInitializationKey, isEditMode, searchParams, session?.principal.memberId, sourceOrganization, sourceOrganizationContact, sourceOrganizationCustomer?.id]);
+    setHydrated(true);
+  }, [hydrated, careCategories, carePolicy, careSources, existingCase, formInitializationKey, isEditMode, searchParams, session?.principal.memberId, sourceOrganization, sourceOrganizationContact, sourceOrganizationCustomer?.id]);
 
   const customer = customers.find((item) => item.id === customerId);
   const customerRelationship = useMemo(
@@ -237,33 +261,17 @@ export const SupportCaseFormPage: React.FC<SupportCaseFormPageProps> = ({ custom
     if (!careSources.includes(source)) setSource(careSources[0] ?? "manual");
   }, [careCategories, careSources, category, source]);
 
-  const dirty = isEditMode
-    ? Boolean(existingCase && [
-        title !== (existingCase.title ?? ""),
-        description !== (existingCase.description ?? ""),
-        priority !== (existingCase.priority ?? "medium"),
-        category !== (existingCase.category ?? "request"),
-        source !== (existingCase.source ?? "manual"),
-        customerId !== (existingCase.customerId ?? ""),
-        contactId !== (existingCase.contactId ?? ""),
-        contactName !== (existingCase.contactName ?? ""),
-        contactEmail !== (existingCase.contactEmail ?? ""),
-        contactPhone !== (existingCase.contactPhone ?? ""),
-        relatedOrderId !== (existingCase.relatedOrderId ?? ""),
-        relatedProductId !== (existingCase.relatedProductId ?? ""),
-        ownerId !== (existingCase.ownerId ?? session?.principal.memberId ?? ""),
-        nextFollowUpAt !== (existingCase.nextFollowUpAt?.slice(0, 16) ?? ""),
-        firstResponseDueAt !== (existingCase.firstResponseDueAt?.slice(0, 16) ?? ""),
-        resolutionDueAt !== (existingCase.resolutionDueAt?.slice(0, 16) ?? ""),
-      ].some(Boolean))
-    : Boolean(title || description || customerId || contactId || relatedOrderId || relatedProductId);
-
+  const fingerprint = JSON.stringify({ title, description, priority, category, source, customerId, contactId, contactName, contactEmail, contactPhone, relatedOrderId, relatedProductId, ownerId, nextFollowUpAt, firstResponseDueAt, resolutionDueAt }, (_key, field: unknown) => typeof field === "string" ? field.trim() : field);
+  const baseline = useRef<string | null>(null);
+  useEffect(() => { if (hydrated && initializedFormKeyRef.current === formInitializationKey && baseline.current === null) baseline.current = fingerprint; }, [fingerprint, formInitializationKey, hydrated]);
+  const creationIntent = useRef(`support.create:${crypto.randomUUID()}`);
+  const baselineCycle = useRef(lifecycle.cycle);
   useEffect(() => {
-    if (!dirty || saving) return undefined;
-    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
-    window.addEventListener("beforeunload", warn);
-    return () => window.removeEventListener("beforeunload", warn);
-  }, [dirty, saving]);
+    if (baselineCycle.current === lifecycle.cycle) return;
+    baselineCycle.current = lifecycle.cycle; baseline.current = null; creationIntent.current = `support.create:${crypto.randomUUID()}`;
+    initializedFormKeyRef.current = null; setHydrated(false);
+  }, [lifecycle.cycle]);
+  const dirty = baseline.current !== null && baseline.current !== fingerprint;
 
   const backToList = () => {
     navigate(toWorkspacePath(workspace.workspaceKey, "crm", "support/cases"));
@@ -271,7 +279,7 @@ export const SupportCaseFormPage: React.FC<SupportCaseFormPageProps> = ({ custom
 
   const save = async (event?: React.SyntheticEvent, navigateAfterSave = true): Promise<boolean> => {
     event?.preventDefault();
-    if (saving) return false;
+    if (lifecycle.pending) return false;
     setMessage(null);
     const errors = {
       ...(!title.trim() ? { title: vi ? "Vui lòng nhập chủ đề." : "Subject is required." } : {}),
@@ -298,6 +306,7 @@ export const SupportCaseFormPage: React.FC<SupportCaseFormPageProps> = ({ custom
     const owner = members.find((item) => item.memberId === ownerId);
     const dateOrUndefined = (value: string) => value ? new Date(value).toISOString() : undefined;
 
+    if (!lifecycle.begin()) return false;
     setSaving(true);
     try {
       const input = {
@@ -330,33 +339,33 @@ export const SupportCaseFormPage: React.FC<SupportCaseFormPageProps> = ({ custom
         });
       } else {
         await createSupportCaseCommand(input, {
+          idempotencyKey: creationIntent.current,
           actor: { id: session?.principal.memberId, name: session?.principal.displayName },
         });
       }
+      if (!lifecycle.isCurrent()) return false;
+      baseline.current = fingerprint;
       unregisterUnsavedWorkRef.current();
       if (navigateAfterSave) backToList();
       return true;
     } catch (error) {
-      setMessage(formatApplicationError(error, { locale }));
+      if (lifecycle.isCurrent()) setMessage(formatApplicationError(error, { locale }));
       return false;
     } finally {
-      setSaving(false);
+      if (lifecycle.isCurrent()) setSaving(false);
+      lifecycle.finish();
     }
   };
 
   saveHandlerRef.current = (navigateAfterSave = false) => save(undefined, navigateAfterSave);
-  useEffect(() => {
-    let unregister: () => void = () => undefined;
-    unregister = registerUnsavedWork({
-      id: `support-case-form:${caseId ?? "new"}`,
-      title: vi ? "Phiếu hỗ trợ chưa lưu" : "Unsaved Support Ticket",
-      isDirty: dirty && !saving,
-      save: () => saveHandlerRef.current(false),
-      discard: () => unregister(),
-    });
-    unregisterUnsavedWorkRef.current = unregister;
-    return unregister;
-  }, [caseId, dirty, saving, vi]);
+  lifecycle.register(dirty, () => {
+    creationIntent.current = `support.create:${crypto.randomUUID()}`;
+    baseline.current = null;
+    setHydrated(false);
+    initializedFormKeyRef.current = null;
+    setMessage(null);
+    setFieldErrors({});
+  }, () => saveHandlerRef.current(false));
 
   return (
     <div className="crm-form-page space-y-5 text-xs">
@@ -376,43 +385,43 @@ export const SupportCaseFormPage: React.FC<SupportCaseFormPageProps> = ({ custom
         <div className="space-y-5">
           <Section title={vi ? "Nội dung chăm sóc" : "Care request"} icon={<UserRound size={15} />}>
             <div className="grid gap-4 md:grid-cols-2">
-              <Field label={vi ? "Chủ đề *" : "Subject *"} wide><Input id="support-title" ref={titleRef} required error={fieldErrors.title} value={title} onChange={(event) => { setTitle(event.target.value); setFieldErrors((current) => ({ ...current, title: undefined })); }} placeholder={vi ? "Ví dụ: Khách hàng cần tư vấn gói nâng cấp" : "Example: Customer needs upgrade consultation"} /></Field>
-              <Field label={vi ? "Mô tả" : "Description"} wide><Textarea rows={5} value={description} onChange={(event) => setDescription(event.target.value)} placeholder={vi ? "Nội dung yêu cầu, mong đợi của khách hàng và thông tin cần theo dõi..." : "Request details, customer expectation and follow-up context..."} /></Field>
-              <Field label={vi ? "Loại chăm sóc" : "Care type"}><Select value={category} onChange={(event) => setCategory(event.target.value as SupportCaseCategory)}>{careCategories.map((value) => <option key={value} value={value}>{getCustomerCareCategoryLabel(carePolicy, value, locale) || (vi ? SUPPORT_CASE_CATEGORY_CONFIG[value].labelVi : SUPPORT_CASE_CATEGORY_CONFIG[value].labelEn)}</option>)}</Select></Field>
-              <Field label={vi ? "Mức ưu tiên" : "Priority"}><Select value={priority} onChange={(event) => setPriority(event.target.value as SupportCasePriority)}>{Object.keys(SUPPORT_CASE_PRIORITY_CONFIG).map((value) => <option key={value} value={value}>{vi ? SUPPORT_CASE_PRIORITY_CONFIG[value as SupportCasePriority].labelVi : SUPPORT_CASE_PRIORITY_CONFIG[value as SupportCasePriority].labelEn}</option>)}</Select></Field>
-              <Field label={vi ? "Kênh tiếp nhận" : "Intake channel"}><Select value={source} onChange={(event) => setSource(event.target.value as SupportCaseSource)}>{careSources.map((value) => <option key={value} value={value}>{getCustomerCareSourceLabel(carePolicy, value, locale) || (vi ? SUPPORT_CASE_SOURCE_CONFIG[value].labelVi : SUPPORT_CASE_SOURCE_CONFIG[value].labelEn)}</option>)}</Select></Field>
-              <Field label={vi ? "Người phụ trách" : "Owner"}><Select value={ownerId} onChange={(event) => setOwnerId(event.target.value)}><option value="">{vi ? "Chưa phân công" : "Unassigned"}</option>{members.map((member) => <option key={member.memberId} value={member.memberId}>{member.displayName}</option>)}</Select></Field>
+              <Field label={vi ? "Chủ đề *" : "Subject *"} wide><Input disabled={lifecycle.pending} id="support-title" ref={titleRef} required error={fieldErrors.title} value={title} onChange={(event) => { setTitle(event.target.value); setFieldErrors((current) => ({ ...current, title: undefined })); }} placeholder={vi ? "Ví dụ: Khách hàng cần tư vấn gói nâng cấp" : "Example: Customer needs upgrade consultation"} /></Field>
+              <Field label={vi ? "Mô tả" : "Description"} wide><Textarea disabled={lifecycle.pending} rows={5} value={description} onChange={(event) => setDescription(event.target.value)} placeholder={vi ? "Nội dung yêu cầu, mong đợi của khách hàng và thông tin cần theo dõi..." : "Request details, customer expectation and follow-up context..."} /></Field>
+              <Field label={vi ? "Loại chăm sóc" : "Care type"}><Select disabled={lifecycle.pending} value={category} onChange={(event) => setCategory(event.target.value as SupportCaseCategory)}>{careCategories.map((value) => <option key={value} value={value}>{getCustomerCareCategoryLabel(carePolicy, value, locale) || (vi ? SUPPORT_CASE_CATEGORY_CONFIG[value].labelVi : SUPPORT_CASE_CATEGORY_CONFIG[value].labelEn)}</option>)}</Select></Field>
+              <Field label={vi ? "Mức ưu tiên" : "Priority"}><Select disabled={lifecycle.pending} value={priority} onChange={(event) => setPriority(event.target.value as SupportCasePriority)}>{Object.keys(SUPPORT_CASE_PRIORITY_CONFIG).map((value) => <option key={value} value={value}>{vi ? SUPPORT_CASE_PRIORITY_CONFIG[value as SupportCasePriority].labelVi : SUPPORT_CASE_PRIORITY_CONFIG[value as SupportCasePriority].labelEn}</option>)}</Select></Field>
+              <Field label={vi ? "Kênh tiếp nhận" : "Intake channel"}><Select disabled={lifecycle.pending} value={source} onChange={(event) => setSource(event.target.value as SupportCaseSource)}>{careSources.map((value) => <option key={value} value={value}>{getCustomerCareSourceLabel(carePolicy, value, locale) || (vi ? SUPPORT_CASE_SOURCE_CONFIG[value].labelVi : SUPPORT_CASE_SOURCE_CONFIG[value].labelEn)}</option>)}</Select></Field>
+              <Field label={vi ? "Người phụ trách" : "Owner"}><Select disabled={lifecycle.pending} value={ownerId} onChange={(event) => setOwnerId(event.target.value)}><option value="">{vi ? "Chưa phân công" : "Unassigned"}</option>{members.map((member) => <option key={member.memberId} value={member.memberId}>{member.displayName}</option>)}</Select></Field>
             </div>
           </Section>
 
           <Section title={vi ? "Khách hàng & Người liên hệ" : "Customer & Contact"} icon={<UserRound size={15} />}>
             <div className="grid gap-4 md:grid-cols-2">
-              <Field label={vi ? "Khách hàng *" : "Customer *"} wide><SearchableSelect id="support-customer" required error={fieldErrors.customerId} value={customerId} onChange={(value) => { setCustomerId(value); setContactId(""); setFieldErrors((current) => ({ ...current, customerId: undefined })); }} placeholder={vi ? "Chọn khách hàng" : "Select customer"} searchPlaceholder={vi ? "Tìm khách hàng..." : "Search customers..."} options={customers.map((item) => ({ value: item.id, label: item.displayName || item.companyName || item.name || item.id, description: item.customerCode || item.email || item.phone || item.id, keywords: `${item.customerCode || ""} ${item.email || ""} ${item.phone || ""}` }))} /></Field>
-              <Field label={vi ? "Người liên hệ" : "Contact"} wide><SearchableSelect value={contactId} onChange={setContactId} placeholder={vi ? "Không liên kết người liên hệ" : "No linked contact"} searchPlaceholder={vi ? "Tìm người liên hệ..." : "Search contacts..."} options={customerContacts.map((item) => ({ value: item.id, label: item.fullName || item.name || item.email || item.id, description: item.email || item.phone || item.mobilePhone || item.id, keywords: `${item.email || ""} ${item.phone || ""} ${item.mobilePhone || ""}` }))} /></Field>
-              <Field label={vi ? "Tên liên hệ" : "Contact name"}><Input value={contactName} onChange={(event) => setContactName(event.target.value)} /></Field>
-              <Field label="Email"><Input type="email" value={contactEmail} onChange={(event) => setContactEmail(event.target.value)} /></Field>
-              <Field label={vi ? "Điện thoại" : "Phone"}><Input value={contactPhone} onChange={(event) => setContactPhone(event.target.value)} /></Field>
+              <Field label={vi ? "Khách hàng *" : "Customer *"} wide><SearchableSelect disabled={lifecycle.pending} id="support-customer" required error={fieldErrors.customerId} value={customerId} onChange={(value) => { setCustomerId(value); setContactId(""); setFieldErrors((current) => ({ ...current, customerId: undefined })); }} placeholder={vi ? "Chọn khách hàng" : "Select customer"} searchPlaceholder={vi ? "Tìm khách hàng..." : "Search customers..."} options={customers.map((item) => ({ value: item.id, label: item.displayName || item.companyName || item.name || item.id, description: item.customerCode || item.email || item.phone || item.id, keywords: `${item.customerCode || ""} ${item.email || ""} ${item.phone || ""}` }))} /></Field>
+              <Field label={vi ? "Người liên hệ" : "Contact"} wide><SearchableSelect disabled={lifecycle.pending} value={contactId} onChange={setContactId} placeholder={vi ? "Không liên kết người liên hệ" : "No linked contact"} searchPlaceholder={vi ? "Tìm người liên hệ..." : "Search contacts..."} options={customerContacts.map((item) => ({ value: item.id, label: item.fullName || item.name || item.email || item.id, description: item.email || item.phone || item.mobilePhone || item.id, keywords: `${item.email || ""} ${item.phone || ""} ${item.mobilePhone || ""}` }))} /></Field>
+              <Field label={vi ? "Tên liên hệ" : "Contact name"}><Input disabled={lifecycle.pending} value={contactName} onChange={(event) => setContactName(event.target.value)} /></Field>
+              <Field label="Email"><Input disabled={lifecycle.pending} type="email" value={contactEmail} onChange={(event) => setContactEmail(event.target.value)} /></Field>
+              <Field label={vi ? "Điện thoại" : "Phone"}><Input disabled={lifecycle.pending} value={contactPhone} onChange={(event) => setContactPhone(event.target.value)} /></Field>
             </div>
           </Section>
 
           <Section title={vi ? "Bản ghi liên quan" : "Related records"} icon={<Link2 size={15} />}>
             <div className="grid gap-4 md:grid-cols-2">
-              <Field label={vi ? "Đơn hàng" : "Order"}><SearchableSelect value={relatedOrderId} onChange={setRelatedOrderId} placeholder={vi ? "Không liên kết đơn hàng" : "No linked order"} searchPlaceholder={vi ? "Tìm mã đơn hàng..." : "Search order number..."} options={customerOrders.map((item) => ({ value: item.id, label: item.orderNumber || item.id, description: item.state || item.status || "" }))} /></Field>
-              <Field label={vi ? "Sản phẩm" : "Product"}><SearchableSelect value={relatedProductId} onChange={setRelatedProductId} placeholder={vi ? "Không liên kết sản phẩm" : "No linked product"} searchPlaceholder={vi ? "Tìm tên hoặc mã sản phẩm..." : "Search product name or SKU..."} options={products.map((item) => ({ value: item.id, label: item.name || item.id, description: item.sku || item.category || "", keywords: `${item.sku || ""} ${item.category || ""}` }))} /></Field>
+              <Field label={vi ? "Đơn hàng" : "Order"}><SearchableSelect disabled={lifecycle.pending} value={relatedOrderId} onChange={setRelatedOrderId} placeholder={vi ? "Không liên kết đơn hàng" : "No linked order"} searchPlaceholder={vi ? "Tìm mã đơn hàng..." : "Search order number..."} options={customerOrders.map((item) => ({ value: item.id, label: item.orderNumber || item.id, description: item.state || item.status || "" }))} /></Field>
+              <Field label={vi ? "Sản phẩm" : "Product"}><SearchableSelect disabled={lifecycle.pending} value={relatedProductId} onChange={setRelatedProductId} placeholder={vi ? "Không liên kết sản phẩm" : "No linked product"} searchPlaceholder={vi ? "Tìm tên hoặc mã sản phẩm..." : "Search product name or SKU..."} options={products.map((item) => ({ value: item.id, label: item.name || item.id, description: item.sku || item.category || "", keywords: `${item.sku || ""} ${item.category || ""}` }))} /></Field>
             </div>
           </Section>
         </div>
 
         <aside className="space-y-5">
           <Section title={vi ? "Hẹn xử lý tiếp theo" : "Next follow-up"} icon={<CalendarClock size={15} />}>
-            <Field label={vi ? "Thời điểm hẹn" : "Follow-up time"}><Input type="datetime-local" value={nextFollowUpAt} onChange={(event) => { nextFollowUpManualRef.current = true; setNextFollowUpAt(event.target.value); }} /></Field>
+            <Field label={vi ? "Thời điểm hẹn" : "Follow-up time"}><Input disabled={lifecycle.pending} type="datetime-local" value={nextFollowUpAt} onChange={(event) => { nextFollowUpManualRef.current = true; setNextFollowUpAt(event.target.value); }} /></Field>
             <p className="mt-3 text-[11px] leading-5 text-slate-500">{vi ? "Mốc này giúp hàng đợi Phiếu hỗ trợ xác định phiếu cần theo dõi. Nó không tự tạo Công việc." : "This date drives the follow-up queue. It does not create a Task automatically."}</p>
           </Section>
 
           <Section title={vi ? (carePolicy.commitments.enabled ? "Cam kết thời gian" : "Cam kết thời gian (không áp dụng)") : "Time commitment"} icon={<CalendarClock size={15} />}>
             <div className="space-y-4">
-              <Field label={vi ? "Hạn phản hồi đầu" : "First response due"}><Input disabled={!carePolicy.commitments.enabled} type="datetime-local" value={firstResponseDueAt} onChange={(event) => { firstResponseManualRef.current = true; setFirstResponseDueAt(event.target.value); }} /></Field>
-              <Field label={vi ? "Hạn hoàn tất" : "Resolution due"}><Input disabled={!carePolicy.commitments.enabled} type="datetime-local" value={resolutionDueAt} onChange={(event) => { resolutionManualRef.current = true; setResolutionDueAt(event.target.value); }} /></Field>
+              <Field label={vi ? "Hạn phản hồi đầu" : "First response due"}><Input disabled={(lifecycle.pending) || (!carePolicy.commitments.enabled)} type="datetime-local" value={firstResponseDueAt} onChange={(event) => { firstResponseManualRef.current = true; setFirstResponseDueAt(event.target.value); }} /></Field>
+              <Field label={vi ? "Hạn hoàn tất" : "Resolution due"}><Input disabled={(lifecycle.pending) || (!carePolicy.commitments.enabled)} type="datetime-local" value={resolutionDueAt} onChange={(event) => { resolutionManualRef.current = true; setResolutionDueAt(event.target.value); }} /></Field>
             </div>
             <p className="mt-3 text-[11px] leading-5 text-slate-500">{vi ? (carePolicy.commitments.enabled ? "Deadline mặc định được tính theo mức ưu tiên trong cấu hình workspace và vẫn có thể chỉnh trên từng phiếu." : "Doanh nghiệp đang tắt cam kết thời gian trong cấu hình workspace nên hệ thống không tạo SLA giả.") : "Time commitments are controlled by workspace support policy."}</p>
           </Section>

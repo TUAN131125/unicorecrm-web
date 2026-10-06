@@ -1,5 +1,6 @@
 {
   "schemaVersion": 1,
+  "nonProductEvidenceDirectories": ["review-artifacts", "test-results", "playwright-report"],
   "allowedStatus": [
     "CURRENT",
     "TARGET",

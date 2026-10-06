@@ -1,3 +1,7 @@
+import { useRef as useWorkspaceBindingRef } from "react";
+import { useWorkspaceContextSnapshot as useWorkflowWorkspace } from "@/platform/workspace-context";
+import { useTargetBoundWorkflow } from "@/shared/presentation/useTargetBoundWorkflow";
+import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
 import React, { useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
@@ -139,7 +143,22 @@ function operationalBlockerLabel(blocker: string, locale: "vi" | "en"): string {
 }
 
 export const OrderDetailPage: React.FC<OrderDetailPageProps> = ({ contacts = [], payments, shippingBookings }) => {
-  const { orderId = "" } = useParams<{ orderId: string }>();
+  const { orderId: routeOrderId = "" } = useParams<{ orderId: string }>();
+  const targetLifecycle = useTargetBoundWorkflow(routeOrderId, "order-cancellation-draft");
+  const workflowWorkspace = useWorkflowWorkspace().workspaceId;
+  const currentWorkflowWorkspace = useWorkspaceBindingRef(workflowWorkspace);
+  currentWorkflowWorkspace.current = workflowWorkspace;
+  const openingWorkspace = useWorkspaceBindingRef({ cycle: targetLifecycle.cycle, id: workflowWorkspace });
+  if (openingWorkspace.current.cycle !== targetLifecycle.cycle) openingWorkspace.current = { cycle: targetLifecycle.cycle, id: workflowWorkspace };
+  const ownsWorkspace = () => openingWorkspace.current.id === currentWorkflowWorkspace.current;
+  const workflow = { ...targetLifecycle,
+    begin: () => ownsWorkspace() && targetLifecycle.begin(),
+    isCurrent: () => ownsWorkspace() && targetLifecycle.isCurrent(),
+    register: (dirty: boolean, reset: () => void, save: () => Promise<boolean>) => {
+      targetLifecycle.register(dirty, reset, () => ownsWorkspace() ? save() : Promise.resolve(false));
+    },
+  };
+  const orderId = workflow.targetId ?? "";
   const workspace = useWorkspaceContextSnapshot();
   const detailQuery = useModuleAuthoritativeResource(getOrderDetailResource(orderId || "__missing__"), { enabled: Boolean(orderId), scopeKey: workspace.workspaceId, onScopeChange: () => replaceOrders({}) });
   const navigate = useNavigate();
@@ -187,10 +206,20 @@ export const OrderDetailPage: React.FC<OrderDetailPageProps> = ({ contacts = [],
   const [sendBusy, setSendBusy] = useState(false);
   const documentRef = useRef<HTMLDivElement | null>(null);
 
-  const order = useMemo(() => orderId ? getOrderById(orders, orderId) : undefined, [orderId, orders]);
+  const liveOrder = useMemo(() => orderId ? getOrderById(orders, orderId) : undefined, [orderId, orders]);
+  const openingOrder = useRef(liveOrder);
+  if (openingOrder.current?.id !== orderId || (!cancelOpen && !deliveryOpen && !workflow.pending)) openingOrder.current = liveOrder ? structuredClone(liveOrder) : undefined;
+  const order = openingOrder.current;
   const customer = useMemo(() => order ? customers.find((item) => item.id === order.customerId) : undefined, [customers, order]);
   const contact = useMemo(() => order ? contacts.find((item) => item.id === order.contactId) : undefined, [contacts, order]);
 
+  const dirty = cancelOpen && Boolean(cancelReason.trim() || cancelReasonCode !== (cancellationReasons[0]?.code ?? ""));
+  const resetCancellation = () => { setCancelOpen(false); setCancelReasonCode(cancellationReasons[0]?.code ?? ""); setCancelReason(""); };
+  const guard = useUnsavedChangesGuard(resetCancellation);
+  React.useEffect(() => guard.setIsDirty(dirty), [dirty, guard.setIsDirty]);
+  workflow.register(dirty, resetCancellation, async () => false);
+  React.useEffect(() => { resetCancellation(); setDeliveryOpen(false); }, [orderId]);
+  const closeCancellation = () => { if (!workflow.pending) guard.requestClose(); };
   if (!order) {
     return (
       <AuthoritativeQueryBoundary
@@ -352,13 +381,20 @@ export const OrderDetailPage: React.FC<OrderDetailPageProps> = ({ contacts = [],
     setDeliveryOpen(true);
   };
 
+  const deliveryIdentity = React.useRef({ orderId, open: deliveryOpen, cycle: 0 });
+  if (deliveryIdentity.current.orderId !== orderId || deliveryIdentity.current.open !== deliveryOpen) deliveryIdentity.current = { orderId, open: deliveryOpen, cycle: deliveryIdentity.current.cycle + 1 };
+  const renderedDeliveryCycle = deliveryIdentity.current.cycle;
+
   const confirmOrderDelivery = async (value: CustomerDocumentDeliveryValue) => {
-    const updated = (await recordOrderDeliveryCommandBoundary(order.id, {
+    const openingTarget = order.id;
+    const openingCycle = renderedDeliveryCycle;
+    await recordOrderDeliveryCommandBoundary(openingTarget, {
       id: createDurableId("order_delivery"),
       ...value,
       evidenceType: "USER_CONFIRMED_SENT",
       sentBy: session.principal.memberId,
-    })).data;
+    });
+    if (!workflow.isCurrent() || deliveryIdentity.current.cycle !== openingCycle) return;
     setDeliveryOpen(false);
     setMessage({ tone: "success", text: locale === "vi" ? "Đã xác nhận tài liệu đơn hàng được gửi và lưu bằng chứng kênh liên hệ." : "Order document delivery was confirmed with channel evidence." });
   };
@@ -398,7 +434,7 @@ export const OrderDetailPage: React.FC<OrderDetailPageProps> = ({ contacts = [],
   };
 
   const confirmCancellation = async () => {
-    if (!cancelReasonCode || !cancelReason.trim()) return;
+    if (!cancelReasonCode || !cancelReason.trim() || !workflow.begin()) return;
     try {
       await executeOrderCancellationCommand(
         {
@@ -408,13 +444,15 @@ export const OrderDetailPage: React.FC<OrderDetailPageProps> = ({ contacts = [],
         },
         order.resourceVersion === undefined ? {} : { expectedVersion: order.resourceVersion },
       );
+      if (!workflow.isCurrent()) return;
       setCancelOpen(false);
       setCancelReasonCode(cancellationReasons[0]?.code ?? "");
       setCancelReason("");
       setMessage({ tone: "success", text: locale === "vi" ? "Đã hủy đơn hàng và đóng kế hoạch thanh toán liên quan." : "Order and its related Payment Plan were cancelled." });
     } catch (error) {
+      if (!workflow.isCurrent()) return;
       setMessage({ tone: "error", text: formatApplicationError(error, { locale }) });
-    }
+    } finally { workflow.finish(); }
   };
 
   const renderHeaderAction = (id: string) => {
@@ -695,6 +733,7 @@ export const OrderDetailPage: React.FC<OrderDetailPageProps> = ({ contacts = [],
       </CommercialDocumentPreviewModal>
       <CustomerDocumentDeliveryModal
         isOpen={deliveryOpen}
+        documentId={order.id}
         documentNumber={order.orderNumber}
         documentLabel={{ vi: "Tài liệu đơn hàng", en: "Order document" }}
         locale={locale}
@@ -708,16 +747,19 @@ export const OrderDetailPage: React.FC<OrderDetailPageProps> = ({ contacts = [],
         onClose={() => setDeliveryOpen(false)}
         onConfirm={confirmOrderDelivery}
       />
+      <ConfirmDialog isOpen={guard.isConfirmOpen} onClose={() => guard.setIsConfirmOpen(false)} onConfirm={() => { if (!workflow.pending) guard.confirmDiscard(); }}
+        title={locale === "vi" ? "Bỏ thay đổi chưa lưu?" : "Discard unsaved changes?"} message={locale === "vi" ? "Các thay đổi chưa được lưu. Bạn có muốn đóng biểu mẫu?" : "Your changes have not been saved. Close the form?"}
+        confirmText={locale === "vi" ? "Bỏ thay đổi" : "Discard changes"} cancelText={locale === "vi" ? "Tiếp tục chỉnh sửa" : "Keep editing"} type="warning" />
       <ConfirmDialog
         isOpen={cancelOpen}
-        onClose={() => { setCancelOpen(false); setCancelReasonCode(cancellationReasons[0]?.code ?? ""); setCancelReason(""); }}
-        onConfirm={() => { void confirmCancellation(); }}
+        onClose={closeCancellation}
+        editable onConfirm={confirmCancellation}
         title={locale === "vi" ? `Hủy ${order.orderNumber}?` : `Cancel ${order.orderNumber}?`}
         message={
           <div className="space-y-3 text-left">
             <p>{locale === "vi" ? "Đây là thao tác hủy nghiệp vụ. Đơn hàng sẽ chuyển sang trạng thái Đã hủy." : "This is an explicit business cancellation. The Order will enter terminal CANCELLED state."}</p>
-            <Select label={locale === "vi" ? "Mã lý do *" : "Reason code *"} value={cancelReasonCode} onChange={(event) => setCancelReasonCode(event.target.value)}><option value="">{locale === "vi" ? "Chọn lý do" : "Select reason"}</option>{cancellationReasons.map((reason) => <option key={reason.code} value={reason.code}>{locale === "vi" ? reason.labelVi : reason.labelEn}</option>)}</Select>
-            <Textarea label={locale === "vi" ? "Ghi chú hủy *" : "Cancellation note *"} value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} />
+            <Select disabled={workflow.pending} label={locale === "vi" ? "Mã lý do *" : "Reason code *"} value={cancelReasonCode} onChange={(event) => setCancelReasonCode(event.target.value)}><option value="">{locale === "vi" ? "Chọn lý do" : "Select reason"}</option>{cancellationReasons.map((reason) => <option key={reason.code} value={reason.code}>{locale === "vi" ? reason.labelVi : reason.labelEn}</option>)}</Select>
+            <Textarea disabled={workflow.pending} label={locale === "vi" ? "Ghi chú hủy *" : "Cancellation note *"} value={cancelReason} onChange={(event) => setCancelReason(event.target.value)} />
           </div>
         }
         confirmText={locale === "vi" ? "Hủy đơn hàng" : "Cancel Order"}

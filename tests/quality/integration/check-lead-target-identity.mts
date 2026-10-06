@@ -80,7 +80,7 @@ let releaseSave: (() => void) | undefined;
 const mutations: { id: string; version: number; name: string }[] = [];
 const leadServices = getLeadApplicationServices();
 configureLeadApplication({ ...leadServices, api: { ...leadServices.api, commands: { ...leadServices.api.commands, async replaceLeadProfile(...args) {
-  mutations.push({ id: args[0], version: args[2].expectedVersion, name: args[1].name });
+  mutations.push({ id: args[0], version: args[2].expectedVersion, name: args[1].displayName });
   if (holdSave) await new Promise<void>(resolve => { releaseSave = resolve; });
   if (failureCode) throw new ApplicationError({ code: failureCode, message: "private server diagnostics", category: "CONFLICT", retryable: false });
   const result = await leadServices.api.commands.replaceLeadProfile(...args);

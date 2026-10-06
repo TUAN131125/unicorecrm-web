@@ -111,6 +111,15 @@ const seeds: readonly StudioGuidanceSeed[] = [
     mistake: { vi: "Không hiển thị secret đầy đủ sau khi tạo và không gửi dữ liệu nhạy cảm ngoài phạm vi cần thiết.", en: "Do not reveal full secrets after creation or send sensitive data beyond the required scope." },
     keywords: { vi: "webhook api endpoint sự kiện secret", en: "webhook api endpoint event secret" },
   },
+  {
+    id: "studio.ai",
+    routeKey: "SETTINGS_AI",
+    title: { vi: "Trợ lý AI", en: "AI Assistant" },
+    purpose: { vi: "Xem và cấu hình nhà cung cấp AI cho workspace.", en: "Review and configure AI providers for the workspace." },
+    task: { vi: "Kiểm tra nhà cung cấp, cấu hình được phép và trạng thái kết nối.", en: "Review the provider, permitted configuration and connection status." },
+    mistake: { vi: "Chỉ coi kết nối thành công khi máy chủ xác nhận; không chia sẻ khóa bí mật.", en: "Treat a connection as successful only when the server confirms it; do not share secret keys." },
+    keywords: { vi: "AI trợ lý nhà cung cấp cấu hình", en: "AI assistant provider configuration" },
+  },
 ] as const;
 
 export const STUDIO_SCREEN_GUIDANCE: readonly ScreenGuidance[] = seeds.map((seed) => ({
@@ -126,15 +135,15 @@ export const STUDIO_SCREEN_GUIDANCE: readonly ScreenGuidance[] = seeds.map((seed
   },
   prerequisites: [
     {
-      vi: "Bạn cần quyền xem Studio; quyền chỉnh sửa được kiểm tra riêng khi lưu.",
-      en: "You need Studio read access; edit permission is checked separately when saving.",
+      vi: seed.id === "studio.ai" ? "Bạn cần quyền xem cấu hình AI; quyền chỉnh sửa được kiểm tra riêng khi lưu." : "Bạn cần quyền xem Studio; quyền chỉnh sửa được kiểm tra riêng khi lưu.",
+      en: seed.id === "studio.ai" ? "You need AI configuration read access; edit permission is checked separately when saving." : "You need Studio read access; edit permission is checked separately when saving.",
     },
   ],
   primaryTasks: [
     {
       id: "configure",
       text: seed.task,
-      requiredCapabilities: [CAPABILITIES.STUDIO_READ],
+      requiredCapabilities: [seed.id === "studio.ai" ? CAPABILITIES.AI_CONFIGURATION_READ : CAPABILITIES.STUDIO_READ],
     },
     {
       id: "review-impact",
@@ -142,12 +151,12 @@ export const STUDIO_SCREEN_GUIDANCE: readonly ScreenGuidance[] = seeds.map((seed
         vi: "Kiểm tra phạm vi ảnh hưởng và trạng thái lưu trước khi rời màn hình.",
         en: "Review the affected scope and save status before leaving the screen.",
       },
-      requiredCapabilities: [CAPABILITIES.STUDIO_READ],
+      requiredCapabilities: [seed.id === "studio.ai" ? CAPABILITIES.AI_CONFIGURATION_READ : CAPABILITIES.STUDIO_READ],
     },
   ],
   commonMistakes: [seed.mistake],
   steps: [],
-  requiredCapabilities: [CAPABILITIES.STUDIO_READ],
+  requiredCapabilities: [seed.id === "studio.ai" ? CAPABILITIES.AI_CONFIGURATION_READ : CAPABILITIES.STUDIO_READ],
   keywords: seed.keywords,
   owner: "product-architecture",
   reviewedAt: "2026-07-24",

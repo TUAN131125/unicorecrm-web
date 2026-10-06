@@ -1,7 +1,10 @@
+import { useWorkspaceContextSnapshot } from "@/platform/workspace-context";
+import { registerUnsavedWork } from "@/platform/unsaved-work";
+import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
 import { formatApplicationError } from "@/shared/operations";
 import React from "react";
 import { CheckCircle2 } from "lucide-react";
-import { Button, Input, Modal, Select, Textarea } from "@/shared/components/ui";
+import { Button, ConfirmDialog, Input, Modal, Select, Textarea } from "@/shared/components/ui";
 import type { QuoteDeliveryChannel } from "../../domain/model/quote.types";
 
 export interface QuoteDeliveryConfirmationValue {
@@ -65,20 +68,53 @@ export const QuoteDeliveryConfirmationModal: React.FC<QuoteDeliveryConfirmationM
   const [error, setError] = React.useState("");
   const [busy, setBusy] = React.useState(false);
 
+  const workspaceId = useWorkspaceContextSnapshot().workspaceId;
+  const liveWorkspace = React.useRef(workspaceId); liveWorkspace.current = workspaceId;
+  const openRef = React.useRef(isOpen); openRef.current = isOpen;
+  const registration = React.useRef<object | undefined>(undefined);
+  const previousOpen = React.useRef(false);
+  const pending = React.useRef(false);
+  const mounted = React.useRef(true);
+  const cycle = React.useRef(0);
+  const opening = React.useRef({ workspaceId, quoteNumber, initialFileName, channelLocked, onConfirm, onClose });
+  const fingerprint = JSON.stringify({ channel, recipientEmail: recipientEmail.trim(), recipient: recipient.trim(), sentAt, note: note.trim() });
+  const baseline = React.useRef(fingerprint);
+  const dirty = baseline.current !== fingerprint;
+  const reset = () => { setChannel(initialChannel); setRecipientEmail(initialRecipientEmail); setRecipient(initialRecipient); setSentAt(currentLocalDateTime()); setNote(""); setError(""); };
+  const guard = useUnsavedChangesGuard(() => { reset(); opening.current.onClose(); });
+  React.useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  React.useEffect(() => {
+    if (isOpen && !pending.current && (!previousOpen.current || (opening.current.quoteNumber !== quoteNumber && !dirty))) {
+      cycle.current += 1;
+      opening.current = { workspaceId, quoteNumber, initialFileName, channelLocked, onConfirm, onClose };
+      const time = currentLocalDateTime();
+      setChannel(initialChannel); setRecipientEmail(initialRecipientEmail); setRecipient(initialRecipient); setSentAt(time); setNote(""); setError("");
+      baseline.current = JSON.stringify({ channel: initialChannel, recipientEmail: initialRecipientEmail.trim(), recipient: initialRecipient.trim(), sentAt: time, note: "" });
+    }
+    if (!isOpen || !pending.current) previousOpen.current = isOpen;
+    guard.setIsDirty(isOpen && dirty);
+  });
   React.useEffect(() => {
     if (!isOpen) return;
-    setChannel(initialChannel);
-    setRecipientEmail(initialRecipientEmail);
-    setRecipient(initialRecipient);
-    setSentAt(currentLocalDateTime());
-    setNote("");
-    setError("");
-    setBusy(false);
-  }, [isOpen, initialChannel, initialRecipientEmail, initialRecipient]);
+    const capturedCycle = cycle.current;
+    const token = {}; registration.current = token;
+    const ownsEntry = () => mounted.current && openRef.current && cycle.current === capturedCycle && registration.current === token;
+    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
+    if (dirty || busy) window.addEventListener("beforeunload", warn);
+    const unregister = registerUnsavedWork({ id: `quote-delivery-confirmation:${opening.current.quoteNumber}:${capturedCycle}`, title: "Quote delivery confirmation", isDirty: dirty || busy,
+      save: async () => false,
+      canDiscard: () => ownsEntry() && !pending.current,
+      discard: () => { if (ownsEntry() && !pending.current) { reset(); opening.current.onClose(); } },
+    });
+    return () => { unregister(); if (registration.current === token) registration.current = undefined; window.removeEventListener("beforeunload", warn); };
+  });
+  const close = () => { if (!pending.current) guard.requestClose(); };
 
   const emailChannel = channel === "GMAIL" || channel === "EMAIL";
 
   const submit = async () => {
+    if (pending.current || !mounted.current || !isOpen) return;
+    if (opening.current.workspaceId !== liveWorkspace.current) { setError("Workspace changed. Close this draft and reopen it."); return; }
     const email = recipientEmail.trim();
     const destination = recipient.trim();
     if (emailChannel && !/^\S+@\S+\.\S+$/.test(email)) {
@@ -95,33 +131,38 @@ export const QuoteDeliveryConfirmationModal: React.FC<QuoteDeliveryConfirmationM
       return;
     }
 
+    pending.current = true;
+    const capturedCycle = cycle.current;
     setBusy(true);
     setError("");
     try {
-      await onConfirm({
+      await opening.current.onConfirm({
         channel,
         recipientEmail: emailChannel ? email : undefined,
         recipient: emailChannel ? undefined : destination,
         note: note.trim() || undefined,
         sentAt: parsedSentAt.toISOString(),
-        fileName: initialFileName,
+        fileName: opening.current.initialFileName,
       });
+      if (mounted.current && capturedCycle === cycle.current) baseline.current = fingerprint;
     } catch (caught) {
-      setError(formatApplicationError(caught, { locale }));
-      setBusy(false);
+      if (mounted.current && capturedCycle === cycle.current) setError(formatApplicationError(caught, { locale }));
+    } finally {
+      if (capturedCycle === cycle.current) { pending.current = false; if (mounted.current) setBusy(false); }
     }
   };
 
   return (
+    <>
     <Modal
       isOpen={isOpen}
-      onClose={busy ? () => undefined : onClose}
+      onClose={close}
       size="md"
       variant="form"
       title={vi ? "Xác nhận Báo giá đã được gửi" : "Confirm quote delivery"}
       footer={(
         <>
-          <Button type="button" variant="secondary" disabled={busy} onClick={onClose}>{vi ? "Chưa gửi" : "Not sent yet"}</Button>
+          <Button type="button" variant="secondary" disabled={busy} onClick={close}>{vi ? "Chưa gửi" : "Not sent yet"}</Button>
           <Button
             type="button"
             variant="success"
@@ -143,14 +184,14 @@ export const QuoteDeliveryConfirmationModal: React.FC<QuoteDeliveryConfirmationM
         </p>
 
         <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs">
-          <strong>{vi ? "Báo giá" : "Quote"}:</strong> {quoteNumber}
+          <strong>{vi ? "Báo giá" : "Quote"}:</strong> {opening.current.quoteNumber}
           {initialFileName && <div className="mt-1"><strong>PDF:</strong> {initialFileName}</div>}
         </div>
 
-        {channelLocked ? (
+        {opening.current.channelLocked ? (
           <Input id="quote-delivery-channel-locked" label={vi ? "Kênh gửi" : "Delivery channel"} value={channelLabel(channel, vi)} disabled />
         ) : (
-          <Select
+          <Select disabled={busy}
             id="quote-delivery-channel"
             label={vi ? "Kênh gửi *" : "Delivery channel *"}
             value={channel}
@@ -161,7 +202,7 @@ export const QuoteDeliveryConfirmationModal: React.FC<QuoteDeliveryConfirmationM
         )}
 
         {emailChannel ? (
-          <Input
+          <Input disabled={busy}
             id="quote-delivery-email"
             type="email"
             label={vi ? "Email người nhận *" : "Recipient email *"}
@@ -170,7 +211,7 @@ export const QuoteDeliveryConfirmationModal: React.FC<QuoteDeliveryConfirmationM
             placeholder="customer@example.com"
           />
         ) : (
-          <Input
+          <Input disabled={busy}
             id="quote-delivery-recipient"
             label={vi ? "Người nhận / tài khoản đích *" : "Recipient / destination account *"}
             value={recipient}
@@ -179,7 +220,7 @@ export const QuoteDeliveryConfirmationModal: React.FC<QuoteDeliveryConfirmationM
           />
         )}
 
-        <Input
+        <Input disabled={busy}
           id="quote-delivery-sent-at"
           type="datetime-local"
           label={vi ? "Thời điểm đã gửi *" : "Sent at *"}
@@ -187,7 +228,7 @@ export const QuoteDeliveryConfirmationModal: React.FC<QuoteDeliveryConfirmationM
           onChange={(event) => { setSentAt(event.target.value); setError(""); }}
         />
 
-        <Textarea
+        <Textarea disabled={busy}
           id="quote-delivery-note"
           label={vi ? "Ghi chú / mã tham chiếu" : "Note / reference"}
           value={note}
@@ -199,5 +240,9 @@ export const QuoteDeliveryConfirmationModal: React.FC<QuoteDeliveryConfirmationM
         {error && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-3 text-xs font-semibold text-rose-700">{error}</div>}
       </div>
     </Modal>
+    <ConfirmDialog isOpen={guard.isConfirmOpen} onClose={() => guard.setIsConfirmOpen(false)} onConfirm={() => { if (!pending.current) guard.confirmDiscard(); }}
+      title={vi ? "Bỏ thay đổi chưa lưu?" : "Discard unsaved changes?"} message={vi ? "Các thay đổi chưa được lưu. Bạn có muốn đóng biểu mẫu?" : "Your changes have not been saved. Close the form?"}
+      confirmText={vi ? "Bỏ thay đổi" : "Discard changes"} cancelText={vi ? "Tiếp tục chỉnh sửa" : "Keep editing"} type="warning" />
+    </>
   );
 };

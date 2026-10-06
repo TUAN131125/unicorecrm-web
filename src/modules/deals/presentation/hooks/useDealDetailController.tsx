@@ -1,4 +1,6 @@
 import { formatApplicationError } from "@/shared/operations";
+import { normalizeApplicationError } from "@/shared/domain";
+import { useDealDetailInteraction } from "./useDealDetailInteraction";
 import React, { useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { formatCurrency } from "@/shared/lib/format/currency";
@@ -56,17 +58,26 @@ export function useDealDetailController({
   const location = useLocation();
   const { t, locale } = useI18n();
 
-  const deal = deals.find(d => d.id === dealId);
-
-  // Modals state
-  const [isWonModalOpen, setIsWonModalOpen] = useState(false);
-  const [isProductPickerOpen, setIsProductPickerOpen] = useState(false);
-  const [isLostModalOpen, setIsLostModalOpen] = useState(false);
+  const screenDeal = deals.find(d => d.id === dealId);
   const [lostReason, setLostReason] = useState("");
   const [lostNotes, setLostNotes] = useState("");
   const [lostRecycleDecision, setLostRecycleDecision] = useState<"RECYCLE" | "CONDITIONAL" | "DO_NOT_RECYCLE">("DO_NOT_RECYCLE");
   const [lostRevisitAt, setLostRevisitAt] = useState("");
   const [lostError, setLostError] = useState("");
+  const lostDirty = Boolean(lostReason || lostNotes.trim() || lostRevisitAt || lostRecycleDecision !== "DO_NOT_RECYCLE");
+  const { intentId, openingDeal, pendingMutation, interactionPending, resetInteraction, runBoundMutation,
+    isWonModalOpen, setIsWonModalOpen, isLostModalOpen, setIsLostModalOpen,
+    isProductPickerOpen, setIsProductPickerOpen, isDirectNoteModalOpen, setIsDirectNoteModalOpen,
+  } = useDealDetailInteraction(screenDeal, dealId, lostDirty, locale,
+    () => { setLostReason(""); setLostNotes(""); setLostRecycleDecision("DO_NOT_RECYCLE"); setLostRevisitAt(""); setLostError(""); },
+    () => handleConfirmLost(),
+    error => { const message = formatApplicationError(error, { locale }); setLostError(message); triggerToast("error", message);
+      const fields = normalizeApplicationError(error).fieldErrors;
+      document.getElementById(fields?.reason ? "deal-lost-reason" : fields?.revisitAt ? "deal-lost-revisit" : "deal-lost-notes")?.focus();
+    },
+  );
+  const deal = openingDeal ?? screenDeal;
+
 
   const [toast, setToast] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const triggerToast = (type: "success" | "error", text: string) => {
@@ -132,7 +143,6 @@ export function useDealDetailController({
   // New note state
   const [newNoteText, setNewNoteText] = useState("");
   const [noteError, setNoteError] = useState("");
-  const [isDirectNoteModalOpen, setIsDirectNoteModalOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<"all" | "note" | "stage" | "quote" | "outcome">("all");
   const [activeTab, setActiveTab] = useState<"overview" | "products" | "quotes" | "activity" | "notes">("overview");
 
@@ -313,13 +323,7 @@ export function useDealDetailController({
       const discountedPrice = (item.unitPrice ?? item.unitPriceSnapshot ?? 0) * (1 - item.discountPercent / 100);
       return sum + (discountedPrice * item.quantity);
     }, 0);
-    try {
-      await updateDealCommand(deal.id, { lineItems: nextLines, amount: newAmount });
-      return true;
-    } catch (error) {
-      triggerToast("error", formatApplicationError(error, { locale }));
-      return false;
-    }
+    return runBoundMutation(() => updateDealCommand(deal.id, { lineItems: nextLines, amount: newAmount }));
   };
 
   // Opens Product Picker modal instead of inserting random placeholder products
@@ -411,19 +415,22 @@ export function useDealDetailController({
   };
 
   // Action: Mark Lost with explicit recycle semantics.
-  const handleConfirmLost = async () => {
+  const handleConfirmLost = async (): Promise<boolean> => {
+    if (pendingMutation.current) return false;
     if (!lostReason.trim()) {
       setLostError(t("deals.lostModal.reasonRequired"));
-      return;
+      document.getElementById("deal-lost-reason")?.focus();
+      return false;
     }
     if (lostRecycleDecision !== "DO_NOT_RECYCLE" && !lostRevisitAt) {
       setLostError(locale === "vi" ? "Cơ hội có thể tái khai thác phải có ngày xem xét lại." : "A recyclable Deal requires a revisit date.");
-      return;
+      document.getElementById("deal-lost-revisit")?.focus();
+      return false;
     }
     setLostError("");
 
     const now = new Date().toISOString();
-    await closeDealLostCommand(deal.id, {
+    const saved = await runBoundMutation(() => closeDealLostCommand(deal.id, {
       reason: lostReason,
       note: lostNotes.trim() || undefined,
       recycleDecision: lostRecycleDecision,
@@ -442,19 +449,17 @@ export function useDealDetailController({
         lostReasonNote: lostNotes.trim(),
         recycleDecision: lostRecycleDecision,
       },
-    });
+    }, { idempotencyKey: `${intentId}:lost` }));
 
-    setIsLostModalOpen(false);
-    setLostReason("");
-    setLostNotes("");
-    setLostRecycleDecision("DO_NOT_RECYCLE");
-    setLostRevisitAt("");
+    if (!saved) return false;
+    resetInteraction();
+    return true;
   };
 
   // Handle adding direct notes in the details workspace
   const handleAddDirectNote = async (draft: NoteActivityDraft) => {
     try {
-      await logDealTimelineActivity({
+      const saved = await runBoundMutation(() => logDealTimelineActivity({
         activityType: "note",
         taskType: "NOTE",
         title: draft.title,
@@ -463,10 +468,11 @@ export function useDealDetailController({
         sourceType: "DEAL_NOTE",
         sourceId: deal.id,
         metadata: { noteCategory: draft.category, pinned: draft.pinned },
-      });
-      setIsDirectNoteModalOpen(false);
+      }), true);
+      if (!saved) throw new Error("DEAL_NOTE_NOT_SAVED");
+      resetInteraction();
     } catch (error) {
-      triggerToast("error", formatApplicationError(error, { locale }));
+      throw error;
     }
   };
 
@@ -517,6 +523,7 @@ export function useDealDetailController({
     setIsWonModalOpen,
     isProductPickerOpen,
     setIsProductPickerOpen,
+    interactionPending,
     isLostModalOpen,
     setIsLostModalOpen,
     lostReason,

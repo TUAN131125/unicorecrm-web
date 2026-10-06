@@ -66,7 +66,7 @@ for (const [name, component, callback] of [
   ["ContactSendSmsModal", "SmsActivityCreateModal", "onSend"],
 ]) {
   const adapter = read(`src/modules/contacts/presentation/detail/actions/${name}.tsx`);
-  assert.match(adapter, new RegExp(`<${component}\\s+guardChanges\\b`, "u"));
+  assert.match(adapter, new RegExp(`<${component}\\s[^>]*\\bguardChanges\\b`, "u"));
   assert.ok(adapter.includes("void | Promise<void>"));
   assert.ok(!adapter.includes("useState") && !adapter.includes("RelationshipQuickActionModal"));
   assert.match(adapter, new RegExp(`(?:=>\\s*|return\\s+)${callback}\\(`, "u"), `${name} must return the callback result.`);
@@ -74,21 +74,29 @@ for (const [name, component, callback] of [
 
 const noteSource = canonical.slice(canonical.indexOf("export interface NoteActivityCreateModalProps"));
 assert.ok(noteSource.includes('Omit<BaseActivityModalProps, "contactPolicy" | "titleOverride">'));
-for (const token of ["guardChanges = false", "void | Promise<void>", "[draft, setDraft, dirty]", "guardChanges={guardChanges} dirty={dirty}", "return onSubmit("]) {
+for (const token of ["guardChanges = true", "void | Promise<void>", "{ draft, setDraft, dirty }", "guardChanges={guardChanges} dirty={dirty}", "return lifecycle.submit("]) {
   assert.ok(noteSource.includes(token), `Note safety must retain ${token}.`);
 }
 for (const caller of [
   "src/modules/contacts/presentation/detail/actions/ContactQuickNoteModal.tsx",
-  "src/modules/contacts/presentation/detail/tabs/ContactNotesTab.tsx",
   "src/modules/leads/presentation/views/LeadDetailView.tsx",
-]) assert.match(read(caller), /<NoteActivityCreateModal\s+guardChanges\b/u);
+]) assert.match(read(caller), /<NoteActivityCreateModal\s[^>]*\bguardChanges\b/u);
+const contactNotes = read("src/modules/contacts/presentation/detail/tabs/ContactNotesTab.tsx");
+assert.ok(contactNotes.includes("onOpenComposer"), "Contact notes must delegate new notes to the canonical composer.");
+assert.ok(!contactNotes.includes("useState"), "Contact notes must not own a second mutation form.");
 const quickNote = read("src/modules/contacts/presentation/detail/actions/ContactQuickNoteModal.tsx");
 assert.ok(quickNote.includes("void | Promise<void>"));
 assert.match(quickNote, /=>\s*onSave\(/u);
 console.log("A2A Note contracts: PASS");
 
 const leadModalSource = read("src/modules/leads/presentation/components/LeadDetailModals.tsx");
-assert.ok(!leadModalSource.includes("RelationshipQuickActionModal"), "Lead quick activities must not own duplicate modal form markup.");
+const quickShells = [...leadModalSource.matchAll(/<RelationshipQuickActionModal\s([^]*?)<\/RelationshipQuickActionModal>/gu)];
+assert.equal(quickShells.length, 1, "Only the distinct Lead handover workflow may own a quick-action shell.");
+assert.ok(quickShells[0]?.[1]?.includes('isOpen={showHandoverModal}'));
+assert.ok(quickShells[0]?.[1]?.includes('formId="lead-handover-form"'));
+for (const name of ["CallActivityCreateModal", "MeetingActivityCreateModal", "EmailActivityCreateModal", "SmsActivityCreateModal"]) {
+  assert.ok(leadModalSource.includes(`<${name}`), `Lead must delegate ${name} to the canonical form.`);
+}
 assert.ok(!leadModalSource.includes('<form id="lead-quick-'), "Lead quick activities must not recreate local form elements.");
 
 const leadViewSource = read("src/modules/leads/presentation/views/LeadDetailView.tsx");
@@ -102,7 +110,7 @@ assert.ok(!leadViewSource.slice(leadProductsTabStart, leadCampaignsTabStart).inc
 assert.ok(!leadViewSource.includes("noteFormText"), "Lead detail must not retain obsolete inline-note state after canonical modal migration.");
 
 const contactNotesTab = read("src/modules/contacts/presentation/detail/tabs/ContactNotesTab.tsx");
-assert.ok(contactNotesTab.includes("NoteActivityCreateModal"), "Contact Notes tab must use the canonical note create form.");
+assert.ok(contactNotesTab.includes("onOpenComposer"), "Contact Notes delegates creation to its owning canonical composer.");
 assert.ok(!contactNotesTab.includes("newTitle"), "Contact Notes tab must not own duplicate create-note title state.");
 assert.ok(!contactNotesTab.includes("newBody"), "Contact Notes tab must not own duplicate create-note body state.");
 assert.ok(!contactNotesTab.includes("handleAddNote"), "Contact Notes tab must not own a duplicate create-note submit handler.");

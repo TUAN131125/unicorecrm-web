@@ -1,3 +1,6 @@
+import { useRef as useWorkspaceBindingRef } from "react";
+import { useWorkspaceContextSnapshot as useWorkflowWorkspace } from "@/platform/workspace-context";
+import { useTargetBoundWorkflow } from "@/shared/presentation/useTargetBoundWorkflow";
 import { formatApplicationError } from "@/shared/operations";
 import React, { useMemo, useState } from "react";
 import { ArrowLeft, CalendarClock, CheckCircle2, FileClock, Link2, ListTodo, MessageSquare, Plus, StickyNote, UserRound } from "lucide-react";
@@ -41,7 +44,22 @@ const priorityLabel = (priority: SupportCasePriority, vi: boolean) => {
 };
 
 export const SupportCaseDetailPage: React.FC<SupportCaseDetailPageProps> = ({ customers = [], contacts = [], products = [], orders = [] }) => {
-  const { caseId = "" } = useParams();
+  const { caseId: routeCaseId = "" } = useParams();
+  const targetLifecycle = useTargetBoundWorkflow(routeCaseId, "support-detail-draft");
+  const workflowWorkspace = useWorkflowWorkspace().workspaceId;
+  const currentWorkflowWorkspace = useWorkspaceBindingRef(workflowWorkspace);
+  currentWorkflowWorkspace.current = workflowWorkspace;
+  const openingWorkspace = useWorkspaceBindingRef({ cycle: targetLifecycle.cycle, id: workflowWorkspace });
+  if (openingWorkspace.current.cycle !== targetLifecycle.cycle) openingWorkspace.current = { cycle: targetLifecycle.cycle, id: workflowWorkspace };
+  const ownsWorkspace = () => openingWorkspace.current.id === currentWorkflowWorkspace.current;
+  const workflow = { ...targetLifecycle,
+    begin: () => ownsWorkspace() && targetLifecycle.begin(),
+    isCurrent: () => ownsWorkspace() && targetLifecycle.isCurrent(),
+    register: (dirty: boolean, reset: () => void, save: () => Promise<boolean>) => {
+      targetLifecycle.register(dirty, reset, () => ownsWorkspace() ? save() : Promise.resolve(false));
+    },
+  };
+  const caseId = workflow.targetId ?? "";
   const navigate = useNavigate();
   const workspace = useWorkspaceContextSnapshot();
   const { locale } = useI18n();
@@ -61,6 +79,8 @@ export const SupportCaseDetailPage: React.FC<SupportCaseDetailPageProps> = ({ cu
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [showTaskModal, setShowTaskModal] = useState(false);
 
+  workflow.register(Boolean(replyText.trim() || noteText.trim()), () => { setReplyText(""); setNoteText(""); setShowTaskModal(false); setMessage(null); }, async () => false);
+  React.useEffect(() => { setReplyText(""); setNoteText(""); setShowTaskModal(false); setMessage(null); }, [caseId]);
   if (!supportCase) return <div className="rounded-2xl border border-slate-200 bg-white p-8 text-sm text-slate-600">{vi ? "Không tìm thấy phiếu hỗ trợ." : "Support ticket not found."}</div>;
 
   const actorId = session?.principal.memberId || "current-user";
@@ -92,17 +112,19 @@ export const SupportCaseDetailPage: React.FC<SupportCaseDetailPageProps> = ({ cu
   const followUpOverdue = Boolean(nextDue && nextDue.getTime() < Date.now() && !["resolved", "closed", "cancelled"].includes(supportCase.status));
 
   const runCommand = async (key: string, success: string, command: () => Promise<unknown>, after?: () => void) => {
-    if (busyAction) return;
+    if (!workflow.begin()) return;
     setBusyAction(key);
     setMessage(null);
     try {
       await command();
+      if (!workflow.isCurrent()) return;
       setMessage(success);
       after?.();
     } catch (error) {
-      setMessage(formatApplicationError(error, { locale }));
+      if (workflow.isCurrent()) setMessage(formatApplicationError(error, { locale }));
     } finally {
-      setBusyAction(null);
+      if (workflow.isCurrent()) setBusyAction(null);
+      workflow.finish();
     }
   };
 
@@ -211,14 +233,14 @@ export const SupportCaseDetailPage: React.FC<SupportCaseDetailPageProps> = ({ cu
               <div className="space-y-3">
                 {customerComments.length === 0 ? <Empty text={vi ? "Chưa có trao đổi." : "No conversation yet."} /> : customerComments.map((comment) => <Comment key={comment.id} name={comment.authorName} body={comment.body} time={comment.createdAt} locale={locale} />)}
               </div>
-              {canUpdate && <div className="mt-4 space-y-2"><Textarea disabled={Boolean(busyAction)} rows={4} value={replyText} onChange={(event) => setReplyText(event.target.value)} placeholder={vi ? "Nhập nội dung phản hồi..." : "Write a reply..."} /><div className="flex justify-end"><Button type="button" actionIntent="create" size="sm" loading={busyAction === "reply"} disabled={Boolean(busyAction) || !replyText.trim()} onClick={submitReply}>{vi ? "Gửi phản hồi" : "Send reply"}</Button></div></div>}
+              {canUpdate && <div className="mt-4 space-y-2"><Textarea disabled={(workflow.pending) || (Boolean(busyAction))} rows={4} value={replyText} onChange={(event) => setReplyText(event.target.value)} placeholder={vi ? "Nhập nội dung phản hồi..." : "Write a reply..."} /><div className="flex justify-end"><Button type="button" actionIntent="create" size="sm" loading={busyAction === "reply"} disabled={Boolean(busyAction) || !replyText.trim()} onClick={submitReply}>{vi ? "Gửi phản hồi" : "Send reply"}</Button></div></div>}
             </Panel>
           )}
 
           {activeTab === "notes" && (
             <Panel title={vi ? "Ghi chú nội bộ" : "Internal notes"}>
               <div className="space-y-3">{internalNotes.length === 0 ? <Empty text={vi ? "Chưa có ghi chú nội bộ." : "No internal notes."} /> : internalNotes.map((comment) => <Comment key={comment.id} name={comment.authorName} body={comment.body} time={comment.createdAt} locale={locale} />)}</div>
-              {canUpdate && <div className="mt-4 space-y-2"><Textarea disabled={Boolean(busyAction)} rows={4} value={noteText} onChange={(event) => setNoteText(event.target.value)} placeholder={vi ? "Thêm ghi chú chỉ nhân viên nội bộ nhìn thấy..." : "Add an internal note..."} /><div className="flex justify-end"><Button type="button" actionIntent="save" size="sm" loading={busyAction === "note"} disabled={Boolean(busyAction) || !noteText.trim()} onClick={submitNote}>{vi ? "Lưu ghi chú" : "Save note"}</Button></div></div>}
+              {canUpdate && <div className="mt-4 space-y-2"><Textarea disabled={(workflow.pending) || (Boolean(busyAction))} rows={4} value={noteText} onChange={(event) => setNoteText(event.target.value)} placeholder={vi ? "Thêm ghi chú chỉ nhân viên nội bộ nhìn thấy..." : "Add an internal note..."} /><div className="flex justify-end"><Button type="button" actionIntent="save" size="sm" loading={busyAction === "note"} disabled={Boolean(busyAction) || !noteText.trim()} onClick={submitNote}>{vi ? "Lưu ghi chú" : "Save note"}</Button></div></div>}
             </Panel>
           )}
 
@@ -255,9 +277,9 @@ export const SupportCaseDetailPage: React.FC<SupportCaseDetailPageProps> = ({ cu
               {(supportCase.resolutionDueAt ?? supportCase.firstResponseDueAt) && <Row label={vi ? "Hạn cam kết" : "Commitment due"} value={new Date(supportCase.resolutionDueAt ?? supportCase.firstResponseDueAt ?? "").toLocaleString(vi ? "vi-VN" : "en-US")} />}
               {followUpOverdue && <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2.5 text-xs font-medium text-rose-700">{vi ? "Đã đến hạn theo dõi tiếp theo." : "Follow-up is due."}</div>}
 
-              {canAssign && <SearchableSelect disabled={Boolean(busyAction)} label={vi ? "Chuyển người phụ trách" : "Reassign"} value={supportCase.ownerId || ""} onChange={assignOwner} placeholder={vi ? "Chưa phân công" : "Unassigned"} searchPlaceholder={vi ? "Tìm tên hoặc email..." : "Search name or email..."} options={members.map((member) => ({ value: member.memberId, label: member.displayName, description: member.email, keywords: member.email }))} />}
+              {canAssign && <SearchableSelect disabled={(workflow.pending) || (Boolean(busyAction))} label={vi ? "Chuyển người phụ trách" : "Reassign"} value={supportCase.ownerId || ""} onChange={assignOwner} placeholder={vi ? "Chưa phân công" : "Unassigned"} searchPlaceholder={vi ? "Tìm tên hoặc email..." : "Search name or email..."} options={members.map((member) => ({ value: member.memberId, label: member.displayName, description: member.email, keywords: member.email }))} />}
 
-              {allowedTransitions.length > 0 && <label className="block"><span className="text-[10px] font-medium uppercase text-slate-400">{vi ? "Chuyển trạng thái" : "Change status"}</span><select disabled={Boolean(busyAction)} value="" onChange={(event) => event.target.value && void changeStatus(event.target.value as SupportCaseStatus)} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-medium"><option value="">{vi ? "Chọn trạng thái..." : "Choose status..."}</option>{allowedTransitions.map((status) => <option key={status} value={status}>{statusLabel(status, vi)}</option>)}</select></label>}
+              {allowedTransitions.length > 0 && <label className="block"><span className="text-[10px] font-medium uppercase text-slate-400">{vi ? "Chuyển trạng thái" : "Change status"}</span><select disabled={(workflow.pending) || (Boolean(busyAction))} value="" onChange={(event) => event.target.value && void changeStatus(event.target.value as SupportCaseStatus)} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-xs font-medium"><option value="">{vi ? "Chọn trạng thái..." : "Choose status..."}</option>{allowedTransitions.map((status) => <option key={status} value={status}>{statusLabel(status, vi)}</option>)}</select></label>}
 
               <Button type="button" actionIntent="create" size="sm" icon={<ListTodo size={15} />} className="w-full" onClick={openTaskModal}>{vi ? "Tạo công việc cụ thể" : "Create concrete task"}</Button>
             </div>
@@ -271,6 +293,8 @@ export const SupportCaseDetailPage: React.FC<SupportCaseDetailPageProps> = ({ cu
       </div>
 
       <TaskCreateModal
+        targetId={supportCase.id}
+        formId="support-case-task-create-form"
         isOpen={showTaskModal}
         onClose={() => setShowTaskModal(false)}
         title={vi ? "Tạo công việc từ Phiếu hỗ trợ" : "Create task from Support Ticket"}

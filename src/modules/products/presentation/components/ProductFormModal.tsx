@@ -3,17 +3,23 @@ import { Product, ProductType, ProductStatus, BillingCycle, TaxMode } from "../.
 import { validateProductForm } from "../../domain/rules/product.helpers";
 import { useI18n } from "@/i18n";
 import { 
-  Modal, Button, Input, Select, Textarea, Checkbox 
+  Modal, Button, Input, Select, Textarea, Checkbox, ConfirmDialog
 } from "@/shared/components/ui";
 import { PRODUCT_TYPES, PRODUCT_CATEGORIES, PRODUCT_UNITS, BILLING_CYCLES, TAX_MODES } from "../../domain/rules/product.config";
 import { getConfiguredProductFields, getConfiguredProductTypes, type ConfiguredProductType } from "../../public/configuration";
 import { useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
 
+import { createDurableId } from "@/shared/ids";
+import { getWorkspaceContextSnapshot, useWorkspaceContextSnapshot } from "@/platform/workspace-context";
+import { registerUnsavedWork } from "@/platform/unsaved-work";
+import { normalizeApplicationError } from "@/shared/domain";
+import { formatApplicationError } from "@/shared/operations";
+
 interface ProductFormModalProps {
   id: string;
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (data: Partial<Product>) => void;
+  onSubmit: (data: Product, opening: Product | null, intentId: string, isCurrent: () => boolean) => Promise<boolean>;
   product?: Product | null;
   existingProducts: Product[];
 }
@@ -28,8 +34,23 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
 }) => {
   const { tx, locale } = useI18n();
   const workspaceConfiguration = useWorkspaceOperationalConfiguration();
+  const workspace = useWorkspaceContextSnapshot();
+  const openingWorkspace = React.useRef(workspace.workspaceId);
 
-  const isEditing = Boolean(product && product.id);
+  const openingSubmit = React.useRef(onSubmit);
+  const opening = React.useRef<Product | null>(product ? structuredClone(product) : null);
+  const pending = React.useRef(false);
+  const mounted = React.useRef(true);
+  const cycle = React.useRef(0);
+  const intentId = React.useRef(createDurableId("product-form"));
+  const wasOpen = React.useRef(false);
+  const baseline = React.useRef("");
+  const needsBaseline = React.useRef(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [closeConfirm, setCloseConfirm] = useState(false);
+  const [saveError, setSaveError] = useState("");
+  const isEditing = Boolean(opening.current?.id);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
 
   // Form Fields State
   const [sku, setSku] = useState("");
@@ -73,8 +94,29 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
 
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
 
+  const fingerprint = JSON.stringify({ sku: sku.trim().toUpperCase(), name: name.trim(), type, status,
+    category: category.trim(), description: description.trim(), unit: unit.trim(), listPrice, costPrice,
+    currency, taxRate, taxMode, billingCycle, isSubscription, isRenewable, warrantyMonths,
+    defaultContractMonths, tags: rawTags.split(",").map(tag => tag.trim()).filter(Boolean), dynamicValues });
+  if (needsBaseline.current) { baseline.current = fingerprint; needsBaseline.current = false; }
+  const dirty = baseline.current !== "" && baseline.current !== fingerprint;
+
   useEffect(() => {
-    if (isOpen) {
+    if (!isOpen) {
+      if (wasOpen.current) cycle.current += 1;
+      wasOpen.current = false;
+      return;
+    }
+    if (pending.current || (wasOpen.current && getWorkspaceContextSnapshot().workspaceId !== openingWorkspace.current)) return;
+    if (isOpen && (!wasOpen.current || ((product?.id || product?.sku) !== (opening.current?.id || opening.current?.sku) && !dirty && !pending.current))) {
+      opening.current = product ? structuredClone(product) : null;
+      openingSubmit.current = onSubmit;
+      openingWorkspace.current = getWorkspaceContextSnapshot().workspaceId;
+      cycle.current += 1;
+      intentId.current = createDurableId("product-form");
+      needsBaseline.current = true;
+      setSaveError("");
+      setCloseConfirm(false);
       if (product) {
         setSku(product.sku || "");
         setName(product.name || "");
@@ -119,7 +161,34 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       }
       setValidationErrors({});
     }
-  }, [isOpen, product?.id]);
+    wasOpen.current = isOpen;
+  }, [isOpen, product?.id, dirty, submitting]);
+
+  useEffect(() => {
+    if (isOpen && workspace.workspaceId !== openingWorkspace.current && !dirty && !pending.current) onClose();
+  });
+  const discard = () => {
+    if (pending.current || !mounted.current) return;
+    baseline.current = "";
+    setCloseConfirm(false);
+    onClose();
+  };
+  const requestClose = () => { if (!pending.current) { if (dirty) setCloseConfirm(true); else discard(); } };
+  useEffect(() => {
+    if (!isOpen) return;
+    const activeCycle = cycle.current;
+    const unregister = registerUnsavedWork({
+      id: `product-form:${opening.current?.id ?? "new"}:${activeCycle}`,
+      title: opening.current?.name ?? tx("products.actions.add", "Thêm sản phẩm"),
+      isDirty: dirty || submitting,
+      save: () => !mounted.current || pending.current || cycle.current !== activeCycle || getWorkspaceContextSnapshot().workspaceId !== openingWorkspace.current ? Promise.resolve(false) : handleSave(),
+      canDiscard: () => !pending.current && mounted.current && cycle.current === activeCycle,
+      discard,
+    });
+    const warn = (event: BeforeUnloadEvent) => { if (dirty || pending.current) { event.preventDefault(); event.returnValue = ""; } };
+    window.addEventListener("beforeunload", warn);
+    return () => { unregister(); window.removeEventListener("beforeunload", warn); };
+  });
 
   const clearValidationError = React.useCallback((field: string) => {
     setValidationErrors((current) => ({ ...current, [field]: "" }));
@@ -130,6 +199,9 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       .find((candidate) => Boolean(errors[candidate]));
     if (!field) return;
     const idByField: Record<string, string> = {
+      costPrice: "form-cost-price", status: "form-status", category: "form-category", unit: "form-unit",
+      currency: "form-currency", type: "form-type", description: "form-description",
+      taxMode: "form-tax-mode", billingCycle: "form-billing-cycle", tags: "form-tags",
       sku: "form-sku",
       name: "form-name",
       listPrice: "form-list-price",
@@ -144,49 +216,41 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
     });
   }, []);
 
-  const handleSave = () => {
+  const handleSave = async (): Promise<boolean> => {
+    if (pending.current || !isOpen || !mounted.current || getWorkspaceContextSnapshot().workspaceId !== openingWorkspace.current) return false;
     // Parse tags
     const parsedTags = rawTags
       .split(",")
       .map((t) => t.trim())
       .filter((t) => t.length > 0);
 
-    // Validate dynamic custom fields
-    const fieldErrors: Record<string, string> = {};
-    activeFields.forEach((f: any) => {
-      const fKey = f.fieldKey || f.key;
-      if (f.required) {
-        const val = dynamicValues[fKey];
-        if (val === undefined || val === null || String(val).trim() === "" || (f.type === "boolean" && val === false)) {
-          fieldErrors[fKey] = locale === "vi" 
-            ? `Trường "${f.labelVi}" là bắt buộc` 
-            : `Field "${f.labelEn}" is required`;
-        }
-      }
-    });
-
-    if (Object.keys(fieldErrors).length > 0) {
-      setValidationErrors((previous) => ({ ...previous, ...fieldErrors }));
-      focusFirstInvalidField(fieldErrors);
-      return;
+    if (status === "archived") {
+      setValidationErrors({ status: locale === "vi" ? "Khôi phục sản phẩm trước khi chỉnh sửa." : "Restore this product before editing." });
+      setSaveError(locale === "vi" ? "Khôi phục sản phẩm trước khi chỉnh sửa." : "Restore this product before editing.");
+      return false;
     }
 
     const mergedCustomFields = {
-      ...(product?.customFields || {}),
+      ...(opening.current?.customFields || {}),
       ...dynamicValues,
     };
 
-    const formData: Partial<Product> = {
-      id: product?.id,
+    const formData: Product = {
+      ...opening.current,
+      id: opening.current?.id ?? "",
+      createdAt: opening.current?.createdAt ?? "",
+      updatedAt: opening.current?.updatedAt ?? "",
       sku: sku.trim().toUpperCase(),
       name: name.trim(),
       type,
       status,
-      category: category.trim() || undefined,
+      category: category.trim(),
       description: description.trim() || undefined,
-      unit: unit.trim() || undefined,
+      unit: unit.trim(),
       listPrice: Number(listPrice),
+      unitPrice: { amount: String(listPrice), currency },
       costPrice: Number(costPrice),
+      costPriceMoney: { amount: String(costPrice), currency },
       currency,
       taxRate: Number(taxRate),
       taxMode,
@@ -208,22 +272,50 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       });
       setValidationErrors(errorMap);
       focusFirstInvalidField(errorMap);
-      return;
+      return false;
     }
 
     setValidationErrors({});
-    onSubmit(formData);
+    const activeCycle = cycle.current;
+    pending.current = true;
+    setSubmitting(true);
+    setSaveError("");
+    try {
+      const saved = await openingSubmit.current(formData, opening.current, intentId.current, () => mounted.current && cycle.current === activeCycle && getWorkspaceContextSnapshot().workspaceId === openingWorkspace.current);
+      if (!saved || !mounted.current || cycle.current !== activeCycle || getWorkspaceContextSnapshot().workspaceId !== openingWorkspace.current) return false;
+      baseline.current = fingerprint;
+      onClose();
+      return true;
+    } catch (error) {
+      if (mounted.current && cycle.current === activeCycle) {
+        const normalized = normalizeApplicationError(error);
+        const aliases: Record<string, string> = { unitPrice: "listPrice", costPriceMoney: "costPrice" };
+        const errors = Object.fromEntries(Object.entries(normalized.fieldErrors ?? {}).map(([field, messages]) => {
+          const root = field.split(/[.[\/]/)[0] ?? field;
+          return [aliases[root] ?? root, messages.join(" ")];
+        }));
+        setValidationErrors(errors);
+        focusFirstInvalidField(errors);
+        setSaveError(formatApplicationError(normalized, { locale }));
+      }
+      return false;
+    } finally {
+      if (mounted.current) { pending.current = false; setSubmitting(false); }
+    }
   };
 
   return (
+    <>
     <Modal variant="form"
       id={id}
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={requestClose}
       title={isEditing ? tx("products.actions.edit", "Chỉnh sửa sản phẩm") : tx("products.actions.add", "Thêm sản phẩm mới")}
       size="md"
     >
-      <div className="space-y-4 font-sans text-slate-700">
+      <form id="product-form" noValidate onSubmit={event => { event.preventDefault(); void handleSave(); }}>
+      <fieldset disabled={submitting} className="space-y-4 font-sans text-slate-700" data-product-target-id={opening.current?.id ?? "new"}>
+        {saveError && <div role="alert" className="text-xs text-rose-600"><p>{saveError}</p><ul>{Object.entries(validationErrors).filter(([, message]) => message).map(([field, message]) => <li key={field}>{message}</li>)}</ul></div>}
         
         {/* Section: Basic info */}
         <div className="bg-slate-50 p-3 rounded-xl border border-slate-200/60 grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -256,7 +348,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
               <option value="draft">Draft</option>
-              <option value="archived">Archived</option>
+              {status === "archived" && <option value="archived" disabled>Archived</option>}
             </Select>
           </div>
 
@@ -521,6 +613,8 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
 
         {/* Section: Dynamic Configured Attributes */}
         {activeFields.length > 0 && (
+          <fieldset disabled>
+          <p className="text-xs text-slate-500">{locale === "vi" ? "Thông tin tùy chỉnh chỉ đọc; lệnh lưu sản phẩm không hỗ trợ chỉnh sửa các trường này." : "Custom information is read-only; the product save command does not support these fields."}</p>
           <div className="bg-white p-4 rounded-xl border border-slate-200 text-left space-y-3.5">
             <span className="text-[11px] font-black text-indigo-700 uppercase tracking-widest block border-b pb-1">
               {locale === "vi" ? "THUỘC TÍNH ĐẶC TẢ MỞ RỘNG" : "DYNAMIC CONFIGURED SPECIFICATIONS"}
@@ -536,11 +630,11 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                   <div key={fKey} className="space-y-1">
                     <label className="text-[10.5px] font-bold text-slate-500 uppercase tracking-wide flex items-center gap-1">
                       <span>{label}</span>
-                      {f.required && <span className="text-rose-500 font-extrabold">*</span>}
+
                     </label>
 
                     {f.type === "textarea" ? (
-                      <Textarea
+                      <Textarea disabled
                         id={`product-dynamic-${fKey}`}
                         placeholder={ph}
                         value={value}
@@ -550,7 +644,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                         error={validationErrors[fKey]}
                       />
                     ) : f.type === "select" ? (
-                      <Select
+                      <Select disabled
                         id={`product-dynamic-${fKey}`}
                         value={value}
                         onChange={(e) => { setDynamicValues((previous) => ({ ...previous, [fKey]: e.target.value })); clearValidationError(fKey); }}
@@ -564,7 +658,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                       </Select>
                     ) : f.type === "boolean" ? (
                       <div className="flex items-center gap-2 pt-2">
-                        <input
+                        <input disabled
                           id={`product-dynamic-${fKey}`}
                           type="checkbox"
                           checked={Boolean(value)}
@@ -574,7 +668,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                         <span className="text-[11.5px] text-slate-600 font-semibold">{locale === "vi" ? "Kích hoạt tiêu chuẩn này" : "Enable this standard"}</span>
                       </div>
                     ) : (
-                      <Input
+                      <Input disabled
                         id={`product-dynamic-${fKey}`}
                         type={f.type === "number" || f.type === "currency" ? "number" : f.type === "date" ? "date" : "text"}
                         placeholder={ph}
@@ -590,6 +684,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
               })}
             </div>
           </div>
+          </fieldset>
         )}
 
         {/* Section: Tags and extras */}
@@ -610,14 +705,15 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
         </div>
 
 
-      </div>
+      </fieldset>
 
       {/* Footer controls */}
       <div className="flex items-center justify-end gap-2.5 mt-5 pt-3 border-t border-slate-200">
         <Button
           id="btn-cancel-form"
           variant="secondary"
-          onClick={onClose}
+          onClick={requestClose}
+          type="button"
           className="rounded-xl h-9 text-xs font-bold font-sans"
         >
           {tx("products.actions.cancel", "Hủy")}
@@ -625,12 +721,20 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
         <Button
           id="btn-save-form"
           variant="indigo"
-          onClick={handleSave}
+          type="submit"
+          loading={submitting}
           className="rounded-xl h-9 text-xs font-black font-sans px-4"
         >
           {tx("products.actions.save", "Lưu lại")}
         </Button>
       </div>
+      </form>
     </Modal>
+    <ConfirmDialog isOpen={closeConfirm} onClose={() => setCloseConfirm(false)} onConfirm={discard}
+      title={locale === "vi" ? "Bỏ thay đổi chưa lưu?" : "Discard unsaved changes?"}
+      message={locale === "vi" ? "Các thay đổi chưa được lưu." : "Your changes have not been saved."}
+      confirmText={locale === "vi" ? "Bỏ thay đổi" : "Discard changes"}
+      cancelText={locale === "vi" ? "Tiếp tục chỉnh sửa" : "Keep editing"} type="warning" />
+    </>
   );
 };

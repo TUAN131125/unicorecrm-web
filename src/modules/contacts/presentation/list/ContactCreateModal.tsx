@@ -1,3 +1,4 @@
+import type { ContactCommandOptions } from "../../application/ports/ContactApiRuntime";
 import React from "react";
 import {
   ContactFormModal,
@@ -10,9 +11,9 @@ export type ContactCreateInput = ContactFormDraft;
 interface ContactCreateModalProps {
   show: boolean;
   onClose(): void;
-  onSave(newContact: ContactCreateInput): void;
+  onSave(newContact: ContactCreateInput, options?: ContactCommandOptions): void | Promise<void>;
 }
 
 export const ContactCreateModal: React.FC<ContactCreateModalProps> = ({ show, onClose, onSave }) => (
-  <ContactFormModal isOpen={show} onClose={onClose} mode="create" onSubmit={onSave} />
+  <ContactFormModal guardChanges isOpen={show} onClose={onClose} mode="create" onSubmit={(draft, opening) => onSave(draft, { idempotencyKey: opening.intentId })} />
 );

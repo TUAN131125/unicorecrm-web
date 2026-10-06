@@ -3,7 +3,7 @@ import { User, Sparkles, Trash2, Pencil, Plus, RefreshCw } from "lucide-react";
 import { ConfirmDialog, IconButton } from "@/shared/components/ui";
 import { PageHeaderActions } from "@/components/crm/PageHeaderActions";
 import { SavedViewNameModal } from "@/components/crm/SavedViewNameModal";
-import { ListPageFrame, ListPageHeader, ListPaginationBar, ListStatePanel, ListToolbar, useListPagination } from "@/components/crm/list-archetype";
+import { ListBulkActionBar, ListPageFrame, ListPageHeader, ListPaginationBar, ListStatePanel, ListToolbar, useListPagination } from "@/components/crm/list-archetype";
 import { ContactStatisticsPanel } from "../list/ContactStatisticsPanel";
 import { ContactTable } from "../list/ContactTable";
 import { ContactCardList } from "../list/ContactCardList";
@@ -285,11 +285,22 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
         }
       />
 
+      <ListBulkActionBar
+        selectedCount={selectedContactIds.length}
+        label={locale === "vi" ? "Đã chọn" : "Selected"}
+        onClear={() => setSelectedContactIds([])}
+      >
+        <span role="status" className="text-xs text-slate-600">
+          {locale === "vi" ? "Thao tác hàng loạt chưa khả dụng." : "Bulk operations are not available yet."}
+        </span>
+      </ListBulkActionBar>
+
       {/* Saved view create/update modal */}
       <SavedViewNameModal
         isOpen={savedViewDialog !== null}
         onClose={closeSavedViewDialog}
         mode={savedViewDialog?.mode ?? "create"}
+        targetId={savedViewDialog?.mode === "edit" ? savedViewDialog.viewKey : undefined}
         name={viewName}
         onNameChange={(name) => { setViewName(name); if (viewNameError) setViewNameError(""); }}
         onSubmit={handleSubmitSavedView}

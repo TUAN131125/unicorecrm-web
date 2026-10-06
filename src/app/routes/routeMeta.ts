@@ -73,6 +73,7 @@ export const ROUTE_METADATA: Record<string, RouteMeta> = {
   SETTINGS_PAYMENT_INFORMATION: { path: ROUTE_KEYS.SETTINGS_PAYMENT_INFORMATION, labelKey: "studio.paymentInformation", guidanceId: "studio.payment-information" },
   SETTINGS_INVOICE_INFORMATION: { path: ROUTE_KEYS.SETTINGS_INVOICE_INFORMATION, labelKey: "studio.invoiceInformation", guidanceId: "studio.invoice-information" },
   SETTINGS_INTEGRATIONS: { path: ROUTE_KEYS.SETTINGS_INTEGRATIONS, labelKey: "studio.integrations", guidanceId: "studio.integrations" },
+  SETTINGS_AI: { path: ROUTE_KEYS.SETTINGS_AI, labelKey: "ai.title", guidanceId: "studio.ai" },
   SETTINGS_WEBHOOKS_API: { path: ROUTE_KEYS.SETTINGS_WEBHOOKS_API, labelKey: "studio.webhooksApi", guidanceId: "studio.webhooks-api" },
   SETTINGS_USERS_PERMISSIONS: { path: ROUTE_KEYS.SETTINGS_USERS_PERMISSIONS, labelKey: "sidebar.usersPermissions", guidanceId: "people.members.access" },
   SETTINGS_AUDIT_LOGS: { path: ROUTE_KEYS.SETTINGS_AUDIT_LOGS, labelKey: "sidebar.auditLogs", guidanceId: "people.audit.access" },

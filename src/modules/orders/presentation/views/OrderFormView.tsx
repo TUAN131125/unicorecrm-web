@@ -221,6 +221,7 @@ export function OrderFormView({ controller }: { controller: OrderFormViewControl
   }
 
   return (
+    <fieldset disabled={submitting} className="contents">
     <div id="order-form-container" data-order-create-flow="v2" className="crm-form-page flex-1 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6">
       <div className="mx-auto max-w-[1440px] space-y-5">
         <PageHeader
@@ -490,5 +491,6 @@ export function OrderFormView({ controller }: { controller: OrderFormViewControl
 
       <ProductPickerModal id="order-product-picker" isOpen={isPickerOpen} onClose={() => setIsPickerOpen(false)} onApply={applyProducts} products={products} context="order" />
     </div>
+    </fieldset>
   );
 }

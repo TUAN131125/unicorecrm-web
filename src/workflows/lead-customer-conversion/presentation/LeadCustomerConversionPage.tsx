@@ -60,11 +60,11 @@ export const LeadCustomerConversionPage: React.FC = () => {
         <p className="mt-2 text-sm text-muted-foreground">Associate this Lead with an authoritative existing CRM subject and create or reuse its exact-subject Customer. No Deal, Quote, Order, or Direct Sale is required or created.</p></header>
       {isLeadCustomerConversionSuppressed(authoritativeCustomerRef) ? <section className="rounded-lg border p-5"><h2 className="font-semibold">Lead already converted</h2><p className="mt-2 text-sm">Customer: <Link className="underline" to={`/customers/${authoritativeCustomerRef}`}>{authoritativeCustomerRef}</Link></p></section>
       : result ? <section className="rounded-lg border p-5" aria-live="polite"><h2 className="font-semibold">Conversion {result.result.customerResolution === "CREATED" ? "created a Customer" : "reused a Customer"}</h2><p className="mt-2 text-sm">Customer: <Link className="underline" to={`/customers/${result.result.customerId}`}>{result.result.customerId}</Link></p><p className="text-sm">Resolution: {result.result.customerResolution}</p><p className="text-sm">Outcome: {result.outcome}</p></section>
-      : <form className="space-y-4 rounded-lg border p-5" onSubmit={submit}>
+      : <form className="crm-form-surface space-y-4 rounded-lg border p-5" onSubmit={submit}>
         <label className="block text-sm font-medium">Subject type<select className="mt-1 block w-full rounded border p-2" disabled={busy || Boolean(intent.current)} value={subjectType} onChange={e=>{ intent.current = undefined; setError(undefined); setSubjectType(e.target.value as ConversionIntent["subjectType"]); }}><option value="CONTACT">Contact (B2C)</option><option value="ORGANIZATION_ACCOUNT">Organization (B2B)</option></select></label>
         <label className="block text-sm font-medium">Existing subject ID<input className="mt-1 block w-full rounded border p-2" required disabled={busy || Boolean(intent.current)} value={subjectId} onChange={e=>{ intent.current = undefined; setError(undefined); setSubjectId(e.target.value); }} /></label>
         {error && <p className="text-sm text-destructive" role="alert">{error}</p>}
-        <button className="rounded bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50" disabled={busy || query.data?.resourceVersion === undefined}>{busy ? "Converting…" : intent.current ? "Retry conversion" : "Convert to Customer"}</button>
+        <button type="submit" className="rounded bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50" disabled={busy || query.data?.resourceVersion === undefined}>{busy ? "Converting…" : intent.current ? "Retry conversion" : "Convert to Customer"}</button>
       </form>}
     </main>
   </AuthoritativeQueryBoundary>;

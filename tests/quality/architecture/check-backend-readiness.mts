@@ -68,6 +68,7 @@ assert.ok(!(metadata.majorCapabilities ?? []).includes("MAJOR_CAPABILITY_SERVER_
 const documentStatus = readJson<{
   schemaVersion: number;
   allowedStatus: string[];
+  nonProductEvidenceDirectories: string[];
   documents: Record<string, { status: string; authority: string; scope: string; owner: string; lastVerifiedAgainst: string }>;
 }>("docs/document-status.json");
 assert.equal(documentStatus.schemaVersion, 1);
@@ -210,7 +211,8 @@ console.log(`Frontend/backend readiness: PASS (${markdownFiles.length} classifie
 
 function walk(directory: string): string[] {
   return walkFiles(directory, {
-    excludeDirectory: (entryName) => ["node_modules", "dist", ".git", "coverage", ".agents", ".claude", ".ai-workflows", "design-reconstruction"].includes(entryName),
+    excludeDirectory: (entryName, absolutePath) => ["node_modules", "dist", ".git", "coverage", ".agents", ".claude", ".ai-workflows", "design-reconstruction"].includes(entryName)
+      || documentStatus.nonProductEvidenceDirectories.includes(path.relative(root, absolutePath).replaceAll(path.sep, "/")),
     sort: false,
   });
 }

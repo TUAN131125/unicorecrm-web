@@ -12,6 +12,7 @@ const GENERATED_PATHS = new Set([
   "docs/quality/repository-inventory.json",
   "docs/quality/repository-inventory.md",
 ]);
+const evidencePolicy = JSON.parse(fs.readFileSync(path.join(ROOT, "docs/document-status.json"), "utf8"));
 const EXCLUDED_DIRECTORIES = new Set([".git", "node_modules", "dist", "coverage", "artifacts", ".agents", ".claude", ".ai-workflows", "design-reconstruction"]);
 const CODE_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx", ".mts", ".mjs", ".cjs"]);
 const SOURCE_EXTENSIONS = new Set([".ts", ".tsx", ".js", ".jsx"]);
@@ -117,7 +118,8 @@ function relativePath(absolutePath) {
 
 function listFiles(directory = ROOT) {
   return walkFiles(directory, {
-    excludeDirectory: (entryName) => EXCLUDED_DIRECTORIES.has(entryName),
+    excludeDirectory: (entryName, absolutePath) => EXCLUDED_DIRECTORIES.has(entryName)
+      || evidencePolicy.nonProductEvidenceDirectories.includes(relativePath(absolutePath)),
   }).sort((a, b) => relativePath(a).localeCompare(relativePath(b)));
 }
 
@@ -776,7 +778,7 @@ export function buildRepositoryInventory() {
       checker: "tests/quality/architecture/check-repository-inventory.mjs",
       runtimeEntry: "src/main.tsx",
       generatedFiles: [...GENERATED_PATHS].sort(),
-      exclusions: [...EXCLUDED_DIRECTORIES].sort(),
+      exclusions: [...EXCLUDED_DIRECTORIES, ...evidencePolicy.nonProductEvidenceDirectories].sort(),
     },
     summary: {
       repositoryFiles: allFiles.length + GENERATED_PATHS.size,

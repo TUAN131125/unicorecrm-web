@@ -142,5 +142,5 @@ const guardedContactEdit = read("src/modules/contacts/presentation/detail/Contac
 assert.match(guardedContactEdit, /<ContactFormModal\s+guardChanges\b/u);
 assert.ok(guardedContactEdit.includes('mode="edit"'));
 const guardedContactForm = read("src/modules/contacts/presentation/components/ContactFormModal.tsx");
-for (const token of ["guardChanges = false", "useUnsavedChangesGuard", "<ConfirmDialog", "initialDraft", "loading={isSubmitting}", "fieldErrors", "focusFirstInvalidField", "contacts.form.canonical"]) assert.ok(guardedContactForm.includes(token), token);
-assert.ok(!read("src/modules/contacts/presentation/list/ContactCreateModal.tsx").includes("guardChanges"));
+for (const token of ["guardChanges = true", "registerUnsavedWork", "canDiscard", "useUnsavedChangesGuard", "<ConfirmDialog", "initialDraft", "loading={isSubmitting}", "fieldErrors", "focusFirstInvalidField", "contacts.form.canonical"]) assert.ok(guardedContactForm.includes(token), token);
+assert.match(read("src/modules/contacts/presentation/list/ContactCreateModal.tsx"), /<ContactFormModal\s+guardChanges\b/u, "Contact create must protect its draft just like edit.");

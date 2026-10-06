@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { AuthoritativeQueryBoundary } from "@/shared/operations";
+import { AuthoritativeQueryBoundary, formatApplicationError } from "@/shared/operations";
 import { useTasksAuthoritative } from "../hooks/useTasksAuthoritative";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { CalendarDays, CheckCircle2, Clock3, ListTodo, Plus, Archive, UserRound, XCircle } from "lucide-react";
@@ -108,45 +108,51 @@ export const TaskListPage: React.FC = () => {
     setSearchParams(next, { replace: true });
   };
 
+  const pendingActions = React.useRef(new Set<string>());
   const complete = async (task: Task) => {
+    if (!canComplete || pendingActions.current.has(task.id)) return;
     if (!currentMemberId) {
       setMessageTone("error");
       setMessage(vi ? "Không xác định được thành viên Workspace hiện tại." : "The current Workspace member could not be resolved.");
       return;
     }
+    pendingActions.current.add(task.id);
     try {
-      await completeTaskCommand(task.id, { actorId: currentMemberId, actorName: session?.principal.displayName || currentMemberId, outcome: vi ? "Hoàn thành từ danh sách Công việc" : "Completed from Task workspace" });
+      await completeTaskCommand(task.id, { actorId: currentMemberId, actorName: session?.principal.displayName || currentMemberId, outcome: vi ? "Hoàn thành từ danh sách Công việc" : "Completed from Task workspace" }, { expectedVersion: task.resourceVersion });
       setMessageTone("success");
       setMessage(vi ? "Đã hoàn thành công việc." : "Task completed.");
     } catch (error) {
       setMessageTone("error");
-      setMessage(vi ? "Chưa thể hoàn thành thao tác. Dữ liệu hiện tại vẫn được giữ. Hãy thử lại." : "The action could not be completed. Your current data is unchanged. Please try again.");
-    }
+      setMessage(formatApplicationError(error, { locale }));
+    } finally { pendingActions.current.delete(task.id); }
   };
 
-  const remove = async () => {
+  const remove = async (isCurrent: () => boolean = () => true) => {
     if (!deleteTarget || !currentMemberId) return;
     try {
-      await archiveTaskCommand(deleteTarget.id, { actorId: currentMemberId, actorName: session?.principal.displayName || currentMemberId, reason: vi ? "Lưu trữ từ danh sách Công việc." : "Archived from Task workspace." });
+      await archiveTaskCommand(deleteTarget.id, { actorId: currentMemberId, actorName: session?.principal.displayName || currentMemberId, reason: vi ? "Lưu trữ từ danh sách Công việc." : "Archived from Task workspace." }, { expectedVersion: deleteTarget.resourceVersion });
+      if (!isCurrent()) return;
       setMessageTone("success");
       setMessage(vi ? "Đã lưu trữ công việc; lịch sử vẫn được giữ lại." : "Task archived; history was retained.");
       setDeleteTarget(null);
     } catch (error) {
+      if (!isCurrent()) return;
       setMessageTone("error");
-      setMessage(vi ? "Chưa thể hoàn thành thao tác. Dữ liệu hiện tại vẫn được giữ. Hãy thử lại." : "The action could not be completed. Your current data is unchanged. Please try again.");
+      setMessage(formatApplicationError(error, { locale }));
     }
   };
 
   const cancel = async (task: Task) => {
-    if (!currentMemberId) return;
+    if (!currentMemberId || !canUpdate || pendingActions.current.has(task.id)) return;
+    pendingActions.current.add(task.id);
     try {
-      await cancelTaskCommand(task.id, { actorId: currentMemberId, actorName: session?.principal.displayName || currentMemberId, reason: vi ? "Đã hủy từ danh sách Công việc" : "Cancelled from Task workspace" });
+      await cancelTaskCommand(task.id, { actorId: currentMemberId, actorName: session?.principal.displayName || currentMemberId, reason: vi ? "Đã hủy từ danh sách Công việc" : "Cancelled from Task workspace" }, { expectedVersion: task.resourceVersion });
       setMessageTone("success");
       setMessage(vi ? "Đã hủy công việc." : "Task cancelled.");
     } catch (error) {
       setMessageTone("error");
-      setMessage(vi ? "Chưa thể hoàn thành thao tác. Dữ liệu hiện tại vẫn được giữ. Hãy thử lại." : "The action could not be completed. Your current data is unchanged. Please try again.");
-    }
+      setMessage(formatApplicationError(error, { locale }));
+    } finally { pendingActions.current.delete(task.id); }
   };
 
   const renderCard = (task: Task) => {

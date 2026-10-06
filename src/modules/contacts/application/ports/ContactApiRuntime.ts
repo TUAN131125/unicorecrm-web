@@ -39,16 +39,18 @@ export interface ContactQueryPort {
   getRelationshipSummary(contactId: string, signal?: AbortSignal): Promise<ContactRelationshipSummary>;
 }
 
+export interface ContactCommandOptions { idempotencyKey?: string; }
+
 export interface ContactCommandPort {
-  create(input: ContactCreateCommand): Promise<Contact>;
-  update(input: ContactUpdateCommand): Promise<Contact>;
+  create(input: ContactCreateCommand, options?: ContactCommandOptions): Promise<Contact>;
+  update(input: ContactUpdateCommand, options?: ContactCommandOptions): Promise<Contact>;
   archive(input: ContactArchiveCommand): Promise<Contact>;
-  createOrganizationRelationship(input: CreateContactOrganizationRelationshipCommand): Promise<Contact>;
-  updateOrganizationRelationship(input: UpdateContactOrganizationRelationshipCommand): Promise<Contact>;
-  endOrganizationRelationship(input: EndContactOrganizationRelationshipCommand): Promise<Contact>;
-  createCustomerRelationship(input: CreateContactCustomerRelationshipCommand): Promise<Contact>;
-  updateCustomerRelationship(input: UpdateContactCustomerRelationshipCommand): Promise<Contact>;
-  endCustomerRelationship(input: EndContactCustomerRelationshipCommand): Promise<Contact>;
+  createOrganizationRelationship(input: CreateContactOrganizationRelationshipCommand, options?: ContactCommandOptions): Promise<Contact>;
+  updateOrganizationRelationship(input: UpdateContactOrganizationRelationshipCommand, options?: ContactCommandOptions): Promise<Contact>;
+  endOrganizationRelationship(input: EndContactOrganizationRelationshipCommand, options?: ContactCommandOptions): Promise<Contact>;
+  createCustomerRelationship(input: CreateContactCustomerRelationshipCommand, options?: ContactCommandOptions): Promise<Contact>;
+  updateCustomerRelationship(input: UpdateContactCustomerRelationshipCommand, options?: ContactCommandOptions): Promise<Contact>;
+  endCustomerRelationship(input: EndContactCustomerRelationshipCommand, options?: ContactCommandOptions): Promise<Contact>;
 }
 
 export interface ContactCreateCommand {
@@ -67,7 +69,10 @@ export interface ContactCreateCommand {
   tags?: string[];
 }
 
-export interface ContactUpdateCommand extends ContactCreateCommand {
+type ContactNullablePatch = { [K in keyof Omit<ContactCreateCommand, "fullName">]?: ContactCreateCommand[K] | null };
+
+export interface ContactUpdateCommand extends ContactNullablePatch {
+  fullName?: string;
   contactId: string;
   expectedVersion: number;
 }
