@@ -138,7 +138,7 @@ try {
     for (const secret of [lead.name, lead.companyName, lead.phone, lead.email]) {
       assert.ok(!rootElement.innerHTML.includes(secret), `Actual page must hide ${secret}`);
     }
-    assert.equal(rootElement.querySelector('[data-authoritative-query-boundary]'), null, "Page uses blocking error boundary rather than stale detail");
+    assert.equal(rootElement.querySelector('[data-authoritative-query-boundary]') === null, true, "Page uses blocking error boundary rather than stale detail");
     // Retrying after denial must not resurrect repository data during loading.
     let release: (() => void) | undefined;
     const denied = failure;
@@ -203,8 +203,8 @@ try {
   assert.deepEqual(getLeadCollectionResource().getSnapshot().data?.items, [redacted], "Collection uses server redaction rather than richer cache");
   assert.ok(!rootElement.innerHTML.includes(lead.email), "Actual page does not resurrect revoked email");
   assert.ok(!rootElement.innerHTML.includes(lead.phone), "Actual page does not resurrect revoked phone");
-  assert.equal(rootElement.querySelector('a[href^="tel:"]'), null);
-  assert.equal(rootElement.querySelector('a[href^="mailto:"]'), null);
+  assert.equal(rootElement.querySelector('a[href^="tel:"]') === null, true);
+  assert.equal(rootElement.querySelector('a[href^="mailto:"]') === null, true);
 
   const attempts: Array<{ id: string; input: { nextOwnerId: string; reason: string }; idempotencyKey: string; expectedVersion: number }> = [];
   let receiptLost = true;
@@ -281,7 +281,7 @@ try {
     assert.ok(!rootElement.innerHTML.includes(secret), "Automatic denial removes protected detail");
   }
   assert.ok(!rootElement.innerHTML.includes(lead.email));
-  assert.equal(window.document.getElementById("lead-handover-form"), null, "Protected dialog disappears during denial");
+  assert.equal(window.document.getElementById("lead-handover-form") === null, true, "Protected dialog disappears during denial");
   receiptLost = false;
   receiptPermissionDenied = true;
   const retryReceipt = async () => {
@@ -293,7 +293,7 @@ try {
       assert.ok(!rootElement.innerHTML.includes(secret), `Receipt-only panel must not expose ${secret}`);
     }
     assert.equal(resource.getSnapshot().data, undefined);
-    assert.equal(window.document.getElementById("lead-handover-form"), null);
+    assert.equal(window.document.getElementById("lead-handover-form") === null, true);
   };
   await retryReceipt();
   assert.equal(attempts.length, 2);
@@ -304,7 +304,7 @@ try {
   assert.deepEqual(attempts[2], attempts[0], "Restored command disclosure replays original intent while Lead GET still returns 404");
   assert.equal(queryDenied, true);
   assert.equal(resource.getSnapshot().error?.status, 404);
-  assert.equal(rootElement.querySelector("[data-lead-handover-receipt-retry]"), null, "Successful receipt resolves the retained attempt");
+  assert.equal(rootElement.querySelector("[data-lead-handover-receipt-retry]") === null, true, "Successful receipt resolves the retained attempt");
   // An uncertain POST is not proof of success: current read authority decides.
   for (const readFailure of [undefined,
     new ApplicationError({ code: "SERVER_UNAVAILABLE", message: "GET failed", status: 500 }),
@@ -382,7 +382,7 @@ try {
   const changeRoute = rootElement.querySelector<HTMLButtonElement>("[data-change-lead-route]");
   assert.ok(changeRoute);
   await act(async () => changeRoute.click());
-  assert.equal(rootElement.querySelector("[data-lead-handover-receipt-retry]"), null, "Route A to B clears A retry state");
+  assert.equal(rootElement.querySelector("[data-lead-handover-receipt-retry]") === null, true, "Route A to B clears A retry state");
   assert.equal(attempts.length, attemptCount, "Changing route never replays A's attempt");
   console.log("Lead detail resource and actual page confidentiality regression PASS");
 } finally {

@@ -174,6 +174,8 @@ export interface AccessGovernanceRuntime {
 
 export interface AccessGovernanceRuntimeState {
   workspaceId?: string;
+  /** Local publication generation; independent of the optional administration directory version. */
+  authorityRevision?: number;
   loading: boolean;
   error?: string;
   snapshot?: AccessGovernanceSnapshot;

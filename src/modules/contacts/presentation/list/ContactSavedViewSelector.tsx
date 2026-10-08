@@ -31,7 +31,7 @@ interface ContactSavedViewSelectorProps {
   setActiveView: (view: string) => void;
   isViewDropdownOpen: boolean;
   setIsViewDropdownOpen: (open: boolean) => void;
-  contactsCount: number;
+  contactsCount?: number;
   onAddViewClick: () => void;
 }
 
@@ -137,7 +137,7 @@ export const ContactSavedViewSelector: React.FC<ContactSavedViewSelectorProps> =
                       {getContactViewIcon(view)}
                       <span className="crm-text-wrap">{getContactViewLabel(view)}</span>
                     </div>
-                    {activeView === view.key && (
+                    {activeView === view.key && contactsCount !== undefined && (
                       <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-medium shrink-0">
                         {contactsCount}
                       </span>
@@ -165,7 +165,7 @@ export const ContactSavedViewSelector: React.FC<ContactSavedViewSelectorProps> =
                       {getContactViewIcon(view)}
                       <span className="crm-text-wrap">{getContactViewLabel(view)}</span>
                     </span>
-                    {activeView === view.key && (
+                    {activeView === view.key && contactsCount !== undefined && (
                       <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-medium shrink-0">
                         {contactsCount}
                       </span>

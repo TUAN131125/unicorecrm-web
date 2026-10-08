@@ -20,9 +20,9 @@ export function ContactNotesTab({ contactNotes = [], onOpenComposer, isArchived 
     />
     <p className="text-xs text-slate-500">{locale === "vi" ? "Sửa ghi chú hồ sơ trong biểu mẫu Sửa liên hệ. Ghi chú hoạt động mới được ghi nhận trong lịch sử hoạt động." : "Edit profile notes in Edit Contact. New activity notes are recorded in activity history."}</p>
     {contactNotes.length ? contactNotes.map(note => <article key={note.id} className="rounded-xl border border-slate-200 bg-white p-4">
-      <h4 className="font-semibold text-slate-900">{note.title}</h4>
+      <h4 className="font-semibold text-slate-900 break-words [overflow-wrap:anywhere]">{note.title}</h4>
       <p className="mt-1 text-xs text-slate-500">{note.date}</p>
-      <p className="mt-3 whitespace-pre-wrap text-slate-700">{note.body}</p>
+      <p className="mt-3 whitespace-pre-wrap text-slate-700 break-words [overflow-wrap:anywhere]">{note.body}</p>
     </article>) : <div className="rounded-xl border border-dashed border-slate-200 p-6 text-center text-slate-500">
       <MessageSquare className="mx-auto mb-2" size={22} />
       {tx("contactDetail.notes.empty", "Chưa có ghi chú.")}

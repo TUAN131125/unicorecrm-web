@@ -1,4 +1,6 @@
 import React from "react";
+import { isTaskConnectedApiRuntime } from "../../application/composition/taskApplicationServices";
+import { resolveActivityRecordingDate } from "../model/activityRecordingTime";
 import { useI18n } from "@/i18n";
 import type { ActivityType } from "../../domain/model/task.types";
 import {
@@ -20,7 +22,7 @@ export interface RelationshipActivityDraft {
   type: ActivityType;
   subject: string;
   body: string;
-  occurredAt: string;
+  occurredAt?: string;
 }
 
 export interface RelationshipActivityCreateModalProps {
@@ -32,7 +34,7 @@ export interface RelationshipActivityCreateModalProps {
   recordLabel?: string;
   ownerName?: string;
   onClose(): void;
-  onSave(draft: RelationshipActivityDraft): void | Promise<void>;
+  onSave(draft: RelationshipActivityDraft): Promise<boolean>;
 }
 
 function nowIso(): string {
@@ -54,10 +56,11 @@ export function RelationshipActivityCreateModal({ action, targetId, formId, emai
         formId={formId}
         onClose={onClose}
         defaults={{ subject: vi ? `Cuộc gọi với ${label}` : `Call with ${label}`, recipient: phone ?? "" }}
-        onSubmit={(draft: CallActivityDraft) => onSave({
+        onSubmit={async () => {}}
+        onSave={(draft: CallActivityDraft) => onSave({
           type: "CALL",
           subject: draft.subject,
-          occurredAt: new Date(draft.occurredAt).toISOString(),
+          occurredAt: resolveActivityRecordingDate(draft),
           body: [
             draft.direction === "outbound" ? "Outbound" : "Inbound",
             draft.result,
@@ -80,10 +83,11 @@ export function RelationshipActivityCreateModal({ action, targetId, formId, emai
         formId={formId}
         onClose={onClose}
         defaults={{ title: vi ? `Lịch hẹn với ${label}` : `Meeting with ${label}`, owner: ownerName }}
-        onSubmit={(draft: MeetingActivityDraft) => onSave({
+        onSubmit={async () => {}}
+        onSave={(draft: MeetingActivityDraft) => onSave({
           type: "MEETING",
           subject: draft.title,
-          occurredAt: new Date(draft.startAt).toISOString(),
+          occurredAt: draft.recordingTime === "SERVER_NOW" ? undefined : new Date(draft.startAt).toISOString(),
           body: [`Start: ${draft.startAt}`, draft.endAt ? `End: ${draft.endAt}` : "", draft.channel, draft.location, draft.attendees, draft.owner, draft.agenda].filter(Boolean).join(" · "),
         })}
       />
@@ -99,10 +103,11 @@ export function RelationshipActivityCreateModal({ action, targetId, formId, emai
         formId={formId}
         onClose={onClose}
         defaults={{ to: email ?? "", subject: vi ? `Email với ${label}` : `Email with ${label}` }}
-        onSubmit={(draft: EmailActivityDraft) => onSave({
+        onSubmit={async () => {}}
+        onSave={(draft: EmailActivityDraft) => onSave({
           type: "EMAIL",
           subject: draft.subject,
-          occurredAt: nowIso(),
+          occurredAt: isTaskConnectedApiRuntime() ? undefined : nowIso(),
           body: [`To: ${draft.to}`, draft.body].filter(Boolean).join(" · "),
         })}
       />
@@ -118,10 +123,11 @@ export function RelationshipActivityCreateModal({ action, targetId, formId, emai
         formId={formId}
         onClose={onClose}
         defaults={{ phone: phone ?? "" }}
-        onSubmit={(draft: SmsActivityDraft) => onSave({
+        onSubmit={async () => {}}
+        onSave={(draft: SmsActivityDraft) => onSave({
           type: "MESSAGE",
           subject: vi ? `SMS với ${label}` : `SMS with ${label}`,
-          occurredAt: nowIso(),
+          occurredAt: isTaskConnectedApiRuntime() ? undefined : nowIso(),
           body: [`To: ${draft.phone}`, draft.body].filter(Boolean).join(" · "),
         })}
       />
@@ -136,10 +142,11 @@ export function RelationshipActivityCreateModal({ action, targetId, formId, emai
       formId={formId}
       onClose={onClose}
       defaults={{ title: vi ? `Ghi chú ${label}` : `${label} note` }}
-      onSubmit={(draft: NoteActivityDraft) => onSave({
+      onSubmit={async () => {}}
+      onSave={(draft: NoteActivityDraft) => onSave({
         type: "NOTE",
         subject: draft.title,
-        occurredAt: new Date(draft.occurredAt).toISOString(),
+        occurredAt: resolveActivityRecordingDate(draft),
         body: `[${draft.category}] ${draft.body}`,
       })}
     />

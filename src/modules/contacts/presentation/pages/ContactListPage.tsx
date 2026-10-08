@@ -5,6 +5,7 @@ import { ContactListView } from "../views/ContactListView";
 
 export const ContactListPage: React.FC<ContactListPageProps> = (props) => {
   const controller = useContactListController(props);
+  if (controller.connected) return <ContactListView controller={controller} />;
   return (
     <AuthoritativeQueryBoundary
       query={controller.contactQuery}

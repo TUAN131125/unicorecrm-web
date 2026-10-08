@@ -29,6 +29,8 @@ import {
   isDuplicateContactViewName,
   normalizeContactPresentationSnapshot,
 } from "@/modules/contacts/presentation/model/contactSavedViewPreferences";
+import { buildContactCreateCommand } from "@/modules/contacts/presentation/model/contactFormCommands";
+import type { ContactFormDraft } from "@/modules/contacts/presentation/components/ContactFormModal";
 import { ModuleRegistry } from "@/platform/module-registry/ModuleRegistry";
 import { readPresentationComposition } from "../../../scripts/lib/presentationCompositionSource.mts";
 
@@ -215,7 +217,20 @@ assert.match(contactRuntimeSource, /contacts/, "Contact preferences must stay sc
 
 const contactCreateControllerSource = readPresentationComposition("src/modules/contacts/presentation/hooks/useContactListController.tsx", "utf8");
 assert.doesNotMatch(contactCreateControllerSource, /id: `contact_\$\{crypto\.randomUUID\(\)\}`/, "Connected Create must not manufacture a local Contact identity.");
-assert.match(contactCreateControllerSource, /const createdContact = await createContactViaApi\(\{[\s\S]*?fullName: data\.name/, "Create must submit an authoritative request DTO and await the backend Contact.");
+assert.match(contactCreateControllerSource, /const createdContact = await createContactViaApi\(buildContactCreateCommand\(data\), options\)/, "Create must submit the canonical form command and await the backend Contact with its idempotency options.");
+const createDraft: ContactFormDraft = {
+  name: "  Authoritative Person  ", contactCode: "local-code", title: " Director ", department: " Sales ",
+  decisionRole: "decision_maker", avatarColor: "local-color", email: " person@example.com ", phone: " 0901000099 ",
+  zaloId: " zalo-person ", address: " Address ", preferredChannel: "phone", communicationConsent: true,
+  organizationName: "Unsubmitted Organization", relationshipType: "local", isPrimaryContact: true, influenceLevel: "high",
+  source: " Referral ", status: "archived", priority: "URGENT", ownerId: "member-1", tagsString: " vip, , new ",
+  lastContactedAt: "2026-10-01", nextFollowUpAt: "2026-10-07", notes: " Note ", internalNotes: "local note",
+};
+assert.deepEqual(buildContactCreateCommand(createDraft), {
+  fullName: "Authoritative Person", jobTitle: "Director", department: "Sales", decisionRole: "decision_maker",
+  workEmail: "person@example.com", mobilePhone: "0901000099", zaloId: "zalo-person", address: "Address",
+  preferredContactChannel: "phone", source: "Referral", ownerId: "member-1", tags: ["vip", "new"], notes: "Note",
+}, "The Create form must trim and map admitted fields while excluding local identity, lifecycle, scheduling and unsupported fields.");
 assert.match(contactCreateControllerSource, /const createdContact = await createContactViaApi[\s\S]*?setShowAddForm\(false\)/, "The modal may close only after backend Create succeeds.");
 assert.match(contactCreateControllerSource, /const activeIds = new Set\(contacts\.map[\s\S]*?setSelectedContactIds[\s\S]*?activeIds\.has/, "Authoritative refresh/archive must prune stale Contact selection state.");
 const contactFormSource = readPresentationComposition("src/modules/contacts/presentation/components/ContactFormModal.tsx", "utf8");

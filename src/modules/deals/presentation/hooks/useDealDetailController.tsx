@@ -21,7 +21,7 @@ import { DEFAULT_CRM_WORKSPACE_CONFIG } from "@/platform/workspace-config/worksp
 import { useI18n } from "@/i18n";
 import { getOrdersForDeal } from "@/modules/orders";
 import type { CustomerOrder } from "@/modules/orders";
-import { logActivityViaApi, type ActivityType, type NoteActivityDraft } from "@/modules/tasks";
+import { logActivityViaApi, type ActivityType, type NoteActivityDraft, resolveActivityRecordingDate } from "@/modules/tasks";
 import { closeDealLostCommand, closeDealWonCommand, isDealConnectedMode, transitionDealStageCommand, updateDealCommand } from "../../public/deals";
 import { invalidateModuleQueries } from "@/shared/application";
 import type { DealLineItem } from "../../domain/model/deal.types";
@@ -90,12 +90,13 @@ export function useDealDetailController({
     taskType: ActivityType;
     title: string;
     description: string;
-    occurredAt: string;
+    occurredAt?: string;
     metadata?: DealActivity["metadata"];
     sourceType: string;
     sourceId: string;
-  }): Promise<void> => {
-    if (!deal) return;
+    idempotencyKey?: string;
+  }): Promise<boolean> => {
+    if (!deal) return false;
     const session = getAuthSessionSnapshot();
     if (!session) throw new Error(locale === "vi" ? "Phiên đăng nhập không còn hợp lệ." : "The authenticated session is no longer available.");
     const outcome = await logActivityViaApi({
@@ -108,8 +109,11 @@ export function useDealDetailController({
       occurredAt: input.occurredAt,
       recordRef: { moduleKey: "deals", recordId: deal.id, label: deal.name },
       sourceRef: { type: input.sourceType, id: input.sourceId },
-    });
+    }, input.idempotencyKey ? { idempotencyKey: input.idempotencyKey } : {});
     const saved = outcome.data.activity;
+    if (saved.recordRef?.moduleKey !== "deals" || saved.recordRef.recordId !== deal.id || saved.type !== input.taskType
+      || (input.occurredAt !== undefined && saved.occurredAt !== input.occurredAt)
+      || !["COMMITTED", "REPLAYED", "DEMO_COMMITTED"].includes(outcome.outcome ?? "")) return false;
     // `task.log-activity` declares readModelRefreshRequirement ["tasks"], so the Tasks
     // module owns this activity and the backend does not record it on the Deal read
     // model. Connected mode must not fabricate a Deal activity locally: it refreshes the
@@ -122,7 +126,7 @@ export function useDealDetailController({
         aggregateId: deal.id,
         occurredAt: saved.occurredAt,
       });
-      return;
+      return true;
     }
     const projection: DealActivity = {
       id: saved.id,
@@ -138,6 +142,7 @@ export function useDealDetailController({
       activities: [projection, ...(item.activities || [])],
       updatedAt: saved.occurredAt,
     } : item));
+    return true;
   };
 
   // New note state
@@ -457,20 +462,21 @@ export function useDealDetailController({
   };
 
   // Handle adding direct notes in the details workspace
-  const handleAddDirectNote = async (draft: NoteActivityDraft) => {
+  const handleAddDirectNote = async (draft: NoteActivityDraft): Promise<boolean> => {
     try {
       const saved = await runBoundMutation(() => logDealTimelineActivity({
         activityType: "note",
         taskType: "NOTE",
         title: draft.title,
         description: `[${draft.category}] ${draft.body}`,
-        occurredAt: new Date(draft.occurredAt).toISOString(),
+        occurredAt: resolveActivityRecordingDate(draft),
         sourceType: "DEAL_NOTE",
         sourceId: deal.id,
         metadata: { noteCategory: draft.category, pinned: draft.pinned },
+        idempotencyKey: `${intentId}:note`,
       }), true);
       if (!saved) throw new Error("DEAL_NOTE_NOT_SAVED");
-      resetInteraction();
+      return true;
     } catch (error) {
       throw error;
     }

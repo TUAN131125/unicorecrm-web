@@ -75,7 +75,7 @@ for (const [name, source] of [["Contact", contactStatistics], ["Customer", custo
   assertIncludes(source, "<Modal", `${name} statistics centered modal`);
   if (source.includes("<Drawer")) throw new Error(`${name} statistics must open in a centered modal instead of a right-side drawer`);
 }
-assertIncludes(leadList, 'showStats={true}', "Lead statistics toolbar action");
+assertIncludes(leadList, 'showStats={!(kanban.connected && viewMode === "kanban")}', "Lead statistics must remain available outside connected Kanban, where partial column windows cannot supply authoritative aggregate statistics");
 assertIncludes(leadList, 'statsLabel={locale === "vi" ? "Thống kê" : "Statistics"}', "Lead statistics label");
 assertIncludes(leadList, "LeadStatisticsModal", "Lead statistics modal integration");
 
@@ -132,7 +132,8 @@ assertIncludes(relationshipQuickActionModal, 'footer={(', "Relationship quick-ac
 for (const marker of ["CallActivityCreateModal", "MeetingActivityCreateModal", "EmailActivityCreateModal", "SmsActivityCreateModal", "NoteActivityCreateModal"]) {
   assertIncludes(canonicalActivityForms, marker, `Canonical relationship activity form ${marker}`);
 }
-assertIncludes(leadDetailModals, "CallActivityCreateModal", "Lead uses canonical activity forms");
+assertIncludes(leadDetailModals, "<LeadCallActivityModal", "Lead delegates its call form adapter");
+assertIncludes(read("src/modules/leads/presentation/components/LeadCallActivityModal.tsx"), "<CallActivityCreateModal", "Lead call adapter uses the canonical activity form");
 assertIncludes(organizationQuickActivityModal, "RelationshipActivityCreateModal", "Organization uses the canonical relationship activity router");
 assertIncludes(contactLogCallModal, "CallActivityCreateModal", "Contact uses canonical activity forms");
 assertIncludes(customerQuickActivityModal, "RelationshipActivityCreateModal", "Customer uses the canonical relationship activity router");

@@ -14,7 +14,9 @@ Studio hiện cung cấp một route Quick Setup tùy chọn, luôn có thể m�
 
 Định danh contract candidate
 
-Archive này tự định danh là unicorecrm-web@0.23.20-contract.0. Nó bao gồm frontend React, OpenAPI 3.1 contract candidate, các TypeScript client được sinh theo cách xác định (deterministic), hệ thống tự động hóa kiểm tra chất lượng GitHub Actions có thứ tự và bộ công cụ tạo bằng chứng source-release theo cách xác định. Archive này chủ ý không chứa implementation backend production có thể chạy được. Connected HTTP host vẫn chỉ dùng cho test; kết quả từ fixture cục bộ không phải là bằng chứng cho backend hoặc database production. Production target đã chọn là ASP.NET Core Modular Monolith + Clean Architecture + CQRS/MediatR + FluentValidation + SQL Server. Xem docs/quality/release-identity.md, .NET/SQL Server target, ADRs và compatibility ledger.
+Repository tự định danh là unicorecrm-web@0.24.0-contract.0, gồm frontend React, OpenAPI 3.1 contract candidate và các TypeScript client được sinh theo cách xác định. Backend ASP.NET Core/SQL Server nằm trong repository riêng. Vòng production-hardening đã kiểm tra Contact paging, phân quyền, Tasks follow-up và Lead Kanban qua ApiHost/SQL thật và trình duyệt connected; bằng chứng này không phải là xác nhận triển khai production hay kiểm chứng tải 10.000 người dùng đồng thời. Xem docs/quality/release-identity.md, ADRs và compatibility ledger.
+
+Contact connected dùng phân trang, lọc, sắp xếp và thống kê phía server; myContacts lấy thành viên từ principal tin cậy. Lead Kanban dùng cửa sổ và cursor riêng cho từng cột. Contact lastContacted, priority, teamContacts, inactiveLongTime và các projection chưa có authority vẫn unavailable; chính sách Activity fail-closed được giữ nguyên. Quy tắc chi tiết nằm tại [Contact query authority](docs/architecture/contact-server-query.md) và [Lead API boundary](docs/architecture/lead-api-boundary.md).
 
 Yêu cầu
 

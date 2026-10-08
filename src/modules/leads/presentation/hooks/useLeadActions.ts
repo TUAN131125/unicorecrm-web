@@ -38,14 +38,14 @@ export function useLeadActions() {
     archiveMany: (leadIds: readonly string[]) => archiveLeadsViaApi(leadIds).then((result) => result.leads),
     advanceNewToContacting: (leadIds: readonly string[]) => advanceLeadWorkStateBatchViaApi(leadIds, "CONTACTING"),
     advanceEligibleToVerifying: (leadIds: readonly string[]) => advanceLeadWorkStateBatchViaApi(leadIds, "VERIFYING"),
-    changeWorkState: (leadId: string, leadWorkState: Exclude<LeadWorkState, "NEW" | "CLOSED">, _activity?: CRMActivity) =>
-      advanceLeadWorkStateViaApi(leadId, { targetWorkState: leadWorkState }).then((result) => result.lead),
+    changeWorkState: (leadId: string, leadWorkState: Exclude<LeadWorkState, "NEW" | "CLOSED">, _activity?: CRMActivity, observedVersion?: number) =>
+      advanceLeadWorkStateViaApi(leadId, { targetWorkState: leadWorkState }, observedVersion).then((result) => result.lead),
     startVerification: (leadId: string, input?: {
       companyName?: string;
       painPoint?: string;
       nextFollowUpAt?: string;
       activity?: CRMActivity;
-    }) => advanceLeadWorkStateViaApi(leadId, {
+    }, observedVersion?: number) => advanceLeadWorkStateViaApi(leadId, {
       targetWorkState: "VERIFYING",
       ...(input === undefined ? {} : {
         verificationProfile: {
@@ -54,7 +54,7 @@ export function useLeadActions() {
           nextFollowUpAt: input.nextFollowUpAt,
         },
       }),
-    }).then((result) => result.lead),
+    }, observedVersion).then((result) => result.lead),
     disqualify: (leadId: string, input: { reason: string; evidence?: string; actorId?: string; activity?: CRMActivity }) =>
       disqualifyLeadViaApi(leadId, { reason: input.reason, evidence: input.evidence }).then((result) => result.lead),
     reopen: (leadId: string, _activity?: CRMActivity) =>

@@ -1,6 +1,8 @@
+import { AuthoritativeQueryNotice } from "@/shared/operations";
+import { ContactServerStatisticsPanel } from "../list/ContactServerStatisticsPanel";
 import { AnimatePresence } from "motion/react";
 import { User, Sparkles, Trash2, Pencil, Plus, RefreshCw } from "lucide-react";
-import { ConfirmDialog, IconButton } from "@/shared/components/ui";
+import { ConfirmDialog, IconButton, Select } from "@/shared/components/ui";
 import { PageHeaderActions } from "@/components/crm/PageHeaderActions";
 import { SavedViewNameModal } from "@/components/crm/SavedViewNameModal";
 import { ListBulkActionBar, ListPageFrame, ListPageHeader, ListPaginationBar, ListStatePanel, ListToolbar, useListPagination } from "@/components/crm/list-archetype";
@@ -22,6 +24,7 @@ type ContactListViewController = ReturnType<typeof useContactListController>;
 
 export function ContactListView({ controller }: { controller: ContactListViewController }) {
   const {
+    connected, serverPagination, serverSummary, serverQueryUnavailable,
     canCreateContact,
     canArchiveContact,
     canReadContacts,
@@ -36,7 +39,6 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
     locale,
     navigate,
     contacts,
-    setContacts,
     productCatalog,
     searchTerm,
     setSearchTerm,
@@ -112,6 +114,7 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
     handleAddViewClick,
     handleEditViewClick,
     handleSubmitSavedView,
+    saveViewName,
     handleDeleteCustomView,
     handleResetFilters,
     handleSaveColumnSettings,
@@ -136,7 +139,8 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
     statsSummary,
   } = controller;
 
-  const pagination = useListPagination(sortedContacts, 25);
+  const localPagination = useListPagination(connected ? [] : sortedContacts, 25);
+  const pagination = connected ? { ...serverPagination, pageItems: serverQueryUnavailable ? [] : serverPagination.items } : localPagination;
   const handleSelectCurrentPage = (checked: boolean) => {
     const pageIds = pagination.pageItems.map((contact) => contact.id);
     setSelectedContactIds((current) => checked
@@ -150,7 +154,7 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
       {/* Page Header */}
       <ListPageHeader
         title={t("contactList.title")}
-        count={sortedContacts.length}
+        count={!canReadContacts || serverQueryUnavailable || (connected && (serverPagination.loading || serverPagination.error)) ? undefined : connected ? serverPagination.totalItems : sortedContacts.length}
         context={locale === "vi" ? "Relationship records" : "Relationship records"}
         icon={<User size={18} />}
         actions={
@@ -194,6 +198,7 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
         filtersOpen={isFilterOpen}
         filtersPanel={(
           <ContactFilterPopover
+            connected={connected}
             isOpen={isFilterOpen}
             onClose={() => setIsFilterOpen(false)}
             statusFilter={statusFilter}
@@ -236,7 +241,7 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
               setActiveView={handleSelectSavedView}
               isViewDropdownOpen={isViewDropdownOpen}
               setIsViewDropdownOpen={setIsViewDropdownOpen}
-              contactsCount={sortedContacts.length}
+              contactsCount={!canReadContacts || serverQueryUnavailable || (connected && (serverPagination.loading || serverPagination.error)) ? undefined : connected ? serverPagination.totalItems : sortedContacts.length}
               onAddViewClick={handleAddViewClick}
             />
             {getActiveCustomView() && (() => {
@@ -272,6 +277,13 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
           </div>
         }
         rightSlot={
+          <div className="flex items-center gap-2">
+          <Select aria-label={locale === "vi" ? "Sắp xếp liên hệ" : "Sort contacts"} value={sortBy} onChange={event => setSortBy(event.target.value)}>
+            <option value="recentlyUpdated">{locale === "vi" ? "Cập nhật gần nhất" : "Recently updated"}</option>
+            <option value="nameAsc">{locale === "vi" ? "Tên A–Z" : "Name A–Z"}</option>
+            <option value="nextFollowUp">{locale === "vi" ? "Ngày chăm sóc tiếp" : "Next follow-up"}</option>
+            <option value="lastContacted" disabled={connected}>{locale === "vi" ? "Liên hệ gần nhất" : "Last contacted"}{connected ? (locale === "vi" ? " — Chưa khả dụng" : " — Unavailable") : ""}</option>
+          </Select>
           <button
             type="button"
             onClick={() => void contactQuery.refresh()}
@@ -282,6 +294,7 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
           >
             <RefreshCw size={14} className={contactQuery.refreshing ? "animate-spin" : undefined} />
           </button>
+          </div>
         }
       />
 
@@ -304,6 +317,7 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
         name={viewName}
         onNameChange={(name) => { setViewName(name); if (viewNameError) setViewNameError(""); }}
         onSubmit={handleSubmitSavedView}
+        onSave={(name) => saveViewName(name, true)}
         error={viewNameError || undefined}
         loading={isSavingView}
         formId="contact-saved-view-form"
@@ -321,7 +335,12 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
       />
 
       {/* Contacts Interactive Lists and Tables representation */}
-      {sortedContacts.length === 0 ? (
+      <AuthoritativeQueryNotice {...contactQuery} connected={connected} onRefresh={() => void contactQuery.refresh()} />
+      {!canReadContacts ? (
+        <ListStatePanel kind="permission" title={locale === "vi" ? "Bạn không có quyền xem liên hệ." : "You do not have permission to view contacts."} />
+      ) : serverQueryUnavailable ? (
+        <ListStatePanel kind="empty" title={locale === "vi" ? "Bộ lọc, cách sắp xếp hoặc giao diện này chưa khả dụng. Vui lòng chọn tùy chọn khác." : "This filter, sort or view is unavailable. Please choose another option."} />
+      ) : connected && (serverPagination.loading || serverPagination.error) ? null : sortedContacts.length === 0 ? (
         <ListStatePanel
           kind="empty"
           title={locale === "vi" ? "Không có Contact phù hợp" : "No matching contacts"}
@@ -389,11 +408,11 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
       />}
 
       {/* Contact Statistics Panel (Side Drawer / Aesthetic Panel) */}
-      <ContactStatisticsPanel
+      {connected ? <ContactServerStatisticsPanel show={showStatisticsPanel} onClose={() => setShowStatisticsPanel(false)} state={serverSummary} unavailable={serverQueryUnavailable} /> : statsSummary && <ContactStatisticsPanel
         show={showStatisticsPanel}
         onClose={() => setShowStatisticsPanel(false)}
         statsSummary={statsSummary}
-      />
+      />}
 
       {/* Styled toast overlay */}
       <AnimatePresence>

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "contractVersion": "0.23.20-contract.0",
+  "contractVersion": "0.24.0-contract.0",
   "operations": [
     {
       "operationId": "acceptQuote",
@@ -38,6 +38,32 @@
       "dataScope": "GLOBAL_IDENTITY",
       "status": "PRODUCTION_CONTRACT_READY",
       "workspaceRequired": false,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "activateAiConfiguration",
+      "method": "POST",
+      "path": "/ai/configuration/activate",
+      "moduleOwner": "ai",
+      "capability": "ai.configuration.manage",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "activateOutboundWebhookSubscription",
+      "method": "POST",
+      "path": "/outbound-webhooks/{subscriptionId}/activate",
+      "moduleOwner": "platform/integrations",
+      "capability": "studio.configure",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
       "actorRequired": true,
       "backendEnforcement": "REQUIRED"
     },
@@ -237,6 +263,19 @@
       "backendEnforcement": "REQUIRED"
     },
     {
+      "operationId": "archiveCustomer",
+      "method": "POST",
+      "path": "/customers/{customerId}/archive",
+      "moduleOwner": "customers",
+      "capability": "customers.archive",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
       "operationId": "archiveDealCommand",
       "method": "POST",
       "path": "/deals/{dealId}/archive",
@@ -307,6 +346,32 @@
       "path": "/orders/archive-batch",
       "moduleOwner": "orders",
       "capability": "orders.delete",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "archiveOrganization",
+      "method": "POST",
+      "path": "/organizations/{organizationId}/archive",
+      "moduleOwner": "organizations",
+      "capability": "organizations.delete",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "archiveOutboundWebhookSubscription",
+      "method": "POST",
+      "path": "/outbound-webhooks/{subscriptionId}/archive",
+      "moduleOwner": "platform/integrations",
+      "capability": "studio.configure",
       "resourceScope": "WORKSPACE",
       "dataScope": "WORKSPACE",
       "status": "PRODUCTION_CONTRACT_READY",
@@ -770,6 +835,19 @@
       "backendEnforcement": "REQUIRED"
     },
     {
+      "operationId": "convertLeadToCustomer",
+      "method": "POST",
+      "path": "/workflows/lead-customer-conversion/{leadId}",
+      "moduleOwner": "leads",
+      "capability": "leads.convert_to_customer",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
       "operationId": "createAccessRole",
       "method": "POST",
       "path": "/access/roles",
@@ -859,6 +937,19 @@
       "workspaceRequired": true,
       "actorRequired": true,
       "backendEnforcement": "BLOCKED_BY_DECISION"
+    },
+    {
+      "operationId": "createCustomer",
+      "method": "POST",
+      "path": "/customers",
+      "moduleOwner": "customers",
+      "capability": "customers.onboard_existing",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
     },
     {
       "operationId": "createDealCommand",
@@ -959,10 +1050,23 @@
       "capability": "organizations.create",
       "resourceScope": "WORKSPACE",
       "dataScope": "WORKSPACE",
-      "status": "BLOCKED",
+      "status": "PRODUCTION_CONTRACT_READY",
       "workspaceRequired": true,
       "actorRequired": true,
-      "backendEnforcement": "BLOCKED_BY_DECISION"
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "createOutboundWebhookSubscription",
+      "method": "POST",
+      "path": "/outbound-webhooks",
+      "moduleOwner": "platform/integrations",
+      "capability": "studio.configure",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
     },
     {
       "operationId": "createPaymentIntent",
@@ -1147,6 +1251,19 @@
       "backendEnforcement": "BLOCKED_BY_DECISION"
     },
     {
+      "operationId": "disableAiConfiguration",
+      "method": "POST",
+      "path": "/ai/configuration/disable",
+      "moduleOwner": "ai",
+      "capability": "ai.configuration.manage",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
       "operationId": "discardInvoiceDraft",
       "method": "POST",
       "path": "/invoices/{invoiceId}/discard",
@@ -1290,6 +1407,45 @@
       "backendEnforcement": "REQUIRED"
     },
     {
+      "operationId": "getAiConfiguration",
+      "method": "GET",
+      "path": "/ai/configuration",
+      "moduleOwner": "ai",
+      "capability": "ai.configuration.read",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "getAiProviderCatalog",
+      "method": "GET",
+      "path": "/ai/configuration/catalog",
+      "moduleOwner": "ai",
+      "capability": "ai.configuration.read",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "getAiUsageSummary",
+      "method": "GET",
+      "path": "/ai/configuration/usage",
+      "moduleOwner": "ai",
+      "capability": "ai.configuration.read",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "SAFE_OPERATIONAL_SUMMARY",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
       "operationId": "getBuyerAccountStatement",
       "method": "GET",
       "path": "/buyers/{buyerType}/{buyerId}/account-statement",
@@ -1309,6 +1465,19 @@
       "moduleOwner": "contacts",
       "capability": "contacts.read",
       "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": false,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "getContactListSummary",
+      "method": "GET",
+      "path": "/contacts/summary",
+      "moduleOwner": "contacts",
+      "capability": "contacts.read",
+      "resourceScope": "WORKSPACE",
       "dataScope": "WORKSPACE",
       "status": "PRODUCTION_CONTRACT_READY",
       "workspaceRequired": true,
@@ -1417,6 +1586,19 @@
       "status": "PRODUCTION_CONTRACT_READY",
       "workspaceRequired": true,
       "actorRequired": false,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "getIntegrationEventCatalog",
+      "method": "GET",
+      "path": "/integration-event-catalog",
+      "moduleOwner": "platform/integrations",
+      "capability": "studio.read",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
       "backendEnforcement": "REQUIRED"
     },
     {
@@ -1560,6 +1742,19 @@
       "status": "PRODUCTION_CONTRACT_READY",
       "workspaceRequired": true,
       "actorRequired": false,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "getOutboundWebhookSubscription",
+      "method": "GET",
+      "path": "/outbound-webhooks/{subscriptionId}",
+      "moduleOwner": "platform/integrations",
+      "capability": "studio.read",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
       "backendEnforcement": "REQUIRED"
     },
     {
@@ -2044,6 +2239,19 @@
       "backendEnforcement": "REQUIRED"
     },
     {
+      "operationId": "listLeadKanbanColumn",
+      "method": "GET",
+      "path": "/leads/kanban/{column}",
+      "moduleOwner": "leads",
+      "capability": "leads.read",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": false,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
       "operationId": "listLeads",
       "method": "GET",
       "path": "/leads",
@@ -2093,6 +2301,32 @@
       "status": "PRODUCTION_CONTRACT_READY",
       "workspaceRequired": true,
       "actorRequired": false,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "listOutboundWebhookDeliveries",
+      "method": "GET",
+      "path": "/outbound-webhook-deliveries",
+      "moduleOwner": "platform/integrations",
+      "capability": "studio.read",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "listOutboundWebhookSubscriptions",
+      "method": "GET",
+      "path": "/outbound-webhooks",
+      "moduleOwner": "platform/integrations",
+      "capability": "studio.read",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
       "backendEnforcement": "REQUIRED"
     },
     {
@@ -2460,6 +2694,19 @@
       "backendEnforcement": "REQUIRED"
     },
     {
+      "operationId": "pauseOutboundWebhookSubscription",
+      "method": "POST",
+      "path": "/outbound-webhooks/{subscriptionId}/pause",
+      "moduleOwner": "platform/integrations",
+      "capability": "studio.configure",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
       "operationId": "previewPaymentPlan",
       "method": "POST",
       "path": "/payment-plans/{planId}/preview",
@@ -2502,7 +2749,7 @@
       "operationId": "putWorkspaceExchangeRate",
       "method": "PUT",
       "path": "/workspace-configuration/exchange-rates/{rateId}",
-      "moduleOwner": "platform/workspace-config",
+      "moduleOwner": "workspaces/studio",
       "capability": "studio.configure",
       "resourceScope": "RESOURCE",
       "dataScope": "WORKSPACE",
@@ -2840,7 +3087,7 @@
       "operationId": "replaceWorkspaceCurrencies",
       "method": "PUT",
       "path": "/workspace-configuration/currencies",
-      "moduleOwner": "platform/workspace-config",
+      "moduleOwner": "workspaces/studio",
       "capability": "studio.configure",
       "resourceScope": "SYSTEM_CONFIGURATION",
       "dataScope": "WORKSPACE",
@@ -2857,6 +3104,19 @@
       "capability": "access.configure",
       "resourceScope": "WORKSPACE_MEMBERSHIP",
       "dataScope": "SELECTED_WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "replayOutboundWebhookDelivery",
+      "method": "POST",
+      "path": "/outbound-webhook-deliveries/{deliveryId}/replay",
+      "moduleOwner": "platform/integrations",
+      "capability": "studio.configure",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE",
       "status": "PRODUCTION_CONTRACT_READY",
       "workspaceRequired": true,
       "actorRequired": true,
@@ -2883,6 +3143,19 @@
       "capability": "quotes.update",
       "resourceScope": "RESOURCE",
       "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "requestAiAdvisory",
+      "method": "POST",
+      "path": "/ai/advisories",
+      "moduleOwner": "ai",
+      "capability": "OWNER_RESOURCE_READ",
+      "resourceScope": "RECORD",
+      "dataScope": "OWNER_AUTHORIZED_FIELDS",
       "status": "PRODUCTION_CONTRACT_READY",
       "workspaceRequired": true,
       "actorRequired": true,
@@ -3058,6 +3331,19 @@
       "backendEnforcement": "REQUIRED"
     },
     {
+      "operationId": "resumeOutboundWebhookSubscription",
+      "method": "POST",
+      "path": "/outbound-webhooks/{subscriptionId}/resume",
+      "moduleOwner": "platform/integrations",
+      "capability": "studio.configure",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
       "operationId": "retryInvoiceIssue",
       "method": "POST",
       "path": "/invoices/{invoiceId}/retry-issue",
@@ -3175,6 +3461,32 @@
       "backendEnforcement": "REQUIRED"
     },
     {
+      "operationId": "rotateOutboundWebhookSecret",
+      "method": "POST",
+      "path": "/outbound-webhooks/{subscriptionId}/rotate-secret",
+      "moduleOwner": "platform/integrations",
+      "capability": "studio.configure",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "saveAiConfiguration",
+      "method": "PUT",
+      "path": "/ai/configuration",
+      "moduleOwner": "ai",
+      "capability": "ai.configuration.manage",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
       "operationId": "saveInvoiceDraft",
       "method": "PATCH",
       "path": "/invoices/{invoiceId}/draft",
@@ -3220,6 +3532,19 @@
       "moduleOwner": "invoices",
       "capability": "invoices.send",
       "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "setAiCredential",
+      "method": "PUT",
+      "path": "/ai/configuration/credential",
+      "moduleOwner": "ai",
+      "capability": "ai.configuration.manage",
+      "resourceScope": "WORKSPACE",
       "dataScope": "WORKSPACE",
       "status": "PRODUCTION_CONTRACT_READY",
       "workspaceRequired": true,
@@ -3273,6 +3598,19 @@
       "capability": "shipping.create",
       "resourceScope": "RESOURCE",
       "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "testAiConfiguration",
+      "method": "POST",
+      "path": "/ai/configuration/test",
+      "moduleOwner": "ai",
+      "capability": "ai.configuration.manage",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "SYNTHETIC_ONLY",
       "status": "PRODUCTION_CONTRACT_READY",
       "workspaceRequired": true,
       "actorRequired": true,
@@ -3370,17 +3708,17 @@
       "backendEnforcement": "BLOCKED_BY_DECISION"
     },
     {
-      "operationId": "updateCustomerLifecycle",
+      "operationId": "updateCustomer",
       "method": "PATCH",
       "path": "/customers/{customerId}",
       "moduleOwner": "customers",
       "capability": "customers.edit",
       "resourceScope": "RESOURCE",
       "dataScope": "WORKSPACE",
-      "status": "BLOCKED",
+      "status": "PRODUCTION_CONTRACT_READY",
       "workspaceRequired": true,
       "actorRequired": true,
-      "backendEnforcement": "BLOCKED_BY_DECISION"
+      "backendEnforcement": "REQUIRED"
     },
     {
       "operationId": "updateDealCommand",
@@ -3455,10 +3793,23 @@
       "capability": "organizations.update",
       "resourceScope": "RESOURCE",
       "dataScope": "WORKSPACE",
-      "status": "BLOCKED",
+      "status": "PRODUCTION_CONTRACT_READY",
       "workspaceRequired": true,
       "actorRequired": true,
-      "backendEnforcement": "BLOCKED_BY_DECISION"
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "updateOutboundWebhookSubscription",
+      "method": "PUT",
+      "path": "/outbound-webhooks/{subscriptionId}",
+      "moduleOwner": "platform/integrations",
+      "capability": "studio.configure",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
     },
     {
       "operationId": "updateProductConfigurationType",

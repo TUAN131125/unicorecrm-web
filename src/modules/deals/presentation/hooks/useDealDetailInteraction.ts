@@ -8,6 +8,7 @@ import { requestDecision } from "@/components/feedback/ProductDialogService";
 export function useDealDetailInteraction(screenDeal: Deal | undefined, dealId: string | undefined,
   lostDirty: boolean, locale: string, resetDraft: () => void, saveLost: () => Promise<boolean>, onError: (error: unknown) => void) {
   const workspace = useWorkspaceContextSnapshot();
+  const liveRoute = React.useRef(dealId); liveRoute.current = dealId;
   const openingWorkspace = React.useRef(workspace.workspaceId);
   const [openingDeal, setOpeningDeal] = useState<Deal>();
   const pendingMutation = React.useRef(false);
@@ -71,11 +72,11 @@ export function useDealDetailInteraction(screenDeal: Deal | undefined, dealId: s
     return () => { unregister(); window.removeEventListener("beforeunload", warn); };
   });
   const runBoundMutation = async (run: () => Promise<unknown>, propagateError = false): Promise<boolean> => {
-    if (pendingMutation.current || !mounted.current || getWorkspaceContextSnapshot().workspaceId !== openingWorkspace.current) return false;
+    if (pendingMutation.current || !mounted.current || (openingDeal && liveRoute.current !== openingDeal.id) || getWorkspaceContextSnapshot().workspaceId !== openingWorkspace.current) return false;
     const cycle = interactionCycle.current;
     pendingMutation.current = true;
     setInteractionPending(true);
-    try { await run(); return mounted.current && interactionCycle.current === cycle && getWorkspaceContextSnapshot().workspaceId === openingWorkspace.current; }
+    try { const result = await run(); return result !== false && mounted.current && interactionCycle.current === cycle && (!openingDeal || liveRoute.current === openingDeal.id) && getWorkspaceContextSnapshot().workspaceId === openingWorkspace.current; }
     catch (error) {
       if (mounted.current && interactionCycle.current === cycle) {
         onError(error);

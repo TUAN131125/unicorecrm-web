@@ -14,7 +14,6 @@ const structuralFiles = [
   "src/components/crm/list-archetype/ListPageHeader.tsx",
   "src/shared/components/ui/Form.tsx",
   "src/shared/components/ui/EmptyState.tsx",
-  "src/components/crm/list-archetype/ListStatePanel.tsx",
   "src/shared/components/ui/Card.tsx",
   "src/shared/components/ui/Drawer.tsx",
   "src/features/auth/components/AuthShell.tsx",
@@ -43,6 +42,11 @@ const listHeader = read("src/components/crm/list-archetype/ListPageHeader.tsx");
 assert.equal(listHeader.includes("subtitle="), false, "List headers must not create a description row.");
 assert.equal(listHeader.includes("context &&"), false, "List header context must not render as supporting copy.");
 assert.ok(listHeader.includes("titleWithCount"), "List count should remain part of the title row.");
+
+// A failed/blocked/loading query needs operational feedback, unlike decorative
+// subtitle copy on a structural title. Empty-state supporting copy stays banned.
+const listStatePanel = read("src/components/crm/list-archetype/ListStatePanel.tsx");
+assert.match(listStatePanel, /\{description && <p[^>]*>\{description\}<\/p>\}/, "List state feedback must render the actual operational description.");
 
 const directDescriptionMarkers = [
   "Công việc dùng một nguồn dữ liệu chung",
@@ -94,14 +98,18 @@ for (const file of tsxFiles) {
     if (ts.isJsxOpeningElement(node) || ts.isJsxSelfClosingElement(node)) {
       const componentName = node.tagName.getText(sourceFile);
       const forbiddenProps = forbiddenStructuralProps.get(componentName);
+      const kind = node.attributes.properties.find((property) => ts.isJsxAttribute(property) && property.name.getText(sourceFile) === "kind");
+      const operationalListState = componentName === "ListStatePanel" && kind && ts.isJsxAttribute(kind)
+        && kind.initializer && ts.isStringLiteral(kind.initializer)
+        && ["error", "permission", "loading"].includes(kind.initializer.text);
       for (const property of node.attributes.properties) {
         if (!ts.isJsxAttribute(property)) continue;
         const propertyName = ts.isIdentifier(property.name) ? property.name.text : property.name.getText(sourceFile);
         if (propertyName === "description") {
           if (studioContextComponents.has(componentName)) studioContextDescriptionCount += 1;
-          else descriptionAttributeCount += 1;
+          else if (!operationalListState) descriptionAttributeCount += 1;
         }
-        if (forbiddenProps?.has(propertyName)) {
+        if (forbiddenProps?.has(propertyName) && !(operationalListState && propertyName === "description")) {
           const line = sourceFile.getLineAndCharacterOfPosition(property.getStart(sourceFile)).line + 1;
           forbiddenStructuralUsages.push(`${path.relative(root, file)}:${line} <${componentName}> ${propertyName}`);
         }

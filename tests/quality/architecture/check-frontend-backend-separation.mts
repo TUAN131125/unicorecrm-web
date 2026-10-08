@@ -48,7 +48,10 @@ assert.ok(
     output.startsWith("src/platform/api/contracts/generated") ||
     output === "src/platform/api/catalog/generatedApiOperationCatalog.ts" ||
     output === "docs/api/api-operation-catalog.json" ||
-    output === "docs/backend-readiness/operation-contract-status.json",
+    output === "docs/backend-readiness/operation-contract-status.json" ||
+    output === "docs/backend-readiness/idempotency-policy.json" ||
+    output === "docs/backend-readiness/concurrency-policy.json" ||
+    output === "docs/backend-readiness/operation-authorization-matrix.json",
   ),
   "Generated artifacts must remain frontend-repository-owned and cannot create backend implementation.",
 );

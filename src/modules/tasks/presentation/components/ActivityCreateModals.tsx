@@ -1,10 +1,10 @@
 import { listWorkspaceMemberDirectory } from "@/platform/member-directory";
-import { useWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import React from "react";
+import { ActivityRecordingTimeNotice } from "./ActivityRecordingTimeNotice";
+import { openingActivityRecordingTime, isCustomActivityDateUnavailable, type ActivityRecordingTime } from "../model/activityRecordingTime";
+import { useActivityDraftLifecycle } from "../hooks/useActivityDraftLifecycle";
 import { Checkbox, Input, Select, Textarea } from "@/shared/components/ui";
 import { RelationshipQuickActionModal } from "@/components/crm/relationship-panel/RelationshipQuickActionModal";
-import { normalizeApplicationError } from "@/shared/domain";
-import { registerUnsavedWork } from "@/platform/unsaved-work";
 import { useI18n } from "@/i18n";
 
 export interface ActivityContactPolicy {
@@ -14,6 +14,7 @@ export interface ActivityContactPolicy {
 }
 
 export interface CallActivityDraft {
+  recordingTime?: ActivityRecordingTime;
   subject: string;
   recipient: string;
   direction: "outbound" | "inbound";
@@ -26,6 +27,7 @@ export interface CallActivityDraft {
 }
 
 export interface MeetingActivityDraft {
+  recordingTime?: ActivityRecordingTime;
   title: string;
   startAt: string;
   endAt?: string;
@@ -50,6 +52,7 @@ export interface SmsActivityDraft {
 }
 
 export interface NoteActivityDraft {
+  recordingTime?: ActivityRecordingTime;
   title: string;
   body: string;
   category: "care" | "internal" | "call_summary" | "consulting";
@@ -60,6 +63,8 @@ export interface NoteActivityDraft {
 interface BaseActivityModalProps {
   /** Opening record identity; the caller owns the authoritative command snapshot. */
   targetId?: string;
+  onBindSave?: (save: (() => Promise<boolean>) | undefined) => void;
+  onPendingChange?: (pending: boolean) => void;
   recordingOnly?: boolean;
   allowFollowUp?: boolean;
   guardChanges?: boolean;
@@ -82,88 +87,6 @@ function normalizeLocalDateTime(value?: string, fallback = new Date()): string {
   return Number.isNaN(parsed.getTime()) ? localDateTimeInput(fallback) : localDateTimeInput(parsed);
 }
 
-function useDraftOnOpen<T>(isOpen: boolean, createDraft: () => T, targetId: string | undefined, formId: string, onSubmit: (draft: T) => void | Promise<void>, onClose: () => void) {
-  const workspaceId = useWorkspaceContextSnapshot().workspaceId;
-  const liveWorkspace = React.useRef(workspaceId);
-  liveWorkspace.current = workspaceId;
-  const [draft, setDraft] = React.useState<T>(createDraft);
-  const initial = React.useRef(draft);
-  const wasOpen = React.useRef(false);
-  const opening = React.useRef({ workspaceId, targetId, onSubmit, onClose });
-  const pending = React.useRef(false);
-  const mounted = React.useRef(true);
-  const cycle = React.useRef(0);
-  const openRef = React.useRef(isOpen);
-  openRef.current = isOpen;
-  const registration = React.useRef<object | undefined>(undefined);
-  const [busy, setBusy] = React.useState(false);
-  const [errors, setErrors] = React.useState<Record<string, string>>({});
-  const fingerprint = (value: T) => JSON.stringify(value, (_key, field: unknown) => typeof field === "string" ? field.trim() : field);
-  const dirty = fingerprint(draft) !== fingerprint(initial.current);
-  React.useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
-  React.useEffect(() => {
-    if (isOpen && !pending.current && (!wasOpen.current || (opening.current.targetId !== targetId && !dirty))) {
-      cycle.current += 1;
-      opening.current = { workspaceId, targetId, onSubmit, onClose };
-      initial.current = createDraft();
-      setDraft(initial.current);
-      setErrors({});
-    }
-    if (!isOpen || !pending.current) wasOpen.current = isOpen;
-  });
-  React.useEffect(() => {
-    // Lead action owners already register their lifecycle; explicit targetId opts other callers in.
-    if (!isOpen || targetId === undefined) return;
-    const capturedCycle = cycle.current;
-    const entryToken = {};
-    registration.current = entryToken;
-    const currentEntry = () => mounted.current && openRef.current && cycle.current === capturedCycle && registration.current === entryToken;
-    const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
-    if (dirty || busy) window.addEventListener("beforeunload", warn);
-    const unregister = registerUnsavedWork({
-      id: `${formId}:${opening.current.targetId}:${capturedCycle}`,
-      title: formId,
-      isDirty: dirty || busy,
-      // Policy/field validation lives in the form submit handler; a global save cannot bypass it.
-      save: async () => false,
-      canDiscard: () => currentEntry() && !pending.current,
-      discard: () => { if (currentEntry() && !pending.current) { setDraft(initial.current); opening.current.onClose(); } },
-    });
-    return () => { unregister(); if (registration.current === entryToken) registration.current = undefined; window.removeEventListener("beforeunload", warn); };
-  });
-  async function submit(value: T): Promise<void> {
-    if (pending.current || !mounted.current) return;
-    if (opening.current.workspaceId !== liveWorkspace.current) throw new Error("Workspace changed. Close this draft and reopen it.");
-    pending.current = true;
-    setBusy(true);
-    const capturedCycle = cycle.current;
-    try {
-      await opening.current.onSubmit(value);
-      if (mounted.current && cycle.current === capturedCycle && opening.current.workspaceId === liveWorkspace.current) { initial.current = value; setDraft(value); }
-    }
-    catch (failure) {
-      if (mounted.current && cycle.current === capturedCycle) {
-        const normalized = normalizeApplicationError(failure);
-        const fields = Object.fromEntries(Object.entries(normalized.fieldErrors ?? {}).map(([field, messages]) => [field, messages.join(" ")]));
-        setErrors(fields);
-        const first = Object.keys(fields)[0];
-        if (first) requestAnimationFrame(() => document.getElementById(`${formId}-${first}`)?.focus());
-      }
-      throw failure;
-    }
-    finally {
-      if (mounted.current && cycle.current === capturedCycle) { pending.current = false; setBusy(false); }
-    }
-  }
-  const validate = (fields: Record<string, string>): boolean => {
-    const invalid = Object.keys(fields).filter(field => !fields[field]?.trim());
-    if (!invalid.length) return true;
-    setErrors(Object.fromEntries(invalid.map(field => [field, "Required"])));
-    document.getElementById(`${formId}-${invalid[0]}`)?.focus();
-    return false;
-  };
-  return { draft, setDraft: (update: React.SetStateAction<T>) => { if (!pending.current) setDraft(update); }, dirty, busy, errors, submit, validate, close: () => { if (!pending.current) opening.current.onClose(); } };
-}
 
 function ContactPolicyNotice({
   policy,
@@ -201,7 +124,9 @@ function ContactPolicyNotice({
 
 export interface CallActivityCreateModalProps extends BaseActivityModalProps {
   defaults?: Partial<CallActivityDraft>;
-  onSubmit(draft: CallActivityDraft): void | Promise<void>;
+  onSubmit(draft: CallActivityDraft): void | boolean | Promise<void | boolean>;
+  /** Owner awaits the admitted command; only true proves persistence. */
+  onSave?(draft: CallActivityDraft): Promise<boolean>;
 }
 
 export function CallActivityCreateModal({
@@ -214,6 +139,9 @@ export function CallActivityCreateModal({
   onClose,
   defaults,
   onSubmit,
+  onSave,
+  onBindSave,
+  onPendingChange,
   contactPolicy,
   formId = "canonical-call-activity-form",
 }: CallActivityCreateModalProps) {
@@ -224,13 +152,14 @@ export function CallActivityCreateModal({
     recipient: defaults?.recipient ?? "",
     direction: defaults?.direction ?? "outbound",
     result: defaults?.result ?? "connected",
-    occurredAt: normalizeLocalDateTime(defaults?.occurredAt),
+    recordingTime: openingActivityRecordingTime(recordingOnly, defaults?.recordingTime),
+    occurredAt: openingActivityRecordingTime(recordingOnly, defaults?.recordingTime) === "SERVER_NOW" ? "" : normalizeLocalDateTime(defaults?.occurredAt),
     durationMinutes: defaults?.durationMinutes ?? 10,
     body: defaults?.body ?? "",
     nextFollowUpAt: recordingOnly && !allowFollowUp ? undefined : defaults?.nextFollowUpAt ? normalizeLocalDateTime(defaults.nextFollowUpAt) : undefined,
     createFollowUpTask: recordingOnly && !allowFollowUp ? false : defaults?.createFollowUpTask ?? false,
   }), [defaults]);
-  const lifecycle = useDraftOnOpen(isOpen, createDraft, targetId, formId, onSubmit, onClose);
+  const lifecycle = useActivityDraftLifecycle(isOpen, createDraft, targetId, formId, onSubmit, onClose, onSave, onBindSave, onPendingChange);
   const { draft, setDraft, dirty } = lifecycle;
   const [confirmed, setConfirmed] = React.useState(false);
   const [policyError, setPolicyError] = React.useState("");
@@ -244,6 +173,17 @@ export function CallActivityCreateModal({
     wasOpen.current = isOpen;
   }, [isOpen]);
 
+  const saveDraft = async (globalSave = false): Promise<boolean> => {
+    if (contactPolicy?.restricted && !confirmed) {
+      setPolicyError(vi ? "Bạn phải xác nhận quyền liên lạc trước khi tiếp tục." : "Confirm contact authorization before continuing.");
+      return false;
+    }
+    if (isCustomActivityDateUnavailable(draft.recordingTime)) return false;
+    if (!lifecycle.validate({ subject: draft.subject, ...(draft.recordingTime === "SERVER_NOW" ? {} : { occurredAt: draft.occurredAt }) })) return false;
+    if (recordingOnly && allowFollowUp && draft.createFollowUpTask && !lifecycle.validate({ nextFollowUpAt: draft.nextFollowUpAt ?? "" })) return false;
+    return lifecycle.submit({ ...draft, subject: draft.subject.trim(), recipient: draft.recipient.trim(), body: draft.body.trim() }, globalSave);
+  };
+  lifecycle.bindSave(() => saveDraft(true));
   return (
     <RelationshipQuickActionModal guardChanges={guardChanges} dirty={dirty}
       isOpen={isOpen}
@@ -252,17 +192,8 @@ export function CallActivityCreateModal({
       formId={formId}
       cancelLabel={vi ? "Hủy" : "Cancel"}
       submitLabel={vi ? "Lưu hoạt động" : "Save activity"}
-      submitDisabled={lifecycle.busy || !draft.subject.trim() || !draft.occurredAt}
-      onSubmit={(event) => {
-        event.preventDefault();
-        if (contactPolicy?.restricted && !confirmed) {
-          setPolicyError(vi ? "Bạn phải xác nhận quyền liên lạc trước khi tiếp tục." : "Confirm contact authorization before continuing.");
-          return;
-        }
-        if (!lifecycle.validate({ subject: draft.subject, occurredAt: draft.occurredAt })) return;
-        if (recordingOnly && allowFollowUp && draft.createFollowUpTask && !lifecycle.validate({ nextFollowUpAt: draft.nextFollowUpAt ?? "" })) return;
-        return lifecycle.submit({ ...draft, subject: draft.subject.trim(), recipient: draft.recipient.trim(), body: draft.body.trim() });
-      }}
+      submitDisabled={lifecycle.busy || isCustomActivityDateUnavailable(draft.recordingTime) || !draft.subject.trim() || (draft.recordingTime !== "SERVER_NOW" && !draft.occurredAt)}
+      onSubmit={async (event) => { event.preventDefault(); await saveDraft(); }}
     >
       <ContactPolicyNotice confirmationId={`${formId}-contact-policy-confirmation`} policy={contactPolicy} checked={confirmed} error={policyError} onChange={(value) => { setConfirmed(value); if (value) setPolicyError(""); }} />
       <Input error={lifecycle.errors.subject} id={`${formId}-subject`} label={vi ? "Tiêu đề cuộc gọi" : "Call subject"} value={draft.subject} onChange={(event) => setDraft((current) => ({ ...current, subject: event.target.value }))} required />
@@ -281,12 +212,16 @@ export function CallActivityCreateModal({
         </Select>
       </div>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Input error={lifecycle.errors.occurredAt} id={`${formId}-occurredAt`} label={vi ? "Thời điểm" : "Occurred at"} readOnly={recordingOnly} type="datetime-local" value={draft.occurredAt} onChange={(event) => setDraft((current) => ({ ...current, occurredAt: event.target.value }))} required />
+        {draft.recordingTime === "SERVER_NOW" ? <ActivityRecordingTimeNotice /> : <>
+        <Input error={lifecycle.errors.occurredAt} id={`${formId}-occurredAt`} label={vi ? "Thời điểm" : "Occurred at"} readOnly={isCustomActivityDateUnavailable(draft.recordingTime)} type="datetime-local" value={draft.occurredAt} onChange={(event) => setDraft((current) => ({ ...current, occurredAt: event.target.value }))} required />
+        {isCustomActivityDateUnavailable(draft.recordingTime) && <ActivityRecordingTimeNotice customDateUnavailable />}
+        </>}
         <Input label={vi ? "Thời lượng (phút)" : "Duration (minutes)"} type="number" min="0" value={String(draft.durationMinutes)} onChange={(event) => setDraft((current) => ({ ...current, durationMinutes: Number(event.target.value) || 0 }))} />
       </div>
       <Textarea error={lifecycle.errors.body} id={`${formId}-body`} label={vi ? "Tóm tắt và kết quả" : "Summary and outcome"} value={draft.body} onChange={(event) => setDraft((current) => ({ ...current, body: event.target.value }))} rows={4} />
       <Input error={lifecycle.errors.nextFollowUpAt} id={`${formId}-nextFollowUpAt`} label={vi ? "Theo dõi tiếp theo" : "Next follow-up"} type="datetime-local" readOnly={recordingOnly && !allowFollowUp} value={draft.nextFollowUpAt ?? ""} onChange={(event) => setDraft((current) => ({ ...current, nextFollowUpAt: event.target.value || undefined }))} />
       <Checkbox id={`${formId}-follow-up-task`} label={vi ? "Tạo công việc theo dõi" : "Create follow-up task"} disabled={recordingOnly && !allowFollowUp} checked={draft.createFollowUpTask} onChange={(event) => setDraft((current) => ({ ...current, createFollowUpTask: event.target.checked }))} />
+      {lifecycle.saveError && <p role="alert" className="text-xs text-rose-600">{lifecycle.saveError}</p>}
     </RelationshipQuickActionModal>
   );
 }
@@ -294,7 +229,9 @@ export function CallActivityCreateModal({
 export interface MeetingActivityCreateModalProps extends BaseActivityModalProps {
   recordingTaskBacked?: boolean;
   defaults?: Partial<MeetingActivityDraft>;
-  onSubmit(draft: MeetingActivityDraft): void | Promise<void>;
+  onSubmit(draft: MeetingActivityDraft): void | boolean | Promise<void | boolean>;
+  /** Owner awaits the admitted command; only true proves persistence. */
+  onSave?(draft: MeetingActivityDraft): Promise<boolean>;
 }
 
 export function MeetingActivityCreateModal({ recordingTaskBacked = true,
@@ -306,6 +243,9 @@ export function MeetingActivityCreateModal({ recordingTaskBacked = true,
   onClose,
   defaults,
   onSubmit,
+  onSave,
+  onBindSave,
+  onPendingChange,
   contactPolicy,
   formId = "canonical-meeting-activity-form",
 }: MeetingActivityCreateModalProps) {
@@ -317,6 +257,7 @@ export function MeetingActivityCreateModal({ recordingTaskBacked = true,
     return {
       title: defaults?.title ?? "",
       startAt,
+      recordingTime: openingActivityRecordingTime(recordingOnly && !recordingTaskBacked, defaults?.recordingTime),
       endAt: defaults?.endAt ? normalizeLocalDateTime(defaults.endAt) : undefined,
       channel: defaults?.channel ?? "online",
       location: defaults?.location ?? "",
@@ -326,7 +267,7 @@ export function MeetingActivityCreateModal({ recordingTaskBacked = true,
       reminder: recordingOnly ? false : defaults?.reminder ?? true,
     };
   }, [defaults]);
-  const lifecycle = useDraftOnOpen(isOpen, createDraft, targetId, formId, onSubmit, onClose);
+  const lifecycle = useActivityDraftLifecycle(isOpen, createDraft, targetId, formId, onSubmit, onClose, onSave, onBindSave, onPendingChange);
   const { draft, setDraft, dirty } = lifecycle;
   const [confirmed, setConfirmed] = React.useState(false);
   const [error, setError] = React.useState("");
@@ -341,6 +282,25 @@ export function MeetingActivityCreateModal({ recordingTaskBacked = true,
   }, [isOpen]);
 
   const policyApplies = contactPolicy?.restricted && draft.channel === "phone";
+  const saveDraft = async (globalSave = false): Promise<boolean> => {
+    if (!recordingTaskBacked && isCustomActivityDateUnavailable(draft.recordingTime)) return false;
+    if (!lifecycle.validate({ title: draft.title, startAt: draft.startAt })) return false;
+    if (draft.endAt && !lifecycle.validate({ endAt: draft.endAt })) return false;
+    if (recordingOnly && recordingTaskBacked && !taskOwners.some(member => member.memberId === draft.owner)) {
+      setError(vi ? "Chọn thành viên workspace phụ trách công việc." : "Select the task assignee from workspace members.");
+      document.getElementById(`${formId}-owner`)?.focus(); return false;
+    }
+    if (draft.endAt && new Date(draft.endAt).getTime() < new Date(draft.startAt).getTime()) {
+      setError(vi ? "Thời gian kết thúc phải sau thời gian bắt đầu." : "End time must be after start time.");
+      return false;
+    }
+    if (policyApplies && !confirmed) {
+      setError(vi ? "Bạn phải xác nhận quyền liên lạc trước khi tiếp tục." : "Confirm contact authorization before continuing.");
+      return false;
+    }
+    return lifecycle.submit({ ...draft, title: draft.title.trim(), location: draft.location?.trim() || undefined, attendees: draft.attendees?.trim() || undefined, owner: draft.owner?.trim() || undefined, agenda: draft.agenda?.trim() || undefined }, globalSave);
+  };
+  lifecycle.bindSave(() => saveDraft(true));
   return (
     <RelationshipQuickActionModal guardChanges={guardChanges} dirty={dirty}
       isOpen={isOpen}
@@ -350,24 +310,9 @@ export function MeetingActivityCreateModal({ recordingTaskBacked = true,
       cancelLabel={vi ? "Hủy" : "Cancel"}
       submitLabel={recordingOnly ? (recordingTaskBacked ? (vi ? "Tạo công việc" : "Create task") : (vi ? "Ghi nhận lịch hẹn" : "Record meeting")) : (vi ? "Lưu lịch hẹn" : "Save meeting")}
       submitDisabled={lifecycle.busy || !draft.title.trim() || !draft.startAt}
-      onSubmit={(event) => {
-        event.preventDefault();
-        if (!lifecycle.validate({ title: draft.title, startAt: draft.startAt })) return;
-        if (recordingOnly && recordingTaskBacked && !taskOwners.some(member => member.memberId === draft.owner)) {
-          setError(vi ? "Chọn thành viên workspace phụ trách công việc." : "Select the task assignee from workspace members.");
-          document.getElementById(`${formId}-owner`)?.focus(); return;
-        }
-        if (draft.endAt && new Date(draft.endAt).getTime() < new Date(draft.startAt).getTime()) {
-          setError(vi ? "Thời gian kết thúc phải sau thời gian bắt đầu." : "End time must be after start time.");
-          return;
-        }
-        if (policyApplies && !confirmed) {
-          setError(vi ? "Bạn phải xác nhận quyền liên lạc trước khi tiếp tục." : "Confirm contact authorization before continuing.");
-          return;
-        }
-        return lifecycle.submit({ ...draft, title: draft.title.trim(), location: draft.location?.trim() || undefined, attendees: draft.attendees?.trim() || undefined, owner: draft.owner?.trim() || undefined, agenda: draft.agenda?.trim() || undefined });
-      }}
+      onSubmit={async (event) => { event.preventDefault(); await saveDraft(); }}
     >
+      {recordingOnly && !recordingTaskBacked && <ActivityRecordingTimeNotice customDateUnavailable={isCustomActivityDateUnavailable(draft.recordingTime)} />}
       {policyApplies ? <ContactPolicyNotice confirmationId={`${formId}-contact-policy-confirmation`} policy={contactPolicy} checked={confirmed} error={error} onChange={(value) => { setConfirmed(value); if (value) setError(""); }} /> : null}
       <Input error={lifecycle.errors.title} id={`${formId}-title`} label={vi ? "Tiêu đề cuộc hẹn" : "Meeting title"} value={draft.title} onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))} required />
       <div className="grid gap-4 sm:grid-cols-2">
@@ -391,6 +336,7 @@ export function MeetingActivityCreateModal({ recordingTaskBacked = true,
       {recordingOnly && <p className="text-xs text-slate-500">{recordingTaskBacked ? (vi ? "Ghi nhận bằng Công việc; không tạo lịch hoặc nhắc hẹn tự động." : "Task-backed recording; no calendar event or automatic reminder.") : (vi ? "Ghi nhận hoạt động; không tạo lịch hoặc nhắc hẹn tự động." : "Activity recording; no calendar event or automatic reminder.")}</p>}
       <Checkbox id={`${formId}-reminder`} label={vi ? "Nhắc trước 15 phút" : "Remind 15 minutes before"} disabled={recordingOnly} checked={draft.reminder} onChange={(event) => setDraft((current) => ({ ...current, reminder: event.target.checked }))} />
       {error && !policyApplies ? <div className="text-xs font-semibold text-rose-600">{error}</div> : null}
+      {lifecycle.saveError && <p role="alert" className="text-xs text-rose-600">{lifecycle.saveError}</p>}
     </RelationshipQuickActionModal>
   );
 }
@@ -400,14 +346,16 @@ export interface EmailActivityCreateModalProps extends BaseActivityModalProps {
   submitLabelOverride?: string;
   helperTextOverride?: string;
   defaults?: Partial<EmailActivityDraft>;
-  onSubmit(draft: EmailActivityDraft): void | Promise<void>;
+  onSubmit(draft: EmailActivityDraft): void | boolean | Promise<void | boolean>;
+  /** Owner awaits the admitted command; only true proves persistence. */
+  onSave?(draft: EmailActivityDraft): Promise<boolean>;
 }
 
-export function EmailActivityCreateModal({ guardChanges = true, targetId, recordingOnly = false, titleOverride, submitLabelOverride, helperTextOverride, isOpen, onClose, defaults, onSubmit, contactPolicy, formId = "canonical-email-activity-form" }: EmailActivityCreateModalProps) {
+export function EmailActivityCreateModal({ guardChanges = true, targetId, recordingOnly = false, titleOverride, submitLabelOverride, helperTextOverride, isOpen, onClose, defaults, onSubmit, onSave, onBindSave, onPendingChange, contactPolicy, formId = "canonical-email-activity-form" }: EmailActivityCreateModalProps) {
   const { locale } = useI18n();
   const vi = locale === "vi";
   const createDraft = React.useCallback((): EmailActivityDraft => ({ to: defaults?.to ?? "", subject: defaults?.subject ?? "", body: defaults?.body ?? "", attachProposal: recordingOnly ? false : defaults?.attachProposal ?? false }), [defaults]);
-  const lifecycle = useDraftOnOpen(isOpen, createDraft, targetId, formId, onSubmit, onClose);
+  const lifecycle = useActivityDraftLifecycle(isOpen, createDraft, targetId, formId, onSubmit, onClose, onSave, onBindSave, onPendingChange);
   const { draft, setDraft, dirty } = lifecycle;
   const [confirmed, setConfirmed] = React.useState(false);
   const [error, setError] = React.useState("");
@@ -416,14 +364,18 @@ export function EmailActivityCreateModal({ guardChanges = true, targetId, record
     if (isOpen && !wasOpen.current) { setConfirmed(false); setError(""); }
     wasOpen.current = isOpen;
   }, [isOpen]);
+  const saveDraft = async (globalSave = false): Promise<boolean> => { if (contactPolicy?.restricted && !confirmed) { setError(vi ? "Bạn phải xác nhận quyền liên lạc trước khi tiếp tục." : "Confirm contact authorization before continuing."); return false; } if (!lifecycle.validate({ to: draft.to, subject: draft.subject, body: draft.body })) return false; return lifecycle.submit({ ...draft, to: draft.to.trim(), subject: draft.subject.trim(), body: draft.body.trim() }, globalSave);
+  };
+  lifecycle.bindSave(() => saveDraft(true));
   return (
-    <RelationshipQuickActionModal guardChanges={guardChanges} dirty={dirty} isOpen={isOpen} onClose={lifecycle.close} title={titleOverride ?? (vi ? "Ghi nhận Email" : "Log email")} formId={formId} cancelLabel={vi ? "Hủy" : "Cancel"} submitLabel={submitLabelOverride ?? (recordingOnly ? (vi ? "Ghi nhận Email" : "Record email") : (vi ? "Gửi Email" : "Send email"))} submitDisabled={lifecycle.busy || !draft.to.trim() || !draft.subject.trim() || !draft.body.trim()} onSubmit={(event) => { event.preventDefault(); if (contactPolicy?.restricted && !confirmed) { setError(vi ? "Bạn phải xác nhận quyền liên lạc trước khi tiếp tục." : "Confirm contact authorization before continuing."); return; } if (!lifecycle.validate({ to: draft.to, subject: draft.subject, body: draft.body })) return; return lifecycle.submit({ ...draft, to: draft.to.trim(), subject: draft.subject.trim(), body: draft.body.trim() }); }}>
+    <RelationshipQuickActionModal guardChanges={guardChanges} dirty={dirty} isOpen={isOpen} onClose={lifecycle.close} title={titleOverride ?? (vi ? "Ghi nhận Email" : "Log email")} formId={formId} cancelLabel={vi ? "Hủy" : "Cancel"} submitLabel={submitLabelOverride ?? (recordingOnly ? (vi ? "Ghi nhận Email" : "Record email") : (vi ? "Gửi Email" : "Send email"))} submitDisabled={lifecycle.busy || !draft.to.trim() || !draft.subject.trim() || !draft.body.trim()} onSubmit={async (event) => { event.preventDefault(); await saveDraft(); }}>
       {helperTextOverride && <p className="text-xs text-slate-500">{helperTextOverride}</p>}
       <ContactPolicyNotice confirmationId={`${formId}-contact-policy-confirmation`} policy={contactPolicy} checked={confirmed} error={error} onChange={(value) => { setConfirmed(value); if (value) setError(""); }} />
       <Input error={lifecycle.errors.to} id={`${formId}-to`} label={vi ? "Người nhận" : "Recipient"} type="email" value={draft.to} onChange={(event) => setDraft((current) => ({ ...current, to: event.target.value }))} required />
       <Input error={lifecycle.errors.subject} id={`${formId}-subject`} label={vi ? "Tiêu đề" : "Subject"} value={draft.subject} onChange={(event) => setDraft((current) => ({ ...current, subject: event.target.value }))} required />
       <Textarea error={lifecycle.errors.body} id={`${formId}-body`} label={vi ? "Nội dung Email" : "Email body"} value={draft.body} onChange={(event) => setDraft((current) => ({ ...current, body: event.target.value }))} rows={6} required />
       <Checkbox id={`${formId}-attachment`} label={vi ? "Đính kèm tài liệu giới thiệu" : "Attach product introduction"} disabled={recordingOnly} checked={draft.attachProposal} onChange={(event) => setDraft((current) => ({ ...current, attachProposal: event.target.checked }))} />
+      {lifecycle.saveError && <p role="alert" className="text-xs text-rose-600">{lifecycle.saveError}</p>}
     </RelationshipQuickActionModal>
   );
 }
@@ -433,14 +385,16 @@ export interface SmsActivityCreateModalProps extends BaseActivityModalProps {
   submitLabelOverride?: string;
   helperTextOverride?: string;
   defaults?: Partial<SmsActivityDraft>;
-  onSubmit(draft: SmsActivityDraft): void | Promise<void>;
+  onSubmit(draft: SmsActivityDraft): void | boolean | Promise<void | boolean>;
+  /** Owner awaits the admitted command; only true proves persistence. */
+  onSave?(draft: SmsActivityDraft): Promise<boolean>;
 }
 
-export function SmsActivityCreateModal({ guardChanges = true, targetId, recordingOnly = false, titleOverride, submitLabelOverride, helperTextOverride, isOpen, onClose, defaults, onSubmit, contactPolicy, formId = "canonical-sms-activity-form" }: SmsActivityCreateModalProps) {
+export function SmsActivityCreateModal({ guardChanges = true, targetId, recordingOnly = false, titleOverride, submitLabelOverride, helperTextOverride, isOpen, onClose, defaults, onSubmit, onSave, onBindSave, onPendingChange, contactPolicy, formId = "canonical-sms-activity-form" }: SmsActivityCreateModalProps) {
   const { locale } = useI18n();
   const vi = locale === "vi";
   const createDraft = React.useCallback((): SmsActivityDraft => ({ phone: defaults?.phone ?? "", body: defaults?.body ?? "" }), [defaults]);
-  const lifecycle = useDraftOnOpen(isOpen, createDraft, targetId, formId, onSubmit, onClose);
+  const lifecycle = useActivityDraftLifecycle(isOpen, createDraft, targetId, formId, onSubmit, onClose, onSave, onBindSave, onPendingChange);
   const { draft, setDraft, dirty } = lifecycle;
   const [confirmed, setConfirmed] = React.useState(false);
   const [error, setError] = React.useState("");
@@ -449,30 +403,39 @@ export function SmsActivityCreateModal({ guardChanges = true, targetId, recordin
     if (isOpen && !wasOpen.current) { setConfirmed(false); setError(""); }
     wasOpen.current = isOpen;
   }, [isOpen]);
+  const saveDraft = async (globalSave = false): Promise<boolean> => { if (contactPolicy?.restricted && !confirmed) { setError(vi ? "Bạn phải xác nhận quyền liên lạc trước khi tiếp tục." : "Confirm contact authorization before continuing."); return false; } if (!lifecycle.validate({ phone: draft.phone, body: draft.body })) return false; return lifecycle.submit({ phone: draft.phone.trim(), body: draft.body.trim() }, globalSave);
+  };
+  lifecycle.bindSave(() => saveDraft(true));
   return (
-    <RelationshipQuickActionModal guardChanges={guardChanges} dirty={dirty} isOpen={isOpen} onClose={lifecycle.close} title={titleOverride ?? (vi ? "Ghi nhận SMS" : "Log SMS")} formId={formId} cancelLabel={vi ? "Hủy" : "Cancel"} submitLabel={submitLabelOverride ?? (recordingOnly ? (vi ? "Ghi nhận SMS" : "Record SMS") : (vi ? "Gửi tin nhắn" : "Send message"))} submitDisabled={lifecycle.busy || !draft.phone.trim() || !draft.body.trim()} onSubmit={(event) => { event.preventDefault(); if (contactPolicy?.restricted && !confirmed) { setError(vi ? "Bạn phải xác nhận quyền liên lạc trước khi tiếp tục." : "Confirm contact authorization before continuing."); return; } if (!lifecycle.validate({ phone: draft.phone, body: draft.body })) return; return lifecycle.submit({ phone: draft.phone.trim(), body: draft.body.trim() }); }}>
+    <RelationshipQuickActionModal guardChanges={guardChanges} dirty={dirty} isOpen={isOpen} onClose={lifecycle.close} title={titleOverride ?? (vi ? "Ghi nhận SMS" : "Log SMS")} formId={formId} cancelLabel={vi ? "Hủy" : "Cancel"} submitLabel={submitLabelOverride ?? (recordingOnly ? (vi ? "Ghi nhận SMS" : "Record SMS") : (vi ? "Gửi tin nhắn" : "Send message"))} submitDisabled={lifecycle.busy || !draft.phone.trim() || !draft.body.trim()} onSubmit={async (event) => { event.preventDefault(); await saveDraft(); }}>
       {helperTextOverride && <p className="text-xs text-slate-500">{helperTextOverride}</p>}
       <ContactPolicyNotice confirmationId={`${formId}-contact-policy-confirmation`} policy={contactPolicy} checked={confirmed} error={error} onChange={(value) => { setConfirmed(value); if (value) setError(""); }} />
       <Input error={lifecycle.errors.phone} id={`${formId}-phone`} label={vi ? "Số điện thoại" : "Phone number"} value={draft.phone} onChange={(event) => setDraft((current) => ({ ...current, phone: event.target.value }))} required />
       <Textarea error={lifecycle.errors.body} id={`${formId}-body`} label={vi ? "Nội dung tin nhắn" : "Message"} value={draft.body} onChange={(event) => setDraft((current) => ({ ...current, body: event.target.value.slice(0, 160) }))} rows={4} required />
       <div className="text-right text-xs font-semibold text-slate-400">{draft.body.length}/160</div>
+      {lifecycle.saveError && <p role="alert" className="text-xs text-rose-600">{lifecycle.saveError}</p>}
     </RelationshipQuickActionModal>
   );
 }
 
 export interface NoteActivityCreateModalProps extends Omit<BaseActivityModalProps, "contactPolicy" | "titleOverride"> {
   defaults?: Partial<NoteActivityDraft>;
-  onSubmit(draft: NoteActivityDraft): void | Promise<void>;
+  onSubmit(draft: NoteActivityDraft): void | boolean | Promise<void | boolean>;
+  /** Owner awaits the admitted command; only true proves persistence. */
+  onSave?(draft: NoteActivityDraft): Promise<boolean>;
 }
 
-export function NoteActivityCreateModal({ guardChanges = true, targetId, recordingOnly = false, isOpen, onClose, defaults, onSubmit, formId = "canonical-note-activity-form" }: NoteActivityCreateModalProps) {
+export function NoteActivityCreateModal({ guardChanges = true, targetId, recordingOnly = false, isOpen, onClose, defaults, onSubmit, onSave, onBindSave, onPendingChange, formId = "canonical-note-activity-form" }: NoteActivityCreateModalProps) {
   const { locale } = useI18n();
   const vi = locale === "vi";
-  const createDraft = React.useCallback((): NoteActivityDraft => ({ title: defaults?.title ?? "", body: defaults?.body ?? "", category: defaults?.category ?? "care", pinned: recordingOnly ? false : defaults?.pinned ?? false, occurredAt: normalizeLocalDateTime(defaults?.occurredAt) }), [defaults]);
-  const lifecycle = useDraftOnOpen(isOpen, createDraft, targetId, formId, onSubmit, onClose);
+  const createDraft = React.useCallback((): NoteActivityDraft => ({ title: defaults?.title ?? "", body: defaults?.body ?? "", category: defaults?.category ?? "care", pinned: recordingOnly ? false : defaults?.pinned ?? false, recordingTime: openingActivityRecordingTime(recordingOnly, defaults?.recordingTime), occurredAt: openingActivityRecordingTime(recordingOnly, defaults?.recordingTime) === "SERVER_NOW" ? "" : normalizeLocalDateTime(defaults?.occurredAt) }), [defaults]);
+  const lifecycle = useActivityDraftLifecycle(isOpen, createDraft, targetId, formId, onSubmit, onClose, onSave, onBindSave, onPendingChange);
   const { draft, setDraft, dirty } = lifecycle;
+  const saveDraft = async (globalSave = false): Promise<boolean> => { if (isCustomActivityDateUnavailable(draft.recordingTime)) return false; if (!lifecycle.validate({ title: draft.title, body: draft.body, ...(draft.recordingTime === "SERVER_NOW" ? {} : { occurredAt: draft.occurredAt }) })) return false; return lifecycle.submit({ ...draft, title: draft.title.trim(), body: draft.body.trim() }, globalSave);
+  };
+  lifecycle.bindSave(() => saveDraft(true));
   return (
-    <RelationshipQuickActionModal guardChanges={guardChanges} dirty={dirty} isOpen={isOpen} onClose={lifecycle.close} title={vi ? "Ghi chú nhanh" : "Quick note"} formId={formId} cancelLabel={vi ? "Hủy" : "Cancel"} submitLabel={vi ? "Lưu ghi chú" : "Save note"} submitDisabled={lifecycle.busy || !draft.title.trim() || !draft.body.trim()} onSubmit={(event) => { event.preventDefault(); if (!lifecycle.validate({ title: draft.title, body: draft.body })) return; return lifecycle.submit({ ...draft, title: draft.title.trim(), body: draft.body.trim() }); }}>
+    <RelationshipQuickActionModal guardChanges={guardChanges} dirty={dirty} isOpen={isOpen} onClose={lifecycle.close} title={vi ? "Ghi chú nhanh" : "Quick note"} formId={formId} cancelLabel={vi ? "Hủy" : "Cancel"} submitLabel={vi ? "Lưu ghi chú" : "Save note"} submitDisabled={lifecycle.busy || isCustomActivityDateUnavailable(draft.recordingTime) || !draft.title.trim() || !draft.body.trim()} onSubmit={async (event) => { event.preventDefault(); await saveDraft(); }}>
       {recordingOnly && <p className="text-xs text-slate-500">{vi ? "Ghi nhận hoạt động; thời điểm do hệ thống xác định, không ghim hoặc gửi nội dung." : "Activity recording; time is assigned by the system. No pinning or delivery."}</p>}
       <Input error={lifecycle.errors.title} id={`${formId}-title`} label={vi ? "Tiêu đề ghi chú" : "Note title"} value={draft.title} onChange={(event) => setDraft((current) => ({ ...current, title: event.target.value }))} required />
       <Select error={lifecycle.errors.category} id={`${formId}-category`} label={vi ? "Phân loại" : "Category"} value={draft.category} onChange={(event) => setDraft((current) => ({ ...current, category: event.target.value as NoteActivityDraft["category"] }))}>
@@ -482,8 +445,12 @@ export function NoteActivityCreateModal({ guardChanges = true, targetId, recordi
         <option value="consulting">{vi ? "Tư vấn" : "Consulting"}</option>
       </Select>
       <Textarea error={lifecycle.errors.body} id={`${formId}-body`} label={vi ? "Nội dung ghi chú" : "Note details"} value={draft.body} onChange={(event) => setDraft((current) => ({ ...current, body: event.target.value }))} rows={5} required />
-      <Input error={lifecycle.errors.occurredAt} id={`${formId}-occurredAt`} label={vi ? "Thời điểm" : "Occurred at"} readOnly={recordingOnly} type="datetime-local" value={draft.occurredAt} onChange={(event) => setDraft((current) => ({ ...current, occurredAt: event.target.value }))} required />
+      {draft.recordingTime === "SERVER_NOW" ? <ActivityRecordingTimeNotice /> : <>
+      <Input error={lifecycle.errors.occurredAt} id={`${formId}-occurredAt`} label={vi ? "Thời điểm" : "Occurred at"} readOnly={isCustomActivityDateUnavailable(draft.recordingTime)} type="datetime-local" value={draft.occurredAt} onChange={(event) => setDraft((current) => ({ ...current, occurredAt: event.target.value }))} required />
+      {isCustomActivityDateUnavailable(draft.recordingTime) && <ActivityRecordingTimeNotice customDateUnavailable />}
+      </>}
       <Checkbox id={`${formId}-pinned`} label={vi ? "Ghim ghi chú" : "Pin note"} disabled={recordingOnly} checked={draft.pinned} onChange={(event) => setDraft((current) => ({ ...current, pinned: event.target.checked }))} />
+      {lifecycle.saveError && <p role="alert" className="text-xs text-rose-600">{lifecycle.saveError}</p>}
     </RelationshipQuickActionModal>
   );
 }

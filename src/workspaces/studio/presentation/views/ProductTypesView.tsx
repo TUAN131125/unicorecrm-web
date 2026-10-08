@@ -150,9 +150,9 @@ export function ProductTypesView() {
 
       <StudioMetricsGrid>
         <StudioMetricCard label={text("Loại hoạt động", "Active types")} value={`${activeTypes.length}/${draft.length}`} description={text("Được hiển thị trong biểu mẫu và bộ chọn sản phẩm.", "Available in product forms and pickers.")} icon={<Box size={17} />} tone="violet" />
-        <StudioMetricCard label={text("Có thể báo giá", "Quotable")} value={activeTypes.filter((item) => item.canBeQuoted).length} description={text("Có thể xuất hiện trên dòng báo giá.", "Can appear on quote lines.")} icon={<FileCheck2 size={17} />} />
-        <StudioMetricCard label={text("Tạo tài sản sở hữu", "Creates owned products")} value={activeTypes.filter((item) => item.createsOwnedProduct).length} description={text("Tạo sản phẩm khách hàng sau bán.", "Creates customer-owned products after sale.")} icon={<BadgeCheck size={17} />} tone="success" />
-        <StudioMetricCard label={text("Có vòng đời gia hạn", "Renewal lifecycle")} value={activeTypes.filter((item) => item.hasSubscriptionPeriod || item.canBeRenewed).length} description={text("Yêu cầu kỳ hạn hoặc luồng gia hạn.", "Uses subscription periods or renewal flows.")} icon={<RefreshCw size={17} />} tone="warning" />
+        <StudioMetricCard label={text("Có thể báo giá", "Quotable")} value={activeTypes.filter((item) => item.canBeQuoted).length} icon={<FileCheck2 size={17} />} />
+        <StudioMetricCard label={text("Tạo tài sản sở hữu", "Creates owned products")} value={activeTypes.filter((item) => item.createsOwnedProduct).length} icon={<BadgeCheck size={17} />} tone="success" />
+        <StudioMetricCard label={text("Có vòng đời gia hạn", "Renewal lifecycle")} value={activeTypes.filter((item) => item.hasSubscriptionPeriod || item.canBeRenewed).length} icon={<RefreshCw size={17} />} tone="warning" />
       </StudioMetricsGrid>
 
       <div className="mt-5 grid gap-5 xl:grid-cols-[320px_minmax(0,1fr)]">

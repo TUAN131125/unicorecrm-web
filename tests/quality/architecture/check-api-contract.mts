@@ -1,9 +1,12 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { mock } from "node:test";
 import { repositoryRoot } from "../../../scripts/quality/core/repo-context.mjs";
 import { OPENAPI_CONTRACT_VERSION, OPENAPI_SPEC_SHA256 } from "@/platform/api";
 import { findBreakingChanges, renderGeneratedArtifacts } from "../../../scripts/api/generate-openapi-client.mjs";
+import { findEndpointAuthorityViolations } from "../../../scripts/api/openapi/write-or-check.mjs";
+import { renderOperationPolicySources } from "../../../scripts/api/openapi/render-operation-policies.mjs";
 
 const root = repositoryRoot;
 const read = (relativePath: string) => fs.readFileSync(path.join(root, relativePath), "utf8");
@@ -16,6 +19,71 @@ const manifest = readJson<GeneratedManifest>("docs/api/generated-client-manifest
 const coverage = readJson<CoverageLedger>("docs/api/operation-coverage-ledger.json");
 const baseline = readJson<BreakingBaseline>("docs/api/openapi-breaking-baseline.json");
 
+assert.deepEqual(findEndpointAuthorityViolations(artifacts.normalized), [], "Generated endpoints and reviewed semantic extensions must retain ownership.");
+const unreviewedExtensions = structuredClone(artifacts.normalized);
+unreviewedExtensions.ownership.approvedSemanticExtensions = [];
+assert.ok(findEndpointAuthorityViolations(unreviewedExtensions).some((finding: string) => finding.includes("emailVerificationApi.ts")), "An undeclared OTP extension must fail ownership validation.");
+for (const [index, extension] of artifacts.normalized.ownership.approvedSemanticExtensions.entries()) {
+  const hasFinding = (normalized: typeof artifacts.normalized, message: string) =>
+    findEndpointAuthorityViolations(normalized).some((finding: string) => finding.startsWith(`${extension.path}:`) && finding.includes(message));
+  const changedExtension = structuredClone(artifacts.normalized);
+  changedExtension.ownership.approvedSemanticExtensions[index].sourceSha256 = "0".repeat(64);
+  assert.ok(hasFinding(changedExtension, "differs from its reviewed authority"), `${extension.path}: source changes must require fresh authority review.`);
+  const narrowedExtension = structuredClone(artifacts.normalized);
+  narrowedExtension.ownership.approvedSemanticExtensions[index].routes = [];
+  assert.ok(hasFinding(narrowedExtension, "unapproved semantic extension route"), `${extension.path}: routes must remain explicitly registered.`);
+
+  const originalSource = read(extension.path);
+  const mutations = [
+    { name: "routes outside spec prefixes", source: extension.routes.reduce((source: string, route: string, routeIndex: number) =>
+      source.replaceAll(`path: "${route}"`, `path: "/review-control/${index}/${routeIndex}"`), originalSource) },
+    { name: "computed path properties", source: extension.routes.reduce((source: string, route: string) =>
+      source.replaceAll(`path: "${route}"`, `["path"]: "${route}"`), originalSource) },
+  ];
+  for (const mutation of mutations) {
+    assert.notEqual(mutation.source, originalSource, `${extension.path}: ${mutation.name} control must change source.`);
+    const originalRead = fs.readFileSync;
+    const readMock = mock.method(fs, "readFileSync", (file: fs.PathOrFileDescriptor, ...args: unknown[]) =>
+      typeof file === "string" && path.resolve(file) === path.join(root, extension.path)
+        ? mutation.source : Reflect.apply(originalRead, fs, [file, ...args]));
+    try {
+      assert.ok(hasFinding(artifacts.normalized, "differs from its reviewed authority"), `${extension.path}: ${mutation.name} must not bypass the reviewed source pin.`);
+    } finally {
+      readMock.mock.restore();
+    }
+  }
+  // Model a deleted registered file without deleting or rewriting shared sources.
+  const originalRead = fs.readFileSync;
+  const missingReadMock = mock.method(fs, "readFileSync", (file: fs.PathOrFileDescriptor, ...args: unknown[]) => {
+    if (typeof file === "string" && path.resolve(file) === path.join(root, extension.path)) {
+      throw Object.assign(new Error("Missing source negative control"), { code: "ENOENT" });
+    }
+    return Reflect.apply(originalRead, fs, [file, ...args]);
+  });
+  try {
+    assert.ok(hasFinding(artifacts.normalized, "registered semantic extension source is missing"), `${extension.path}: deleted registered sources must fail ownership validation.`);
+  } finally {
+    missingReadMock.mock.restore();
+  }
+}
+assert.deepEqual(findEndpointAuthorityViolations(artifacts.normalized), [], "In-memory negative controls must restore filesystem reads.");
+
+const policySources = renderOperationPolicySources(artifacts.normalized);
+for (const [relativePath, expected] of [
+  ["docs/backend-readiness/idempotency-policy.json", policySources.idempotencyPolicySource],
+  ["docs/backend-readiness/concurrency-policy.json", policySources.concurrencyPolicySource],
+  ["docs/backend-readiness/operation-authorization-matrix.json", policySources.authorizationMatrixSource],
+] as const) {
+  assert.equal(read(relativePath), expected, `${relativePath}: operation policy drift must be rejected.`);
+  const policy = JSON.parse(expected) as { operations: { operationId: string }[] };
+  assert.deepEqual(policy.operations.map(row => row.operationId).sort(), artifacts.normalized.operations.map((operation: { operationId: string }) => operation.operationId).sort(), `${relativePath}: every canonical operation needs exactly one policy row.`);
+}
+for (const authorityField of ["x-workspace-required", "x-actor-required"]) {
+  const missingAuthority = structuredClone(artifacts.normalized);
+  delete missingAuthority.operations[0].operation[authorityField];
+  assert.throws(() => renderOperationPolicySources(missingAuthority), /explicit workspace\/actor authority is required/u, "Policy generation must not infer omitted authorization authority.");
+}
+
 assert.equal(spec.openapi, "3.1.0");
 assert.equal(spec["x-contract-authority"], "OPENAPI");
 assert.equal(spec.security?.[0]?.bearerAuth?.length, 0);
@@ -26,8 +94,8 @@ assert.equal(OPENAPI_CONTRACT_VERSION, packageJson.version);
 assert.equal(OPENAPI_SPEC_SHA256, artifacts.sha256);
 assert.equal(manifest.specSha256, artifacts.sha256);
 assert.equal(manifest.contractVersion, packageJson.version);
-assert.equal(coverage.summary.operations, 301);
-assert.equal(coverage.summary.productionReadyOperations, 273);
+assert.equal(coverage.summary.operations, 303);
+assert.equal(coverage.summary.productionReadyOperations, 275);
 assert.equal(coverage.summary.blockedOperations, 28);
 
 for (const [relativePath, expected] of [
@@ -41,8 +109,8 @@ for (const [relativePath, expected] of [
 ] as const) assert.equal(read(relativePath), expected, `${relativePath} drifted from OpenAPI generation.`);
 
 const operations = collectOperations(spec);
-assert.equal(operations.length, 301);
-assert.equal(new Set(operations.map((operation) => operation.operationId)).size, 301);
+assert.equal(operations.length, 303);
+assert.equal(new Set(operations.map((operation) => operation.operationId)).size, 303);
 assert.deepEqual(manifest.operations.map((operation) => operation.operationId).sort(), operations.map((operation) => operation.operationId).sort());
 assert.deepEqual(coverage.operations.map((operation) => operation.operationId).sort(), operations.map((operation) => operation.operationId).sort());
 
@@ -81,6 +149,25 @@ assert.equal(schemas.CurrencyCode.pattern, "^[A-Z]{3}$");
 assert.equal(schemas.ProblemDetails.additionalProperties, false);
 assert.equal(schemas.LeadDocument.properties.status, undefined);
 assert.equal(schemas.LeadDocument.properties.leadWorkState.$ref, "#/components/schemas/LeadWorkState");
+assert.equal(schemas.ContactList.type, "object", "Contact list must expose a bounded page envelope, never a full array.");
+assert.equal(schemas.ContactList.additionalProperties, false);
+assert.deepEqual(schemas.ContactList.required, ["items", "pageInfo", "followUpAvailable"]);
+assert.deepEqual(schemas.ContactList.properties.items, { type: "array", items: { $ref: "#/components/schemas/ContactDocument" } });
+assert.equal(schemas.ContactList.properties.pageInfo.$ref, "#/components/schemas/ContactPageInfo");
+assert.deepEqual(schemas.ContactPageInfo.required, ["hasNextPage", "totalCount"]);
+assert.deepEqual(schemas.ContactPageInfo.properties.totalCount, { type: "integer", minimum: 0 });
+assert.deepEqual(schemas.ContactListSummary.required, ["totalCount", "statusCounts"]);
+assert.deepEqual(schemas.ContactListSummary.properties.totalCount, { type: "integer", minimum: 0 });
+assert.deepEqual(schemas.ContactListSummary.properties.statusCounts, { type: "object", additionalProperties: { type: "integer", minimum: 0 } });
+const contactList = operations.find(item => item.operationId === "listContacts");
+const contactSummary = operations.find(item => item.operationId === "getContactListSummary");
+assert.ok(contactList && contactSummary);
+assert.equal(contactList.operation["x-contract-status"], "PRODUCTION_CONTRACT_READY");
+assert.equal(contactSummary.operation["x-contract-status"], "PRODUCTION_CONTRACT_READY");
+assert.equal(contactList.operation.responses["200"].content?.["application/json"]?.schema?.$ref, "#/components/schemas/ContactList");
+assert.equal(contactSummary.operation.responses["200"].content?.["application/json"]?.schema?.$ref, "#/components/schemas/ContactListSummary");
+assert.deepEqual(contactList.operation.parameters?.find(parameter => parameter.name === "limit")?.schema, { type: "integer", minimum: 1, maximum: 100, default: 25 });
+assert.equal(contactSummary.operation.parameters?.some(parameter => parameter.name === "cursor" || parameter.name === "limit"), false, "Server summary must be independent of page position and size.");
 
 const readyMutations = operations.filter((item) => item.method !== "GET" && item.operation["x-contract-status"] === "PRODUCTION_CONTRACT_READY");
 const readyQueries = operations.filter((item) => item.method === "GET" && item.operation["x-contract-status"] === "PRODUCTION_CONTRACT_READY");
@@ -140,7 +227,7 @@ interface OpenApiSchema { type?: string; pattern?: string; additionalProperties?
 interface OperationShape {
   operationId?: string;
   security?: Array<{ bearerAuth?: string[] }>;
-  parameters?: Array<{ $ref?: string }>;
+  parameters?: Array<{ $ref?: string; name?: string; schema?: Record<string, unknown> }>;
   requestBody?: { content?: Record<string, { schema?: { $ref?: string } }> };
   responses: Record<string, { content?: Record<string, { schema?: { $ref?: string } }> }>;
   "x-contract-status": string;

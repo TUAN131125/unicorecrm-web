@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "contractVersion": "0.23.20-contract.0",
+  "contractVersion": "0.24.0-contract.0",
   "conflictStatus": 412,
   "conflictCode": "VERSION_CONFLICT",
   "operations": [
@@ -17,6 +17,16 @@
     {
       "operationId": "acceptWorkspaceInvitation",
       "policy": "BACKEND_SERIALIZED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "activateAiConfiguration",
+      "policy": "IF_MATCH_REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "activateOutboundWebhookSubscription",
+      "policy": "OPTIMISTIC_WHERE_RESOURCE_VERSION_EXISTS",
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
@@ -95,6 +105,11 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "archiveCustomer",
+      "policy": "IF_MATCH_REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "archiveDealCommand",
       "policy": "IF_MATCH_REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -122,6 +137,16 @@
     {
       "operationId": "archiveOrdersBatch",
       "policy": "ITEMS_CARRY_EXPECTED_VERSION",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "archiveOrganization",
+      "policy": "IF_MATCH_REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "archiveOutboundWebhookSubscription",
+      "policy": "OPTIMISTIC_WHERE_RESOURCE_VERSION_EXISTS",
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
@@ -300,6 +325,11 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "convertLeadToCustomer",
+      "policy": "IF_MATCH_REQUIRED_AT_ADMISSION_THEN_SEMANTIC_RECOVERY",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "createAccessRole",
       "policy": "BACKEND_SERIALIZED",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -333,6 +363,11 @@
       "operationId": "createCrmPipelineStage",
       "policy": "UNRESOLVED_BLOCKED",
       "status": "BLOCKED"
+    },
+    {
+      "operationId": "createCustomer",
+      "policy": "BACKEND_SERIALIZED",
+      "status": "PRODUCTION_CONTRACT_READY"
     },
     {
       "operationId": "createDealCommand",
@@ -371,8 +406,13 @@
     },
     {
       "operationId": "createOrganization",
-      "policy": "UNRESOLVED_BLOCKED",
-      "status": "BLOCKED"
+      "policy": "BACKEND_SERIALIZED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "createOutboundWebhookSubscription",
+      "policy": "OPTIMISTIC_WHERE_RESOURCE_VERSION_EXISTS",
+      "status": "PRODUCTION_CONTRACT_READY"
     },
     {
       "operationId": "createPaymentIntent",
@@ -445,6 +485,11 @@
       "status": "BLOCKED"
     },
     {
+      "operationId": "disableAiConfiguration",
+      "policy": "IF_MATCH_REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "discardInvoiceDraft",
       "policy": "IF_MATCH_REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -500,12 +545,32 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "getAiConfiguration",
+      "policy": "READ_ONLY",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "getAiProviderCatalog",
+      "policy": "READ_ONLY",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "getAiUsageSummary",
+      "policy": "READ_ONLY",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "getBuyerAccountStatement",
       "policy": "NOT_APPLICABLE",
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
       "operationId": "getContact",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "getContactListSummary",
       "policy": "NOT_APPLICABLE",
       "status": "PRODUCTION_CONTRACT_READY"
     },
@@ -547,6 +612,11 @@
     {
       "operationId": "getDealForecastSummary",
       "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "getIntegrationEventCatalog",
+      "policy": "READ_ONLY",
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
@@ -602,6 +672,11 @@
     {
       "operationId": "getOrganizationOverview",
       "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "getOutboundWebhookSubscription",
+      "policy": "READ_ONLY",
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
@@ -790,6 +865,11 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "listLeadKanbanColumn",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "listLeads",
       "policy": "NOT_APPLICABLE",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -807,6 +887,16 @@
     {
       "operationId": "listOrganizations",
       "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "listOutboundWebhookDeliveries",
+      "policy": "READ_ONLY",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "listOutboundWebhookSubscriptions",
+      "policy": "READ_ONLY",
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
@@ -947,6 +1037,11 @@
     {
       "operationId": "openStudioQuickSetup",
       "policy": "IF_MATCH_REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "pauseOutboundWebhookSubscription",
+      "policy": "OPTIMISTIC_WHERE_RESOURCE_VERSION_EXISTS",
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
@@ -1105,6 +1200,11 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "replayOutboundWebhookDelivery",
+      "policy": "OPTIMISTIC_WHERE_RESOURCE_VERSION_EXISTS",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "repriceOrderDraft",
       "policy": "IF_MATCH_REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -1112,6 +1212,11 @@
     {
       "operationId": "repriceQuoteDraft",
       "policy": "IF_MATCH_REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "requestAiAdvisory",
+      "policy": "READ_ONLY",
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
@@ -1180,6 +1285,11 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "resumeOutboundWebhookSubscription",
+      "policy": "OPTIMISTIC_WHERE_RESOURCE_VERSION_EXISTS",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "retryInvoiceIssue",
       "policy": "IF_MATCH_REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -1225,6 +1335,16 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "rotateOutboundWebhookSecret",
+      "policy": "OPTIMISTIC_WHERE_RESOURCE_VERSION_EXISTS",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "saveAiConfiguration",
+      "policy": "IF_MATCH_REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "saveInvoiceDraft",
       "policy": "IF_MATCH_REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -1245,6 +1365,11 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "setAiCredential",
+      "policy": "IF_MATCH_REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "signIn",
       "policy": "BACKEND_SERIALIZED",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -1261,6 +1386,11 @@
     },
     {
       "operationId": "syncShippingBookingCommand",
+      "policy": "IF_MATCH_REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "testAiConfiguration",
       "policy": "IF_MATCH_REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
     },
@@ -1300,9 +1430,9 @@
       "status": "BLOCKED"
     },
     {
-      "operationId": "updateCustomerLifecycle",
-      "policy": "UNRESOLVED_BLOCKED",
-      "status": "BLOCKED"
+      "operationId": "updateCustomer",
+      "policy": "IF_MATCH_REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
     },
     {
       "operationId": "updateDealCommand",
@@ -1331,8 +1461,13 @@
     },
     {
       "operationId": "updateOrganization",
-      "policy": "UNRESOLVED_BLOCKED",
-      "status": "BLOCKED"
+      "policy": "IF_MATCH_REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "updateOutboundWebhookSubscription",
+      "policy": "OPTIMISTIC_WHERE_RESOURCE_VERSION_EXISTS",
+      "status": "PRODUCTION_CONTRACT_READY"
     },
     {
       "operationId": "updateProductConfigurationType",

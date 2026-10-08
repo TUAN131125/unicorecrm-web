@@ -122,10 +122,13 @@ export function DealDetailActivityTimeline({ controller }: { controller: DealDet
             </div>
             <NoteActivityCreateModal
               isOpen={isDirectNoteModalOpen}
+              targetId={deal.id}
+              recordingOnly
               onClose={() => setIsDirectNoteModalOpen(false)}
               formId="deal-timeline-note-form"
               defaults={{ title: locale === "vi" ? `Ghi chú ${deal.name}` : `Deal note: ${deal.name}` }}
-              onSubmit={handleAddDirectNote}
+              onSubmit={async () => {}}
+              onSave={handleAddDirectNote}
             />
 
             {/* Filter chips */}

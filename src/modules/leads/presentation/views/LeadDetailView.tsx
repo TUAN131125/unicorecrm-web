@@ -1031,11 +1031,14 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
 
       <NoteActivityCreateModal
         guardChanges
+        targetId={lead.id}
+        recordingOnly
         isOpen={showNoteForm}
         onClose={() => setShowNoteForm(false)}
         formId="lead-quick-note-form"
         defaults={{ title: locale === "vi" ? `Ghi chú Lead ${lead.name}` : `Lead note: ${lead.name}` }}
         onSubmit={handleAddNoteFromComposer}
+        onSave={(draft) => handleAddNoteFromComposer(draft, true)}
       />
 
       <React.Suspense fallback={null}>
@@ -1045,6 +1048,9 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
         requiredFields={getConfiguredLeadProfileBlockers(lead, LeadWorkState.VERIFYING)}
         onClose={() => setShowVerificationReadiness(false)}
         onConfirm={commitStartVerification}
+        onSave={(input) => commitStartVerification(input, true)}
+        onPendingChange={showVerificationReadiness ? dialogs.setActiveInteractionPending : undefined}
+        onBindSave={showVerificationReadiness ? dialogs.bindSave : undefined}
       />
       <LeadDetailModals
         screen={{

@@ -1,5 +1,6 @@
 import { formatApplicationError } from "@/shared/operations";
 import React from "react";
+import { getWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import { Button, Modal } from "@/shared/components/ui";
 import type { Lead } from "../../../domain/model/lead.types";
 import type { LeadProfileField } from "../../../domain/rules/leadProgressiveProfile";
@@ -19,7 +20,10 @@ interface LeadTransitionRequirementsModalProps {
   lead: Lead | null;
   requiredFields: readonly LeadProfileField[];
   onClose: () => void;
-  onConfirm: (input: LeadTransitionProfileInput) => void;
+  onConfirm: (input: LeadTransitionProfileInput) => void | Promise<unknown>;
+  onSave?: (input: LeadTransitionProfileInput) => Promise<boolean>;
+  onBindSave?: (save: (() => Promise<boolean>) | undefined) => void;
+  onPendingChange?: (pending: boolean) => void;
 }
 
 const supportedFields = new Set<LeadProfileField>(["companyName", "painPoint", "nextFollowUpAt"]);
@@ -30,6 +34,9 @@ export const LeadTransitionRequirementsModal: React.FC<LeadTransitionRequirement
   requiredFields,
   onClose,
   onConfirm,
+  onSave,
+  onBindSave,
+  onPendingChange,
 }) => {
   const { locale } = useI18n();
   const configuration = useWorkspaceOperationalConfiguration();
@@ -37,6 +44,13 @@ export const LeadTransitionRequirementsModal: React.FC<LeadTransitionRequirement
   const formId = "lead-transition-requirements-form";
   const [values, setValues] = React.useState<LeadTransitionProfileInput>({});
   const [errors, setErrors] = React.useState<Partial<Record<LeadProfileField, string>>>({});
+  const pending = React.useRef(false);
+  const [busy, setBusy] = React.useState(false);
+  const mounted = React.useRef(true);
+  const wasOpen = React.useRef(false);
+  const opening = React.useRef({ targetId: lead?.id, workspaceId: getWorkspaceContextSnapshot().workspaceId, cycle: 0 });
+  const live = React.useRef({ isOpen, targetId: lead?.id }); live.current = { isOpen, targetId: lead?.id };
+  React.useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
 
   const editableFields = React.useMemo(
     () => requiredFields.filter((field) => supportedFields.has(field)),
@@ -44,7 +58,11 @@ export const LeadTransitionRequirementsModal: React.FC<LeadTransitionRequirement
   );
 
   React.useEffect(() => {
-    if (!isOpen || !lead) return;
+    const opened = isOpen && !wasOpen.current;
+    if (isOpen !== wasOpen.current) opening.current.cycle++;
+    wasOpen.current = isOpen;
+    if (!opened || !lead) return;
+    opening.current = { targetId: lead.id, workspaceId: getWorkspaceContextSnapshot().workspaceId, cycle: opening.current.cycle };
     setValues({
       companyName: lead.companyName || "",
       painPoint: lead.painPoint || "",
@@ -53,9 +71,10 @@ export const LeadTransitionRequirementsModal: React.FC<LeadTransitionRequirement
     setErrors({});
   }, [isOpen, lead, workspaceTimeZone]);
 
-  const handleSubmit = (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!lead) return;
+  const save = async (): Promise<boolean> => {
+    if (!lead || !isOpen || pending.current || !mounted.current || opening.current.targetId !== lead.id
+      || opening.current.workspaceId !== getWorkspaceContextSnapshot().workspaceId) return false;
+    const cycle = opening.current.cycle;
 
     const nextErrors: Partial<Record<LeadProfileField, string>> = {};
     if (editableFields.includes("companyName") && !values.companyName?.trim()) {
@@ -69,17 +88,23 @@ export const LeadTransitionRequirementsModal: React.FC<LeadTransitionRequirement
     }
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
-      return;
+      return false;
     }
 
     try {
-      onConfirm({
+      pending.current = true; setBusy(true); onPendingChange?.(true);
+      const input = {
         ...(editableFields.includes("companyName") ? { companyName: values.companyName?.trim() } : {}),
         ...(editableFields.includes("painPoint") ? { painPoint: values.painPoint?.trim() } : {}),
         ...(editableFields.includes("nextFollowUpAt") && values.nextFollowUpAt
           ? { nextFollowUpAt: dateTimeLocalValueToIso(values.nextFollowUpAt, workspaceTimeZone) }
           : {}),
-      });
+      };
+      const saved = onSave ? (await onSave(input)) === true : (await onConfirm(input)) !== false;
+      if (!saved || !mounted.current || cycle !== opening.current.cycle || !live.current.isOpen
+        || opening.current.targetId !== live.current.targetId || opening.current.workspaceId !== getWorkspaceContextSnapshot().workspaceId) return false;
+      if (onSave) onClose();
+      return true;
     } catch (error) {
       setErrors({
         nextFollowUpAt: formatApplicationError(error, {
@@ -87,22 +112,29 @@ export const LeadTransitionRequirementsModal: React.FC<LeadTransitionRequirement
           fallbackMessage: locale === "vi" ? "Thời gian đã chọn không hợp lệ." : "The selected time is invalid.",
         }),
       });
-    }
+      return false;
+    } finally { pending.current = false; onPendingChange?.(false); if (mounted.current) setBusy(false); }
   };
+  React.useEffect(() => {
+    const lease = { active: true };
+    onBindSave?.(() => lease.active && onSave ? save() : Promise.resolve(false));
+    return () => { lease.active = false; onBindSave?.(undefined); };
+  });
+  const handleSubmit = async (event: React.FormEvent) => { event.preventDefault(); await save(); };
 
   return (
     <Modal
       isOpen={isOpen && editableFields.length > 0}
-      onClose={onClose}
+      onClose={() => { if (!pending.current) onClose(); }}
       title={locale === "vi" ? "Bổ sung thông tin theo cấu hình" : "Complete configured information"}
       size="sm"
       variant="form"
       footer={(
         <>
-          <Button type="button" variant="secondary" onClick={onClose}>
+          <Button type="button" variant="secondary" disabled={busy} onClick={onClose}>
             {locale === "vi" ? "Hủy" : "Cancel"}
           </Button>
-          <Button type="submit" form={formId}>
+          <Button type="submit" form={formId} loading={busy} disabled={busy}>
             {locale === "vi" ? "Tiếp tục" : "Continue"}
           </Button>
         </>
@@ -115,7 +147,7 @@ export const LeadTransitionRequirementsModal: React.FC<LeadTransitionRequirement
             requiredFields={editableFields}
             values={values}
             errors={errors}
-            onChange={(patch) => setValues((current) => ({ ...current, ...patch }))}
+            onChange={(patch) => { if (!pending.current) setValues((current) => ({ ...current, ...patch })); }}
           />
         </form>
       )}

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useI18n } from "@/i18n";
 import { ApplicationError, normalizeApplicationError } from "@/shared/domain";
 import { invalidateModuleQueries } from "@/shared/application";
 import { handoverLeadWithTasksViaApi } from "../../application/commands/leadApiCommands";
@@ -7,6 +8,7 @@ import type { HandoverLeadWithTasksInput } from "../../application/ports/LeadApi
 import type { Lead } from "../../domain/model/lead.types";
 
 export function useLeadHandover({ leadId, observedLead: lead }: { leadId: string; observedLead: Lead | undefined }) {
+  const { locale } = useI18n();
   const [pending, setPending] = useState(false);
   const [blocked, setBlocked] = useState(false);
   const [ambiguous, setAmbiguous] = useState(false);
@@ -44,7 +46,7 @@ export function useLeadHandover({ leadId, observedLead: lead }: { leadId: string
     const resource = getLeadDetailResource(leadId);
     const next = await resource.refresh();
     if (startedEpoch !== epoch.current) return;
-    if (!next) throw resource.getSnapshot().error ?? new ApplicationError({ code: "RESOURCE_NOT_FOUND", category: "NOT_FOUND", message: "Lead refresh failed" });
+    if (!next) throw resource.getSnapshot().error ?? new ApplicationError({ code: "RESOURCE_NOT_FOUND", category: "NOT_FOUND", message: locale === "vi" ? "Không thể tải lại Lead." : "Lead refresh failed" });
     if (refreshed.current?.id !== next.id || (next.resourceVersion ?? -1) >= (refreshed.current.resourceVersion ?? -1)) refreshed.current = next;
     attempt.current = undefined;
     setBlocked(false);
@@ -61,7 +63,8 @@ export function useLeadHandover({ leadId, observedLead: lead }: { leadId: string
     const intent = attempt.current;
     if (!intent) return;
     if (intent.leadId !== leadId || JSON.stringify(intent.input) !== JSON.stringify(payload)) {
-      throw new ApplicationError({ code: "IDEMPOTENCY_KEY_REUSED", category: "CONFLICT", message: "Retry the original handover before changing its intent.", userMessage: "Retry the original handover before changing its intent." });
+      const message = locale === "vi" ? "Hãy thử lại yêu cầu bàn giao ban đầu trước khi thay đổi nội dung." : "Retry the original handover before changing its intent.";
+      throw new ApplicationError({ code: "IDEMPOTENCY_KEY_REUSED", category: "CONFLICT", message, userMessage: message });
     }
     busy.current = true;
     setPending(true);

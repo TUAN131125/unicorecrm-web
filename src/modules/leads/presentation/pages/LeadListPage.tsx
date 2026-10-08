@@ -29,7 +29,7 @@ import { PageHeaderActions, PageHeaderMoreButton } from "@/components/crm/PageHe
 import { ListBulkActionBar, ListPageFrame, ListPageHeader, ListToolbar } from "@/components/crm/list-archetype";
 import { CAPABILITIES, useEffectiveAccess } from "@/platform/access-control";
 import { filterRuntimeRecordsByOwnership, useRecordOwnershipContext } from "@/platform/record-ownership";
-import { useWorkspaceContextSnapshot } from "@/platform/workspace-context";
+import { getWorkspaceContextSnapshot, useWorkspaceContextSnapshot } from "@/platform/workspace-context";
 
 // Custom hooks
 import { useLeadFilters, LeadFiltersState, INITIAL_LEAD_FILTERS, DEFAULT_LEAD_SORT } from "../hooks/useLeadFilters";
@@ -42,6 +42,7 @@ import { useLeadImportExport } from "../hooks/useLeadImportExport";
 import { useLeadDialogs } from "../hooks/useLeadDialogs";
 import { useLeads } from "../hooks/useLeads";
 import { useLeadActions } from "../hooks/useLeadActions";
+import { useLeadKanbanWindows } from "../hooks/useLeadKanbanWindows";
 import { useLeadServerPagedCollection } from "../hooks/useLeadServerPagedCollection";
 import { registerUnsavedWork } from "@/platform/unsaved-work";
 import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
@@ -83,7 +84,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
   const [searchParams, setSearchParams] = useSearchParams();
   const { t, locale } = useI18n();
   const viewMode = !queueOnly && searchParams.get("view") === "kanban" ? "kanban" : "table";
-  const { leads: retainedLeads, query: fullCollectionQuery } = useLeads({ loadAuthoritative: viewMode === "kanban" });
+  const { leads: retainedLeads, query: fullCollectionQuery } = useLeads({ loadAuthoritative: false });
   const leadActions = useLeadActions();
   const referenceData = useLeadReferenceData(sources, campaigns);
   const access = useEffectiveAccess();
@@ -181,7 +182,21 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
     project: projectServerLeadPage,
     evictProjection: clearLeadProjection,
   });
-  const leads = serverPagination.connected && viewMode === "table" ? serverPagination.items : retainedLeads;
+  const kanbanFilterUnavailable = Boolean(
+    filters.filters.source || filters.filters.campaignId || filters.filters.nextFollowUpAt
+    || filters.filters.overdue !== null || filters.filters.qualificationOutcome || filters.filters.recontactAt
+    || filters.filters.converted || filters.filters.duplicate !== null
+    || (filters.filters.status && !Object.values(LeadWorkState).includes(filters.filters.status as LeadWorkState))
+    || filters.sort.field !== DEFAULT_LEAD_SORT.field || filters.sort.direction !== DEFAULT_LEAD_SORT.direction
+    || (!savedViews.activeView.startsWith("custom_") && !["all", "my_leads", "new", "contacted", "qualified", "nurture", "disqualified", "unassigned"].includes(savedViews.activeView))
+  );
+  const kanban = useLeadKanbanWindows({
+    scopeKey: JSON.stringify([workspace.workspaceId, ownership?.memberId, ownership?.dataScope]),
+    enabled: viewMode === "kanban", activeView: savedViews.activeView, query: leadServerQuery, unavailable: kanbanFilterUnavailable,
+  });
+  const leads = serverPagination.connected
+    ? viewMode === "table" ? serverPagination.items : kanban.items
+    : retainedLeads;
 
   useEffect(() => {
     if (!leadToAssign) return;
@@ -225,15 +240,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
         canGoNext: serverPagination.canGoNext,
       }
     : localPagination;
-  const leadQuery = viewMode === "table" ? serverPagination : fullCollectionQuery;
-  const previousViewModeRef = React.useRef(viewMode);
-  useEffect(() => {
-    const previousViewMode = previousViewModeRef.current;
-    previousViewModeRef.current = viewMode;
-    if (previousViewMode !== "kanban" && viewMode === "kanban" && fullCollectionQuery.state !== "IDLE") {
-      void fullCollectionQuery.refresh();
-    }
-  }, [fullCollectionQuery.refresh, fullCollectionQuery.state, viewMode]);
+  const leadQuery = viewMode === "table" ? serverPagination : kanban.connected ? kanban : fullCollectionQuery;
 
   // 3. Selection Custom Hook
   const selection = useLeadSelection();
@@ -283,18 +290,19 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
     setViewMode(snapshot.layout);
   };
 
-  const handleSaveView = (name: string) => {
-    const result = savedViews.saveView(name, captureSavedViewSnapshot());
+  const handleSaveView = async (name: string, deferClose = false): Promise<boolean> => {
+    const result = savedViews.saveView(name, captureSavedViewSnapshot(), deferClose);
     if ("error" in result) {
       const message = result.error === "duplicate"
         ? (locale === "vi" ? "Tên giao diện đã tồn tại." : "A saved view with this name already exists.")
         : (locale === "vi" ? "Hãy nhập tên giao diện hợp lệ." : "Enter a valid saved-view name.");
       showToast(message);
-      return;
+      return false;
     }
     showToast(result.mode === "created"
       ? (locale === "vi" ? `Đã lưu giao diện "${name}".` : `Saved view "${name}".`)
       : (locale === "vi" ? `Đã cập nhật giao diện "${name}".` : `Updated view "${name}".`));
+    return true;
   };
 
   const handleDeleteSavedView = (key: string) => {
@@ -325,6 +333,8 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
   const [createPending, setCreatePending] = useState(false);
   const createLifecycle = React.useRef({ open: false, pending: false, cycle: 0 });
   const createMounted = React.useRef(true);
+  const createWorkspace = React.useRef(getWorkspaceContextSnapshot().workspaceId);
+  const createSave = React.useRef<{ cycle: number; save: () => Promise<boolean> } | undefined>(undefined);
   useEffect(() => {
     createMounted.current = true;
     return () => { createMounted.current = false; };
@@ -340,6 +350,8 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
   const openNewLeadModal = React.useCallback(() => {
     if (createLifecycle.current.open || createLifecycle.current.pending) return;
     createLifecycle.current = { open: true, pending: false, cycle: createLifecycle.current.cycle + 1 };
+    createWorkspace.current = getWorkspaceContextSnapshot().workspaceId;
+    createSave.current = undefined;
     setCreateCycle(createLifecycle.current.cycle);
     setCreatePending(false);
     newLeadUnsavedChanges.setIsDirty(false);
@@ -374,8 +386,14 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
       id: "lead-create:list",
       title: locale === "vi" ? "Tạo Lead" : "Create Lead",
       isDirty: newLeadUnsavedChanges.isDirty || createPending,
-      // The event-driven form exposes no truthful programmatic save capability yet.
-      save: async () => false,
+      save: async () => {
+        const binding = createSave.current;
+        if (!canDiscard() || binding?.cycle !== createCycle || createWorkspace.current !== getWorkspaceContextSnapshot().workspaceId) return false;
+        const saved = await binding.save();
+        if (saved !== true || !createMounted.current || !createLifecycle.current.open || createLifecycle.current.cycle !== createCycle
+          || createWorkspace.current !== getWorkspaceContextSnapshot().workspaceId) return false;
+        newLeadUnsavedChanges.setIsDirty(false); releaseNewLeadModal(); return true;
+      },
       canDiscard,
       discard: () => {
         if (!canDiscard()) return;
@@ -467,22 +485,24 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
     }
   };
 
-  const handleBulkUpdateConfirm = async (data: { status: string }) => {
+  const handleBulkUpdateConfirm = async (data: { status: string }, deferClose = false): Promise<boolean> => {
     try {
       const targetIds = data.status === LeadWorkState.CONTACTING
         ? dialogs.auxiliaryTargets.update.filter((leadId) => leads.some((lead) => lead.id === leadId && lead.leadWorkState === LeadWorkState.NEW))
         : data.status === LeadWorkState.VERIFYING
           ? dialogs.auxiliaryTargets.update.filter((leadId) => leads.some((lead) => lead.id === leadId && lead.leadWorkState === LeadWorkState.CONTACTING))
           : [];
+      if (!targetIds.length) return false;
       const updated = data.status === LeadWorkState.CONTACTING
         ? await leadActions.advanceNewToContacting(targetIds)
         : await leadActions.advanceEligibleToVerifying(targetIds);
       const updatedCount = updated.length;
-      dialogs.setIsBulkUpdateOpen(false);
+      if (!deferClose) dialogs.setIsBulkUpdateOpen(false);
       selection.clearSelection();
       showToast(locale === "vi"
         ? `Đã chuyển ${updatedCount} Lead theo lifecycle hợp lệ.`
         : `Moved ${updatedCount} Leads through valid lifecycle transitions.`);
+      return updatedCount === targetIds.length;
     } catch (error) {
       showToast(formatApplicationError(error, { locale }));
       throw error;
@@ -496,7 +516,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
     needRecontact: boolean;
     recontactDate?: string;
     recontactNote?: string;
-  }): Promise<boolean> => {
+  }, deferClose = false): Promise<boolean> => {
     const targetIds = dialogs.disqualifyLeadId ? [dialogs.disqualifyLeadId] : dialogs.auxiliaryTargets.disqualify;
     if (targetIds.length === 0) return false;
 
@@ -513,7 +533,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
         await leadActions.disqualifyMany(targetIds, { reason: data.reason, evidence });
       }
 
-      dialogs.setIsDisqualifyModalOpen(false);
+      if (!deferClose) dialogs.setIsDisqualifyModalOpen(false);
       dialogs.setDisqualifyLeadId(null);
       selection.clearSelection();
       showToast(t("leads.bulkDisqualifiedSuccess"));
@@ -531,12 +551,13 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
   const handleFollowUpConfirm = async (data: {
     date: string;
     note: string;
-  }) => {
+  }, deferClose = false): Promise<boolean> => {
     try {
       const targetIds = dialogs.followUpLeadId ? [dialogs.followUpLeadId] : dialogs.auxiliaryTargets.followUp;
-      if (targetIds.length === 0) return;
+      if (targetIds.length === 0) return false;
 
       const activeTargetIds = targetIds.filter((leadId) => leads.some((lead) => lead.id === leadId && lead.leadWorkState !== LeadWorkState.CLOSED));
+      if (!activeTargetIds.length) return false;
       const parsedFollowUpAt = Date.parse(data.date);
       if (!Number.isFinite(parsedFollowUpAt)) {
         throw new Error("LEAD_FOLLOW_UP_DATE_INVALID");
@@ -547,10 +568,11 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
         note,
       });
 
-      dialogs.setIsFollowUpModalOpen(false);
-      dialogs.setFollowUpLeadId(null);
+      if (!deferClose) dialogs.setIsFollowUpModalOpen(false);
+      if (!deferClose) dialogs.setFollowUpLeadId(null);
       selection.clearSelection();
       showToast(t("leads.followUp.success"));
+      return true;
     } catch (error) {
       showToast(formatApplicationError(error, { locale }));
       throw error;
@@ -568,38 +590,42 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
     }
   };
 
-  const executeBulkReassign = async () => {
+  const executeBulkReassign = async (deferClose = false): Promise<boolean> => {
     if (!ownership?.canAssign) {
       showToast(locale === "vi" ? "Bạn không có quyền bàn giao khách hàng tiềm năng." : "You do not have permission to reassign Leads.");
-      return;
+      return false;
     }
     if (!dialogs.selectedReassignOwnerId || !dialogs.reassignReason.trim()) {
       showToast(locale === "vi" ? "Hãy chọn người nhận và nhập lý do bàn giao." : "Select the new owner and enter a handover reason.");
-      return;
+      return false;
     }
     await leadActions.reassignMany(dialogs.auxiliaryTargets.reassign, {
       ownerId: dialogs.selectedReassignOwnerId,
       reason: dialogs.reassignReason,
     });
     selection.clearSelection();
-    dialogs.setIsReassignModalOpen(false);
+    if (!deferClose) dialogs.setIsReassignModalOpen(false);
     showToast(t("leads.reassignedAlert"));
+    return true;
   };
 
+  reassignLifecycle.bindSave(() => executeBulkReassign(true));
+
   // Manual creation delegates server-owned IDs, timestamps, lifecycle and audit evidence to the active Lead runtime.
-  const handleCreateLeadFromForm = async (formData: Partial<Lead>) => {
+  const handleCreateLeadFromForm = async (formData: Partial<Lead>, deferClose = false): Promise<boolean> => {
     const saved = await leadActions.createFromForm(formData);
     const ownerName = ownership?.visibleOwners.find((owner) => owner.memberId === saved.ownerId)?.displayName
       || (locale === "vi" ? "người phụ trách hiện tại" : "the current owner");
-    if (!createMounted.current || !createLifecycle.current.open || createLifecycle.current.cycle !== createCycle) return;
+    if (!createMounted.current || !createLifecycle.current.open || createLifecycle.current.cycle !== createCycle) return false;
     newLeadUnsavedChanges.setIsDirty(false);
     newLeadUnsavedChanges.setIsConfirmOpen(false);
-    releaseNewLeadModal();
+    if (!deferClose) releaseNewLeadModal();
     showActionToast(
       locale === "vi" ? `Đã tạo Lead và giao cho ${ownerName}.` : `Lead created and assigned to ${ownerName}.`,
       locale === "vi" ? "Mở chi tiết" : "Open record",
       () => navigate(`/leads/${saved.id}`, { state: { returnTo: getReturnToUrl(viewMode), tab: "overview" } }),
     );
+    return Boolean(saved.id);
   };
 
   const getLeadHeaderMoreDropdownSections = (): ActionDropdownSection[] => [
@@ -689,6 +715,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
       await action();
       showToast(locale === "vi" ? successVi : successEn);
     } catch (error) {
+      if (kanban.connected && viewMode === "kanban") await kanban.refresh();
       showToast(formatApplicationError(error, { locale }));
     }
   };
@@ -699,7 +726,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
     "Lead moved to Contacting.",
   );
 
-  const requestStartVerifying = (leadId: string) => {
+  const requestStartVerifying = async (leadId: string) => {
     const lead = leads.find((item) => item.id === leadId);
     if (!lead) return;
     const blockers = getConfiguredLeadProfileBlockers(lead, LeadWorkState.VERIFYING);
@@ -707,8 +734,8 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
       setVerificationLeadId(leadId);
       return;
     }
-    runLifecycleAction(
-      () => leadActions.startVerification(leadId),
+    await runLifecycleAction(
+      () => leadActions.startVerification(leadId, undefined, kanban.connected && viewMode === "kanban" ? lead.resourceVersion : undefined),
       "Đã chuyển khách hàng tiềm năng sang Đang xác minh.",
       "Lead moved to Verifying.",
     );
@@ -719,7 +746,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
   const handleVerificationReadinessConfirm = async (input: LeadTransitionProfileInput) => {
     if (!verificationLeadId) return;
     try {
-      await leadActions.startVerification(verificationLeadId, input);
+      await leadActions.startVerification(verificationLeadId, input, kanban.connected && viewMode === "kanban" ? leads.find(item => item.id === verificationLeadId)?.resourceVersion : undefined);
       setVerificationLeadId(null);
       showToast(locale === "vi" ? "Đã chuyển khách hàng tiềm năng sang Đang xác minh." : "Lead moved to Verifying.");
     } catch (error) {
@@ -727,7 +754,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
     }
   };
 
-  const handleKanbanMove = (leadId: string, target: LeadKanbanDropTarget) => {
+  const handleKanbanMove = async (leadId: string, target: LeadKanbanDropTarget) => {
     const lead = leads.find((item) => item.id === leadId);
     if (!lead) return;
 
@@ -744,7 +771,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
 
     if (lead.leadWorkState === target) return;
     if (target === LeadWorkState.VERIFYING) {
-      requestStartVerifying(leadId);
+      await requestStartVerifying(leadId);
       return;
     }
     if (target !== LeadWorkState.CONTACTING) {
@@ -754,8 +781,8 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
       return;
     }
 
-    runLifecycleAction(
-      () => leadActions.changeWorkState(leadId, target),
+    await runLifecycleAction(
+      () => leadActions.changeWorkState(leadId, target, undefined, kanban.connected ? lead.resourceVersion : undefined),
       target === LeadWorkState.CONTACTING
         ? "Đã chuyển Lead sang Đang liên hệ."
         : "Đã cập nhật trạng thái Lead.",
@@ -781,10 +808,10 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
     void leadQuery.refresh();
   };
 
-  const handleArchiveConfirm = async () => {
-    if (archiveSubmittingRef.current) return;
+  const handleArchiveConfirm = async (deferClose = false): Promise<boolean> => {
+    if (archiveSubmittingRef.current) return false;
     const targetIds = dialogs.leadToArchive ? [dialogs.leadToArchive] : dialogs.auxiliaryTargets.archive;
-    if (targetIds.length === 0) return;
+    if (targetIds.length === 0) return false;
 
     archiveSubmittingRef.current = true;
     setArchivePending(true);
@@ -797,19 +824,23 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
         selection.clearSelection();
         showToast(t("leads.bulkArchiveSuccess", "Đã lưu trữ các Lead đã chọn."));
       }
-      dialogs.setShowArchiveConfirm(false);
-      dialogs.setLeadToArchive(null);
+      if (!deferClose) dialogs.setShowArchiveConfirm(false);
+      if (!deferClose) dialogs.setLeadToArchive(null);
+      return true;
     } catch (error) {
       const applicationError = normalizeApplicationError(error);
       if (applicationError.code === "VERSION_CONFLICT" || applicationError.code === "LEAD_BATCH_VERSION_CONFLICT") {
         void leadQuery.refresh().catch(() => undefined);
       }
       showToast(formatApplicationError(applicationError, { locale }));
+      return false;
     } finally {
       archiveSubmittingRef.current = false;
       setArchivePending(false);
     }
   };
+
+  archiveLifecycle.bindSave(() => handleArchiveConfirm(true));
 
   const closeArchiveModal = () => {
     if (archiveSubmittingRef.current) return;
@@ -844,7 +875,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
       {/* PAGE HEADER */}
       <ListPageHeader
         title={t("sidebar.leads", "Leads")}
-        count={serverPagination.connected && viewMode === "table" ? serverPagination.totalItems : filters.filteredLeads.length}
+        count={serverPagination.connected ? viewMode === "table" ? serverPagination.totalItems : Object.values(kanban.windows).reduce((sum, window) => sum + (window.totalCount ?? 0), 0) : filters.filteredLeads.length}
         context={locale === "vi" ? "Hàng đợi xác minh khách hàng tiềm năng" : "Lead qualification queue"}
         icon={<Target size={18} />}
         actions={
@@ -904,7 +935,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
         filtersOpen={dialogs.isFilterOpen}
         showColumns={true}
         onOpenColumns={() => table.setIsColumnSettingsOpen(true)}
-        showStats={true}
+        showStats={!(kanban.connected && viewMode === "kanban")}
         onOpenStats={() => setShowStatistics(true)}
         statsLabel={locale === "vi" ? "Thống kê" : "Statistics"}
         activeFilterCount={filters.activeFiltersCount}
@@ -913,6 +944,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
         columnsLabel={locale === "vi" ? "Cột" : "Columns"}
         filtersPanel={(
           <LeadFilterPopover
+            serverKanban={kanban.connected && viewMode === "kanban"}
             isOpen={dialogs.isFilterOpen}
             onClose={() => dialogs.setIsFilterOpen(false)}
             owners={referenceData.members}
@@ -1047,7 +1079,10 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
         errorTitleEn="Lead list could not be loaded"
       >
       <LeadListResults
-        leads={pagination.pageItems}
+        leads={kanban.connected && viewMode === "kanban" ? kanban.items : pagination.pageItems}
+        {...(kanban.connected && viewMode === "kanban" ? {
+          kanbanWindows: kanban.windows, onLoadMoreColumn: kanban.loadMore, onRetryColumn: kanban.retry,
+        } : {})}
         viewMode={viewMode}
         activeView={savedViews.activeView}
         selectedLeadIds={selection.selectedLeadIds}
@@ -1119,7 +1154,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
       />}
 
       <LeadStatisticsModal
-        isOpen={showStatistics}
+        isOpen={showStatistics && !(kanban.connected && viewMode === "kanban")}
         onClose={() => setShowStatistics(false)}
         leads={scopedLeads}
         locale={locale}
@@ -1148,7 +1183,9 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
         <React.Suspense fallback={<div className="p-6 text-sm text-slate-500">{locale === "vi" ? "Đang tải biểu mẫu…" : "Loading form…"}</div>}>
         <LeadForm
           key={createCycle}
-          onSubmit={handleCreateLeadFromForm}
+          onSubmit={async (data) => { await handleCreateLeadFromForm(data); }}
+          onSave={(data) => handleCreateLeadFromForm(data, true)}
+          onBindSave={(save) => { if (createLifecycle.current.cycle === createCycle) createSave.current = save ? { cycle: createCycle, save } : undefined; }}
           onCancel={requestCreateClose}
           onDirtyChange={reportCreateDirty}
           onSubmittingChange={reportCreateSubmitting}
@@ -1181,6 +1218,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
         isOpen={dialogs.isDisqualifyModalOpen}
         onClose={closeDisqualifyModal}
         onConfirm={handleDisqualifyConfirm}
+        onSave={(data) => handleDisqualifyConfirm(data, true)}
       />
 
       {/* 7. QUICK REOUTREACH / FOLLOW-UP MODAL */}
@@ -1188,6 +1226,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
         isOpen={dialogs.isFollowUpModalOpen}
         onClose={() => dialogs.setIsFollowUpModalOpen(false)}
         onConfirm={handleFollowUpConfirm}
+        onSave={(data) => handleFollowUpConfirm(data, true)}
       />
 
       <LeadTransitionRequirementsModal
@@ -1210,6 +1249,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
         onClose={() => dialogs.setIsBulkUpdateOpen(false)}
         selectedCount={dialogs.auxiliaryTargets.update.length}
         onConfirm={handleBulkUpdateConfirm}
+        onSave={(data) => handleBulkUpdateConfirm(data, true)}
       />
       </React.Suspense>
 
@@ -1218,6 +1258,11 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
         isOpen={dialogs.isManageTagsModalOpen}
         onClose={() => dialogs.setIsManageTagsModalOpen(false)}
         selectedCount={dialogs.auxiliaryTargets.tags.length}
+        onSave={async (tag) => {
+          if (!dialogs.auxiliaryTargets.tags.length) return false;
+          const result = await leadActions.applyTagMany(dialogs.auxiliaryTargets.tags, tag);
+          return result.length === dialogs.auxiliaryTargets.tags.length;
+        }}
         onApply={async (tag) => {
           await leadActions.applyTagMany(dialogs.auxiliaryTargets.tags, tag);
           showToast(locale === "vi" ? `Đã gắn nhãn “${tag}” cho ${selection.selectedLeadIds.length} Lead.` : `Applied “${tag}” to ${selection.selectedLeadIds.length} Leads.`);

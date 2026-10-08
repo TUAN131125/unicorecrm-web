@@ -1,7 +1,7 @@
 import React from "react";
 import { Building2, Crown, ShieldCheck, UserRound } from "lucide-react";
 import { Button, ConfirmDialog, Input, Modal, SearchableSelect, Select, Textarea } from "@/shared/components/ui";
-import { useBoundFormDraft } from "../hooks/useBoundFormDraft";
+import { useBoundFormDraft } from "@/shared/hooks/useBoundFormDraft";
 import { presentApplicationError } from "@/shared/operations";
 import { useI18n } from "@/i18n";
 import type { Contact } from "@/modules/contacts";

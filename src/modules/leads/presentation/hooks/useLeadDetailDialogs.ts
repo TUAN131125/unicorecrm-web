@@ -1,10 +1,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { registerUnsavedWork } from "@/platform/unsaved-work";
+import { getWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import type { Lead } from "../../domain/model/lead.types";
 import { useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
 import { toDateKeyInTimeZone } from "@/shared/lib/datetime/workspaceDateTime";
+import { useI18n } from "@/i18n";
+import { formatApplicationError } from "@/shared/operations";
 
 export function useLeadDetailDialogs(lead: Lead | undefined, routeLeadId: string) {
+  const { locale } = useI18n();
+  const [saveError, setSaveError] = useState("");
   const configuration = useWorkspaceOperationalConfiguration();
   const today = toDateKeyInTimeZone(new Date(), configuration.localeRegion.timezone);
   const [interactionPending, setInteractionPending] = useState(false);
@@ -13,13 +18,18 @@ export function useLeadDetailDialogs(lead: Lead | undefined, routeLeadId: string
   const latestLead = useRef(lead);
   latestLead.current = lead;
   const [formIntent, setFormIntent] = useState<{
-    kind: FormKind; lead: Lead; cycle: number;
+    kind: FormKind; lead: Lead; cycle: number; workspaceId: string;
     disqualifyCategory: string; disqualifyReasonText: string;
   } | null>(null);
   const nextCycle = useRef(0);
   const currentIntent = useRef(formIntent);
   currentIntent.current = formIntent;
   const pendingCycle = useRef<number | null>(null);
+  const saveBinding = useRef<{ cycle: number; save: () => Promise<boolean> } | undefined>(undefined);
+  const mounted = useRef(true);
+  const liveRoute = useRef(routeLeadId); liveRoute.current = routeLeadId;
+  const registration = useRef<object | undefined>(undefined);
+  useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const [editDirty, setEditDirty] = useState(false);
   const [editSubmitting, setEditSubmitting] = useState(false);
   const activeForm = formIntent?.kind ?? null;
@@ -38,6 +48,7 @@ export function useLeadDetailDialogs(lead: Lead | undefined, routeLeadId: string
         && current.cycle === callbackCycle && pendingCycle.current !== current.cycle ? null : current;
       if (current || !latestLead.current) return current;
       return { kind, lead: structuredClone(latestLead.current), cycle: ++nextCycle.current,
+        workspaceId: getWorkspaceContextSnapshot().workspaceId,
         disqualifyCategory: "Không có nhu cầu", disqualifyReasonText: "" };
     });
   }, [callbackCycle, callbackTargetId]);
@@ -57,7 +68,9 @@ export function useLeadDetailDialogs(lead: Lead | undefined, routeLeadId: string
     return true;
   }, [callbackCycle]);
   const isCurrentInteraction = useCallback(() => callbackCycle !== undefined
-    && currentIntent.current?.cycle === callbackCycle, [callbackCycle]);
+    && currentIntent.current?.cycle === callbackCycle
+    && currentIntent.current.workspaceId === getWorkspaceContextSnapshot().workspaceId
+    && currentIntent.current.lead.id === liveRoute.current, [callbackCycle]);
   const resolveInteraction = useCallback((kind: FormKind) => {
     setFormIntent(current => current?.kind === kind && current.cycle === callbackCycle ? null : current);
   }, [callbackCycle]);
@@ -69,17 +82,42 @@ export function useLeadDetailDialogs(lead: Lead | undefined, routeLeadId: string
   }, [callbackCycle]);
   useEffect(() => {
     if (!formIntent) return;
-    return registerUnsavedWork({
+    const token = {}; registration.current = token;
+    const unregister = registerUnsavedWork({
       id: `lead-form:${formIntent.lead.id}`, title: formIntent.lead.name,
       // Sibling forms own their local drafts. Require explicit resolution while
       // one is open; never assume their draft is clean from screen state alone.
       isDirty: (formIntent.kind === "edit" ? editDirty || editSubmitting
         : formIntent.kind === "disqualify" ? disqualifyDirty : true) || interactionPending,
-      save: async () => false,
+      save: () => registration.current === token ? saveActiveForm() : Promise.resolve(false),
       canDiscard: () => currentIntent.current?.cycle === callbackCycle && !submitting.current && pendingCycle.current === null,
       discard: discardActiveForm,
     });
-  }, [discardActiveForm, disqualifyDirty, editDirty, editSubmitting, formIntent, interactionPending]);
+    return () => { unregister(); if (registration.current === token) registration.current = undefined; };
+  }, [discardActiveForm, disqualifyDirty, editDirty, editSubmitting, formIntent, interactionPending, routeLeadId]);
+  async function saveActiveForm(): Promise<boolean> {
+        if (!formIntent) return false;
+        const binding = saveBinding.current;
+        if (!mounted.current || currentIntent.current?.cycle !== formIntent.cycle || pendingCycle.current !== null || submitting.current
+          || formIntent.workspaceId !== getWorkspaceContextSnapshot().workspaceId || routeLeadId !== formIntent.lead.id
+          || binding?.cycle !== formIntent.cycle) return false;
+        pendingCycle.current = formIntent.cycle; setInteractionPending(true); setSaveError("");
+        try {
+          const command = binding.save();
+          if (!command || typeof command.then !== "function") return false;
+          const result = await command;
+          if (result !== true || !mounted.current || currentIntent.current?.cycle !== formIntent.cycle
+            || formIntent.workspaceId !== getWorkspaceContextSnapshot().workspaceId || liveRoute.current !== formIntent.lead.id) return false;
+          currentIntent.current = null;
+          if (formIntent.kind === "handover") { setHandoverOwnerId(""); setHandoverReason(""); }
+          setFormIntent(current => current?.cycle === formIntent.cycle ? null : current);
+          return true;
+        } catch (failure) {
+          if (mounted.current && isCurrentInteraction()) setSaveError(formatApplicationError(failure, { locale }));
+          return false;
+        }
+        finally { if (pendingCycle.current === formIntent.cycle) { pendingCycle.current = null; if (mounted.current) setInteractionPending(false); } }
+  }
   useEffect(() => {
     if (formIntent?.kind === "edit" && formIntent.lead.id !== routeLeadId && !editDirty && !editSubmitting) setFormIntent(null);
     if (formIntent?.kind === "disqualify" && formIntent.lead.id !== routeLeadId && !disqualifyDirty && !interactionPending) setFormIntent(null);
@@ -87,6 +125,7 @@ export function useLeadDetailDialogs(lead: Lead | undefined, routeLeadId: string
   useEffect(() => {
     if (!formIntent) {
       setEditDirty(false); setEditSubmitting(false);
+      setSaveError("");
       pendingCycle.current = null; setInteractionPending(false);
     }
   }, [formIntent]);
@@ -174,6 +213,8 @@ export function useLeadDetailDialogs(lead: Lead | undefined, routeLeadId: string
   }, [formIntent, lead]);
 
   return {
+    saveActiveForm, interactionPending, saveError,
+    bindSave: (save: (() => Promise<boolean>) | undefined) => { if (formIntent && currentIntent.current?.cycle === formIntent.cycle) saveBinding.current = save ? { cycle: formIntent.cycle, save } : undefined; },
     setActiveInteractionPending, resolveInteraction, isCurrentInteraction,
     showVerificationReadiness, setShowVerificationReadiness,
     boundLead, activeForm, setEditDirty, setEditSubmitting, discardActiveForm,

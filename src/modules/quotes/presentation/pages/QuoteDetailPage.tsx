@@ -1,3 +1,4 @@
+import { saveQuoteDeliveryEvidence } from "../services/saveQuoteDeliveryEvidence";
 import { formatApplicationError } from "@/shared/operations";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
@@ -27,7 +28,7 @@ import {
 import { getDealSnapshot, getDealStagesSnapshot, isWonStage } from "@/modules/deals";
 import { getQuoteConversionIssues } from "../../domain/rules/quoteConversion";
 import { QuoteApprovalStatus, QuoteStatus, SalesDocumentAdjustmentType } from "../../domain/model/quote.types";
-import { approveQuoteCommand, duplicateQuoteCommand, createQuoteRevisionCommand, archiveQuoteCommand, requestQuoteApprovalChangesCommand, requestQuoteApprovalCommand, recordQuoteDeliveryCommand, transitionQuoteStatusCommand } from "../../public/quotes";
+import { approveQuoteCommand, duplicateQuoteCommand, createQuoteRevisionCommand, archiveQuoteCommand, requestQuoteApprovalChangesCommand, requestQuoteApprovalCommand, transitionQuoteStatusCommand } from "../../public/quotes";
 import { CAPABILITIES, useEffectiveAccess, useEffectiveRecordAccessDecision } from "@/platform/access-control";
 import { formatDate } from "@/shared/lib/format/date";
 import { usePlatformState } from "@/platform/application-state";
@@ -451,17 +452,13 @@ export const QuoteDetailPage: React.FC = () => {
   };
 
   const renderedDeliveryCycle = deliveryIdentity.current.cycle;
-  const confirmQuoteSent = async (value: QuoteDeliveryConfirmationValue) => {
+  const confirmQuoteSent = async (value: QuoteDeliveryConfirmationValue, deferClose = false, deliveryId = createDurableId("quote_delivery")): Promise<boolean> => {
     const deliveryCycle = renderedDeliveryCycle;
-    await recordQuoteDeliveryCommand(quote.id, {
-      id: createDurableId("quote_delivery"),
-      ...value,
-      evidenceType: "USER_CONFIRMED_SENT",
-      sentBy: actorId,
-    });
-    if (deliveryIdentity.current.cycle !== deliveryCycle) return;
-    setIsDeliveryConfirmationOpen(false);
+    if (!(await saveQuoteDeliveryEvidence(quote.id, quote.resourceVersion, value, deliveryId, actorId))) return false;
+    if (deliveryIdentity.current.cycle !== deliveryCycle) return false;
+    if (!deferClose) setIsDeliveryConfirmationOpen(false);
     triggerToast("success", locale === "vi" ? "Đã xác nhận Báo giá được gửi và lưu kênh liên hệ." : "Quote delivery was confirmed with its contact channel.");
+    return true;
   };
 
   const renderHeaderAction = (actionId: QuoteActionId) => {
@@ -847,12 +844,14 @@ export const QuoteDetailPage: React.FC = () => {
 
       <QuoteDeliveryConfirmationModal
         isOpen={isDeliveryConfirmationOpen}
+        targetId={quote.id}
         quoteNumber={quote.quoteNumber}
         locale={locale}
         initialRecipientEmail={quote.recipientEmail}
         initialRecipient={quote.customerContact || quote.customerName}
         onClose={() => setIsDeliveryConfirmationOpen(false)}
-        onConfirm={confirmQuoteSent}
+        onConfirm={async (value) => { await confirmQuoteSent(value); }}
+        onSave={(value, deliveryId) => confirmQuoteSent(value, true, deliveryId)}
       />
     </RecordDetailFrame>
   );

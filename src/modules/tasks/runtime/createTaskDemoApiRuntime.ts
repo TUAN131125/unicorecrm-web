@@ -118,7 +118,7 @@ export function createTaskDemoApiRuntime(repository: TaskActivityRepository, wor
           subject: input.subject,
           actorId: "demo-actor",
           actorName: "Demo User",
-          occurredAt: now,
+          occurredAt: input.occurredAt ?? now,
           ...(input.body !== undefined ? { body: input.body } : {}),
           ...(input.relationshipRef !== undefined ? { relationshipRef: input.relationshipRef } : {}),
           ...(input.recordRef !== undefined ? { recordRef: input.recordRef } : {}),

@@ -125,9 +125,11 @@ for (const file of [
 
 // Shared floating owner prevents list menus from table/card clipping.
 const dropdownSource = read("src/components/crm/ActionDropdown.tsx");
-assert.ok(dropdownSource.includes("createPortal"));
-assert.ok(dropdownSource.includes("document.body"));
-assert.ok(dropdownSource.includes("openAbove"));
+assert.match(dropdownSource, /<RowActionPortal\s/, "ActionDropdown must render through the shared floating owner.");
+const rowActionPortalSource = read("src/shared/components/ui/Dialog.tsx");
+assert.ok(rowActionPortalSource.includes("createPortal"));
+assert.ok(rowActionPortalSource.includes("document.body"));
+assert.ok(rowActionPortalSource.includes("openAbove"));
 
 // Create Order preserves required business regions and optional Shipping.
 const orderCreate = read("src/modules/orders/presentation/pages/OrderFormPage.tsx");

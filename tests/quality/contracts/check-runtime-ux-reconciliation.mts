@@ -37,7 +37,10 @@ assert.match(contactCommandAdapter, /options\(input\.expectedVersion\)/u, "Conta
 const contactPublicApi = read("src/modules/contacts/public/contacts.ts");
 assert.match(contactPublicApi, /isContactOperationReady\(CONTACT_CREATE_OPERATION\)[\s\S]*Boolean\(getContactApiRuntime\(\)\.commands\)/u, "Contact Create availability must require both canonical admission and runtime support.");
 assert.match(contactPublicApi, /isContactOperationReady\(CONTACT_UPDATE_OPERATION\)/u, "Contact Update availability must remain independently authority-gated.");
-assert.match(contactPublicApi, /!isContactOperationReady\(CONTACT_ARCHIVE_OPERATION\)/u, "Contact Archive availability must remain independently authority-gated.");
+assert.match(contactPublicApi, /isContactArchiveAvailable\(\): boolean\s*\{\s*return isContactOperationReady\(CONTACT_ARCHIVE_OPERATION\) && \(Boolean\(getContactApiRuntime\(\)\.commands\) \|\| !isContactConnectedApiRuntime\(\)\)/u, "Contact Archive availability must independently require contract admission and connected adapter support.");
+for (const action of ["Restore", "Anonymize"]) {
+  assert.match(contactPublicApi, new RegExp(`isContact${action}Available\\(\\): boolean\\s*\\{\\s*return !isContactConnectedApiRuntime\\(\\) && !isMutationCommandUnavailable\\("contact\\.${action.toLowerCase()}"\\)`, "u"), `${action} must remain independently unavailable in connected mode.`);
+}
 const contactOpenApi = JSON.parse(read("docs/api/openapi.json")) as { paths: Record<string, Record<string, { operationId?: string; "x-contract-status"?: string }>> };
 const contactStatuses = new Map<string, string>();
 for (const pathItem of Object.values(contactOpenApi.paths)) {
@@ -62,7 +65,11 @@ assert.doesNotMatch(contactTopActions, /id: "(?:export|import|bulk|trash|delete)
 const contactRecordHeader = read("src/modules/contacts/presentation/detail/ContactRecordHeader.tsx");
 assert.match(contactRecordHeader, /\{canArchiveContact && <>[\s\S]*?onDeleteClick/u, "Contact Archive must not incorrectly depend on Contact Update permission.");
 assert.doesNotMatch(contactRecordHeader, /contactDetail\.actions\.(setPrimary|changeOwner|manageTags|export)/u, "Unsupported Contact detail mutations/export must not masquerade as available actions.");
-const contactDetailPage = read("src/modules/contacts/presentation/pages/ContactDetailPage.tsx");
+const contactDetailPage = [
+  read("src/modules/contacts/presentation/pages/ContactDetailPage.tsx"),
+  read("src/modules/contacts/presentation/hooks/useContactDetailPageController.ts"),
+  read("src/modules/contacts/presentation/views/ContactDetailResourceView.tsx"),
+].join("\n");
 assert.match(contactDetailPage, /getContactDetailResource\(contactId/u, "Contact Detail must load the authoritative detail operation instead of relying on list cache.");
 assert.match(contactDetailPage, /failure\?\.category === "AUTHORIZATION"/u, "Contact Detail must distinguish access denial from not-found.");
 assert.match(contactDetailPage, /failure\?\.category === "NOT_FOUND"/u, "Contact Detail must expose deterministic not-found state.");
@@ -70,7 +77,7 @@ assert.match(contactDetailPage, /detailQuery\.refresh\(\)/u, "Retryable Contact 
 const contactCollectionHook = read("src/modules/contacts/presentation/hooks/useContacts.ts");
 assert.match(contactCollectionHook, /query\.error\?\.category === "AUTHORIZATION"[\s\S]*replaceContacts\(\[\]\)/u, "A denied connected list read must not expose stale cached Contacts as successful data.");
 const contactReadAdapter = read("src/modules/contacts/infrastructure/http/ContactHttpApiAdapter.ts");
-assert.match(contactReadAdapter, /listContacts<ContactList>\(\{\}, signal\)/u, "Contact list must serialize only the currently admitted empty query contract.");
-assert.doesNotMatch(contactReadAdapter, /search:|sort:|cursor:|limit:/u, "Contact list must not simulate unsupported authoritative query semantics.");
+assert.match(contactReadAdapter, /listContacts<ContactList>\(contactQuery\(query\), signal\)/u, "Contact list must forward the admitted server query contract.");
+assert.match(contactReadAdapter, /getContactListSummary<ContactListSummaryDto>/u, "Contact statistics must have a separate authoritative summary operation.");
 
 console.log("Connected runtime UX reconciliation: PASS");

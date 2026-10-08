@@ -33,8 +33,14 @@ export interface ContactRelationshipSummary {
   customerRelationships: ContactCustomerRelationship[];
 }
 
+export interface ContactListSummary {
+  totalCount: number;
+  statusCounts: Record<string, number>;
+}
+
 export interface ContactQueryPort {
   list(query?: ModuleListQuery, signal?: AbortSignal): Promise<AuthoritativePage<Contact>>;
+  summary?(query?: ModuleListQuery, signal?: AbortSignal): Promise<ContactListSummary>;
   get(contactId: string, signal?: AbortSignal): Promise<Contact>;
   getRelationshipSummary(contactId: string, signal?: AbortSignal): Promise<ContactRelationshipSummary>;
 }

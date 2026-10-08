@@ -96,17 +96,19 @@ assert.equal(referenceData.includes("Member not found (${memberId})"), false, "L
 const leadRepositoryCommands = read("src/modules/leads/application/commands/leadRepositoryCommands.ts");
 assert.ok(leadRepositoryCommands.includes('isBackendProjectionActive("leads")'), "Authoritative Lead reads must bypass local business-mutation semantics.");
 
-for (const marker of ["getRetainedLeadsSnapshot", "replaceLeads([...byId.values()])", "void leadQuery.refresh()"] ) {
-  assert.ok(leadListPage.includes(marker), `Lead List/Kanban reconciliation contract missing: ${marker}`);
-}
+assert.ok(leadListPage.includes("useLeadKanbanWindows"), "Connected Kanban owns independent server windows");
+assert.ok(leadListPage.includes("kanban.items"), "Kanban renders the column read snapshots");
+assert.equal(leadListPage.includes('loadAuthoritative: viewMode === "kanban"'), false, "Connected Kanban must never enable full-collection loading");
+assert.equal(leadListPage.includes("replaceLeads([...byId.values()])"), false, "Column reads must never merge a global collection projection");
+assert.ok(leadListPage.includes("void leadQuery.refresh()"), "The visible query remains independently refreshable");
 
 for (const marker of [
   "isLeadOperationAvailable(LEAD_OPERATION.ARCHIVE)",
   "canArchiveLeadBatch",
   "<LeadArchiveConfirmationModal",
   "archiveSubmittingRef.current",
-  "await leadActions.archive(dialogs.leadToDelete, reason)",
-  "await leadActions.archiveMany(selection.selectedLeadIds, reason)",
+  "await leadActions.archive(dialogs.leadToArchive)",
+  "await leadActions.archiveMany(dialogs.auxiliaryTargets.archive)",
 ]) {
   assert.ok(leadListPage.includes(marker), `Lead archive action contract missing: ${marker}`);
 }
@@ -118,7 +120,7 @@ assert.ok(connectedRuntime.includes("adapter.archiveLeadBatch(input, options)"),
 assert.ok(connectedRuntime.includes("declareUnavailableBusinessOperation(operationId)"), "Connected unavailable operations must be declared before presentation evaluates permission.");
 
 const archiveModal = read("src/modules/leads/presentation/components/LeadArchiveConfirmationModal.tsx");
-for (const marker of ["Lý do lưu trữ *", "selectedCount", "pending || !reason.trim()", "Hồ sơ và lịch sử vẫn được giữ lại"]) {
+for (const marker of ["selectedCount", "loading={pending}", "confirmDisabled={selectedCount === 0}", "will be retained"]) {
   assert.ok(archiveModal.includes(marker), `Bulk Archive modal contract missing: ${marker}`);
 }
 const disqualifyModal = read("src/modules/leads/presentation/components/LeadDisqualifyModal.tsx");
@@ -137,16 +139,18 @@ assert.ok(detailMenu.includes("canManageTags") && detailMenu.includes("canQualif
 const detailController = read("src/modules/leads/presentation/hooks/useLeadDetailController.tsx");
 const detailFields = read("src/modules/leads/presentation/detail/buildLeadDetailFields.tsx");
 const detailView = read("src/modules/leads/presentation/views/LeadDetailView.tsx");
-for (const marker of ["authoritativeLead?.id === leadId", "archiveReason, setArchiveReason", "!lead?.archivedAt"]) {
+for (const marker of ["authoritativeLead?.id === leadId", "showArchiveConfirm, setShowArchiveConfirm", "!lead?.archivedAt"]) {
   assert.ok(detailController.includes(marker), `Archived Lead detail controller contract missing: ${marker}`);
 }
 assert.ok(detailPage.includes("authoritativeLead: detailQuery.data"), "Archived Lead detail must render from the authoritative GET-by-id result instead of the active-list projection.");
 for (const marker of ['id: "archivedAt"', 'id: "archiveReason"']) {
   assert.ok(detailFields.includes(marker), `Archived Lead detail metadata missing: ${marker}`);
 }
-for (const marker of ["lead.archivedAt &&", "canEdit && ownership?.memberId", "lead.leadWorkState === LeadWorkState.VERIFYING ? canQualify : canEdit"]) {
+for (const marker of ["lead.archivedAt &&", "canRecordConsent && ownership?.memberId", "lead.leadWorkState === LeadWorkState.VERIFYING ? canQualify : canEdit"]) {
   assert.ok(detailView.includes(marker), `Archived Lead detail action guard missing: ${marker}`);
 }
+
+assert.ok(detailController.includes("canEdit && isLeadOperationAvailable(LEAD_OPERATION.RECORD_CONSENT)"), "Consent must remain unavailable until the authoritative operation is ready");
 
 const rowActionPortal = read("src/shared/components/ui/Dialog.tsx");
 for (const marker of ["createPortal", "openAbove", "window.innerWidth", "closeAndRestoreFocus", 'addEventListener("scroll"']) {

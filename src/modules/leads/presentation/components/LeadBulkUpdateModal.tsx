@@ -9,6 +9,7 @@ interface LeadBulkUpdateModalProps {
   isOpen: boolean;
   onClose: () => void | Promise<unknown>;
   selectedCount: number;
+  onSave?: (data: { status: string }) => Promise<boolean>;
   onConfirm: (data: { status: string }) => void | Promise<unknown>;
 }
 
@@ -17,6 +18,7 @@ export const LeadBulkUpdateModal: React.FC<LeadBulkUpdateModalProps> = ({
   onClose,
   selectedCount,
   onConfirm,
+  onSave,
 }) => {
   const { t, locale } = useI18n();
   const [bulkUpdateStatus, setBulkUpdateStatus] = useState("");
@@ -26,6 +28,9 @@ export const LeadBulkUpdateModal: React.FC<LeadBulkUpdateModalProps> = ({
   useEffect(() => {
     if (isOpen) setBulkUpdateStatus("");
   }, [isOpen]);
+
+  lifecycle.bindSave(async () => selectedCount > 0 && (bulkUpdateStatus === LeadWorkState.CONTACTING || bulkUpdateStatus === LeadWorkState.VERIFYING) && onSave
+    ? onSave({ status: bulkUpdateStatus }) : false);
 
   return (
     <> <Modal variant="form" isOpen={isOpen} onClose={lifecycle.requestClose} title={locale === "vi" ? "Cập nhật hàng loạt" : "Bulk Update"} size="sm">
@@ -53,7 +58,7 @@ export const LeadBulkUpdateModal: React.FC<LeadBulkUpdateModalProps> = ({
         </p>
         <div className="flex justify-end gap-2 border-t border-slate-100 pt-3">
           <Button variant="secondary" onClick={lifecycle.requestClose}>{t("common.cancel", "Hủy")}</Button>
-          <Button variant="primary" onClick={() => { void lifecycle.run(() => onConfirm({ status: bulkUpdateStatus })); }} disabled={lifecycle.pending || !bulkUpdateStatus}>
+          <Button variant="primary" onClick={() => { void (onSave ? lifecycle.save() : lifecycle.run(() => onConfirm({ status: bulkUpdateStatus }))); }} disabled={lifecycle.pending || !bulkUpdateStatus}>
             {locale === "vi" ? "Cập nhật" : "Update"}
           </Button>
         </div>

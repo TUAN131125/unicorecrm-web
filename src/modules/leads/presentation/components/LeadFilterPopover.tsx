@@ -15,6 +15,7 @@ interface LeadFilterOwnerOption {
 
 interface LeadFilterPopoverProps {
   isOpen: boolean;
+  serverKanban?: boolean;
   onClose: () => void;
   owners: LeadFilterOwnerOption[];
   sources: LeadSource[];
@@ -46,6 +47,7 @@ interface LeadFilterPopoverProps {
 
 export const LeadFilterPopover: React.FC<LeadFilterPopoverProps> = ({
   isOpen,
+  serverKanban = false,
   onClose,
   owners,
   sources,
@@ -77,6 +79,28 @@ export const LeadFilterPopover: React.FC<LeadFilterPopoverProps> = ({
   const { tx, locale } = useI18n();
   const allLabel = tx("leads.filterPanel.allLabel", locale === "vi" ? "Tất cả" : "All");
   if (!isOpen) return null;
+
+  if (serverKanban) return (
+    <ListFilterPopover isOpen={isOpen} onClose={onClose} onReset={onResetAll}
+      ariaLabel={locale === "vi" ? "Bộ lọc Kanban" : "Kanban filters"}
+      resetLabel={locale === "vi" ? "Đặt lại" : "Reset"} doneLabel={locale === "vi" ? "Hoàn tất" : "Done"}>
+      <p className="mb-3 text-xs text-slate-600">{locale === "vi"
+        ? "Kanban sắp xếp theo cập nhật gần nhất. Hỗ trợ tìm kiếm, trạng thái làm việc và chủ sở hữu."
+        : "Kanban is ordered by most recently updated. Search, work state and owner filters are supported."}</p>
+      <ListFilterGrid>
+        <Select label={locale === "vi" ? "Trạng thái" : "Work state"} value={filterStatus}
+          onChange={event => setFilterStatus(event.target.value)}>
+          <option value="">{allLabel}</option>
+          {Object.values(LeadWorkState).map(state => <option key={state} value={state}>{getLeadWorkStateLabel(state, locale)}</option>)}
+        </Select>
+        <Select label={locale === "vi" ? "Chủ sở hữu" : "Owner"} value={filterOwner}
+          onChange={event => setFilterOwner(event.target.value)}>
+          <option value="">{allLabel}</option>
+          {owners.map(owner => <option key={owner.memberId} value={owner.memberId}>{owner.displayName}</option>)}
+        </Select>
+      </ListFilterGrid>
+    </ListFilterPopover>
+  );
 
   const sortValue = `${sort.field}:${sort.direction}`;
 

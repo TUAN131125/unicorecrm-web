@@ -183,8 +183,8 @@ export function ConnectedOutboundWebhooksView() {
     <StudioPageFrame
       title={t("Webhook gửi ra", "Outbound webhooks")}
       description={t(
-        "Đăng ký sự kiện và theo dõi lần gửi từ backend.",
-        "Configure event subscriptions and inspect backend delivery evidence.",
+        "Đăng ký sự kiện và theo dõi kết quả gửi.",
+        "Configure event subscriptions and inspect delivery results.",
       )}
       locale={locale}
       dirty={false}
@@ -237,7 +237,7 @@ export function ConnectedOutboundWebhooksView() {
               ))}
             </StudioSelect>
           </StudioField>
-          <StudioField label="HTTPS endpoint">
+          <StudioField label={t("Địa chỉ HTTPS", "HTTPS endpoint")}>
             <StudioInput
               value={form.endpointUrl}
               onChange={(e) =>
@@ -265,7 +265,7 @@ export function ConnectedOutboundWebhooksView() {
         <div className="grid gap-3 md:grid-cols-3">
           <StudioField label={t("Tên", "Name")}><StudioInput value={editForm.name} onChange={(e)=>setEditForm({...editForm,name:e.target.value})}/></StudioField>
           <StudioField label={t("Sự kiện", "Event")}><StudioSelect value={editForm.eventType} onChange={(e)=>setEditForm({...editForm,eventType:e.target.value})}>{catalog.map((event)=><option key={event.eventType} value={event.eventType}>{event.name} — {event.eventType}</option>)}</StudioSelect></StudioField>
-          <StudioField label="HTTPS endpoint"><StudioInput value={editForm.endpointUrl} onChange={(e)=>setEditForm({...editForm,endpointUrl:e.target.value})}/></StudioField>
+          <StudioField label={t("Địa chỉ HTTPS", "HTTPS endpoint")}><StudioInput value={editForm.endpointUrl} onChange={(e)=>setEditForm({...editForm,endpointUrl:e.target.value})}/></StudioField>
         </div>
         <div className="flex gap-2"><StudioButton tone="accent" disabled={busy||!editForm.name||!editForm.eventType||!editForm.endpointUrl} onClick={()=>void saveEdit()}>{t("Lưu", "Save")}</StudioButton><StudioButton disabled={busy} onClick={()=>setEditing(undefined)}>{t("Hủy", "Cancel")}</StudioButton></div>
       </StudioSection> : null}

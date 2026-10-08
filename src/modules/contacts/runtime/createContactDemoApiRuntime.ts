@@ -18,6 +18,12 @@ export function createContactDemoApiRuntime(repository: ContactRepository): Cont
   return {
     mode: "demo",
     queries: {
+      async summary() {
+        const items = repository.list();
+        const statusCounts: Record<string, number> = {};
+        for (const contact of items) statusCounts[contact.status] = (statusCounts[contact.status] ?? 0) + 1;
+        return { totalCount: items.length, statusCounts };
+      },
       async list() {
         const items = repository.list();
         return {

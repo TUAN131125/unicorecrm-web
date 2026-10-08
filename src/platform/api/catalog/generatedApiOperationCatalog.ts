@@ -12443,6 +12443,227 @@ export const API_OPERATION_CATALOG = {
       "quality.task-activity-api-boundary"
     ]
   },
+  "getContactListSummary": {
+    "operationId": "getContactListSummary",
+    "moduleId": "contacts",
+    "boundedContext": "Contacts",
+    "kind": "QUERY",
+    "method": "GET",
+    "path": "/contacts/summary",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "getContactListSummary"
+    },
+    "adapter": {
+      "file": "src/modules/contacts/infrastructure/http/ContactHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "decisionRole",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "doNotContact",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "boolean",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "followUp",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "link",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "nextFollowUpDate",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": "date",
+            "pattern": null
+          }
+        },
+        {
+          "name": "ownerId",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "ownerScope",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "relationshipLevel",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "search",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "sort",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "source",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "status",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "ContactListSummary",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "contacts.read",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "NOT_APPLICABLE",
+      "audit": "READ_ACCESS_LOG",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
   "getContactRelationshipSummary": {
     "operationId": "getContactRelationshipSummary",
     "moduleId": "contacts",
@@ -17104,6 +17325,160 @@ export const API_OPERATION_CATALOG = {
             "format": null,
             "pattern": null
           }
+        },
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": "CursorToken",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "decisionRole",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "doNotContact",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "boolean",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "followUp",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "integer",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "link",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "nextFollowUpDate",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": "date",
+            "pattern": null
+          }
+        },
+        {
+          "name": "ownerId",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "ownerScope",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "relationshipLevel",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "search",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "sort",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "source",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "status",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
         }
       ]
     },
@@ -18098,6 +18473,172 @@ export const API_OPERATION_CATALOG = {
       "quality.financial-operations-api-boundary",
       "quality.financial-vertical-slice",
       "quality.order-to-cash-api-contracts"
+    ]
+  },
+  "listLeadKanbanColumn": {
+    "operationId": "listLeadKanbanColumn",
+    "moduleId": "leads",
+    "boundedContext": "Leads",
+    "kind": "QUERY",
+    "method": "GET",
+    "path": "/leads/kanban/{column}",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "listLeadKanbanColumn"
+    },
+    "adapter": {
+      "file": "src/modules/leads/infrastructure/http/LeadHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "column",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "LeadKanbanColumn",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "assignmentState",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": "CursorToken",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "integer",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "ownerId",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "search",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "workState",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": "LeadWorkState",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "LeadListResponse",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "leads.read",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "NOT_APPLICABLE",
+      "audit": "READ_ACCESS_LOG",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
     ]
   },
   "listLeads": {

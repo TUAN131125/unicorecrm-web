@@ -794,6 +794,13 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "getContactListSummary",
+      "method": "GET",
+      "path": "/contacts/summary",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "getContactRelationshipSummary",
       "method": "GET",
       "path": "/contacts/{contactId}/relationship-summary",
@@ -1196,6 +1203,13 @@
       "operationId": "listInvoices",
       "method": "GET",
       "path": "/invoices",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "listLeadKanbanColumn",
+      "method": "GET",
+      "path": "/leads/kanban/{column}",
       "status": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null
     },

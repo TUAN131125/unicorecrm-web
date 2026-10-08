@@ -9,15 +9,24 @@ import {
 } from "../../../src/shared/application";
 import { createHttpModuleDataAuthorityRegistry, type HttpClient, type HttpRequest } from "../../../src/platform/api";
 import { CONNECTED_MODULE_QUERY_RESPONSE_MAPPERS } from "../../../src/app/composition/connectedModuleQueryResponseMappers";
+import type { DealReadModel } from "../../../src/modules/deals/application/read-models/dealReadModel";
+
+const dealFixture: DealReadModel = {
+  id: "deal-1", name: "Canonical Deal", buyerRef: { type: "ORGANIZATION_ACCOUNT", id: "organization-1" },
+  stageCode: "NEW", stageCategory: "OPEN", amount: { amount: "1000000.25", currency: "VND" },
+  opportunityScore: "80", ownerId: "user-1", expectedCloseDate: "2026-08-31",
+  interestedProductIds: [], lineItems: [], resourceVersion: 4,
+  createdAt: "2026-07-25T00:00:00.000Z", updatedAt: "2026-07-25T00:00:00.000Z",
+};
 
 const requests: HttpRequest[] = [];
 const client: HttpClient = {
   async request<TResponse>(request: HttpRequest): Promise<TResponse> {
     requests.push(request);
-    if (request.operationId === "listContacts") return [{ id: "contact-1" }] as TResponse;
+    if (request.operationId === "listContacts") return { items: [{ id: "contact-1" }], pageInfo: { hasNextPage: false, totalCount: 1 }, followUpAvailable: true } as TResponse;
     if (request.operationId === "getContact") return { id: "contact-1", version: 7 } as TResponse;
-    if (request.operationId === "listDeals") return { items: [{ id: "deal-1", resourceVersion: 4 }], pageInfo: { hasNextPage: false, totalCount: 1 } } as TResponse;
-    if (request.operationId === "getDeal") return { id: "deal-1", resourceVersion: 4 } as TResponse;
+    if (request.operationId === "listDeals") return { items: [dealFixture], pageInfo: { hasNextPage: false, totalCount: 1 } } as TResponse;
+    if (request.operationId === "getDeal") return dealFixture as TResponse;
     if (request.operationId === "listLeads") return { items: [{ id: "lead-1", displayName: "Lead", source: "WEB", score: 80, leadWorkState: "NEW", qualificationOutcome: "PENDING", relationshipRef: { type: "CONTACT", id: "contact-1" }, ownerId: "user-1", interestedProducts: [], activityProjection: "NOT_INCLUDED", estimatedValue: { amount: "1000000.25", currency: "VND" }, tags: [], createdAt: "2026-07-25T00:00:00.000Z", updatedAt: "2026-07-25T00:00:00.000Z", version: 3 }], page: { limit: 50, hasMore: false } } as TResponse;
     throw new Error(`Unexpected API operation ${request.operationId}`);
   },
@@ -27,13 +36,14 @@ configureModuleDataAuthorityRegistry(registry);
 
 let projected: Array<{ id: string }> = [];
 const collection = createModuleCollectionResource<{ id: string }>("contacts", {
+  pageSize: 25,
   project(records) { projected = [...records]; },
 });
 const loaded = await collection.load();
 assert.deepEqual(loaded?.items.map((item) => item.id), ["contact-1"]);
 assert.deepEqual(projected.map((item) => item.id), ["contact-1"]);
 assert.equal(requests[0]?.operationId, "listContacts");
-assert.equal(requests[0]?.query && Object.keys(requests[0].query).length, 0);
+assert.deepEqual(requests[0]?.query, { limit: 25 });
 
 let projectedDetail: { id: string; version: number } | undefined;
 const detail = createModuleDetailResource<{ id: string; version: number }>("contacts", "contact-1", (record) => { projectedDetail = record; });
@@ -110,7 +120,7 @@ for (const relativePath of scopeResetHooks) {
 }
 
 const authoritativeDetailRoutes = [
-  ["src/modules/customers/detail-route.tsx", /getCustomerDetailResource/, /AuthoritativeQueryBoundary/, /scopeKey:\s*workspace\.workspaceId/],
+  ["src/modules/customers/detail-route.tsx", /useModuleAuthoritativeResource\(getCustomer360Resource\(/, /AuthoritativeQueryBoundary/, /scopeKey:\s*workspace\.workspaceId/],
   ["src/modules/organizations/detail-route.tsx", /getOrganizationAccountDetailResource/, /AuthoritativeQueryBoundary/, /replaceOrganizationAccounts\(\[\]\)/],
   ["src/modules/products/detail-route.tsx", /getProductDetailResource/, /AuthoritativeQueryBoundary/, /replaceProductCatalog\(\[\]\)/],
   ["src/modules/returns/detail-route.tsx", /getReturnDetailResource/, /AuthoritativeQueryBoundary/, /replaceReturnsSnapshot/],
@@ -143,7 +153,11 @@ const presentationFiles = [
   "src/modules/tasks/presentation/pages/TaskListPage.tsx",
 ] as const;
 for (const relativePath of presentationFiles) {
-  const source = fs.readFileSync(path.join(root, relativePath), "utf8");
+  let source = fs.readFileSync(path.join(root, relativePath), "utf8");
+  if (relativePath === "src/modules/contacts/presentation/pages/ContactDetailPage.tsx") {
+    assert.match(source, /<ContactDetailResourceView model=\{model\}>/, "Contact detail must render its delegated authoritative state surface.");
+    source += fs.readFileSync(path.join(root, "src/modules/contacts/presentation/views/ContactDetailResourceView.tsx"), "utf8");
+  }
   assert.match(source, /AuthoritativeQuery(?:Notice|Boundary)/, `${relativePath} must surface loading, refresh, stale or error state.`);
 }
 

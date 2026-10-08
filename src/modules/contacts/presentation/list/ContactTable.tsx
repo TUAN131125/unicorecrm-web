@@ -10,6 +10,7 @@ import {
 import { ContactActionMenu } from "./ContactActionMenu";
 import { findCustomerForContact, getCustomerDisplayNameForContact } from "../model/contactCustomerLookup";
 import { getWorkspaceMemberOptions } from "@/platform/member-directory";
+import { useEffectiveAccess } from "@/platform/access-control";
 
 interface ContactTableProps {
   contacts: Contact[];
@@ -43,6 +44,9 @@ export const ContactTable: React.FC<ContactTableProps> = ({
   onViewDetails
 }) => {
   const { t, tx, locale } = useI18n();
+  const access = useEffectiveAccess();
+  const ownerAccess = access.getFieldAccess("contacts", "ownerId");
+  const ownerHidden = ownerAccess === "HIDDEN" || ownerAccess === "MASKED";
   const [rowActionAnchorEl, setRowActionAnchorEl] = React.useState<HTMLElement | null>(null);
 
   const activeContact = React.useMemo(() => {
@@ -156,7 +160,12 @@ export const ContactTable: React.FC<ContactTableProps> = ({
           ) : (
             contacts.map((contact) => {
               const isSelected = selectedContactIds.includes(contact.id);
-              const owner = getWorkspaceMemberOptions().find(u => u.id === contact.ownerId) || getWorkspaceMemberOptions()[0];
+              const owner = !ownerHidden && contact.ownerId ? getWorkspaceMemberOptions().find(u => u.id === contact.ownerId) : undefined;
+              const ownerName = ownerHidden
+                ? (locale === "vi" ? "Người phụ trách bị ẩn" : "Owner hidden")
+                : owner?.name || (contact.ownerId
+                  ? (locale === "vi" ? "Người phụ trách chưa khả dụng" : "Owner unavailable")
+                  : (locale === "vi" ? "Chưa phân công" : "Unassigned"));
               const customerName = getCustomerDisplayNameForContact(contact);
 
               return (
@@ -282,7 +291,7 @@ export const ContactTable: React.FC<ContactTableProps> = ({
                       case "ownerId":
                         content = (
                           <span className="font-medium text-slate-700">
-                            {owner?.name || tx("contactList.preview.unassigned", "Chưa phân công")}
+                            {ownerName}
                           </span>
                         );
                         break;
@@ -301,6 +310,7 @@ export const ContactTable: React.FC<ContactTableProps> = ({
 
                       case "nextFollowUpAt": {
                         const dt = contact.nextFollowUpAt;
+                        if (dt === null) { content = locale === "vi" ? "Chưa khả dụng" : "Unavailable"; break; }
                         const isOverdue = dt && new Date(dt) < new Date();
                         content = dt ? (
                           <span className={`font-mono font-medium flex items-center gap-1 ${isOverdue ? "text-rose-600 font-semibold shrink-0" : "text-emerald-600"}`}>
@@ -312,7 +322,7 @@ export const ContactTable: React.FC<ContactTableProps> = ({
                       }
 
                       case "openOpportunityCount": {
-                        const cnt = contact.openOpportunityCount || 0;
+                        const cnt = contact.openOpportunityCount ?? (locale === "vi" ? "Chưa khả dụng" : "Unavailable");
                         content = (
                           <span className="font-mono font-medium font-semibold text-slate-800">
                             {cnt}

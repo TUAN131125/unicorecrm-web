@@ -70,8 +70,14 @@ mode='consent';await act(async()=>refresh());await click('Ghi nhận đồng thu
 await act(async()=>consentOpener.click());assert.equal(document.querySelector('textarea')?.value,'Opening A evidence');
 await click('Ghi nhận');assert.equal(consentOpener.disabled,true);await act(async()=>{consentOpener.click();consentOpener.click();});assert.equal(document.querySelector('textarea')?.value,'Opening A evidence');assert.equal(captures.filter(c=>c.kind==='consent').length,1);assert.equal(discardDirtyUnsavedWork(),false);assert.equal(await saveDirtyUnsavedWork(),false);
 await act(async()=>consentRelease?.());await settle();assert.equal(captures[1]?.kind,'consent');assert.equal(captures[1]?.id,A.id);assert.equal(captures[1]?.version,3);assert.equal(document.querySelector('textarea')?.value,'Opening A evidence');assert.ok(document.querySelector('[role=alert]'));
-assert.equal(await saveDirtyUnsavedWork(),false);
-mode='import';await act(async()=>refresh());const input=document.querySelector('input[type=file]');assert.ok(input);const file=new window.File(['name,email\nImported A,a@example.test'],'proof.csv',{type:'text/csv'});Object.defineProperty(file,'text',{value:async()=> 'name,email\nImported A,a@example.test'});Object.defineProperty(input,'files',{value:[file],configurable:true});await act(async()=>input.dispatchEvent(new window.Event('change',{bubbles:true})));await settle();assert.equal(getDirtyUnsavedWork().length,1);await click('Nhập toàn bộ');assert.equal(captures[2]?.kind,'import');assert.equal(captures[2]?.owner,'u1');assert.ok(document.querySelector('[role=alert]'));
+let consentSave: Promise<boolean> | undefined;
+await act(async()=>{consentSave=saveDirtyUnsavedWork();});
+assert.equal(captures.filter(c=>c.kind==='consent').length,2);
+assert.equal(discardDirtyUnsavedWork(),false);
+await act(async()=>{consentRelease?.();assert.equal(await consentSave,false);});
+assert.equal(document.querySelector('textarea')?.value,'Opening A evidence');
+assert.ok(document.querySelector('[role=alert]'));
+mode='import';await act(async()=>refresh());const input=document.querySelector('input[type=file]');assert.ok(input);const file=new window.File(['name,email\nImported A,a@example.test'],'proof.csv',{type:'text/csv'});Object.defineProperty(file,'text',{value:async()=> 'name,email\nImported A,a@example.test'});Object.defineProperty(input,'files',{value:[file],configurable:true});await act(async()=>input.dispatchEvent(new window.Event('change',{bubbles:true})));await settle();assert.equal(getDirtyUnsavedWork().length,1);await click('Nhập toàn bộ');assert.equal(captures.at(-1)?.kind,'import');assert.equal(captures.at(-1)?.owner,'u1');assert.ok(document.querySelector('[role=alert]'));
 mode='scope';await act(async()=>refresh());const opening=workspace.getWorkspaceContextSnapshot();const other=workspace.listWorkspaceMemberships().find(w=>w.workspaceId!==opening.workspaceId);assert.ok(other);
 await act(async()=>{await workspace.switchWorkspaceContext(other.workspaceKey);});await click('Scope proof');assert.equal(called,0);assert.equal(open,true);assert.equal(await saveDirtyUnsavedWork(),false);
 await act(async()=>{assert.equal(discardDirtyUnsavedWork(),true);});assert.equal(open,false);

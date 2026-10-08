@@ -5,6 +5,7 @@ import { useI18n } from "@/i18n";
 import { getWorkspaceMemberOptions } from "@/platform/member-directory";
 
 interface ContactFilterPopoverProps {
+  connected?: boolean;
   isOpen: boolean;
   onClose: () => void;
   statusFilter: string;
@@ -31,6 +32,7 @@ interface ContactFilterPopoverProps {
 }
 
 export const ContactFilterPopover: React.FC<ContactFilterPopoverProps> = ({
+  connected = false,
   isOpen,
   onClose,
   statusFilter,
@@ -91,7 +93,7 @@ export const ContactFilterPopover: React.FC<ContactFilterPopoverProps> = ({
           <option value="unlinked">{t("contactList.filters.unlinked")}</option>
         </Select>
 
-        <Select label={tx("contactList.filters.priority", isVi ? "Mức độ ưu tiên" : "Priority")} value={priorityFilter} onChange={(event) => setPriorityFilter(event.target.value)}>
+        <Select disabled={connected} label={tx("contactList.filters.priority", isVi ? "Mức độ ưu tiên" : "Priority") + (connected ? (isVi ? " — Chưa khả dụng" : " — Unavailable") : "")} value={priorityFilter} onChange={(event) => setPriorityFilter(event.target.value)}>
           <option value="all">{allLabel}</option>
           <option value="LOW">{t("contactList.priority.low")}</option>
           <option value="MEDIUM">{t("contactList.priority.medium")}</option>
@@ -129,7 +131,7 @@ export const ContactFilterPopover: React.FC<ContactFilterPopoverProps> = ({
         </Select>
 
         <Input label={tx("contactForm.nextFollowUpAt", isVi ? "Ngày chăm sóc tiếp" : "Next follow-up date")} type="date" value={nextFollowUpAtFilter} onChange={(event) => setNextFollowUpAtFilter(event.target.value)} />
-        <Input label={tx("contactList.preview.lastOutreach", isVi ? "Ngày tương tác gần nhất" : "Last interaction date")} type="date" value={lastInteractionAtFilter} onChange={(event) => setLastInteractionAtFilter(event.target.value)} />
+        <Input disabled={connected} label={tx("contactList.preview.lastOutreach", isVi ? "Ngày tương tác gần nhất" : "Last interaction date") + (connected ? (isVi ? " — Chưa khả dụng" : " — Unavailable") : "")} type="date" value={lastInteractionAtFilter} onChange={(event) => setLastInteractionAtFilter(event.target.value)} />
       </ListFilterGrid>
 
       <div className="mt-4 rounded-xl border border-slate-100 bg-slate-50/70 p-3">

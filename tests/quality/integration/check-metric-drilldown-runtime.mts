@@ -25,7 +25,28 @@ assert.equal(adminSignIn.ok, true, "Administrative demo sign-in must create an A
 const { initializeApplicationComposition } = await import("../../../src/app/composition");
 await initializeApplicationComposition({ mode: "demo" });
 const { loadAccessGovernance } = await import("../../../src/platform/access-control/governance");
-await loadAccessGovernance("ws1");
+const { getWorkspaceContextSnapshot } = await import("../../../src/platform/workspace-context");
+const workspaceContext = getWorkspaceContextSnapshot();
+assert.equal(workspaceContext.workspaceKey, "unicore-vietnam", "The report fixture must use its routed workspace membership.");
+await loadAccessGovernance(workspaceContext.workspaceId);
+// Reports are deferred in server-admitted roles. Explicit test authorization lets
+// this interaction fixture exercise the drawer without changing production roles.
+const { getAccessGovernanceRuntimeBinding, configureAccessGovernanceRuntime } = await import("../../../src/platform/access-control/application/accessGovernanceBinding");
+const governance = getAccessGovernanceRuntimeBinding();
+let grantMetricRead = false;
+configureAccessGovernanceRuntime({
+  getRuntime: () => governance.getRuntime(), getState: () => governance.getState(),
+  load: (id, signal) => governance.load(id, signal), refresh: (id, signal) => governance.refresh(id, signal),
+  applyMutation: (id, result, signal) => governance.applyMutation(id, result, signal),
+  subscribe: (listener) => governance.subscribe(listener), clear: () => governance.clear(),
+  getEffectiveAccess(id) {
+    const access = governance.getEffectiveAccess(id);
+    assert.ok(access, "The interaction fixture must retain its real workspace authorization context.");
+    return { ...access, can: (capability) => grantMetricRead && ["reports.read", "orders.read"].includes(capability) || access.can(capability) };
+  },
+});
+const { resolveEffectiveAccess } = await import("../../../src/platform/access-control/runtime/accessControlRuntime");
+assert.equal(resolveEffectiveAccess(workspaceContext.workspaceId).can("reports.read"), false, "Deferred Reports authority must remain denied by default.");
 const React = await import("react");
 const { act } = React;
 const { createRoot } = await import("react-dom/client");
@@ -48,6 +69,10 @@ try {
   const metricCard = window.document.querySelector('[data-guidance-id="reports.metric.completed-revenue"]');
   assert.ok(metricCard, "Completed revenue metric must be interactive.");
   await act(async () => metricCard.dispatchEvent(new window.MouseEvent("click", { bubbles: true, cancelable: true })));
+  assert.equal(window.document.querySelector('[data-guidance-id="reports.metric.drilldown"]'), null, "A metric click without Reports read authority must not disclose source records.");
+  grantMetricRead = true;
+  await act(async () => governance.refresh(workspaceContext.workspaceId));
+  await act(async () => window.document.querySelector('[data-guidance-id="reports.metric.completed-revenue"]').dispatchEvent(new window.MouseEvent("click", { bubbles: true, cancelable: true })));
   const drawer = window.document.querySelector('[data-guidance-id="reports.metric.drilldown"]');
   assert.ok(drawer, "Metric click must open the drill-down drawer.");
   const drawerText = drawer.textContent || "";

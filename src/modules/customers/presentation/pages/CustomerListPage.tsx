@@ -104,6 +104,7 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [dataQualityOpen, setDataQualityOpen] = useState(false);
   const viewSaveInFlightRef = useRef(false);
+  const archiveInFlightRef = useRef(false);
 
   const rows = useMemo<CustomerListRow[]>(
     () => customers.map((customer) => ({
@@ -228,13 +229,12 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
     setSavedViewDialog({ mode: "edit", viewKey: activeCustomView.key });
   };
 
-  const handleSubmitSavedView = (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!savedViewDialog || viewSaveInFlightRef.current) return;
-    const trimmedName = viewName.trim();
+  const saveViewName = async (submittedName: string, deferClose = false): Promise<boolean> => {
+    if (!savedViewDialog || viewSaveInFlightRef.current) return false;
+    const trimmedName = submittedName.trim();
     if (!trimmedName) {
       setViewNameError(isVi ? "Vui lòng nhập tên giao diện." : "Enter a view name.");
-      return;
+      return false;
     }
     viewSaveInFlightRef.current = true;
     setIsSavingView(true);
@@ -244,17 +244,18 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
         : createCustomView(trimmedName, getCurrentViewSnapshot());
       if (result.ok === false) {
         setViewNameError(result.error === "duplicate" ? (isVi ? "Tên giao diện đã tồn tại." : "This view name already exists.") : (isVi ? "Không thể lưu giao diện." : "Could not save this view."));
-        return;
+        return false;
       }
-      setSavedViewDialog(null);
-      setViewName("");
+      if (!deferClose) { setSavedViewDialog(null); setViewName(""); }
       showToast(isVi ? "Đã lưu giao diện khách hàng." : "Customer view saved.");
+      return true;
     } finally {
       viewSaveInFlightRef.current = false;
       setIsSavingView(false);
     }
   };
 
+  const handleSubmitSavedView = async (event: React.FormEvent) => { event.preventDefault(); await saveViewName(viewName); };
   const handleDeleteCustomView = () => {
     if (!viewToDelete) return;
     const defaultPresentation = deleteCustomView(viewToDelete);
@@ -279,11 +280,27 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
   };
 
   const confirmArchive = async (isCurrent: () => boolean = () => true) => {
-    await Promise.all(archiveTargets.map((row) => archiveCustomerProductionCommand(row.customer.id)));
-    if (!isCurrent()) return;
-    setArchiveTargets([]);
-    setSelectedCustomerIds([]);
-    showToast(isVi ? "Đã lưu trữ khách hàng được chọn." : "Selected customers archived.");
+    if (archiveInFlightRef.current || archiveTargets.length === 0 || !isCurrent()) return;
+    archiveInFlightRef.current = true;
+    try {
+      const targets = [...archiveTargets];
+      const results = await Promise.allSettled(targets.map((row) => archiveCustomerProductionCommand(row.customer.id)));
+      const successfulIds = new Set(targets.filter((_, index) => results[index]?.status === "fulfilled").map((row) => row.customer.id));
+      const failedTargets = targets.filter((row) => !successfulIds.has(row.customer.id));
+      // Refresh failures cannot undo commands that already committed.
+      const [refreshResult] = await Promise.allSettled([customerSource.query.refresh()]);
+      if (!isCurrent()) return;
+      setSelectedCustomerIds((current) => current.filter((id) => !successfulIds.has(id)));
+      setArchiveTargets(failedTargets);
+      const outcomeMessage = failedTargets.length > 0
+        ? (isVi ? `Đã lưu trữ ${successfulIds.size}/${targets.length} khách hàng. ${failedTargets.length} khách hàng chưa được lưu trữ; hãy thử lại.` : `Archived ${successfulIds.size}/${targets.length} customers. ${failedTargets.length} customers were not archived; retry them.`)
+        : (isVi ? `Đã lưu trữ ${successfulIds.size} khách hàng.` : `Archived ${successfulIds.size} customers.`);
+      showToast(refreshResult?.status === "rejected"
+        ? `${outcomeMessage} ${isVi ? "Không thể tải lại danh sách; hãy làm mới." : "Could not reload the list; refresh it."}`
+        : outcomeMessage);
+    } finally {
+      archiveInFlightRef.current = false;
+    }
   };
 
   const exportAll = () => {
@@ -455,6 +472,7 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
         name={viewName}
         onNameChange={(name) => { setViewName(name); if (viewNameError) setViewNameError(""); }}
         onSubmit={handleSubmitSavedView}
+        onSave={(name) => saveViewName(name, true)}
         error={viewNameError || undefined}
         loading={isSavingView}
         formId="customer-saved-view-form"
@@ -537,8 +555,9 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
       <CustomerStatisticsPanel show={showStatisticsPanel} onClose={() => setShowStatisticsPanel(false)} statsSummary={statistics} />
 
       <ConfirmDialog
+        key={JSON.stringify(archiveTargets.map((row) => row.customer.id))}
         isOpen={archiveTargets.length > 0}
-        onClose={() => setArchiveTargets([])}
+        onClose={() => { if (!archiveInFlightRef.current) setArchiveTargets([]); }}
         onConfirm={confirmArchive}
         title={isVi ? "Lưu trữ khách hàng?" : "Archive customers?"}
         description={archiveTargets.length === 1 ? archiveTargets[0]?.model.identity.displayName : (isVi ? `${archiveTargets.length} khách hàng được chọn` : `${archiveTargets.length} selected customers`)}

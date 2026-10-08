@@ -1,10 +1,10 @@
 # Release Identity
 
-- Release: `unicorecrm-web@0.23.20-contract.0`
-- Date: `2026-07-26`
+- Release: `unicorecrm-web@0.24.0-contract.0`
+- Date: `2026-10-08`
 - Status: `QUALITY_BASELINE_REMEDIATION_CANDIDATE`
-- Scope: `FRONTEND_QUALITY_AND_RUNTIME_REMEDIATION`
-- Classification: frontend quality and runtime remediation candidate with a green local baseline, corrected Orders query projection, authoritative demo access bootstrap, route/runtime cleanup and unchanged operation-level backend semantics.
+- Scope: `CONTACT_SERVER_PAGING_LEAD_KANBAN_AND_SAVE_REMEDIATION`
+- Classification: production-hardening candidate with bounded authorized Contact paging and summary, Tasks-owned follow-up projection, independent Lead Kanban windows, reconciled Contact command authority and validated awaited Save outcomes. Activity security authority remains unresolved and its fail-closed policy is preserved. Verification evidence is recorded separately; this identity does not attest deployment or unrestricted production acceptance.
 - Backend target: ASP.NET Core/SQL Server backend.
 - This is not an accepted production baseline.
 

@@ -75,7 +75,7 @@ for (const marker of [
 const listPage = read("src/modules/leads/presentation/pages/LeadListPage.tsx");
 for (const marker of [
   "handleKanbanMove",
-  "leadActions.changeWorkState(leadId, target)",
+  "leadActions.changeWorkState(leadId, target, undefined, kanban.connected ? lead.resourceVersion : undefined)",
   "requestStartVerifying",
   "leadActions.startVerification",
   "LeadTransitionRequirementsModal",

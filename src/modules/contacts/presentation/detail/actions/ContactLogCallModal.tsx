@@ -1,17 +1,18 @@
 import React from "react";
-import { CallActivityCreateModal, type CallActivityDraft } from "@/modules/tasks";
+import { resolveActivityRecordingDate, CallActivityCreateModal, type CallActivityDraft } from "@/modules/tasks";
 
 interface ContactLogCallModalProps {
   targetId?: string;
   isOpen: boolean;
   onClose: () => void;
   onSave: (call: {
+    occurredAt?: string;
     direction: string;
     result: string;
     summary: string;
     nextFollowUpDate?: string;
     createFollowUpTask?: boolean;
-  }) => void | Promise<void>;
+  }) => Promise<boolean>;
   isDoNotContact?: boolean;
 }
 
@@ -25,7 +26,9 @@ export const ContactLogCallModal: React.FC<ContactLogCallModalProps> = ({ target
     formId="contact-log-call-form"
     defaults={{ subject: "Cuộc gọi với Contact" }}
     contactPolicy={{ restricted: isDoNotContact }}
-    onSubmit={(draft: CallActivityDraft) => onSave({
+    onSubmit={async () => {}}
+    onSave={(draft: CallActivityDraft) => onSave({
+      occurredAt: resolveActivityRecordingDate(draft),
       direction: draft.direction,
       result: draft.result,
       summary: [draft.subject, draft.recipient, `${draft.durationMinutes} min`, draft.body].filter(Boolean).join(" — "),

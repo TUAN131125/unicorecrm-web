@@ -48,6 +48,8 @@ export interface AssignTaskInput { assigneeId: string; }
 export interface RescheduleTaskInput { dueAt: string; }
 export interface ArchiveTaskInput { reason: string; }
 export interface LogActivityInput {
+  /** Demo recording date; the connected contract currently owns its server timestamp. */
+  occurredAt?: string;
   type: ActivityType;
   subject: string;
   body?: string;

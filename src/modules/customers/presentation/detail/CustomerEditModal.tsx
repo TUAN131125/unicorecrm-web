@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useBoundFormDraft } from "../hooks/useBoundFormDraft";
+import { useBoundFormDraft } from "@/shared/hooks/useBoundFormDraft";
 import { presentApplicationError } from "@/shared/operations";
 import { Building2, ContactRound, HeartHandshake, Save, ShieldCheck } from "lucide-react";
 import { Button, ConfirmDialog, Input, Modal, Select, Textarea } from "@/shared/components/ui";

@@ -1,3 +1,4 @@
+import { saveQuoteDeliveryEvidence } from "../services/saveQuoteDeliveryEvidence";
 import { useQuoteFormLifecycle } from "./useQuoteFormLifecycle";
 import { formatApplicationError } from "@/shared/operations";
 import React, { useState, useEffect, useMemo, useRef } from "react";
@@ -14,7 +15,7 @@ import { normalizeQuoteLineItem } from "../../domain/rules/quoteCalculations";
 import { getQuoteConversionIssues } from "../../domain/rules/quoteConversion";
 import { calculateQuoteDraftTotals } from "../../domain/rules/quoteDraftPricing";
 import { isQuoteVersionImmutable, quoteContentFingerprint } from "../../domain/rules/quoteVersioning";
-import { allocateQuoteIdentitySnapshot, createQuoteRevisionCommand, recordQuoteDeliveryCommand, requestQuoteApprovalCommand, saveQuoteCommand } from "../../public/quotes";
+import { allocateQuoteIdentitySnapshot, createQuoteRevisionCommand, requestQuoteApprovalCommand, saveQuoteCommand } from "../../public/quotes";
 
 import { useQuotes } from "../hooks/useQuotes";
 import { useDeals } from "../hooks/useDeals";
@@ -140,6 +141,7 @@ export interface QuoteBuilderPageProps {
 
 interface PendingQuoteDelivery {
   quoteId: string;
+  expectedVersion?: number;
   channel: QuoteDeliveryChannel;
   recipientEmail?: string;
   recipient?: string;
@@ -811,6 +813,7 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
       });
       setDeliveryConfirmation({
         quoteId: saved.id,
+        expectedVersion: saved.resourceVersion,
         channel: "GMAIL",
         recipientEmail: email,
         fileName: pdf.fileName,
@@ -838,22 +841,19 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
     }
     setDeliveryConfirmation({
       quoteId: saved.id,
+        expectedVersion: saved.resourceVersion,
       channel: "ZALO",
       recipient: referencedDeal?.contactName || saved.customerContact || saved.customerName || "",
     });
   };
 
-  const confirmQuoteSent = async (value: QuoteDeliveryConfirmationValue) => {
-    if (!deliveryConfirmation) return;
-    const updated = (await recordQuoteDeliveryCommand(deliveryConfirmation.quoteId, {
-      id: createDurableId("quote_delivery"),
-      ...value,
-      evidenceType: "USER_CONFIRMED_SENT",
-      sentBy: actorId,
-    })).data;
-    setDeliveryConfirmation(null);
+  const confirmQuoteSent = async (value: QuoteDeliveryConfirmationValue, deferClose = false, deliveryId = createDurableId("quote_delivery")): Promise<boolean> => {
+    if (!deliveryConfirmation) return false;
+    if (!(await saveQuoteDeliveryEvidence(deliveryConfirmation.quoteId, deliveryConfirmation.expectedVersion, value, deliveryId, actorId))) return false;
+    if (!deferClose) setDeliveryConfirmation(null);
     triggerToast(locale === "vi" ? "Đã xác nhận Báo giá được gửi và lưu bằng chứng kênh liên hệ." : "Quote delivery was confirmed with channel evidence.", "success");
-    navigate(`/quotes/${updated.id}`);
+    if (!deferClose) navigate(`/quotes/${deliveryConfirmation.quoteId}`);
+    return true;
   };
 
   useEffect(() => {

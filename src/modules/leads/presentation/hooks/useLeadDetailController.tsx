@@ -77,7 +77,7 @@ export function useLeadDetailRouteFeature(leadId: string, observedLead: Lead | u
   const { leads } = useLeads({ loadAuthoritative: false });
   const lead = observedLead?.id === leadId ? observedLead : (!isLeadConnectedApiRuntime() ? leads.find(item => item.id === leadId) : undefined);
   const dialogs = useLeadDetailDialogs(lead, leadId);
-  const handover = useLeadHandover({ leadId: dialogs.boundLead?.id ?? leadId, observedLead: dialogs.boundLead ?? lead });
+  const handover = useLeadHandover({ leadId, observedLead: dialogs.boundLead?.id === leadId ? dialogs.boundLead : lead });
   const [receiptError, setReceiptError] = useState<string | null>(null);
   const { locale } = useI18n();
   useEffect(() => setReceiptError(null), [leadId]);
@@ -228,8 +228,9 @@ export function useLeadDetailReadController(props: LeadDetailPageProps, feature:
     await leadActions.changeWorkState(lead.id, nextWorkState, newAct);
   };
 
-  const commitStartVerification = async (input?: LeadTransitionProfileInput) => {
-    if (showVerificationReadiness && !dialogs.setActiveInteractionPending(true)) return;
+  const commitStartVerification = async (input?: LeadTransitionProfileInput, deferClose = false): Promise<boolean> => {
+    if (!canQualify || (showVerificationReadiness && !dialogs.isCurrentInteraction())) return false;
+    if (!deferClose && showVerificationReadiness && !dialogs.setActiveInteractionPending(true)) return false;
     const activity: CRMActivity = {
       id: `act_work_state_${Date.now()}`,
       title: locale === "vi" ? "Lead đạt chất lượng sơ bộ" : "Lead is ready for verification",
@@ -239,13 +240,16 @@ export function useLeadDetailReadController(props: LeadDetailPageProps, feature:
       type: "system",
     };
     try {
-      await leadActions.startVerification(lead.id, { ...input, activity });
-      dialogs.resolveInteraction("verification");
+      const saved = await leadActions.startVerification(lead.id, { ...input, activity }, lead.resourceVersion);
+      if (saved.id !== lead.id || saved.leadWorkState !== "VERIFYING") return false;
+      if (!deferClose) dialogs.resolveInteraction("verification");
       showToast(locale === "vi" ? "Đã chuyển Lead sang Đang xác minh." : "Lead moved to Verifying.");
+      return true;
     } catch (error) {
       showToast(formatApplicationError(error, { locale }));
+      return false;
     } finally {
-      if (showVerificationReadiness) dialogs.setActiveInteractionPending(false);
+      if (!deferClose && showVerificationReadiness) dialogs.setActiveInteractionPending(false);
     }
   };
 
@@ -298,7 +302,8 @@ export function useLeadDetailReadController(props: LeadDetailPageProps, feature:
   ];
   const detailSections = [...getLeadDetailSections(locale), ...(customDetailFields.length > 0 ? [customSectionLabel] : [])];
 
-  const handleSaveEditFromForm = async (formData: Partial<Lead>) => {
+  const handleSaveEditFromForm = async (formData: Partial<Lead>, deferClose = false): Promise<boolean> => {
+    if (!canEdit || !dialogs.isCurrentInteraction()) return false;
     try {
       const { ownerId: _ownerId, ...editableData } = formData;
       const saved = await leadActions.replaceProfileFromForm(lead.id, {
@@ -308,14 +313,15 @@ export function useLeadDetailReadController(props: LeadDetailPageProps, feature:
         resourceVersion: lead.resourceVersion,
       });
       if (saved.activitiesAuthority === "LOCAL_COMPLETE") {
-        addTimelineActivity(
+        await addTimelineActivity(
           "system",
           locale === "vi" ? "Lead đã được cập nhật" : "Lead was updated",
           locale === "vi" ? "Thông tin chi tiết của tiềm năng vừa được cập nhật bởi nhân viên." : "Detail profile of the lead was updated by staff.",
         );
       }
-      setShowEditModal(false);
+      if (!deferClose) setShowEditModal(false);
       showToast(locale === "vi" ? "Lưu bản sửa đổi thành công!" : "Lead updated successfully");
+      return saved.id === lead.id;
     } catch (error: unknown) {
       // LeadForm owns recovery and dirty state. Do not refresh away the editing version.
       throw normalizeApplicationError(error);
@@ -323,12 +329,12 @@ export function useLeadDetailReadController(props: LeadDetailPageProps, feature:
   };
 
   // Disqualification handler
-  const handleConfirmDisqualify = async () => {
+  const handleConfirmDisqualify = async (deferClose = false): Promise<boolean> => {
     const target = dialogs.activeForm === "disqualify" ? dialogs.boundLead : undefined;
-    if (!target || !dialogs.isCurrentInteraction()) return;
+    if (!target || !canQualify || !dialogs.isCurrentInteraction()) return false;
     if (!disqualifyReasonText.trim()) {
-      showToast("Vui lòng nhập lý do cụ thể!");
-      return;
+      showToast(locale === "vi" ? "Vui lòng nhập lý do cụ thể!" : "Enter the reason details.");
+      return false;
     }
     const fullDesc = `Danh mục: ${disqualifyCategory} | Chi tiết: ${disqualifyReasonText.trim()}`;
     const activity: CRMActivity = {
@@ -341,14 +347,16 @@ export function useLeadDetailReadController(props: LeadDetailPageProps, feature:
     };
     // Lifecycle commands resolve the authoritative version at command time for
     // this bound ID. Profile editing retains its separate opening-version rule.
-    await leadActions.disqualify(target.id, {
+    const saved = await leadActions.disqualify(target.id, {
       reason: disqualifyReasonText.trim(),
       evidence: fullDesc,
       actorId: target.ownerId,
       activity,
     });
-    dialogs.resolveInteraction("disqualify");
+    if (saved.id !== target.id) return false;
+    if (!deferClose) dialogs.resolveInteraction("disqualify");
     showToast(locale === "vi" ? "Đã lưu trạng thái Không đủ điều kiện." : "Disqualified status saved.");
+    return true;
   };
 
   // Reopen disqualified Lead
@@ -375,8 +383,8 @@ export function useLeadDetailReadController(props: LeadDetailPageProps, feature:
   };
 
   // Handlers for right workspace forms submisson
-  const handleSavePhoneCall = async (draft: CallActivityDraft) => {
-    if (!ensureContactAllowed(LeadContactChannel.CALL)) return;
+  const handleSavePhoneCall = async (draft: CallActivityDraft, deferClose = false): Promise<boolean> => {
+    if (!ensureContactAllowed(LeadContactChannel.CALL) || draft.createFollowUpTask) return false;
     const resultLabels: Record<CallActivityDraft["result"], string> = {
       connected: locale === "vi" ? "Đã kết nối" : "Connected",
       no_answer: locale === "vi" ? "Không trả lời" : "No answer",
@@ -398,7 +406,7 @@ export function useLeadDetailReadController(props: LeadDetailPageProps, feature:
     const followUpOwnerId = lead.ownerId;
     if (draft.createFollowUpTask && !followUpOwnerId) {
       showToast(locale === "vi" ? "Lead chưa có người phụ trách để giao công việc." : "The Lead needs an owner before assigning a follow-up task.");
-      return;
+      return false;
     }
     const followUpDueAt = draft.createFollowUpTask && draft.nextFollowUpAt
       ? new Date(draft.nextFollowUpAt).toISOString()
@@ -436,12 +444,13 @@ export function useLeadDetailReadController(props: LeadDetailPageProps, feature:
         : failure);
       throw normalizeApplicationError(callReport.error);
     }
-    setShowCallModal(false);
-    setCallForm((current) => ({ ...current, title: "", desc: "" }));
+    if (!deferClose) setShowCallModal(false);
+    if (!deferClose) setCallForm((current) => ({ ...current, title: "", desc: "" }));
     showToast(locale === "vi" ? "Đã ghi nhận cuộc gọi." : "Call logged.");
+    return true;
   };
 
-  const handleSaveMeeting = async (draft: MeetingActivityDraft) => {
+  const handleSaveMeeting = async (draft: MeetingActivityDraft, deferClose = false): Promise<boolean> => {
     const fullDesc = [
       `${locale === "vi" ? "Hình thức" : "Channel"}: ${draft.channel}`,
       `${locale === "vi" ? "Thời gian" : "Time"}: ${draft.startAt}${draft.endAt ? ` - ${draft.endAt}` : ""}`,
@@ -450,35 +459,39 @@ export function useLeadDetailReadController(props: LeadDetailPageProps, feature:
       draft.agenda,
     ].filter(Boolean).join(" | ");
     await addTimelineActivity("meeting", `${locale === "vi" ? "Lịch hẹn" : "Meeting"}: ${draft.title}`, fullDesc);
-    setShowMeetingModal(false);
-    setMeetingForm((current) => ({ ...current, title: "", desc: "" }));
+    if (!deferClose) setShowMeetingModal(false);
+    if (!deferClose) setMeetingForm((current) => ({ ...current, title: "", desc: "" }));
     showToast(locale === "vi" ? "Đã lưu lịch hẹn." : "Meeting saved.");
+    return true;
   };
 
-  const handleLogExternalEmail = async (draft: EmailActivityDraft) => {
-    if (!ensureContactAllowed(LeadContactChannel.EMAIL)) return;
+  const handleLogExternalEmail = async (draft: EmailActivityDraft, deferClose = false): Promise<boolean> => {
+    if (!ensureContactAllowed(LeadContactChannel.EMAIL)) return false;
     await addTimelineActivity(
       "email",
       locale === "vi" ? `Email đã ghi nhận: ${draft.subject}` : `Email logged: ${draft.subject}`,
       `${locale === "vi" ? "Tới" : "To"}: ${draft.to} | ${locale === "vi" ? "Nội dung" : "Content"}: ${draft.body}${draft.attachProposal ? ` | ${locale === "vi" ? "Có tài liệu đính kèm" : "Attachment included"}` : ""}`,
     );
-    setShowEmailModal(false);
-    setEmailForm((current) => ({ ...current, subject: "", content: "" }));
+    if (!deferClose) setShowEmailModal(false);
+    if (!deferClose) setEmailForm((current) => ({ ...current, subject: "", content: "" }));
     showToast(locale === "vi" ? "Đã ghi nhận hoạt động Email." : "Email activity logged.");
+    return true;
   };
 
-  const handleLogExternalSms = async (draft: SmsActivityDraft) => {
-    if (!ensureContactAllowed(LeadContactChannel.SMS)) return;
+  const handleLogExternalSms = async (draft: SmsActivityDraft, deferClose = false): Promise<boolean> => {
+    if (!ensureContactAllowed(LeadContactChannel.SMS)) return false;
     await addTimelineActivity("sms", locale === "vi" ? "SMS đã ghi nhận" : "SMS logged", `${locale === "vi" ? "Tới số" : "To"}: ${draft.phone} | ${locale === "vi" ? "Nội dung" : "Content"}: ${draft.body}`);
-    setShowSmsModal(false);
-    setSmsForm((current) => ({ ...current, content: "" }));
+    if (!deferClose) setShowSmsModal(false);
+    if (!deferClose) setSmsForm((current) => ({ ...current, content: "" }));
     showToast(locale === "vi" ? "Đã ghi nhận hoạt động SMS." : "SMS activity logged.");
+    return true;
   };
 
-  const handleAddNoteFromComposer = async (draft: NoteActivityDraft) => {
+  const handleAddNoteFromComposer = async (draft: NoteActivityDraft, deferClose = false): Promise<boolean> => {
     await addTimelineActivity("note", draft.title, `[${draft.category}] ${draft.body}`);
-    setShowNoteForm(false);
+    if (!deferClose) setShowNoteForm(false);
     showToast(locale === "vi" ? "Ghi chú đã được lưu." : "Note saved.");
+    return true;
   };
 
   // Link addition handler
@@ -498,17 +511,17 @@ export function useLeadDetailReadController(props: LeadDetailPageProps, feature:
     ? careCases.filter((item) => item.relationshipRef && relationshipRefKey(item.relationshipRef) === relationshipRefKey(lead.relationshipRef!))
     : [];
 
-  const handleConfirmHandover = async (nextOwnerId: string, reason: string) => {
+  const handleConfirmHandover = async (nextOwnerId: string, reason: string, deferClose = false): Promise<boolean> => {
     const exactRetry = handover.isAmbiguousRetry({ nextOwnerId, reason });
-    if (!(canStartNewHandover || exactRetry) || (nextOwnerId === lead.ownerId && !exactRetry)) return;
+    if (!(canStartNewHandover || exactRetry) || (nextOwnerId === lead.ownerId && !exactRetry) || !reason.trim() || reason.trim().length > 1000) return false;
     const result = await handover.submit({ nextOwnerId, reason });
-    if (!result) return;
-    setShowHandoverModal(false);
-    setHandoverOwnerId("");
-    setHandoverReason("");
+    if (!result) return false;
+    if (!deferClose) setShowHandoverModal(false);
+    if (!deferClose) { setHandoverOwnerId(""); setHandoverReason(""); }
     showToast(locale === "vi"
       ? `Đã bàn giao, chuyển ${result.reassignedTaskIds.length} công việc. Hạn tiếp nhận: ${result.handoverTaskDueAt}.`
       : `Handover complete; moved ${result.reassignedTaskIds.length} tasks. Acceptance due: ${result.handoverTaskDueAt}.`);
+    return true;
   };
 
   const handleActivityQuickAction = (action: LeadQuickAction) => {

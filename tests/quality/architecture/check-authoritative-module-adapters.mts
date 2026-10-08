@@ -9,7 +9,7 @@ import { CONNECTED_MODULE_QUERY_RESPONSE_MAPPERS } from "../../../src/app/compos
 const requests: HttpRequest[] = [];
 const client: HttpClient = { async request<TResponse>(input: HttpRequest): Promise<TResponse> {
   requests.push(input);
-  if (input.operationId === "listContacts") return [] as TResponse;
+  if (input.operationId === "listContacts") return { items: [], pageInfo: { hasNextPage: false, totalCount: 0 }, followUpAvailable: true } as TResponse;
   if (input.operationId === "listLeads") return { items: [{ id: "lead-1", displayName: "Lead", source: "WEB", score: 80, leadWorkState: "NEW", qualificationOutcome: "PENDING", relationshipRef: { type: "CONTACT", id: "contact-1" }, ownerId: "user-1", interestedProducts: [], activityProjection: "NOT_INCLUDED", estimatedValue: { amount: "1000000.25", currency: "VND" }, tags: [], createdAt: "2026-07-25T00:00:00.000Z", updatedAt: "2026-07-25T00:00:00.000Z", version: 3 }], page: { limit: 50, hasMore: false } } as TResponse;
   if (input.operationId === "getOrder") return { id: "order-1", resourceVersion: 9 } as TResponse;
   if (input.operationId === "getInvoice") return { id: "inv-1", version: 2 } as TResponse;
@@ -26,7 +26,7 @@ for (const key of MODULE_DATA_AUTHORITY_KEYS) {
 const contacts = await registry.contacts.queries.list<{ id: string }>();
 assert.deepEqual(contacts.items, []);
 assert.equal(requests[0]?.operationId, "listContacts");
-await assert.rejects(registry.contacts.queries.list({ search: "linh" }), /Unsupported query parameters/u);
+await assert.rejects(registry.contacts.queries.list({ filters: { priority: "high" } }), /Unsupported query parameters/u);
 const leads = await registry.leads.queries.list<{ id: string; estimatedValue: { amount: string; currency: string }; resourceVersion: number }>();
 assert.equal(leads.items[0]?.estimatedValue.amount, "1000000.25");
 assert.equal(leads.items[0]?.resourceVersion, 3);

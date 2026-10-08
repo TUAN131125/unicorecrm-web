@@ -55,6 +55,13 @@ const PRESENTATION_COMPOSITIONS: Record<string, readonly string[]> = {
     "src/modules/leads/presentation/hooks/useLeadDetailController.tsx",
     "src/modules/leads/presentation/views/LeadDetailView.tsx",
   ],
+  "src/modules/leads/presentation/components/LeadDetailModals.tsx": [
+    "src/modules/leads/presentation/components/LeadCallActivityModal.tsx",
+    "src/modules/leads/presentation/components/LeadEmailActivityModal.tsx",
+  ],
+  "src/modules/tasks/presentation/components/ActivityCreateModals.tsx": [
+    "src/modules/tasks/presentation/hooks/useActivityDraftLifecycle.ts",
+  ],
   "src/modules/contacts/presentation/pages/ContactDetailPage.tsx": [
     "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
     "src/modules/contacts/presentation/views/ContactDetailView.tsx",

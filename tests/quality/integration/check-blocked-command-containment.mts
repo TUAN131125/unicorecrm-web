@@ -39,9 +39,11 @@ assert.equal(
 
 /** Any HTTP call at all means a refused command still reached transport. */
 let httpCalls = 0;
+const attemptedOperations: string[] = [];
 const connectedClient = {
   async request(input: { operationId: string }) {
     httpCalls += 1;
+    attemptedOperations.push(input.operationId);
     throw new Error(`BLOCKED_COMMAND_REACHED_TRANSPORT: ${input.operationId}`);
   },
 };
@@ -83,9 +85,9 @@ for (const commandType of routed) {
 // Connected boundaries refuse before the mutation authority.
 // ---------------------------------------------------------------------------
 
-const { archiveContactCommand, restoreContactCommand, anonymizeContactCommand, isContactRetentionUnavailable } =
+const { archiveContactCommand, restoreContactCommand, anonymizeContactCommand, isContactCreateAvailable, isContactUpdateAvailable, isContactArchiveAvailable, isContactRestoreAvailable, isContactAnonymizeAvailable, isContactBulkAvailable } =
   await import("../../../src/modules/contacts/public/contacts");
-const { archiveCustomerCommand, anonymizeCustomerCommand, isCustomerRetentionUnavailable } =
+const { archiveCustomerProductionCommand, anonymizeCustomerCommand, isCustomerRetentionUnavailable } =
   await import("../../../src/modules/customers/public/api");
 const { allocateReceivableCanonical, isReceivableAllocationUnavailable } =
   await import("../../../src/modules/invoices/public/api");
@@ -135,7 +137,6 @@ const refusals: [string, () => unknown][] = [
   ["contact.archive", () => archiveContactCommand("contact_1", { reason: "r", actorId: "u1" })],
   ["contact.restore", () => restoreContactCommand("contact_1", { reason: "r", actorId: "u1" })],
   ["contact.anonymize", () => anonymizeContactCommand("contact_1", { reason: "r", actorId: "u1" })],
-  ["customer.archive", () => archiveCustomerCommand("customer_1", { reason: "r", actorId: "u1" })],
   ["customer.anonymize", () => anonymizeCustomerCommand("customer_1", { reason: "r", actorId: "u1" })],
   ["organization.archive", () => archiveOrganizationAccountCommand("org_1", { reason: "r", actorId: "u1" })],
   ["organization.restore", () => restoreOrganizationAccountCommand("org_1", { reason: "r", actorId: "u1" })],
@@ -182,10 +183,24 @@ for (const [commandType, run] of refusals) {
 
 assert.equal(httpCalls, 0, "No refused command may reach transport.");
 
+assert.equal(registry.commands.find((command) => command.commandType === "customer.archive")?.status, "PRODUCTION_CONTRACT_READY");
+await assert.rejects(
+  () => archiveCustomerProductionCommand("customer_1", { expectedVersion: 1 }),
+  (error: Error) => { assert.ok(error instanceof Error); assert.equal(httpCalls, 1, `READY Customer archive was refused before transport: ${error.message}`); return true; },
+  "The READY Customer archive boundary must reach its canonical transport with an explicit resource version.",
+);
+assert.equal(httpCalls, 1, "Only the explicitly admitted Customer archive command may reach transport.");
+assert.deepEqual(attemptedOperations, ["archiveCustomer"], "The admitted boundary must dispatch precisely its registry operation.");
+
 // The presentation-facing preflight predicates must agree with the boundary refusal, so a
 // connected UI can disable the action instead of discovering the refusal by exception.
-assert.equal(isContactRetentionUnavailable(), true);
-assert.equal(isCustomerRetentionUnavailable(), true);
+assert.equal(isContactCreateAvailable(), true);
+assert.equal(isContactUpdateAvailable(), true);
+assert.equal(isContactArchiveAvailable(), true);
+assert.equal(isContactRestoreAvailable(), false);
+assert.equal(isContactAnonymizeAvailable(), false);
+assert.equal(isContactBulkAvailable(), false);
+assert.equal(isCustomerRetentionUnavailable(), false, "Customer archive is a routable READY command; anonymization remains independently refused above.");
 assert.equal(isReceivableAllocationUnavailable(), true);
 assert.equal(isPaymentIntentRefreshUnavailable(), true);
 assert.equal(isContactOrganizationRelationshipUnavailable(), true);
@@ -196,7 +211,7 @@ assert.equal(isContactOrganizationRelationshipUnavailable(), true);
 
 await initializeApplicationComposition({ mode: "demo" });
 
-assert.equal(isContactRetentionUnavailable(), false, "Demo mode must keep Contact retention available.");
+assert.equal(isContactArchiveAvailable(), true, "Demo mode must keep Contact archive available independently.");
 assert.equal(isCustomerRetentionUnavailable(), false, "Demo mode must keep Customer retention available.");
 assert.equal(isReceivableAllocationUnavailable(), false, "Demo mode must keep receivable allocation available.");
 assert.equal(isPaymentIntentRefreshUnavailable(), false, "Demo mode must keep intent refresh available.");

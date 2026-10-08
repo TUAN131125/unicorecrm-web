@@ -5,7 +5,7 @@ interface ContactSendSmsModalProps {
   targetId?: string;
   isOpen: boolean;
   onClose: () => void;
-  onSend: (sms: { phone: string; body: string }) => void | Promise<void>;
+  onSend: (sms: { phone: string; body: string }) => Promise<boolean>;
   prefilledPhone: string;
   isDoNotContact?: boolean;
 }
@@ -20,6 +20,7 @@ export const ContactSendSmsModal: React.FC<ContactSendSmsModalProps> = ({ target
     formId="contact-send-sms-form"
     defaults={{ phone: prefilledPhone }}
     contactPolicy={{ restricted: isDoNotContact }}
-    onSubmit={(draft: SmsActivityDraft) => onSend(draft)}
+    onSubmit={async () => {}}
+    onSave={(draft: SmsActivityDraft) => onSend(draft)}
   />
 );

@@ -5,6 +5,7 @@ import { Modal, Input, Textarea, Button } from "@/shared/components/ui";
 
 interface LeadFollowUpModalProps {
   isOpen: boolean;
+  onSave?: (data: { date: string; note: string }) => Promise<boolean>;
   onClose: () => void | Promise<unknown>;
   onConfirm: (data: {
     date: string;
@@ -16,6 +17,7 @@ export const LeadFollowUpModal: React.FC<LeadFollowUpModalProps> = ({
   isOpen,
   onClose,
   onConfirm,
+  onSave,
 }) => {
   const { t, locale } = useI18n();
 
@@ -32,8 +34,11 @@ export const LeadFollowUpModal: React.FC<LeadFollowUpModalProps> = ({
     }
   }, [isOpen]);
 
+  lifecycle.bindSave(async () => followUpDate && Number.isFinite(Date.parse(followUpDate)) && onSave
+    ? onSave({ date: followUpDate, note: followUpNote }) : false);
   const handleExecute = async () => {
     if (!followUpDate) return;
+    if (onSave) { await lifecycle.save(); return; }
     if (await lifecycle.run(() => onConfirm({ date: followUpDate, note: followUpNote }))) {
       setFollowUpDate(""); setFollowUpNote("");
     }

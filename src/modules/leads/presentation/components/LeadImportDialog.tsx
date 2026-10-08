@@ -98,16 +98,16 @@ export const LeadImportDialog: React.FC<LeadImportDialogProps> = ({
     }
   };
 
-  const commitWork = async () => {
+  const commitWork = async (deferClose = false): Promise<boolean> => {
     if (!plan || plan.invalidRowCount > 0 || isImporting) return false;
     setIsImporting(true);
     setError(null);
     try {
       const result = await importLeadCsvPlanViaApi(plan, { defaultOwnerId: openingOwner.current });
       if (!lifecycle.isCurrent()) return false;
-      reset();
+      if (!deferClose) { reset(); onClose(); }
       onImported(result.importedCount);
-      onClose();
+      return result.importedCount === plan.candidates.length;
     } catch (caught) {
       if (lifecycle.isCurrent()) setError(formatApplicationError(caught, { locale }));
       return false;
@@ -116,7 +116,8 @@ export const LeadImportDialog: React.FC<LeadImportDialogProps> = ({
     }
   };
 
-  const commit = () => lifecycle.run(commitWork);
+  lifecycle.bindSave(() => commitWork(true));
+  const commit = () => lifecycle.save();
 
   return (
     <>{lifecycle.confirmation}

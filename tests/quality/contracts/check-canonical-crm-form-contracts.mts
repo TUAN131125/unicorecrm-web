@@ -59,9 +59,11 @@ for (const [adapter, mode] of [
 
 const dealCanonicalPath = "src/modules/deals/presentation/components/DealFormModal.tsx";
 const dealCanonical = read(dealCanonicalPath);
+const dealModel = read("src/modules/deals/presentation/components/dealFormModel.ts");
+assertContains(dealCanonical, 'export type { DealFormMode,', "DealFormModal must preserve its public mode export.");
+assertContains(dealModel, 'export type DealFormMode = "create" | "edit"', "The Deal form model must retain create/edit modes.");
 for (const token of [
   "export function DealFormModal",
-  'export type DealFormMode = "create" | "edit"',
   'id={`deal-${mode}-form`}',
   'data-guidance-id="deals.form.canonical"',
   "mapSelectedPickerItemsToDealLineItems",

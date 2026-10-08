@@ -1,3 +1,5 @@
+import { LeadEmailActivityModal } from "./LeadEmailActivityModal";
+import { LeadCallActivityModal } from "./LeadCallActivityModal";
 import type { useLeadHandover } from "../hooks/useLeadHandover";
 import React from "react";
 import { RelationshipQuickActionModal } from "@/components/crm/relationship-panel/RelationshipQuickActionModal";
@@ -10,8 +12,6 @@ import type { useI18n } from "@/i18n";
 import type { Lead, LeadCampaign, LeadSource } from "../../domain/model/lead.types";
 import type { Product } from "@/modules/products";
 import {
-  CallActivityCreateModal,
-  EmailActivityCreateModal,
   MeetingActivityCreateModal,
   SmsActivityCreateModal,
   TaskCreateModal,
@@ -41,15 +41,15 @@ export interface LeadDetailModalScreen {
   showToast: (message: string) => void;
   navigate: NavigateFunction;
   leadActions: LeadActions;
-  handleConfirmDisqualify: () => void | Promise<void>;
-  handleSaveEditFromForm: (formData: Partial<Lead>) => void;
-  handleSavePhoneCall: (draft: CallActivityDraft) => void;
-  handleSaveMeeting: (draft: MeetingActivityDraft) => void;
-  handleLogExternalEmail: (draft: EmailActivityDraft) => void;
-  handleLogExternalSms: (draft: SmsActivityDraft) => void;
+  handleConfirmDisqualify: (deferClose?: boolean) => void | boolean | Promise<void | boolean>;
+  handleSaveEditFromForm: (formData: Partial<Lead>, deferClose?: boolean) => void | boolean | Promise<void | boolean>;
+  handleSavePhoneCall: (draft: CallActivityDraft, deferClose?: boolean) => void | boolean | Promise<void | boolean>;
+  handleSaveMeeting: (draft: MeetingActivityDraft, deferClose?: boolean) => void | boolean | Promise<void | boolean>;
+  handleLogExternalEmail: (draft: EmailActivityDraft, deferClose?: boolean) => void | boolean | Promise<void | boolean>;
+  handleLogExternalSms: (draft: SmsActivityDraft, deferClose?: boolean) => void | boolean | Promise<void | boolean>;
   members: Array<{ memberId: string; displayName: string }>;
   archiveListPath: string;
-  handleConfirmHandover: (ownerId: string, reason: string) => void | Promise<void>;
+  handleConfirmHandover: (ownerId: string, reason: string, deferClose?: boolean) => void | boolean | Promise<void | boolean>;
   handover: ReturnType<typeof useLeadHandover>;
   canHandover: boolean;
   handoverMembers: Array<{ memberId: string; displayName: string }>;
@@ -112,17 +112,15 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
   }, [dialogs.targetChangeRequested, showDisqualifyModal]);
   const submitDisqualify = async () => {
     if (disqualifyPending.current) return;
-    if (!dialogs.setActiveInteractionPending(true)) return;
     disqualifyPending.current = true;
     setDisqualifySubmitting(true);
     setDisqualifyError("");
     try {
-      await handleConfirmDisqualify();
+      await dialogs.saveActiveForm();
     } catch (failure) {
       if (dialogs.isCurrentInteraction()) setDisqualifyError(formatApplicationError(normalizeApplicationError(failure), { locale }));
     } finally {
       disqualifyPending.current = false;
-      dialogs.setActiveInteractionPending(false);
       setDisqualifySubmitting(false);
     }
   };
@@ -148,6 +146,21 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
     }
   }, [editUnsavedChanges.setIsConfirmOpen, editUnsavedChanges.setIsDirty, showEditModal]);
 
+  const saveTags = async (): Promise<boolean> => {
+    const tag = tagDraft.trim();
+    if (!tag || !dialogs.isCurrentInteraction()) return false;
+    const saved = await leadActions.update(lead.id, currentLead => ({ ...currentLead,
+      tags: [...new Set([...(currentLead.tags || []), tag])] }));
+    return saved.id === lead.id && Boolean(saved.tags?.includes(tag));
+  };
+  if (dialogs.activeForm === "disqualify") dialogs.bindSave(async () => (await handleConfirmDisqualify(true)) === true);
+  if (dialogs.activeForm === "handover") dialogs.bindSave(async () => (await handleConfirmHandover(handoverOwnerId, handoverReason.trim(), true)) === true);
+  if (dialogs.activeForm === "tags") dialogs.bindSave(saveTags);
+  if (dialogs.activeForm === "archive") dialogs.bindSave(async () => {
+    const saved = await leadActions.archive(lead.id);
+    return saved.id === lead.id && Boolean(saved.archivedAt);
+  });
+
   return (
     <>
       {/* CONFIRM MODAL: DISQUALIFICATION REASON */}
@@ -162,7 +175,7 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
             <Button onClick={requestDisqualifyClose} disabled={disqualifySubmitting} variant="secondary" size="sm">
               {locale === "vi" ? "Bỏ qua" : "Cancel"}
             </Button>
-            <Button onClick={submitDisqualify} disabled={disqualifySubmitting} loading={disqualifySubmitting} variant="danger" size="sm">
+            <Button onClick={submitDisqualify} disabled={disqualifySubmitting || dialogs.interactionPending} loading={disqualifySubmitting || dialogs.interactionPending} variant="danger" size="sm">
               {locale === "vi" ? "Xác nhận không đạt" : "Confirm disqualification"}
             </Button>
           </>
@@ -196,7 +209,7 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
             onChange={(event) => setDisqualifyReasonText(event.target.value)}
             placeholder={locale === "vi" ? "Cung cấp chi tiết ngắn để phục vụ báo cáo phễu..." : "Add a short explanation for funnel reporting..."}
           />
-          {disqualifyError && <p role="alert" className="text-xs text-rose-600">{disqualifyError}</p>}
+          {(disqualifyError || dialogs.saveError) && <p role="alert" className="text-xs text-rose-600">{disqualifyError || dialogs.saveError}</p>}
         </div>
       </Modal>
 
@@ -249,13 +262,13 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
         cancelLabel={t("common.cancel")}
         submitLabel={handover.ambiguous ? (locale === "vi" ? "Thử lại bàn giao" : "Retry handover") : (locale === "vi" ? "Bàn giao" : "Handover")}
         submitDisabled={!canHandover || handover.pending || handover.blocked || !handoverOwnerId || (handoverOwnerId === lead.ownerId && !handover.isAmbiguousRetry({ nextOwnerId: handoverOwnerId, reason: handoverReason })) || !handoverReason.trim() || handoverReason.trim().length > 1000}
-        onSubmit={(event) => {
+        onSubmit={async (event) => {
           event.preventDefault();
           if (!handoverOwnerId || !handoverReason.trim() || handoverReason.trim().length > 1000) {
             showToast(locale === "vi" ? "Hãy chọn người nhận và nhập lý do bàn giao." : "Select the new owner and enter a handover reason.");
             return;
           }
-          return handleConfirmHandover(handoverOwnerId, handoverReason.trim());
+          await dialogs.saveActiveForm();
         }}
       >
         <p className="mb-4 text-xs text-slate-500">{locale === "vi" ? "Máy chủ chuyển công việc Lead đang mở đủ điều kiện, tạo công việc tiếp nhận và xác định hạn tiếp nhận." : "The server transfers eligible open Lead tasks, creates an acceptance task, and determines the acceptance deadline."}</p>
@@ -283,6 +296,7 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
             ? "Chưa thể xác minh kết quả bàn giao vì quyền truy cập của bạn đã thay đổi. Yêu cầu gốc được giữ lại và có thể thử lại mà không tạo lần bàn giao mới."
             : "The Handover outcome cannot currently be verified because your access has changed. The original request is retained and can be retried without creating a new Handover."}</p>}
           {handover.blocked && <Button type="button" variant="secondary" onClick={() => { void handover.recover().catch((failure: unknown) => showToast(formatApplicationError(failure, { locale }))); }}>{locale === "vi" ? "Tải lại Lead để đối chiếu" : "Refresh Lead to reconcile"}</Button>}
+          {dialogs.saveError && <p role="alert" className="text-xs text-rose-600">{dialogs.saveError}</p>}
 
         </div>
       </RelationshipQuickActionModal>
@@ -314,18 +328,8 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
               variant="primary"
               size="sm"
               className="h-11 min-w-20"
-              disabled={!tagDraft.trim()}
-              onClick={() => {
-                const tag = tagDraft.trim();
-                if (!tag) return;
-                leadActions.update(lead.id, (currentLead) => ({
-                  ...currentLead,
-                  tags: [...new Set([...(currentLead.tags || []), tag])],
-                  updatedAt: new Date().toISOString(),
-                }));
-                setTagDraft("");
-                showToast(locale === "vi" ? `Đã gắn nhãn “${tag}”.` : `Applied tag “${tag}”.`);
-              }}
+              disabled={!tagDraft.trim() || dialogs.interactionPending}
+              onClick={() => { void dialogs.saveActiveForm(); }}
             >
               {locale === "vi" ? "Thêm" : "Add"}
             </Button>
@@ -389,6 +393,9 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
             try { await handleSaveEditFromForm(draft); }
             finally { editPending.current = false; dialogs.setEditSubmitting(false); }
           }}
+          onSave={async (draft) => (await handleSaveEditFromForm(draft, true)) === true}
+          onBindSave={showEditModal ? dialogs.bindSave : undefined}
+          onSubmittingChange={dialogs.setEditSubmitting}
           onCancel={requestEditClose}
           onDirtyChange={reportEditDirty}
           isEdit={true}
@@ -411,27 +418,15 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
       />
 
       {/* CUỘC GỌI MODAL */}
-      <CallActivityCreateModal
-        guardChanges
-        isOpen={showCallModal}
-        onClose={() => setShowCallModal(false)}
-        formId="lead-quick-call-form"
-        defaults={{
-          subject: callForm.title,
-          recipient: callForm.phone || lead.phone || "",
-          direction: callForm.callType === "Inbound" ? "inbound" : "outbound",
-          result: callForm.status === "Hoàn thành" ? "connected" : "callback",
-          occurredAt: `${callForm.startDate}T${callForm.startTime}`,
-          durationMinutes: Number(callForm.duration) || 10,
-          body: [callForm.callResult, callForm.desc].filter(Boolean).join(" — "),
-        }}
-        onSubmit={handleSavePhoneCall}
-      />
+      <LeadCallActivityModal dialogs={dialogs} lead={lead} handleSavePhoneCall={handleSavePhoneCall} />
 
       {/* NHIỆM VỤ MODAL */}
       <TaskCreateModal
         guardChanges
         isOpen={showTaskModal}
+        targetId={lead.id}
+        onBindSave={showTaskModal ? dialogs.bindSave : undefined}
+        onPendingChange={showTaskModal ? dialogs.setActiveInteractionPending : undefined}
         onClose={() => setShowTaskModal(false)}
         context={{
           relationshipRef: lead.relationshipRef,
@@ -464,21 +459,16 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
           owner: meetingForm.performer,
           agenda: meetingForm.desc,
         }}
-        onSubmit={handleSaveMeeting}
+        targetId={lead.id}
+        recordingOnly
+        onSave={async (draft) => (await handleSaveMeeting(draft, true)) === true}
+        onBindSave={showMeetingModal ? dialogs.bindSave : undefined}
+        onPendingChange={showMeetingModal ? dialogs.setActiveInteractionPending : undefined}
+        onSubmit={async (draft) => { await handleSaveMeeting(draft); }}
       />
 
       {/* EMAIL MODAL */}
-      <EmailActivityCreateModal
-        guardChanges
-        titleOverride={locale === "vi" ? "Ghi nhận Email ngoài CRM" : "Log external Email"}
-        submitLabelOverride={locale === "vi" ? "Lưu hoạt động" : "Save activity"}
-        helperTextOverride={locale === "vi" ? "Chỉ dùng khi Email đã được gửi hoặc nhận ngoài UniCoreCRM." : "Use only for Email already sent or received outside UniCoreCRM."}
-        isOpen={showEmailModal}
-        onClose={() => setShowEmailModal(false)}
-        formId="lead-quick-email-form"
-        defaults={{ to: emailForm.to || lead.email || "", subject: emailForm.subject, body: emailForm.content }}
-        onSubmit={handleLogExternalEmail}
-      />
+      <LeadEmailActivityModal dialogs={dialogs} lead={lead} locale={locale} handleLogExternalEmail={handleLogExternalEmail} />
 
       {/* SMS MODAL */}
       <SmsActivityCreateModal
@@ -490,7 +480,12 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
         onClose={() => setShowSmsModal(false)}
         formId="lead-quick-sms-form"
         defaults={{ phone: smsForm.to || lead.phone || "", body: smsForm.content }}
-        onSubmit={handleLogExternalSms}
+        targetId={lead.id}
+        recordingOnly
+        onSave={async (draft) => (await handleLogExternalSms(draft, true)) === true}
+        onBindSave={showSmsModal ? dialogs.bindSave : undefined}
+        onPendingChange={showSmsModal ? dialogs.setActiveInteractionPending : undefined}
+        onSubmit={async (draft) => { await handleLogExternalSms(draft); }}
       />
     </>
   );

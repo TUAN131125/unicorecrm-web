@@ -46,12 +46,14 @@ export function LeadOwnerAssignDialog({ lead: currentLead, onAssigned, refresh, 
   const command = useLeadOwnerAssign(lead, onAssigned, refresh);
   const lifecycle = useLeadAuxiliaryLifecycle(isOpen, `owner-assign:${lead.id}`, Boolean(ownerId || reason.trim()),
     () => { if (!command.ambiguous) { setOwnerId(""); setReason(""); } }, onClose, command.pending, currentLead.id);
+  lifecycle.bindSave(async () => canSubmit && !command.blocked && Boolean(ownerId && reason.trim())
+    ? command.submit(ownerId, reason) : false);
   const tasks = useAuthoritativeResource(getScopedTaskCollectionResource({ filters: { recordModuleKey: "leads", recordId: lead.id } }), { enabled: isOpen });
   const hasOpenTasks = tasks.state === "READY" && tasks.data?.items.some((task) => task.status === "OPEN" && !task.archivedAt);
   const currentOwner = ownership?.visibleOwners.find((owner) => owner.memberId === command.observed.ownerId)?.displayName
     ?? (command.observed.ownerId ? text("Chưa xác định", "Unknown") : text("Chưa phân công", "Unassigned"));
   return <>{lifecycle.confirmation}<Modal variant="form" size="sm" isOpen={isOpen} onClose={() => { if (!command.pending) lifecycle.requestClose(); }} title={text("Phân công Lead", "Assign Lead owner")}>
-    <form className="space-y-4" onSubmit={async (event) => { event.preventDefault(); if (!canSubmit) return; if (await lifecycle.run(() => command.submit(ownerId, reason))) { setOwnerId(""); setReason(""); onClose(); } }}>
+    <form className="space-y-4" onSubmit={async (event) => { event.preventDefault(); if (!canSubmit) return; await lifecycle.save(); }}>
       <p className="text-sm">{text("Phụ trách hiện tại", "Current owner")}: {currentOwner}</p>
       <p role="status" className="text-sm text-slate-600">{text(
         "Phân công chỉ thay đổi người phụ trách Lead. Công việc hiện có không được chuyển sang người mới.",

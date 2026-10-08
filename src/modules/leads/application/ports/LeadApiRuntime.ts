@@ -274,7 +274,10 @@ export interface LeadIdentityResolutionMutationResult {
 export type MergeLeadDuplicatesResult = LeadIdentityResolutionMutationResult;
 export type ConfirmLeadDuplicatesDistinctResult = LeadIdentityResolutionMutationResult;
 
+export type LeadKanbanColumn = "NEW" | "CONTACTING" | "VERIFYING" | "POSITIVE_OUTCOME" | "NURTURE" | "DISQUALIFIED";
+
 export interface LeadQueryPort {
+  kanbanColumn?(column: LeadKanbanColumn, query?: LeadListQuery, signal?: AbortSignal): Promise<AuthoritativePage<Lead>>;
   list(query?: LeadListQuery, signal?: AbortSignal): Promise<AuthoritativePage<Lead>>;
   get(leadId: string, signal?: AbortSignal): Promise<Lead>;
 }

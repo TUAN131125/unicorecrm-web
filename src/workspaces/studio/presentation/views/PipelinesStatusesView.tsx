@@ -197,7 +197,7 @@ export function PipelinesStatusesView() {
       <StudioMetricsGrid>
         <StudioMetricCard label={text("Pipeline hoạt động", "Active pipelines")} value={`${activePipelines.length}/${draft.length}`} description={text("Dùng cho tạo mới và phân loại cơ hội.", "Available to new opportunities and routing.")} icon={<Workflow size={17} />} tone="violet" />
         <StudioMetricCard label={text("Giai đoạn đang mở", "Open stages")} value={allStages.filter((stage) => stage.isActive && stage.category === "open").length} description={text("Được dùng trên Kanban và dự báo.", "Used by Kanban and forecasting.")} icon={<CircleDot size={17} />} />
-        <StudioMetricCard label={text("Điểm kết thúc", "Closing outcomes")} value={allStages.filter((stage) => stage.isActive && stage.category !== "open").length} description={text("Bao gồm thắng và thất bại.", "Includes won and lost outcomes.")} icon={<Flag size={17} />} tone="success" />
+        <StudioMetricCard label={text("Điểm kết thúc", "Closing outcomes")} value={allStages.filter((stage) => stage.isActive && stage.category !== "open").length} icon={<Flag size={17} />} tone="success" />
         <StudioMetricCard label={text("Kiểm tra cấu hình", "Configuration check")} value={validationIssues.length === 0 ? text("Sẵn sàng", "Ready") : validationIssues.length} description={validationIssues.length === 0 ? text("Không phát hiện thiếu sót vòng đời.", "No lifecycle gaps detected.") : text("Cần xử lý trước khi lưu.", "Items must be resolved before saving.")} icon={validationIssues.length === 0 ? <CheckCircle2 size={17} /> : <Target size={17} />} tone={validationIssues.length === 0 ? "success" : "warning"} />
       </StudioMetricsGrid>
 

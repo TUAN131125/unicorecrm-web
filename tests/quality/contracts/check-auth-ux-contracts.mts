@@ -79,7 +79,9 @@ assert.ok(authShell.includes('overflow-visible py-[0.08em]') && authShell.includ
 assert.ok(authShell.includes('data-auth-page-title="true"') && authShell.includes('leading-[1.18]'), "Every auth page title must use the safe title rhythm");
 assert.ok(authShell.includes('backgroundPosition') && authShell.includes('useReducedMotion'), "Auth headline motion must be subtle and reduced-motion safe");
 for (const file of walkAllFiles(path.join(root, "src/features/auth/pages")).filter((candidate) => /\.tsx$/.test(candidate))) {
-  const content = fs.readFileSync(file, "utf8");
+  // Developer comments about provisioning authority are not displayed auth copy.
+  // Keep all executable/JSX content under the existing presentation constraints.
+  const content = fs.readFileSync(file, "utf8").replace(/^\s*\/\/[^\r\n]*/gm, "");
   for (const forbidden of ["subtitle=", "eyebrow=", "AuthGateway", "backend", "production", "font-black", "font-extrabold"]) {
     assert.equal(content.includes(forbidden), false, `${path.relative(root, file)} must keep auth copy minimal and implementation-neutral: ${forbidden}`);
   }

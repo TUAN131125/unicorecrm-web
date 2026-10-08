@@ -37,6 +37,7 @@ const { InMemoryTaskActivityRepository } = await import("@/modules/tasks/infrast
 const { createTaskConnectedApiRuntime } = await import("@/modules/tasks/infrastructure/http/createTaskConnectedApiRuntime");
 const shared = await import("@/shared/application");
 const { ApplicationError } = await import("@/shared/domain");
+const { saveDirtyUnsavedWork, getDirtyUnsavedWork } = await import("@/platform/unsaved-work");
 const { useLeadDetailController } = await import("@/modules/leads/presentation/hooks/useLeadDetailController");
 const { LeadDetailView } = await import("@/modules/leads/presentation/views/LeadDetailView");
 const leads = await import("@/modules/leads");
@@ -120,6 +121,7 @@ const submit = async () => { const form = document.querySelector('[role="dialog"
 const close = async () => document.querySelector('[data-surface="drawer"]') ? click("Đóng bảng điều khiển", drawer()) : click("Đóng hộp thoại", modal());
 const rail = () => { const element = rootElement.querySelector("aside"); assert.ok(element); return element; };
 const settle = async () => { await act(async () => { await new Promise(resolve => setTimeout(resolve, 80)); }); };
+const globalSave = async (expected: boolean) => { await act(async () => assert.equal(await saveDirtyUnsavedWork(), expected)); };
 try {
   await render(); await settle();
   assert.equal(current().canHandover, false);
@@ -134,7 +136,7 @@ try {
   assert.equal(requests.length, beforeOpen, "Opening Edit adds no unrelated HTTP");
   await change("#lead-name", "Retained surface draft");
   for (const code of ["VERSION_CONFLICT", "SAVE_FAILED"]) {
-    failureCode = code; await submit();
+    failureCode = code; await globalSave(false);
     assert.equal(document.querySelector<HTMLInputElement>("#lead-name")?.value, "Retained surface draft");
     assert.ok(drawer().querySelector("#lead-form-error-summary")?.textContent);
     assert.doesNotMatch(drawer().textContent ?? "", /private server diagnostics/);
@@ -143,7 +145,7 @@ try {
     await click("Tiếp tục chỉnh sửa"); assert.ok(drawer());
   }
   await close(); await click("Bỏ thay đổi"); assert.equal(document.querySelector('[data-surface="drawer"]'), null);
-  await act(async () => { const button = document.querySelector<HTMLButtonElement>("#edit-direct-btn"); assert.ok(button); button.click(); }); await settle(); await change("#lead-name", "Saved surface draft"); failureCode = null; await submit();
+  await act(async () => { const button = document.querySelector<HTMLButtonElement>("#edit-direct-btn"); assert.ok(button); button.click(); }); await settle(); await change("#lead-name", "Saved surface draft"); failureCode = null; await globalSave(true);
   assert.equal(document.querySelector('[data-surface="drawer"]'), null, "Successful edit closes Drawer");
   await click("Thêm công việc", rail()); assert.match(modal().textContent ?? "", /Tạo công việc/);
   await act(async () => current().handleActivityQuickAction("email"));
@@ -152,17 +154,20 @@ try {
   assert.ok(modal().querySelector('[data-floating-overlay="menu"]'), "Picker portal belongs to the Modal focus/layer scope");
   await act(async () => window.dispatchEvent(new window.KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
   assert.equal(modal().querySelector('[data-floating-overlay="menu"]'), null, "Escape dismisses picker before Modal");
-  await change("#task-create-title", "Surface task"); await submit();
+  await change("#task-create-title", "Surface task"); await globalSave(true);
   assert.equal(document.querySelector('[data-surface="drawer"]'), null);
   const createRequest = requests.find(item => item.operationId === "createTask"); assert.ok(createRequest);
   assert.deepEqual((createRequest.body as { recordRef: unknown }).recordRef, { moduleKey: "leads", recordId: lead.id, label: lead.name });
-  await click("Ghi nhận cuộc gọi", rail()); assert.match(modal().textContent ?? "", /Ghi nhận cuộc gọi/); await close();
+  await click("Ghi nhận cuộc gọi", rail()); assert.match(modal().textContent ?? "", /Ghi nhận cuộc gọi/);
+  await change("#lead-quick-call-form input", "Recorded call"); await globalSave(true); assert.equal(activities.at(-1)?.type, "CALL");
   await click("Ghi nhận Email ngoài CRM", rail());
   assert.match(modal().textContent ?? "", /Ghi nhận Email ngoài CRM/); assert.match(modal().textContent ?? "", /Lưu hoạt động/);
   assert.doesNotMatch(modal().textContent ?? "", /Gửi Email|Soạn.*Email/);
   await change('#lead-quick-email-form input:not([type="email"])', "External email");
   await change("#lead-quick-email-form textarea", "Already sent outside CRM");
-  rejectActivity = true; await submit(); assert.ok(modal().querySelector('[role="alert"]'));
+  rejectActivity = true; const rejectedBefore = requests.filter(item => item.operationId === "logActivity").length; await globalSave(false);
+  assert.equal(requests.filter(item => item.operationId === "logActivity").length, rejectedBefore + 1, "Global email Save must reach the command");
+  assert.ok(modal().querySelector('[role="alert"]'));
   assert.doesNotMatch(modal().textContent ?? "", /private diagnostics/);
   await close(); await click("Tiếp tục chỉnh sửa"); rejectActivity = false;
   holdActivity = true;
@@ -175,22 +180,24 @@ try {
   await click("Thao tác khác", rail()); assert.ok(document.querySelector('[role="menu"]'));
   await click("Đặt lịch hẹn", document.querySelector('[role="menu"]') ?? document);
   assert.equal(document.querySelector('[role="menu"]'), null); assert.match(modal().textContent ?? "", /Ghi nhận lịch hẹn/);
-  await change("#lead-quick-meeting-form input", "Surface meeting"); await submit(); assert.equal(activities.at(-1)?.type, "MEETING");
+  await change("#lead-quick-meeting-form input", "Surface meeting"); await globalSave(true); assert.equal(activities.at(-1)?.type, "MEETING");
   await click("Thao tác khác", rail()); await click("Ghi nhận SMS ngoài CRM", document.querySelector('[role="menu"]') ?? document);
   assert.match(modal().textContent ?? "", /Ghi nhận SMS ngoài CRM/); assert.doesNotMatch(modal().textContent ?? "", /Gửi tin nhắn/);
-  await change("#lead-quick-sms-form textarea", "External SMS"); await submit(); assert.equal(activities.at(-1)?.type, "SYSTEM");
+  await change("#lead-quick-sms-form textarea", "External SMS"); await globalSave(true); assert.equal(activities.at(-1)?.type, "SYSTEM");
   await act(async () => { const button = document.querySelector<HTMLButtonElement>("#header-more-actions-btn"); assert.ok(button); button.click(); }); await click("Lưu trữ Lead", document.querySelector('[role="menu"]') ?? document);
   assert.equal(document.querySelector('[data-surface="drawer"]'), null); assert.ok(document.querySelector('[data-dialog-variant="form"]'));
   await act(async () => current().setShowArchiveConfirm(false));
   shared.resetBusinessOperationAvailability(); await render("handover"); await settle();
   assert.equal(current().canHandover, true); await click("Bàn giao", rail()); assert.match(modal().textContent ?? "", /Bàn giao Lead & công việc/);
-  assert.match(modal().textContent ?? "", /Các công việc đang mở liên kết với Lead/);
+  assert.match(modal().textContent ?? "", /Máy chủ chuyển công việc Lead đang mở đủ điều kiện, tạo công việc tiếp nhận và xác định hạn tiếp nhận./);
   const owner = modal().querySelector("select"); assert.ok(owner);
-  const nextOwner = [...owner.options].find(option => option.value !== lead.ownerId); assert.ok(nextOwner);
+  const nextOwner = [...owner.options].find(option => Boolean(option.value) && option.value !== lead.ownerId); assert.ok(nextOwner);
   await act(async () => { owner.value = nextOwner.value; owner.dispatchEvent(new window.Event("change", { bubbles: true })); });
   await change("#lead-handover-form textarea", "Retain handover reason");
-  current().leadActions.handover = async () => { throw new ApplicationError({ code: "SAVE_FAILED", message: "private handover diagnostics", category: "CONFLICT", retryable: false }); };
+  const handoverServices = getLeadApplicationServices();
+  configureLeadApplication({ ...handoverServices, api: { ...handoverServices.api, commands: { ...handoverServices.api.commands, async handoverLeadWithTasks() { throw new ApplicationError({ code: "SAVE_FAILED", message: "private handover diagnostics", category: "CONFLICT", retryable: false }); } } } });
   await submit(); assert.ok(modal().querySelector('[role="alert"]'));
+  await globalSave(false); assert.ok(modal());
   assert.equal(modal().querySelector("textarea")?.value, "Retain handover reason");
   assert.equal(modal().querySelector("select")?.value, nextOwner.value);
   assert.doesNotMatch(modal().textContent ?? "", /private handover diagnostics/);
@@ -214,9 +221,11 @@ try {
   const tags = document.querySelector<HTMLElement>('[data-floating-overlay="menu"][role="dialog"]'); assert.ok(tags, "Tags use anchored portal");
   assert.equal(document.querySelector('[data-dialog-variant="form"]'), null); assert.equal(document.querySelector('[data-surface="drawer"]'), null);
   assert.match(tags.textContent ?? "", /Nhãn mới|VIP/); assert.ok(tags.querySelector('[aria-label="Gỡ nhãn VIP"]'));
-  await change('[data-floating-overlay="menu"][role="dialog"] input', "Hot"); await click("Thêm", tags); await settle();
+  await change('[data-floating-overlay="menu"][role="dialog"] input', "Hot"); await globalSave(true); await settle();
   assert.ok(lead.tags?.includes("Hot"));
-  await click("Gỡ nhãn Hot", tags); await settle(); assert.equal(lead.tags?.includes("Hot"), false);
+  await act(async () => current().dialogs.setShowTagsModal(true));
+  const reopenedTags = document.querySelector<HTMLElement>('[data-floating-overlay="menu"][role="dialog"]'); assert.ok(reopenedTags);
+  await click("Gỡ nhãn Hot", reopenedTags); await settle(); assert.equal(lead.tags?.includes("Hot"), false);
   await act(async () => window.dispatchEvent(new window.KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
   assert.equal(document.querySelector('[data-floating-overlay="menu"][role="dialog"]'), null);
   lead = { ...lead, leadWorkState: "VERIFYING" }; await render("qualify"); await settle();
@@ -230,6 +239,7 @@ try {
   assert.equal(unassignedOwner.disabled, true);
   assert.match(drawer().textContent ?? "", /Chưa phân công/);
   await close();
+  assert.equal(getDirtyUnsavedWork().length, 0);
   // Shared consumers keep centered defaults unless they explicitly opt in.
   await act(async () => root.render(React.createElement(I18nProvider, null,
     React.createElement(tasks.EmailActivityCreateModal, { isOpen: true, onClose() {}, onSubmit() {} }))));

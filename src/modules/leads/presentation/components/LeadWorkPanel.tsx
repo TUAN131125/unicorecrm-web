@@ -100,7 +100,7 @@ export function LeadWorkPanel({ lead, locale, isVisible, workResources, ownerNam
             {overdueTasks.slice(0, 2).map((task) => (
               <button key={task.id} type="button" onClick={onOpenWork} title={task.title} className="flex w-full items-start gap-2 rounded-lg px-1 py-1.5 text-left hover:bg-slate-50">
                 <AlertCircle size={13} className="mt-0.5 shrink-0 text-amber-600" />
-                <span className="min-w-0"><span className="block truncate text-xs font-semibold text-slate-700">{task.title}</span><span className="block text-[10px] text-slate-400">{dateLabel(task.dueAt)}</span></span>
+                <span className="min-w-0"><span className="block break-words text-xs font-semibold text-slate-700 [overflow-wrap:anywhere]">{task.title}</span><span className="block text-[10px] text-slate-400">{dateLabel(task.dueAt)}</span></span>
               </button>
             ))}
             {overdueTasks.length > 2 && <button type="button" onClick={onOpenWork} className="text-[11px] font-semibold text-indigo-600 hover:underline">{text("Xem tất cả", "View all")}</button>}
@@ -113,9 +113,9 @@ export function LeadWorkPanel({ lead, locale, isVisible, workResources, ownerNam
         <h5 className={sectionTitle}>{text("Việc tiếp theo", "Next work")}</h5>
         {hasData && (nextTask ? (
           <div className="space-y-2 rounded-xl border border-indigo-100 bg-indigo-50/30 p-3">
-            <button type="button" onClick={() => onOpenTask(nextTask)} title={nextTask.title} className="line-clamp-2 w-full break-words text-left text-xs font-bold text-slate-800 hover:text-indigo-700">{nextTask.title}</button>
+            <button type="button" onClick={() => onOpenTask(nextTask)} title={nextTask.title} className="w-full break-words text-left text-xs font-bold text-slate-800 hover:text-indigo-700 [overflow-wrap:anywhere]">{nextTask.title}</button>
             <p className="text-[10px] text-slate-500">{dateLabel(nextTask.dueAt)} · {text("Ưu tiên", "Priority")}: {nextTask.priority === "URGENT" ? text("Khẩn cấp", "Urgent") : nextTask.priority === "HIGH" ? text("Cao", "High") : nextTask.priority === "LOW" ? text("Thấp", "Low") : text("Bình thường", "Normal")}</p>
-            {nextTask.description && <p className="line-clamp-2 break-words text-[11px] text-slate-500">{nextTask.description}</p>}
+            {nextTask.description && <p className="break-words text-[11px] text-slate-500 [overflow-wrap:anywhere]">{nextTask.description}</p>}
             <Button size="xs" onClick={() => onOpenTask(nextTask)}>{text("Mở công việc", "Open task")}</Button>
           </div>
         ) : (
@@ -126,7 +126,7 @@ export function LeadWorkPanel({ lead, locale, isVisible, workResources, ownerNam
         <h5 className={sectionTitle}>{text("Phụ trách", "Owner")}</h5>
         <div className="flex items-center gap-2">
           <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-indigo-50 text-xs font-bold text-indigo-600">{ownerName && ownerName !== "—" ? ownerName.trim().split(/\s+/).slice(-2).map((part) => part[0]).join("") : "?"}</span>
-          <span className="min-w-0 flex-1 truncate text-xs font-semibold text-slate-700" title={owner}>{owner}</span>
+          <span className="min-w-0 flex-1 break-words text-xs font-semibold text-slate-700 [overflow-wrap:anywhere]" title={owner}>{owner}</span>
           <LeadOwnerAssignAction lead={lead} onAssigned={onAssigned} />
           {canHandover && <Button size="xs" onClick={onHandover}>{text("Bàn giao", "Handover")}</Button>}
         </div>
@@ -135,7 +135,7 @@ export function LeadWorkPanel({ lead, locale, isVisible, workResources, ownerNam
         <button type="button" aria-expanded={contextOpen} onClick={() => setContextOpen((open) => !open)} className={`${sectionTitle} w-full justify-between`}>
           {text("Ngữ cảnh nhanh", "Quick context")}<ChevronDown size={13} className={contextOpen ? "rotate-180" : ""} />
         </button>
-        {contextOpen && <dl className="space-y-2">{contextRows.map(([label, value]) => <div key={label} className="text-[11px]"><dt className="text-slate-400">{label}</dt><dd className="truncate font-medium text-slate-700" title={value}>{value}</dd></div>)}</dl>}
+        {contextOpen && <dl className="space-y-2">{contextRows.map(([label, value]) => <div key={label} className="text-[11px]"><dt className="text-slate-400">{label}</dt><dd className="break-words font-medium text-slate-700 [overflow-wrap:anywhere]" title={value}>{value}</dd></div>)}</dl>}
       </section>
     </RelationshipWorkPanelShell>
   );

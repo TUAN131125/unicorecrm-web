@@ -2,6 +2,7 @@ import { repositoryRoot } from "../../../scripts/quality/core/repo-context.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { STUDIO_SECTIONS } from "../../../src/workspaces/studio/navigation/studioSectionRegistry";
 
 const root = repositoryRoot;
 const routeFiles = [
@@ -37,7 +38,8 @@ for (const relativePath of routeFiles) {
 assert.ok(definitions.length >= 60, "All canonical lazy route modules must be included in the load audit");
 assert.equal(new Set(definitions.map((definition) => definition.routeId)).size, definitions.length, "Lazy route IDs must be unique");
 const studioDefinitions = definitions.filter((definition) => definition.routeFile.endsWith("studioWorkspaceRoutes.tsx"));
-assert.equal(studioDefinitions.length, 12, "Studio load audit must include eleven section screens plus the Studio index route");
+assert.equal(studioDefinitions.length, STUDIO_SECTIONS.length + 1, "Studio load audit must include every registered section screen plus the Studio index route");
+assert.ok(studioDefinitions.some(definition => definition.routeId === "StudioIndexRoute"));
 
 for (const definition of definitions) {
   let timeoutHandle: ReturnType<typeof setTimeout> | undefined;

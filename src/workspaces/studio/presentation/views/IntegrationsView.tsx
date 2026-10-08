@@ -245,7 +245,7 @@ export function IntegrationsView() {
 
 
   return (
-    <StudioPageFrame title={text("Tích hợp", "Integrations")} description={text("Quản lý nhà cung cấp, thông tin kết nối và trạng thái sẵn sàng của các tích hợp.", "Manage providers, connection details, and integration readiness.")} locale={locale} revision={source.revision}>
+    <StudioPageFrame title={text("Tích hợp", "Integrations")} locale={locale} revision={source.revision}>
       {content}
     </StudioPageFrame>
   );

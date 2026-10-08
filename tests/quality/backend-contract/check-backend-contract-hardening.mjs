@@ -7,7 +7,11 @@ import { walkAllFiles } from "../../../scripts/quality/core/filesystem.mjs";
 const root = repositoryRoot;
 const gate = process.argv[2];
 const read = (p) => fs.readFileSync(path.join(root, p), "utf8");
-const json = (p) => JSON.parse(read(p));
+const json = (p) => {
+  const value = JSON.parse(read(p));
+  if (p.startsWith("tests/fixtures/backend-contract/") && p.endsWith("/provider-scenarios.json")) assertProviderPack(value, p);
+  return value;
+};
 const exists = (p) => fs.existsSync(path.join(root, p));
 const assert = (condition, message) => { if (!condition) throw new Error(message); };
 const spec = json("docs/api/openapi.json");
@@ -28,6 +32,159 @@ const requestSchemaName = (op) => derefName(op.requestBody?.content?.["applicati
 const responseSchemaName = (op) => derefName(successResponse(op)?.[1]?.content?.["application/json"]?.schema?.$ref);
 const readyNonGetOperations = operations.filter((op) => op["x-contract-status"] === "PRODUCTION_CONTRACT_READY" && op.method !== "GET");
 const readyMutations = readyNonGetOperations.filter((op) => !String(op["x-transaction-boundary"] ?? "").startsWith("READ_ONLY"));
+
+// These producers return their own typed documents, not the shared command envelope.
+// An absent aggregate policy is permitted only for these explicit operation/schema pairs.
+const typedProducerResponses = new Map([
+  ...["createOutboundWebhookSubscription", "updateOutboundWebhookSubscription", "activateOutboundWebhookSubscription", "pauseOutboundWebhookSubscription", "resumeOutboundWebhookSubscription", "archiveOutboundWebhookSubscription", "rotateOutboundWebhookSecret"].map((id) => [id, "OutboundWebhookMutationResponse"]),
+  ["replayOutboundWebhookDelivery", "OutboundWebhookDelivery"],
+  ...["saveAiConfiguration", "setAiCredential", "activateAiConfiguration", "disableAiConfiguration"].map((id) => [id, "AiConfigurationMutationResponse"]),
+  ["testAiConfiguration", "AiConfigurationTestResponse"],
+  ["requestAiAdvisory", "AiAdvisoryResponse"],
+]);
+const historicalContractVersion = "0.23.20-contract.0";
+// Each entry pins the checked-in historical pack, independently of the live spec.
+const historicalProviderVersions = new Map([
+  "accepted-quote-order-conversion", "access-governance", "commercial-credit-approval", "commercial-read-models", "deal-core", "direct-order-draft", "financial-operations-core", "identity-auth", "invoice-draft", "lead-completion", "lead-lifecycle", "lead-qualification", "payment-ledger", "payment-plan-intent", "product-order-core", "query-authority", "quote-core", "refund-recovery", "relationship-domain-query", "return-refund-saga", "shipping-returns-core", "studio-core", "support-core", "task-core", "transaction-semantics", "workspace-bootstrap",
+].map((name) => [name, "0.23.20-contract.0"]));
+const historicalProviderScenarioCounts = new Map([
+  ["accepted-quote-order-conversion", 8], ["access-governance", 46], ["commercial-credit-approval", 10], ["commercial-read-models", 6], ["deal-core", 20], ["direct-order-draft", 8], ["financial-operations-core", 32], ["identity-auth", 32], ["invoice-draft", 8], ["lead-completion", 68], ["lead-lifecycle", 12], ["lead-qualification", 18], ["payment-ledger", 14], ["payment-plan-intent", 10], ["product-order-core", 33], ["query-authority", 8], ["quote-core", 22], ["refund-recovery", 14], ["relationship-domain-query", 9], ["return-refund-saga", 10], ["shipping-returns-core", 36], ["studio-core", 38], ["support-core", 13], ["task-core", 17], ["transaction-semantics", 12], ["workspace-bootstrap", 12],
+]);
+
+function assertTypedProducerResponse(op, schemaOverride) {
+  const expected = typedProducerResponses.get(op.operationId);
+  assert(responseSchemaName(op) === expected, `${op.operationId}: typed producer response drift`);
+  const schema = schemaOverride ?? schemas[expected];
+  assert(schema?.additionalProperties === false && !schema.properties?.aggregateId && !schema.properties?.result && !schema.properties?.data,
+    `${op.operationId}: custom producer must retain its closed typed document contract`);
+  const fields = expected === "OutboundWebhookMutationResponse" ? ["subscription", "outcome", "signingSecret"]
+    : expected === "OutboundWebhookDelivery" ? ["deliveryId", "subscriptionId", "status", "attemptCount", "replayable"]
+    : expected === "AiAdvisoryResponse" ? ["executionId", "advisory", "contextReferences", "evidence", "provider"]
+    : expected === "AiConfigurationTestResponse" ? ["configuration", "succeeded", "provider", "model", "status"] : ["configuration"];
+  for (const field of fields) assert(schema.properties?.[field] && (field === "signingSecret" || schema.required?.includes(field)), `${op.operationId}: missing typed producer field ${field}`);
+  assert(op["x-workspace-required"] === true && parameters(op).some((p) => p.in === "header" && p.name === "X-Workspace-Id" && p.required), `${op.operationId}: trusted workspace header boundary missing`);
+  assert((op.security ?? spec.security ?? []).some((item) => Object.hasOwn(item, "bearerAuth")), `${op.operationId}: authenticated producer boundary missing`);
+  assert(op["x-actor-required"] === true, `${op.operationId}: authoritative actor boundary missing`);
+  assert(typeof op["x-data-scope"] === "string" && op["x-data-scope"].length > 0 && op["x-data-scope"] !== "UNRESOLVED", `${op.operationId}: data scope missing`);
+  assert(typeof op["x-required-capability"] === "string" && op["x-required-capability"] !== "UNRESOLVED", `${op.operationId}: capability boundary missing`);
+  assert(op["x-resource-scope"] === (expected === "AiAdvisoryResponse" ? "RECORD" : "WORKSPACE"), `${op.operationId}: producer resource scope drift`);
+  if (expected !== "AiAdvisoryResponse") assert(op["x-idempotency-policy"] === "REQUIRED" && parameters(op).some((p) => p.in === "header" && p.name === "Idempotency-Key" && p.required), `${op.operationId}: typed command replay boundary missing`);
+  if (expected !== "AiAdvisoryResponse" && !["createOutboundWebhookSubscription", "replayOutboundWebhookDelivery"].includes(op.operationId)) {
+    const policy = expected === "OutboundWebhookMutationResponse" ? "OPTIMISTIC_WHERE_RESOURCE_VERSION_EXISTS" : "IF_MATCH_REQUIRED";
+    assert(op["x-concurrency-policy"] === policy && parameters(op).some((p) => p.in === "header" && p.name === "If-Match" && p.required), `${op.operationId}: typed command concurrency boundary missing`);
+  }
+  if (expected === "AiAdvisoryResponse") assert(schema.properties.advisory.const === true && op["x-concurrency-policy"] === "READ_ONLY" && op["x-idempotency-policy"] === "NOT_APPLICABLE_READ_ONLY", `${op.operationId}: advisory must remain read-only`);
+}
+
+function assertAggregatePolicy(op, schemaOverride) {
+  if (typedProducerResponses.has(op.operationId)) {
+    assertTypedProducerResponse(op, schemaOverride);
+    assert(op["x-aggregate-id-policy"] === undefined, `${op.operationId}: producer has no shared aggregate envelope to enforce this policy`);
+    return;
+  }
+  if (String(op["x-transaction-boundary"] ?? "").startsWith("READ_ONLY")) return;
+  assert(["MUST_MATCH_TARGET", "SERVER_ASSIGNED"].includes(op["x-aggregate-id-policy"]), `${op.operationId}: aggregate ID policy missing`);
+}
+
+function assertSyntheticAiTest(op) {
+  assertTypedProducerResponse(op);
+  assert(op.operationId === "testAiConfiguration" && op["x-data-scope"] === "SYNTHETIC_ONLY" && op["x-resource-scope"] === "WORKSPACE" && op["x-required-capability"] === "ai.configuration.manage" && op["x-workspace-required"] === true && op["x-actor-required"] === true, "testAiConfiguration: synthetic trusted-workspace isolation metadata incomplete");
+  const request = schemas[requestSchemaName(op)];
+  assert(requestSchemaName(op) === "EmptyCommandRequest" && request?.additionalProperties === false && Object.keys(request.properties ?? {}).length === 0, "testAiConfiguration: synthetic test must not accept CRM context or client data");
+  assert(op.summary.includes("synthetic non-CRM input"), "testAiConfiguration: synthetic no-CRM input contract missing");
+  const adapter = read("src/workspaces/studio/infrastructure/AiConfigurationHttpAdapter.ts");
+  assert(adapter.includes("testAiConfiguration({}, requestOptions(options))") && adapter.includes("expectedVersion: options.expectedVersion") && adapter.includes("idempotencyKey: options.idempotencyKey"), "testAiConfiguration: empty synthetic input or command metadata boundary missing");
+}
+
+const dedicatedCommandProducers = new Map([
+  ["createCustomer", { method: "POST", route: "/customers", request: "CreateCustomerRequest", response: "CustomerMutationResponse", call: "createCustomer<CustomerMutationResponse, CreateCustomerRequest>(input, options)" }],
+  ["updateCustomer", { method: "PATCH", route: "/customers/{customerId}", request: "UpdateCustomerRequest", response: "CustomerMutationResponse", call: "updateCustomer<CustomerMutationResponse, UpdateCustomerRequest>(customerId, input, options)" }],
+  ["archiveCustomer", { method: "POST", route: "/customers/{customerId}/archive", request: "ArchiveCustomerRequest", response: "CustomerMutationResponse", call: "archiveCustomer<CustomerMutationResponse>(customerId, {}, options)" }],
+  ["convertLeadToCustomer", { method: "POST", route: "/workflows/lead-customer-conversion/{leadId}", request: "ConvertLeadToCustomerRequest", response: "LeadCustomerConversionResponse", call: "client.convertLeadToCustomer(leadId, request, {" }],
+]);
+
+function assertDedicatedCommandProducer(operationId) {
+  const proof = dedicatedCommandProducers.get(operationId);
+  const op = opById.get(operationId);
+  assert(op?.["x-contract-status"] === "PRODUCTION_CONTRACT_READY" && op.method === proof.method && op.route === proof.route && requestSchemaName(op) === proof.request && responseSchemaName(op) === proof.response, `${operationId}: dedicated typed route/schema drift`);
+  assert(schemas[proof.request]?.additionalProperties === false && schemas[proof.response]?.additionalProperties === false, `${operationId}: dedicated request/outcome must be closed`);
+  for (const field of ["commandId", "correlationId", "aggregateId", "aggregateType", "version", "occurredAt", "outcome", "result"]) assert(schemas[proof.response].required?.includes(field), `${operationId}: authoritative outcome field ${field} missing`);
+  for (const field of ["actorId", "commandId", "aggregateId", "occurredAt", "auditEvidenceIds", "outcome"]) assert(!schemas[proof.request].properties?.[field], `${operationId}: request accepts server evidence ${field}`);
+  assert(op["x-workspace-required"] === true && op["x-actor-required"] === true && op["x-idempotency-policy"] === "REQUIRED" && parameters(op).some((p) => p.name === "Idempotency-Key" && p.required), `${operationId}: dedicated command authority metadata missing`);
+  if (operationId !== "createCustomer") assert(parameters(op).some((p) => p.name === "If-Match" && p.required), `${operationId}: dedicated command version header missing`);
+  const client = read("src/platform/api/generated/commercialApi.ts");
+  const start = client.indexOf(`  ${operationId}<`);
+  const method = client.slice(start, client.indexOf("\n  }", start));
+  const generatedPath = proof.route.includes("{") ? "path: `" + proof.route.replace(/\{(\w+)\}/gu, (_, name) => "${encodeURIComponent(" + name + ")}") + "`" : `path: ${JSON.stringify(proof.route)}`;
+  for (const token of [`operationId: "${operationId}"`, `method: "${proof.method}"`, generatedPath, "body,", "options.idempotencyKey", "options.expectedVersion"]) assert(start >= 0 && method.includes(token), `${operationId}: generated dedicated transport misses ${token}`);
+  const conversion = operationId === "convertLeadToCustomer";
+  const adapter = read(conversion ? "src/workflows/lead-customer-conversion/infrastructure/convertLeadToCustomer.ts" : "src/modules/customers/infrastructure/http/CustomerHttpApiAdapter.ts");
+  assert(adapter.includes(proof.call) && !/RoutedHttpMutationAuthority|projectProductionCommandPayload/u.test(adapter), `${operationId}: dedicated typed adapter call missing`);
+  if (conversion) {
+    for (const token of ["expectedVersion,", "idempotencyKey,", "outcome: response.outcome", "occurredAt: response.occurredAt", "response.result.customerId", "response.result.customerResolution"]) assert(adapter.includes(token), `${operationId}: dedicated outcome/metadata mapping misses ${token}`);
+    const composition = read("src/app/composition/applicationComposition.ts");
+    assert(composition.includes('mode === "connected" && connectedHttpClient') && composition.includes("configureLeadCustomerConversionGateway(createLeadCustomerConversionGateway(new CommercialApiClient(connectedHttpClient)))"), `${operationId}: dedicated connected composition missing`);
+  } else {
+    assert(adapter.includes("mapCustomerDocument(response.result)"), `${operationId}: authoritative Customer result mapping missing`);
+    const runtime = read("src/modules/customers/infrastructure/http/createCustomerConnectedApiRuntime.ts");
+    assert(runtime.includes("new CustomerHttpApiAdapter(new CommercialApiClient(httpClient))") && runtime.includes('mode: "connected", queries: adapter, commands: adapter'), `${operationId}: dedicated command runtime missing`);
+    assert(read("src/app/composition/connected/connectedCrmModuleServices.ts").includes("api: createCustomerConnectedApiRuntime(httpClient)"), `${operationId}: dedicated connected composition missing`);
+    const publicApi = read("src/modules/customers/public/api.ts");
+    for (const token of ["getCustomerApiRuntime().commands.", "idempotencyKey: resolved.idempotencyKey", "resolved.expectedVersion"]) assert(publicApi.includes(token), `${operationId}: public command metadata boundary missing`);
+  }
+  const http = read("src/platform/api/client/FetchHttpClient.ts");
+  assert(http.includes("validateOpenApiRequest(operationId, value)") && http.includes("validateOpenApiResponse(operationId, value, responseStatus)"), `${operationId}: dedicated transport runtime schema validation missing`);
+}
+
+function assertProducerScopeNegativeControls() {
+  const rejects = (action, label) => {
+    let rejected = false;
+    try { action(); } catch { rejected = true; }
+    assert(rejected, `Producer scope negative control accepted ${label}`);
+  };
+  for (const [id, name] of typedProducerResponses) {
+    const op = opById.get(id);
+    assert(op, `${id}: explicit typed producer operation missing`);
+    const schema = schemas[name];
+    const unknown = { ...op, operationId: `unknown_${id}` };
+    delete unknown["x-aggregate-id-policy"];
+    rejects(() => assertAggregatePolicy(unknown), `${id}: unknown operation without policy`);
+    const swapped = structuredClone(op);
+    successResponse(swapped)[1].content["application/json"].schema = { $ref: "#/components/schemas/ProblemDetails" };
+    rejects(() => assertAggregatePolicy(swapped), `${id}: response schema swap`);
+    rejects(() => assertAggregatePolicy(op, { ...schema, additionalProperties: true }), `${id}: open extra fields`);
+    rejects(() => assertAggregatePolicy(op, { ...schema, required: [] }), `${id}: missing required response fields`);
+    rejects(() => assertAggregatePolicy({ ...op, "x-workspace-required": false }), `${id}: missing trusted workspace`);
+    rejects(() => assertAggregatePolicy({ ...op, security: [] }), `${id}: missing authentication`);
+    rejects(() => assertAggregatePolicy({ ...op, "x-required-capability": "UNRESOLVED" }), `${id}: missing capability`);
+    rejects(() => assertAggregatePolicy({ ...op, "x-actor-required": false }), `${id}: missing authoritative actor`);
+    rejects(() => assertAggregatePolicy({ ...op, "x-data-scope": undefined }), `${id}: missing data scope`);
+  }
+  const advisory = opById.get("requestAiAdvisory");
+  rejects(() => assertAggregatePolicy({ ...advisory, "x-idempotency-policy": "REQUIRED" }), "read-only advisory rewritten as mutation policy");
+  rejects(() => assertAggregatePolicy({ ...advisory, "x-concurrency-policy": "IF_MATCH_REQUIRED" }), "read-only advisory rewritten as mutation concurrency");
+}
+
+function assertProviderPack(pack, label) {
+  const name = label.split("/").at(-2);
+  assert(historicalProviderVersions.has(name) && pack.contractVersion === historicalProviderVersions.get(name), `${label}: pinned historical contract version drift`);
+  assert(pack.scenarios.length === historicalProviderScenarioCounts.get(name), `${label}: pinned historical scenario count drift`);
+  assert(new Set(pack.scenarios.map((item) => item.id)).size === pack.scenarios.length, `${label}: duplicate provider scenarios`);
+  const covered = new Set();
+  for (const scenario of pack.scenarios) {
+    assert(typeof scenario.id === "string" && scenario.id.length > 0, `${label}: scenario ID missing`);
+    const op = opById.get(scenario.operationId);
+    assert(op?.["x-contract-status"] === "PRODUCTION_CONTRACT_READY", `${label}/${scenario.id}: scenario targets blocked or unknown operation`);
+    covered.add(scenario.operationId);
+    if (scenario.expectedStatus !== undefined) assert(op.responses[String(scenario.expectedStatus)], `${label}/${scenario.id}: undocumented response status ${scenario.expectedStatus}`);
+    if (scenario.expectedCode) assert(schemas.ErrorCode.enum.includes(scenario.expectedCode), `${label}/${scenario.id}: unknown error code ${scenario.expectedCode}`);
+  }
+  if (pack.operations) {
+    assert(new Set(pack.operations).size === pack.operations.length, `${label}: duplicate operation inventory`);
+    for (const id of pack.operations) assert(opById.get(id)?.["x-contract-status"] === "PRODUCTION_CONTRACT_READY", `${label}: declared dependency operation ${id} is blocked or unknown`);
+    for (const id of covered) assert(pack.operations.includes(id), `${label}: undeclared scenario operation ${id}`);
+  }
+}
 
 function validate(schemaOrRef, value, where = "$", stack = new Set()) {
   const issues = [];
@@ -102,11 +259,11 @@ const checks = {
   "openapi-syntax": () => {
     assert(spec.openapi === "3.1.0", "OpenAPI must be 3.1.0");
     assert(spec["x-contract-authority"] === "OPENAPI", "OpenAPI authority marker missing");
-    assert(operations.length === 276, `Expected 276 operations, found ${operations.length}`);
+    assert(operations.length === 303, `Expected 303 operations, found ${operations.length}`);
   },
   "openapi-lint": () => {
     for (const op of operations) {
-      for (const key of ["operationId", "x-contract-status", "x-module-owner", "x-required-capability", "x-resource-scope", "x-data-scope", "x-idempotency-policy", "x-concurrency-policy", "x-audit-requirement", "x-transaction-boundary", "x-error-codes"]) assert(op[key] !== undefined, `${op.operationId}: missing ${key}`);
+      for (const key of ["operationId", "x-contract-status", "x-module-owner", "x-required-capability", "x-resource-scope", "x-data-scope", "x-workspace-required", "x-actor-required", "x-idempotency-policy", "x-concurrency-policy", "x-audit-requirement", "x-transaction-boundary", "x-error-codes"]) assert(op[key] !== undefined, `${op.operationId}: missing ${key}`);
       const status = op["x-contract-status"];
       assert(["PRODUCTION_CONTRACT_READY", "BLOCKED"].includes(status), `${op.operationId}: invalid status`);
       if (status === "BLOCKED") {
@@ -116,7 +273,7 @@ const checks = {
       } else {
         assert(successResponse(op), `${op.operationId}: ready operation has no 2xx`);
         assert(responseSchemaName(op), `${op.operationId}: ready response must use named schema`);
-        if (op.method !== "GET") assert(["MUST_MATCH_TARGET", "SERVER_ASSIGNED"].includes(op["x-aggregate-id-policy"]), `${op.operationId}: aggregate ID policy missing`);
+        if (op.method !== "GET") assertAggregatePolicy(op);
       }
     }
     const runtimeContract = read("src/platform/api/contracts/generatedOpenApiRuntimeContract.ts");
@@ -167,6 +324,7 @@ const checks = {
         assert(Object.keys(schema.properties ?? {}).length > 0, `${op.operationId}: authoritative identity response is empty`);
         continue;
       }
+      if (typedProducerResponses.has(op.operationId)) { assertTypedProducerResponse(op); continue; }
       assert(schema.properties?.result, `${op.operationId}: typed result missing`);
       const resultName = derefName(schema.properties.result.$ref);
       assert(resultName && !["JsonObject", "JsonObjectList"].includes(resultName), `${op.operationId}: generic result schema`);
@@ -176,8 +334,8 @@ const checks = {
   },
   "command-registry": () => {
     const d = json("docs/backend-readiness/command-registry.json");
-    assert(d.commands.length === 173, `Expected 173 commands, found ${d.commands.length}`);
-    assert(new Set(d.commands.map((x) => x.stableCommandId)).size === 173, "Command IDs are not unique");
+    assert(d.commands.length === 184, `Expected 184 commands, found ${d.commands.length}`);
+    assert(new Set(d.commands.map((x) => x.stableCommandId)).size === 184, "Command IDs are not unique");
     for (const c of d.commands) assert(d.allowedStatuses.includes(c.status), `${c.commandType}: invalid status`);
   },
   "query-registry": () => {
@@ -198,21 +356,24 @@ const checks = {
   },
   "authorization-matrix": () => {
     const rows = json("docs/backend-readiness/operation-authorization-matrix.json").operations;
-    assert(rows.length === 276, "Authorization matrix incomplete");
+    assert(rows.length === operations.length, "Authorization matrix incomplete");
     const ids = new Set(rows.map((x) => x.operationId));
     for (const op of operations) { assert(ids.has(op.operationId), `${op.operationId}: auth row missing`); assert(op["x-required-capability"] !== "UNRESOLVED", `${op.operationId}: capability unresolved`); if (op.tags?.includes("Identity")) assert(op["x-workspace-required"] === false && op["x-data-scope"] === "GLOBAL_IDENTITY", `${op.operationId}: identity scope invalid`); else if (op.tags?.includes("WorkspaceBootstrap")) assert(op["x-workspace-required"] === false && ["GLOBAL_IDENTITY", "SELECTED_WORKSPACE"].includes(op["x-data-scope"]), `${op.operationId}: workspace bootstrap scope invalid`); else assert(op["x-workspace-required"] === true, `${op.operationId}: workspace boundary missing`); }
   },
   "idempotency-policy": () => {
     const rows = json("docs/backend-readiness/idempotency-policy.json").operations;
-    assert(rows.length === 276, "Idempotency matrix incomplete");
+    assert(rows.length === operations.length, "Idempotency matrix incomplete");
+    for (const row of rows) assert(row.policy === opById.get(row.operationId)?.["x-idempotency-policy"] && row.status === opById.get(row.operationId)?.["x-contract-status"], `${row.operationId}: idempotency policy drift`);
     for (const op of operations.filter((x) => x["x-contract-status"] === "PRODUCTION_CONTRACT_READY" && x.method !== "GET")) {
+      if (op.operationId === "requestAiAdvisory") { assertTypedProducerResponse(op); continue; }
       assert(["REQUIRED", "OPTIONAL", "NOT_APPLICABLE"].includes(op["x-idempotency-policy"]), `${op.operationId}: invalid idempotency policy`);
       if (op["x-idempotency-policy"] === "REQUIRED") assert(parameters(op).some((p) => p.in === "header" && p.name === "Idempotency-Key" && p.required), `${op.operationId}: required header missing`);
     }
   },
   "concurrency-policy": () => {
     const rows = json("docs/backend-readiness/concurrency-policy.json").operations;
-    assert(rows.length === 276, "Concurrency matrix incomplete");
+    assert(rows.length === operations.length, "Concurrency matrix incomplete");
+    for (const row of rows) assert(row.policy === opById.get(row.operationId)?.["x-concurrency-policy"] && row.status === opById.get(row.operationId)?.["x-contract-status"], `${row.operationId}: concurrency policy drift`);
     for (const op of operations.filter((x) => x["x-contract-status"] === "PRODUCTION_CONTRACT_READY")) {
       assert(op["x-concurrency-policy"], `${op.operationId}: concurrency policy missing`);
       if (op["x-concurrency-policy"] === "IF_MATCH_REQUIRED") assert(parameters(op).some((p) => p.in === "header" && p.name === "If-Match" && p.required), `${op.operationId}: If-Match missing`);
@@ -220,7 +381,14 @@ const checks = {
   },
   "error-catalog": () => {
     const d = json("docs/backend-readiness/error-catalog.json"); const codes = new Set(d.errors.map((x) => x.code));
-    assert(d.mediaType === "application/problem+json" && codes.size === schemas.ErrorCode.enum.length, "Error catalog incomplete");
+    assert(d.mediaType === "application/problem+json" && codes.size === d.errors.length, "Error catalog media type or uniqueness invalid");
+    for (const code of schemas.ErrorCode.enum) assert(codes.has(code), `Error catalog missing ${code}`);
+    for (const error of d.errors) {
+      assert(schemas.ErrorCode.enum.includes(error.code), `Error catalog contains unknown ${error.code}`);
+      assert(Number.isInteger(error.httpStatus) && error.httpStatus >= 400 && error.httpStatus <= 599, `${error.code}: invalid error status`);
+      if (error.userSafeExposure !== undefined) assert(["CODE_AND_SAFE_TITLE", "CODE_SAFE_TITLE_AND_BLOCKERS", "SAFE_CODE_WITH_LOCALIZED_CLIENT_COPY"].includes(error.userSafeExposure), `${error.code}: unsafe error exposure policy`);
+      for (const id of error.operationReferences ?? []) assert(opById.has(id), `${error.code}: unknown operation reference ${id}`);
+    }
     for (const op of operations) for (const code of op["x-error-codes"]) assert(codes.has(code), `${op.operationId}: unknown error ${code}`);
     for (const op of operations.filter((x) => x["x-contract-status"] === "PRODUCTION_CONTRACT_READY" && (x.security ?? spec.security ?? []).length > 0)) { assert(op.responses["401"] && op.responses["403"], `${op.operationId}: auth errors missing`); }
   },
@@ -282,8 +450,15 @@ const checks = {
   },
   "workflow-ownership": () => {
     const d = json("docs/backend-readiness/workflow-ownership.json");
-    assert(d.workflows.length === 27, "Expected 27 workflows");
-    for (const w of d.workflows) { assert(w.ownershipDecision !== "UNRESOLVED", `${w.name}: unresolved workflow`); assert(w.connectedFrontendCoordinatorAllowed === false, `${w.name}: connected coordinator allowed`); }
+    assert(d.workflows.length > 0 && new Set(d.workflows.map((w) => w.workflowId)).size === d.workflows.length && new Set(d.workflows.map((w) => w.name)).size === d.workflows.length, "Workflow ownership inventory is empty or duplicated");
+    for (const w of d.workflows) {
+      const owner = w.ownershipDecision ?? w.authoritativeCoordinator;
+      assert(typeof owner === "string" && owner !== "UNRESOLVED", `${w.name}: unresolved workflow`);
+      assert(w.connectedFrontendCoordinatorAllowed === false, `${w.name}: connected coordinator allowed`);
+      if (w.sourcePath) assert(exists(w.sourcePath), `${w.name}: workflow source missing`);
+      for (const id of w.publicOperations ?? []) assert(opById.has(id), `${w.name}: unknown public operation ${id}`);
+    }
+    for (const w of json("docs/quality/repository-inventory.json").workflows) assert(d.workflows.some((entry) => entry.name === w.key || entry.sourcePath === w.path), `${w.path}: workflow ownership missing`);
   },
   "no-production-transaction-coordinator": () => {
     const files = filesUnder("src").filter((p) => p.includes("/infrastructure/http/") || p.startsWith("src/platform/api/"));
@@ -347,7 +522,8 @@ const checks = {
     assert(adapter.includes("calculateInvoiceTotals") && adapter.includes("buildDraftLines"), "Demo adapter does not model backend calculation ownership");
   },
   "aggregate-id-authority": () => {
-    for (const op of readyMutations) assert(["MUST_MATCH_TARGET", "SERVER_ASSIGNED"].includes(op["x-aggregate-id-policy"]), `${op.operationId}: aggregate ID policy missing`);
+    for (const op of readyMutations) assertAggregatePolicy(op);
+    assertProducerScopeNegativeControls();
     const source = read("src/platform/api/runtime/RoutedHttpMutationAuthority.ts");
     assert(source.includes('contract.aggregateIdPolicy === "MUST_MATCH_TARGET"'), "Mutation authority does not enforce target-match policy");
     assert(source.includes('contract.aggregateIdPolicy === "SERVER_ASSIGNED"'), "Mutation authority does not enforce server-assigned policy");
@@ -355,14 +531,14 @@ const checks = {
   },
   "provider-contract-pack": () => {
     const pack = json("tests/fixtures/backend-contract/invoice-draft/provider-scenarios.json");
-    assert(pack.contractVersion === spec.info.version && pack.scenarios.length === 8, "Invoice provider scenario pack incomplete");
-    assert(new Set(pack.scenarios.map((item) => item.id)).size === 8, "Provider scenario IDs are not unique");
+    assert(pack.scenarios.length === 8, "Invoice provider scenario pack incomplete");
+    assert(new Set(pack.scenarios.map((item) => item.id)).size === pack.scenarios.length, "Provider scenario IDs are not unique");
     const runner = read("tests/contract/provider/run-invoice-draft-provider-contract.mjs");
     for (const token of ["REPLAYED", "IDEMPOTENCY_KEY_REUSED", "VERSION_CONFLICT", "WORKSPACE_MISMATCH", "issueInvoice"]) assert(runner.includes(token), `Provider runner misses ${token}`);
   },
   "transaction-semantics-decisions": () => {
     const pack = json("docs/backend-readiness/p02-transaction-semantics.json");
-    assert(pack.contractVersion === spec.info.version && pack.closedTransactions.length === 4, "P0.2 transaction decision pack incomplete");
+    assert(pack.contractVersion === historicalContractVersion && pack.closedTransactions.length === 4, "P0.2 transaction decision pack incomplete");
     for (const operationId of ["acceptQuoteAndCloseDeal", "confirmOrderWithPaymentPlan", "cancelOrder", "reconcilePaymentRecord"]) {
       const op = opById.get(operationId);
       assert(op?.["x-contract-status"] === "PRODUCTION_CONTRACT_READY" && successResponse(op), `${operationId}: closed transaction is not production-ready`);
@@ -378,12 +554,21 @@ const checks = {
   },
   "explicit-command-payload-projection": () => {
     const registry = json("docs/backend-readiness/command-registry.json").commands.filter((item) => item.status === "PRODUCTION_CONTRACT_READY" && item.runtimeImplementationMode !== "DEDICATED_MODULE_HTTP_ADAPTER" && item.runtimeImplementationMode !== "DEDICATED_WORKFLOW_HTTP_ADAPTER");
-    assert(registry.length === 28, `Expected 28 generic ready command projections after Phase 18 workflow promotion, found ${registry.length}`);
+    assert(registry.length > 0 && new Set(registry.map((item) => item.openApiOperationId)).size === registry.length, "Generic command projection inventory is empty or duplicated");
     for (const command of registry) assert(typeof command.requestProjection === "string" && command.requestProjection.length > 0, `${command.commandType}: request projection missing`);
     const authority = read("src/platform/api/runtime/RoutedHttpMutationAuthority.ts");
     const projector = read("src/platform/api/contracts/productionCommandPayloadProjection.ts");
+    const generatedRegistry = read("src/platform/api/contracts/generatedProductionCommandRegistry.ts");
+    const generatedIds = [...generatedRegistry.matchAll(/operationId: "([^"]+)"/gu)].map((match) => match[1]);
+    assert(generatedIds.length === registry.length && new Set(generatedIds).size === generatedIds.length, "Generated command projection inventory coverage drift");
+    for (const command of registry) assert(generatedIds.includes(command.openApiOperationId) && opById.get(command.openApiOperationId)?.["x-contract-status"] === "PRODUCTION_CONTRACT_READY", `${command.commandType}: generated ready operation projection missing`);
     assert(authority.includes("projectProductionCommandPayload") && !authority.includes("body: command.payload"), "Connected authority serializes raw command payload");
-    for (const projection of registry.map((item) => item.requestProjection)) assert(projector.includes(`case "${projection}"`), `${projection}: projector case missing`);
+    for (const id of dedicatedCommandProducers.keys()) {
+      assert(registry.some((item) => item.openApiOperationId === id), `${id}: dedicated command registry coverage missing`);
+      assertDedicatedCommandProducer(id);
+    }
+    const missing = registry.filter((item) => !dedicatedCommandProducers.has(item.openApiOperationId) && !projector.includes(`case "${item.requestProjection}"`));
+    assert(missing.length === 0, `Projector cases missing: ${missing.map((item) => `${item.openApiOperationId}/${item.requestProjection}`).join(", ")}`);
   },
   "no-inline-credit-approval": () => {
     const request = schemas.ConfirmOrderWithPaymentPlanRequest;
@@ -395,14 +580,14 @@ const checks = {
   },
   "transaction-provider-contract-pack": () => {
     const pack = json("tests/fixtures/backend-contract/transaction-semantics/provider-scenarios.json");
-    assert(pack.contractVersion === spec.info.version && pack.scenarios.length === 12, "Transaction provider scenario pack incomplete");
-    assert(new Set(pack.scenarios.map((item) => item.id)).size === 12, "Transaction provider scenario IDs are not unique");
+    assert(pack.scenarios.length === 12, "Transaction provider scenario pack incomplete");
+    assert(new Set(pack.scenarios.map((item) => item.id)).size === pack.scenarios.length, "Transaction provider scenario IDs are not unique");
     const runner = read("tests/contract/provider/run-transaction-semantics-provider-contract.mjs");
     for (const token of ["acceptQuoteAndCloseDeal", "confirmOrderWithPaymentPlan", "cancelOrder", "reconcilePaymentRecord", "CREDIT_APPROVAL_REQUIRED", "ORDER_CANCELLATION_BLOCKED", "WORKSPACE_MISMATCH"]) assert(runner.includes(token), `Transaction provider runner misses ${token}`);
   },
   "payment-financial-effects-decisions": () => {
     const pack = json("docs/backend-readiness/p04-payment-ledger-semantics.json");
-    assert(pack.contractVersion === spec.info.version && pack.phase === "P0.4", "P0.4 payment decision pack missing");
+    assert(pack.contractVersion === historicalContractVersion && pack.phase === "P0.4", "P0.4 payment decision pack missing");
     const status = new Map(pack.decisions.map((item) => [item.decisionId, item.status]));
     for (const id of ["DEC-P04-PAYMENT-ALLOCATION-LEDGER", "DEC-P04-PAYMENT-ALLOCATION-REVERSAL", "DEC-P04-REFUND-ASYNC-INTENT", "DEC-P04-COD-COLLECTION-EVIDENCE", "DEC-P04-COD-REMITTANCE-EVIDENCE"]) assert(status.get(id) === "CLOSED", `${id}: financial decision not closed`);
     assert(status.get("DEC-P04-RETURN-REFUND-SAGA") === "BLOCKED" && status.get("DEC-P04-REFUND-CANCEL-RETRY") === "BLOCKED", "P0.4 residual blockers missing");
@@ -454,14 +639,14 @@ const checks = {
   },
   "payment-ledger-provider-contract-pack": () => {
     const pack = json("tests/fixtures/backend-contract/payment-ledger/provider-scenarios.json");
-    assert(pack.contractVersion === spec.info.version && pack.scenarios.length === 14, "Payment ledger provider pack incomplete");
+    assert(pack.scenarios.length === 14, "Payment ledger provider pack incomplete");
     const fixtureSchemas = {"allocation-request.json":"AllocatePaymentSourceRequest","allocation-success.json":"AllocatePaymentSourceResponse","reversal-request.json":"ReversePaymentAllocationRequest","reversal-success.json":"ReversePaymentAllocationResponse","refund-request.json":"CreateRefundIntentRequest","refund-accepted.json":"CreateRefundIntentResponse","refund-detail-created.json":"RefundIntentDocument","refund-detail-succeeded.json":"RefundIntentDocument","refund-detail-failed.json":"RefundIntentDocument","cod-collection-request.json":"RecordCodCustomerCollectionRequest","cod-collection-success.json":"CodPaymentEvidenceResponse","cod-remittance-request.json":"RecordCodMerchantRemittanceRequest","cod-remittance-success.json":"CodPaymentEvidenceResponse"};
     for (const [file,schemaName] of Object.entries(fixtureSchemas)) { const issues=validate(schemas[schemaName],json(`tests/fixtures/backend-contract/payment-ledger/${file}`)); assert(issues.length===0,`${file}: ${issues.join("; ")}`); }
     const runner=read("tests/contract/provider/run-payment-ledger-provider-contract.mjs"); for(const token of ["allocatePaymentSource","createRefundIntent","getRefund","REPLAYED","WORKSPACE_MISMATCH"]) assert(runner.includes(token),`Payment provider runner misses ${token}`);
   },
   "payment-plan-money-contract": () => {
     const decision = json("docs/backend-readiness/payment-plan-intent-money-contract.json");
-    assert(decision.contractVersion === spec.info.version && decision.frontendFloatingPointAuthorityAllowed === false, "Payment Plan/Intent Money decision missing");
+    assert(decision.contractVersion === historicalContractVersion && decision.frontendFloatingPointAuthorityAllowed === false, "Payment Plan/Intent Money decision missing");
     for (const [operationId, schemaName] of Object.entries({ listPaymentPlans: "PaymentPlanList", listPaymentScheduleLines: "PaymentScheduleLineList", previewPaymentPlan: "PaymentPlanPreviewResponse", savePaymentPlanDraft: "SavePaymentPlanDraftResponse", activatePaymentPlan: "ActivatePaymentPlanResponse", cancelPaymentPlan: "CancelPaymentPlanResponse" })) {
       const op = opById.get(operationId); assert(op?.["x-contract-status"] === "PRODUCTION_CONTRACT_READY", `${operationId}: plan contract not ready`); assert(responseSchemaName(op) === schemaName, `${operationId}: wrong plan response`);
     }
@@ -486,7 +671,7 @@ const checks = {
   },
   "return-refund-saga-contract": () => {
     const decision = json("docs/backend-readiness/return-refund-saga.json");
-    assert(decision.contractVersion === spec.info.version && decision.ownership === "BACKEND_ORCHESTRATED_SAGA", "Return refund saga decision missing");
+    assert(decision.contractVersion === historicalContractVersion && decision.ownership === "BACKEND_ORCHESTRATED_SAGA", "Return refund saga decision missing");
     const start = opById.get("resolveReturnCreditRefund"); const detail = opById.get("getReturnCreditRefundResolution");
     assert(start?.["x-contract-status"] === "PRODUCTION_CONTRACT_READY" && successResponse(start)?.[0] === "202", "Return saga start must be typed 202");
     assert(start["x-transaction-boundary"] === "BACKEND_ORCHESTRATED_SAGA" && start["x-saga-failure-policy"].includes("NO_FRONTEND_ROLLBACK"), "Return saga ownership/failure policy incomplete");
@@ -504,8 +689,8 @@ const checks = {
   "p05-provider-contract-pack": () => {
     const planPack = json("tests/fixtures/backend-contract/payment-plan-intent/provider-scenarios.json");
     const returnPack = json("tests/fixtures/backend-contract/return-refund-saga/provider-scenarios.json");
-    assert(planPack.contractVersion === spec.info.version && planPack.scenarios.length === 10, "Payment Plan/Intent provider pack incomplete");
-    assert(returnPack.contractVersion === spec.info.version && returnPack.scenarios.length === 10, "Return saga provider pack incomplete");
+    assert(planPack.scenarios.length === 10, "Payment Plan/Intent provider pack incomplete");
+    assert(returnPack.scenarios.length === 10, "Return saga provider pack incomplete");
     const fixtures = {
       "payment-plan-intent/plan-list-response.json":"PaymentPlanList",
       "payment-plan-intent/schedule-lines-response.json":"PaymentScheduleLineList",
@@ -537,7 +722,7 @@ const checks = {
   },
   "commercial-read-model-contract": () => {
     const decision = json("docs/backend-readiness/p03-commercial-read-models.json");
-    assert(decision.contractVersion === spec.info.version && decision.status === "CLOSED", "P0.3 commercial read-model decision is not closed");
+    assert(decision.contractVersion === historicalContractVersion && decision.status === "CLOSED", "P0.3 commercial read-model decision is not closed");
     for (const [operationId, schemaName] of Object.entries({ listDeals: "DealListResponse", getDeal: "DealReadModel", listQuotes: "QuoteListResponse", getQuote: "QuoteReadModel", listOrders: "OrderListResponse", getOrder: "OrderReadModel" })) {
       const op = opById.get(operationId);
       assert(op?.["x-contract-status"] === "PRODUCTION_CONTRACT_READY", `${operationId}: read operation is not ready`);
@@ -577,7 +762,7 @@ const checks = {
   },
   "credit-approval-decision-pack": () => {
     const decision = json("docs/backend-readiness/credit-approval-command-decision.json");
-    assert(decision.contractVersion === spec.info.version && decision.status === "CLOSED", "Credit approval decision is not closed");
+    assert(decision.contractVersion === historicalContractVersion && decision.status === "CLOSED", "Credit approval decision is not closed");
     assert(decision.reusePolicy.includes("SINGLE_USE") && decision.expiryPolicy.includes("BINDING_CHANGE_SUPERSEDES"), "Credit approval lifecycle binding/single-use policy incomplete");
     for (const operationId of decision.operations) assert(opById.get(operationId)?.["x-contract-status"] === "PRODUCTION_CONTRACT_READY", `${operationId}: credit approval operation not ready`);
     assert(schemas.OrderReadModel.properties.creditApproval?.$ref?.endsWith("/OrderCreditApprovalSummaryReadModel"), "Order read model lacks authoritative credit approval summary");
@@ -585,7 +770,7 @@ const checks = {
   },
   "quote-order-conversion-decision": () => {
     const decision = json("docs/backend-readiness/quote-order-conversion-decision.json");
-    assert(decision.contractVersion === spec.info.version && decision.status === "CLOSED", "Accepted Quote conversion decision is not closed");
+    assert(decision.contractVersion === historicalContractVersion && decision.status === "CLOSED", "Accepted Quote conversion decision is not closed");
     assert(decision.operationId === "convertAcceptedQuoteToOrderDraft" && decision.transactionBoundary.includes("QUOTE_UNIQUENESS_LOCK"), "Quote conversion transaction/uniqueness policy incomplete");
     const conversion = opById.get("convertAcceptedQuoteToOrderDraft");
     assert(conversion?.["x-contract-status"] === "PRODUCTION_CONTRACT_READY" && responseSchemaName(conversion) === "ConvertAcceptedQuoteToOrderDraftResponse", "Accepted Quote conversion operation not ready/typed");
@@ -629,8 +814,8 @@ const checks = {
   "p06-provider-contract-pack": () => {
     const creditPack = json("tests/fixtures/backend-contract/commercial-credit-approval/provider-scenarios.json");
     const conversionPack = json("tests/fixtures/backend-contract/accepted-quote-order-conversion/provider-scenarios.json");
-    assert(creditPack.contractVersion === spec.info.version && creditPack.scenarios.length === 10, "Credit approval provider pack incomplete");
-    assert(conversionPack.contractVersion === spec.info.version && conversionPack.scenarios.length === 8, "Quote conversion provider pack incomplete");
+    assert(creditPack.scenarios.length === 10, "Credit approval provider pack incomplete");
+    assert(conversionPack.scenarios.length === 8, "Quote conversion provider pack incomplete");
     const fixtures = {
       "commercial-credit-approval/request.json":"RequestOrderCreditApprovalRequest",
       "commercial-credit-approval/request-success.json":"OrderCreditApprovalMutationResponse",
@@ -720,7 +905,7 @@ const checks = {
       ["task-core",17,{"create-request.json":"CreateTaskRequest","create-success.json":"TaskMutationResponse","list-success.json":"TaskListResponse","detail-success.json":"TaskReadModel","complete-request.json":"CompleteTaskRequest","cancel-request.json":"CancelTaskRequest","assign-request.json":"AssignTaskRequest","reschedule-request.json":"RescheduleTaskRequest","archive-request.json":"ArchiveTaskRequest","activity-request.json":"LogActivityRequest","activity-success.json":"ActivityMutationResponse"}],
     ];
     for (const [dir,count,fixtures] of packs) {
-      const pack=json(`tests/fixtures/backend-contract/${dir}/provider-scenarios.json`); assert(pack.contractVersion===spec.info.version && pack.scenarios.length===count,`${dir}: provider scenarios incomplete`);
+      const pack=json(`tests/fixtures/backend-contract/${dir}/provider-scenarios.json`); assert(pack.scenarios.length === count,`${dir}: provider scenarios incomplete`);
       for(const [file,schemaName] of Object.entries(fixtures)){const issues=validate(schemas[schemaName],json(`tests/fixtures/backend-contract/${dir}/${file}`));assert(issues.length===0,`${dir}/${file}: ${issues.join("; ")}`);}
       const runner=read(`tests/contract/provider/run-${dir}-provider-contract.mjs`); assert(runner.includes("BLOCKED_EXTERNAL") && runner.includes(dir),`${dir}: provider runner incomplete`);
     }
@@ -760,7 +945,7 @@ const checks = {
   },
   "p08-refund-recovery-provider-pack": () => {
     const pack=json("tests/fixtures/backend-contract/refund-recovery/provider-scenarios.json");
-    assert(pack.contractVersion===spec.info.version && pack.scenarios.length===14,"Refund recovery provider scenarios incomplete");
+    assert(pack.scenarios.length === 14,"Refund recovery provider scenarios incomplete");
     const fixtures={"attempt-list.json":"RefundProviderAttemptList","cancellation-request.json":"RequestRefundCancellationRequest","cancellation-accepted.json":"RequestRefundCancellationResponse","retry-request.json":"RetryRefundIntentRequest","retry-accepted.json":"RetryRefundIntentResponse","cancellation-pending-problem.json":"ProblemDetails","retry-not-allowed-problem.json":"ProblemDetails","manual-review-problem.json":"ProblemDetails"};
     for(const [file,schemaName] of Object.entries(fixtures)){const issues=validate(schemas[schemaName],json(`tests/fixtures/backend-contract/refund-recovery/${file}`));assert(issues.length===0,`refund-recovery/${file}: ${issues.join("; ")}`);}
     const runner=read("tests/contract/provider/run-refund-recovery-provider-contract.mjs");
@@ -768,7 +953,7 @@ const checks = {
   },
   "p08-refund-recovery-decision-closure": () => {
     const pack=json("docs/backend-readiness/p08-refund-provider-recovery.json");
-    assert(pack.contractVersion===spec.info.version,"P0.8 decision contract version drift");
+    assert(pack.contractVersion === historicalContractVersion,"P0.8 decision contract version drift");
     for(const id of ["DEC-P08-REFUND-PROVIDER-ATTEMPT","DEC-P08-REFUND-CANCELLATION-ACK","DEC-P08-REFUND-RETRY-LINEAGE","DEC-P08-REFUND-IDEMPOTENCY-RETENTION"]) assert(pack.decisions.some((item)=>item.decisionId===id&&item.status==="CLOSED"),`${id}: decision not closed`);
     const workflow=json("docs/backend-readiness/workflow-ownership.json").workflows.find((item)=>item.name==="refund-provider-recovery");
     assert(workflow?.ownershipDecision==="BACKEND_ORCHESTRATED"&&!workflow.connectedFrontendCoordinatorAllowed,"Refund recovery workflow ownership incomplete");
@@ -777,9 +962,9 @@ const checks = {
   },
   "p09-query-authority-closure": () => {
     const decision = json("docs/backend-readiness/p09-provider-conformance-query-closure.json");
-    assert(decision.contractVersion === spec.info.version && decision.phase === "P0.9", "P0.9 decision pack drift");
+    assert(decision.contractVersion === historicalContractVersion && decision.phase === "P0.9", "P0.9 decision pack drift");
     const expected = {
-      listLeads: "LeadList", getLead: "LeadDocument",
+      listLeads: "LeadListResponse", getLead: "LeadDocument",
       listProducts: "ProductList", getProduct: "ProductDocument",
       listShippingBookings: "ShippingBookingListResponse", getShippingBooking: "ShippingBookingReadModel",
       listReturns: "ReturnListResponse", getReturn: "ReturnReadModel",
@@ -815,11 +1000,12 @@ const checks = {
     let count = 0;
     for (const pack of packs) {
       const fixture = json(`tests/fixtures/backend-contract/${pack}/provider-scenarios.json`);
-      assert(fixture.contractVersion === spec.info.version, `${pack}: provider pack version drift`);
+      assert(fixture.contractVersion === historicalProviderVersions.get(pack), `${pack}: provider pack version drift`);
       for (const scenario of fixture.scenarios) assert(opById.get(scenario.operationId)?.["x-contract-status"] === "PRODUCTION_CONTRACT_READY", `${pack}/${scenario.id}: scenario targets blocked or unknown operation`);
       count += fixture.scenarios.length;
     }
-    assert(packs.length === 26 && count === 516, `Expected 26 provider packs/516 scenarios, found ${packs.length}/${count}`);
+    const historicalInventory = json("docs/backend-readiness/contract-inventory.json");
+    assert(packs.length === historicalInventory.providerContractPacks && count === historicalInventory.providerScenarios, "Historical provider inventory coverage was lost");
     const queryPack = json("tests/fixtures/backend-contract/query-authority/provider-scenarios.json");
     assert(queryPack.scenarios.length === 8, "Query-authority pack incomplete");
   },
@@ -843,7 +1029,7 @@ const checks = {
   },
   "p10-query-registry-decision-closure": () => {
     const decision = json("docs/backend-readiness/p10-provider-adapter-registry-closure.json");
-    assert(decision.contractVersion === spec.info.version && decision.phase === "P0.10", "P0.10 decision pack drift");
+    assert(decision.contractVersion === historicalContractVersion && decision.phase === "P0.10", "P0.10 decision pack drift");
     const registry = json("docs/backend-readiness/query-registry.json");
     const counts = registry.queries.reduce((all, item) => ({ ...all, [item.classification]: (all[item.classification] ?? 0) + 1 }), {});
     assert(registry.queries.length === 162, "Phase 16 query inventory drift");
@@ -905,7 +1091,7 @@ const checks = {
   },
   "commercial-read-provider-contract-pack": () => {
     const pack = json("tests/fixtures/backend-contract/commercial-read-models/provider-scenarios.json");
-    assert(pack.contractVersion === spec.info.version && pack.scenarios.length === 6, "Commercial read provider scenario pack incomplete");
+    assert(pack.scenarios.length === 6, "Commercial read provider scenario pack incomplete");
     const fixtures = { "deal-list.json": "DealListResponse", "deal-detail.json": "DealReadModel", "quote-list.json": "QuoteListResponse", "quote-detail.json": "QuoteReadModel", "order-list.json": "OrderListResponse", "order-detail.json": "OrderReadModel" };
     for (const [file, schemaName] of Object.entries(fixtures)) {
       const issues = validate(schemas[schemaName], json(`tests/fixtures/backend-contract/commercial-read-models/${file}`));
@@ -949,12 +1135,25 @@ const checks = {
       else if (op.tags?.includes("WorkspaceBootstrap")) assert(op["x-workspace-required"] === false && ["GLOBAL_IDENTITY", "SELECTED_WORKSPACE"].includes(op["x-data-scope"]), `${op.operationId}: workspace bootstrap isolation metadata incomplete`);
       else if (op.tags?.includes("AccessGovernance")) assert(op["x-workspace-required"] === true && op["x-data-scope"] === "SELECTED_WORKSPACE", `${op.operationId}: access governance isolation metadata incomplete`);
       else if (op.tags?.includes("WorkspaceConfiguration") || op.tags?.includes("StudioQuickSetup")) assert(op["x-workspace-required"] === true && op["x-data-scope"] === "SELECTED_WORKSPACE", `${op.operationId}: Studio isolation metadata incomplete`);
+      else if (op.operationId === "testAiConfiguration") assertSyntheticAiTest(op);
+      else if (op.operationId === "getAiUsageSummary") {
+        assert(op.method === "GET" && op["x-data-scope"] === "SAFE_OPERATIONAL_SUMMARY" && op["x-resource-scope"] === "WORKSPACE" && op["x-required-capability"] === "ai.configuration.read" && op["x-workspace-required"] === true && op["x-actor-required"] === true && op["x-concurrency-policy"] === "READ_ONLY", `${op.operationId}: trusted-workspace operational summary scope incomplete`);
+        assert(parameters(op).some((p) => p.name === "X-Workspace-Id" && p.in === "header" && p.required) && (op.security ?? spec.security ?? []).some((item) => Object.hasOwn(item, "bearerAuth")), `${op.operationId}: authenticated workspace boundary missing`);
+        const schema = schemas[responseSchemaName(op)];
+        const safeFields = ["executions", "successfulExecutions", "failedExecutions", "providerAttempts", "inputTokens", "outputTokens", "windowStartedAt", "lastExecutionAt", "lastStatus"];
+        assert(responseSchemaName(op) === "AiUsageSummaryResponse" && schema?.additionalProperties === false && Object.keys(schema.properties ?? {}).every((field) => safeFields.includes(field)), `${op.operationId}: operational summary exposes non-summary fields`);
+        for (const field of safeFields.slice(0, 7)) assert(schema.required?.includes(field), `${op.operationId}: operational summary missing ${field}`);
+      }
+      else if (op.operationId === "requestAiAdvisory") {
+        assertTypedProducerResponse(op);
+        assert(op["x-data-scope"] === "OWNER_AUTHORIZED_FIELDS" && op["x-required-capability"] === "OWNER_RESOURCE_READ", `${op.operationId}: owner-authorized read isolation metadata incomplete`);
+      }
       else assert(op["x-workspace-required"] === true && op["x-data-scope"] === "WORKSPACE", `${op.operationId}: isolation metadata incomplete`);
     }
   },
   "inventory-integrity": () => {
     const d = json("docs/backend-readiness/contract-inventory.json");
-    assert(d.modules.length === 15 && d.routeCount === 78 && d.commands === 173 && d.queries === 162 && d.workflows === 27 && d.openApiOperations === 276, "Contract inventory drift");
+    assert(d.modules.length === 15 && d.routeCount === 78 && d.commands === 173 && d.queries === 162 && d.workflows === 27 && d.openApiOperations === 276, "Historical contract inventory drift");
     assert(d.genericProductionMutationRequestOperations === 0 && d.genericProductionMutationResponseOperations === 0, "Generic mutation inventory non-zero");
     // Artifact hygiene is a property of the release ARTIFACT, not of the working tree.
     // node_modules is required to run this pipeline at all, dist is produced by

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "contractVersion": "0.23.20-contract.0",
+  "contractVersion": "0.24.0-contract.0",
   "keyScope": "WORKSPACE_OPERATION_IDEMPOTENCY_KEY",
   "sameKeySamePayload": "REPLAY_OR_RETURN_ORIGINAL_OUTCOME",
   "sameKeyDifferentPayload": "409_IDEMPOTENCY_KEY_REUSED",
@@ -9,7 +9,7 @@
   "operations": [
     {
       "operationId": "acceptQuote",
-      "policy": "UNRESOLVED_BLOCKED",
+      "policy": "REQUIRED",
       "status": "BLOCKED"
     },
     {
@@ -19,6 +19,16 @@
     },
     {
       "operationId": "acceptWorkspaceInvitation",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "activateAiConfiguration",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "activateOutboundWebhookSubscription",
       "policy": "REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
     },
@@ -49,12 +59,12 @@
     },
     {
       "operationId": "allocateCustomerCredit",
-      "policy": "UNRESOLVED_BLOCKED",
+      "policy": "REQUIRED",
       "status": "BLOCKED"
     },
     {
       "operationId": "allocatePayment",
-      "policy": "UNRESOLVED_BLOCKED",
+      "policy": "REQUIRED",
       "status": "BLOCKED"
     },
     {
@@ -98,6 +108,11 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "archiveCustomer",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "archiveDealCommand",
       "policy": "REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -124,6 +139,16 @@
     },
     {
       "operationId": "archiveOrdersBatch",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "archiveOrganization",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "archiveOutboundWebhookSubscription",
       "policy": "REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
     },
@@ -224,7 +249,7 @@
     },
     {
       "operationId": "changeQuoteStatusCommand",
-      "policy": "UNRESOLVED_BLOCKED",
+      "policy": "REQUIRED",
       "status": "BLOCKED"
     },
     {
@@ -303,6 +328,11 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "convertLeadToCustomer",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "createAccessRole",
       "policy": "REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -324,18 +354,23 @@
     },
     {
       "operationId": "createCrmObjectField",
-      "policy": "UNRESOLVED_BLOCKED",
+      "policy": "REQUIRED",
       "status": "BLOCKED"
     },
     {
       "operationId": "createCrmPipeline",
-      "policy": "UNRESOLVED_BLOCKED",
+      "policy": "REQUIRED",
       "status": "BLOCKED"
     },
     {
       "operationId": "createCrmPipelineStage",
-      "policy": "UNRESOLVED_BLOCKED",
+      "policy": "REQUIRED",
       "status": "BLOCKED"
+    },
+    {
+      "operationId": "createCustomer",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
     },
     {
       "operationId": "createDealCommand",
@@ -344,7 +379,7 @@
     },
     {
       "operationId": "createIntegrationConnection",
-      "policy": "UNRESOLVED_BLOCKED",
+      "policy": "REQUIRED",
       "status": "BLOCKED"
     },
     {
@@ -374,8 +409,13 @@
     },
     {
       "operationId": "createOrganization",
-      "policy": "UNRESOLVED_BLOCKED",
-      "status": "BLOCKED"
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "createOutboundWebhookSubscription",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
     },
     {
       "operationId": "createPaymentIntent",
@@ -389,7 +429,7 @@
     },
     {
       "operationId": "createProductConfigurationType",
-      "policy": "UNRESOLVED_BLOCKED",
+      "policy": "REQUIRED",
       "status": "BLOCKED"
     },
     {
@@ -429,23 +469,28 @@
     },
     {
       "operationId": "deleteCrmObjectField",
-      "policy": "UNRESOLVED_BLOCKED",
+      "policy": "REQUIRED",
       "status": "BLOCKED"
     },
     {
       "operationId": "deleteCrmPipeline",
-      "policy": "UNRESOLVED_BLOCKED",
+      "policy": "REQUIRED",
       "status": "BLOCKED"
     },
     {
       "operationId": "deleteCrmPipelineStage",
-      "policy": "UNRESOLVED_BLOCKED",
+      "policy": "REQUIRED",
       "status": "BLOCKED"
     },
     {
       "operationId": "deleteProductConfigurationType",
-      "policy": "UNRESOLVED_BLOCKED",
+      "policy": "REQUIRED",
       "status": "BLOCKED"
+    },
+    {
+      "operationId": "disableAiConfiguration",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
     },
     {
       "operationId": "discardInvoiceDraft",
@@ -454,7 +499,7 @@
     },
     {
       "operationId": "disconnectIntegrationConnection",
-      "policy": "UNRESOLVED_BLOCKED",
+      "policy": "REQUIRED",
       "status": "BLOCKED"
     },
     {
@@ -503,12 +548,32 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "getAiConfiguration",
+      "policy": "NOT_APPLICABLE_READ_ONLY",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "getAiProviderCatalog",
+      "policy": "NOT_APPLICABLE_READ_ONLY",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "getAiUsageSummary",
+      "policy": "NOT_APPLICABLE_READ_ONLY",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "getBuyerAccountStatement",
       "policy": "NOT_APPLICABLE",
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
       "operationId": "getContact",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "getContactListSummary",
       "policy": "NOT_APPLICABLE",
       "status": "PRODUCTION_CONTRACT_READY"
     },
@@ -549,6 +614,11 @@
     },
     {
       "operationId": "getDealForecastSummary",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "getIntegrationEventCatalog",
       "policy": "NOT_APPLICABLE",
       "status": "PRODUCTION_CONTRACT_READY"
     },
@@ -604,6 +674,11 @@
     },
     {
       "operationId": "getOrganizationOverview",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "getOutboundWebhookSubscription",
       "policy": "NOT_APPLICABLE",
       "status": "PRODUCTION_CONTRACT_READY"
     },
@@ -793,6 +868,11 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "listLeadKanbanColumn",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "listLeads",
       "policy": "NOT_APPLICABLE",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -809,6 +889,16 @@
     },
     {
       "operationId": "listOrganizations",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "listOutboundWebhookDeliveries",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "listOutboundWebhookSubscriptions",
       "policy": "NOT_APPLICABLE",
       "status": "PRODUCTION_CONTRACT_READY"
     },
@@ -924,7 +1014,7 @@
     },
     {
       "operationId": "markDealLostAndPlanRecycle",
-      "policy": "UNRESOLVED_BLOCKED",
+      "policy": "REQUIRED",
       "status": "BLOCKED"
     },
     {
@@ -953,6 +1043,11 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "pauseOutboundWebhookSubscription",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "previewPaymentPlan",
       "policy": "NOT_APPLICABLE",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -969,12 +1064,12 @@
     },
     {
       "operationId": "putWorkspaceExchangeRate",
-      "policy": "UNRESOLVED_BLOCKED",
+      "policy": "REQUIRED",
       "status": "BLOCKED"
     },
     {
       "operationId": "qualifyLead",
-      "policy": "UNRESOLVED_BLOCKED",
+      "policy": "REQUIRED",
       "status": "BLOCKED"
     },
     {
@@ -1074,7 +1169,7 @@
     },
     {
       "operationId": "replaceInvoiceSellerInformationConfiguration",
-      "policy": "UNRESOLVED_BLOCKED",
+      "policy": "REQUIRED",
       "status": "BLOCKED"
     },
     {
@@ -1084,7 +1179,7 @@
     },
     {
       "operationId": "replacePaymentReceivingAccounts",
-      "policy": "UNRESOLVED_BLOCKED",
+      "policy": "REQUIRED",
       "status": "BLOCKED"
     },
     {
@@ -1099,11 +1194,16 @@
     },
     {
       "operationId": "replaceWorkspaceCurrencies",
-      "policy": "UNRESOLVED_BLOCKED",
+      "policy": "REQUIRED",
       "status": "BLOCKED"
     },
     {
       "operationId": "replaceWorkspaceMemberAccess",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "replayOutboundWebhookDelivery",
       "policy": "REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
     },
@@ -1115,6 +1215,11 @@
     {
       "operationId": "repriceQuoteDraft",
       "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "requestAiAdvisory",
+      "policy": "NOT_APPLICABLE_READ_ONLY",
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
@@ -1183,6 +1288,11 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "resumeOutboundWebhookSubscription",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "retryInvoiceIssue",
       "policy": "REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -1228,6 +1338,16 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "rotateOutboundWebhookSecret",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "saveAiConfiguration",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "saveInvoiceDraft",
       "policy": "REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -1248,6 +1368,11 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "setAiCredential",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "signIn",
       "policy": "REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -1264,6 +1389,11 @@
     },
     {
       "operationId": "syncShippingBookingCommand",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "testAiConfiguration",
       "policy": "REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
     },
@@ -1289,23 +1419,23 @@
     },
     {
       "operationId": "updateCrmObjectField",
-      "policy": "UNRESOLVED_BLOCKED",
+      "policy": "REQUIRED",
       "status": "BLOCKED"
     },
     {
       "operationId": "updateCrmPipeline",
-      "policy": "UNRESOLVED_BLOCKED",
+      "policy": "REQUIRED",
       "status": "BLOCKED"
     },
     {
       "operationId": "updateCrmPipelineStage",
-      "policy": "UNRESOLVED_BLOCKED",
+      "policy": "REQUIRED",
       "status": "BLOCKED"
     },
     {
-      "operationId": "updateCustomerLifecycle",
-      "policy": "UNRESOLVED_BLOCKED",
-      "status": "BLOCKED"
+      "operationId": "updateCustomer",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
     },
     {
       "operationId": "updateDealCommand",
@@ -1324,7 +1454,7 @@
     },
     {
       "operationId": "updateIntegrationConnection",
-      "policy": "UNRESOLVED_BLOCKED",
+      "policy": "REQUIRED",
       "status": "BLOCKED"
     },
     {
@@ -1334,12 +1464,17 @@
     },
     {
       "operationId": "updateOrganization",
-      "policy": "UNRESOLVED_BLOCKED",
-      "status": "BLOCKED"
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "updateOutboundWebhookSubscription",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
     },
     {
       "operationId": "updateProductConfigurationType",
-      "policy": "UNRESOLVED_BLOCKED",
+      "policy": "REQUIRED",
       "status": "BLOCKED"
     },
     {
@@ -1374,7 +1509,7 @@
     },
     {
       "operationId": "verifyIntegrationConnection",
-      "policy": "UNRESOLVED_BLOCKED",
+      "policy": "REQUIRED",
       "status": "BLOCKED"
     },
     {

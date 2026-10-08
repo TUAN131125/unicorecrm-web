@@ -1,3 +1,5 @@
+import type { LeadKanbanColumn } from "../../application/ports/LeadApiRuntime";
+import type { LeadKanbanWindow } from "../../application/queries/leadKanbanWindows";
 import type { MouseEvent } from "react";
 import type { Lead, LeadCampaign } from "../../domain/model/lead.types";
 import type { ColumnKeyType } from "../model/leadTable.types";
@@ -13,6 +15,9 @@ import { LeadPaginationBar } from "./LeadPaginationBar";
 
 interface LeadListResultsProps {
   leads: Lead[];
+  kanbanWindows?: Partial<Record<LeadKanbanColumn, LeadKanbanWindow>>;
+  onLoadMoreColumn?: (column: LeadKanbanColumn) => Promise<void>;
+  onRetryColumn?: (column: LeadKanbanColumn) => Promise<void>;
   viewMode: "table" | "kanban";
   activeView: string;
   selectedLeadIds: string[];
@@ -39,7 +44,7 @@ interface LeadListResultsProps {
   onColumnReset: (columnKey: string) => void;
   setOpenRowActionId: (leadId: string | null) => void;
   getReturnToUrl: (mode: "table" | "kanban") => string;
-  onMoveLead: (leadId: string, target: LeadKanbanDropTarget) => void;
+  onMoveLead: (leadId: string, target: LeadKanbanDropTarget) => void | Promise<void>;
   canClaim?: boolean;
   claimPendingIds?: ReadonlySet<string>;
   onClaim?: (leadId: string) => void;
@@ -57,6 +62,9 @@ interface LeadListResultsProps {
 
 export function LeadListResults({
   leads,
+  kanbanWindows,
+  onLoadMoreColumn,
+  onRetryColumn,
   viewMode,
   activeView,
   selectedLeadIds,
@@ -100,7 +108,7 @@ export function LeadListResults({
 }: LeadListResultsProps) {
   const { t, locale } = useI18n();
 
-  if (totalItems === 0) {
+  if (totalItems === 0 && !kanbanWindows) {
     return (
       <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <ListStatePanel
@@ -176,6 +184,9 @@ export function LeadListResults({
       ) : (
         <LeadKanbanBoard
           filteredLeads={leads}
+          {...(kanbanWindows ? { windows: kanbanWindows } : {})}
+          {...(onLoadMoreColumn ? { onLoadMoreColumn } : {})}
+          {...(onRetryColumn ? { onRetryColumn } : {})}
           activeView={activeView}
           openRowActionId={openRowActionId}
           setOpenRowActionId={setOpenRowActionId}
@@ -185,7 +196,7 @@ export function LeadListResults({
           {...sharedActions}
         />
       )}
-      <LeadPaginationBar
+      {viewMode === "table" && <LeadPaginationBar
         page={page}
         pageCount={pageCount}
         pageSize={pageSize}
@@ -194,7 +205,7 @@ export function LeadListResults({
         rangeEnd={rangeEnd}
         onPageChange={onPageChange}
         onPageSizeChange={onPageSizeChange}
-      />
+      />}
     </div>
   );
 }

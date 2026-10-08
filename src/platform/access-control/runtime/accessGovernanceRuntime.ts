@@ -84,7 +84,10 @@ class DefaultAccessGovernanceRuntimeBinding implements AccessGovernanceRuntimeBi
     return this.refresh(workspaceId, signal);
   }
   clear(): void { this.commit({ loading: false }); }
-  private commit(next: AccessGovernanceRuntimeState): void { this.state = next; this.listeners.forEach((listener) => listener()); }
+  private commit(next: AccessGovernanceRuntimeState): void {
+    this.state = { ...next, authorityRevision: (this.state.authorityRevision ?? 0) + 1 };
+    this.listeners.forEach((listener) => listener());
+  }
 }
 
 export function configureDefaultAccessGovernanceRuntime(runtime: AccessGovernanceRuntime): void {

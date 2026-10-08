@@ -36,14 +36,15 @@ export function LeadConsentPanel({ lead, actorId, actorName, onRecord }: LeadCon
     () => { setChannel("EMAIL"); setDecision("GRANTED"); setSource("VERBAL_CONFIRMATION"); setEvidence(""); }, () => { openIntent.current = false; setOpen(false); }, false, lead.id);
   const latest = useMemo(() => lead.consent?.ledger?.[0], [lead.consent?.ledger]);
 
-  const submit = async () => {
-    if (!source.trim()) return;
+  lifecycle.bindSave(async () => {
+    if (!source.trim()) return false;
     const target = opening.current;
-    if (await lifecycle.run(() => target.onRecord({ channel, decision, source: source.trim(), evidence: evidence.trim() || undefined,
-      actorId: target.actorId, actorName: target.actorName }))) {
-      openIntent.current = false; setOpen(false); setEvidence("");
-    }
-  };
+    const saved = await target.onRecord({ channel, decision, source: source.trim(), evidence: evidence.trim() || undefined,
+      actorId: target.actorId, actorName: target.actorName });
+    return saved.id === target.lead.id;
+  });
+
+  const submit = async () => { await lifecycle.save(); };
 
   return (
     <>{lifecycle.confirmation}

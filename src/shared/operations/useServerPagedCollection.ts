@@ -3,6 +3,7 @@ import type { AuthoritativePage, ModuleListQuery } from "@/shared/application";
 import { normalizeApplicationError, type ApplicationError } from "@/shared/domain";
 
 interface ServerPageSnapshot<T> {
+  scopeKey: string;
   state: "IDLE" | "LOADING" | "READY" | "ERROR";
   page?: AuthoritativePage<T>;
   error?: ApplicationError;
@@ -55,7 +56,7 @@ export function useServerPagedCollection<T>(
   const enabled = options.connected && (options.enabled ?? true);
   const [page, setPageState] = React.useState(1);
   const [pageSize, setPageSizeState] = React.useState(() => normalizePageSize(options.initialPageSize ?? 25));
-  const [snapshot, setSnapshot] = React.useState<ServerPageSnapshot<T>>({ state: "IDLE" });
+  const [snapshot, setSnapshot] = React.useState<ServerPageSnapshot<T>>({ state: "IDLE", scopeKey: options.scopeKey });
   const controllerRef = React.useRef<AbortController | undefined>(undefined);
   const requestVersionRef = React.useRef(0);
   const cursorByPageRef = React.useRef(new Map<number, string | undefined>([[1, undefined]]));
@@ -72,11 +73,12 @@ export function useServerPagedCollection<T>(
     cursorByPageRef.current = new Map([[1, undefined]]);
     setPageState(1);
     setSnapshot((current) => evictProjection
-      ? { state: "IDLE" }
+      ? { state: "IDLE", scopeKey: options.scopeKey }
       : current.page === undefined
-        ? { state: "IDLE" }
+        ? { state: "IDLE", scopeKey: options.scopeKey }
         : {
             state: "IDLE",
+            scopeKey: current.scopeKey,
             page: current.page,
             ...(current.loadedAt === undefined ? {} : { loadedAt: current.loadedAt }),
           });
@@ -85,7 +87,7 @@ export function useServerPagedCollection<T>(
       else options.project([]);
     }
     options.onReset?.();
-  }, [options.evictProjection, options.project, options.onReset]);
+  }, [options.evictProjection, options.project, options.onReset, options.scopeKey]);
 
   React.useLayoutEffect(() => {
     if (previousResetKeyRef.current === resetKey) return;
@@ -107,8 +109,8 @@ export function useServerPagedCollection<T>(
   }, []);
 
   const load = React.useCallback(async (force: boolean) => {
-    if (!enabled) return;
-    if (!force && snapshot.state === "READY") return;
+    if (!enabled || previousScopeKeyRef.current !== options.scopeKey) return;
+    if (!force && snapshot.scopeKey === options.scopeKey && snapshot.state === "READY") return;
 
     const cursor = cursorByPageRef.current.get(page);
     if (page > 1 && cursor === undefined) {
@@ -122,9 +124,10 @@ export function useServerPagedCollection<T>(
     const controller = new AbortController();
     controllerRef.current = controller;
     const requestedAt = new Date().toISOString();
-    const previousPage = snapshot.page;
+    const previousPage = snapshot.scopeKey === options.scopeKey ? snapshot.page : undefined;
     setSnapshot({
       state: "LOADING",
+      scopeKey: options.scopeKey,
       requestedAt,
       ...(previousPage === undefined ? {} : { page: previousPage }),
     });
@@ -135,14 +138,14 @@ export function useServerPagedCollection<T>(
         limit: pageSize,
         ...(cursor === undefined ? {} : { cursor }),
       }, controller.signal);
-      if (controller.signal.aborted || requestVersion !== requestVersionRef.current) return;
+      if (controller.signal.aborted || requestVersion !== requestVersionRef.current || previousScopeKeyRef.current !== options.scopeKey) return;
 
       const authoritativePageCount = Math.max(1, Math.ceil((result.pageInfo.totalCount ?? result.items.length) / pageSize));
       if (page > authoritativePageCount) {
         setPageState(authoritativePageCount);
         setSnapshot((current) => current.page === undefined
-          ? { state: "IDLE" }
-          : { state: "IDLE", page: current.page, ...(current.loadedAt === undefined ? {} : { loadedAt: current.loadedAt }) });
+          ? { state: "IDLE", scopeKey: options.scopeKey }
+          : { state: "IDLE", scopeKey: current.scopeKey, page: current.page, ...(current.loadedAt === undefined ? {} : { loadedAt: current.loadedAt }) });
         return;
       }
 
@@ -160,14 +163,16 @@ export function useServerPagedCollection<T>(
       options.project(result.items);
       setSnapshot({
         state: "READY",
+        scopeKey: options.scopeKey,
         page: result,
         requestedAt,
         loadedAt: result.loadedAt || new Date().toISOString(),
       });
     } catch (error: unknown) {
-      if (controller.signal.aborted || requestVersion !== requestVersionRef.current) return;
+      if (controller.signal.aborted || requestVersion !== requestVersionRef.current || previousScopeKeyRef.current !== options.scopeKey) return;
       setSnapshot({
         state: "ERROR",
+        scopeKey: options.scopeKey,
         error: normalizeApplicationError(error),
         requestedAt,
         ...(previousPage === undefined ? {} : { page: previousPage }),
@@ -175,18 +180,19 @@ export function useServerPagedCollection<T>(
     } finally {
       if (requestVersion === requestVersionRef.current) controllerRef.current = undefined;
     }
-  }, [enabled, options.errorCodePrefix, options.loadPage, options.project, options.query, page, pageSize, snapshot.page, snapshot.state]);
+  }, [enabled, options.errorCodePrefix, options.loadPage, options.project, options.query, options.scopeKey, page, pageSize, snapshot.page, snapshot.state, snapshot.scopeKey]);
 
   React.useEffect(() => {
     if (enabled && snapshot.state === "IDLE") void load(false);
   }, [enabled, load, snapshot.state]);
 
-  const totalCount = snapshot.page?.pageInfo.totalCount;
-  const hasNextPage = snapshot.page?.pageInfo.hasNextPage ?? false;
+  const visibleSnapshot = snapshot.scopeKey === options.scopeKey ? snapshot : { state: "IDLE" as const, scopeKey: options.scopeKey };
+  const totalCount = visibleSnapshot.page?.pageInfo.totalCount;
+  const hasNextPage = visibleSnapshot.page?.pageInfo.hasNextPage ?? false;
   const pageCount = totalCount === undefined
     ? Math.max(1, page + (hasNextPage ? 1 : 0))
     : Math.max(1, Math.ceil(totalCount / pageSize));
-  const items = snapshot.page?.items ?? [];
+  const items = visibleSnapshot.page?.items ?? [];
   const totalItems = totalCount ?? ((page - 1) * pageSize + items.length + (hasNextPage ? 1 : 0));
   const rangeStart = items.length === 0 ? 0 : (page - 1) * pageSize + 1;
   const rangeEnd = items.length === 0 ? 0 : rangeStart + items.length - 1;
@@ -200,9 +206,10 @@ export function useServerPagedCollection<T>(
     controllerRef.current = undefined;
     setPageState(normalized);
     setSnapshot((current) => current.page === undefined
-      ? { state: "IDLE" }
+      ? { state: "IDLE", scopeKey: current.scopeKey }
       : {
           state: "IDLE",
+          scopeKey: current.scopeKey,
           page: current.page,
           ...(current.loadedAt === undefined ? {} : { loadedAt: current.loadedAt }),
         });
@@ -221,8 +228,8 @@ export function useServerPagedCollection<T>(
     controllerRef.current?.abort();
     controllerRef.current = undefined;
     setSnapshot((current) => current.page
-      ? { state: "READY", page: current.page, loadedAt: current.loadedAt }
-      : { state: "IDLE" });
+      ? { state: "READY", scopeKey: current.scopeKey, page: current.page, loadedAt: current.loadedAt }
+      : { state: "IDLE", scopeKey: current.scopeKey });
   }, []);
 
   return {
@@ -240,11 +247,11 @@ export function useServerPagedCollection<T>(
     hasNextPage,
     canGoPrevious: page > 1,
     canGoNext: hasNextPage || page < pageCount,
-    loading: enabled && (snapshot.state === "IDLE" || snapshot.state === "LOADING"),
-    refreshing: enabled && snapshot.state === "LOADING" && snapshot.page !== undefined,
-    stale: enabled && snapshot.state === "ERROR" && snapshot.page !== undefined,
-    ...(snapshot.error === undefined ? {} : { error: snapshot.error }),
-    ...(snapshot.loadedAt === undefined ? {} : { loadedAt: snapshot.loadedAt }),
+    loading: enabled && (visibleSnapshot.state === "IDLE" || visibleSnapshot.state === "LOADING"),
+    refreshing: enabled && visibleSnapshot.state === "LOADING" && visibleSnapshot.page !== undefined,
+    stale: enabled && visibleSnapshot.state === "ERROR" && visibleSnapshot.page !== undefined,
+    ...(visibleSnapshot.error === undefined ? {} : { error: visibleSnapshot.error }),
+    ...(visibleSnapshot.loadedAt === undefined ? {} : { loadedAt: visibleSnapshot.loadedAt }),
     refresh,
     cancel,
   };

@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import crypto from "node:crypto";
 import path from "node:path";
 import { repositoryRoot } from "../../quality/core/repo-context.mjs";
 import { walkFiles } from "../../quality/core/filesystem.mjs";
@@ -36,6 +37,9 @@ export function generatedOutputs(artifacts) {
     ["src/platform/api/catalog/generatedApiOperationCatalog.ts", artifacts.operationCatalogSource],
     ["docs/api/api-operation-catalog.json", artifacts.operationCatalogJsonSource],
     ["docs/backend-readiness/operation-contract-status.json", artifacts.operationContractStatusSource],
+    ["docs/backend-readiness/idempotency-policy.json", artifacts.idempotencyPolicySource],
+    ["docs/backend-readiness/concurrency-policy.json", artifacts.concurrencyPolicySource],
+    ["docs/backend-readiness/operation-authorization-matrix.json", artifacts.authorizationMatrixSource],
   ];
 }
 
@@ -76,16 +80,40 @@ export function findEndpointAuthorityViolations(normalized) {
     "src/platform/api/FetchHttpClient.ts",
   ]);
   const externalTransports = new Map((normalized.ownership.approvedExternalTransports ?? []).map((transport) => [transport.path, transport]));
+  const semanticExtensions = new Map((normalized.ownership.approvedSemanticExtensions ?? []).map((extension) => [extension.path, extension]));
+  const violations = [];
+  // Reviewed source pins apply even when a file disappears or no longer has a
+  // literal route overlapping the spec. Validate registrations before scanning.
+  for (const [relative, extension] of semanticExtensions) {
+    let original;
+    try {
+      original = fs.readFileSync(absolute(relative), "utf8");
+    } catch (error) {
+      if (error?.code !== "ENOENT") throw error;
+      violations.push(`${relative}: registered semantic extension source is missing.`);
+      continue;
+    }
+    const source = stripComments(original);
+    const digest = crypto.createHash("sha256").update(original.replaceAll("\r\n", "\n")).digest("hex");
+    if (digest !== extension.sourceSha256 || !source.includes('contractAuthority: "semantic-extension"')) {
+      violations.push(`${relative}: semantic extension differs from its reviewed authority.`);
+      continue;
+    }
+    for (const match of source.matchAll(/(?:path\s*:\s*|request\s*\(\s*)(["'`])\/(?!\/)([^"'`\n]*)\1/g)) {
+      const value = `/${match[2]}`;
+      if (!extension.routes.includes(value)) violations.push(`${relative}: unapproved semantic extension route: ${value}`);
+    }
+  }
   const apiPaths = normalized.operations.map((operation) => operation.route.split("{")[0]).filter((value) => value.length > 1);
   const files = walkFiles(absolute("src"), {
     excludeDirectory: (name) => ["node_modules", "dist", ".git", "coverage"].includes(name),
     sort: true,
   }).filter((file) => /\.(?:ts|tsx|mts|mjs)$/.test(file) && !file.startsWith(generatedRoot));
-  const violations = [];
   for (const file of files) {
     const relative = path.relative(repositoryRoot, file).replaceAll(path.sep, "/");
-    if (generatedContractFiles.has(relative)) continue;
-    const source = stripComments(fs.readFileSync(file, "utf8"));
+    if (generatedContractFiles.has(relative) || semanticExtensions.has(relative)) continue;
+    const original = fs.readFileSync(file, "utf8");
+    const source = stripComments(original);
     const literalMatches = [...source.matchAll(/(?:path\s*:\s*|request\s*\(\s*)(["'`])\/(?!\/)([^"'`\n]*)\1/g)];
     if (literalMatches.length === 0) continue;
     const endpointMatches = literalMatches.filter((match) => apiPaths.some((prefix) => `/${match[2]}`.startsWith(prefix)));

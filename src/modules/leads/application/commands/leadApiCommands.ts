@@ -73,8 +73,13 @@ export async function replaceLeadProfileFromFormViaApi(
 export async function advanceLeadWorkStateViaApi(
   leadId: string,
   input: AdvanceLeadWorkStateInput,
+  observedVersion?: number,
 ): Promise<AdvanceLeadWorkStateResult> {
-  const expectedVersion = await requireLeadVersion(leadId, "advanceLeadWorkState");
+  const expectedVersion = observedVersion ?? await requireLeadVersion(leadId, "advanceLeadWorkState");
+  if (!Number.isSafeInteger(expectedVersion) || expectedVersion < 0) {
+    throw new ApplicationError({ code: "LEAD_LIFECYCLE_VERSION_REQUIRED", category: "CONFLICT", retryable: false,
+      message: "Lead transition requires a valid observed version." });
+  }
   const result = await getLeadApiRuntime().commands.advanceLeadWorkState(leadId, input, {
     idempotencyKey: createAttemptKey(`lead:advance-work-state:${leadId}:${input.targetWorkState}`),
     expectedVersion,

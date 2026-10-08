@@ -107,7 +107,8 @@ assert.doesNotMatch(generatedCommands, /"order\.(?:create|update-draft|reprice-d
 const productList = read("src/modules/products/presentation/hooks/useProductListController.ts");
 assert.doesNotMatch(productList, /Promise\.all/u, "Product batch lifecycle must be backend-owned");
 const orderList = read("src/modules/orders/presentation/hooks/useOrderListController.tsx");
-assert.match(orderList, /archiveOrdersCommandBoundary\(selectedOrderIds/u, "Order batch archive must use the authoritative boundary");
+assert.match(orderList, /const orderIds = action === "cancel" && bulkCancelOpen \? bulkCancelTargets\.current : selectedOrderIds;/u, "Order bulk actions must retain opening cancellation targets and current archive selection.");
+assert.match(orderList, /if \(action === "archive"\) \{\s*await archiveOrdersCommandBoundary\(orderIds/u, "Order batch archive must use the authoritative boundary with the selected target IDs");
 
 console.log(`Product/Order API boundary: PASS (${productOperations.length + orderOperations.length} authoritative operations).`);
 function read(relative: string): string { return readFileSync(join(root, relative), "utf8"); }

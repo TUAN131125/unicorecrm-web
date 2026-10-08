@@ -1,4 +1,5 @@
 export * from "./api";
+export { resolveActivityRecordingDate } from "../presentation/model/activityRecordingTime";
 
 export { TaskCreateModal } from "../presentation/components/TaskCreateModal";
 

@@ -1080,6 +1080,7 @@ export function QuoteBuilderView({ controller }: { controller: QuoteBuilderViewC
 
       <QuoteDeliveryConfirmationModal
         isOpen={Boolean(deliveryConfirmation)}
+        targetId={deliveryConfirmation?.quoteId}
         quoteNumber={quoteNumber}
         locale={locale}
         initialChannel={deliveryConfirmation?.channel}
@@ -1088,7 +1089,8 @@ export function QuoteBuilderView({ controller }: { controller: QuoteBuilderViewC
         initialFileName={deliveryConfirmation?.fileName}
         channelLocked={deliveryConfirmation?.channelLocked}
         onClose={() => setDeliveryConfirmation(null)}
-        onConfirm={confirmQuoteSent}
+        onConfirm={async (value) => { await confirmQuoteSent(value); }}
+        onSave={(value, deliveryId) => confirmQuoteSent(value, true, deliveryId)}
       />
 
       <QuoteBuilderProductPicker

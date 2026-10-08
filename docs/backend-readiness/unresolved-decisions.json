@@ -21,11 +21,9 @@
         "contact-organization.set-primary-representative",
         "contact-organization.upsert-relationship",
         "contact.anonymize",
-        "contact.archive",
         "contact.restore",
         "customer-conversion.reconcile",
         "customer.anonymize",
-        "customer.archive",
         "deal.mark-lost-and-plan-recycle",
         "invoice.allocate-receivable",
         "order.change-state",
@@ -580,16 +578,12 @@
     },
     {
       "decisionId": "DEC-MUTATION-RESULT-PROJECTION",
-      "question": "Approve, redesign or retire OpenAPI operation createContact.",
+      "question": "Define authoritative typed outcomes for remaining composite Customer onboarding/lifecycle operations.",
       "recommendedOwner": "contacts",
       "blockingOperations": [
         "completeCustomerOnboarding",
-        "createContact",
-        "createOrganization",
         "onboardExistingCustomer",
-        "updateContact",
-        "updateCustomerLifecycle",
-        "updateOrganization"
+        "updateCustomerLifecycle"
       ],
       "status": "BLOCKED",
       "availableEvidence": [
@@ -600,7 +594,14 @@
         "PATCH /customers/{customerId}",
         "POST /customers/{customerId}/complete-onboarding",
         "POST /organizations",
-        "PATCH /organizations/{organizationId}"
+        "PATCH /organizations/{organizationId}",
+        "Source reconciliation 2026-10-08: typed Contact and Organization mutation results match backend a6111021aae42b5a1bcb21b9b37c2a63d4642df4. See docs/api/contact-paging-baseline-review.md."
+      ],
+      "resolvedOperations": [
+        "createContact",
+        "createOrganization",
+        "updateContact",
+        "updateOrganization"
       ]
     },
     {

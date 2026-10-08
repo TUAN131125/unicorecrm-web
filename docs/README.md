@@ -21,6 +21,9 @@ Status labels:
 ## Backend contract hardening
 
 - [Backend-readiness contract authority](backend-readiness/README.md) — CURRENT
+- [Contact server query authority](architecture/contact-server-query.md) — CURRENT
+- [Contact paging contract baseline review](api/contact-paging-baseline-review.md) — CURRENT
+- [Global Save authority audit](quality/safe-fail-save-audit.md) — CURRENT
 - [P0.2 transaction semantics](backend-readiness/p02-transaction-semantics.md) — CURRENT
 - [P0.3 authoritative commercial read models](backend-readiness/p03-commercial-read-models.md) — CURRENT
 - [Credit approval command decision](backend-readiness/credit-approval-command-decision.md) — CURRENT

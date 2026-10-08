@@ -713,7 +713,7 @@
         "tags": [
           "Contacts"
         ],
-        "summary": "List contacts",
+        "summary": "Read an authorized bounded Contact page",
         "parameters": [
           {
             "$ref": "#/components/parameters/WorkspaceIdHeader"
@@ -723,6 +723,153 @@
           },
           {
             "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/CursorToken"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "active",
+                "needs_follow_up",
+                "in_consulting",
+                "has_open_opportunity",
+                "inactive",
+                "do_not_contact",
+                "archived"
+              ]
+            }
+          },
+          {
+            "name": "ownerId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "ownerScope",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "my"
+              ]
+            }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "relationshipLevel",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "decisionRole",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "doNotContact",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "link",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "linked",
+                "unlinked"
+              ]
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "recentlyUpdated",
+                "nameAsc",
+                "nextFollowUp"
+              ],
+              "default": "recentlyUpdated"
+            }
+          },
+          {
+            "name": "nextFollowUpDate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "followUp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "today",
+                "overdue"
+              ]
+            }
           }
         ],
         "responses": {
@@ -858,7 +1005,8 @@
           "RATE_LIMITED",
           "INTEGRATION_UNAVAILABLE",
           "INTERNAL_ERROR"
-        ]
+        ],
+        "description": "Opaque one-hour keyset cursor bound to trusted workspace/member, authorized field visibility, Tasks follow-up scope, sort and filters. Default active archive scope excludes archived records; status=archived explicitly selects archived records. Tasks-derived nextFollowUpAt is disclosed only under both Contact and Tasks read authority. Unsupported filters and sorts fail explicitly."
       },
       "post": {
         "operationId": "createContact",
@@ -1033,7 +1181,8 @@
           "IDEMPOTENCY_KEY_REUSED",
           "RATE_LIMITED",
           "INTERNAL_ERROR"
-        ]
+        ],
+        "x-aggregate-id-policy": "SERVER_ASSIGNED"
       }
     },
     "/contacts/{contactId}": {
@@ -1383,7 +1532,8 @@
               }
             }
           }
-        }
+        },
+        "x-aggregate-id-policy": "MUST_MATCH_TARGET"
       }
     },
     "/contacts/{contactId}/archive": {
@@ -1543,7 +1693,8 @@
               }
             }
           }
-        }
+        },
+        "x-aggregate-id-policy": "MUST_MATCH_TARGET"
       }
     },
     "/credit-notes": {
@@ -51558,6 +51709,16 @@
               }
             }
           },
+          "401": {
+            "description": "Authentication token missing or invalid",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "403": {
             "description": "Access denied",
             "content": {
@@ -51585,7 +51746,13 @@
         "x-concurrency-policy": "READ_ONLY",
         "x-audit-requirement": "SAFE_CONFIGURATION_READ",
         "x-event-outbox-expectation": "NOT_APPLICABLE",
-        "x-transaction-boundary": "PLATFORM_AI_READ"
+        "x-transaction-boundary": "PLATFORM_AI_READ",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "AI_CONFIGURATION_ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "TOKEN_INVALID"
+        ]
       }
     },
     "/ai/configuration": {
@@ -51624,6 +51791,16 @@
               }
             }
           },
+          "401": {
+            "description": "Authentication token missing or invalid",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "403": {
             "description": "Access denied",
             "content": {
@@ -51651,7 +51828,13 @@
         "x-concurrency-policy": "READ_ONLY",
         "x-audit-requirement": "SAFE_CONFIGURATION_READ",
         "x-event-outbox-expectation": "NOT_APPLICABLE",
-        "x-transaction-boundary": "PLATFORM_AI_READ"
+        "x-transaction-boundary": "PLATFORM_AI_READ",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "AI_CONFIGURATION_ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "TOKEN_INVALID"
+        ]
       },
       "put": {
         "tags": [
@@ -51693,6 +51876,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AiConfigurationMutationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication token missing or invalid",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -51744,7 +51937,16 @@
         "x-concurrency-policy": "IF_MATCH_REQUIRED",
         "x-audit-requirement": "IMMUTABLE_SAFE_CONFIGURATION_AUDIT",
         "x-event-outbox-expectation": "NOT_APPLICABLE",
-        "x-transaction-boundary": "PLATFORM_AI_CONFIGURATION"
+        "x-transaction-boundary": "PLATFORM_AI_CONFIGURATION",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "AI_CONFIGURATION_ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "AI_REQUEST_INVALID",
+          "AI_CONFIGURATION_VERSION_CONFLICT",
+          "AI_IDEMPOTENCY_KEY_REUSED",
+          "TOKEN_INVALID"
+        ]
       }
     },
     "/ai/configuration/credential": {
@@ -51788,6 +51990,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AiConfigurationMutationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication token missing or invalid",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -51839,7 +52051,16 @@
         "x-concurrency-policy": "IF_MATCH_REQUIRED",
         "x-audit-requirement": "CREDENTIAL_METADATA_ONLY",
         "x-event-outbox-expectation": "NOT_APPLICABLE",
-        "x-transaction-boundary": "PLATFORM_AI_CONFIGURATION"
+        "x-transaction-boundary": "PLATFORM_AI_CONFIGURATION",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "AI_CONFIGURATION_ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "AI_REQUEST_INVALID",
+          "AI_CONFIGURATION_VERSION_CONFLICT",
+          "AI_IDEMPOTENCY_KEY_REUSED",
+          "TOKEN_INVALID"
+        ]
       }
     },
     "/ai/configuration/test": {
@@ -51868,7 +52089,13 @@
         ],
         "requestBody": {
           "required": true,
-          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmptyCommandRequest" } } }
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyCommandRequest"
+              }
+            }
+          }
         },
         "responses": {
           "200": {
@@ -51877,6 +52104,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AiConfigurationTestResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication token missing or invalid",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -51948,7 +52185,20 @@
         "x-concurrency-policy": "IF_MATCH_REQUIRED",
         "x-audit-requirement": "SAFE_TEST_RESULT",
         "x-event-outbox-expectation": "NOT_APPLICABLE",
-        "x-transaction-boundary": "PLATFORM_AI_CONFIGURATION"
+        "x-transaction-boundary": "PLATFORM_AI_CONFIGURATION",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "AI_CONFIGURATION_ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "AI_REQUEST_INVALID",
+          "AI_CONFIGURATION_VERSION_CONFLICT",
+          "AI_IDEMPOTENCY_KEY_REUSED",
+          "AI_PROVIDER_UNAVAILABLE",
+          "AI_PROVIDER_TIMEOUT",
+          "AI_PROVIDER_RATE_LIMITED",
+          "AI_PROVIDER_RESPONSE_INVALID",
+          "TOKEN_INVALID"
+        ]
       }
     },
     "/ai/configuration/activate": {
@@ -51977,7 +52227,13 @@
         ],
         "requestBody": {
           "required": true,
-          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmptyCommandRequest" } } }
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyCommandRequest"
+              }
+            }
+          }
         },
         "responses": {
           "200": {
@@ -51986,6 +52242,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AiConfigurationMutationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication token missing or invalid",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -52027,7 +52293,18 @@
         "x-concurrency-policy": "IF_MATCH_REQUIRED",
         "x-audit-requirement": "IMMUTABLE_SAFE_CONFIGURATION_AUDIT",
         "x-event-outbox-expectation": "NOT_APPLICABLE",
-        "x-transaction-boundary": "PLATFORM_AI_CONFIGURATION"
+        "x-transaction-boundary": "PLATFORM_AI_CONFIGURATION",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "AI_CONFIGURATION_ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "AI_REQUEST_INVALID",
+          "AI_CONFIGURATION_VERSION_CONFLICT",
+          "AI_IDEMPOTENCY_KEY_REUSED",
+          "AI_CONFIGURATION_NOT_VALIDATED",
+          "AI_PROVIDER_UNAVAILABLE",
+          "TOKEN_INVALID"
+        ]
       }
     },
     "/ai/configuration/disable": {
@@ -52056,7 +52333,13 @@
         ],
         "requestBody": {
           "required": true,
-          "content": { "application/json": { "schema": { "$ref": "#/components/schemas/EmptyCommandRequest" } } }
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmptyCommandRequest"
+              }
+            }
+          }
         },
         "responses": {
           "200": {
@@ -52065,6 +52348,16 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AiConfigurationMutationResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication token missing or invalid",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
                 }
               }
             }
@@ -52106,24 +52399,73 @@
         "x-concurrency-policy": "IF_MATCH_REQUIRED",
         "x-audit-requirement": "IMMUTABLE_SAFE_CONFIGURATION_AUDIT",
         "x-event-outbox-expectation": "NOT_APPLICABLE",
-        "x-transaction-boundary": "PLATFORM_AI_CONFIGURATION"
+        "x-transaction-boundary": "PLATFORM_AI_CONFIGURATION",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "AI_CONFIGURATION_ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "AI_REQUEST_INVALID",
+          "AI_CONFIGURATION_VERSION_CONFLICT",
+          "AI_IDEMPOTENCY_KEY_REUSED",
+          "TOKEN_INVALID"
+        ]
       }
     },
     "/ai/configuration/usage": {
       "get": {
-        "tags": ["AI"],
+        "tags": [
+          "AI"
+        ],
         "operationId": "getAiUsageSummary",
         "summary": "Read safe Workspace AI health and usage summary",
         "parameters": [
-          { "$ref": "#/components/parameters/WorkspaceIdHeader" },
-          { "$ref": "#/components/parameters/RequestIdHeader" },
-          { "$ref": "#/components/parameters/CorrelationIdHeader" }
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          }
         ],
         "responses": {
-          "200": { "description": "Safe usage summary", "content": { "application/json": { "schema": { "$ref": "#/components/schemas/AiUsageSummaryResponse" } } } },
-          "403": { "description": "Access denied", "content": { "application/problem+json": { "schema": { "$ref": "#/components/schemas/ProblemDetails" } } } }
+          "200": {
+            "description": "Safe usage summary",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiUsageSummaryResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication token missing or invalid",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Access denied",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
         },
-        "security": [{ "bearerAuth": [] }],
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
         "x-contract-status": "PRODUCTION_CONTRACT_READY",
         "x-module-owner": "ai",
         "x-required-capability": "ai.configuration.read",
@@ -52135,7 +52477,13 @@
         "x-concurrency-policy": "READ_ONLY",
         "x-audit-requirement": "SAFE_CONFIGURATION_READ",
         "x-event-outbox-expectation": "NOT_APPLICABLE",
-        "x-transaction-boundary": "PLATFORM_AI_READ"
+        "x-transaction-boundary": "PLATFORM_AI_READ",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "AI_CONFIGURATION_ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "TOKEN_INVALID"
+        ]
       }
     },
     "/ai/advisories": {
@@ -52179,6 +52527,16 @@
           },
           "400": {
             "description": "Invalid request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication token missing or invalid",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -52296,8 +52654,515 @@
           "AI_PROVIDER_UNAVAILABLE",
           "AI_PROVIDER_TIMEOUT",
           "AI_PROVIDER_RATE_LIMITED",
-          "AI_PROVIDER_RESPONSE_INVALID"
+          "AI_PROVIDER_RESPONSE_INVALID",
+          "TOKEN_INVALID"
         ]
+      }
+    },
+    "/contacts/summary": {
+      "get": {
+        "operationId": "getContactListSummary",
+        "tags": [
+          "Contacts"
+        ],
+        "summary": "Read authorized filtered Contact status totals",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "active",
+                "needs_follow_up",
+                "in_consulting",
+                "has_open_opportunity",
+                "inactive",
+                "do_not_contact",
+                "archived"
+              ]
+            }
+          },
+          {
+            "name": "ownerId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "ownerScope",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "my"
+              ]
+            }
+          },
+          {
+            "name": "source",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "relationshipLevel",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "decisionRole",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "doNotContact",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "link",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "linked",
+                "unlinked"
+              ]
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "recentlyUpdated",
+                "nameAsc",
+                "nextFollowUp"
+              ],
+              "default": "recentlyUpdated"
+            }
+          },
+          {
+            "name": "nextFollowUpDate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "format": "date"
+            }
+          },
+          {
+            "name": "followUp",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "today",
+                "overdue"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List contacts.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContactListSummary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "contacts",
+        "x-required-capability": "contacts.read",
+        "x-resource-scope": "WORKSPACE",
+        "x-data-scope": "WORKSPACE",
+        "x-workspace-required": true,
+        "x-actor-required": false,
+        "x-idempotency-policy": "NOT_APPLICABLE",
+        "x-concurrency-policy": "NOT_APPLICABLE",
+        "x-audit-requirement": "READ_ACCESS_LOG",
+        "x-event-outbox-expectation": "NOT_APPLICABLE",
+        "x-transaction-boundary": "READ_ONLY",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "RATE_LIMITED",
+          "INTEGRATION_UNAVAILABLE",
+          "INTERNAL_ERROR"
+        ],
+        "description": "Opaque one-hour keyset cursor bound to trusted workspace/member, authorized field visibility, Tasks follow-up scope, sort and filters. Default active archive scope excludes archived records; status=archived explicitly selects archived records. Tasks-derived nextFollowUpAt is disclosed only under both Contact and Tasks read authority. Unsupported filters and sorts fail explicitly."
+      }
+    },
+    "/leads/kanban/{column}": {
+      "get": {
+        "operationId": "listLeadKanbanColumn",
+        "tags": [
+          "Leads"
+        ],
+        "summary": "Read one authorized bounded Lead Kanban column",
+        "parameters": [
+          {
+            "name": "column",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "$ref": "#/components/schemas/LeadKanbanColumn"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "description": "Opaque continuation cursor for deterministic Lead ordering.",
+            "schema": {
+              "$ref": "#/components/schemas/CursorToken"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Maximum Leads returned.",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 50
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "description": "Workspace- and access-scoped search by Lead ID, display name, and readable primary phone.",
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "workState",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/LeadWorkState"
+            }
+          },
+          {
+            "name": "ownerId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "$ref": "#/components/schemas/EntityId"
+            }
+          },
+          {
+            "name": "assignmentState",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "ASSIGNED",
+                "UNASSIGNED"
+              ]
+            },
+            "description": "Assignment filter. UNASSIGNED requires leads.queue.read in OWN or WORKSPACE scope and cannot be combined with ownerId."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List leads.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LeadListResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "leads",
+        "x-required-capability": "leads.read",
+        "x-resource-scope": "WORKSPACE",
+        "x-data-scope": "WORKSPACE",
+        "x-workspace-required": true,
+        "x-actor-required": false,
+        "x-idempotency-policy": "NOT_APPLICABLE",
+        "x-concurrency-policy": "NOT_APPLICABLE",
+        "x-audit-requirement": "READ_ACCESS_LOG",
+        "x-event-outbox-expectation": "NOT_APPLICABLE",
+        "x-transaction-boundary": "READ_ONLY",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "RATE_LIMITED",
+          "INTEGRATION_UNAVAILABLE",
+          "INTERNAL_ERROR"
+        ],
+        "description": "Independent column window ordered by updatedAt DESC, id DESC. Cursor is opaque and bound to trusted workspace/member, access-policy fingerprint, column and filters. Invalid or mismatched cursors return 422. No full collection projection."
       }
     }
   },
@@ -52771,18 +53636,72 @@
           "isValidated"
         ],
         "properties": {
-          "status": { "type": "string", "enum": ["DRAFT"] },
-          "primaryProvider": { "type": "string", "enum": ["GEMINI", "OPENAI"] },
-          "primaryModel": { "type": "string" },
-          "primaryCredentialSource": { "type": "string", "enum": ["WORKSPACE", "DEPLOYMENT"] },
-          "primaryCredentialConfigured": { "type": "boolean" },
-          "fallbackEnabled": { "type": "boolean" },
-          "fallbackProvider": { "type": ["string", "null"], "enum": ["GEMINI", "OPENAI", null] },
-          "fallbackModel": { "type": ["string", "null"] },
-          "fallbackCredentialSource": { "type": ["string", "null"], "enum": ["WORKSPACE", "DEPLOYMENT", null] },
-          "fallbackCredentialConfigured": { "type": "boolean" },
-          "retryRateLimited": { "type": "boolean" },
-          "isValidated": { "type": "boolean" }
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT"
+            ]
+          },
+          "primaryProvider": {
+            "type": "string",
+            "enum": [
+              "GEMINI",
+              "OPENAI"
+            ]
+          },
+          "primaryModel": {
+            "type": "string"
+          },
+          "primaryCredentialSource": {
+            "type": "string",
+            "enum": [
+              "WORKSPACE",
+              "DEPLOYMENT"
+            ]
+          },
+          "primaryCredentialConfigured": {
+            "type": "boolean"
+          },
+          "fallbackEnabled": {
+            "type": "boolean"
+          },
+          "fallbackProvider": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "GEMINI",
+              "OPENAI",
+              null
+            ]
+          },
+          "fallbackModel": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "fallbackCredentialSource": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "enum": [
+              "WORKSPACE",
+              "DEPLOYMENT",
+              null
+            ]
+          },
+          "fallbackCredentialConfigured": {
+            "type": "boolean"
+          },
+          "retryRateLimited": {
+            "type": "boolean"
+          },
+          "isValidated": {
+            "type": "boolean"
+          }
         }
       },
       "AiConfigurationView": {
@@ -53027,17 +53946,57 @@
       "AiUsageSummaryResponse": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["executions","successfulExecutions","failedExecutions","providerAttempts","inputTokens","outputTokens","windowStartedAt"],
+        "required": [
+          "executions",
+          "successfulExecutions",
+          "failedExecutions",
+          "providerAttempts",
+          "inputTokens",
+          "outputTokens",
+          "windowStartedAt"
+        ],
         "properties": {
-          "executions": { "type": "integer", "format": "int64" },
-          "successfulExecutions": { "type": "integer", "format": "int64" },
-          "failedExecutions": { "type": "integer", "format": "int64" },
-          "providerAttempts": { "type": "integer", "format": "int64" },
-          "inputTokens": { "type": "integer", "format": "int64" },
-          "outputTokens": { "type": "integer", "format": "int64" },
-          "windowStartedAt": { "type": "string", "format": "date-time" },
-          "lastExecutionAt": { "type": ["string","null"], "format": "date-time" },
-          "lastStatus": { "type": ["string","null"] }
+          "executions": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "successfulExecutions": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "failedExecutions": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "providerAttempts": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "inputTokens": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "outputTokens": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "windowStartedAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "lastExecutionAt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time"
+          },
+          "lastStatus": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
         }
       },
       "AcceptQuoteRequest": {
@@ -55109,13 +56068,35 @@
             "type": "string",
             "maxLength": 200,
             "description": "Read-only display projection of fullName."
+          },
+          "nextFollowUpAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Tasks-owned authorized minimum dueAt of open, unarchived Contact-targeted Tasks; omitted when unavailable or no eligible task."
           }
         }
       },
       "ContactList": {
-        "type": "array",
-        "items": {
-          "$ref": "#/components/schemas/ContactDocument"
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "pageInfo",
+          "followUpAvailable"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ContactDocument"
+            }
+          },
+          "pageInfo": {
+            "$ref": "#/components/schemas/ContactPageInfo"
+          },
+          "followUpAvailable": {
+            "type": "boolean"
+          }
         }
       },
       "ContactOrganizationRelationshipDocument": {
@@ -56997,17 +57978,102 @@
           "evaluatedAt"
         ],
         "properties": {
-          "score": { "anyOf": [{ "type": "integer", "minimum": 0, "maximum": 100 }, { "type": "null" }] },
-          "healthBand": { "type": "string", "enum": ["UNKNOWN", "HEALTHY", "WATCH", "AT_RISK", "CRITICAL"] },
-          "churnRisk": { "type": "string", "enum": ["UNKNOWN", "LOW", "MEDIUM", "HIGH", "CRITICAL"] },
-          "confidence": { "type": "string", "enum": ["NONE", "LOW", "MEDIUM", "HIGH"] },
-          "purchaseCount": { "type": "integer", "minimum": 0 },
-          "lastPurchaseAt": { "anyOf": [{ "$ref": "#/components/schemas/UtcDateTime" }, { "type": "null" }] },
-          "expectedPurchaseCadenceDays": { "anyOf": [{ "type": "integer", "minimum": 7, "maximum": 365 }, { "type": "null" }] },
-          "daysSinceLastPurchase": { "anyOf": [{ "type": "integer", "minimum": 0 }, { "type": "null" }] },
-          "reasonCode": { "type": "string", "enum": ["NO_PURCHASE_EVIDENCE", "PURCHASE_RECENCY_HEALTHY", "PURCHASE_WITHIN_EXPECTED_CADENCE", "PURCHASE_CADENCE_SLIPPING", "PURCHASE_OVER_EXPECTED_CADENCE", "PURCHASE_SEVERELY_OVERDUE"] },
-          "algorithmVersion": { "type": "string", "const": "CUSTOMER_HEALTH_PURCHASE_RECENCY_V1" },
-          "evaluatedAt": { "$ref": "#/components/schemas/UtcDateTime" }
+          "score": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 100
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "healthBand": {
+            "type": "string",
+            "enum": [
+              "UNKNOWN",
+              "HEALTHY",
+              "WATCH",
+              "AT_RISK",
+              "CRITICAL"
+            ]
+          },
+          "churnRisk": {
+            "type": "string",
+            "enum": [
+              "UNKNOWN",
+              "LOW",
+              "MEDIUM",
+              "HIGH",
+              "CRITICAL"
+            ]
+          },
+          "confidence": {
+            "type": "string",
+            "enum": [
+              "NONE",
+              "LOW",
+              "MEDIUM",
+              "HIGH"
+            ]
+          },
+          "purchaseCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "lastPurchaseAt": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UtcDateTime"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "expectedPurchaseCadenceDays": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 7,
+                "maximum": 365
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "daysSinceLastPurchase": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reasonCode": {
+            "type": "string",
+            "enum": [
+              "NO_PURCHASE_EVIDENCE",
+              "PURCHASE_RECENCY_HEALTHY",
+              "PURCHASE_WITHIN_EXPECTED_CADENCE",
+              "PURCHASE_CADENCE_SLIPPING",
+              "PURCHASE_OVER_EXPECTED_CADENCE",
+              "PURCHASE_SEVERELY_OVERDUE"
+            ]
+          },
+          "algorithmVersion": {
+            "type": "string",
+            "const": "CUSTOMER_HEALTH_PURCHASE_RECENCY_V1"
+          },
+          "evaluatedAt": {
+            "$ref": "#/components/schemas/UtcDateTime"
+          }
         }
       },
       "CustomerList": {
@@ -57413,6 +58479,18 @@
           "ACCESS_DENIED",
           "ACCOUNT_ALREADY_EXISTS",
           "ACCOUNT_SUSPENDED",
+          "AI_CONFIGURATION_ACCESS_DENIED",
+          "AI_CONFIGURATION_NOT_VALIDATED",
+          "AI_CONFIGURATION_VERSION_CONFLICT",
+          "AI_CONTEXT_ACCESS_DENIED",
+          "AI_CONTEXT_NOT_FOUND",
+          "AI_IDEMPOTENCY_KEY_REUSED",
+          "AI_PROVIDER_RATE_LIMITED",
+          "AI_PROVIDER_RESPONSE_INVALID",
+          "AI_PROVIDER_TIMEOUT",
+          "AI_PROVIDER_UNAVAILABLE",
+          "AI_REQUEST_INVALID",
+          "AI_REQUEST_TOO_LARGE",
           "ALLOCATION_RESIDUAL_CONFLICT",
           "AUTHENTICATION_REQUIRED",
           "COD_COLLECTION_EVIDENCE_REQUIRED",
@@ -57471,6 +58549,7 @@
           "LAST_WORKSPACE_ADMINISTRATOR",
           "LEAD_ALREADY_ANONYMIZED",
           "LEAD_ALREADY_ARCHIVED",
+          "LEAD_ALREADY_CONVERTED",
           "LEAD_ANONYMIZATION_NOT_ALLOWED",
           "LEAD_ASSIGNMENT_REASON_REQUIRED",
           "LEAD_BATCH_ASSIGNMENT_CONFLICT",
@@ -57481,6 +58560,10 @@
           "LEAD_CONSENT_DECISION_INVALID",
           "LEAD_CONSENT_EXPIRY_INVALID",
           "LEAD_CONSENT_SOURCE_REQUIRED",
+          "LEAD_CONVERSION_INELIGIBLE",
+          "LEAD_CONVERSION_IN_PROGRESS",
+          "LEAD_CONVERSION_MANUAL_REVIEW",
+          "LEAD_CONVERSION_SUBJECT_INVALID",
           "LEAD_DIRECT_SALE_INPUT_INVALID",
           "LEAD_DISQUALIFICATION_EVIDENCE_REQUIRED",
           "LEAD_DUPLICATE_CLUSTER_INVALID",
@@ -57504,13 +58587,13 @@
           "LEAD_INVALID_TRANSITION",
           "LEAD_NURTURE_INPUT_INVALID",
           "LEAD_OPPORTUNITY_INPUT_INVALID",
+          "LEAD_OWNER_ALREADY_ASSIGNED",
           "LEAD_OWNER_NOT_ASSIGNABLE",
           "LEAD_PROGRESSIVE_PROFILE_INCOMPLETE",
           "LEAD_QUALIFICATION_DOWNSTREAM_CAPABILITY_REQUIRED",
           "LEAD_QUALIFICATION_DOWNSTREAM_MODULE_DISABLED",
           "LEAD_QUALIFICATION_RELATIONSHIP_INVALID",
           "LEAD_QUEUE_CLAIM_CONFLICT",
-          "LEAD_OWNER_ALREADY_ASSIGNED",
           "LEAD_REOPEN_NOT_ALLOWED",
           "LEAD_RETENTION_REASON_REQUIRED",
           "LEAD_TAG_REQUIRED",
@@ -57624,11 +58707,7 @@
           "UNKNOWN_BUSINESS_STATUS",
           "VALIDATION_FAILED",
           "VERSION_CONFLICT",
-          "WORKSPACE_MISMATCH",
-          "LEAD_CONVERSION_INELIGIBLE",
-          "LEAD_ALREADY_CONVERTED",
-          "LEAD_CONVERSION_SUBJECT_INVALID",
-          "LEAD_CONVERSION_MANUAL_REVIEW"
+          "WORKSPACE_MISMATCH"
         ]
       },
       "EvidenceItem": {
@@ -61584,7 +62663,7 @@
       },
       "OrganizationDocument": {
         "type": "object",
-        "additionalProperties": true,
+        "additionalProperties": false,
         "required": [
           "id",
           "workspaceId",
@@ -76624,6 +77703,59 @@
         "items": {
           "$ref": "#/components/schemas/OutboundWebhookDelivery"
         }
+      },
+      "ContactPageInfo": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "hasNextPage",
+          "totalCount"
+        ],
+        "properties": {
+          "hasNextPage": {
+            "type": "boolean"
+          },
+          "nextCursor": {
+            "type": "string",
+            "nullable": true
+          },
+          "totalCount": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "ContactListSummary": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "totalCount",
+          "statusCounts"
+        ],
+        "properties": {
+          "totalCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "statusCounts": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "integer",
+              "minimum": 0
+            }
+          }
+        }
+      },
+      "LeadKanbanColumn": {
+        "type": "string",
+        "enum": [
+          "NEW",
+          "CONTACTING",
+          "VERIFYING",
+          "POSITIVE_OUTCOME",
+          "NURTURE",
+          "DISQUALIFIED"
+        ]
       }
     }
   },

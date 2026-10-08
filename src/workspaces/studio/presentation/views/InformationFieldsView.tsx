@@ -300,7 +300,6 @@ export function InformationFieldsView() {
   return (
     <StudioPageFrame
       title={text("Trường thông tin", "Information fields")}
-      description={text("Thiết lập trường dùng chung cho biểu mẫu, danh sách, bộ lọc, tìm kiếm và xuất dữ liệu.", "Configure shared fields used by forms, lists, filters, search, and exports.")}
      
       locale={locale}
       dirty={dirty}

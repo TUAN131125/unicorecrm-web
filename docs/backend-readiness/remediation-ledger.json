@@ -28,8 +28,8 @@
       "remediationStatus": "PARTIALLY_CLOSED",
       "owner": "Module Domain Owners + API Contract Architect",
       "notes": "Reproduced from current source and OpenAPI. P0 closure status recorded after source remediation.",
-      "closureEvidence": "docs/backend-readiness/command-registry.json; all 173 commands are classified: 152 ready, 17 blocked and 4 deprecated. Ready commands resolve through typed operation mappings; blocked/deprecated commands fail before network.",
-      "remainingRisk": "17 blocked commands and 4 deprecated commands require module-owned DTO, invariant and workflow decisions before production implementation."
+      "closureEvidence": "docs/backend-readiness/command-registry.json; all 184 commands are classified: 165 ready, 15 blocked and 4 deprecated. Ready commands resolve through typed operation mappings; blocked/deprecated commands fail before network.",
+      "remainingRisk": "15 blocked commands and 4 deprecated commands require module-owned DTO, invariant and workflow decisions before production implementation."
     },
     {
       "ID": "H-03",

@@ -164,15 +164,23 @@ for (const marker of [
   "createTaskCommand",
 ]) assert.ok(leadDetailController.includes(marker), `Lead detail workflow contract missing ${marker}`);
 assert.equal(leadDetailController.includes("reassignTaskSnapshot"), false, "Lead handover must not reassign tasks through the local snapshot boundary.");
-assert.match(leadDetailController, /const handleConfirmHandover = async \(nextOwnerId: string, reason: string\) => \{[\s\S]*?handover\.isAmbiguousRetry\(\{ nextOwnerId, reason \}\)[\s\S]*?const result = await handover\.submit\(\{ nextOwnerId, reason \}\);\s*if \(!result\) return;\s*setShowHandoverModal\(false\);/, "Handover must preserve exact ambiguous retry and await the canonical workflow result before closing.");
+const handoverHandler = leadDetailController.match(/const handleConfirmHandover = async[\s\S]*?\n  \};/)?.[0];
+assert.ok(handoverHandler, "Lead detail must retain its canonical handover handler.");
+assert.match(handoverHandler, /\(nextOwnerId: string, reason: string, deferClose = false\): Promise<boolean>/, "Handover must return its save result and support deferred interaction resolution.");
+assert.match(handoverHandler, /handover\.isAmbiguousRetry\(\{ nextOwnerId, reason \}\)/, "Handover must preserve exact ambiguous retry admission.");
+assert.match(handoverHandler, /const result = await handover\.submit\(\{ nextOwnerId, reason \}\);\s*if \(!result\) return false;/, "Handover must await the canonical receipt and refuse success without a result.");
+assert.match(handoverHandler, /if \(!deferClose\) (?:setShowHandoverModal\(false\)|dialogs\.resolveInteraction\("handover"\));/, "Only direct submissions may resolve the dialog; deferred saves are resolved by the interaction owner.");
+assert.match(handoverHandler, /return true;/, "A committed handover must acknowledge save success to the interaction owner.");
+assert.doesNotMatch(handoverHandler, /createTaskCommand|createTaskSnapshot|reassignTaskSnapshot|completeTaskSnapshot/, "Handover must not orchestrate local Task effects.");
 
 const detailModals = read("src/modules/leads/presentation/components/LeadDetailModals.tsx");
 assert.equal(detailModals.includes("Xác nhận Lead đạt chất lượng"), false, "The redundant qualify confirmation dialog must stay removed.");
 for (const marker of [
   'title={locale === "vi" ? "Bàn giao Lead & công việc"',
-  "handleConfirmHandover(handoverOwnerId, handoverReason.trim())",
+  "handleConfirmHandover(handoverOwnerId, handoverReason.trim(), true)",
   'className="h-11 min-w-20"',
 ]) assert.ok(detailModals.includes(marker), `Lead modal alignment/work integration contract missing ${marker}`);
+assert.match(detailModals, /dialogs\.activeForm === "handover"\) dialogs\.bindSave\(async \(\) => \(await handleConfirmHandover\(handoverOwnerId, handoverReason\.trim\(\), true\)\) === true\)/, "Handover must bind its awaited deferred canonical save result to the opening interaction.");
 
 for (const relativePath of [
   "src/modules/leads/presentation/components/LeadDetailModals.tsx",
@@ -517,7 +525,7 @@ function DisqualifyHarness() {
   );
 }
 const mountDisqualify = async (key) => {
-  await act(async () => root.render(React.createElement(DisqualifyHarness, { key })));
+  await act(async () => root.render(React.createElement(I18nProvider, null, React.createElement(DisqualifyHarness, { key }))));
 };
 await mountDisqualify("pristine");
 await escape();

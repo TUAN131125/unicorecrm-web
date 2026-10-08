@@ -61,14 +61,15 @@ export function useLeadSavedViews(defaultSnapshot: LeadListPresentationSnapshot,
   const saveView = (
     name: string,
     snapshot: LeadListPresentationSnapshot,
+    deferClose = false,
   ): { ok: true; key: string; mode: "created" | "updated" } | { ok: false; error: "empty" | "duplicate" | "missing" } => {
     if (editingViewKey) {
       const result = updateLeadCustomSavedView(customViews, editingViewKey, name, snapshot);
       if ("error" in result) return { ok: false, error: result.error };
       persist(result.views.filter((view) => view.key.startsWith("custom_")) as typeof customOnly);
       setActiveView(result.view.key);
-      setEditingViewKey(null);
-      setIsAddViewOpen(false);
+      if (!deferClose) setEditingViewKey(null);
+      if (!deferClose) setIsAddViewOpen(false);
       return { ok: true, key: result.view.key, mode: "updated" };
     }
 
@@ -76,7 +77,7 @@ export function useLeadSavedViews(defaultSnapshot: LeadListPresentationSnapshot,
     if ("error" in result) return { ok: false, error: result.error };
     persist(result.views.filter((view) => view.key.startsWith("custom_")) as typeof customOnly);
     setActiveView(result.view.key);
-    setIsAddViewOpen(false);
+    if (!deferClose) setIsAddViewOpen(false);
     return { ok: true, key: result.view.key, mode: "created" };
   };
 

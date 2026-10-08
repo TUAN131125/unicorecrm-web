@@ -141,7 +141,8 @@
         "quality.studio-currency-exchange-rates",
         "quality.lead-lifecycle-contracts",
         "quality.deal-lifecycle-contracts",
-        "quality.quote-direct-sale-contracts"
+        "quality.quote-direct-sale-contracts",
+        "quality.lead-kanban-windows"
       ]
     },
     {
@@ -212,7 +213,8 @@
         "quality.auth-ux-contracts",
         "quality.crm-presentation-contracts",
         "quality.deal-stage-localization",
-        "quality.sales-order-p2-contracts"
+        "quality.sales-order-p2-contracts",
+        "quality.contact-http-query-contract"
       ]
     },
     {
@@ -262,14 +264,17 @@
         "quality.reports-runtime",
         "quality.workspace-governance-contracts",
         "quality.access-control-contracts",
-    "quality.contact-effective-field-profile",
+        "quality.contact-effective-field-profile",
         "quality.people-account-provisioning",
         "quality.contact-visual-baseline",
         "quality.connected-backend-integration",
         "quality.lead-ownership-distribution-contracts",
         "quality.lead-queue-claim",
         "quality.lead-owner-assign",
-        "quality.lead-handover"
+        "quality.lead-handover",
+        "quality.contact-command-authority",
+        "quality.contact-server-paging",
+        "quality.safe-fail-save-adapters"
       ]
     },
     {
@@ -1624,7 +1629,8 @@
       "timeoutMs": 180000,
       "openHandleGraceMs": 250,
       "requires": [
-        "node"
+        "node",
+        "typescript"
       ],
       "shardKey": "quality.partial-commit-outcomes",
       "steps": [
@@ -3602,6 +3608,7 @@
       "openHandleGraceMs": 250,
       "requires": [
         "node",
+        "typescript",
         "tsx"
       ],
       "shardKey": "quality.lead-data-safety-contracts",
@@ -9308,7 +9315,150 @@
         {
           "type": "node",
           "entry": "tests/quality/integration/check-lead-list-confidentiality.mts",
-          "nodeArgs": ["--import", "tsx"],
+          "nodeArgs": [
+            "--import",
+            "tsx"
+          ],
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "quality.contact-http-query-contract",
+      "commandName": "test:contact-http-query-contract",
+      "groupId": "contract",
+      "kind": "contract",
+      "owner": "quality-contract",
+      "entry": "tests/quality/contracts/check-contact-http-query-contract.mts",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node",
+        "tsx"
+      ],
+      "shardKey": "quality.contact-http-query-contract",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/contracts/check-contact-http-query-contract.mts",
+          "nodeArgs": [
+            "--import",
+            "tsx",
+            "--import",
+            "./tests/fixtures/runtime/bootstrap-demo-application-composition.mjs"
+          ],
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "quality.contact-command-authority",
+      "commandName": "test:contact-command-authority",
+      "groupId": "integration",
+      "kind": "integration",
+      "owner": "quality-integration",
+      "entry": "tests/quality/integration/check-contact-command-authority.mts",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node",
+        "tsx"
+      ],
+      "shardKey": "quality.contact-command-authority",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/integration/check-contact-command-authority.mts",
+          "nodeArgs": [
+            "--import",
+            "tsx",
+            "--import",
+            "./tests/fixtures/runtime/bootstrap-demo-application-composition.mjs"
+          ],
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "quality.contact-server-paging",
+      "commandName": "test:contact-server-paging",
+      "groupId": "integration",
+      "kind": "integration",
+      "owner": "quality-integration",
+      "entry": "tests/quality/integration/check-contact-server-paging.mts",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node",
+        "tsx"
+      ],
+      "shardKey": "quality.contact-server-paging",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/integration/check-contact-server-paging.mts",
+          "nodeArgs": [
+            "--import",
+            "tsx",
+            "--import",
+            "./tests/fixtures/runtime/bootstrap-demo-application-composition.mjs"
+          ],
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "quality.safe-fail-save-adapters",
+      "commandName": "test:safe-fail-save-adapters",
+      "groupId": "integration",
+      "kind": "integration",
+      "owner": "quality-integration",
+      "entry": "tests/quality/integration/check-safe-fail-save-adapters.mts",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node",
+        "tsx"
+      ],
+      "shardKey": "quality.safe-fail-save-adapters",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/integration/check-safe-fail-save-adapters.mts",
+          "nodeArgs": [
+            "--import",
+            "tsx",
+            "--import",
+            "./tests/fixtures/runtime/bootstrap-demo-application-composition.mjs"
+          ],
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "quality.lead-kanban-windows",
+      "commandName": "test:lead-kanban-windows",
+      "groupId": "unit",
+      "kind": "unit",
+      "owner": "quality-unit",
+      "entry": "tests/quality/unit/check-lead-kanban-windows.mts",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node",
+        "tsx"
+      ],
+      "shardKey": "quality.lead-kanban-windows",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/unit/check-lead-kanban-windows.mts",
+          "nodeArgs": [
+            "--import",
+            "tsx",
+            "--import",
+            "./tests/fixtures/runtime/bootstrap-demo-application-composition.mjs"
+          ],
           "args": []
         }
       ]

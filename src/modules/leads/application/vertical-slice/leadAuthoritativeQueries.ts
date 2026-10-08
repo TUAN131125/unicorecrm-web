@@ -12,12 +12,27 @@ import { evictLeadProjection, replaceLeads, saveLeadSnapshot } from "../../publi
 const COLLECTION_PAGE_SIZE = 250;
 const COLLECTION_MAX_PAGES = 20;
 
+let collectionReaders = 0;
 const collection = createLeadCollectionResource();
 const details = new Map<string, AuthoritativeResource<Lead>>();
 
 export function getLeadCollectionResource(): AuthoritativeResource<AuthoritativePage<Lead>> {
   return collection;
 }
+
+// Full-collection invalidation belongs only to an explicitly enabled reader.
+// A retained resource from a previous surface must not reactivate behind Kanban/table.
+export function retainLeadCollectionReader(): () => void {
+  collectionReaders++;
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    collectionReaders--;
+    if (collectionReaders === 0) collection.cancel();
+  };
+}
+
 
 export function getLeadDetailResource(leadId: string): AuthoritativeResource<Lead> {
   let resource = details.get(leadId);
@@ -41,6 +56,7 @@ function createLeadCollectionResource(): AuthoritativeResource<AuthoritativePage
         limit: COLLECTION_PAGE_SIZE,
         ...(cursor === undefined ? {} : { cursor }),
       }, signal);
+      signal.throwIfAborted();
       items.push(...page.items);
       totalCount = page.pageInfo.totalCount ?? totalCount;
       pageCount += 1;
@@ -62,7 +78,7 @@ function createLeadCollectionResource(): AuthoritativeResource<AuthoritativePage
     throw new Error("LEADS_AUTHORITATIVE_PAGE_LIMIT_EXCEEDED");
   });
   subscribeModuleQueryInvalidation("leads", async () => {
-    if (resource.getSnapshot().state !== "IDLE") await resource.refresh();
+    if (collectionReaders > 0 && resource.getSnapshot().state !== "IDLE") await resource.refresh();
   });
   return resource;
 }

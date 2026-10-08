@@ -20,23 +20,25 @@ function isContactOperationReady(operation: string): boolean {
 }
 export function isContactCreateAvailable(): boolean {
   return isContactOperationReady(CONTACT_CREATE_OPERATION)
-    && (Boolean(getContactApiRuntime().commands) || !isBusinessOperationUnavailable(CONTACT_CREATE_OPERATION));
+    && (Boolean(getContactApiRuntime().commands) || !isContactConnectedApiRuntime());
 }
 export function isContactUpdateAvailable(): boolean {
   return isContactOperationReady(CONTACT_UPDATE_OPERATION)
-    && (Boolean(getContactApiRuntime().commands) || !isBusinessOperationUnavailable(CONTACT_UPDATE_OPERATION));
+    && (Boolean(getContactApiRuntime().commands) || !isContactConnectedApiRuntime());
 }
-/**
- * True when Contact retention (archive/restore/anonymize) cannot run in the active runtime.
- * `contact.archive`, `contact.restore` and `contact.anonymize` are BLOCKED in the canonical
- * registry, so presentation can refuse the action up front instead of starting a mutation
- * that the boundary would reject.
- */
-export function isContactRetentionUnavailable(): boolean {
-  return !isContactOperationReady(CONTACT_ARCHIVE_OPERATION)
-    || (!getContactApiRuntime().commands && isMutationCommandUnavailable("contact.archive"));
+/** Archive has its own admitted HTTP command, independent of restore and anonymize. */
+export function isContactArchiveAvailable(): boolean {
+  return isContactOperationReady(CONTACT_ARCHIVE_OPERATION) && (Boolean(getContactApiRuntime().commands) || !isContactConnectedApiRuntime());
 }
-
+export function isContactRestoreAvailable(): boolean {
+  return !isContactConnectedApiRuntime() && !isMutationCommandUnavailable("contact.restore");
+}
+export function isContactAnonymizeAvailable(): boolean {
+  return !isContactConnectedApiRuntime() && !isMutationCommandUnavailable("contact.anonymize");
+}
+export function isContactBulkAvailable(): boolean {
+  return !isContactConnectedApiRuntime();
+}
 export { createContactViaApi, updateContactViaApi, archiveContactViaApi };
 
 export function getContactsSnapshot(): Contact[] {

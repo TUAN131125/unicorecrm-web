@@ -7,7 +7,8 @@ import { createOrganizationRepresentativeWorkflow } from "@/workflows/contact-or
 import { recordOperationalAudit } from "@/platform/operational-audit";
 import type { OrganizationAccount } from "../../public/api";
 
-import { useBoundFormDraft } from "../hooks/useBoundFormDraft";
+import { useBoundFormDraft } from "@/shared/hooks/useBoundFormDraft";
+import { useI18n } from "@/i18n";
 
 interface OrganizationRepresentativeModalProps {
   isOpen: boolean;
@@ -30,6 +31,7 @@ interface Draft {
 const EMPTY_DRAFT: Draft = { fullName: "", roleTitle: "", department: "", phone: "", email: "", decisionRole: "influencer", isPrimary: false };
 
 export const OrganizationRepresentativeModal: React.FC<OrganizationRepresentativeModalProps> = ({ isOpen, onClose, account, actorId, onCreated }) => {
+  const { locale } = useI18n();
   const lifecycle = useBoundFormDraft(isOpen, account.id, account, () => ({ ...EMPTY_DRAFT }), "Organization representative", onClose);
   const { draft, setDraft } = lifecycle;
   const [error, setError] = useState<string | null>(null);
@@ -132,7 +134,7 @@ export const OrganizationRepresentativeModal: React.FC<OrganizationRepresentativ
       </form>
     </Modal>
     <ConfirmDialog isOpen={lifecycle.confirmOpen} onClose={() => lifecycle.setConfirmOpen(false)} onConfirm={lifecycle.discard}
-      title="Bỏ thay đổi chưa lưu?" message="Các thay đổi chưa được lưu." confirmText="Bỏ thay đổi" cancelText="Tiếp tục chỉnh sửa" type="warning" />
+      title={locale === "vi" ? "Bỏ thay đổi chưa lưu?" : "Discard unsaved changes?"} message={locale === "vi" ? "Các thay đổi chưa được lưu." : "Your changes have not been saved."} confirmText={locale === "vi" ? "Bỏ thay đổi" : "Discard changes"} cancelText={locale === "vi" ? "Tiếp tục chỉnh sửa" : "Keep editing"} type="warning" />
     </>
   );
 };

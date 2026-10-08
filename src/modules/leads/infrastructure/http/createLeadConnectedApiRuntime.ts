@@ -4,10 +4,13 @@ import { ApplicationError } from "@/shared/domain";
 import { declareUnavailableBusinessOperation } from "@/shared/application";
 import type { LeadApiRuntime, LeadCommandPort } from "../../application/ports/LeadApiRuntime";
 import { LEAD_OPERATION } from "../../application/leadOperationAvailability";
+import { LeadHttpKanbanQueryAdapter } from "./LeadHttpKanbanQueryAdapter";
 import { LeadHttpApiAdapter } from "./LeadHttpApiAdapter";
 
 export function createLeadConnectedApiRuntime(httpClient: HttpClient): LeadApiRuntime {
-  const adapter = new LeadHttpApiAdapter(new CommercialApiClient(httpClient));
+  const api = new CommercialApiClient(httpClient);
+  const adapter = new LeadHttpApiAdapter(api);
+  const kanban = new LeadHttpKanbanQueryAdapter(api);
   const unavailable = (operationId: string) => {
     declareUnavailableBusinessOperation(operationId);
     return async (): Promise<never> => {
@@ -46,7 +49,11 @@ export function createLeadConnectedApiRuntime(httpClient: HttpClient): LeadApiRu
   };
   return {
     mode: "connected",
-    queries: adapter,
+    queries: {
+      list: (query, signal) => adapter.list(query, signal),
+      get: (id, signal) => adapter.get(id, signal),
+      kanbanColumn: (column, query, signal) => kanban.column(column, query, signal),
+    },
     commands,
   };
 }

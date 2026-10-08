@@ -157,7 +157,7 @@ const quoteBuilderSource = readPresentationComposition(path.join(root, "src/modu
 assert.match(quoteBuilderSource, /allocateQuoteIdentitySnapshot/);
 assert.match(quoteBuilderSource, /getQuoteConversionIssues/);
 assert.match(quoteBuilderSource, /saveQuoteSnapshotAsync/);
-assert.match(quoteBuilderSource, /save: \(\) => saveHandlerRef\.current\(\)/);
+assert.match(quoteBuilderSource, /lifecycle\.register\(hasUnsavedChanges,[\s\S]*?\}, \(\) => saveHandlerRef\.current\(\)\)/, "The opening lifecycle must bind the current canonical save callback.");
 const orderFormSource = readPresentationComposition(path.join(root, "src/modules/orders/presentation/pages/OrderFormPage.tsx"), "utf8");
 assert.match(orderFormSource, /ORDER_COMMERCIAL_IMMUTABLE/);
 assert.match(fs.readFileSync(path.join(root, "src/modules/orders/presentation/model/orderFormSupport.ts"), "utf8"), /Confirmed Order commercial content is immutable/);

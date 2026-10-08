@@ -1,5 +1,5 @@
 import React from "react";
-import { useBoundFormDraft } from "../hooks/useBoundFormDraft";
+import { useBoundFormDraft } from "@/shared/hooks/useBoundFormDraft";
 import { Button, ConfirmDialog, Input, Modal, Select } from "@/shared/components/ui";
 import { getContactsSnapshot } from "@/modules/contacts";
 import { getOrganizationAccountsSnapshot } from "@/modules/organizations";

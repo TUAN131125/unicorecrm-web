@@ -4,7 +4,7 @@
   "openapiVersion": "3.1.0",
   "contractVersion": "0.24.0-contract.0",
   "specPath": "docs/api/openapi.json",
-  "specSha256": "fb404a5c87c429e876154f99b1cf22d8aed524b51f3ad920b38b331f70295528",
+  "specSha256": "7aaf0b269de362b8bef6b6f2e783a660ef231e599a174fdfecb1e0f3b4d5ec5e",
   "ownershipPath": "scripts/api/openapi/client-ownership.json",
   "coverageLedgerPath": "docs/api/operation-coverage-ledger.json",
   "breakingBaselinePath": "docs/api/openapi-breaking-baseline.json",
@@ -29,7 +29,10 @@
     "src/platform/api/contracts/generatedProductionQueryRegistry.ts",
     "src/platform/api/catalog/generatedApiOperationCatalog.ts",
     "docs/api/api-operation-catalog.json",
-    "docs/backend-readiness/operation-contract-status.json"
+    "docs/backend-readiness/operation-contract-status.json",
+    "docs/backend-readiness/idempotency-policy.json",
+    "docs/backend-readiness/concurrency-policy.json",
+    "docs/backend-readiness/operation-authorization-matrix.json"
   ],
   "clients": [
     {
@@ -103,7 +106,7 @@
       "output": "src/platform/api/generated/commercialApi.ts",
       "className": "CommercialApiClient",
       "requestOptionsName": "CommercialRequestOptions",
-      "operationCount": 162
+      "operationCount": 164
     },
     {
       "id": "workspace-configuration",
@@ -1760,6 +1763,20 @@
       "requiredCapability": "contacts.read"
     },
     {
+      "operationId": "getContactListSummary",
+      "method": "GET",
+      "path": "/contacts/summary",
+      "boundedContext": "Contacts",
+      "ownerModule": "contacts",
+      "generatedClientId": "commercial",
+      "generatedMethod": "getContactListSummary",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "contacts.read"
+    },
+    {
       "operationId": "getContactRelationshipSummary",
       "method": "GET",
       "path": "/contacts/{contactId}/relationship-summary",
@@ -2570,6 +2587,20 @@
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "invoices.read"
+    },
+    {
+      "operationId": "listLeadKanbanColumn",
+      "method": "GET",
+      "path": "/leads/kanban/{column}",
+      "boundedContext": "Leads",
+      "ownerModule": "leads",
+      "generatedClientId": "commercial",
+      "generatedMethod": "listLeadKanbanColumn",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "leads.read"
     },
     {
       "operationId": "listLeads",

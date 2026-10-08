@@ -1,8 +1,8 @@
 # Canonical Command Registry
 
-Contract version: `0.23.20-contract.0`. OpenAPI is the sole production HTTP authority.
+Contract version: `0.24.0-contract.0`. OpenAPI is the sole production HTTP authority.
 
-Inventory: **173 commands** — **152 ready**, **17 blocked**, **4 deprecated**.
+Inventory: **184 commands** — **165 ready**, **15 blocked**, **4 deprecated**.
 
 Module commands use dedicated module/workflow HTTP adapters when production-ready; blocked commands remain fail closed and are excluded from generic mutation routing.
 
@@ -12,7 +12,7 @@ Module commands use dedicated module/workflow HTTP adapters when production-read
 | CMD-002 | `contact-organization.set-primary-representative` | contacts | BLOCKED | — | — | — | UNRESOLVED_BLOCKED | UNRESOLVED_BLOCKED | DEC-CMD-CONTACT-ORGANIZATION-SET-PRIMARY-REPRESENTATIVE |
 | CMD-003 | `contact-organization.upsert-relationship` | contacts | BLOCKED | — | — | — | UNRESOLVED_BLOCKED | UNRESOLVED_BLOCKED | DEC-CMD-CONTACT-ORGANIZATION-UPSERT-RELATIONSHIP |
 | CMD-004 | `contact.anonymize` | contacts | BLOCKED | — | — | — | UNRESOLVED_BLOCKED | UNRESOLVED_BLOCKED | DEC-CMD-CONTACT-ANONYMIZE |
-| CMD-005 | `contact.archive` | contacts | BLOCKED | — | — | — | UNRESOLVED_BLOCKED | UNRESOLVED_BLOCKED | DEC-CMD-CONTACT-ARCHIVE |
+| CMD-005 | `contact.archive` | contacts | PRODUCTION_CONTRACT_READY | archiveContact | ArchiveContactRequest | ContactMutationResponse | REQUIRED | IF_MATCH_REQUIRED | — |
 | CMD-006 | `contact.restore` | contacts | BLOCKED | — | — | — | UNRESOLVED_BLOCKED | UNRESOLVED_BLOCKED | DEC-CMD-CONTACT-RESTORE |
 | CMD-007 | `customer-conversion.reconcile` | customers | BLOCKED | — | — | — | UNRESOLVED_BLOCKED | UNRESOLVED_BLOCKED | DEC-CMD-CUSTOMER-CONVERSION-RECONCILE |
 | CMD-008 | `customer.anonymize` | customers | BLOCKED | — | — | — | UNRESOLVED_BLOCKED | UNRESOLVED_BLOCKED | DEC-CMD-CUSTOMER-ANONYMIZE |
@@ -181,3 +181,16 @@ Module commands use dedicated module/workflow HTTP adapters when production-read
 | CMD-171 | `order.reprice-draft` | orders | READY | `repriceOrderDraft` | `RepriceOrderDraftRequest` | `OrderMutationResponse` | REQUIRED | IF_MATCH_REQUIRED | — |
 | CMD-172 | `order.duplicate-draft` | orders | READY | `duplicateOrderDraft` | `DuplicateOrderDraftRequest` | `OrderMutationResponse` | REQUIRED | IF_MATCH_REQUIRED | — |
 | CMD-173 | `shipping.create-order-outbound` | shipping | READY | `createOrderOutboundShippingBooking` | `CreateOrderOutboundShippingRequest` | `ShippingWorkflowResponse` | REQUIRED | IF_MATCH_REQUIRED | DEC-PHASE18-SHIPPING-RETURNS-API-BOUNDARY |
+| CMD-174 | `customer.create` | customers | PRODUCTION_CONTRACT_READY | createCustomer | CreateCustomerRequest | CustomerMutationResponse | REQUIRED | BACKEND_SERIALIZED | DEC-CU-001..008 |
+| CMD-175 | `customer.update` | customers | PRODUCTION_CONTRACT_READY | updateCustomer | UpdateCustomerRequest | CustomerMutationResponse | REQUIRED | IF_MATCH_REQUIRED | DEC-CU-001..008 |
+| CMD-176 | `lead.convert-to-customer` | leads | PRODUCTION_CONTRACT_READY | convertLeadToCustomer | ConvertLeadToCustomerRequest | LeadCustomerConversionResponse | REQUIRED | IF_MATCH_REQUIRED_AT_ADMISSION_THEN_SEMANTIC_RECOVERY | DEC-WF-001;DEC-WF-002;DEC-WF-003 |
+| CMD-177 | `contact.create` | contacts | PRODUCTION_CONTRACT_READY | createContact | CreateContactRequest | ContactMutationResponse | REQUIRED | BACKEND_SERIALIZED | — |
+| CMD-178 | `contact.update` | contacts | PRODUCTION_CONTRACT_READY | updateContact | UpdateContactRequest | ContactMutationResponse | REQUIRED | IF_MATCH_REQUIRED | — |
+| CMD-179 | `contact.relationship.organization.create` | contacts | PRODUCTION_CONTRACT_READY | createContactOrganizationRelationship | CreateContactOrganizationRelationshipRequest | ContactMutationResponse | REQUIRED | IF_MATCH_REQUIRED | DEC-C6-001 |
+| CMD-180 | `contact.relationship.organization.update` | contacts | PRODUCTION_CONTRACT_READY | updateContactOrganizationRelationship | UpdateContactOrganizationRelationshipRequest | ContactMutationResponse | REQUIRED | IF_MATCH_REQUIRED | DEC-C6-001 |
+| CMD-181 | `contact.relationship.organization.end` | contacts | PRODUCTION_CONTRACT_READY | endContactOrganizationRelationship | EndContactRelationshipRequest | ContactMutationResponse | REQUIRED | IF_MATCH_REQUIRED | DEC-C6-001 |
+| CMD-182 | `contact.relationship.customer.create` | contacts | PRODUCTION_CONTRACT_READY | createContactCustomerRelationship | CreateContactCustomerRelationshipRequest | ContactMutationResponse | REQUIRED | IF_MATCH_REQUIRED | DEC-C6-002 |
+| CMD-183 | `contact.relationship.customer.update` | contacts | PRODUCTION_CONTRACT_READY | updateContactCustomerRelationship | UpdateContactCustomerRelationshipRequest | ContactMutationResponse | REQUIRED | IF_MATCH_REQUIRED | DEC-C6-002 |
+| CMD-184 | `contact.relationship.customer.end` | contacts | PRODUCTION_CONTRACT_READY | endContactCustomerRelationship | EndContactRelationshipRequest | ContactMutationResponse | REQUIRED | IF_MATCH_REQUIRED | DEC-C6-002 |
+
+Contact create/update/archive and six typed organization/customer relationship commands are READY through `ContactHttpCommandAdapter`. Legacy contact-organization workflow commands retain different semantics and remain blocked independently. Restore, anonymize and bulk Contact operations have no admitted connected command contract. Use separate action availability checks.

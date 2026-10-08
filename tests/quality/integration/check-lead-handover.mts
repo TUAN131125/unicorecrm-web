@@ -172,11 +172,12 @@ let current!: ReturnType<typeof useLeadHandover>;
 const rootElement = window.document.getElementById("root");
 assert.ok(rootElement);
 const root = createRoot(rootElement);
+const { I18nProvider, useI18n } = await import("@/i18n");
 let observed = mapLeadDocumentToApplication(document);
 let hideObserved = false;
 function Fixture() { current = useLeadHandover({ leadId: observed.id, observedLead: hideObserved ? undefined : observed }); return null; }
 let fixtureKey = crypto.randomUUID();
-async function rerender() { await act(async () => root.render(React.createElement(Fixture, { key: fixtureKey }))); }
+async function rerender() { await act(async () => root.render(React.createElement(I18nProvider, null, React.createElement(Fixture, { key: fixtureKey })))); }
 async function mount() { fixtureKey = crypto.randomUUID(); await rerender(); }
 // Read reconciliation is independent and cannot mask the POST error or replay it.
 for (const ambiguousMode of ["NETWORK", "SERVER", "UNKNOWN"] as const) {
@@ -319,21 +320,25 @@ assert.equal(requests.length, count, "Unassigned Lead uses Assign or Claim");
 const { useLeadDetailDialogs } = await import("@/modules/leads/presentation/hooks/useLeadDetailDialogs");
 const { LeadDetailModals } = await import("@/modules/leads/presentation/components/LeadDetailModals");
 const { useLeadActions } = await import("@/modules/leads/presentation/hooks/useLeadActions");
-const { I18nProvider, useI18n } = await import("@/i18n");
 let dialogs!: ReturnType<typeof useLeadDetailDialogs>;
 let canAdmit = true;
 observed = mapLeadDocumentToApplication(document);
 function DialogFixture() {
   dialogs = useLeadDetailDialogs(hideObserved ? undefined : observed, observed.id);
-  current = useLeadHandover({ leadId: observed.id, observedLead: hideObserved ? undefined : observed });
+  current = useLeadHandover({ leadId: dialogs.boundLead?.id ?? observed.id, observedLead: dialogs.boundLead ?? (hideObserved ? undefined : observed) });
   const { t } = useI18n();
   const actions = useLeadActions();
   return React.createElement(LeadDetailModals, { screen: {
-    dialogs, lead: observed, locale: "en", t, sources: [], campaigns: [], products: [], members: [],
+    dialogs, lead: dialogs.boundLead ?? observed, locale: "en", t, sources: [], campaigns: [], products: [], members: [],
     showToast() {}, navigate() {}, leadActions: actions, archiveListPath: "/leads",
     handleConfirmDisqualify() {}, handleSaveEditFromForm() {}, handleSavePhoneCall() {}, handleSaveMeeting() {}, handleLogExternalEmail() {}, handleLogExternalSms() {},
     handover: current, canHandover: canAdmit, handoverMembers: [{ memberId: input.nextOwnerId, displayName: "Target" }],
-    async handleConfirmHandover(nextOwnerId, reason) { if (await current.submit({ nextOwnerId, reason })) { dialogs.setShowHandoverModal(false); dialogs.setHandoverOwnerId(""); dialogs.setHandoverReason(""); } },
+    async handleConfirmHandover(nextOwnerId, reason, deferClose) {
+      const result = await current.submit({ nextOwnerId, reason });
+      if (!result) return false;
+      if (!deferClose) { dialogs.resolveInteraction("handover"); dialogs.setHandoverOwnerId(""); dialogs.setHandoverReason(""); }
+      return true;
+    },
   } });
 }
 await act(async () => root.render(React.createElement(I18nProvider, null, React.createElement(DialogFixture))));
@@ -357,7 +362,7 @@ await act(async () => { formElement.dispatchEvent(new window.Event("submit", { b
 assert.equal(dialogs.showHandoverModal, true);
 assert.equal(dialogs.handoverOwnerId, input.nextOwnerId);
 assert.equal(dialogs.handoverReason, input.reason);
-assert.ok(window.document.querySelector('[role="alert"]'), "412 stays in the dialog error surface");
+assert.equal(current.blocked, true, "412 must block the retained dialog until explicit reconciliation");
 assert.match(window.document.body.textContent ?? "", /Refresh Lead to reconcile/);
 assert.equal(submitButton?.disabled, true);
 await act(async () => { await current.recover(); });
@@ -389,10 +394,18 @@ assert.match(window.document.body.textContent ?? "", /original request is retain
 assert.equal(window.document.querySelector<HTMLTextAreaElement>("textarea")?.disabled, true);
 assert.equal((window.document.querySelector<HTMLButtonElement>('#lead-handover-form button[aria-haspopup="listbox"]') ?? window.document.querySelector<HTMLSelectElement>("#lead-handover-form select"))?.disabled, true);
 assert.equal(window.document.querySelector<HTMLButtonElement>('button[form="lead-handover-form"]')?.disabled, false, "Manual exact receipt retry stays available");
-// The presentation draft must follow actual Lead identity, without remounting the dialog fixture.
+// The canonical dialog retains its opening target until the user resolves the draft.
 const dialogCount = requests.length;
 observed = { ...mapLeadDocumentToApplication(document), id: "lead_b", resourceVersion: 21 };
 await act(async () => root.render(React.createElement(I18nProvider, null, React.createElement(DialogFixture))));
+assert.equal(dialogs.showHandoverModal, true, "Changing the route must not silently discard an unresolved handover");
+assert.equal(dialogs.boundLead?.id, document.id, "The command hook must retain the opening Lead, as the composed controller does");
+assert.equal(dialogs.targetChangeRequested, true);
+assert.equal(dialogs.handoverOwnerId, input.nextOwnerId);
+assert.equal(dialogs.handoverReason, input.reason);
+assert.equal(current.ambiguous, true, "A different route cannot clear the opening Lead's unresolved receipt");
+assert.equal(requests.length, dialogCount, "Changing the route must not replay the command");
+await act(async () => dialogs.discardActiveForm());
 assert.equal(dialogs.showHandoverModal, false);
 assert.equal(dialogs.handoverOwnerId, "");
 assert.equal(dialogs.handoverReason, "");
@@ -595,7 +608,7 @@ configureLeadApplication({ ...base, repository: scopedLeadRepository, api: { ...
 } } });
 observed = { ...mapLeadDocumentToApplication(document), ownerId: ownerContext.memberId, resourceVersion: 4 };
 const demoRoot = createRoot(rootElement);
-await act(async () => demoRoot.render(React.createElement(Fixture)));
+await act(async () => demoRoot.render(React.createElement(I18nProvider, null, React.createElement(Fixture))));
 await act(async () => { await assert.rejects(() => current.submit(demoInput), { code: "VERSION_CONFLICT", status: 412 }); });
 assert.equal(current.blocked, true);
 assert.equal(current.ambiguous, false, "Definitive demo version rejection is not ambiguous");

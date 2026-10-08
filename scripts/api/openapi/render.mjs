@@ -3,6 +3,7 @@ import path from "node:path";
 import { repositoryRoot } from "../../quality/core/repo-context.mjs";
 import { buildApiOperationCatalog, buildOperationCoverageLedger } from "./normalize.mjs";
 import { getServerPath, refName, resolveRef } from "./validate.mjs";
+import { renderOperationPolicySources } from "./render-operation-policies.mjs";
 
 const generatorVersion = 17;
 const productVersionBoundReadOperationIds = new Set([
@@ -532,7 +533,7 @@ export function renderGeneratedArtifacts(normalized, sha256) {
     coverageLedgerPath: "docs/api/operation-coverage-ledger.json",
     breakingBaselinePath: "docs/api/openapi-breaking-baseline.json",
     generatedAt: "DETERMINISTIC",
-    outputs: [...ownership.clients.map((client) => client.output), "src/platform/api/generated/index.ts", "src/platform/api/contracts/generatedOpenApiRuntimeContract.ts", "src/platform/api/contracts/generatedProductionCommandRegistry.ts", "src/platform/api/contracts/generatedProductionQueryRegistry.ts", "src/platform/api/catalog/generatedApiOperationCatalog.ts", "docs/api/api-operation-catalog.json", "docs/backend-readiness/operation-contract-status.json"],
+    outputs: [...ownership.clients.map((client) => client.output), "src/platform/api/generated/index.ts", "src/platform/api/contracts/generatedOpenApiRuntimeContract.ts", "src/platform/api/contracts/generatedProductionCommandRegistry.ts", "src/platform/api/contracts/generatedProductionQueryRegistry.ts", "src/platform/api/catalog/generatedApiOperationCatalog.ts", "docs/api/api-operation-catalog.json", "docs/backend-readiness/operation-contract-status.json", "docs/backend-readiness/idempotency-policy.json", "docs/backend-readiness/concurrency-policy.json", "docs/backend-readiness/operation-authorization-matrix.json"],
     clients: ownership.clients.map((client) => ({
       id: client.id,
       tags: client.tags,
@@ -558,6 +559,7 @@ export function renderGeneratedArtifacts(normalized, sha256) {
   };
 
   return {
+    ...renderOperationPolicySources(normalized),
     checksum: `${sha256}  docs/api/openapi.json\n`,
     renderedClients,
     indexSource,

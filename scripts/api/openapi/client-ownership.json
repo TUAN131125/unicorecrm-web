@@ -289,13 +289,22 @@
     },
     {
       "id": "ai",
-      "tags": ["AI"],
+      "tags": [
+        "AI"
+      ],
       "output": "src/platform/api/generated/aiApi.ts",
       "className": "AiApiClient",
       "requestOptionsName": "AiRequestOptions",
-      "ownerByTag": {"AI": "ai"},
-      "adapterByTag": {"AI": "src/platform/api/extensions/aiAdvisoryApi.ts"},
-      "testGateIds": ["quality.api-contract", "quality.ai-application-contracts"]
+      "ownerByTag": {
+        "AI": "ai"
+      },
+      "adapterByTag": {
+        "AI": "src/platform/api/extensions/aiAdvisoryApi.ts"
+      },
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.ai-application-contracts"
+      ]
     }
   ],
   "approvedExternalTransports": [
@@ -306,6 +315,27 @@
       "routePrefixes": [
         "/shipping/providers/"
       ]
+    }
+  ],
+  "approvedSemanticExtensions": [
+    {
+      "path": "src/platform/api/extensions/emailVerificationApi.ts",
+      "ownerModule": "platform/identity-auth",
+      "routes": [
+        "/auth/email-verifications",
+        "/auth/email-verification-requests"
+      ],
+      "purpose": "Canonical OTP email/code authority supersedes the historical token shape; identity-auth API boundary gates verify metadata and non-replayable behavior.",
+      "sourceSha256": "4d06d1acf1afebfb1dd7bce84fc3975bd4953b5edbf91ecb1c85e3e038d6d918"
+    },
+    {
+      "path": "src/platform/api/extensions/workspaceProvisioningApi.ts",
+      "ownerModule": "platform/workspace-context",
+      "routes": [
+        "/workspaces/initial-provisioning"
+      ],
+      "purpose": "Canonical authenticated durable initial provisioning authority; caller cannot supply workspace/member/capability identity.",
+      "sourceSha256": "94cdbc185b3fd0bd667f0d727d84a9d627c50e02f9fc7d72e9a01e813ed3470b"
     }
   ]
 }

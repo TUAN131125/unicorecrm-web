@@ -1,3 +1,4 @@
+import { saveQuoteDeliveryEvidence } from "../services/saveQuoteDeliveryEvidence";
 import { AuthoritativeQueryNotice, formatApplicationError, useServerPagedModuleCollection } from "@/shared/operations";
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -7,7 +8,7 @@ import { AlertCircle, BarChart3, Calendar, CheckCircle2, FolderSync, Plus, Refre
 import type { CustomerDisplay as Customer } from "@/modules/customers";
 
 import { QuoteApprovalStatus, QuoteStatus, type Quote } from "../../domain/model/quote.types";
-import { replaceQuotes, approveQuoteCommand, duplicateQuoteCommand, createQuoteRevisionCommand, archiveQuoteCommand, archiveQuotesCommand, expireQuotesBatchCommand, recordQuoteDeliveryCommand, requestQuoteApprovalBatchCommand, requestQuoteApprovalChangesCommand, requestQuoteApprovalCommand, transitionQuoteStatusCommand } from "../../public/quotes";
+import { replaceQuotes, approveQuoteCommand, duplicateQuoteCommand, createQuoteRevisionCommand, archiveQuoteCommand, archiveQuotesCommand, expireQuotesBatchCommand, requestQuoteApprovalBatchCommand, requestQuoteApprovalChangesCommand, requestQuoteApprovalCommand, transitionQuoteStatusCommand } from "../../public/quotes";
 import { CAPABILITIES, useEffectiveAccess } from "@/platform/access-control";
 import { usePlatformState } from "@/platform/application-state";
 import { useI18n } from "@/i18n";
@@ -467,18 +468,12 @@ export const QuoteListPage: React.FC<QuoteListPageProps> = ({ customers }) => {
     ),
   };
 
-  const confirmQuoteSent = async (value: QuoteDeliveryConfirmationValue) => {
-    if (!deliveryTargetQuote) return;
-    const updated = (await recordQuoteDeliveryCommand(deliveryTargetQuote.id, {
-      id: createDurableId("quote_delivery"),
-      ...value,
-      evidenceType: "USER_CONFIRMED_SENT",
-      sentBy: actorId,
-    })).data;
-    setDeliveryTargetQuote(null);
-    triggerToast("success", locale === "vi" ? "Đã xác nhận Báo giá được gửi và lưu kênh liên hệ." : "Quote delivery was confirmed with its contact channel.");
+  const confirmQuoteSent = async (value: QuoteDeliveryConfirmationValue, deferClose = false, deliveryId = createDurableId("quote_delivery")): Promise<boolean> => {
+    if (!deliveryTargetQuote) return false;
+    if (!(await saveQuoteDeliveryEvidence(deliveryTargetQuote.id, deliveryTargetQuote.resourceVersion, value, deliveryId, actorId))) return false;
+    if (!deferClose) setDeliveryTargetQuote(null);
+    triggerToast("success", locale === "vi" ? "Đã xác nhận Báo giá được gửi và lưu kênh liên hệ." : "Quote delivery was confirmed with its contact channel.");    return true;
   };
-
   // Bulk action only requests internal approval. Customer delivery stays explicit per Quote.
   const handleBulkAdvanceLifecycle = async () => {
     const targetIds = quotes
@@ -1076,12 +1071,14 @@ export const QuoteListPage: React.FC<QuoteListPageProps> = ({ customers }) => {
 
       <QuoteDeliveryConfirmationModal
         isOpen={Boolean(deliveryTargetQuote)}
+        targetId={deliveryTargetQuote?.id}
         quoteNumber={deliveryTargetQuote?.quoteNumber || ""}
         locale={locale}
         initialRecipientEmail={deliveryTargetQuote?.recipientEmail}
         initialRecipient={deliveryTargetQuote?.customerContact || deliveryTargetQuote?.customerName}
         onClose={() => setDeliveryTargetQuote(null)}
-        onConfirm={confirmQuoteSent}
+        onConfirm={async (value) => { await confirmQuoteSent(value); }}
+        onSave={(value, deliveryId) => confirmQuoteSent(value, true, deliveryId)}
       />
 
       <ConfirmDialog

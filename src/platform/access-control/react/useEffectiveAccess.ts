@@ -23,7 +23,7 @@ export function useEffectiveAccess() {
   }, [getSnapshot]);
   const revision = useSubscribableSnapshot(getSnapshot, subscribe);
   return useMemo(
-    () => resolveEffectiveAccess(workspace.workspaceId),
-    [workspace.workspaceId, revision],
+    () => ({ ...resolveEffectiveAccess(workspace.workspaceId), authorityRevision: revision }),
+    [workspace, revision],
   );
 }

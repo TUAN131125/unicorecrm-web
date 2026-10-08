@@ -134,8 +134,16 @@ export const logActivityCommand = async (
   command: Omit<Parameters<typeof logActivity>[1], "workspaceId">,
   metadata: Partial<MutationCommandMetadata> = {},
 ): Promise<MutationOutcome<Activity>> => {
+  const api = getTaskApiRuntime();
+  if (command.occurredAt !== undefined) {
+    if (Number.isNaN(new Date(command.occurredAt).getTime())) throw new Error("ACTIVITY_DATE_INVALID");
+    // LogActivityRequest has no date field. Refuse a dated draft before transport rather
+    // than silently replace its validated date with the server's recording timestamp.
+    if (api.mode === "connected") throw new Error("ACTIVITY_RECORDING_DATE_UNAVAILABLE");
+  }
   const options = commandMetadata(`task.log-activity:${command.id}`, metadata);
-  const result = await getTaskApiRuntime().commands.logActivity({
+  const result = await api.commands.logActivity({
+    ...(command.occurredAt !== undefined ? { occurredAt: new Date(command.occurredAt).toISOString() } : {}),
     type: command.type,
     subject: command.subject,
     ...(command.body !== undefined ? { body: command.body } : {}),

@@ -1,17 +1,17 @@
 # Remediation Ledger
 
-Current contract: `0.23.20-contract.0`. Original audit source SHA-256: `655a4d9b2e547c92cfaaf62bfd5c4ccf637a4b8271eb703e13211538728f5b8c`.
+Current contract: `0.24.0-contract.0`. Original audit source SHA-256: `655a4d9b2e547c92cfaaf62bfd5c4ccf637a4b8271eb703e13211538728f5b8c`.
 
-- Commands: 173 total; 152 ready; 17 blocked; 4 deprecated.
+- Commands: 184 total; 165 ready; 15 blocked; 4 deprecated.
 - Queries: 162 total; 0 unresolved.
-- OpenAPI: 276 operations; 245 ready; 31 blocked.
+- OpenAPI: 303 operations; 275 ready; 28 blocked.
 - Provider conformance: 26 packs; 516 scenarios defined; the Shipping/Returns live pack is `BLOCKED_EXTERNAL`.
-- Quality pipeline: 310 deterministic gates across 11 groups.
+- Quality pipeline: 345 deterministic gates across 11 groups.
 
 | Finding | Severity | Reproduction | Remediation | Owner | Remaining risk |
 | --- | --- | --- | --- | --- | --- |
 | H-01 | High | CONFIRMED | CLOSED | API Contract Architecture | None for P0; blocked mutations still need module decisions before implementation. |
-| H-02 | High | CONFIRMED | PARTIALLY_CLOSED | Module Domain Owners + API Contract Architect | 17 blocked commands and 4 deprecated commands require module-owned DTO, invariant and workflow decisions before production implementation. |
+| H-02 | High | CONFIRMED | PARTIALLY_CLOSED | Module Domain Owners + API Contract Architect | 15 blocked commands and 4 deprecated commands require module-owned DTO, invariant and workflow decisions before production implementation. |
 | H-03 | High | CONFIRMED | PARTIALLY_CLOSED | Module Domain Owners + Read Model Architect | All 162 query symbols are classified; no generic route inference exists. |
 | H-04 | High | CONFIRMED | CLOSED | Module/Platform Owner | Positive close/reopen/archive operations remain blocked until evidence and transaction semantics are approved. |
 | H-05 | High | CONFIRMED | CLOSED | Module/Platform Owner | Backend provider tests remain unavailable until a backend exists. |

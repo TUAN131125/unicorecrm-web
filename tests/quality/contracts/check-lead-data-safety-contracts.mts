@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import ts from "typescript";
 
 const read = (relativePath: string) => fs.readFileSync(path.resolve(relativePath), "utf8");
 
@@ -46,8 +47,39 @@ assert.ok(leadListPage.includes("<LeadImportDialog"), "The real CSV importer mus
 assert.ok(leadListPage.includes("canCreateLeads && canBulkLeads"), "Import UI must require create and bulk capabilities.");
 assert.equal(leadListPage.includes('id: "auto-merge"'), false, "Destructive duplicate auto-merge must not be exposed.");
 assert.ok(leadListPage.includes("canExportLeads = access.can(CAPABILITIES.LEADS_EXPORT)"));
-assert.ok(leadListPage.includes("...(canExportLeads ? ["), "Export actions must be hidden without leads.export.");
-assert.ok(leadListPage.includes("canDeleteLeads"), "Archive actions must remain capability-gated in the Lead UI.");
+// Read the actual action condition so extra availability checks and formatting do not
+// make a more restrictive production guard fail a stale substring assertion.
+const leadListSyntax = ts.createSourceFile("LeadListPage.tsx", leadListPage, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+let exportGuard: ts.Expression | undefined;
+const containsExport = (node: ts.Node): boolean => {
+  if (ts.isPropertyAssignment(node) && node.name.getText(leadListSyntax) === "id"
+    && ts.isStringLiteral(node.initializer) && node.initializer.text === "export-all") return true;
+  return ts.forEachChild(node, child => containsExport(child) ? true : undefined) === true;
+};
+const findExportGuard = (node: ts.Node): void => {
+  if (ts.isConditionalExpression(node) && ts.isArrayLiteralExpression(node.whenTrue) && containsExport(node.whenTrue)) exportGuard = node.condition;
+  ts.forEachChild(node, findExportGuard);
+};
+findExportGuard(leadListSyntax);
+assert.ok(exportGuard, "Export action must sit behind an explicit condition");
+const permitsExport = (node: ts.Expression, granted: boolean, ready: boolean): boolean => {
+  if (ts.isParenthesizedExpression(node)) return permitsExport(node.expression, granted, ready);
+  if (ts.isIdentifier(node) && node.text === "canExportLeads") return granted;
+  if (ts.isCallExpression(node) && node.expression.getText(leadListSyntax) === "isLeadOperationAvailable") {
+    assert.equal(node.arguments[0]?.getText(leadListSyntax), "LEAD_OPERATION.REQUEST_EXPORT");
+    return ready;
+  }
+  if (ts.isBinaryExpression(node)) {
+    if (node.operatorToken.kind === ts.SyntaxKind.AmpersandAmpersandToken) return permitsExport(node.left, granted, ready) && permitsExport(node.right, granted, ready);
+    if (node.operatorToken.kind === ts.SyntaxKind.BarBarToken) return permitsExport(node.left, granted, ready) || permitsExport(node.right, granted, ready);
+  }
+  throw new Error(`Review new export guard semantics: ${node.getText(leadListSyntax)}`);
+};
+assert.equal(permitsExport(exportGuard, false, true), false, "Missing leads.export hides even a ready operation");
+assert.equal(permitsExport(exportGuard, false, false), false, "Missing leads.export always hides export");
+assert.equal(permitsExport(exportGuard, true, false), false, "Blocked backend export stays unavailable despite capability");
+assert.equal(permitsExport(exportGuard, true, true), true, "Ready authorized export is exposed");
+assert.ok(leadListPage.includes("access.can(CAPABILITIES.LEADS_DELETE)"), "Archive actions must remain capability-gated in the Lead UI.");
 
 const leadRepositoryCommandsSource = read("src/modules/leads/application/commands/leadRepositoryCommands.ts");
 assert.equal(leadRepositoryCommandsSource.includes("mergeDuplicateLeadsByPhone"), false, "Delete-by-dedup must not remain as a callable command.");

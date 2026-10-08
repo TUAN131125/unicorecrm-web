@@ -24,6 +24,6 @@ export function getAccessGovernanceRuntimeBinding(): AccessGovernanceRuntimeBind
 export function getAuthoritativeEffectiveAccess(workspaceId: string): EffectiveAccess | undefined { return binding?.getEffectiveAccess(workspaceId); }
 export function getAccessGovernanceRevision(workspaceId: string): number {
   const state = binding?.getState();
-  return state?.workspaceId === workspaceId ? state.snapshot?.revision ?? (state.loading ? -1 : 0) : 0;
+  return state?.workspaceId === workspaceId ? state.authorityRevision ?? state.snapshot?.revision ?? (state.loading ? -1 : 0) : 0;
 }
 export function subscribeToAccessGovernance(listener: () => void): () => void { return binding?.subscribe(listener) ?? (() => undefined); }

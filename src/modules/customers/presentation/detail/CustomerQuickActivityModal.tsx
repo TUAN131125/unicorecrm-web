@@ -13,7 +13,7 @@ interface CustomerQuickActivityModalProps {
   recordLabel?: string;
   ownerName?: string;
   onClose(): void;
-  onSave(draft: CustomerQuickActivityDraft): void;
+  onSave(draft: CustomerQuickActivityDraft): Promise<boolean>;
 }
 
 export const CustomerQuickActivityModal: React.FC<CustomerQuickActivityModalProps> = ({ action, targetId, email, phone, recordLabel, ownerName, onClose, onSave }) => (

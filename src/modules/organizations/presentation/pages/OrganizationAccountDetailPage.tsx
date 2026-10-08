@@ -1,5 +1,5 @@
 import { backendUnavailableMessage, formatApplicationError } from "@/shared/operations";
-import { useBoundFormDraft } from "../hooks/useBoundFormDraft";
+import { useBoundFormDraft } from "@/shared/hooks/useBoundFormDraft";
 import { getWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import { getDirtyUnsavedWork } from "@/platform/unsaved-work";
 import React, { useMemo, useState } from "react";
@@ -220,11 +220,14 @@ export const OrganizationAccountDetailPage: React.FC = () => {
   const communicationEmail = primaryContact?.workEmail || primaryContact?.email || account?.email || "";
   const canCommunicate = account?.status !== "archived" && account?.status !== "inactive";
 
-  const quickOpening = React.useRef<{ account: OrganizationAccount; customerId: string | undefined; workspaceId: string } | undefined>(undefined);
+  const quickOpening = React.useRef<{ account: OrganizationAccount; customerId: string | undefined; workspaceId: string; intentId: string } | undefined>(undefined);
+  const quickPending = React.useRef(false);
+  const quickMounted = React.useRef(true);
+  React.useEffect(() => { quickMounted.current = true; return () => { quickMounted.current = false; }; }, []);
   const quickWasOpen = React.useRef(false);
   const currentQuickTarget = React.useRef(account?.id); currentQuickTarget.current = account?.id;
   React.useEffect(() => {
-    if (quickAction && account && !quickWasOpen.current) quickOpening.current = { account: structuredClone(account), customerId: linkedCustomer?.id, workspaceId: getWorkspaceContextSnapshot().workspaceId };
+    if (quickAction && account && !quickWasOpen.current) quickOpening.current = { account: structuredClone(account), customerId: linkedCustomer?.id, workspaceId: getWorkspaceContextSnapshot().workspaceId, intentId: crypto.randomUUID() };
     if (!quickAction) quickOpening.current = undefined;
     quickWasOpen.current = Boolean(quickAction);
   }, [quickAction, account, linkedCustomer?.id]);
@@ -295,8 +298,9 @@ export const OrganizationAccountDetailPage: React.FC = () => {
 
   const openTaskModal = () => setTaskOpen(true);
 
-  const saveQuickActivity = async (draft: OrganizationQuickActivityDraft) => {
+  const saveQuickActivity = async (draft: OrganizationQuickActivityDraft): Promise<boolean> => {
     const opening = quickOpening.current;
+    if (!quickMounted.current || quickPending.current || currentQuickTarget.current !== opening?.account.id) return false;
     if (!opening) throw new Error("ORGANIZATION_ACTIVITY_TARGET_REQUIRED");
     if (opening.workspaceId !== getWorkspaceContextSnapshot().workspaceId) throw new Error("WORKSPACE_CHANGED");
     const account = opening.account;
@@ -304,10 +308,11 @@ export const OrganizationAccountDetailPage: React.FC = () => {
       setMessage(text("Phiên đăng nhập chưa có member hợp lệ.", "The active session has no valid member."));
       throw new Error("MEMBER_REQUIRED");
     }
+    quickPending.current = true;
     setSavingActivity(true);
     try {
-      await logActivityCommand({
-        id: crypto.randomUUID(),
+      const outcome = await logActivityCommand({
+        id: opening.intentId,
         type: draft.type,
         subject: draft.subject,
         body: draft.body,
@@ -318,14 +323,19 @@ export const OrganizationAccountDetailPage: React.FC = () => {
         relationshipRef: { type: "ORGANIZATION_ACCOUNT", id: account.id },
         recordRef: { moduleKey: "organizations", recordId: account.id, label: account.displayName },
         sourceRef: { type: "ORGANIZATION_DETAIL", id: account.id },
-      });
-      if (opening.workspaceId !== getWorkspaceContextSnapshot().workspaceId || quickOpening.current !== opening || currentQuickTarget.current !== account.id) return;
-      setQuickAction(null);
+      }, { idempotencyKey: `activity:account:${account.id}:${opening.intentId}` });
+      if (opening.workspaceId !== getWorkspaceContextSnapshot().workspaceId || quickOpening.current !== opening || currentQuickTarget.current !== account.id || !quickMounted.current
+        || outcome.data.recordRef?.moduleKey !== "organizations" || outcome.data.recordRef.recordId !== account.id || outcome.data.type !== draft.type
+        || (draft.occurredAt !== undefined && outcome.data.occurredAt !== draft.occurredAt)
+        || !["COMMITTED", "REPLAYED", "DEMO_COMMITTED"].includes(outcome.outcome ?? "")) return false;
+
       setMessage(text("Đã ghi hoạt động vào timeline tổ chức.", "Activity added to the organization timeline."));
+      return true;
     } catch (error) {
       throw error;
     } finally {
-      setSavingActivity(false);
+      quickPending.current = false;
+      if (quickMounted.current) setSavingActivity(false);
     }
   };
 

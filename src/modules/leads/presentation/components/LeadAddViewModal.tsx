@@ -4,7 +4,7 @@ import { SavedViewNameModal } from "@/components/crm/SavedViewNameModal";
 interface LeadAddViewModalProps {
   isOpen: boolean;
   onClose(): void;
-  onConfirm(viewName: string): void;
+  onConfirm(viewName: string, deferClose?: boolean): Promise<boolean>;
   initialName?: string;
   mode?: "create" | "edit";
 }
@@ -31,9 +31,10 @@ export function LeadAddViewModal({
       mode={mode}
       name={name}
       onNameChange={setName}
-      onSubmit={(event) => {
+      onSave={(value) => onConfirm(value, true)}
+      onSubmit={async (event) => {
         event.preventDefault();
-        if (name.trim()) onConfirm(name.trim());
+        if (name.trim()) await onConfirm(name.trim());
       }}
       formId="lead-saved-view-form"
     />

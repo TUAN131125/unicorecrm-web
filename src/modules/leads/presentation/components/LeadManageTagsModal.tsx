@@ -7,6 +7,7 @@ interface LeadManageTagsModalProps {
   isOpen: boolean;
   onClose: () => void | Promise<unknown>;
   selectedCount: number;
+  onSave?: (tag: string) => Promise<boolean>;
   onApply: (tag: string) => void | Promise<unknown>;
 }
 
@@ -15,6 +16,7 @@ export const LeadManageTagsModal: React.FC<LeadManageTagsModalProps> = ({
   onClose,
   selectedCount,
   onApply,
+  onSave,
 }) => {
   const { locale } = useI18n();
   const [tagName, setTagName] = useState("");
@@ -25,9 +27,11 @@ export const LeadManageTagsModal: React.FC<LeadManageTagsModalProps> = ({
     if (!isOpen) setTagName("");
   }, [isOpen]);
 
+  lifecycle.bindSave(async () => tagName.trim() && selectedCount > 0 && onSave ? onSave(tagName.trim()) : false);
   const submit = async () => {
     const normalized = tagName.trim();
     if (!normalized || selectedCount === 0) return;
+    if (onSave) { await lifecycle.save(); return; }
     if (await lifecycle.run(() => onApply(normalized))) { setTagName(""); onClose(); }
   };
 

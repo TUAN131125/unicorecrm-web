@@ -46,8 +46,10 @@ assert.equal(commands.find((command: Record<string, unknown>) => command.command
 assert.equal(commands.find((command: Record<string, unknown>) => command.commandType === "lead.start-verification")?.status, "DEPRECATED");
 
 const handoverWorkflow = workflows.find((workflow: Record<string, unknown>) => workflow.name === "lead-handover");
-assert.equal(handoverWorkflow?.ownershipDecision, "SINGLE_BACKEND_TRANSACTION");
+assert.equal(handoverWorkflow?.ownershipDecision, "BACKEND_ORCHESTRATED");
 assert.equal(handoverWorkflow?.connectedFrontendCoordinatorAllowed, false);
+assert.equal(handoverWorkflow?.compensationOwner, "BACKEND_RECOVERY_NO_TASK_COMPENSATION");
+assert.equal(handoverWorkflow?.idempotencyBoundary, "WORKSPACE_OPERATION_IDEMPOTENCY_KEY_PLUS_LEAD_VERSION_AND_CANONICAL_INTENT");
 const identityWorkflow = workflows.find((workflow: Record<string, unknown>) => workflow.name === "lead-identity-resolution");
 assert.equal(identityWorkflow?.ownershipDecision, "SINGLE_BACKEND_TRANSACTION");
 assert.equal(identityWorkflow?.connectedFrontendCoordinatorAllowed, false);
@@ -79,7 +81,11 @@ assert.match(importExport, /requestLeadExportViaApi/u);
 assert.doesNotMatch(importExport, /JSON\.stringify|toCsv|exportLeadsSnapshot/u, "Connected export must consume an authoritative backend artifact");
 const controller = fs.readFileSync("src/modules/leads/presentation/hooks/useLeadDetailController.tsx", "utf8");
 assert.doesNotMatch(controller, /(?:createTaskSnapshot|reassignTaskSnapshot|completeTaskSnapshot)/u);
-assert.match(controller, /handoverLeadWithTasksViaApi|leadActions\.handover/u);
+assert.match(controller, /useLeadHandover\(/u);
+assert.match(controller, /await handover\.submit\(/u);
+const handoverHook = fs.readFileSync("src/modules/leads/presentation/hooks/useLeadHandover.ts", "utf8");
+assert.match(handoverHook, /await handoverLeadWithTasksViaApi\(intent\.leadId, intent\.input, intent\)/u, "The dedicated hook must submit its retained target, payload and idempotency/version intent through the canonical command");
+assert.doesNotMatch(handoverHook, /(?:createTaskSnapshot|reassignTaskSnapshot|completeTaskSnapshot)/u);
 
 const publicApi = fs.readFileSync("src/modules/leads/public/leads.ts", "utf8");
 assert.match(publicApi, /function assertLocalLeadMutationAllowed[\s\S]*LEAD_LOCAL_MUTATION_FORBIDDEN/u);

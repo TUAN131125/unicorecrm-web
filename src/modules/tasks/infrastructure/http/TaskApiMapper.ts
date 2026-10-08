@@ -74,6 +74,7 @@ export function mapCreateTaskRequest(input: CreateTaskInput): CreateTaskRequest 
 }
 
 export function mapLogActivityRequest(input: LogActivityInput): LogActivityRequest {
+  if (input.occurredAt !== undefined) throw requestViolation("logActivity", "occurredAt", "The connected Activity contract does not accept a recording date.");
   const subject = input.subject.trim();
   if (!subject) throw requestViolation("logActivity", "subject", "Activity subject is required.");
   return compact({

@@ -5,7 +5,7 @@ interface ContactSendEmailModalProps {
   targetId?: string;
   isOpen: boolean;
   onClose: () => void;
-  onSend: (email: { to: string; subject: string; body: string; attachProposal?: boolean }) => void | Promise<void>;
+  onSend: (email: { to: string; subject: string; body: string; attachProposal?: boolean }) => Promise<boolean>;
   prefilledEmail: string;
   isDoNotContact?: boolean;
 }
@@ -20,6 +20,7 @@ export const ContactSendEmailModal: React.FC<ContactSendEmailModalProps> = ({ ta
     formId="contact-send-email-form"
     defaults={{ to: prefilledEmail }}
     contactPolicy={{ restricted: isDoNotContact }}
-    onSubmit={(draft: EmailActivityDraft) => onSend(draft)}
+    onSubmit={async () => {}}
+    onSave={(draft: EmailActivityDraft) => onSend(draft)}
   />
 );

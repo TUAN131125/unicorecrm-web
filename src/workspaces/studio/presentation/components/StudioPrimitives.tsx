@@ -76,7 +76,7 @@ export function StudioPageFrame({
   children,
 }: {
   title: string;
-  description: string;
+  description?: string;
   actions?: React.ReactNode;
   locale: string;
   message?: string;
@@ -94,7 +94,7 @@ export function StudioPageFrame({
           <div className="min-w-0">
             <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-violet-500">Studio</p>
             <h1 className="mt-1 text-[27px] font-semibold leading-9 tracking-[-0.025em] text-slate-950 [overflow-wrap:anywhere]">{title}</h1>
-            <p className="mt-1 max-w-3xl text-sm font-normal leading-6 text-slate-600 [overflow-wrap:anywhere]" data-studio-page-description="true">{description}</p>
+            {description ? <p className="mt-1 max-w-3xl text-sm font-normal leading-6 text-slate-600 [overflow-wrap:anywhere]" data-studio-page-description="true">{description}</p> : null}
           </div>
           {actions ? <div className="flex shrink-0 flex-wrap items-center gap-2">{actions}</div> : null}
         </div>

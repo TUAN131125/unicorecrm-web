@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "contractVersion": "0.23.20-contract.0",
+  "contractVersion": "0.24.0-contract.0",
   "allowedStatuses": [
     "PRODUCTION_CONTRACT_READY",
     "DEMO_ONLY",
@@ -143,32 +143,39 @@
       "commandType": "contact.archive",
       "moduleOwner": "contacts",
       "aggregateOwner": "contact",
-      "useCase": "contact.archive",
+      "useCase": "Archive contact",
       "frontendApplicationSymbols": [
         {
-          "path": "src/modules/contacts/public/contacts.ts",
-          "line": 39
+          "path": "src/modules/contacts/application/commands/contactApiCommands.ts",
+          "line": 19
         }
       ],
-      "openApiOperationId": null,
+      "openApiOperationId": "archiveContact",
       "blockedOperationCandidate": null,
-      "requestSchema": null,
-      "successResponseSchema": null,
+      "requestSchema": "ArchiveContactRequest",
+      "successResponseSchema": "ContactMutationResponse",
       "errorSchema": "ProblemDetails",
-      "requiredCapability": "UNRESOLVED",
-      "resourceScope": "UNRESOLVED",
+      "requiredCapability": "contacts.delete",
+      "resourceScope": "RESOURCE",
       "dataScope": "WORKSPACE",
-      "idempotencyPolicy": "UNRESOLVED_BLOCKED",
-      "concurrencyPolicy": "UNRESOLVED_BLOCKED",
-      "auditRequirement": "SERVER_OWNED_REQUIRED_BEFORE_UNBLOCK",
-      "eventOutboxExpectation": "UNRESOLVED_BLOCKED",
-      "transactionBoundary": "UNRESOLVED_BLOCKED",
-      "runtimeImplementationMode": "DEMO_ONLY_LOCAL_EXECUTOR",
-      "readModelRefreshRequirement": [],
-      "status": "BLOCKED",
-      "decisionId": "DEC-CMD-CONTACT-ARCHIVE",
-      "originalAuditAlignment": "SEMANTIC_OTHER_PATH",
-      "originalRuntimePath": "/contacts/{id}/archive"
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "auditRequirement": "IMMUTABLE_COMMAND_AUDIT",
+      "eventOutboxExpectation": "CONTACT_ARCHIVED",
+      "transactionBoundary": "SINGLE_CONTACT_AGGREGATE_TRANSACTION",
+      "runtimeImplementationMode": "DEDICATED_MODULE_HTTP_ADAPTER",
+      "readModelRefreshRequirement": [
+        "contacts"
+      ],
+      "status": "PRODUCTION_CONTRACT_READY",
+      "decisionId": null,
+      "originalAuditAlignment": "CONTRACT_CONFLICT_RESOLVED",
+      "originalRuntimePath": "src/modules/contacts/infrastructure/http/ContactHttpCommandAdapter.ts",
+      "aggregateIdPolicy": "MUST_MATCH_TARGET",
+      "affectedModuleKeys": [
+        "contacts"
+      ],
+      "additionalCapabilities": []
     },
     {
       "stableCommandId": "CMD-006",
@@ -6725,6 +6732,330 @@
         "customers",
         "contacts",
         "organizations"
+      ]
+    },
+    {
+      "stableCommandId": "CMD-177",
+      "commandType": "contact.create",
+      "moduleOwner": "contacts",
+      "aggregateOwner": "contact",
+      "useCase": "Create contact",
+      "frontendApplicationSymbols": [
+        {
+          "path": "src/modules/contacts/application/commands/contactApiCommands.ts",
+          "line": 7
+        }
+      ],
+      "openApiOperationId": "createContact",
+      "blockedOperationCandidate": null,
+      "requestSchema": "CreateContactRequest",
+      "successResponseSchema": "ContactMutationResponse",
+      "errorSchema": "ProblemDetails",
+      "runtimeImplementationMode": "DEDICATED_MODULE_HTTP_ADAPTER",
+      "readModelRefreshRequirement": [
+        "contacts"
+      ],
+      "status": "PRODUCTION_CONTRACT_READY",
+      "decisionId": null,
+      "originalAuditAlignment": "CONTRACT_CONFLICT_RESOLVED",
+      "originalRuntimePath": "src/modules/contacts/infrastructure/http/ContactHttpCommandAdapter.ts",
+      "aggregateIdPolicy": "SERVER_ASSIGNED",
+      "affectedModuleKeys": [
+        "contacts"
+      ],
+      "requiredCapability": "contacts.create",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "BACKEND_SERIALIZED",
+      "auditRequirement": "IMMUTABLE_COMMAND_AUDIT",
+      "eventOutboxExpectation": "CONTACT_CREATED",
+      "transactionBoundary": "SINGLE_CONTACT_AGGREGATE_TRANSACTION",
+      "additionalCapabilities": []
+    },
+    {
+      "stableCommandId": "CMD-178",
+      "commandType": "contact.update",
+      "moduleOwner": "contacts",
+      "aggregateOwner": "contact",
+      "useCase": "Update contact",
+      "frontendApplicationSymbols": [
+        {
+          "path": "src/modules/contacts/application/commands/contactApiCommands.ts",
+          "line": 13
+        }
+      ],
+      "openApiOperationId": "updateContact",
+      "blockedOperationCandidate": null,
+      "requestSchema": "UpdateContactRequest",
+      "successResponseSchema": "ContactMutationResponse",
+      "errorSchema": "ProblemDetails",
+      "runtimeImplementationMode": "DEDICATED_MODULE_HTTP_ADAPTER",
+      "readModelRefreshRequirement": [
+        "contacts"
+      ],
+      "status": "PRODUCTION_CONTRACT_READY",
+      "decisionId": null,
+      "originalAuditAlignment": "CONTRACT_CONFLICT_RESOLVED",
+      "originalRuntimePath": "src/modules/contacts/infrastructure/http/ContactHttpCommandAdapter.ts",
+      "aggregateIdPolicy": "MUST_MATCH_TARGET",
+      "affectedModuleKeys": [
+        "contacts"
+      ],
+      "requiredCapability": "contacts.update",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "auditRequirement": "IMMUTABLE_COMMAND_AUDIT",
+      "eventOutboxExpectation": "CONTACT_UPDATED",
+      "transactionBoundary": "SINGLE_CONTACT_AGGREGATE_TRANSACTION",
+      "additionalCapabilities": []
+    },
+    {
+      "stableCommandId": "CMD-179",
+      "commandType": "contact.relationship.organization.create",
+      "moduleOwner": "contacts",
+      "aggregateOwner": "contact",
+      "useCase": "Link Contact to an existing Organization",
+      "frontendApplicationSymbols": [
+        {
+          "path": "src/modules/contacts/application/commands/contactRelationshipCommands.ts",
+          "line": 16
+        }
+      ],
+      "openApiOperationId": "createContactOrganizationRelationship",
+      "blockedOperationCandidate": null,
+      "requestSchema": "CreateContactOrganizationRelationshipRequest",
+      "successResponseSchema": "ContactMutationResponse",
+      "errorSchema": "ProblemDetails",
+      "runtimeImplementationMode": "DEDICATED_MODULE_HTTP_ADAPTER",
+      "readModelRefreshRequirement": [
+        "contacts"
+      ],
+      "status": "PRODUCTION_CONTRACT_READY",
+      "decisionId": "DEC-C6-001",
+      "originalAuditAlignment": "CONTRACT_CONFLICT_RESOLVED",
+      "originalRuntimePath": "src/modules/contacts/infrastructure/http/ContactHttpCommandAdapter.ts",
+      "aggregateIdPolicy": "MUST_MATCH_TARGET",
+      "affectedModuleKeys": [
+        "contacts"
+      ],
+      "requiredCapability": "contacts.update",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "auditRequirement": "IMMUTABLE_COMMAND_AUDIT",
+      "eventOutboxExpectation": "CONTACT_ORGANIZATION_RELATIONSHIP_CREATED",
+      "transactionBoundary": "SINGLE_CONTACT_AGGREGATE_TRANSACTION",
+      "additionalCapabilities": [
+        "organizations.read"
+      ]
+    },
+    {
+      "stableCommandId": "CMD-180",
+      "commandType": "contact.relationship.organization.update",
+      "moduleOwner": "contacts",
+      "aggregateOwner": "contact",
+      "useCase": "Update an active Contact Organization relationship",
+      "frontendApplicationSymbols": [
+        {
+          "path": "src/modules/contacts/application/commands/contactRelationshipCommands.ts",
+          "line": 22
+        }
+      ],
+      "openApiOperationId": "updateContactOrganizationRelationship",
+      "blockedOperationCandidate": null,
+      "requestSchema": "UpdateContactOrganizationRelationshipRequest",
+      "successResponseSchema": "ContactMutationResponse",
+      "errorSchema": "ProblemDetails",
+      "runtimeImplementationMode": "DEDICATED_MODULE_HTTP_ADAPTER",
+      "readModelRefreshRequirement": [
+        "contacts"
+      ],
+      "status": "PRODUCTION_CONTRACT_READY",
+      "decisionId": "DEC-C6-001",
+      "originalAuditAlignment": "CONTRACT_CONFLICT_RESOLVED",
+      "originalRuntimePath": "src/modules/contacts/infrastructure/http/ContactHttpCommandAdapter.ts",
+      "aggregateIdPolicy": "MUST_MATCH_TARGET",
+      "affectedModuleKeys": [
+        "contacts"
+      ],
+      "requiredCapability": "contacts.update",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "auditRequirement": "IMMUTABLE_COMMAND_AUDIT",
+      "eventOutboxExpectation": "CONTACT_ORGANIZATION_RELATIONSHIP_UPDATED",
+      "transactionBoundary": "SINGLE_CONTACT_AGGREGATE_TRANSACTION",
+      "additionalCapabilities": [
+        "organizations.read"
+      ]
+    },
+    {
+      "stableCommandId": "CMD-181",
+      "commandType": "contact.relationship.organization.end",
+      "moduleOwner": "contacts",
+      "aggregateOwner": "contact",
+      "useCase": "End a Contact Organization relationship while retaining history",
+      "frontendApplicationSymbols": [
+        {
+          "path": "src/modules/contacts/application/commands/contactRelationshipCommands.ts",
+          "line": 28
+        }
+      ],
+      "openApiOperationId": "endContactOrganizationRelationship",
+      "blockedOperationCandidate": null,
+      "requestSchema": "EndContactRelationshipRequest",
+      "successResponseSchema": "ContactMutationResponse",
+      "errorSchema": "ProblemDetails",
+      "runtimeImplementationMode": "DEDICATED_MODULE_HTTP_ADAPTER",
+      "readModelRefreshRequirement": [
+        "contacts"
+      ],
+      "status": "PRODUCTION_CONTRACT_READY",
+      "decisionId": "DEC-C6-001",
+      "originalAuditAlignment": "CONTRACT_CONFLICT_RESOLVED",
+      "originalRuntimePath": "src/modules/contacts/infrastructure/http/ContactHttpCommandAdapter.ts",
+      "aggregateIdPolicy": "MUST_MATCH_TARGET",
+      "affectedModuleKeys": [
+        "contacts"
+      ],
+      "requiredCapability": "contacts.update",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "auditRequirement": "IMMUTABLE_COMMAND_AUDIT",
+      "eventOutboxExpectation": "CONTACT_ORGANIZATION_RELATIONSHIP_ENDED",
+      "transactionBoundary": "SINGLE_CONTACT_AGGREGATE_TRANSACTION",
+      "additionalCapabilities": [
+        "organizations.read"
+      ]
+    },
+    {
+      "stableCommandId": "CMD-182",
+      "commandType": "contact.relationship.customer.create",
+      "moduleOwner": "contacts",
+      "aggregateOwner": "contact",
+      "useCase": "Link Contact as a stakeholder of an existing Customer",
+      "frontendApplicationSymbols": [
+        {
+          "path": "src/modules/contacts/application/commands/contactRelationshipCommands.ts",
+          "line": 34
+        }
+      ],
+      "openApiOperationId": "createContactCustomerRelationship",
+      "blockedOperationCandidate": null,
+      "requestSchema": "CreateContactCustomerRelationshipRequest",
+      "successResponseSchema": "ContactMutationResponse",
+      "errorSchema": "ProblemDetails",
+      "runtimeImplementationMode": "DEDICATED_MODULE_HTTP_ADAPTER",
+      "readModelRefreshRequirement": [
+        "contacts"
+      ],
+      "status": "PRODUCTION_CONTRACT_READY",
+      "decisionId": "DEC-C6-002",
+      "originalAuditAlignment": "CONTRACT_CONFLICT_RESOLVED",
+      "originalRuntimePath": "src/modules/contacts/infrastructure/http/ContactHttpCommandAdapter.ts",
+      "aggregateIdPolicy": "MUST_MATCH_TARGET",
+      "affectedModuleKeys": [
+        "contacts"
+      ],
+      "requiredCapability": "contacts.update",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "auditRequirement": "IMMUTABLE_COMMAND_AUDIT",
+      "eventOutboxExpectation": "CONTACT_CUSTOMER_RELATIONSHIP_CREATED",
+      "transactionBoundary": "SINGLE_CONTACT_AGGREGATE_TRANSACTION",
+      "additionalCapabilities": [
+        "customers.view"
+      ]
+    },
+    {
+      "stableCommandId": "CMD-183",
+      "commandType": "contact.relationship.customer.update",
+      "moduleOwner": "contacts",
+      "aggregateOwner": "contact",
+      "useCase": "Update an active Contact Customer stakeholder relationship",
+      "frontendApplicationSymbols": [
+        {
+          "path": "src/modules/contacts/application/commands/contactRelationshipCommands.ts",
+          "line": 40
+        }
+      ],
+      "openApiOperationId": "updateContactCustomerRelationship",
+      "blockedOperationCandidate": null,
+      "requestSchema": "UpdateContactCustomerRelationshipRequest",
+      "successResponseSchema": "ContactMutationResponse",
+      "errorSchema": "ProblemDetails",
+      "runtimeImplementationMode": "DEDICATED_MODULE_HTTP_ADAPTER",
+      "readModelRefreshRequirement": [
+        "contacts"
+      ],
+      "status": "PRODUCTION_CONTRACT_READY",
+      "decisionId": "DEC-C6-002",
+      "originalAuditAlignment": "CONTRACT_CONFLICT_RESOLVED",
+      "originalRuntimePath": "src/modules/contacts/infrastructure/http/ContactHttpCommandAdapter.ts",
+      "aggregateIdPolicy": "MUST_MATCH_TARGET",
+      "affectedModuleKeys": [
+        "contacts"
+      ],
+      "requiredCapability": "contacts.update",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "auditRequirement": "IMMUTABLE_COMMAND_AUDIT",
+      "eventOutboxExpectation": "CONTACT_CUSTOMER_RELATIONSHIP_UPDATED",
+      "transactionBoundary": "SINGLE_CONTACT_AGGREGATE_TRANSACTION",
+      "additionalCapabilities": [
+        "customers.view"
+      ]
+    },
+    {
+      "stableCommandId": "CMD-184",
+      "commandType": "contact.relationship.customer.end",
+      "moduleOwner": "contacts",
+      "aggregateOwner": "contact",
+      "useCase": "End a Contact Customer stakeholder relationship while retaining history",
+      "frontendApplicationSymbols": [
+        {
+          "path": "src/modules/contacts/application/commands/contactRelationshipCommands.ts",
+          "line": 46
+        }
+      ],
+      "openApiOperationId": "endContactCustomerRelationship",
+      "blockedOperationCandidate": null,
+      "requestSchema": "EndContactRelationshipRequest",
+      "successResponseSchema": "ContactMutationResponse",
+      "errorSchema": "ProblemDetails",
+      "runtimeImplementationMode": "DEDICATED_MODULE_HTTP_ADAPTER",
+      "readModelRefreshRequirement": [
+        "contacts"
+      ],
+      "status": "PRODUCTION_CONTRACT_READY",
+      "decisionId": "DEC-C6-002",
+      "originalAuditAlignment": "CONTRACT_CONFLICT_RESOLVED",
+      "originalRuntimePath": "src/modules/contacts/infrastructure/http/ContactHttpCommandAdapter.ts",
+      "aggregateIdPolicy": "MUST_MATCH_TARGET",
+      "affectedModuleKeys": [
+        "contacts"
+      ],
+      "requiredCapability": "contacts.update",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "auditRequirement": "IMMUTABLE_COMMAND_AUDIT",
+      "eventOutboxExpectation": "CONTACT_CUSTOMER_RELATIONSHIP_ENDED",
+      "transactionBoundary": "SINGLE_CONTACT_AGGREGATE_TRANSACTION",
+      "additionalCapabilities": [
+        "customers.view"
       ]
     }
   ]

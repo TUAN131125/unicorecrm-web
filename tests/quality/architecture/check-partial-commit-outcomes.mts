@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import ts from "typescript";
 import { repositoryRoot } from "../../../scripts/quality/core/repo-context.mjs";
 import { walkFiles } from "../../../scripts/quality/core/filesystem.mjs";
 
@@ -144,8 +145,7 @@ const pinnedSequences: Record<string, "PARTIAL_OUTCOME_AWARE" | "STEPWISE_REPORT
 
   // Mutually exclusive branches: archive OR restore, create OR replace. Exactly one
   // authoritative command runs per invocation, so there is no sequence to partially commit.
-  "src/modules/contacts/presentation/hooks/useContactDetailController.tsx -> handleArchiveToggle": "SINGLE_COMMAND_PER_RUN",
-  "src/modules/contacts/presentation/hooks/useContactListController.tsx -> handleToggleArchiveContact": "SINGLE_COMMAND_PER_RUN",
+  "src/modules/contacts/presentation/hooks/useContactDetailController.tsx -> useContactDetailController": "SINGLE_COMMAND_PER_RUN",
   "src/modules/products/presentation/hooks/useProductListController.ts -> handleArchiveToggle": "SINGLE_COMMAND_PER_RUN",
   "src/modules/products/presentation/pages/ProductDetailPage.tsx -> handleArchiveToggle": "SINGLE_COMMAND_PER_RUN",
   "src/modules/support/presentation/pages/SupportCaseFormPage.tsx -> save": "SINGLE_COMMAND_PER_RUN",
@@ -164,6 +164,27 @@ assert.deepEqual(
 for (const entry of sequences) {
   const key = `${entry.file} -> ${entry.handler}`;
   const classification = pinnedSequences[key];
+  if (classification === "SINGLE_COMMAND_PER_RUN" && entry.handler === "useContactDetailController") {
+    // Activity wrappers and Contact archive/update now live in separate callbacks.
+    // Use the AST to prove the hook container does not disguise an actual sequence.
+    const source = ts.createSourceFile(entry.file, sourceOf(entry.file), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+    const handlers = new Map<ts.Node, Set<string>>();
+    function inspect(node: ts.Node) {
+      if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && authoritativeCommands.has(node.expression.text)) {
+        let owner: ts.Node | undefined = node.parent;
+        while (owner && !ts.isArrowFunction(owner) && !ts.isFunctionExpression(owner) && !ts.isFunctionDeclaration(owner)) owner = owner.parent;
+        assert.ok(owner, `${key}: every authoritative call must belong to a callback.`);
+        const calls = handlers.get(owner) ?? new Set<string>();
+        calls.add(node.expression.text);
+        handlers.set(owner, calls);
+      }
+      ts.forEachChild(node, inspect);
+    }
+    inspect(source);
+    assert.ok(handlers.size >= 2, `${key}: the separate callbacks must be observed.`);
+    for (const [handler, calls] of handlers) assert.ok(calls.size <= 1,
+      `${key}: callback at ${source.getLineAndCharacterOfPosition(handler.getStart(source)).line + 1} issues ${[...calls].join(" + ")}; classify and report a real sequence.`);
+  }
   if (classification === "PARTIAL_OUTCOME_AWARE") {
     assert.match(
       entry.body,

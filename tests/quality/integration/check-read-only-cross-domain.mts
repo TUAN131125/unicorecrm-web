@@ -43,9 +43,10 @@ assert.ok(banner.includes('data-guidance-id="access.read-only.notice"'));
 assert.ok(banner.includes("chịu trách nhiệm") && banner.includes("owns update actions"));
 
 const routes = fs.readFileSync(path.join(root, "src/app/router/workspaces/crmWorkspaceRoutes.tsx"), "utf8");
-for (const capability of ["QUOTES_CREATE", "QUOTES_UPDATE", "ORDERS_CREATE", "ORDERS_UPDATE", "SHIPPING_CREATE", "RETURNS_CREATE", "SUPPORT_CREATE", "SUPPORT_UPDATE"]) {
+for (const capability of ["QUOTES_CREATE", "QUOTES_UPDATE", "ORDERS_CREATE", "ORDERS_UPDATE", "SHIPPING_CREATE", "RETURNS_UPDATE", "SUPPORT_CREATE", "SUPPORT_UPDATE"]) {
   assert.ok(routes.includes(`CAPABILITIES.${capability}`), `Direct write route must require ${capability}`);
 }
 assert.ok(routes.includes("moduleActionRoute"), "Write routes must not rely on read permission alone");
+assert.match(routes, /path: relativeRoutePath\(ROUTE_KEYS\.RETURN_NEW\), element: moduleActionRoute\(canWrite\("returns"\), CAPABILITIES\.RETURNS_UPDATE, <ReturnFormPage \/>\)/, "Return creation must use returns.update, the admitted createReturnRequestCommand capability.");
 
 console.log("Read-only cross-domain access: PASS — route guards, ownership banners, and Finance/Operations/Customer Success modes verified");

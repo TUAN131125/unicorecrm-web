@@ -67,7 +67,7 @@ export function useContactRelationshipForm(contact: Contact, fingerprint: string
     const summary = await resource.refresh();
     if (!ownsTarget()) return false;
     if (!summary || summary.contact.id !== target.contact.id || !Number.isSafeInteger(summary.projectionVersion) || summary.projectionVersion < 0) {
-      throw resource.getSnapshot().error ?? new ApplicationError({ code: "CONTACT_VERSION_REFRESH_FAILED", category: "NETWORK", message: "The opening Contact version could not be refreshed." });
+      throw resource.getSnapshot().error ?? new ApplicationError({ code: "CONTACT_VERSION_REFRESH_FAILED", category: "NETWORK", message: locale === "vi" ? "Không thể tải lại phiên bản Liên hệ đã mở." : "The opening Contact version could not be refreshed." });
     }
     // A rejected version check has no committed idempotency record in Contact authority.
     // Rebase concurrency only; the explicit retry keeps its original intent and draft.

@@ -7,6 +7,7 @@ import { Avatar, Badge, IconButton, RowActionPortal, Checkbox } from "@/shared/c
 import { ContactActionMenu } from "./ContactActionMenu";
 import { findCustomerForContact, getCustomerDisplayNameForContact } from "../model/contactCustomerLookup";
 import { getWorkspaceMemberOptions } from "@/platform/member-directory";
+import { useEffectiveAccess } from "@/platform/access-control";
 
 interface ContactCardListProps {
   filteredContacts: Contact[];
@@ -30,6 +31,9 @@ export const ContactCardList: React.FC<ContactCardListProps> = ({
   onViewDetails
 }) => {
   const { t, tx, locale } = useI18n();
+  const access = useEffectiveAccess();
+  const ownerAccess = access.getFieldAccess("contacts", "ownerId");
+  const ownerHidden = ownerAccess === "HIDDEN" || ownerAccess === "MASKED";
   const [rowActionAnchorEl, setRowActionAnchorEl] = React.useState<HTMLElement | null>(null);
 
   const activeContact = React.useMemo(() => {
@@ -68,8 +72,12 @@ export const ContactCardList: React.FC<ContactCardListProps> = ({
       <div data-data-surface="list" className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 p-3 font-sans">
       {filteredContacts.map((contact) => {
         const isSelected = selectedContactIds.includes(contact.id);
-        const owner = getWorkspaceMemberOptions().find(u => u.id === contact.ownerId) || getWorkspaceMemberOptions()[0];
-        const ownerName = owner?.name || "System Owner";
+        const owner = !ownerHidden && contact.ownerId ? getWorkspaceMemberOptions().find(u => u.id === contact.ownerId) : undefined;
+        const ownerName = ownerHidden
+          ? (locale === "vi" ? "Người phụ trách bị ẩn" : "Owner hidden")
+          : owner?.name || (contact.ownerId
+            ? (locale === "vi" ? "Người phụ trách chưa khả dụng" : "Owner unavailable")
+            : (locale === "vi" ? "Chưa phân công" : "Unassigned"));
         const phoneVal = contact.mobilePhone || contact.phone;
         const emailVal = contact.workEmail || contact.email;
 
@@ -148,6 +156,7 @@ export const ContactCardList: React.FC<ContactCardListProps> = ({
                   <span className="crm-text-wrap">{emailVal}</span>
                 </div>
               )}
+              {contact.nextFollowUpAt === null && <span className="text-xs text-slate-500">{locale === "vi" ? "Ngày chăm sóc tiếp chưa khả dụng" : "Next follow-up date unavailable"}</span>}
               {contact.nextFollowUpAt && (
                 <div className="col-span-2 flex items-center gap-1 text-slate-600 font-medium">
                   <Clock size={10} className="text-indigo-400" />
@@ -164,7 +173,7 @@ export const ContactCardList: React.FC<ContactCardListProps> = ({
             {/* Owner signature and dates */}
             <div className="flex items-center justify-between text-[10px] text-slate-400 pt-2 border-t border-slate-50">
               <div className="flex items-center gap-1">
-                <Avatar src={owner?.avatarUrl} name={ownerName} className="h-4 w-4" />
+                {owner && <Avatar src={owner.avatarUrl} name={ownerName} className="h-4 w-4" />}
                 <span className="font-medium text-slate-600">{ownerName}</span>
               </div>
               <span className="font-mono">{new Date(contact.createdAt).toLocaleDateString()}</span>

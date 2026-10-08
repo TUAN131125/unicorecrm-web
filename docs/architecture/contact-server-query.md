@@ -1,0 +1,21 @@
+# Contact connected query authority
+
+The connected Contact table and cards use the Contact application query port, generated CommercialApiClient and authenticated backend ListContacts handler. Each request defaults to 25 records and accepts a limit of 1–100. Filtering, ordering, totalCount and status summary aggregation run in SQL after workspace and effective Contact record scope. Demo collections remain demo-owned.
+
+Frontend page, cursor and summary lifetimes bind workspace, authenticated account/member/membership and the effective authorization publication generation. That generation advances on authorization refresh independently of the optional administration directory version. Narrowing record scope or field visibility while retaining contacts.read evicts old rows, fields and totals, aborts old requests and rejects their late responses. Page snapshots carry their authority scope so a refresh cannot retain a wider-context page. Fresh totals come from the server; the UI does not synthesize narrower totals from cached rows.
+
+The protected keyset cursor expires after one hour. Its scope binds workspace, trusted authenticated member, record scope, readable search fields, filters, ordering, authorized Tasks follow-up scope and business-date boundaries. recentlyUpdated orders UpdatedAt descending then ContactId descending; nameAsc orders canonical FullName then ContactId ascending; nextFollowUp orders eligible dueAt ascending with nulls last then ContactId ascending. A cursor is not a snapshot of concurrent writes. Production instances must share the existing ASP.NET Data Protection key ring for cross-instance continuity.
+
+Admitted direct filters are search, status, ownerId, ownerScope=my, source, relationshipLevel, decisionRole and doNotContact. Default queries exclude archived contacts; status=archived explicitly selects them. Search includes canonical FullName and only readable profile fields. Filtering on a protected profile field is refused. ownerScope=my derives the member from trusted backend context. linked/unlinked and becameCustomer use active Contact-owned Customer relationship records; these predicates do not return foreign Customer identifiers or fields.
+
+nextFollowUpAt is a read-only Tasks projection. Tasks owns the view and issues request-local read authority. The view includes only open, unarchived Tasks whose RecordRef explicitly targets contacts, and groups by workspace, Contact and assignee. The authority applies canonical tasks.read workspace/assignee scope and required field visibility before taking the minimum dueAt per Contact. Contacts additionally requires readable nextFollowUpAt. No mutable Contact follow-up state or per-Contact Tasks query exists. Today, overdue and explicit date filters use the workspace timezone; missing timezone or denied Tasks authority produces an explicit error.
+
+GET /contacts/summary applies the same admitted filters and record scope before returning totalCount and statusCounts. Connected global statistics never aggregate the loaded page. Metrics requiring unavailable authority are explicitly unavailable.
+
+priority, teamContacts, inactiveLongTime and lastContactedAt remain unavailable in connected mode. Duplicate candidates and Deal-derived opportunity views remain unavailable until a secure canonical cross-module projection is admitted. No hidden-record duplicate inference is added.
+
+TaskActivity record scope and field-security authority remain unresolved. Existing TaskActivitySecurity reachability is unchanged: effective Tasks scope must be WORKSPACE and no restrictive Tasks field policy may exist. This is a conservative gate, not Activity FLS. Contact lastContactedAt remains conceptually Activity-derived but unavailable until dedicated Activity authority is defined; no Contact Activity query, projection, sort or filter is added.
+
+Contact create, update, archive and the six Organization/Customer relationship commands use their dedicated authoritative runtime. Restore, anonymize and bulk availability remain independent and blocked in connected mode. Connected local persistence is refused; demo handlers may persist only through explicit demo authority.
+
+This architecture establishes bounded reads and removes full collection loading. It does not establish 10,000 concurrent-user capacity without a measured load harness.

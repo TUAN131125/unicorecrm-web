@@ -36,7 +36,7 @@ let release: (() => void) | undefined;
 let version = 5;
 const client: HttpClient = { async request<TResponse, TBody = unknown>(input: HttpRequest<TBody>): Promise<TResponse> {
   requests.push(input);
-  if (input.operationId === "getLead") return { ...document, version } as TResponse;
+  if (input.operationId === "getLead") return { ...document, id: input.path.split("/")[2] ?? document.id, version } as TResponse;
   if (input.operationId === "listLeads") return { items: [], pageInfo: { hasNextPage: false, totalCount: 0 } } as TResponse;
   if (mode === "PENDING") await new Promise<void>(resolve => { release = resolve; });
   if (mode === "NETWORK") throw new ApplicationError({ code: "NETWORK_ERROR", category: "NETWORK", message: "ambiguous", retryable: true });
@@ -46,7 +46,11 @@ const client: HttpClient = { async request<TResponse, TBody = unknown>(input: Ht
   if (mode === "INVALID") throw new ApplicationError({ code: "LEAD_OWNER_NOT_ASSIGNABLE", category: "VALIDATION", message: "invalid target", status: 422 });
   const ownerId = (input.body as { ownerId: string }).ownerId;
   const targetId = input.path.split("/")[2] ?? document.id;
-  return { commandId: "assign_cmd", correlationId: "assign_corr", aggregateId: targetId, aggregateType: "LEAD", version: 6, occurredAt: document.updatedAt, outcome: "COMMITTED", warnings: [], emittedEventIds: ["assign_event"], auditEvidenceIds: ["assign_audit"], result: { ...document, id: targetId, ownerId, version: 6 } } as TResponse;
+  const expectedVersion = input.expectedVersion;
+  assert.ok(typeof expectedVersion === "number", "Assignment transport carries a numeric opening version");
+  assert.ok(Number.isSafeInteger(expectedVersion) && expectedVersion >= 0, "Assignment opening version is a valid resource version");
+  const committedVersion = expectedVersion + 1;
+  return { commandId: "assign_cmd", correlationId: "assign_corr", aggregateId: targetId, aggregateType: "LEAD", version: committedVersion, occurredAt: document.updatedAt, outcome: "COMMITTED", warnings: [], emittedEventIds: ["assign_event"], auditEvidenceIds: ["assign_audit"], result: { ...document, id: targetId, ownerId, version: committedVersion } } as TResponse;
 }};
 const base = getLeadApplicationServices();
 let records = [mapLeadDocumentToApplication(document)];
@@ -136,7 +140,10 @@ assert.match(action, /task.status === "OPEN"/);
 assert.match(action, /Open Tasks keep their assignee/);
 assert.doesNotMatch(action, /reassignTask|createTask|updateTask|localStorage/);
 const panel = readFileSync("src/modules/leads/presentation/components/LeadWorkPanel.tsx", "utf8");
-assert.match(panel, /lg:w-\[350px\]/);
+assert.match(panel, /<RelationshipWorkPanelShell/);
+const workPanelShell = readFileSync("src/components/crm/relationship-panel/RelationshipWorkPanelShell.tsx", "utf8");
+assert.match(workPanelShell, /xl:w-\[350px\]/);
+assert.match(workPanelShell, /min-w-0/);
 assert.match(panel, /LeadOwnerAssignAction lead=\{lead\}/);
 assert.match(panel, /onAssigned=\{onAssigned\}/);
 const list = readFileSync("src/modules/leads/presentation/pages/LeadListPage.tsx", "utf8");
@@ -227,10 +234,11 @@ mode = "NETWORK";
 await act(async () => { window.document.querySelector("form")!.dispatchEvent(new window.Event("submit", { bubbles: true, cancelable: true })); });
 const authorityRetry = requests.filter(input => input.operationId === "assignLeadOwner").at(-1)!;
 holdAuthority = true;
+const evaluationsBeforeSameVersionRefresh = authorityIds.length;
 await renderAction({ ...actionLead, name: "Refreshed same version" });
-assert.equal(window.document.querySelector<HTMLButtonElement>("button[type=submit]")?.disabled, true, "Authority loading gates submission without unmounting the dialog");
+assert.equal(authorityIds.length, evaluationsBeforeSameVersionRefresh, "An open dialog retains its selected snapshot; an unrelated same-version prop refresh does not evaluate a different record.");
+assert.equal(window.document.querySelector<HTMLTextAreaElement>("textarea")?.value, "Coverage", "Same-version refresh preserves the ambiguous draft.");
 holdAuthority = false;
-await act(async () => { releaseAuthority?.(); });
 async function confirmCloseIfPrompted() {
   const confirm = [...window.document.querySelectorAll<HTMLButtonElement>("button")].find(node => /^(Đóng|Close|Bỏ thay đổi|Discard changes)$/.test(node.textContent ?? ""));
   if (confirm) await act(async () => { confirm.click(); });
@@ -238,7 +246,7 @@ async function confirmCloseIfPrompted() {
 const cancel = [...window.document.querySelectorAll<HTMLButtonElement>("button")].find(node => /^(Hủy|Cancel)$/.test(node.textContent ?? ""));
 assert.ok(cancel);
 await act(async () => { cancel.click(); });
-assert.match(window.document.body.textContent ?? "", /Đóng và giữ yêu cầu thử lại|Close and keep the retry intent/);
+assert.match(window.document.body.textContent ?? "", /Bỏ thay đổi chưa lưu|Discard unsaved changes/);
 await confirmCloseIfPrompted();
 await openAction();
 await act(async () => { window.document.querySelector("form")!.dispatchEvent(new window.Event("submit", { bubbles: true, cancelable: true })); });
@@ -251,6 +259,7 @@ const { LeadActionMenu } = await import("@/modules/leads/presentation/components
 const pageLeads = Array.from({ length: 50 }, (_, index) => mapLeadDocumentToApplication({ ...document, id: `lead_scale_${index}`, displayName: `Scale ${index}` }));
 let authoritativePage = pageLeads;
 let activeTarget: string | undefined;
+const listAssigned: string[] = [];
 function ListFixture() {
   const [leadToAssign, setLeadToAssign] = React.useState<(typeof pageLeads)[number] | null>(null);
   const [assignOpen, setAssignOpen] = React.useState(false);
@@ -273,6 +282,7 @@ function ListFixture() {
       onAssign: lead => { setLeadToAssign(current => current?.id === lead.id && (current.resourceVersion ?? -1) > (lead.resourceVersion ?? -1) ? current : lead); setAssignOpen(true); },
     }),
     leadToAssign && React.createElement(LeadOwnerAssignDialog, { key: leadToAssign.id, lead: leadToAssign,
+      onAssigned: id => { listAssigned.push(id); },
       isOpen: assignOpen, onClose: () => setAssignOpen(false) }));
 }
 const mountList = async () => { await act(async () => { root.render(React.createElement(I18nProvider, null, React.createElement(ListFixture))); }); };
@@ -351,18 +361,47 @@ await mountList();
 assert.equal(requests.filter(input => input.operationId === "assignLeadOwner").length, count, "New authoritative observation cannot automatically resubmit");
 await act(async () => { window.document.querySelector("form")!.dispatchEvent(new window.Event("submit", { bubbles: true, cancelable: true })); });
 const openDialogObservedRetry = requests.filter(input => input.operationId === "assignLeadOwner").at(-1)!;
-assert.equal(openDialogObservedRetry.expectedVersion, 7, "While-open list refresh supplies the newer authoritative version");
-assert.notEqual(openDialogObservedRetry.idempotencyKey, observedVersionAttempt.idempotencyKey);
+assert.equal(openDialogObservedRetry.expectedVersion, 6, "While-open observation must not silently rebase the opening intent to version 7");
+assert.equal(openDialogObservedRetry.idempotencyKey, observedVersionAttempt.idempotencyKey, "New page observations cannot replace an ambiguous opening intent");
 authoritativePage = [];
 await mountList();
 await act(async () => { window.document.querySelector("form")!.dispatchEvent(new window.Event("submit", { bubbles: true, cancelable: true })); });
 const latestAbsentPageRetry = requests.filter(input => input.operationId === "assignLeadOwner").at(-1)!;
 assert.equal(latestAbsentPageRetry.idempotencyKey, openDialogObservedRetry.idempotencyKey, "Absence after newer ambiguous submit keeps the latest intent");
-assert.equal(latestAbsentPageRetry.expectedVersion, 7, "Fallback retains latest observed authoritative version, not the opening snapshot");
+assert.equal(latestAbsentPageRetry.expectedVersion, 6, "Page absence preserves the original opening version");
+
+mode = "VERSION";
+version = 7;
+const retainedReason = window.document.querySelector<HTMLTextAreaElement>("form textarea")!.value;
+const retainedOwner = window.document.querySelector<HTMLSelectElement>("form select")!.value;
+count = requests.filter(input => input.operationId === "assignLeadOwner").length;
+await act(async () => { window.document.querySelector("form")!.dispatchEvent(new window.Event("submit", { bubbles: true, cancelable: true })); });
+assert.equal(requests.filter(input => input.operationId === "assignLeadOwner").length, count + 1, "Conflict recovery must not automatically resubmit");
+const staleOpeningAttempt = requests.filter(input => input.operationId === "assignLeadOwner").at(-1)!;
+assert.equal(staleOpeningAttempt.expectedVersion, 6, "The server receives the stale opening version and rejects it with 412");
+assert.equal(staleOpeningAttempt.idempotencyKey, observedVersionAttempt.idempotencyKey);
+assert.equal(window.document.querySelectorAll("form textarea").length, 1, "Conflict retains the dialog");
+assert.equal(window.document.querySelector<HTMLTextAreaElement>("form textarea")!.value, retainedReason, "Conflict retains the complete reason");
+assert.equal(window.document.querySelector<HTMLSelectElement>("form select")!.value, retainedOwner, "Conflict retains the chosen owner");
+assert.ok(window.document.querySelector('[role="alert"]'), "Conflict is visible to the user");
+await clickCancel();
+pageLeads[0] = { ...pageLeads[0], resourceVersion: 7 };
+authoritativePage = pageLeads;
+await mountList();
+await act(async () => { window.document.querySelector<HTMLButtonElement>(".row-more-btn")!.click(); });
+await act(async () => { assignEntry()!.click(); });
+await completeDraft();
+mode = "SUCCESS";
+await act(async () => { window.document.querySelector("form")!.dispatchEvent(new window.Event("submit", { bubbles: true, cancelable: true })); });
+const reopenedAttempt = requests.filter(input => input.operationId === "assignLeadOwner").at(-1)!;
+assert.equal(reopenedAttempt.expectedVersion, 7, "Explicit reopen uses the new authoritative version");
+assert.notEqual(reopenedAttempt.idempotencyKey, staleOpeningAttempt.idempotencyKey, "The reopened confirmation is a fresh intent");
+assert.equal((reopenedAttempt.body as { ownerId: string }).ownerId, retainedOwner, "Explicit confirmation sends the chosen owner");
+assert.deepEqual(listAssigned, [pageLeads[0].id], "Only the authoritative successful confirmation acknowledges assignment");
 
 authoritativePage = pageLeads;
 
-await clickCancel();
+assert.equal(window.document.querySelectorAll("form textarea").length, 0, "Authoritative reopened success closes the assignment dialog");
 const mobileMore = window.document.querySelectorAll<SVGElement>("svg.lucide-sparkles")[1]?.closest("button");
 assert.ok(mobileMore, "Mobile More trigger exists");
 await act(async () => { mobileMore.click(); });
@@ -376,7 +415,6 @@ await act(async () => { window.document.querySelector("form")!.dispatchEvent(new
 const otherTargetAttempt = requests.filter(input => input.operationId === "assignLeadOwner").at(-1)!;
 assert.equal(otherTargetAttempt.path, `/leads/${pageLeads[1].id}/assign`);
 assert.notEqual(otherTargetAttempt.idempotencyKey, listAttempt.idempotencyKey, "Intent cannot leak between Leads");
-await clickCancel();
 // Exact authority denial overrides coarse menu eligibility.
 denyAuthority = true;
 await act(async () => { window.document.querySelectorAll<HTMLButtonElement>(".row-more-btn")[2].click(); });
@@ -420,7 +458,8 @@ assert.equal(dirtyClosed, 2, "Successful save closes without dirty prompt");
 assert.doesNotMatch(window.document.body.textContent ?? "", /Bỏ thay đổi chưa lưu|Discard unsaved changes/);
 const detailView = readFileSync("src/modules/leads/presentation/views/LeadDetailView.tsx", "utf8");
 assert.match(detailView, /onAssigned=\{\(\) => showToast/);
-assert.match(action, /useUnsavedChangesGuard/);
+assert.match(action, /useLeadAuxiliaryLifecycle/);
+assert.match(readFileSync("src/modules/leads/presentation/hooks/useLeadAuxiliaryLifecycle.tsx", "utf8"), /registerUnsavedWork/);
 // A Task read failure is informational, even with a fully completed Assign draft.
 const failingTaskClient: HttpClient = { async request(input) { taskRequests.push(input); assert.equal(input.operationId, "listTasks", "Failed Task observation is still read-only"); throw new ApplicationError({ code: "NETWORK_ERROR", category: "NETWORK", message: "unavailable", retryable: true }); } };
 configureTaskApplication({ repository: new InMemoryTaskActivityRepository({ tasks: [], activities: [] }), api: createTaskConnectedApiRuntime(failingTaskClient) });

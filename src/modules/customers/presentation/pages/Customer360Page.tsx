@@ -220,11 +220,14 @@ export const Customer360Page: React.FC<Customer360PageProps> = ({
   };
 
 
-  const quickOpening = React.useRef<{ customer: Customer; label: string; workspaceId: string } | undefined>(undefined);
+  const quickOpening = React.useRef<{ customer: Customer; label: string; workspaceId: string; intentId: string } | undefined>(undefined);
+  const quickPending = React.useRef(false);
+  const quickMounted = React.useRef(true);
+  React.useEffect(() => { quickMounted.current = true; return () => { quickMounted.current = false; }; }, []);
   const quickWasOpen = React.useRef(false);
   const currentQuickTarget = React.useRef(customer.id); currentQuickTarget.current = customer.id;
   React.useEffect(() => {
-    if (quickAction && !quickWasOpen.current) quickOpening.current = { customer: structuredClone(customer), label: model.identity.displayName, workspaceId: getWorkspaceContextSnapshot().workspaceId };
+    if (quickAction && !quickWasOpen.current) quickOpening.current = { customer: structuredClone(customer), label: model.identity.displayName, workspaceId: getWorkspaceContextSnapshot().workspaceId, intentId: crypto.randomUUID() };
     if (!quickAction) quickOpening.current = undefined;
     quickWasOpen.current = Boolean(quickAction);
   }, [quickAction, customer, model.identity.displayName]);
@@ -232,8 +235,9 @@ export const Customer360Page: React.FC<Customer360PageProps> = ({
     if (quickAction && quickOpening.current && quickOpening.current.customer.id !== customer.id && !getDirtyUnsavedWork().some(entry => entry.id.startsWith("customers-activity:"))) setQuickAction(null);
   }, [quickAction, customer.id]);
 
-  const saveQuickActivity = async (draft: CustomerQuickActivityDraft) => {
+  const saveQuickActivity = async (draft: CustomerQuickActivityDraft): Promise<boolean> => {
     const opening = quickOpening.current;
+    if (!quickMounted.current || quickPending.current || currentQuickTarget.current !== opening?.customer.id) return false;
     if (!opening) throw new Error("CUSTOMER_ACTIVITY_TARGET_REQUIRED");
     if (opening.workspaceId !== getWorkspaceContextSnapshot().workspaceId) throw new Error("WORKSPACE_CHANGED");
     const customer = opening.customer;
@@ -245,10 +249,11 @@ export const Customer360Page: React.FC<Customer360PageProps> = ({
       );
       throw new Error("MEMBER_REQUIRED");
     }
+    quickPending.current = true;
     setSavingActivity(true);
     try {
-      await logActivityCommand({
-        id: crypto.randomUUID(),
+      const outcome = await logActivityCommand({
+        id: opening.intentId,
         type: draft.type,
         subject: draft.subject,
         body: draft.body,
@@ -263,18 +268,23 @@ export const Customer360Page: React.FC<Customer360PageProps> = ({
           label: opening.label,
         },
         sourceRef: { type: "CUSTOMER_360", id: customer.id },
-      });
-      if (opening.workspaceId !== getWorkspaceContextSnapshot().workspaceId || quickOpening.current !== opening || currentQuickTarget.current !== customer.id) return;
-      setQuickAction(null);
+      }, { idempotencyKey: `activity:customer:${customer.id}:${opening.intentId}` });
+      if (opening.workspaceId !== getWorkspaceContextSnapshot().workspaceId || quickOpening.current !== opening || currentQuickTarget.current !== customer.id || !quickMounted.current
+        || outcome.data.recordRef?.moduleKey !== "customers" || outcome.data.recordRef.recordId !== customer.id || outcome.data.type !== draft.type
+        || (draft.occurredAt !== undefined && outcome.data.occurredAt !== draft.occurredAt)
+        || !["COMMITTED", "REPLAYED", "DEMO_COMMITTED"].includes(outcome.outcome ?? "")) return false;
+
       showToast(
         isVi
           ? "Đã ghi hoạt động vào timeline Customer 360."
           : "Activity logged to the Customer 360 timeline.",
       );
+      return true;
     } catch (error) {
       throw error;
     } finally {
-      setSavingActivity(false);
+      quickPending.current = false;
+      if (quickMounted.current) setSavingActivity(false);
     }
   };
 

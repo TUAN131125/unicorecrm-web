@@ -32,6 +32,8 @@ export interface TaskCreateDefaults {
 
 export interface TaskCreateModalProps {
   targetId?: string;
+  onBindSave?: (save: (() => Promise<boolean>) | undefined) => void;
+  onPendingChange?: (pending: boolean) => void;
   formId?: string;
   guardChanges?: boolean;
   isOpen: boolean;
@@ -88,6 +90,8 @@ function createTaskId(): string {
 
 export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
   guardChanges = true,
+  onBindSave,
+  onPendingChange,
   targetId,
   formId = "canonical-task-create-form",
   isOpen,
@@ -168,6 +172,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
     const bound = opening.current;
     if (bound.workspaceId !== liveWorkspace.current) { setErrorMessage(vi ? "Workspace đã thay đổi. Đóng bản nháp và mở lại." : "Workspace changed. Close this draft and reopen it."); return false; }
     pending.current = true;
+    onPendingChange?.(true);
     setSubmitting(true);
     const capturedCycle = cycle.current;
     const context = bound.context;
@@ -207,13 +212,18 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
       }
       return false;
     } finally {
-      if (mounted.current && capturedCycle === cycle.current) { pending.current = false; setSubmitting(false); }
+      if (mounted.current && capturedCycle === cycle.current) { pending.current = false; onPendingChange?.(false); setSubmitting(false); }
     }
   };
+  React.useEffect(() => {
+    const capturedCycle = cycle.current; const lease = { active: true };
+    onBindSave?.(() => lease.active && mounted.current && openRef.current && cycle.current === capturedCycle && !pending.current ? save() : Promise.resolve(false));
+    return () => { lease.active = false; onBindSave?.(undefined); };
+  });
   const submit = async (event: React.FormEvent) => { event.preventDefault(); await save(); };
   const close = () => { if (!pending.current) opening.current.onClose(); };
   React.useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || onBindSave) return;
     const capturedCycle = cycle.current;
     const entryToken = {};
     registration.current = entryToken;

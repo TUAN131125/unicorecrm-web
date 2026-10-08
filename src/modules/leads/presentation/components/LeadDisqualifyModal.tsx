@@ -5,6 +5,7 @@ import { Modal, Select, Textarea, Button } from "@/shared/components/ui";
 
 interface LeadDisqualifyModalProps {
   isOpen: boolean;
+  onSave?: LeadDisqualifyModalProps["onConfirm"];
   onClose: () => void;
   onConfirm: (data: {
     reason: string;
@@ -15,7 +16,7 @@ interface LeadDisqualifyModalProps {
   }) => Promise<boolean>;
 }
 
-export const LeadDisqualifyModal: React.FC<LeadDisqualifyModalProps> = ({ isOpen, onClose, onConfirm }) => {
+export const LeadDisqualifyModal: React.FC<LeadDisqualifyModalProps> = ({ isOpen, onClose, onConfirm, onSave }) => {
   const { t, locale } = useI18n();
   const [reason, setReason] = useState("");
   const [evidence, setEvidence] = useState("");
@@ -33,8 +34,10 @@ export const LeadDisqualifyModal: React.FC<LeadDisqualifyModalProps> = ({ isOpen
     () => { setReason(""); setEvidence(""); }, onClose, pending);
   const close = lifecycle.requestClose;
 
+  lifecycle.bindSave(async () => reason.trim() && onSave ? onSave({ reason, note: evidence, needRecontact: false }) : false);
   const confirm = async () => {
     if (submittingRef.current || !reason.trim()) return;
+    if (onSave) { await lifecycle.save(); return; }
     submittingRef.current = true;
     setPending(true);
     try {

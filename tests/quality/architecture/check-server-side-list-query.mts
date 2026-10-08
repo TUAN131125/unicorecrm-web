@@ -65,7 +65,7 @@ assert.deepEqual(requests[1]?.query, {
 const root = repositoryRoot;
 const expected = [
   ["src/shared/operations/useServerPagedCollection.ts", /cursorByPageRef/, /totalCount/, /options\.loadPage/, /limit:\s*pageSize/, /SERVER_PAGE_CURSOR_REQUIRED/],
-  ["src/modules/leads/presentation/pages/LeadListPage.tsx", /useLeadServerPagedCollection/, /search:\s*filters\.searchTerm\.trim\(\)/, /workState:/, /ownerId/, /enabled:\s*viewMode\s*===\s*"table"/, /useLeads\(\{\s*loadAuthoritative:\s*viewMode\s*===\s*"kanban"\s*\}\)/],
+  ["src/modules/leads/presentation/pages/LeadListPage.tsx", /useLeadServerPagedCollection/, /search:\s*filters\.searchTerm\.trim\(\)/, /workState:/, /ownerId/, /enabled:\s*viewMode\s*===\s*"table"/, /useLeads\(\{\s*loadAuthoritative:\s*false\s*\}\)/, /useLeadKanbanWindows\(\{[\s\S]*?enabled:\s*viewMode\s*===\s*"kanban"/],
   ["src/modules/leads/presentation/hooks/useLeadServerPagedCollection.ts", /useServerPagedCollection/, /getLeadApiRuntime\(\)\.queries\.list/],
   ["src/modules/quotes/presentation/pages/QuoteListPage.tsx", /useServerPagedModuleCollection<Quote>/, /key:\s*"quotes"/, /useQuotes\(\{\s*loadAuthoritative:\s*false\s*\}\)/, /sourceDealId:\s*filterDeal/, /sortBy:\s*"updatedAt"/],
   ["src/modules/orders/presentation/hooks/useOrderListController.tsx", /useServerPagedModuleCollection<CustomerOrder>/, /key:\s*"orders"/, /enabled:\s*view\s*!==\s*"kanban"/, /useOrders\(\{\s*loadAuthoritative:\s*view\s*===\s*"kanban"\s*\}\)/, /filters:\s*\{\s*state:/],

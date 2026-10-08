@@ -26,6 +26,7 @@ import { repositoryRoot } from "../../../scripts/quality/core/repo-context.mjs";
  */
 
 const root = repositoryRoot;
+const dealPipelineNewline = fs.readFileSync(path.join(root, "src/modules/deals/presentation/hooks/useDealPipelineController.ts"), "utf8").includes("\r\n") ? "\r\n" : "\n";
 const journalPath = path.join(root, "node_modules", ".cache", "m11-negative-control-journal.json");
 
 interface NegativeControl {
@@ -74,8 +75,8 @@ const controls: readonly NegativeControl[] = [
     invariant: "MA-03 — a client-generated Task identity must not become a Deal Task reference",
     gate: "quality.server-assigned-task-identity",
     file: "src/modules/deals/presentation/hooks/useDealPipelineController.ts",
-    find: "        run: () => updateDealNextActionCommand(editingDeal.id, {\n          nextActionAt,",
-    replace: "        run: () => updateDealNextActionCommand(editingDeal.id, {\n          taskId: `task_deal_${editingDeal.id}`,\n          nextActionAt,",
+    find: "run: () => updateDealNextActionCommand(opening.id, {",
+    replace: "run: () => updateDealNextActionCommand(opening.id, { taskId: `task_deal_${opening.id}`,",
     defect: "the M3 defect verbatim: a deterministic client Task key is sent as UpdateDealNextActionRequest.taskId",
   },
   {
@@ -145,9 +146,9 @@ const controls: readonly NegativeControl[] = [
     id: "MA-07-controller-surface",
     invariant: "MA-07 — the React caller must actually surface the partial outcome",
     gate: "quality.partial-commit-controller-runtime",
-    file: "src/modules/leads/presentation/hooks/useLeadDetailController.tsx",
-    find: 'showToast(callReport.status === "PARTIAL_SUCCESS"',
-    replace: 'showToast(false && callReport.status === "PARTIAL_SUCCESS"',
+    file: "src/modules/orders/presentation/hooks/useOrderListController.tsx",
+    find: 'text: bulk.status === "PARTIAL_SUCCESS"',
+    replace: 'text: false && bulk.status === "PARTIAL_SUCCESS"',
     defect: "the controller computes a correct report and then reports only the failure",
   },
   {
@@ -182,8 +183,8 @@ const controls: readonly NegativeControl[] = [
     invariant: "MA-04 — presentation must not write the authoritative projection after a commit",
     gate: "quality.post-commit-projection-writes",
     file: "src/modules/deals/presentation/hooks/useDealPipelineController.ts",
-    find: "    setIsEditModalOpen(false);\n    setEditingDeal(null);",
-    replace: "    replaceDeals(getDealsSnapshot());\n    setIsEditModalOpen(false);\n    setEditingDeal(null);",
+    find: ["    return true;", "  };", "", "  // Clone opportunity"].join(dealPipelineNewline),
+    replace: ["    replaceDeals(getDealsSnapshot()); return true;", "  };", "", "  // Clone opportunity"].join(dealPipelineNewline),
     defect: "the success path patches the Deal repository locally to imitate the committed result",
   },
   {
@@ -218,10 +219,10 @@ const controls: readonly NegativeControl[] = [
     id: "MA-01-platform-configuration-preflight",
     invariant: "MA-01 — the Studio surface must refuse before a non-authoritative configuration write",
     gate: "quality.connected-platform-configuration-authority",
-    file: "src/workspaces/studio/presentation/views/WebhooksApiView.tsx",
-    find: "    if (isDeveloperWebhookSaveUnavailable()) {",
-    replace: "    if (isDeveloperWebhookSaveUnavailable() && false) {",
-    defect: "the Studio webhook preflight is left in place but made unreachable",
+    file: "src/workspaces/studio/presentation/views/IntegrationsView.tsx",
+    find: "    if (isIntegrationConfigurationWriteUnavailable()) {",
+    replace: "    if (isIntegrationConfigurationWriteUnavailable() && false) {",
+    defect: "the Studio integration preflight is left in place but made unreachable",
   },
   {
     id: "MA-06-wf12-declaration",

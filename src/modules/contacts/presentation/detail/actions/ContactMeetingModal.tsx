@@ -17,7 +17,7 @@ interface ContactMeetingModalProps {
     owner: string;
     agenda?: string;
     reminder?: boolean;
-  }) => void | Promise<void>;
+  }) => Promise<boolean>;
   isDoNotContact?: boolean;
 }
 
@@ -37,7 +37,8 @@ export const ContactMeetingModal: React.FC<ContactMeetingModalProps> = ({ target
     formId="contact-meeting-form"
     defaults={{ owner: getAuthSessionSnapshot()?.principal.memberId ?? "", reminder: false }}
     contactPolicy={{ restricted: isDoNotContact }}
-    onSubmit={(draft: MeetingActivityDraft) => {
+    onSubmit={async () => {}}
+    onSave={(draft: MeetingActivityDraft) => {
       const start = splitLocalDateTime(draft.startAt);
       const end = splitLocalDateTime(draft.endAt);
       return onSave({

@@ -39,11 +39,50 @@ assert.ok(pipelineSource.includes("function subscribeToDealPipelineSnapshot"), "
 
 const result = await build({
   absWorkingDir: root,
-  entryPoints: ["src/main.tsx"],
+  stdin: {
+    resolveDir: root,
+    sourcefile: "studio-route-fixture.ts",
+    loader: "ts",
+    contents: `
+      import "./src/main.tsx";
+      import { configureAiConfigurationGateway } from "@/workspaces/studio/application/composition/aiConfigurationApplicationServices";
+      import type { AiConfiguration, AiConfigurationGateway } from "@/workspaces/studio/application/AiConfigurationGateway";
+
+      const reads = { catalog: 0, configuration: 0, usage: 0 };
+      const configuration: AiConfiguration = {
+        status: "UNCONFIGURED", primaryProvider: "GEMINI", primaryModel: "gemini-2.5-flash",
+        primaryCredentialSource: "WORKSPACE", primaryCredentialConfigured: false,
+        fallbackEnabled: false, fallbackCredentialConfigured: false,
+        retryRateLimited: false, isValidated: false, version: 0,
+        createdAt: "2026-09-19T00:00:00Z", updatedAt: "2026-09-19T00:00:00Z",
+      };
+      const unsupportedCommand = async (): Promise<AiConfiguration> => {
+        throw new Error("The route smoke fixture does not execute AI configuration commands.");
+      };
+      const gateway: AiConfigurationGateway = {
+        async getCatalog() {
+          reads.catalog++;
+          return [{ id: "GEMINI", displayName: "Google Gemini", deploymentCredentialAvailable: false,
+            models: [{ id: "gemini-2.5-flash", displayName: "Studio demo model", structuredOutput: true }] }];
+        },
+        async getConfiguration() { reads.configuration++; return { ...configuration }; },
+        async getUsage() {
+          reads.usage++;
+          return { executions: 0, successfulExecutions: 0, failedExecutions: 0, providerAttempts: 0,
+            inputTokens: 0, outputTokens: 0, windowStartedAt: configuration.createdAt };
+        },
+        saveDraft: unsupportedCommand, setCredential: unsupportedCommand, test: unsupportedCommand,
+        activate: unsupportedCommand, disable: unsupportedCommand,
+      };
+      export function initializeAiConfiguration() { configureAiConfigurationGateway(gateway); }
+      export function aiConfigurationReads() { return { ...reads }; }
+    `,
+  },
   outfile: "studio-route-runtime.js",
   bundle: true,
   write: false,
   format: "iife",
+  globalName: "studioRouteFixture",
   platform: "browser",
   target: ["es2022"],
   define: {
@@ -163,6 +202,9 @@ async function waitForSelector(selector: string, timeoutMs = 8_000): Promise<Ele
 
 browser.eval(browserBundle.text);
 await waitForSelector("#unicore-root");
+// Demo bootstrap resets optional service bindings. Install the explicit fixture afterwards,
+// in the same bundle/module instance consumed by the real lazy Studio AI route.
+browser.eval("studioRouteFixture.initializeAiConfiguration()");
 
 const fatalPatterns = [
   "Maximum update depth exceeded",
@@ -181,6 +223,14 @@ for (const section of orderedSections) {
 
   const routeError = browser.document.querySelector("[data-route-error-kind]");
   assert.equal(routeError, null, `${section.id} must render without falling into the route error boundary`);
+
+  if (section.id === "ai") {
+    const reads = browser.eval("studioRouteFixture.aiConfigurationReads()") as Record<string, number>;
+    for (const field of ["catalog", "configuration", "usage"]) {
+      assert.ok(reads[field] > 0, `The real AI route must read its demo ${field} through the canonical gateway`);
+    }
+    assert.ok(browser.document.querySelector('[data-studio-route-section="ai"] select option[value="gemini-2.5-flash"]'), "The AI route must render the configured demo model rather than a loading/error placeholder");
+  }
 
   if (section.id === "quick-setup") {
     const sheet = await waitForSelector("[data-quick-setup-sheet]");

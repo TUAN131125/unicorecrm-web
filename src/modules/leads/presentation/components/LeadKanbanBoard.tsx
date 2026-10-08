@@ -1,3 +1,6 @@
+import type { LeadKanbanColumn } from "../../application/ports/LeadApiRuntime";
+import type { LeadKanbanWindow } from "../../application/queries/leadKanbanWindows";
+import { formatApplicationError } from "@/shared/operations";
 import React from "react";
 import { getQualificationOutcomeLabel } from "../leadLifecyclePresentation";
 import { GripVertical, Mail, MoreHorizontal, Phone } from "lucide-react";
@@ -19,16 +22,19 @@ export type LeadKanbanDropTarget =
   | typeof LeadWorkState.VERIFYING
   | "POSITIVE_OUTCOME";
 
-type LeadKanbanColumnStatus = LeadKanbanDropTarget | QualificationOutcome;
+type LeadKanbanColumnStatus = LeadKanbanColumn;
 
 interface LeadKanbanBoardProps {
   filteredLeads: Lead[];
+  windows?: Partial<Record<LeadKanbanColumn, LeadKanbanWindow>>;
+  onLoadMoreColumn?: (column: LeadKanbanColumn) => Promise<void>;
+  onRetryColumn?: (column: LeadKanbanColumn) => Promise<void>;
   activeView: string;
   openRowActionId: string | null;
   setOpenRowActionId: (id: string | null) => void;
   getReturnToUrl: (mode: "table" | "kanban") => string;
   memberById: ReadonlyMap<string, WorkspaceMemberDirectoryEntry>;
-  onMoveLead?: (leadId: string, target: LeadKanbanDropTarget) => void;
+  onMoveLead?: (leadId: string, target: LeadKanbanDropTarget) => void | Promise<void>;
   onCall?: (lead: Lead) => void;
   onMarkContacted?: (leadId: string) => void;
   onQualify?: (leadId: string) => void;
@@ -55,6 +61,9 @@ const nextTargetFor = (lead: Lead): LeadKanbanDropTarget | null => {
 
 export const LeadKanbanBoard: React.FC<LeadKanbanBoardProps> = ({
   filteredLeads,
+  windows,
+  onLoadMoreColumn,
+  onRetryColumn,
   activeView,
   openRowActionId,
   setOpenRowActionId,
@@ -75,6 +84,8 @@ export const LeadKanbanBoard: React.FC<LeadKanbanBoardProps> = ({
   const [dragOverStatus, setDragOverStatus] = React.useState<LeadKanbanDropTarget | null>(null);
   const [rowActionAnchorEl, setRowActionAnchorEl] = React.useState<HTMLElement | null>(null);
   const didDragRef = React.useRef(false);
+  const moving = React.useRef(new Set<string>());
+  const [pendingMoves, setPendingMoves] = React.useState<ReadonlySet<string>>(new Set());
   const activeMenuLead = React.useMemo(
     () => filteredLeads.find((lead) => lead.id === openRowActionId) ?? null,
     [filteredLeads, openRowActionId],
@@ -100,8 +111,12 @@ export const LeadKanbanBoard: React.FC<LeadKanbanBoardProps> = ({
     ? "Kéo Lead sang cột kế tiếp. Có thể dùng Alt và phím mũi tên phải để chuyển bằng bàn phím."
     : "Drag the Lead to its next column. You can also press Alt and Arrow Right to move it with the keyboard.";
 
-  const moveLead = React.useCallback((leadId: string, target: LeadKanbanDropTarget) => {
-    onMoveLead?.(leadId, target);
+  const moveLead = React.useCallback(async (leadId: string, target: LeadKanbanDropTarget) => {
+    if (moving.current.has(leadId)) return;
+    moving.current.add(leadId);
+    setPendingMoves(new Set(moving.current));
+    try { await onMoveLead?.(leadId, target); }
+    finally { moving.current.delete(leadId); setPendingMoves(new Set(moving.current)); }
   }, [onMoveLead]);
 
   return (
@@ -119,7 +134,8 @@ export const LeadKanbanBoard: React.FC<LeadKanbanBoardProps> = ({
       >
         {columns.map(({ status, title }) => {
           const isOutcomeColumn = Object.values(QualificationOutcome).includes(status as QualificationOutcome);
-          const columnLeads = filteredLeads.filter((lead) => isOutcomeColumn
+          const columnWindow = windows?.[status];
+          const columnLeads = columnWindow?.items ?? filteredLeads.filter((lead) => isOutcomeColumn
             ? lead.qualificationOutcome === status
             : status === "POSITIVE_OUTCOME"
               ? isPositiveQualificationOutcome(lead.qualificationOutcome)
@@ -173,14 +189,24 @@ export const LeadKanbanBoard: React.FC<LeadKanbanBoardProps> = ({
                   <span className="text-xs font-semibold uppercase tracking-wide text-slate-800">{title}</span>
                 </div>
                 <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-800">
-                  {columnLeads.length}
+                  {columnWindow ? `${columnWindow.loadedCount} / ${columnWindow.totalCount ?? "…"}` : columnLeads.length}
                 </span>
               </div>
 
+              {columnWindow?.loading && <p role="status" className="mb-2 text-xs text-slate-600">{locale === "vi" ? "Đang tải…" : "Loading…"}</p>}
+              {columnWindow?.error && <div role="alert" className="mb-2 text-xs text-red-700">
+                <p>{columnWindow.error.code === "LEAD_KANBAN_FILTER_UNAVAILABLE"
+                  ? locale === "vi" ? "Bộ lọc hoặc sắp xếp này chưa hỗ trợ trên Kanban. Đặt lại bộ lọc hoặc chọn giao diện Tất cả."
+                    : "This filter or sort is unavailable for Kanban. Reset filters or choose the All view."
+                  : formatApplicationError(columnWindow.error, { locale })}</p>
+                <button type="button" disabled={columnWindow.loading} onClick={() => void onRetryColumn?.(status)} className="mt-1 underline">
+                  {locale === "vi" ? "Thử lại" : "Retry"}
+                </button>
+              </div>}
               <div className="flex-1 space-y-2.5 overflow-y-auto pr-1 crm-scroll-y">
                 {columnLeads.map((lead) => {
                   const ownerName = getLeadMemberDisplay(memberById, lead.ownerId, locale);
-                  const canDrag = lifecycleBoard && lead.leadWorkState !== LeadWorkState.CLOSED && Boolean(onMoveLead);
+                  const canDrag = lifecycleBoard && lead.leadWorkState !== LeadWorkState.CLOSED && Boolean(onMoveLead) && !pendingMoves.has(lead.id) && !columnWindow?.loading;
                   const nextTarget = nextTargetFor(lead);
                   const dragging = draggedLeadId === lead.id;
 
@@ -286,7 +312,7 @@ export const LeadKanbanBoard: React.FC<LeadKanbanBoardProps> = ({
                     </article>
                   );
                 })}
-                {columnLeads.length === 0 && (
+                {columnLeads.length === 0 && !columnWindow?.loading && !columnWindow?.error && (
                   <div className={`rounded-xl border border-dashed py-10 text-center text-xs font-normal ${isDragOver ? "border-violet-300 bg-violet-50 text-slate-950" : "border-slate-200 bg-white/70 text-slate-700"}`}>
                     {isDragOver
                       ? (locale === "vi" ? "Thả Lead vào đây" : "Drop Lead here")
@@ -294,6 +320,10 @@ export const LeadKanbanBoard: React.FC<LeadKanbanBoardProps> = ({
                   </div>
                 )}
               </div>
+              {columnWindow?.hasNextPage && <button type="button" disabled={columnWindow.loading || Boolean(columnWindow.error)}
+                onClick={() => void onLoadMoreColumn?.(status)} className="mt-3 rounded-lg border bg-white px-3 py-2 text-xs font-medium disabled:opacity-50">
+                {locale === "vi" ? "Tải thêm" : "Load more"}
+              </button>}
             </section>
           );
         })}

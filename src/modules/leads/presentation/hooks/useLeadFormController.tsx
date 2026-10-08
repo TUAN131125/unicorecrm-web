@@ -1,3 +1,4 @@
+import { getWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import { formatApplicationError } from "@/shared/operations";
 import { money } from "@/shared/money";
 import React, { useState, useEffect } from "react";
@@ -46,7 +47,9 @@ interface LeadOwnerOption {
 
 export interface LeadFormProps {
   initialLead?: Partial<Lead>;
-  onSubmit: (data: Partial<Lead>) => void | Promise<void>;
+  onSubmit: (data: Partial<Lead>) => void | boolean | Promise<void | boolean>;
+  onSave?: (data: Partial<Lead>) => Promise<boolean>;
+  onBindSave?: (save: (() => Promise<boolean>) | undefined) => void;
   onCancel: () => void;
   onDirtyChange?: (isDirty: boolean) => void;
   onSubmittingChange?: (submitting: boolean) => void;
@@ -90,6 +93,11 @@ export function useLeadFormController(props: LeadFormProps) {
     formId,
     footerPortalId,
   } = props;
+  const mounted = React.useRef(true);
+  const openingWorkspace = React.useRef(getWorkspaceContextSnapshot().workspaceId);
+  const openingTarget = React.useRef(initialLead?.id);
+  const liveTarget = React.useRef(initialLead?.id); liveTarget.current = initialLead?.id;
+  React.useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const defaultMode = props.defaultMode ?? (isEdit ? "complete" : "quick");
   const { t, locale } = useI18n();
   const configurationRuntime = useConfigurationRuntime();
@@ -307,9 +315,10 @@ export function useLeadFormController(props: LeadFormProps) {
     });
   };
 
-  const handleFormSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (submitInFlightRef.current) return;
+  const save = async (globalSave = false): Promise<boolean> => {
+    globalSave = globalSave || Boolean(props.onSave);
+    if (submitInFlightRef.current || !mounted.current || openingWorkspace.current !== getWorkspaceContextSnapshot().workspaceId
+      || openingTarget.current !== initialLead?.id || (globalSave && !props.onSave)) return false;
     const newErrors: Record<string, string> = {};
 
     if (!name.trim()) newErrors.name = tf("validationNameRequired", "Full name is required.");
@@ -411,7 +420,7 @@ export function useLeadFormController(props: LeadFormProps) {
     setFormError(null);
     if (Object.keys(newErrors).length > 0) {
       focusFirstInvalidField(newErrors);
-      return;
+      return false;
     }
 
     const processedTags = tagsInput.split(",").map((tag) => tag.trim()).filter(Boolean);
@@ -453,8 +462,7 @@ export function useLeadFormController(props: LeadFormProps) {
         const existing = (initialLead?.interestedProducts || []).find((product) => typeof product === "string" ? product === productId : product.productId === productId);
         if (existing && typeof existing !== "string") return existing;
         const product = products.find((candidate) => candidate.id === productId);
-        return {
-          id: `lip_${productId}_${Date.now()}`,
+        return {         id: `lip_${productId}_${Date.now()}`,
           productId,
           skuSnapshot: product?.sku,
           productNameSnapshot: product?.name || "",
@@ -485,19 +493,31 @@ export function useLeadFormController(props: LeadFormProps) {
     setIsSubmitting(true);
     try {
       onSubmittingChange?.(true);
-      await onSubmit(finalLeadData);
+      if (globalSave) {
+        const command = props.onSave?.(finalLeadData);
+        if (!command || typeof command.then !== "function" || (await command) !== true
+          || !mounted.current || openingTarget.current !== liveTarget.current || openingWorkspace.current !== getWorkspaceContextSnapshot().workspaceId) return false;
+      } else await onSubmit(finalLeadData);
       initialSnapshotRef.current = formSnapshot;
       onDirtyChange?.(false);
       setFormError(null);
+      return true;
     } catch (caught) {
       setFormError(formatApplicationError(caught, { locale }));
       window.requestAnimationFrame(() => document.getElementById("lead-form-error-summary")?.focus());
+      return false;
     } finally {
       submitInFlightRef.current = false;
       onSubmittingChange?.(false);
       setIsSubmitting(false);
     }
   };
+  const handleFormSubmit = async (event: React.FormEvent) => { event.preventDefault(); await save(); };
+  React.useEffect(() => {
+    const lease = { active: true };
+    props.onBindSave?.(() => lease.active ? save(true) : Promise.resolve(false));
+    return () => { lease.active = false; props.onBindSave?.(undefined); };
+  });
   return {
     initialLead,
     onSubmit,

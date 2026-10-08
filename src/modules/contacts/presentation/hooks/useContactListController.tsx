@@ -4,7 +4,7 @@ import { backendUnavailableMessage, formatOperationUnavailableError } from "@/sh
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Contact } from "../../domain/model/contact.types";
-import { archiveContactViaApi, createContactViaApi, isContactCreateAvailable, isContactRetentionUnavailable, isContactUpdateAvailable } from "../../public/contacts";
+import { archiveContactViaApi, createContactViaApi, isContactCreateAvailable, isContactArchiveAvailable, isContactUpdateAvailable } from "../../public/contacts";
 import type { CustomerDisplay as Customer } from "@/modules/customers";
 import { createDealCommand, Deal, DealStage } from "@/modules/deals";
 import { createTaskCommand } from "@/modules/tasks";
@@ -19,6 +19,11 @@ import { notifyProduct } from "@/components/feedback/ProductDialogService";
 import { resolveWorkspaceMemberName, getWorkspaceMemberOptions } from "@/platform/member-directory";
 import { useSubscribableSnapshot } from "@/platform/react";
 import type { ContactCreateInput } from "../list/ContactCreateModal";
+import { useWorkspaceContextSnapshot } from "@/platform/workspace-context";
+import { isContactConnectedApiRuntime } from "../../application/composition/contactApplicationServices";
+import { useContactServerPagedCollection } from "./useContactServerPagedCollection";
+import { useContactListSummary } from "./useContactListSummary";
+import { composeContactServerListQuery } from "../model/contactServerListQuery";
 import { useContacts } from "../hooks/useContacts";
 import { useContactListFilters } from "../hooks/useContactListFilters";
 import { useContactListViewSettings } from "../hooks/useContactListViewSettings";
@@ -41,7 +46,9 @@ export function useContactListController({
   const { t, tx, locale } = useI18n();
   const access = useEffectiveAccess();
   const navigate = useNavigate();
-  const { contacts, setContacts, query: contactQuery } = useContacts();
+  const connected = isContactConnectedApiRuntime();
+  const workspace = useWorkspaceContextSnapshot();
+  const { contacts: demoContacts, setContacts, query: demoQuery } = useContacts({ loadAuthoritative: !connected });
   const productCatalog = useSubscribableSnapshot(getProductCatalogSnapshot, subscribeToProductCatalog);
   const {
     searchTerm, setSearchTerm,
@@ -93,6 +100,21 @@ export function useContactListController({
   const [selectedContactIds, setSelectedContactIds] = useState<string[]>([]);
   const [openRowActionId, setOpenRowActionId] = useState<string | null>(null);
   const [showBulkReassignModal, setShowBulkReassignModal] = useState(false);
+  const serverQuery = useMemo(() => composeContactServerListQuery({
+    searchTerm, statusFilter, linkFilter, sourceFilter, ownerFilter, priorityFilter,
+    relationshipLevelFilter, decisionRoleFilter, nextFollowUpAtFilter, lastInteractionAtFilter,
+    doNotContactFilter, activeView, sortBy,
+  }), [searchTerm, statusFilter, linkFilter, sourceFilter, ownerFilter, priorityFilter,
+    relationshipLevelFilter, decisionRoleFilter, nextFollowUpAtFilter, lastInteractionAtFilter,
+    doNotContactFilter, activeView, sortBy]);
+  const authorityScopeKey = JSON.stringify([workspace.workspaceId, access.accountId, access.membershipId,
+    access.memberId, access.authorityRevision]);
+  const serverPagination = useContactServerPagedCollection({ scopeKey: authorityScopeKey,
+    query: serverQuery.query, enabled: access.canPerform("contacts", "read") && !serverQuery.unavailable });
+  const contactQuery = connected ? serverPagination : demoQuery;
+  const contacts = connected ? (serverQuery.unavailable || !access.canPerform("contacts", "read") ? [] : serverPagination.items) : demoContacts;
+  const serverSummary = useContactListSummary(authorityScopeKey, serverQuery.query,
+    connected && showStatisticsPanel && !serverQuery.unavailable && access.canPerform("contacts", "read"));
   useEffect(() => {
     const activeIds = new Set(contacts.map((contact) => contact.id));
     setSelectedContactIds((current) => {
@@ -162,13 +184,12 @@ export function useContactListController({
     setSavedViewDialog({ mode: "edit", viewKey: viewToEdit.key });
     setIsViewDropdownOpen(false);
   };
-  const handleSubmitSavedView = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (viewSaveInFlightRef.current || !savedViewDialog) return;
-    const trimmedName = viewName.trim();
+  const saveViewName = async (submittedName: string, deferClose = false): Promise<boolean> => {
+    if (viewSaveInFlightRef.current || !savedViewDialog) return false;
+    const trimmedName = submittedName.trim();
     if (!trimmedName) {
       setViewNameError(tx("contactList.customViews.validation.required", "Vui l\u00f2ng nh\u1eadp t\u00ean giao di\u1ec7n."));
-      return;
+      return false;
     }
     viewSaveInFlightRef.current = true;
     setIsSavingView(true);
@@ -182,18 +203,22 @@ export function useContactListController({
         setViewNameError(result.error === "duplicate"
           ? tx("contactList.customViews.validation.duplicate", "T\u00ean giao di\u1ec7n \u0111\u00e3 t\u1ed3n t\u1ea1i.")
           : tx("contactList.customViews.validation.required", "Vui l\u00f2ng nh\u1eadp t\u00ean giao di\u1ec7n."));
-        return;
+        return false;
       }
       const completedMode = savedViewDialog.mode;
-      closeSavedViewDialog();
-      setViewName("");
+      if (!deferClose) { closeSavedViewDialog(); setViewName(""); }
       showToast(completedMode === "edit"
         ? tx("contactList.toastMessage.updatedView", "\u0110\u00e3 c\u1eadp nh\u1eadt giao di\u1ec7n th\u00e0nh c\u00f4ng.")
         : tx("contactList.toastMessage.addedView", "\u0110\u00e3 th\u00eam giao di\u1ec7n th\u00e0nh c\u00f4ng.", { name: trimmedName }));
+      return true;
     } finally {
       viewSaveInFlightRef.current = false;
       setIsSavingView(false);
     }
+  };
+  const handleSubmitSavedView = async (event: React.FormEvent) => {
+    event.preventDefault();
+    await saveViewName(viewName);
   };
   const handleDeleteCustomView = () => {
     if (!viewToDelete) return;
@@ -462,9 +487,9 @@ export function useContactListController({
   const canReadContacts = access.canPerform("contacts", "read");
   const canCreateContact = contactCreateAvailable && access.canPerform("contacts", "create");
   const canUpdateContact = contactUpdateAvailable && access.canPerform("contacts", "update");
-  const canArchiveContact = !isContactRetentionUnavailable() && access.canPerform("contacts", "delete");
-  const contactOpportunityAvailable = !isContactOpportunityCreationUnavailable();
-  const contactWritesUnavailable = !contactUpdateAvailable;
+  const canArchiveContact = isContactArchiveAvailable() && access.canPerform("contacts", "delete");
+  const contactOpportunityAvailable = !connected && !isContactOpportunityCreationUnavailable();
+  const contactWritesUnavailable = connected || !contactUpdateAvailable;
   const refuseUnavailableContactWrite = (action: string, unavailable = contactWritesUnavailable): boolean => {
     if (!unavailable) return false;
     showToast(backendUnavailableMessage({ locale, action }));
@@ -478,7 +503,7 @@ export function useContactListController({
    * write and a local Contact write does not make the frontend the workflow owner.
    */
   const refuseUnavailableContactOpportunity = (action: string): boolean => {
-    if (!isContactOpportunityCreationUnavailable()) return false;
+    if (!connected && !isContactOpportunityCreationUnavailable()) return false;
     showToast(backendUnavailableMessage({ locale, action }));
     return true;
   };
@@ -729,10 +754,9 @@ export function useContactListController({
       },
     );
   };
-  // `contact.archive` / `contact.restore` are BLOCKED canonical commands: refuse before the
-  // confirmation dialog rather than after the user has committed to the action.
+  // Archive availability is independent of Restore and checked before confirmation.
   const refuseUnavailableContactRetention = (action: string): boolean => {
-    if (!isContactRetentionUnavailable()) return false;
+    if (isContactArchiveAvailable()) return false;
     showToast(backendUnavailableMessage({ locale, action }));
     return true;
   };
@@ -755,6 +779,7 @@ export function useContactListController({
     setActiveMenuContactId(null);
   };
   const handleBulkExport = () => {
+    if (connected) { showToast(backendUnavailableMessage({ locale, action: locale === "vi" ? "Xuất danh sách liên hệ" : "Exporting the contact list" })); return; }
     setIsHeaderMoreOpen(false);
     const targetContacts = selectedContactIds.length > 0
       ? contacts.filter(c => selectedContactIds.includes(c.id))
@@ -784,6 +809,7 @@ export function useContactListController({
   };
   // 3. Filtering & Sorting Local Handler
   const filteredContacts = useMemo(() => {
+    if (connected) return contacts;
     const now = new Date();
     const todayStr = now.toISOString().substring(0, 10);
     const currentUserId = getWorkspaceMemberOptions()[0]?.id || "";
@@ -893,10 +919,11 @@ export function useContactListController({
       );
     });
   }, [
-    contacts, customers, searchTerm, statusFilter, linkFilter, sourceFilter, ownerFilter, priorityFilter,
+    connected, contacts, customers, searchTerm, statusFilter, linkFilter, sourceFilter, ownerFilter, priorityFilter,
     relationshipLevelFilter, decisionRoleFilter, nextFollowUpAtFilter, lastInteractionAtFilter, doNotContactFilter, activeView
   ]);
   const sortedContacts = useMemo(() => {
+    if (connected) return contacts;
     return [...filteredContacts].sort((a, b) => {
       if (sortBy === "recentlyUpdated") {
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
@@ -916,9 +943,10 @@ export function useContactListController({
       }
       return 0;
     });
-  }, [filteredContacts, sortBy]);
+  }, [connected, contacts, filteredContacts, sortBy]);
   // Rich calculations for Contact statistics (on-demand via memo)
   const statsSummary = useMemo(() => {
+    if (connected) return undefined;
     const total = contacts.length;
     const linked = contacts.filter((contact) => Boolean(findCustomerForContact(contact))).length;
     const unlinked = total - linked;
@@ -1018,8 +1046,12 @@ export function useContactListController({
       becameCustomerRate,
       oppCreationRate
     };
-  }, [contacts, deals, locale]);
+  }, [connected, contacts, deals, locale]);
   return {
+    connected,
+    serverPagination,
+    serverSummary,
+    serverQueryUnavailable: connected && serverQuery.unavailable,
     contactCreateAvailable,
     contactUpdateAvailable,
     canReadContacts,
@@ -1037,7 +1069,6 @@ export function useContactListController({
     locale,
     navigate,
     contacts,
-    setContacts,
     productCatalog,
     searchTerm,
     setSearchTerm,
@@ -1115,6 +1146,7 @@ export function useContactListController({
     handleAddViewClick,
     handleEditViewClick,
     handleSubmitSavedView,
+    saveViewName,
     handleDeleteCustomView,
     handleResetFilters,
     handleSaveColumnSettings,

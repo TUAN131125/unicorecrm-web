@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "generatorVersion": 11,
   "contractVersion": "0.24.0-contract.0",
-  "specSha256": "fb404a5c87c429e876154f99b1cf22d8aed524b51f3ad920b38b331f70295528",
+  "specSha256": "7aaf0b269de362b8bef6b6f2e783a660ef231e599a174fdfecb1e0f3b4d5ec5e",
   "generatedAt": "DETERMINISTIC",
   "coveragePolicy": {
     "ownerModule": "REQUIRED",
@@ -13,12 +13,12 @@
     "concurrency": "DERIVED_FROM_IF_MATCH_HEADER"
   },
   "summary": {
-    "operations": 301,
-    "ownedOperations": 301,
-    "generatedClientMappings": 301,
-    "productionReadyOperations": 273,
+    "operations": 303,
+    "ownedOperations": 303,
+    "generatedClientMappings": 303,
+    "productionReadyOperations": 275,
     "blockedOperations": 28,
-    "declaredConnectedBoundaries": 273,
+    "declaredConnectedBoundaries": 275,
     "blockedByContract": 28,
     "pendingConnectedAdapters": 0
   },
@@ -3982,6 +3982,44 @@
       "dataScope": "WORKSPACE"
     },
     {
+      "operationId": "getContactListSummary",
+      "method": "GET",
+      "path": "/contacts/summary",
+      "boundedContext": "Contacts",
+      "ownerModule": "contacts",
+      "generatedClient": {
+        "file": "src/platform/api/generated/commercialApi.ts",
+        "className": "CommercialApiClient",
+        "method": "getContactListSummary"
+      },
+      "httpAdapter": "src/modules/contacts/infrastructure/http/ContactHttpApiAdapter.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.application-composition",
+        "quality.commercial-authoritative-queries",
+        "quality.deal-api-boundary",
+        "quality.lead-qualification-api-boundary",
+        "quality.order-to-cash-api-contracts",
+        "quality.product-order-api-boundary",
+        "quality.quote-api-boundary",
+        "quality.relationship-domain-api-boundary",
+        "quality.shipping-returns-api-boundary",
+        "quality.support-api-boundary",
+        "quality.task-activity-api-boundary"
+      ],
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "requestBodySchema": null,
+      "responseSchema": "ContactListSummary",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "contacts.read",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE"
+    },
+    {
       "operationId": "getContactRelationshipSummary",
       "method": "GET",
       "path": "/contacts/{contactId}/relationship-summary",
@@ -5918,6 +5956,44 @@
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "invoices.read",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE"
+    },
+    {
+      "operationId": "listLeadKanbanColumn",
+      "method": "GET",
+      "path": "/leads/kanban/{column}",
+      "boundedContext": "Leads",
+      "ownerModule": "leads",
+      "generatedClient": {
+        "file": "src/platform/api/generated/commercialApi.ts",
+        "className": "CommercialApiClient",
+        "method": "listLeadKanbanColumn"
+      },
+      "httpAdapter": "src/modules/leads/infrastructure/http/LeadHttpApiAdapter.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.application-composition",
+        "quality.commercial-authoritative-queries",
+        "quality.deal-api-boundary",
+        "quality.lead-qualification-api-boundary",
+        "quality.order-to-cash-api-contracts",
+        "quality.product-order-api-boundary",
+        "quality.quote-api-boundary",
+        "quality.relationship-domain-api-boundary",
+        "quality.shipping-returns-api-boundary",
+        "quality.support-api-boundary",
+        "quality.task-activity-api-boundary"
+      ],
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "requestBodySchema": null,
+      "responseSchema": "LeadListResponse",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "leads.read",
       "resourceScope": "WORKSPACE",
       "dataScope": "WORKSPACE"
     },

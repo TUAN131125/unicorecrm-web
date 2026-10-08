@@ -2,9 +2,10 @@ import { repositoryRoot } from "../../../scripts/quality/core/repo-context.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { readPresentationComposition } from "../../../scripts/lib/presentationCompositionSource.mts";
 
 const root = repositoryRoot;
-const read = (relativePath: string) => fs.readFileSync(path.join(root, relativePath), "utf8");
+const read = (relativePath: string) => readPresentationComposition(path.join(root, relativePath), "utf8");
 
 const canonicalPath = "src/modules/tasks/presentation/components/ActivityCreateModals.tsx";
 const canonical = read(canonicalPath);
@@ -67,14 +68,14 @@ for (const [name, component, callback] of [
 ]) {
   const adapter = read(`src/modules/contacts/presentation/detail/actions/${name}.tsx`);
   assert.match(adapter, new RegExp(`<${component}\\s[^>]*\\bguardChanges\\b`, "u"));
-  assert.ok(adapter.includes("void | Promise<void>"));
+  assert.match(adapter, /\) => Promise<boolean>/, `${name} must return an acknowledged save result so the opening interaction closes only after success.`);
   assert.ok(!adapter.includes("useState") && !adapter.includes("RelationshipQuickActionModal"));
   assert.match(adapter, new RegExp(`(?:=>\\s*|return\\s+)${callback}\\(`, "u"), `${name} must return the callback result.`);
 }
 
 const noteSource = canonical.slice(canonical.indexOf("export interface NoteActivityCreateModalProps"));
 assert.ok(noteSource.includes('Omit<BaseActivityModalProps, "contactPolicy" | "titleOverride">'));
-for (const token of ["guardChanges = true", "void | Promise<void>", "{ draft, setDraft, dirty }", "guardChanges={guardChanges} dirty={dirty}", "return lifecycle.submit("]) {
+for (const token of ["guardChanges = true", "void | boolean | Promise<void | boolean>", "onSave?(draft: NoteActivityDraft): Promise<boolean>", "{ draft, setDraft, dirty }", "guardChanges={guardChanges} dirty={dirty}", "return lifecycle.submit("]) {
   assert.ok(noteSource.includes(token), `Note safety must retain ${token}.`);
 }
 for (const caller of [
@@ -85,8 +86,17 @@ const contactNotes = read("src/modules/contacts/presentation/detail/tabs/Contact
 assert.ok(contactNotes.includes("onOpenComposer"), "Contact notes must delegate new notes to the canonical composer.");
 assert.ok(!contactNotes.includes("useState"), "Contact notes must not own a second mutation form.");
 const quickNote = read("src/modules/contacts/presentation/detail/actions/ContactQuickNoteModal.tsx");
-assert.ok(quickNote.includes("void | Promise<void>"));
+assert.match(quickNote, /onSave:.*=> Promise<boolean>/u, "Contact notes must propagate an acknowledged persistence result.");
 assert.match(quickNote, /=>\s*onSave\(/u);
+assert.ok(quickNote.includes("onSave={(draft: NoteActivityDraft) => onSave("), "Contact notes must route persistence through the canonical acknowledged save callback.");
+for (const marker of [
+  '(await command) !== true) return false',
+  'opening.current.targetId !== liveTarget.current',
+  'opening.current.workspaceId !== getWorkspaceContextSnapshot().workspaceId',
+  'setSaveError(formatApplicationError(normalized, { locale }))',
+  'if (globalSave) return false',
+  'if (globalSave) { openRef.current = false; opening.current.onClose(); }',
+]) assert.ok(canonical.includes(marker), `Acknowledged activity saves must preserve failure and opening-scope safety: ${marker}.`);
 console.log("A2A Note contracts: PASS");
 
 const leadModalSource = read("src/modules/leads/presentation/components/LeadDetailModals.tsx");

@@ -16,6 +16,8 @@ Lead presentation
 
 ## Owned application ports
 
+Connected Kanban reads use `GET /leads/kanban/{column}` through a dedicated query port and generated client. Each column owns its bounded items, authorized totalCount, cursor, loading and error state. Loading more one column does not fetch all columns. The existing table uses ListLeads paging independently. Both paths retain workspace, effective record scope and field access; drag commands remain authoritative and invalidate the column windows after success.
+
 `src/modules/leads/application/ports/LeadApiRuntime.ts` owns:
 
 - `LeadQueryPort.list` and `LeadQueryPort.get`;

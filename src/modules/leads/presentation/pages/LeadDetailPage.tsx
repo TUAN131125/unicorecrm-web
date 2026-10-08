@@ -27,13 +27,13 @@ export const LeadDetailPage: React.FC<LeadDetailPageProps> = (props) => {
     <>
       <AuthoritativeQueryBoundary
         query={detailQuery}
-        hasData={Boolean(feature.dialogs.boundLead) || hasAuthoritativeData || !detailQuery.connected}
+        hasData={hasAuthoritativeData || !detailQuery.connected}
         loadingTitleVi="Đang tải thông tin Lead"
         loadingTitleEn="Loading Lead details"
         errorTitleVi="Không thể tải Lead"
         errorTitleEn="Lead could not be loaded"
       >
-        {(!detailQuery.connected || hasAuthoritativeData || Boolean(feature.dialogs.boundLead)) && (
+        {(!detailQuery.connected || hasAuthoritativeData) && (
           controller ? (
             <LeadDetailView controller={controller} />
           ) : (

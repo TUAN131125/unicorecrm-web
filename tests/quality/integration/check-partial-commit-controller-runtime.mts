@@ -19,7 +19,7 @@ import { JSDOM } from "jsdom";
  */
 
 const dom = new JSDOM('<!doctype html><html><body><div id="root"></div></body></html>', {
-  url: "http://localhost/#/w/unicore-vietnam/crm/leads",
+  url: "http://localhost/#/w/unicore-vietnam/crm/orders",
   pretendToBeVisual: true,
 });
 const { window } = dom;
@@ -89,65 +89,41 @@ const { createRoot } = await import("react-dom/client");
 const { MemoryRouter, Route, Routes } = await import("react-router-dom");
 const { I18nProvider } = await import("../../../src/i18n/index");
 const { PlatformStateProvider } = await import("../../../src/app/providers");
-const leadsModule = await import("../../../src/modules/leads");
-const { getTaskActivitySnapshot } = await import("../../../src/modules/tasks");
-const { useLeadDetailController } = await import("../../../src/modules/leads/presentation/hooks/useLeadDetailController");
+const ordersModule = await import("../../../src/modules/orders");
+const { getPaymentsSnapshot } = await import("../../../src/modules/payments");
+const { useOrderListController } = await import("../../../src/modules/orders/presentation/hooks/useOrderListController");
 
-// ---------------------------------------------------------------------------
-// 1. Arrange a genuine partial commit out of real behaviour.
-//
-// Nothing here stubs the partial-commit model or injects a synthetic rejection. The
-// follow-up Task is created with `assigneeId: lead.ownerId`, and the Task domain refuses a
-// blank assignee ("Task assignee is required."). A lead with no owner therefore produces
-// exactly the M9 hazard in the real command path: the call activity commits, and the
-// follow-up Task that depends on it fails afterwards.
-// ---------------------------------------------------------------------------
-
-// The lead is seeded explicitly rather than taken from the demo fixture: under a JSDOM
-// global the Lead repository hydrates from browser storage, so the fixture is not reliably
-// present.
-const LEAD_ID = "lead_m11_partial_commit_probe";
-leadsModule.saveLeadSnapshot({
-  id: LEAD_ID,
-  name: "M11 partial-commit probe",
-  title: "Operations",
-  companyName: "M11 Probe Co.",
-  email: "probe@m11.local",
-  phone: "0900000000",
-  source: "Website",
-  score: 50,
-  leadWorkState: "NEW",
-  ownerId: "u1",
-  createdAt: new Date().toISOString(),
-  activities: [],
+// One real cancellation succeeds while the completed order is rejected by the workflow.
+const CANCELLABLE_ID = "order_partial_cancellable";
+const COMPLETED_ID = "order_partial_completed";
+const makeOrder = (id, state) => ({
+  id, orderNumber: id, orderDate: new Date().toISOString(),
+  buyerRef: { type: "CONTACT", id: "contact_partial_probe" },
+  state, items: [{
+    id: `${id}:line`, productId: "product_partial_probe", productNameSnapshot: "Probe service",
+    fulfillmentKind: "SERVICE", quantity: 1, unitPriceSnapshot: 100000, discountPercent: 0,
+    lineSubtotal: 100000, lineDiscountAmount: 0, lineTaxAmount: 0, lineTotal: 100000,
+  }], totalAmount: 100000, grandTotal: 100000, currency: "VND",
+  paymentAgreementSnapshot: {
+    version: 1, kind: "FULL_PAYMENT", currency: "VND", policyVersion: "test/v1",
+    lines: [{
+      id: `${id}:agreement`, sequence: 1, label: "Full payment", purpose: "FULL",
+      amountRule: { type: "REMAINDER" }, previewAmount: { amount: "100000", currency: "VND" },
+      dueRule: { type: "EVENT_RELATIVE", event: "ORDER_CONFIRMED", offsetDays: 0, dayBasis: "CALENDAR" },
+      allowedMethodCodes: ["bank-transfer"], fulfillmentGate: "BEFORE_COMPLETION",
+    }],
+  },
+  ...(state === "COMPLETED" ? {
+    completedAt: new Date().toISOString(),
+    completion: { policyVersion: "test/v1", correlationId: id, evidenceId: `${id}:evidence`, occurredAt: new Date().toISOString() },
+  } : {}),
 });
-
-// The failure lever is a real permission boundary, not an injected rejection: a member may
-// log a call on a Lead but not create Tasks. That is an ordinary role configuration, and it
-// makes the SECOND authoritative command fail after the FIRST has already committed —
-// exactly the M9 hazard, produced by production code paths end to end.
-const {
-  getAccessControlSnapshot,
-  updateRoleCapabilities,
-  refreshAccessGovernance,
-  can,
-} = await import("../../../src/platform/access-control");
-
-const accessSnapshot = getAccessControlSnapshot(activeWorkspaceId);
-const taskCreatingRoles = accessSnapshot.roles.filter((role) => role.capabilities.includes("tasks.create"));
-assert.ok(taskCreatingRoles.length > 0, "The demo workspace must grant tasks.create to at least one role.");
-for (const role of taskCreatingRoles) {
-  updateRoleCapabilities(role.roleId, role.capabilities.filter((capability) => capability !== "tasks.create"), activeWorkspaceId);
-}
-await refreshAccessGovernance(activeWorkspaceId);
-assert.equal(can("tasks.create"), false, "The probe role must no longer be allowed to create Tasks.");
-assert.equal(can("leads.update"), true, "The probe role must still be allowed to log Lead activity, or nothing commits.");
-
-const preparedLead = leadsModule.getLeadSnapshot(LEAD_ID);
-assert.ok(preparedLead, "The probe lead must exist in the Lead projection.");
-
-const activitiesBefore = (preparedLead.activities ?? []).length;
-const tasksBefore = getTaskActivitySnapshot().tasks.length;
+ordersModule.replaceOrderList([
+  makeOrder(CANCELLABLE_ID, "DRAFT"),
+  makeOrder(COMPLETED_ID, "COMPLETED"),
+]);
+const { can } = await import("../../../src/platform/access-control");
+assert.equal(can("orders.update"), true, "The probe must exercise workflow state rejection, not authorization failure.");
 
 // ---------------------------------------------------------------------------
 // 2. Mount the real controller on the real route.
@@ -155,7 +131,7 @@ const tasksBefore = getTaskActivitySnapshot().tasks.length;
 
 let controller = null;
 const Harness = () => {
-  controller = useLeadDetailController({});
+  controller = useOrderListController({ payments: getPaymentsSnapshot(), shippingBookings: [] });
   return null;
 };
 
@@ -183,14 +159,14 @@ try {
         null,
         React.createElement(
           MemoryRouter,
-          { initialEntries: [`/leads/${LEAD_ID}`] },
+          { initialEntries: ["/orders"] },
           React.createElement(
             PlatformStateProvider,
             null,
             React.createElement(
               Routes,
               null,
-              React.createElement(Route, { path: "/leads/:leadId", element: React.createElement(Harness) }),
+              React.createElement(Route, { path: "/orders", element: React.createElement(Harness) }),
             ),
           ),
         ),
@@ -204,60 +180,24 @@ try {
     }
   };
 
-  assert.ok(controller, "The Lead detail controller must mount.");
-  assert.ok(controller.lead, `The controller must resolve lead ${LEAD_ID} from the route.`);
-  assert.equal(typeof controller.handleSavePhoneCall, "function", "The controller must expose the call handler.");
-
-  // ---------------------------------------------------------------------------
-  // 3. Run the two-command action and read what the user is actually told.
-  // ---------------------------------------------------------------------------
-
-  await act(async () => {
-    await controller.handleSavePhoneCall({
-      subject: "M11 partial-commit probe",
-      body: "Controller-level MA-07 verification.",
-      direction: "outbound",
-      result: "connected",
-      recipient: "0900000000",
-      durationMinutes: 5,
-      createFollowUpTask: true,
-      nextFollowUpAt: new Date(Date.now() + 86_400_000).toISOString(),
-    });
-  });
+  await settle(3);
+  assert.ok(controller, "The Order list controller must mount.");
+  assert.equal(typeof controller.executeBulkAction, "function");
+  await act(async () => { controller.setSelectedOrderIds([CANCELLABLE_ID, COMPLETED_ID]); });
+  let outcome;
+  await act(async () => { outcome = await controller.executeBulkAction("cancel"); });
   await settle(3);
 
-  // The partial commit must be real, not merely reported: the activity committed and the
-  // Task did not. If this fails the scenario stopped reproducing and the message assertions
-  // below would be meaningless.
-  const leadAfter = leadsModule.getLeadSnapshot(LEAD_ID);
-  assert.equal(
-    (leadAfter.activities ?? []).length,
-    activitiesBefore + 1,
-    "The call activity must actually commit, otherwise this is a total failure and not a partial commit.",
-  );
-  assert.equal(
-    getTaskActivitySnapshot().tasks.length,
-    tasksBefore,
-    "The follow-up Task must actually fail, otherwise this is a full success and not a partial commit.",
-  );
-
-  const toast = controller.toastMessage;
-  assert.ok(toast, "An action whose second command failed must tell the user something.");
-
-  // The MA-07 property, asserted at the surface the user reads: the committed half must be
-  // named. A caller that computed the report and then rendered only the error text — the
-  // exact M9 defect — leaves this sentence out.
-  assert.match(
-    toast,
-    /The call log was saved|Cuộc gọi đã được lưu/u,
-    "A PARTIAL_SUCCESS must be surfaced as a partial result that names what committed. Reporting only the failure "
-      + `makes the committed call log invisible and invites the user to log it twice. Got: ${toast}`,
-  );
-  assert.match(
-    toast,
-    /did not complete|chưa hoàn tất/u,
-    `The failed step must also be named, so the user knows what still needs doing. Got: ${toast}`,
-  );
+  assert.equal(outcome, false, "A partial result must not acknowledge full success.");
+  assert.equal(ordersModule.getOrderSnapshot(CANCELLABLE_ID).state, "CANCELLED", "The eligible order must actually commit.");
+  assert.equal(ordersModule.getOrderSnapshot(COMPLETED_ID).state, "COMPLETED", "The rejected order must retain its state.");
+  assert.deepEqual(controller.selectedOrderIds, [COMPLETED_ID], "Only the failed order may remain selected for retry.");
+  const toast = controller.alertMessage?.text;
+  assert.ok(toast, "A partial cancellation must tell the user what happened.");
+  assert.equal(controller.alertMessage.type, "error", "The failed half must not appear as full success.");
+  assert.match(toast, /Cancelled 1 of 2 orders|Đã hủy 1\/2 đơn hàng/u, "The committed half must be named.");
+  assert.match(toast, /Not cancelled:|Chưa hủy được:/u, "The failed half must be named.");
+  assert.ok(toast.includes(COMPLETED_ID), "The user must be able to identify the failed order.");
 
   // And the failure text itself must be safe copy, not the raw domain diagnostic (MA-08
   // holding at the same surface).
@@ -267,7 +207,7 @@ try {
     "The failure half must be formatted product copy, not the raw authorization diagnostic.",
   );
 
-  console.log(`quality.partial-commit-controller-runtime: PASS (real Lead controller reported: ${toast})`);
+  console.log(`quality.partial-commit-controller-runtime: PASS (real Order controller reported: ${toast})`);
 } finally {
   await act(async () => root.unmount());
   globalThis.setTimeout = nativeSetTimeout;

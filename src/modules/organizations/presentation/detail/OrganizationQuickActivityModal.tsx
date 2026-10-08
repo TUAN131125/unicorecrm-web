@@ -12,7 +12,7 @@ interface OrganizationQuickActivityModalProps {
   recordLabel?: string;
   ownerName?: string;
   onClose(): void;
-  onSave(draft: OrganizationQuickActivityDraft): void;
+  onSave(draft: OrganizationQuickActivityDraft): Promise<boolean>;
 }
 
 export const OrganizationQuickActivityModal: React.FC<OrganizationQuickActivityModalProps> = ({ action, targetId, email, phone, recordLabel, ownerName, onClose, onSave }) => (

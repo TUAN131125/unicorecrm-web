@@ -18,8 +18,13 @@ const source = (relativePath: string) => readPresentationComposition(path.join(r
 
 assert.deepEqual(
   validateLeadProgressiveProfile({ name: "Lan", phone: "0900000000", ownerId: "u3" }, LeadWorkState.NEW, "QUICK"),
-  ["source", "nextFollowUpAt"],
-  "Lead Quick Create must require source and a next follow-up in addition to identity, contact channel, and owner.",
+  [],
+  "Lead Quick Create must not require optional source or next follow-up without an authoritative progressive-profile policy.",
+);
+assert.deepEqual(
+  validateLeadProgressiveProfile({}, LeadWorkState.NEW, "QUICK"),
+  ["name", "contactChannel"],
+  "Lead Quick Create must still require identity and a contact channel.",
 );
 assert.deepEqual(
   validateLeadProgressiveProfile({
@@ -119,7 +124,10 @@ for (const [name, fileSource, targets] of [
 ] as const) {
   for (const target of targets) assert.match(fileSource, new RegExp(`data-guidance-id=["']${target}["']`), `${name} Quick Create must retain ${target}.`);
 }
-assert.match(contactList, /createContactViaApi\(\{[\s\S]*fullName: data\.name/, "Contact Quick Create must submit the admitted backend Create contract.");
+assert.match(contactList, /await createContactViaApi\(buildContactCreateCommand\(data\), options\)/, "Contact Quick Create must await its canonical form command with idempotency options.");
+const contactCommand = source("src/modules/contacts/presentation/model/contactFormCommands.ts");
+assert.match(contactCommand, /fullName: data\.name\.trim\(\)/, "The canonical Contact create mapper must submit the trimmed form identity.");
+assert.doesNotMatch(contactCommand, /nextFollowUpAt:|lastContactedAt:|organizationName:/, "Contact profile creation must not submit unsupported scheduling or relationship facts.");
 assert.doesNotMatch(contactList, /id: `contact_\$\{crypto\.randomUUID\(\)\}`/, "Contact Quick Create must not manufacture a local aggregate identity.");
 assert.match(dealController, /validateDealProgressiveProfile/, "Deal create and edit commands must enforce lifecycle requirements outside HTML attributes.");
 assert.match(dealController, /updateDealForecastCommand/, "Deal forecast edits must use the typed forecast command boundary.");

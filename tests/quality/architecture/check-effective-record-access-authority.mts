@@ -6,6 +6,9 @@ import {
   HttpEffectiveRecordAccessAuthority,
 } from "../../../src/platform/access-control";
 import type { HttpClient, HttpRequest } from "../../../src/platform/api";
+import { CommercialApiClient } from "../../../src/platform/api/generated/commercialApi";
+import { ProductHttpApiAdapter } from "../../../src/modules/products/infrastructure/http/ProductHttpApiAdapter";
+import { ApplicationError } from "../../../src/shared/domain";
 
 let networkCalls = 0;
 let capturedRequest: HttpRequest | undefined;
@@ -64,7 +67,6 @@ const protectedSurfaces = [
   "src/modules/contacts/detail-route.tsx",
   "src/modules/organizations/detail-route.tsx",
   "src/modules/customers/detail-route.tsx",
-  "src/modules/products/detail-route.tsx",
   "src/modules/returns/detail-route.tsx",
   "src/modules/shipping/detail-route.tsx",
   "src/modules/support/detail-route.tsx",
@@ -79,6 +81,33 @@ for (const relative of protectedSurfaces) {
   assert.match(read(relative), /EffectiveRecordAccessBoundary/, `${relative} must use backend-effective access boundary.`);
 }
 
+// Product reads enforce record and field authority in getProduct itself. The
+// canonical route consumes that protected read rather than a second evaluator.
+const productRoute = read("src/modules/products/detail-route.tsx");
+assert.match(productRoute, /useModuleAuthoritativeResource\(getProductDetailResource\(productId/u);
+assert.match(productRoute, /scopeKey: workspace\.workspaceId/u);
+assert.match(productRoute, /onScopeChange: \(\) => replaceProductCatalog\(\[\]\)/u);
+assert.match(productRoute, /<AuthoritativeQueryBoundary[\s\S]*?query=\{detailQuery\}/u);
+const productResource = read("src/modules/products/application/vertical-slice/productAuthoritativeQueries.ts");
+assert.match(productResource, /createModuleDetailResource\("products", id/u);
+const productAdapter = read("src/modules/products/infrastructure/http/ProductHttpApiAdapter.ts");
+assert.match(productAdapter, /await this\.api\.getProduct\(productId, \{\}, signal\)/u);
+const openapi = JSON.parse(read("docs/api/openapi.json"));
+const productRead = openapi.paths["/products/{productId}"].get;
+assert.equal(productRead.operationId, "getProduct");
+assert.equal(productRead["x-required-capability"], "products.read");
+assert.equal(productRead["x-workspace-required"], true);
+assert.equal(productRead["x-resource-scope"], "RESOURCE");
+assert.equal(productRead["x-data-scope"], "WORKSPACE");
+for (const status of [403, 404]) {
+  const denied = new ApplicationError({ code: status === 403 ? "ACCESS_DENIED" : "RESOURCE_NOT_FOUND", status, message: "Protected Product read denied" });
+  let attemptedRead: HttpRequest | undefined;
+  const deniedClient: HttpClient = { async request(input) { attemptedRead = input; throw denied; } };
+  const products = new ProductHttpApiAdapter(new CommercialApiClient(deniedClient));
+  await assert.rejects(() => products.get("product-denied"), error => error === denied, "A denied backend Product read must propagate without a browser fallback");
+  assert.equal(attemptedRead?.operationId, "getProduct");
+  assert.equal(attemptedRead?.path, "/products/product-denied");
+}
 
 const quoteBuilderView = read("src/modules/quotes/presentation/views/QuoteBuilderView.tsx");
 assert.match(quoteBuilderView, /EffectiveFieldAccessScope fieldKey="items"/);
