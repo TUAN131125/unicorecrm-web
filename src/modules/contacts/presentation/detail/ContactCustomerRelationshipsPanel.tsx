@@ -2,11 +2,12 @@ import React from "react";
 import { useContactRelationshipForm } from "./useContactRelationshipForm";
 import { Link2, Pencil, Unlink, UsersRound } from "lucide-react";
 import { Button, Modal } from "@/shared/components/ui";
-import { formatApplicationError, useAuthoritativeResource } from "@/shared/operations";
+import { formatApplicationError, useAuthoritativeResource, useModuleAuthoritativeResource } from "@/shared/operations";
 import { useI18n } from "@/i18n";
 import { getCustomerCollectionResource } from "@/modules/customers";
 import { createContactCustomerRelationshipViaApi, updateContactCustomerRelationshipViaApi, endContactCustomerRelationshipViaApi } from "../../public/contacts";
 import { getContactRelationshipSummaryResource } from "../../application/vertical-slice/contactAuthoritativeQueries";
+import { useContactReadAuthorityScope } from "../hooks/useContactReadAuthorityScope";
 import type { Contact, ContactCustomerRelationship, ContactCustomerRelationshipRole } from "../../domain/model/contact.types";
 
 interface Props { contact: Contact; onOpenCustomer?(customerId: string): void }
@@ -14,9 +15,13 @@ const ROLES: ContactCustomerRelationshipRole[] = ["primary_contact", "billing", 
 const INPUT = "min-h-[42px] w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs";
 
 export function ContactCustomerRelationshipsPanel({ contact, onOpenCustomer }: Props) {
+  const authorityScope = useContactReadAuthorityScope();
   const { locale } = useI18n();
   const text = (vi: string, en: string) => locale === "vi" ? vi : en;
-  const directory = useAuthoritativeResource(React.useMemo(() => getCustomerCollectionResource(), []));
+  const directoryResource = React.useMemo(() => getCustomerCollectionResource(), []);
+  const scopedDirectory = useModuleAuthoritativeResource(directoryResource, { scopeKey: authorityScope, onScopeChange: directoryResource.reset });
+  const fixtureDirectory = useAuthoritativeResource(directoryResource, { enabled: !scopedDirectory.connected });
+  const directory = scopedDirectory.connected ? scopedDirectory : fixtureDirectory;
   const [editing, setEditing] = React.useState<ContactCustomerRelationship>();
   const [endTarget, setEndTarget] = React.useState<ContactCustomerRelationship>();
   const [customerId, setCustomerId] = React.useState("");
@@ -27,7 +32,7 @@ export function ContactCustomerRelationshipsPanel({ contact, onOpenCustomer }: P
 
   const lifecycle = useContactRelationshipForm(contact, JSON.stringify(endTarget ? { endReason: endReason.trim() } : { customerId, role }), () => { setOpen(false); setEditing(undefined); setEndTarget(undefined); setEndReason(""); setCustomerId(""); setRole("other"); }, locale, text("Quan hệ", "Customer relationship"), "customer");
   const summaryContactId = lifecycle.opening?.contact.id ?? contact.id;
-  const summary = useAuthoritativeResource(React.useMemo(() => getContactRelationshipSummaryResource(summaryContactId), [summaryContactId]));
+  const summary = useAuthoritativeResource(React.useMemo(() => getContactRelationshipSummaryResource(summaryContactId), [summaryContactId, authorityScope]));
   const relationships = summary.data?.customerRelationships ?? [];
   const active = relationships.filter((item) => !item.effectiveTo);
   const history = relationships.filter((item) => item.effectiveTo);

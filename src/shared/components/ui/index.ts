@@ -4,6 +4,7 @@ export * from "./Input";
 export * from "./Badge";
 export * from "./Card";
 export * from "./Dialog";
+export * from "./OverlayPortalHost";
 export * from "./Tabs";
 export * from "./Table";
 export * from "./PageHeader";

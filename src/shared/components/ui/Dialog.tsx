@@ -9,6 +9,7 @@ import { Button, ButtonVariant } from "./Button";
 import { OverlayLayerProvider, useOverlayLayer } from "../../../components/overlay/OverlayLayerContext";
 import { useI18n } from "../../../i18n";
 import { useAccessibleOverlay } from "./useAccessibleOverlay";
+import { OverlayPortalHostContext } from "./OverlayPortalHost";
 import { formatApplicationError } from "../../operations/errorPresentation";
 
 export type ModalSize = "sm" | "md" | "lg";
@@ -62,6 +63,7 @@ export const Modal: React.FC<ModalProps> = ({
   footerClassName,
   zIndexClass = "z-[9000]",
 }) => {
+  const portalHost = React.useContext(OverlayPortalHostContext);
   const parentLayer = useOverlayLayer();
   const { locale, t } = useI18n();
   const titleId = React.useId();
@@ -69,7 +71,7 @@ export const Modal: React.FC<ModalProps> = ({
   const resolvedCloseLabel = closeLabel ?? t("common.closeDialog", locale === "vi" ? "Đóng hộp thoại" : "Close dialog");
   const resolvedAriaLabel = ariaLabel ?? t("common.dialog", locale === "vi" ? "Hộp thoại" : "Dialog");
   const { rootRef, surfaceRef } = useAccessibleOverlay({
-    isOpen, onClose,
+    isOpen: isOpen && !portalHost?.suspended, onClose,
     shouldHandleEscape: () => !containPopovers || !surfaceRef.current?.querySelector('[data-floating-overlay="menu"]'),
   });
   const explicitZIndex = Number(zIndexClass.match(/z-\[(\d+)\]/)?.[1]);
@@ -107,7 +109,7 @@ export const Modal: React.FC<ModalProps> = ({
         transition: { duration: 0.2, ease: [0.22, 1, 0.36, 1] },
       };
 
-  useBodyScrollLock(isOpen);
+  useBodyScrollLock(isOpen && !portalHost?.suspended);
 
   const modalElement = (
     <OverlayLayerProvider value={{ scope: "modal", baseZIndex: modalZIndex, ...(containPopovers ? { portalContainer: surfaceRef } : {}) }}>
@@ -213,7 +215,7 @@ export const Modal: React.FC<ModalProps> = ({
     </OverlayLayerProvider>
   );
 
-  return typeof document !== "undefined" ? createPortal(modalElement, document.body) : null;
+  return typeof document !== "undefined" ? createPortal(modalElement, portalHost?.container ?? document.body) : null;
 };
 
 export interface ConfirmDialogProps {
@@ -331,6 +333,7 @@ export const RowActionPortal: React.FC<RowActionPortalProps> = ({
   onKeyDown,
   autoFocusFirstMenuItem = false,
 }) => {
+  const portalHost = React.useContext(OverlayPortalHostContext);
   const overlayLayer = useOverlayLayer();
   const menuRef = React.useRef<HTMLDivElement>(null);
   const [coords, setCoords] = React.useState({ top: 12, left: 12, width: width ?? 240, openAbove: false });
@@ -376,7 +379,7 @@ export const RowActionPortal: React.FC<RowActionPortalProps> = ({
   }, [align, anchorEl, width]);
 
   React.useLayoutEffect(() => {
-    if (!open || !anchorEl) return;
+    if (!open || !anchorEl || portalHost?.suspended) return;
 
     updatePosition();
 
@@ -395,15 +398,15 @@ export const RowActionPortal: React.FC<RowActionPortalProps> = ({
       window.removeEventListener("scroll", updatePosition, true);
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [open, anchorEl, updatePosition, closeAndRestoreFocus]);
+  }, [open, anchorEl, updatePosition, closeAndRestoreFocus, portalHost?.suspended]);
 
   React.useEffect(() => {
-    if (!open || !autoFocusFirstMenuItem) return;
+    if (!open || !autoFocusFirstMenuItem || portalHost?.suspended) return;
     const frame = window.requestAnimationFrame(() => {
       menuRef.current?.querySelector<HTMLElement>('[role="menuitem"]:not([disabled])')?.focus();
     });
     return () => window.cancelAnimationFrame(frame);
-  }, [autoFocusFirstMenuItem, open]);
+  }, [autoFocusFirstMenuItem, open, portalHost?.suspended]);
 
   if (!open || !anchorEl) return null;
 
@@ -442,6 +445,6 @@ export const RowActionPortal: React.FC<RowActionPortalProps> = ({
         {children}
       </div>
     </>,
-    overlayLayer.portalContainer?.current ?? document.body
+    overlayLayer.portalContainer?.current ?? portalHost?.container ?? document.body
   );
 };

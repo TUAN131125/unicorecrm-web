@@ -55,7 +55,13 @@ function syncBackgroundInertState(): void {
   for (const child of Array.from(document.body.children)) {
     const element = child as HTMLElement;
     if (!originalInertState.has(element)) originalInertState.set(element, element.inert);
-    element.inert = activeRoot ? element !== activeRoot : (originalInertState.get(element) ?? false);
+    element.inert = activeRoot ? element !== activeRoot && !element.contains(activeRoot) : (originalInertState.get(element) ?? false);
+  }
+  // Opt-in owners can host several modal roots inside one body container.
+  // Keep sibling dialogs inert as well as the application's body root.
+  for (const { root } of overlayStack) {
+    if (!originalInertState.has(root)) originalInertState.set(root, root.inert);
+    root.inert = activeRoot ? root !== activeRoot && !root.contains(activeRoot) : (originalInertState.get(root) ?? false);
   }
 
   if (!activeRoot) {

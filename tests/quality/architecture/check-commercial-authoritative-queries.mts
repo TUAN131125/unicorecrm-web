@@ -81,7 +81,7 @@ const expectedSources = [
   ["src/modules/shipping/application/vertical-slice/shippingAuthoritativeQueries.ts", /getShippingApiRuntime\(\)\.queries/, /createAuthoritativeResource/, /getShippingBookingDetailResource/],
   ["src/modules/support/application/vertical-slice/supportAuthoritativeQueries.ts", /getSupportApiRuntime\(\)\.queries/, /createAuthoritativeResource/, /getSupportCaseDetailResource/],
   ["src/modules/tasks/application/vertical-slice/taskAuthoritativeQueries.ts", /getTaskApiRuntime\(\)\.queries/, /getActivityCollectionResource/, /getTaskDetailResource/],
-  ["src/modules/contacts/presentation/hooks/useContacts.ts", /useModuleAuthoritativeResource\(getContactCollectionResource\(\)/, /scopeKey:\s*workspace\.workspaceId/, /replaceContacts\(\[\]\)/],
+  ["src/modules/contacts/presentation/hooks/useContacts.ts", /useModuleAuthoritativeResource\(getContactCollectionResource\(\)/, /const scopeKey = useContactReadAuthorityScope\(\)/, /scopeKey,/, /getContactProjectionAuthorityScope\(\)/, /replaceContacts\(\[\]\)/],
   ["src/modules/customers/presentation/hooks/useCustomers.ts", /useModuleAuthoritativeResource\(getCustomerCollectionResource\(\)/, /scopeKey:\s*workspace\.workspaceId/],
   ["src/modules/organizations/presentation/hooks/useOrganizationAccounts.ts", /useModuleAuthoritativeResource\(/, /getOrganizationAccountCollectionResource\(\)/, /scopeKey:\s*workspace\.workspaceId/, /replaceOrganizationAccounts\(\[\]\)/],
   ["src/modules/products/presentation/hooks/useProductListController.ts", /useModuleAuthoritativeResource\(getProductCollectionResource\(\)/, /scopeKey:\s*workspace\.workspaceId/],

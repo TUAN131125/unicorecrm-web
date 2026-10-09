@@ -2,10 +2,11 @@ import React from "react";
 import { useContactRelationshipForm } from "./useContactRelationshipForm";
 import { Building2, Crown, Link2, Pencil, Unlink } from "lucide-react";
 import { Button, Input, Modal } from "@/shared/components/ui";
-import { useAuthoritativeResource, formatApplicationError } from "@/shared/operations";
+import { useAuthoritativeResource, useModuleAuthoritativeResource, formatApplicationError } from "@/shared/operations";
 import { useI18n } from "@/i18n";
 import { getOrganizationAccountCollectionResource } from "@/modules/organizations";
 import { getContactRelationshipSummaryResource } from "../../application/vertical-slice/contactAuthoritativeQueries";
+import { useContactReadAuthorityScope } from "../hooks/useContactReadAuthorityScope";
 import { createContactOrganizationRelationshipViaApi, updateContactOrganizationRelationshipViaApi, endContactOrganizationRelationshipViaApi } from "../../public/contacts";
 import type { Contact, ContactOrganizationRelationship, ContactOrganizationRelationshipRole } from "../../domain/model/contact.types";
 
@@ -14,9 +15,13 @@ type Draft = { organizationId: string; role: ContactOrganizationRelationshipRole
 const emptyDraft = (): Draft => ({ organizationId: "", role: "employee", isPrimaryAffiliation: false, effectiveFrom: formatDateInput(new Date().toISOString()) });
 
 export function ContactOrganizationRelationshipsPanel({ contact, onOpenOrganization }: Props) {
+  const authorityScope = useContactReadAuthorityScope();
   const { locale } = useI18n();
   const text = (vi: string, en: string) => locale === "vi" ? vi : en;
-  const directory = useAuthoritativeResource(React.useMemo(() => getOrganizationAccountCollectionResource(), []));
+  const directoryResource = React.useMemo(() => getOrganizationAccountCollectionResource(), []);
+  const scopedDirectory = useModuleAuthoritativeResource(directoryResource, { scopeKey: authorityScope, onScopeChange: directoryResource.reset });
+  const fixtureDirectory = useAuthoritativeResource(directoryResource, { enabled: !scopedDirectory.connected });
+  const directory = scopedDirectory.connected ? scopedDirectory : fixtureDirectory;
   const [draft, setDraft] = React.useState<Draft>(emptyDraft);
   const [editing, setEditing] = React.useState<ContactOrganizationRelationship>();
   const [endTarget, setEndTarget] = React.useState<ContactOrganizationRelationship>();
@@ -26,7 +31,7 @@ export function ContactOrganizationRelationshipsPanel({ contact, onOpenOrganizat
 
   const lifecycle = useContactRelationshipForm(contact, JSON.stringify(endTarget ? { endReason: endReason.trim() } : draft), () => { setOpen(false); setEditing(undefined); setEndTarget(undefined); setEndReason(""); setDraft(emptyDraft()); }, locale, text("Quan hệ", "Organization relationship"), "organization");
   const summaryContactId = lifecycle.opening?.contact.id ?? contact.id;
-  const summary = useAuthoritativeResource(React.useMemo(() => getContactRelationshipSummaryResource(summaryContactId), [summaryContactId]));
+  const summary = useAuthoritativeResource(React.useMemo(() => getContactRelationshipSummaryResource(summaryContactId), [summaryContactId, authorityScope]));
   const relationships = summary.data?.organizationRelationships ?? [];
   const active = relationships.filter((item) => !item.effectiveTo);
   const history = relationships.filter((item) => item.effectiveTo);

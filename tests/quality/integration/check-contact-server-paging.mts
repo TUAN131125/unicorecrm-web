@@ -278,4 +278,5 @@ assert.equal(getCurrentController()?.contacts[0]?.id, "own-scope");
 assert.equal(getCurrentController()?.contacts[0]?.workEmail, undefined);
 assert.equal(getCurrentController()?.serverSummary.summary?.totalCount, 1, "Use the fresh server total rather than a local projection");
 await React.act(async () => authorityRoot.unmount());
+await import("../../fixtures/runtime/check-contact-authority-cache.mts").then(({ checkContactAuthorityCache }) => checkContactAuthorityCache());
 console.log("Contact server paging, query composition, summary cancellation/unavailability and connected controller authority checks passed.");

@@ -9,6 +9,7 @@ import { cn } from "../../lib/classnames/cn";
 import { IconButton } from "./Button";
 import { useI18n } from "../../../i18n";
 import { useAccessibleOverlay } from "./useAccessibleOverlay";
+import { OverlayPortalHostContext } from "./OverlayPortalHost";
 
 export interface DrawerProps {
   isOpen: boolean;
@@ -43,6 +44,7 @@ export const Drawer: React.FC<DrawerProps> = ({
   bodyClassName,
   scrollBody = true,
 }) => {
+  const portalHost = React.useContext(OverlayPortalHostContext);
   const { locale, t } = useI18n();
   const titleId = React.useId();
   const subtitleId = React.useId();
@@ -50,7 +52,7 @@ export const Drawer: React.FC<DrawerProps> = ({
   const resolvedAriaLabel = ariaLabel ?? t("common.drawer", locale === "vi" ? "Bảng điều khiển" : "Drawer");
   const parentLayer = useOverlayLayer();
   const { rootRef, surfaceRef } = useAccessibleOverlay({
-    isOpen, onClose,
+    isOpen: isOpen && !portalHost?.suspended, onClose,
     shouldHandleEscape: () => !containPopovers || !surfaceRef.current?.querySelector('[data-floating-overlay="menu"]'),
   });
   const motionDisabled =
@@ -71,7 +73,7 @@ export const Drawer: React.FC<DrawerProps> = ({
     wide: "max-w-full lg:w-[80vw] lg:max-w-[960px] xl:w-[65vw]",
   };
 
-  useBodyScrollLock(isOpen);
+  useBodyScrollLock(isOpen && !portalHost?.suspended);
 
   const isLeft = position === "left";
 
@@ -135,5 +137,5 @@ export const Drawer: React.FC<DrawerProps> = ({
     </OverlayLayerProvider>
   );
 
-  return typeof document !== "undefined" ? createPortal(drawerElement, document.body) : null;
+  return typeof document !== "undefined" ? createPortal(drawerElement, portalHost?.container ?? document.body) : null;
 };

@@ -55,6 +55,8 @@ import { findCustomerForContact, getCustomerDisplayNameForContact } from "../mod
 import { getDealNextActionTaskIntentKey } from "@/workflows/work-activation";
 import { getDirtyUnsavedWork } from "@/platform/unsaved-work";
 import { useEffectiveAccess } from "@/platform/access-control";
+import { getContactReadAuthorityScope } from "../../application/vertical-slice/contactReadAuthorityScope";
+import { useContactReadAuthorityScope } from "./useContactReadAuthorityScope";
 
 export interface ContactDetailPageProps {
   customers: Customer[];
@@ -95,6 +97,7 @@ export function useContactDetailController(props: ContactDetailPageProps) {
   const { tx, locale } = useI18n();
   const workspace = useWorkspaceContextSnapshot();
   const access = useEffectiveAccess();
+  const authorityScope = useContactReadAuthorityScope();
   const reduceMotion = useReducedMotion();
   const currentMemberId = getAuthSessionSnapshot()?.principal.memberId;
   const members = listWorkspaceMemberDirectory();
@@ -112,7 +115,7 @@ export function useContactDetailController(props: ContactDetailPageProps) {
   const routeContact = contacts.find(c => c.id === contactId);
   const ownedInteraction = useSubscribableSnapshot(getContactInteractionSnapshot, subscribeToContactInteraction);
   type Interaction = "edit" | "opportunity" | "archive" | "note" | "task" | "meeting" | "call" | "email" | "sms";
-  const [interaction, setInteraction] = useState<{ action: Interaction; contact: Contact; cycle: number; intentId: string; workspaceId: string }>();
+  const [interaction, setInteraction] = useState<{ action: Interaction; contact: Contact; cycle: number; intentId: string; workspaceId: string; authorityScope: string }>();
   const activityMounted = React.useRef(true);
   const activityPending = React.useRef(false);
   const liveActivityTarget = React.useRef(contactId); liveActivityTarget.current = contactId;
@@ -127,7 +130,7 @@ export function useContactDetailController(props: ContactDetailPageProps) {
     if (activityPending.current) return;
     if (open) {
       if (interactionRef.current || !routeContact || !acquireContactInteraction(interactionOwner.current, routeContact)) return;
-      const next = { action, contact: structuredClone(routeContact), cycle: ++interactionCycle.current, intentId: crypto.randomUUID(), workspaceId: workspace.workspaceId };
+      const next = { action, contact: structuredClone(routeContact), cycle: ++interactionCycle.current, intentId: crypto.randomUUID(), workspaceId: workspace.workspaceId, authorityScope };
       interactionRef.current = next;
       setInteraction(next);
     } else {
@@ -372,8 +375,11 @@ export function useContactDetailController(props: ContactDetailPageProps) {
 
   // Saving edited fields
   const handleSaveContact = async (updatedContact: Parameters<typeof updateContactViaApi>[0], options?: ContactCommandOptions) => {
+    const openingScope = interactionRef.current?.authorityScope ?? authorityScope;
+    if (openingScope !== getContactReadAuthorityScope()) throw new Error("CONTACT_AUTHORITY_CHANGED");
     if (refuseUnavailableContactWrite(locale === "vi" ? "Cập nhật hồ sơ Liên hệ" : "Updating the Contact profile")) throw new Error("CONTACT_UPDATE_UNAVAILABLE");
     await updateContactViaApi(updatedContact, options);
+    if (openingScope !== getContactReadAuthorityScope()) return;
     setShowEditModal(false);
     showToast(tx("common.updatedSuccessfully", "Đã lưu cập nhật thành công."));
   };
@@ -568,9 +574,12 @@ export function useContactDetailController(props: ContactDetailPageProps) {
   };
 
   const confirmDeleteContact = async () => {
+    const openingScope = interactionRef.current?.authorityScope ?? authorityScope;
+    if (openingScope !== getContactReadAuthorityScope()) throw new Error("CONTACT_AUTHORITY_CHANGED");
     if (refuseUnavailableContactRetention(locale === "vi" ? "Lưu trữ liên hệ" : "Archiving a Contact")) return;
     try {
       await archiveContactViaApi({ contactId: contact.id, expectedVersion: requireContactVersion(contact) });
+      if (openingScope !== getContactReadAuthorityScope()) return;
       setShowDeleteModal(false);
       navigate("/contacts");
     } catch (error) {
@@ -596,7 +605,7 @@ export function useContactDetailController(props: ContactDetailPageProps) {
   };
 
   const handleCompleteTask = async (id: string) => {
-    if (pendingTaskId) return;
+    if (pendingTaskId || authorityScope !== getContactReadAuthorityScope()) return;
     const task = canonicalTaskById.get(id);
     if (!task) return;
     if (interaction && interaction.workspaceId !== getWorkspaceContextSnapshot().workspaceId) throw new Error("CONTACT_INTERACTION_WORKSPACE_CHANGED");
@@ -612,9 +621,10 @@ export function useContactDetailController(props: ContactDetailPageProps) {
         actorName: resolveWorkspaceMemberName(actorId),
         outcome: tx("contactDetail.activity.completedText", "Đã hoàn thành từ hồ sơ Contact."),
       });
+      if (authorityScope !== getContactReadAuthorityScope()) return;
       showToast(tx("contactDetail.toast.taskCompleted", "Đã hoàn thành công việc thành công!"));
     } catch (error) {
-      showToast(formatApplicationError(error, { locale }));
+      if (authorityScope === getContactReadAuthorityScope()) showToast(formatApplicationError(error, { locale }));
     } finally {
       setPendingTaskId(null);
     }
@@ -624,7 +634,8 @@ export function useContactDetailController(props: ContactDetailPageProps) {
   const ownsActivity = () => Boolean(interaction && activityMounted.current
     && interactionRef.current?.cycle === interaction.cycle
     && interaction.contact.id === liveActivityTarget.current
-    && interaction.workspaceId === getWorkspaceContextSnapshot().workspaceId);
+    && interaction.workspaceId === getWorkspaceContextSnapshot().workspaceId
+    && interaction.authorityScope === getContactReadAuthorityScope());
   const recordContactActivity = async (type: "NOTE" | "CALL" | "EMAIL" | "MESSAGE", subject: string, body: string, occurredAt?: string): Promise<boolean> => {
     if (!ownsActivity() || activityPending.current) return false;
     const actorId = currentMemberId || contact.ownerId;
@@ -798,7 +809,7 @@ export function useContactDetailController(props: ContactDetailPageProps) {
 
   // Task updates always go through the canonical Tasks module.
   const handleRescheduleTask = async (id: string, newDate: string, options?: { idempotencyKey: string }) => {
-    if (pendingTaskId) return false;
+    if (pendingTaskId || authorityScope !== getContactReadAuthorityScope()) return false;
     const task = canonicalTaskById.get(id);
     const actorId = currentMemberId || contact.ownerId;
     if (!task || !actorId) return false;
@@ -810,6 +821,7 @@ export function useContactDetailController(props: ContactDetailPageProps) {
         actorId,
         actorName: resolveWorkspaceMemberName(actorId),
       }, { expectedVersion: task.resourceVersion, ...options });
+      if (authorityScope !== getContactReadAuthorityScope()) return false;
       showToast(tx("contactDetail.toast.taskRescheduled", "Điều chỉnh lịch hạn xử lý công việc thành công!"));
       return true;
     } finally {
@@ -862,6 +874,13 @@ export function useContactDetailController(props: ContactDetailPageProps) {
     return dateB.localeCompare(dateA) || b.id.localeCompare(a.id);
   });
   return {
+    readAuthorityCurrent: (interaction?.authorityScope ?? ownedInteraction?.authorityScope ?? authorityScope) === authorityScope,
+    discardSuspendedInteraction: () => {
+      if (activityPending.current || interactionRef.current?.authorityScope === getContactReadAuthorityScope()) return;
+      releaseContactInteraction(interactionOwner.current);
+      interactionRef.current = undefined;
+      setInteraction(undefined);
+    },
     hasActiveInteraction: Boolean(interaction || ownedInteraction),
     contactUpdateAvailable,
     canUpdateContact,

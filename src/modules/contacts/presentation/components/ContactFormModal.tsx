@@ -1,4 +1,7 @@
 import { getWorkspaceContextSnapshot, useWorkspaceContextSnapshot } from "@/platform/workspace-context";
+import { getContactReadAuthorityScope } from "../../application/vertical-slice/contactReadAuthorityScope";
+import { useContactReadAuthorityScope } from "../hooks/useContactReadAuthorityScope";
+import { OverlayPortalHostContext } from "@/shared/components/ui/OverlayPortalHost";
 import React from "react";
 import { ChevronDown, ChevronUp, Zap } from "lucide-react";
 import { Button, Checkbox, ConfirmDialog, Input, Modal, Select, Textarea } from "@/shared/components/ui";
@@ -145,6 +148,9 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit, gua
   const { t, locale } = useI18n();
   const workspace = useWorkspaceContextSnapshot();
   const openingWorkspace = React.useRef(workspace.workspaceId);
+  const authorityScope = useContactReadAuthorityScope();
+  const portalHost = React.useContext(OverlayPortalHostContext);
+  const openingAuthority = React.useRef(authorityScope);
   const vi = locale === "vi";
   const ownership = useRecordOwnershipContext("contacts", CAPABILITIES.CONTACTS_ASSIGN);
   const defaultOwnerId = ownership?.memberId || "";
@@ -179,6 +185,7 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit, gua
   React.useEffect(() => {
     if (isOpen && (!wasOpen.current || (openingContact.current?.id !== contact?.id && !canonicalDirty && !pending.current))) {
       openingWorkspace.current = workspace.workspaceId;
+      openingAuthority.current = authorityScope;
       cycle.current++;
       intentId.current = `contact-${crypto.randomUUID()}`;
       openingContact.current = contact ? structuredClone(contact) : undefined;
@@ -219,6 +226,7 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit, gua
   }, [mode]);
 
   const save = async (): Promise<boolean> => {
+    if (portalHost?.suspended || openingAuthority.current !== getContactReadAuthorityScope()) return false;
     if (pending.current || !isOpen || !openRef.current || !mounted.current || cycle.current !== activeCycle) return false;
     if (openingWorkspace.current !== getWorkspaceContextSnapshot().workspaceId) {
       setFormError(vi ? "Hãy trở lại không gian làm việc đang mở hoặc bỏ thay đổi." : "Return to the opening workspace or discard this draft.");
@@ -267,12 +275,12 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit, gua
         internalNotes: draft.internalNotes.trim(),
       }, { contact: openingContact.current, draft: initialDraft.current, intentId: intentId.current });
       if (saved === false) return false;
-      if (!mounted.current || cycle.current !== submittingCycle) return false;
+      if (!mounted.current || cycle.current !== submittingCycle || openingAuthority.current !== getContactReadAuthorityScope()) return false;
       initialDraft.current = draft;
       unsavedChanges.setIsDirty(false);
       return true;
     } catch (error) {
-      if (!mounted.current || !openRef.current || cycle.current !== submittingCycle) return false;
+      if (!mounted.current || !openRef.current || cycle.current !== submittingCycle || openingAuthority.current !== getContactReadAuthorityScope()) return false;
       const normalized = normalizeApplicationError(error);
       const serverErrors: Record<string, string> = {};
       for (const [field, messages] of Object.entries(normalized.fieldErrors ?? {})) {
@@ -292,6 +300,7 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit, gua
   React.useEffect(() => {
     if (!isOpen) return;
     const canDiscard = () => mounted.current && openRef.current && cycle.current === activeCycle && !pending.current;
+    const unregisterRecovery = portalHost?.registerDraft?.({ canDiscard, discard: () => { if (canDiscard()) unsavedChanges.confirmDiscard(); } });
     const cleanup = registerUnsavedWork({
       id: `contact-form:${mode}:${openingContact.current?.id ?? "new"}`,
       title: mode === "edit" ? "Edit Contact" : "Create Contact",
@@ -302,10 +311,29 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit, gua
     });
     const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
     if (canonicalDirty || isSubmitting) window.addEventListener("beforeunload", warn);
-    return () => { cleanup(); window.removeEventListener("beforeunload", warn); };
+    return () => { unregisterRecovery?.(); cleanup(); window.removeEventListener("beforeunload", warn); };
   });
 
   const showComplete = mode === "edit" || showAdvanced;
+  const discardDialog = guardChanges && <ConfirmDialog
+    isOpen={unsavedChanges.isConfirmOpen}
+    onClose={() => unsavedChanges.setIsConfirmOpen(false)}
+    onConfirm={() => { if (!pending.current) unsavedChanges.confirmDiscard(); }}
+    title={vi ? "Bỏ thay đổi chưa lưu?" : "Discard unsaved changes?"}
+    message={vi ? "Các thay đổi chưa được lưu. Bạn có muốn đóng biểu mẫu?" : "Your changes have not been saved. Close the form?"}
+    confirmText={vi ? "Bỏ thay đổi" : "Discard changes"}
+    cancelText={vi ? "Tiếp tục chỉnh sửa" : "Keep editing"} type="warning"
+  />;
+  if (isOpen && openingAuthority.current !== authorityScope) {
+    if (portalHost) return null;
+    return <>
+      <Modal isOpen onClose={requestClose} size="sm" title={vi ? "Quyền truy cập đã thay đổi" : "Access changed"}>
+        <p role="status">{vi ? "Bản nháp được giữ lại nhưng không thể lưu với quyền hiện tại. Đóng biểu mẫu và xác nhận bỏ bản nháp trước khi mở lại." : "Your draft is preserved but cannot be saved with current access. Close the form and confirm discarding the draft before reopening."}</p>
+        <Button type="button" variant="secondary" disabled={isSubmitting} onClick={requestClose}>{vi ? "Đóng biểu mẫu" : "Close form"}</Button>
+      </Modal>
+      {discardDialog}
+    </>;
+  }
   return (
     <>
     <Modal
@@ -402,15 +430,7 @@ export function ContactFormModal({ isOpen, onClose, mode, contact, onSubmit, gua
         </div>
       </form>
     </Modal>
-    {guardChanges && <ConfirmDialog
-      isOpen={unsavedChanges.isConfirmOpen}
-      onClose={() => unsavedChanges.setIsConfirmOpen(false)}
-      onConfirm={() => { if (!pending.current) unsavedChanges.confirmDiscard(); }}
-      title={vi ? "Bỏ thay đổi chưa lưu?" : "Discard unsaved changes?"}
-      message={vi ? "Các thay đổi chưa được lưu. Bạn có muốn đóng biểu mẫu?" : "Your changes have not been saved. Close the form?"}
-      confirmText={vi ? "Bỏ thay đổi" : "Discard changes"}
-      cancelText={vi ? "Tiếp tục chỉnh sửa" : "Keep editing"} type="warning"
-    />}
+    {discardDialog}
     </>
   );
 }

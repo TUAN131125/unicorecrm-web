@@ -3,7 +3,7 @@ import React from "react";
 import { normalizeApplicationError } from "@/shared/domain";
 import { registerUnsavedWork } from "@/platform/unsaved-work";
 import { RelationshipQuickActionModal } from "@/components/crm/relationship-panel/RelationshipQuickActionModal";
-import { Button, Input, Modal, SearchableSelect, Select, Textarea } from "@/shared/components/ui";
+import { Button, Input, Modal, SearchableSelect, Select, Textarea, OverlayPortalHostContext } from "@/shared/components/ui";
 import { useI18n } from "@/i18n";
 import { useEffectiveAccess } from "@/platform/access-control";
 import type { RelationshipRef } from "@/platform/identity";
@@ -105,6 +105,8 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
   onCreated,
   onError,
 }) => {
+  const portalHost = React.useContext(OverlayPortalHostContext);
+  const portalHostRef = React.useRef(portalHost); portalHostRef.current = portalHost;
   const { locale } = useI18n();
   const vi = locale === "vi";
   const access = useEffectiveAccess();
@@ -147,6 +149,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
   });
 
   const save = async (): Promise<boolean> => {
+    if (portalHostRef.current?.suspended) return false;
     if (pending.current || !mounted.current || !isOpen || !canCreate) return false;
     if (!currentMemberId || !currentActorName) {
       setErrorMessage(vi ? "Không xác định được thành viên Workspace hiện tại." : "The current Workspace member could not be resolved.");
@@ -195,7 +198,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
         idempotencyKey: `task.create:${taskId}`,
         actor: { id: currentMemberId, name: currentActorName },
       });
-      if (!mounted.current || capturedCycle !== cycle.current || bound.workspaceId !== liveWorkspace.current) return false;
+      if (!mounted.current || capturedCycle !== cycle.current || bound.workspaceId !== liveWorkspace.current || portalHostRef.current?.suspended) return false;
       initialDraft.current = draft;
       bound.onCreated?.(outcome.data);
       bound.onClose();
@@ -228,6 +231,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
     const entryToken = {};
     registration.current = entryToken;
     const currentEntry = () => mounted.current && openRef.current && capturedCycle === cycle.current && registration.current === entryToken;
+    const unregisterRecovery = portalHost?.registerDraft?.({ canDiscard: () => currentEntry() && !pending.current, discard: () => { if (currentEntry() && !pending.current) { setDraft(initialDraft.current); opening.current.onClose(); } } });
     const warn = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
     if (dirty || submitting) window.addEventListener("beforeunload", warn);
     const unregister = registerUnsavedWork({
@@ -237,7 +241,7 @@ export const TaskCreateModal: React.FC<TaskCreateModalProps> = ({
       canDiscard: () => currentEntry() && !pending.current,
       discard: () => { if (currentEntry() && !pending.current) { setDraft(initialDraft.current); opening.current.onClose(); } },
     });
-    return () => { unregister(); if (registration.current === entryToken) registration.current = undefined; window.removeEventListener("beforeunload", warn); };
+    return () => { unregisterRecovery?.(); unregister(); if (registration.current === entryToken) registration.current = undefined; window.removeEventListener("beforeunload", warn); };
   });
 
   const canCreate = Boolean(currentMemberId) && access.canPerform("tasks", "create");

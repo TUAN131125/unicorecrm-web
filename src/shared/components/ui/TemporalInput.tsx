@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useI18n } from "../../../i18n";
 import { cn } from "../../lib/classnames/cn";
+import { OverlayPortalHostContext } from "./OverlayPortalHost";
 
 export type TemporalInputMode = "date" | "time" | "datetime-local";
 
@@ -159,6 +160,7 @@ export const TemporalInput: React.FC<TemporalInputProps> = ({
   ariaDescribedBy,
   ariaInvalid,
 }) => {
+  const portalHost = React.useContext(OverlayPortalHostContext);
   const generatedId = React.useId();
   const controlId = id || `temporal-field-${generatedId.replace(/:/g, "")}`;
   const { locale } = useI18n();
@@ -202,7 +204,7 @@ export const TemporalInput: React.FC<TemporalInputProps> = ({
   }, [type]);
 
   React.useEffect(() => {
-    if (!open) return;
+    if (!open || portalHost?.suspended) return;
     syncDraftFromValue();
     updatePosition();
     const handleReposition = () => updatePosition();
@@ -228,7 +230,7 @@ export const TemporalInput: React.FC<TemporalInputProps> = ({
       document.removeEventListener("pointerdown", handlePointerDown, true);
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [open, syncDraftFromValue, updatePosition]);
+  }, [open, syncDraftFromValue, updatePosition, portalHost?.suspended]);
 
   const isDayDisabled = React.useCallback((date: Date) => {
     const normalized = new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
@@ -492,7 +494,7 @@ export const TemporalInput: React.FC<TemporalInputProps> = ({
         </motion.div>
       )}
     </AnimatePresence>,
-    document.body,
+    portalHost?.container ?? document.body,
   ) : null;
 
   return (

@@ -4,8 +4,11 @@ import { registerUnsavedWork } from "@/platform/unsaved-work";
 import { formatApplicationError } from "@/shared/operations";
 import { normalizeApplicationError } from "@/shared/domain";
 import { useI18n } from "@/i18n";
+import { OverlayPortalHostContext } from "@/shared/components/ui";
 
 export function useActivityDraftLifecycle<T>(isOpen: boolean, createDraft: () => T, targetId: string | undefined, formId: string, onSubmit: (draft: T) => void | boolean | Promise<void | boolean>, onClose: () => void, onSave?: (draft: T) => Promise<boolean>, onBindSave?: (save: (() => Promise<boolean>) | undefined) => void, onPendingChange?: (pending: boolean) => void) {
+  const portalHost = React.useContext(OverlayPortalHostContext);
+  const portalHostRef = React.useRef(portalHost); portalHostRef.current = portalHost;
   const workspaceId = useWorkspaceContextSnapshot().workspaceId;
   const liveWorkspace = React.useRef(workspaceId);
   liveWorkspace.current = workspaceId;
@@ -63,11 +66,13 @@ export function useActivityDraftLifecycle<T>(isOpen: boolean, createDraft: () =>
   });
   React.useEffect(() => {
     const capturedCycle = cycle.current; const lease = { active: true };
+    const unregisterRecovery = isOpen ? portalHost?.registerDraft?.({ canDiscard: () => mounted.current && openRef.current && cycle.current === capturedCycle && !pending.current, discard: () => { if (!pending.current) { setDraft(initial.current); opening.current.onClose(); } } }) : undefined;
     onBindSave?.(() => lease.active && mounted.current && openRef.current && cycle.current === capturedCycle && !pending.current
       ? validatedSave.current?.() ?? Promise.resolve(false) : Promise.resolve(false));
-    return () => { lease.active = false; onBindSave?.(undefined); };
+    return () => { unregisterRecovery?.(); lease.active = false; onBindSave?.(undefined); };
   });
   async function submit(value: T, globalSave = false): Promise<boolean> {
+    if (portalHostRef.current?.suspended) return false;
     globalSave = globalSave || Boolean(opening.current.onSave);
     if (pending.current || !mounted.current || !openRef.current) return false;
     if (globalSave && (!opening.current.onSave || opening.current.targetId !== liveTarget.current)) return false;
@@ -87,6 +92,7 @@ export function useActivityDraftLifecycle<T>(isOpen: boolean, createDraft: () =>
         if (!mounted.current || !openRef.current || cycle.current !== capturedCycle || opening.current.targetId !== liveTarget.current
           || opening.current.workspaceId !== getWorkspaceContextSnapshot().workspaceId) return false;
       } else if ((await opening.current.onSubmit(value)) === false) return false;
+      if (portalHostRef.current?.suspended) return false;
       if (mounted.current && cycle.current === capturedCycle && opening.current.workspaceId === liveWorkspace.current) { initial.current = value; setDraft(value); }
       if (globalSave) { openRef.current = false; opening.current.onClose(); }
       return true;

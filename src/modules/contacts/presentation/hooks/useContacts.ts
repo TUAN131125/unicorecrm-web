@@ -2,20 +2,21 @@ import { useEffect, useState } from "react";
 import type { Contact } from "../../domain/model/contact.types";
 import type { ContactCollectionUpdater } from "../../application/commands/contactRepositoryCommands";
 import { getContactCollectionResource } from "../../application/vertical-slice/contactAuthoritativeQueries";
-import { getContactsSnapshot, replaceContacts, subscribeToContacts, updateContacts } from "../../public/contacts";
+import { getContactsSnapshot, replaceContacts, subscribeToContacts, updateContacts, isContactConnectedMode } from "../../public/contacts";
 import { useModuleAuthoritativeResource } from "@/shared/operations";
-import { useWorkspaceContextSnapshot } from "@/platform/workspace-context";
+import { useContactReadAuthorityScope } from "./useContactReadAuthorityScope";
+import { getContactReadAuthorityScope, getContactProjectionAuthorityScope } from "../../application/vertical-slice/contactReadAuthorityScope";
 
 export function useContacts(options: { loadAuthoritative?: boolean } = {}) {
-  const workspace = useWorkspaceContextSnapshot();
-  const [contacts, setContactsState] = useState<Contact[]>(getContactsSnapshot);
+  const scopeKey = useContactReadAuthorityScope();
+  const [snapshot, setContactsState] = useState(() => ({ contacts: getContactsSnapshot(), scope: isContactConnectedMode() ? getContactProjectionAuthorityScope() : scopeKey }));
   const query = useModuleAuthoritativeResource(getContactCollectionResource(), {
     enabled: options.loadAuthoritative ?? true,
-    scopeKey: workspace.workspaceId,
+    scopeKey,
     onScopeChange: () => replaceContacts([]),
   });
 
-  useEffect(() => subscribeToContacts(setContactsState), []);
+  useEffect(() => subscribeToContacts(contacts => setContactsState({ contacts, scope: isContactConnectedMode() ? getContactProjectionAuthorityScope() : getContactReadAuthorityScope() })), []);
 
   const accessDenied = query.error?.category === "AUTHORIZATION";
   useEffect(() => {
@@ -26,5 +27,5 @@ export function useContacts(options: { loadAuthoritative?: boolean } = {}) {
     updateContacts(updater);
   };
 
-  return { contacts: accessDenied ? [] : contacts, setContacts, query };
+  return { contacts: accessDenied || snapshot.scope !== scopeKey ? [] : snapshot.contacts, setContacts, query };
 }

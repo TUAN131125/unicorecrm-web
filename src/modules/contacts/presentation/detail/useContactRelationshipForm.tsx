@@ -4,13 +4,15 @@ import { ApplicationError, normalizeApplicationError } from "@/shared/domain";
 import { getContactRelationshipSummaryResource } from "../../application/vertical-slice/contactAuthoritativeQueries";
 import { getWorkspaceContextSnapshot, useWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import { getDirtyUnsavedWork, registerUnsavedWork } from "@/platform/unsaved-work";
-import { Modal, Button } from "@/shared/components/ui";
+import { Modal, Button, OverlayPortalHostContext } from "@/shared/components/ui";
 import { formatApplicationError } from "@/shared/operations";
 import { acquireContactInteraction, releaseContactInteraction } from "../model/contactInteractionOwnership";
 import type { Contact } from "../../domain/model/contact.types";
+import { getContactReadAuthorityScope } from "../../application/vertical-slice/contactReadAuthorityScope";
+import { useContactReadAuthorityScope } from "../hooks/useContactReadAuthorityScope";
 
 
-type Opening = { contact: Contact; version: number | undefined; fingerprint: string; cycle: number; intentId: string; workspaceId: string };
+type Opening = { contact: Contact; version: number | undefined; fingerprint: string; cycle: number; intentId: string; workspaceId: string; authorityScope: string };
 const RELATIONSHIP_FIELDS = ["organizationId", "customerId", "role", "effectiveFrom", "endedReason", "isPrimaryAffiliation"] as const;
 type RelationshipField = typeof RELATIONSHIP_FIELDS[number];
 const FIELD_IDS: Record<"organization" | "customer", Partial<Record<RelationshipField, string>>> = {
@@ -22,6 +24,9 @@ export function useContactRelationshipForm(contact: Contact, fingerprint: string
   const { contactId: routeContactId } = useParams<{ contactId: string }>();
   const sourceContactId = routeContactId ?? contact.id;
   const { workspaceId } = useWorkspaceContextSnapshot();
+  const authorityScope = useContactReadAuthorityScope();
+  const portalHost = React.useContext(OverlayPortalHostContext);
+  const portalHostRef = React.useRef(portalHost); portalHostRef.current = portalHost;
   const errorFocus = React.useRef<{ cycle: number; field: RelationshipField } | undefined>(undefined);
   const errorScope = React.useRef<HTMLElement | null>(null);
   const setErrorScope = React.useCallback((element: HTMLElement | null) => { errorScope.current = element; }, []);
@@ -53,7 +58,7 @@ export function useContactRelationshipForm(contact: Contact, fingerprint: string
     if (current.current || pendingRef.current || sourceContactId !== contact.id) return false;
     if (getDirtyUnsavedWork().some(entry => entry.id.startsWith("contact-"))) return false;
     if (!acquireContactInteraction(owner.current, contact)) return false;
-    const next = { contact: structuredClone(contact), workspaceId: getWorkspaceContextSnapshot().workspaceId, version, fingerprint: initialFingerprint, cycle: ++sequence.current, intentId: `contact-relationship-${crypto.randomUUID()}` };
+    const next = { contact: structuredClone(contact), workspaceId: getWorkspaceContextSnapshot().workspaceId, authorityScope, version, fingerprint: initialFingerprint, cycle: ++sequence.current, intentId: `contact-relationship-${crypto.randomUUID()}` };
     current.current = next; setOpening(next); setError(undefined); setConfirm(false); return true;
   };
   React.useEffect(() => {
@@ -61,7 +66,7 @@ export function useContactRelationshipForm(contact: Contact, fingerprint: string
     if (error && !pending && focus && current.current?.cycle === focus.cycle) { focusField(focus.field); errorFocus.current = undefined; }
   }, [error, pending]);
   const refreshVersion = async (target: Opening) => {
-    const ownsTarget = () => mounted.current && current.current?.cycle === target.cycle && target.workspaceId === getWorkspaceContextSnapshot().workspaceId;
+    const ownsTarget = () => mounted.current && current.current?.cycle === target.cycle && target.workspaceId === getWorkspaceContextSnapshot().workspaceId && target.authorityScope === getContactReadAuthorityScope();
     if (!ownsTarget()) return false;
     const resource = getContactRelationshipSummaryResource(target.contact.id);
     const summary = await resource.refresh();
@@ -78,7 +83,9 @@ export function useContactRelationshipForm(contact: Contact, fingerprint: string
   const run = async (command: (target: Opening & { version: number }) => Promise<void>) => {
     let target = current.current;
     if (!target || pendingRef.current || !mounted.current) return false;
+    if (portalHostRef.current?.suspended) return false;
     if (target.workspaceId !== getWorkspaceContextSnapshot().workspaceId) { setError(locale === "vi" ? "Không gian làm việc đã thay đổi. Quay lại không gian đã mở để tiếp tục." : "Workspace changed. Return to the opening workspace to continue."); return false; }
+    if (target.authorityScope !== getContactReadAuthorityScope()) return false;
     if (target.version === undefined) { setError(locale === "vi" ? "Cần tải lại phiên bản Liên hệ." : "Refresh the Contact version before saving."); return false; }
     pendingRef.current = true; setPending(true); setError(undefined);
     try {
@@ -91,11 +98,11 @@ export function useContactRelationshipForm(contact: Contact, fingerprint: string
       const version = target.version;
       if (version === undefined) return false;
       await command({ ...target, version });
-      if (!mounted.current || current.current?.cycle !== target.cycle || target.workspaceId !== getWorkspaceContextSnapshot().workspaceId) return false;
+      if (!mounted.current || current.current?.cycle !== target.cycle || target.workspaceId !== getWorkspaceContextSnapshot().workspaceId || target.authorityScope !== getContactReadAuthorityScope() || portalHostRef.current?.suspended) return false;
       finish();
       return true;
     } catch (caught) {
-      if (mounted.current && current.current?.cycle === target.cycle) {
+      if (mounted.current && current.current?.cycle === target.cycle && target.authorityScope === getContactReadAuthorityScope()) {
         const normalized = normalizeApplicationError(caught);
         const fieldMessages = Object.values(normalized.fieldErrors ?? {}).flat().join(" ");
         setError([formatApplicationError(caught, { locale }), fieldMessages].filter(Boolean).join(" "));
@@ -121,18 +128,19 @@ export function useContactRelationshipForm(contact: Contact, fingerprint: string
   React.useEffect(() => {
     if (!opening) return;
     const cycle = opening.cycle;
+    const unregisterRecovery = portalHost?.registerDraft?.({ canDiscard: () => mounted.current && current.current?.cycle === cycle && !pendingRef.current, discard: finish });
     const unload = (event: BeforeUnloadEvent) => { if (dirty || pendingRef.current) { event.preventDefault(); event.returnValue = ""; } };
     window.addEventListener("beforeunload", unload);
     const unregister = registerUnsavedWork({ id: `contact-relationship:${kind}:${opening.contact.id}:${cycle}`, title, isDirty: dirty || pending,
       save: async () => {
-        if (!mounted.current || current.current?.cycle !== cycle || pendingRef.current || opening.workspaceId !== getWorkspaceContextSnapshot().workspaceId) return false;
+        if (!mounted.current || current.current?.cycle !== cycle || pendingRef.current || opening.workspaceId !== getWorkspaceContextSnapshot().workspaceId || opening.authorityScope !== getContactReadAuthorityScope()) return false;
         return saveRef.current();
       },
       canDiscard: () => mounted.current && current.current?.cycle === cycle && !pendingRef.current,
       discard: finish });
-    return () => { unregister(); window.removeEventListener("beforeunload", unload); };
-  }, [opening, dirty, pending, title, kind, finish]);
-  return { opening, setErrorScope, focusField, pending, error, setError, begin, run, saveRef,
+    return () => { unregisterRecovery?.(); unregister(); window.removeEventListener("beforeunload", unload); };
+  }, [opening, dirty, pending, title, kind, finish, portalHost]);
+  return { opening, readAuthorityCurrent: !opening || opening.authorityScope === authorityScope, setErrorScope, focusField, pending, error, setError, begin, run, saveRef,
     requestClose: () => { if (pendingRef.current) return; if (dirty) setConfirm(true); else finish(); },
     confirmDialog: <Modal isOpen={confirm} onClose={() => setConfirm(false)} size="sm" title={locale === "vi" ? "Bỏ thay đổi?" : "Discard changes?"}><div className="flex justify-end gap-2"><Button type="button" variant="secondary" onClick={() => setConfirm(false)}>{locale === "vi" ? "Tiếp tục chỉnh sửa" : "Keep editing"}</Button><Button type="button" variant="danger" disabled={pending} onClick={() => { if (!pendingRef.current) finish(); }}>{locale === "vi" ? "Bỏ thay đổi" : "Discard changes"}</Button></div></Modal> };
 }

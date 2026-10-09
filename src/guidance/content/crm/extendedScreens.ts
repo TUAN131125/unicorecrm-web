@@ -507,7 +507,7 @@ export const CRM_EXTENDED_SCREEN_GUIDANCE: ScreenGuidance[] = [
     id: "crm.contacts.list",
     routeKey: "CONTACTS",
     productSpace: "crm",
-    version: 2,
+    version: 3,
     title: text("Liên hệ", "Contacts"),
     purpose: text("Quản lý hồ sơ cá nhân, thông tin liên lạc, quan hệ tổ chức và lịch sử tương tác.", "Manage individual profiles, contact details, organization relationships, and interaction history."),
     primaryTasks: [
@@ -520,6 +520,7 @@ export const CRM_EXTENDED_SCREEN_GUIDANCE: ScreenGuidance[] = [
     commonMistakes: [
       text("Không tạo hồ sơ mới khi cùng một người đã tồn tại với email hoặc số điện thoại khác định dạng.", "Do not create a new record when the same person already exists with differently formatted email or phone data."),
       text("Không yêu cầu người dùng điền toàn bộ hồ sơ trước khi có lần chăm sóc đầu tiên.", "Do not require the complete profile before the first follow-up can be scheduled."),
+      text("Nếu quyền truy cập thay đổi khi biểu mẫu đang mở, bản nháp được giữ lại nhưng tạm ngừng. Chờ yêu cầu đang xử lý hoàn tất, đóng biểu mẫu và xác nhận bỏ bản nháp trước khi mở lại với quyền hiện tại.", "If access changes while a form is open, its draft is preserved but suspended. Wait for pending requests to finish, close the form and confirm discarding its draft before reopening with current access."),
     ],
     additionalSteps: [
       { id: "quick-create", targetId: "contacts.form.progressive-profile", title: text("Tạo liên hệ nhanh", "Quick-create a contact"), body: text("Bắt đầu bằng tên, kênh liên hệ, tổ chức nếu có, lịch chăm sóc và người phụ trách; bổ sung dữ liệu nâng cao sau.", "Start with name, contact channel, organization when known, follow-up time, and owner; enrich advanced data later."), placement: "top", expectedAction: "view", optional: true, requiredCapabilities: [CAPABILITIES.CONTACTS_CREATE] },
@@ -530,6 +531,7 @@ export const CRM_EXTENDED_SCREEN_GUIDANCE: ScreenGuidance[] = [
     id: "crm.contacts.detail",
     routeKey: "CONTACT_DETAIL",
     productSpace: "crm",
+    version: 2,
     title: text("Chi tiết liên hệ", "Contact detail"),
     purpose: text("Xem hồ sơ cá nhân, quan hệ, hoạt động và các bản ghi thương mại hoặc hỗ trợ liên quan.", "Review the person's profile, relationships, activities, and related commercial or support records."),
     primaryTasks: [
@@ -539,7 +541,10 @@ export const CRM_EXTENDED_SCREEN_GUIDANCE: ScreenGuidance[] = [
     ],
     relatedWorkflowIds: ["workflow.relationship-management"],
     requiredCapabilities: [CAPABILITIES.CONTACTS_READ],
-    commonMistakes: [text("Không dùng liên hệ thay cho tổ chức hoặc khách hàng khi nghiệp vụ cần một đối tượng khác.", "Do not use a contact as a substitute for an organization or customer when the process requires another record type.")],
+    commonMistakes: [
+      text("Không dùng liên hệ thay cho tổ chức hoặc khách hàng khi nghiệp vụ cần một đối tượng khác.", "Do not use a contact as a substitute for an organization or customer when the process requires another record type."),
+      text("Khi quyền truy cập thay đổi, bản nháp đang mở được giữ lại nhưng tạm ngừng và không thể lưu. Chờ yêu cầu đang xử lý hoàn tất, rồi chọn Bỏ bản nháp và tải lại để mở hồ sơ với quyền hiện tại.", "When access changes, an open draft is preserved but suspended and cannot be saved. Wait for pending requests to finish, then choose Discard draft and reload to reopen with current access."),
+    ],
     keywords: text("chi tiết liên hệ quan hệ hoạt động lịch sử", "contact detail relationship activity history"),
   }),
   createScreenGuidance({

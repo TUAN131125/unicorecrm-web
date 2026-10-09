@@ -17,9 +17,9 @@ Do not delete a dead, compatibility, deprecated or duplicate candidate based on 
 
 | Metric | Count |
 |---|---:|
-| Repository files | 2133 |
-| Source files | 1418 |
-| Source lines | 217112 |
+| Repository files | 2137 |
+| Source files | 1421 |
+| Source lines | 217350 |
 | Registered modules | 15 |
 | Route keys | 80 |
 | Loadable route modules | 64 |
@@ -37,7 +37,7 @@ Do not delete a dead, compatibility, deprecated or duplicate candidate based on 
 | Quality groups | 11 |
 | Verify gates | 345 |
 
-Inventory fingerprint: `abde52580cf62fdf6417c18835fabe0bdd7293a4e6582d43d11098c5aa62669e`
+Inventory fingerprint: `6b64da72ed1fa659d250271167ec738621b2c191a55881c99e3a909566a01dd9`
 
 
 ## Quality pipeline
@@ -60,9 +60,9 @@ Inventory fingerprint: `abde52580cf62fdf6417c18835fabe0bdd7293a4e6582d43d11098c5
 
 | Classification | Count |
 |---|---:|
-| `active-runtime` | 1333 |
+| `active-runtime` | 1336 |
 | `active-script` | 70 |
-| `active-test` | 481 |
+| `active-test` | 482 |
 | `compatibility` | 53 |
 | `documentation` | 191 |
 | `fixture` | 3 |
@@ -189,7 +189,7 @@ The JSON manifest includes each detected key pattern, operation, path, line and 
 | `src/modules/quotes/presentation/pages/QuoteListPage.tsx` | 1100 | `quotes` |
 | `src/modules/leads/presentation/views/LeadDetailView.tsx` | 1084 | `leads` |
 | `src/modules/quotes/presentation/hooks/useQuoteBuilderController.tsx` | 998 | `quotes` |
-| `src/modules/contacts/presentation/hooks/useContactDetailController.tsx` | 978 | `contacts` |
+| `src/modules/contacts/presentation/hooks/useContactDetailController.tsx` | 997 | `contacts` |
 | `src/modules/deals/presentation/hooks/useDealPipelineController.ts` | 968 | `deals` |
 | `src/modules/orders/presentation/hooks/useOrderFormController.tsx` | 943 | `orders` |
 | `src/modules/leads/presentation/components/LeadFormView.tsx` | 924 | `leads` |
@@ -199,7 +199,7 @@ The JSON manifest includes each detected key pattern, operation, path, line and 
 | `src/modules/orders/presentation/pages/OrderDetailPage.tsx` | 772 | `orders` |
 | `src/modules/products/presentation/components/ProductFormModal.tsx` | 741 | `products` |
 | `src/modules/organizations/presentation/pages/OrganizationAccountDetailPage.tsx` | 739 | `organizations` |
-| `src/guidance/content/crm/extendedScreens.ts` | 701 | `shared:guidance` |
+| `src/guidance/content/crm/extendedScreens.ts` | 706 | `shared:guidance` |
 | `src/modules/payments/presentation/pages/PaymentOperationsPage.tsx` | 700 | `payments` |
 | `src/modules/products/presentation/pages/ProductDetailPage.tsx` | 696 | `products` |
 | `src/modules/leads/infrastructure/http/LeadHttpCommandAdapter.ts` | 692 | `leads` |

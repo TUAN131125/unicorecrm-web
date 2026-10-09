@@ -6,7 +6,8 @@ import { formatApplicationError } from "@/shared/operations";
 import { acquireContactInteraction, releaseContactInteraction } from "../../model/contactInteractionOwnership";
 import { CheckSquare, Calendar, User, CheckCircle2, Clock, Plus } from "lucide-react";
 import { useI18n } from "@/i18n";
-import { Modal, Button, Input, DetailTabActionButton } from "@/shared/components/ui";
+import { Modal, Button, Input, DetailTabActionButton, OverlayPortalHostContext } from "@/shared/components/ui";
+import { getContactReadAuthorityScope } from "../../../application/vertical-slice/contactReadAuthorityScope";
 import { RelationshipModuleActions, RelationshipWorkspaceHeader } from "@/components/crm/relationship-detail";
 
 interface TaskMocks {
@@ -47,9 +48,11 @@ export const ContactActiveTasksTab: React.FC<ContactActiveTasksTabProps> = ({
   onModalStateChange
 }) => {
   const { tx, locale } = useI18n();
+  const portalHost = React.useContext(OverlayPortalHostContext);
+  const portalHostRef = React.useRef(portalHost); portalHostRef.current = portalHost;
   const sourceKey = contactTargetId ?? contact?.id;
   const { workspaceId } = useWorkspaceContextSnapshot();
-  type Intent = { task: TaskMocks; contactTargetId: string | undefined; workspaceId: string; initialDate: string; cycle: number; intentId: string; submit: NonNullable<ContactActiveTasksTabProps["onRescheduleTask"]>; notify: ContactActiveTasksTabProps["onModalStateChange"] };
+  type Intent = { authorityScope: string; task: TaskMocks; contactTargetId: string | undefined; workspaceId: string; initialDate: string; cycle: number; intentId: string; submit: NonNullable<ContactActiveTasksTabProps["onRescheduleTask"]>; notify: ContactActiveTasksTabProps["onModalStateChange"] };
   const [intent, setIntent] = useState<Intent>();
   const [date, setDate] = useState("");
   const [pending, setPending] = useState(false);
@@ -76,14 +79,16 @@ export const ContactActiveTasksTab: React.FC<ContactActiveTasksTabProps> = ({
   React.useEffect(() => {
     if (intent && (intent.contactTargetId !== sourceKey || intent.workspaceId !== workspaceId) && !dirty && !pendingRef.current) finish();
   }, [intent, sourceKey, workspaceId, dirty, pending, finish]);
-  const requestClose = () => { if (pendingRef.current) return; if (dirty) setConfirmClose(true); else finish(); };
+  const requestClose = () => { if (pendingRef.current || portalHostRef.current?.suspended) return; if (dirty) setConfirmClose(true); else finish(); };
   React.useEffect(() => {
     if (error && !pending && errorFocusCycle.current === intentRef.current?.cycle) { formRef.current?.querySelector<HTMLElement>("#contact-task-reschedule-date")?.focus(); errorFocusCycle.current = undefined; }
   }, [error, pending]);
   const save = async (): Promise<boolean> => {
     const opening = intentRef.current;
     if (!opening || !mounted.current || pendingRef.current) return false;
+    if (portalHostRef.current?.suspended) return false;
     if (opening.workspaceId !== getWorkspaceContextSnapshot().workspaceId) { setError(tx("contactDetail.tasks.workspaceChanged", "Không gian làm việc đã thay đổi. Quay lại không gian đã mở để tiếp tục.")); return false; }
+    if (opening.authorityScope !== getContactReadAuthorityScope()) return false;
     const suppliedDate = draftRef.current.trim();
     const parsedDate = new Date(`${suppliedDate}T00:00:00Z`);
     if (!/^\d{4}-\d{2}-\d{2}$/.test(suppliedDate) || Number.isNaN(parsedDate.getTime()) || parsedDate.toISOString().slice(0,10) !== suppliedDate) {
@@ -93,7 +98,7 @@ export const ContactActiveTasksTab: React.FC<ContactActiveTasksTabProps> = ({
     pendingRef.current = true; setPending(true); setError(undefined);
     try {
       const result = await opening.submit(opening.task.id, suppliedDate, { idempotencyKey: opening.intentId });
-      if (!mounted.current || intentRef.current?.cycle !== opening.cycle || opening.workspaceId !== getWorkspaceContextSnapshot().workspaceId) return false;
+      if (!mounted.current || intentRef.current?.cycle !== opening.cycle || opening.workspaceId !== getWorkspaceContextSnapshot().workspaceId || portalHostRef.current?.suspended || opening.authorityScope !== getContactReadAuthorityScope()) return false;
       if (result === false) { setError(tx("contactDetail.tasks.rescheduleUnavailable", "Không thể cập nhật lịch công việc lúc này.")); return false; }
       finish(); return true;
     } catch (caught) {
@@ -109,6 +114,7 @@ export const ContactActiveTasksTab: React.FC<ContactActiveTasksTabProps> = ({
     if (!intent) return;
     const captured = intent;
     const canDiscard = () => mounted.current && intentRef.current?.cycle === captured.cycle && !pendingRef.current;
+    const unregisterRecovery = portalHost?.registerDraft?.({ canDiscard, discard: finish });
     const unregister = registerUnsavedWork({ id: `contact-task-reschedule:${captured.workspaceId}:${captured.contactTargetId ?? "context"}:${captured.task.id}:${captured.cycle}`,
       title: tx("contactDetail.actions.rescheduleTitle", "Điều chỉnh hạn xử lý"), isDirty: dirty || pending,
       canDiscard, discard: finish,
@@ -116,8 +122,8 @@ export const ContactActiveTasksTab: React.FC<ContactActiveTasksTabProps> = ({
     });
     const unload = (event: BeforeUnloadEvent) => { if (dirty || pendingRef.current) { event.preventDefault(); event.returnValue = ""; } };
     window.addEventListener("beforeunload", unload);
-    return () => { unregister(); window.removeEventListener("beforeunload", unload); };
-  }, [intent, dirty, pending, tx, finish]);
+    return () => { unregisterRecovery?.(); unregister(); window.removeEventListener("beforeunload", unload); };
+  }, [intent, dirty, pending, tx, finish, portalHost]);
 
   const activeTasks = tasks.filter(t => t.status !== "completed");
 
@@ -135,7 +141,7 @@ export const ContactActiveTasksTab: React.FC<ContactActiveTasksTabProps> = ({
     const task = tasks.find(item => item.id === tkId); if (!task) return;
     if (getDirtyUnsavedWork().some(entry => entry.id.startsWith("contact-")) || !acquireContactInteraction(owner.current, contact)) return;
     const initialDate = currentDueDate?.slice(0,10) || new Date().toISOString().slice(0,10);
-    const next: Intent = { task: structuredClone(task), initialDate, contactTargetId: sourceKey, workspaceId: getWorkspaceContextSnapshot().workspaceId, cycle: ++cycle.current, intentId: `contact-task-reschedule-${crypto.randomUUID()}`, submit: onRescheduleTask, notify: onModalStateChange };
+    const next: Intent = { authorityScope: getContactReadAuthorityScope(), task: structuredClone(task), initialDate, contactTargetId: sourceKey, workspaceId: getWorkspaceContextSnapshot().workspaceId, cycle: ++cycle.current, intentId: `contact-task-reschedule-${crypto.randomUUID()}`, submit: onRescheduleTask, notify: onModalStateChange };
     intentRef.current = next; setIntent(next); setDate(initialDate); setError(undefined); setConfirmClose(false); next.notify?.(true);
   };
 
