@@ -1,16 +1,16 @@
 # Release Identity
 
 - Release: `unicorecrm-web@0.24.0-contract.0`
-- Date: `2026-10-08`
+- Date: `2026-07-26`
 - Status: `QUALITY_BASELINE_REMEDIATION_CANDIDATE`
-- Scope: `CONTACT_SERVER_PAGING_LEAD_KANBAN_AND_SAVE_REMEDIATION`
-- Classification: production-hardening candidate with bounded authorized Contact paging and summary, Tasks-owned follow-up projection, independent Lead Kanban windows, reconciled Contact command authority and validated awaited Save outcomes. Activity security authority remains unresolved and its fail-closed policy is preserved. Verification evidence is recorded separately; this identity does not attest deployment or unrestricted production acceptance.
+- Scope: `FRONTEND_QUALITY_AND_RUNTIME_REMEDIATION`
+- Classification: quality and runtime remediation candidate. Verification evidence for individual changes is recorded separately; this identity does not attest deployment or production release approval. Activity security restrictions remain fail-closed.
 - Backend target: ASP.NET Core/SQL Server backend.
 - This is not an accepted production baseline.
 
 Semantic authority order:
 
-1. This release identity establishes version and scope.
+1. `docs/quality/release-identity.json` establishes version, date, status and scope; this Markdown summarizes that authority.
 2. `docs/api/openapi.json` owns operation-level HTTP status, path, DTO and transport policy.
 3. Closed decision JSON and transaction contracts own business semantics.
 4. Generated clients, catalogs and registries are deterministic derivatives.

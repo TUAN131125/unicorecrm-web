@@ -118,6 +118,14 @@ for (const authority of [
 
 const releaseDocument = read("docs/quality/release-identity.md");
 assert.ok(releaseDocument.includes(release.releaseId));
+for (const [label, value] of [
+  ["Release", release.releaseId],
+  ["Date", release.releaseDate],
+  ["Status", release.status],
+  ["Scope", release.sourceScope],
+]) {
+  assert.ok(releaseDocument.includes(`- ${label}: \`${value}\``), `Release Markdown ${label} must match JSON authority.`);
+}
 assert.match(releaseDocument, /quality and runtime remediation candidate/i);
 assert.match(releaseDocument, /not an accepted production baseline/i);
 assert.match(releaseDocument, /ASP\.NET Core\/SQL Server backend/i);

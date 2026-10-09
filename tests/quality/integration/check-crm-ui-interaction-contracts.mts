@@ -292,6 +292,11 @@ Object.defineProperty(window, "matchMedia", {
 });
 Object.defineProperty(window.HTMLElement.prototype, "scrollIntoView", { value: () => undefined, configurable: true });
 
+// The child has a fresh module environment and does not inherit the parent's
+// preloaded services. Install the canonical fixture after browser globals so
+// React DOM observes the browser environment before Activity controls render.
+await import("../../fixtures/runtime/bootstrap-demo-application-composition.mjs");
+
 const React = await import("react");
 const { act } = React;
 const { createRoot } = await import("react-dom/client");
