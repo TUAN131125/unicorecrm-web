@@ -331,7 +331,7 @@ export async function saveLeadForRuntime(lead: Lead): Promise<Lead> {
   return (await createLeadFromFormViaApi(lead)).lead;
 }
 
-async function projectAndInvalidate(result: LeadMutationResult, commandType: string): Promise<void> {
+export async function projectAndInvalidate(result: LeadMutationResult, commandType: string): Promise<void> {
   runBackendProjection("leads", () => saveLead(leadRepository, result.lead));
   await invalidateModuleQueries({
     moduleKeys: ["leads"],
@@ -397,9 +397,9 @@ async function requireLeadVersion(leadId: string, operationId: string): Promise<
   return Number(version);
 }
 
-function toLeadProfileInput(input: Partial<Lead>, requireOwner: false): LeadProfileInput;
-function toLeadProfileInput(input: Partial<Lead>, requireOwner: true): LeadProfileInput;
-function toLeadProfileInput(input: Partial<Lead>, requireOwner: boolean): LeadProfileInput {
+export function toLeadProfileInput(input: Partial<Lead>, requireOwner: false): LeadProfileInput;
+export function toLeadProfileInput(input: Partial<Lead>, requireOwner: true): LeadProfileInput;
+export function toLeadProfileInput(input: Partial<Lead>, requireOwner: boolean): LeadProfileInput {
   const displayName = input.name?.trim() ?? "";
   const source = input.source?.trim() || undefined;
   const ownerId = input.ownerId?.trim() || undefined;
@@ -484,7 +484,7 @@ function compact<T extends Record<string, unknown>>(value: T): T {
   return Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined)) as T;
 }
 
-function profileViolation(field: string, message: string): ApplicationError {
+export function profileViolation(field: string, message: string): ApplicationError {
   return new ApplicationError({
     code: "LEAD_PROFILE_CONTRACT_VIOLATION",
     message,

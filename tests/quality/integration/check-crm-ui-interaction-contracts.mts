@@ -594,5 +594,11 @@ await act(async () => root.unmount());
 console.log("CRM UI interaction runtime: PASS");
 console.log("- Continuous modal typing retains focus across controlled rerenders.");
 
+// Isolated DOM and deferred canonical commands exercise both tag intents.
+const { spawnSync } = await import("node:child_process");
+const tagsRuntime = spawnSync(process.execPath, ["--import", "tsx", "tests/fixtures/runtime/check-lead-tag-mutation.mts"], { encoding: "utf8" });
+assert.equal(tagsRuntime.status, 0, tagsRuntime.stdout + tagsRuntime.stderr);
+console.log(tagsRuntime.stdout.trim());
+
 
 }

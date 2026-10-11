@@ -17,9 +17,9 @@ Do not delete a dead, compatibility, deprecated or duplicate candidate based on 
 
 | Metric | Count |
 |---|---:|
-| Repository files | 2141 |
-| Source files | 1424 |
-| Source lines | 217487 |
+| Repository files | 2145 |
+| Source files | 1427 |
+| Source lines | 217647 |
 | Registered modules | 15 |
 | Route keys | 80 |
 | Loadable route modules | 64 |
@@ -27,7 +27,7 @@ Do not delete a dead, compatibility, deprecated or duplicate candidate based on 
 | Workspace module flags | 13 |
 | Cross-module workflows | 23 |
 | Public boundary files | 108 |
-| Persistence entries | 3035 |
+| Persistence entries | 3036 |
 | Repository/store/adapter files | 147 |
 | Compatibility candidates | 53 |
 | Dead-code candidates | 0 |
@@ -37,7 +37,7 @@ Do not delete a dead, compatibility, deprecated or duplicate candidate based on 
 | Quality groups | 11 |
 | Verify gates | 345 |
 
-Inventory fingerprint: `45595d7bcce47e4a7de5609d61da7889f0263a146c5fe052210e9da7a17a269f`
+Inventory fingerprint: `d2be7d85ab6fa15dbf233d4af03c849d36c0faf331f88316dc224f7340e47987`
 
 
 ## Quality pipeline
@@ -60,9 +60,9 @@ Inventory fingerprint: `45595d7bcce47e4a7de5609d61da7889f0263a146c5fe052210e9da7
 
 | Classification | Count |
 |---|---:|
-| `active-runtime` | 1339 |
+| `active-runtime` | 1342 |
 | `active-script` | 70 |
-| `active-test` | 483 |
+| `active-test` | 484 |
 | `compatibility` | 53 |
 | `documentation` | 191 |
 | `fixture` | 3 |
@@ -144,7 +144,7 @@ The journey table locks source evidence and executable command names. Actual com
 | `deals` | 6 |
 | `feature:auth` | 3 |
 | `invoices` | 6 |
-| `leads` | 8 |
+| `leads` | 9 |
 | `orders` | 4 |
 | `organizations` | 2 |
 | `payments` | 7 |

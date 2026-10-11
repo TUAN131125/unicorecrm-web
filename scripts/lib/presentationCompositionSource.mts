@@ -58,6 +58,7 @@ const PRESENTATION_COMPOSITIONS: Record<string, readonly string[]> = {
     "src/modules/leads/presentation/views/LeadDetailView.tsx",
   ],
   "src/modules/leads/presentation/components/LeadDetailModals.tsx": [
+    "src/modules/leads/presentation/hooks/useLeadTags.ts",
     "src/modules/leads/presentation/components/LeadCallActivityModal.tsx",
     "src/modules/leads/presentation/components/LeadEmailActivityModal.tsx",
   ],

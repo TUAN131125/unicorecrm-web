@@ -6,9 +6,15 @@ import { useWorkspaceOperationalConfiguration } from "@/platform/workspace-confi
 import { toDateKeyInTimeZone } from "@/shared/lib/datetime/workspaceDateTime";
 import { useI18n } from "@/i18n";
 import { formatApplicationError } from "@/shared/operations";
+import { useEffectiveAccess } from "@/platform/access-control";
+import { getLeadTagAuthorityKey } from "../model/leadTagAuthority";
+import { useAuthSessionSnapshot } from "@/platform/identity-auth";
 
 export function useLeadDetailDialogs(lead: Lead | undefined, routeLeadId: string) {
   const { locale } = useI18n();
+  const tagAccess = useEffectiveAccess();
+  useAuthSessionSnapshot();
+  const tagAuthorityKey = getLeadTagAuthorityKey();
   const [saveError, setSaveError] = useState("");
   const configuration = useWorkspaceOperationalConfiguration();
   const today = toDateKeyInTimeZone(new Date(), configuration.localeRegion.timezone);
@@ -18,7 +24,7 @@ export function useLeadDetailDialogs(lead: Lead | undefined, routeLeadId: string
   const latestLead = useRef(lead);
   latestLead.current = lead;
   const [formIntent, setFormIntent] = useState<{
-    kind: FormKind; lead: Lead; cycle: number; workspaceId: string;
+    kind: FormKind; lead: Lead; cycle: number; workspaceId: string; tagAuthorityKey: string;
     disqualifyCategory: string; disqualifyReasonText: string;
   } | null>(null);
   const nextCycle = useRef(0);
@@ -48,6 +54,7 @@ export function useLeadDetailDialogs(lead: Lead | undefined, routeLeadId: string
         && current.cycle === callbackCycle && pendingCycle.current !== current.cycle ? null : current;
       if (current || !latestLead.current) return current;
       return { kind, lead: structuredClone(latestLead.current), cycle: ++nextCycle.current,
+        tagAuthorityKey: getLeadTagAuthorityKey(),
         workspaceId: getWorkspaceContextSnapshot().workspaceId,
         disqualifyCategory: "Không có nhu cầu", disqualifyReasonText: "" };
     });
@@ -67,8 +74,9 @@ export function useLeadDetailDialogs(lead: Lead | undefined, routeLeadId: string
     setInteractionPending(pending);
     return true;
   }, [callbackCycle]);
-  const isCurrentInteraction = useCallback(() => callbackCycle !== undefined
+  const isCurrentInteraction = useCallback(() => mounted.current && callbackCycle !== undefined
     && currentIntent.current?.cycle === callbackCycle
+    && (currentIntent.current.kind !== "tags" || currentIntent.current.tagAuthorityKey === getLeadTagAuthorityKey())
     && currentIntent.current.workspaceId === getWorkspaceContextSnapshot().workspaceId
     && currentIntent.current.lead.id === liveRoute.current, [callbackCycle]);
   const resolveInteraction = useCallback((kind: FormKind) => {
@@ -100,14 +108,14 @@ export function useLeadDetailDialogs(lead: Lead | undefined, routeLeadId: string
         const binding = saveBinding.current;
         if (!mounted.current || currentIntent.current?.cycle !== formIntent.cycle || pendingCycle.current !== null || submitting.current
           || formIntent.workspaceId !== getWorkspaceContextSnapshot().workspaceId || routeLeadId !== formIntent.lead.id
-          || binding?.cycle !== formIntent.cycle) return false;
+          || binding?.cycle !== formIntent.cycle || !isCurrentInteraction()) return false;
         pendingCycle.current = formIntent.cycle; setInteractionPending(true); setSaveError("");
         try {
           const command = binding.save();
           if (!command || typeof command.then !== "function") return false;
           const result = await command;
           if (result !== true || !mounted.current || currentIntent.current?.cycle !== formIntent.cycle
-            || formIntent.workspaceId !== getWorkspaceContextSnapshot().workspaceId || liveRoute.current !== formIntent.lead.id) return false;
+            || formIntent.workspaceId !== getWorkspaceContextSnapshot().workspaceId || liveRoute.current !== formIntent.lead.id || !isCurrentInteraction()) return false;
           currentIntent.current = null;
           if (formIntent.kind === "handover") { setHandoverOwnerId(""); setHandoverReason(""); }
           setFormIntent(current => current?.cycle === formIntent.cycle ? null : current);
@@ -137,7 +145,13 @@ export function useLeadDetailDialogs(lead: Lead | undefined, routeLeadId: string
   const setShowArchiveConfirm = useCallback((open: boolean) => setForm("archive", open), [setForm]);
   const showHandoverModal = activeForm === "handover";
   const setShowHandoverModal = useCallback((open: boolean) => setForm("handover", open), [setForm]);
-  const showTagsModal = activeForm === "tags";
+  const showTagsModal = activeForm === "tags" && formIntent?.tagAuthorityKey === tagAuthorityKey && formIntent.lead.id === routeLeadId;
+  useEffect(() => {
+    if (formIntent?.kind === "tags" && (formIntent.tagAuthorityKey !== getLeadTagAuthorityKey() || formIntent.lead.id !== routeLeadId)) {
+      currentIntent.current = null;
+      setFormIntent(current => current?.cycle === formIntent.cycle ? null : current);
+    }
+  }, [formIntent, tagAuthorityKey, tagAccess.authorityRevision, routeLeadId]);
   const setShowTagsModal = useCallback((open: boolean) => setForm("tags", open), [setForm]);
   const showVerificationReadiness = activeForm === "verification";
   const setShowVerificationReadiness = useCallback((open: boolean) => setForm("verification", open), [setForm]);

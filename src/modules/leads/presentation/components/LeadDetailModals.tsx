@@ -23,6 +23,7 @@ import {
 import type { LeadDetailDialogs } from "../hooks/useLeadDetailDialogs";
 import type { useLeadActions } from "../hooks/useLeadActions";
 import { getLeadDetailResource } from "../../application/vertical-slice/leadAuthoritativeQueries";
+import { useLeadTags } from "../hooks/useLeadTags";
 import { LeadArchiveConfirmationModal } from "./LeadArchiveConfirmationModal";
 
 const LeadForm = React.lazy(() => import("@/components/LeadForm").then((module) => ({ default: module.LeadForm })));
@@ -72,7 +73,7 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
     showDisqualifyModal, setShowDisqualifyModal, disqualifyCategory, setDisqualifyCategory,
     disqualifyReasonText, setDisqualifyReasonText, showEditModal, setShowEditModal,
     showArchiveConfirm, setShowArchiveConfirm, showHandoverModal, setShowHandoverModal,
-    showTagsModal, setShowTagsModal,
+    showTagsModal,
     handoverOwnerId, setHandoverOwnerId, handoverReason, setHandoverReason, showCallModal, setShowCallModal,
     showTaskModal, setShowTaskModal, showMeetingModal, setShowMeetingModal,
     showEmailModal, setShowEmailModal, showSmsModal, setShowSmsModal,
@@ -136,9 +137,10 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
     editUnsavedChanges.setIsDirty(dirty);
     dialogs.setEditDirty(dirty);
   }, [editUnsavedChanges.setIsDirty, dialogs.setEditDirty]);
-  const [tagDraft, setTagDraft] = React.useState("");
+  const tags = useLeadTags(dialogs, locale, showToast);
+  const { draft: tagDraft, setDraft: setTagDraft } = tags;
   const [archivePending, setArchivePending] = React.useState(false);
-  React.useEffect(() => { if (!showTagsModal) setTagDraft(""); }, [showTagsModal]);
+
   React.useEffect(() => {
     if (!showEditModal) {
       editUnsavedChanges.setIsDirty(false);
@@ -146,13 +148,7 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
     }
   }, [editUnsavedChanges.setIsConfirmOpen, editUnsavedChanges.setIsDirty, showEditModal]);
 
-  const saveTags = async (): Promise<boolean> => {
-    const tag = tagDraft.trim();
-    if (!tag || !dialogs.isCurrentInteraction()) return false;
-    const saved = await leadActions.update(lead.id, currentLead => ({ ...currentLead,
-      tags: [...new Set([...(currentLead.tags || []), tag])] }));
-    return saved.id === lead.id && Boolean(saved.tags?.includes(tag));
-  };
+  const saveTags = tags.add;
   if (dialogs.activeForm === "disqualify") dialogs.bindSave(async () => (await handleConfirmDisqualify(true)) === true);
   if (dialogs.activeForm === "handover") dialogs.bindSave(async () => (await handleConfirmHandover(handoverOwnerId, handoverReason.trim(), true)) === true);
   if (dialogs.activeForm === "tags") dialogs.bindSave(saveTags);
@@ -302,9 +298,9 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
       </RelationshipQuickActionModal>
 
       <RowActionPortal
-        open={showTagsModal && Boolean(dialogs.tagsAnchor?.isConnected)}
+        open={showTagsModal && tags.visible && Boolean(dialogs.tagsAnchor?.isConnected)}
         anchorEl={dialogs.tagsAnchor}
-        onClose={() => { setShowTagsModal(false); setTagDraft(""); }}
+        onClose={tags.close}
         width={340}
         align="end"
         role="dialog"
@@ -320,6 +316,7 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
               autoFocus
               label={locale === "vi" ? "Nhãn mới" : "New tag"}
               placeholder={locale === "vi" ? "Ví dụ: Khách hàng ưu tiên" : "For example: Priority account"}
+              disabled={dialogs.interactionPending}
               value={tagDraft}
               onChange={(event) => setTagDraft(event.target.value)}
             />
@@ -328,33 +325,30 @@ export function LeadDetailModals({ screen }: LeadDetailModalsProps) {
               variant="primary"
               size="sm"
               className="h-11 min-w-20"
-              disabled={!tagDraft.trim() || dialogs.interactionPending}
+              disabled={!tags.available || !tagDraft.trim() || dialogs.interactionPending}
               onClick={() => { void dialogs.saveActiveForm(); }}
             >
               {locale === "vi" ? "Thêm" : "Add"}
             </Button>
           </div>
+          {(tags.error || dialogs.saveError) && <p role="alert">{tags.error || dialogs.saveError}</p>}
           <div className="space-y-1">
             <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-400">
               {locale === "vi" ? "Nhãn đang gắn" : "Attached tags"}
             </span>
             <div className="flex min-h-[45px] flex-wrap gap-1.5 rounded-xl border border-slate-200 bg-white p-2.5">
-              {(lead.tags || []).length === 0 ? (
+              {!tags.lead ? (
+                <span className="text-[10px] text-slate-400">{locale === "vi" ? "Nhãn chưa khả dụng" : "Tags unavailable"}</span>
+              ) : (tags.lead.tags || []).length === 0 ? (
                 <span className="text-[10px] text-slate-400">{locale === "vi" ? "Chưa có nhãn" : "No tags"}</span>
-              ) : (lead.tags || []).map((tag) => (
+              ) : (tags.lead?.tags || []).map((tag) => (
                 <span key={tag} className="inline-flex shrink-0 items-center gap-1 rounded-lg border border-indigo-100 bg-indigo-50 px-2 py-0.5 text-[10px] font-extrabold text-indigo-700">
                   <span>{tag}</span>
                   <button
                     type="button"
                     aria-label={locale === "vi" ? `Gỡ nhãn ${tag}` : `Remove tag ${tag}`}
-                    onClick={() => {
-                      leadActions.update(lead.id, (currentLead) => ({
-                        ...currentLead,
-                        tags: (currentLead.tags || []).filter((item) => item !== tag),
-                        updatedAt: new Date().toISOString(),
-                      }));
-                      showToast(locale === "vi" ? `Đã gỡ nhãn “${tag}”.` : `Removed tag “${tag}”.`);
-                    }}
+                    disabled={dialogs.interactionPending || !tags.available}
+                    onClick={() => { void tags.remove(tag); }}
                     className="ml-1 font-bold text-indigo-400 hover:text-indigo-700"
                   >
                     ×

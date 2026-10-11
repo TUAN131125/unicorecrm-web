@@ -24,9 +24,9 @@
     ]
   },
   "summary": {
-    "repositoryFiles": 2141,
-    "sourceFiles": 1424,
-    "sourceLines": 217487,
+    "repositoryFiles": 2145,
+    "sourceFiles": 1427,
+    "sourceLines": 217647,
     "modules": 15,
     "routes": 80,
     "loadableRouteModules": 64,
@@ -35,7 +35,7 @@
     "workflows": 23,
     "publicBoundaryFiles": 108,
     "publicExportStatements": 963,
-    "persistenceEntries": 3035,
+    "persistenceEntries": 3036,
     "repositoryImplementations": 147,
     "browserEventEntries": 37,
     "mockAndDefaultDataSources": 26,
@@ -48,9 +48,9 @@
     "verifyGates": 345,
     "qualityGroups": 11,
     "fileClassifications": {
-      "active-runtime": 1339,
+      "active-runtime": 1342,
       "active-script": 70,
-      "active-test": 483,
+      "active-test": 484,
       "compatibility": 53,
       "documentation": 191,
       "fixture": 3,
@@ -17216,6 +17216,14 @@
         "keyPattern": "leads",
         "operation": "workspace-resource",
         "owner": "leads",
+        "path": "src/modules/leads/presentation/hooks/useLeadTags.ts",
+        "line": 16,
+        "browserGlobal": false
+      },
+      {
+        "keyPattern": "leads",
+        "operation": "workspace-resource",
+        "owner": "leads",
         "path": "src/modules/leads/runtime/leadModuleRuntime.ts",
         "line": 13,
         "browserGlobal": false
@@ -28228,7 +28236,7 @@
       "deals": 6,
       "feature:auth": 3,
       "invoices": 6,
-      "leads": 8,
+      "leads": 9,
       "orders": 4,
       "organizations": 2,
       "payments": 7,
@@ -28258,7 +28266,7 @@
       "declaration": 9,
       "read": 3,
       "remove": 1,
-      "workspace-resource": 3013,
+      "workspace-resource": 3014,
       "write": 9
     }
   },
@@ -30797,7 +30805,7 @@
       "path": "src/guidance/content/crm/extendedScreens.ts",
       "owner": "shared:guidance",
       "lines": 706,
-      "bytes": 68486
+      "bytes": 68904
     },
     {
       "path": "src/modules/payments/presentation/pages/PaymentOperationsPage.tsx",
@@ -31629,8 +31637,8 @@
       "classification": "documentation",
       "reason": "Markdown documentation.",
       "owner": "documentation",
-      "bytes": 12619,
-      "lines": 160,
+      "bytes": 15515,
+      "lines": 172,
       "usage": {
         "runtimeReachable": false,
         "scriptReachable": false,
@@ -33618,8 +33626,8 @@
       "classification": "active-script",
       "reason": "Repository tooling or build configuration.",
       "owner": "tooling",
-      "bytes": 7279,
-      "lines": 133,
+      "bytes": 7338,
+      "lines": 134,
       "usage": {
         "runtimeReachable": false,
         "scriptReachable": true,
@@ -36140,7 +36148,7 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "shared:guidance",
-      "bytes": 68486,
+      "bytes": 68904,
       "lines": 706,
       "usage": {
         "runtimeReachable": true,
@@ -40391,7 +40399,7 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "leads",
-      "bytes": 22871,
+      "bytes": 22906,
       "lines": 497,
       "usage": {
         "runtimeReachable": true,
@@ -40458,6 +40466,19 @@
       "owner": "leads",
       "bytes": 13312,
       "lines": 321,
+      "usage": {
+        "runtimeReachable": true,
+        "scriptReachable": true,
+        "testReachable": true
+      }
+    },
+    {
+      "path": "src/modules/leads/application/commands/leadTagCommands.ts",
+      "classification": "active-runtime",
+      "reason": "Reachable from src/main.tsx.",
+      "owner": "leads",
+      "bytes": 2503,
+      "lines": 42,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -41067,8 +41088,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "leads",
-      "bytes": 25912,
-      "lines": 493,
+      "bytes": 25588,
+      "lines": 487,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -41418,8 +41439,8 @@
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
       "owner": "leads",
-      "bytes": 13205,
-      "lines": 244,
+      "bytes": 14246,
+      "lines": 258,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -41648,6 +41669,19 @@
       }
     },
     {
+      "path": "src/modules/leads/presentation/hooks/useLeadTags.ts",
+      "classification": "active-runtime",
+      "reason": "Reachable from src/main.tsx.",
+      "owner": "leads",
+      "bytes": 6849,
+      "lines": 90,
+      "usage": {
+        "runtimeReachable": true,
+        "scriptReachable": true,
+        "testReachable": true
+      }
+    },
+    {
       "path": "src/modules/leads/presentation/leadLifecyclePresentation.ts",
       "classification": "active-runtime",
       "reason": "Reachable from src/main.tsx.",
@@ -41693,6 +41727,19 @@
       "owner": "leads",
       "bytes": 686,
       "lines": 36,
+      "usage": {
+        "runtimeReachable": true,
+        "scriptReachable": true,
+        "testReachable": true
+      }
+    },
+    {
+      "path": "src/modules/leads/presentation/model/leadTagAuthority.ts",
+      "classification": "active-runtime",
+      "reason": "Reachable from src/main.tsx.",
+      "owner": "leads",
+      "bytes": 1323,
+      "lines": 20,
       "usage": {
         "runtimeReachable": true,
         "scriptReachable": true,
@@ -55025,6 +55072,19 @@
       }
     },
     {
+      "path": "tests/fixtures/runtime/check-lead-tag-mutation.mts",
+      "classification": "active-test",
+      "reason": "Test source.",
+      "owner": "test",
+      "bytes": 22558,
+      "lines": 326,
+      "usage": {
+        "runtimeReachable": false,
+        "scriptReachable": false,
+        "testReachable": true
+      }
+    },
+    {
       "path": "tests/fixtures/runtime/check-safe-contact-owner.mts",
       "classification": "active-test",
       "reason": "Test source.",
@@ -57174,8 +57234,8 @@
       "classification": "active-test",
       "reason": "Test source.",
       "owner": "test",
-      "bytes": 36609,
-      "lines": 599,
+      "bytes": 37007,
+      "lines": 605,
       "usage": {
         "runtimeReachable": false,
         "scriptReachable": false,
@@ -59589,5 +59649,5 @@
       "quality.work-operations-ux"
     ]
   },
-  "inventoryFingerprint": "45595d7bcce47e4a7de5609d61da7889f0263a146c5fe052210e9da7a17a269f"
+  "inventoryFingerprint": "d2be7d85ab6fa15dbf233d4af03c849d36c0faf331f88316dc224f7340e47987"
 }
