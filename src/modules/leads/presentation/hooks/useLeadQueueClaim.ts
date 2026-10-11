@@ -9,15 +9,29 @@ export type ClaimQueueObservation = {
   items: readonly { id: string; resourceVersion?: number }[];
 };
 
-export function useLeadQueueClaim(options: { enabled: boolean; locale: "vi" | "en"; refresh: () => Promise<unknown>; notify: (message: string) => void; onClaimed?: (leadId: string) => void }) {
-  const pending = useRef(new Set<string>());
-  const blocked = useRef(new Map<string, number>());
-  const previousObservation = useRef<ClaimQueueObservation | undefined>(undefined);
-  const attempts = useRef(new Map<string, { idempotencyKey: string; expectedVersion: number }>());
-  const [pendingIds, setPendingIds] = useState<ReadonlySet<string>>(new Set());
+export function useLeadQueueClaim(options: { enabled: boolean; locale: "vi" | "en"; refresh: () => Promise<unknown>; notify: (message: string) => void; onClaimed?: (leadId: string) => void; scopeKey?: string; authorityScopeKey?: string }) {
+  const liveScope = useRef(options.scopeKey); liveScope.current = options.scopeKey;
+  const authorityKey = options.authorityScopeKey ?? options.scopeKey ?? "local";
+  const contexts = useRef(new Map<string, {
+    pending: Set<string>;
+    blocked: Map<string, number>;
+    attempts: Map<string, { idempotencyKey: string; expectedVersion: number }>;
+    observation?: ClaimQueueObservation;
+  }>());
+  let context = contexts.current.get(authorityKey);
+  if (!context) {
+    context = { pending: new Set(), blocked: new Map(), attempts: new Map() };
+    contexts.current.set(authorityKey, context);
+  }
+  const pending = { current: context.pending };
+  const blocked = { current: context.blocked };
+  const attempts = { current: context.attempts };
+  const [, setPendingRevision] = useState(0);
+  const publishPending = () => setPendingRevision(revision => revision + 1);
+  const pendingIds: ReadonlySet<string> = new Set([...pending.current, ...blocked.current.keys()]);
   const reconcile = useCallback((observation: ClaimQueueObservation) => {
-    const previous = previousObservation.current;
-    previousObservation.current = observation;
+    const previous = context.observation;
+    context.observation = observation;
     const versions = new Map(observation.items.map(item => [item.id, item.resourceVersion]));
     // Only consecutive observations of the same page/query provide removal evidence.
     const removedIds = previous?.queryKey === observation.queryKey && previous.pageKey === observation.pageKey
@@ -35,22 +49,25 @@ export function useLeadQueueClaim(options: { enabled: boolean; locale: "vi" | "e
       const observedVersion = versions.get(id);
       if (removed.has(id) || (observedVersion !== undefined && observedVersion !== attempt.expectedVersion)) attempts.current.delete(id);
     }
-    if (changed) setPendingIds(new Set([...pending.current, ...blocked.current.keys()]));
+    if (changed) publishPending();
     return removedIds;
-  }, []);
+  }, [context]);
   const claim = async (leadId: string, expectedVersion: number) => {
-    if (!options.enabled || (pending.current.has(leadId) || blocked.current.has(leadId))) return;
+    if (options.scopeKey !== liveScope.current || !options.enabled || (pending.current.has(leadId) || blocked.current.has(leadId))) return;
     pending.current.add(leadId);
-    setPendingIds(new Set([...pending.current, ...blocked.current.keys()]));
+    const scope = options.scopeKey;
+    publishPending();
     const intent = attempts.current.get(leadId) ?? { idempotencyKey: `lead-claim-${crypto.randomUUID()}`, expectedVersion };
     attempts.current.set(leadId, intent);
     try {
       await claimLeadFromQueueViaApi(leadId, intent);
+      if (scope !== liveScope.current) return;
       attempts.current.delete(leadId);
       options.onClaimed?.(leadId);
       options.notify(options.locale === "vi" ? "Đã nhận Lead." : "Lead claimed.");
       await options.refresh();
     } catch (error) {
+      if (scope !== liveScope.current) return;
       if (error instanceof ApplicationError && ["LEAD_QUEUE_CLAIM_CONFLICT", "VERSION_CONFLICT"].includes(error.code)) {
         attempts.current.delete(leadId);
         options.notify(options.locale === "vi" ? "Lead này vừa được một nhân viên khác nhận." : "This Lead was just claimed by another team member.");
@@ -60,6 +77,7 @@ export function useLeadQueueClaim(options: { enabled: boolean; locale: "vi" | "e
           // The collection can resolve refresh after recording an error. Only a
           // successful authoritative observation may unblock via reconcile().
         } catch (refreshError) {
+          if (scope !== liveScope.current) return;
           options.notify(formatApplicationError(refreshError, { locale: options.locale }));
         }
       } else {
@@ -67,7 +85,7 @@ export function useLeadQueueClaim(options: { enabled: boolean; locale: "vi" | "e
       }
     } finally {
       pending.current.delete(leadId);
-      setPendingIds(new Set([...pending.current, ...blocked.current.keys()]));
+      publishPending();
     }
   };
   return { claim, pendingIds, reconcile };

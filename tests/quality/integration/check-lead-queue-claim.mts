@@ -56,21 +56,23 @@ for (const op of [LEAD_OPERATION.ASSIGN_OWNER_BATCH]) assert.equal(isLeadOperati
 const before = requests.length;
 await assert.rejects(() => api.commands.assignLeadOwnerBatch({ ownerId: "member_other", reason: "test", items: [{ leadId: document.id, expectedVersion: 0 }] }, { idempotencyKey: "batch_key" }));
 assert.equal(requests.length, before);
-let current: ReturnType<typeof useLeadQueueClaim>;
+let current!: ReturnType<typeof useLeadQueueClaim>;
 let refreshes = 0;
 let invalidations = 0;
 const stop = shared.subscribeModuleQueryInvalidation("leads", () => { invalidations++; });
 const messages: string[] = [];
 let enabled = true;
+let scopeKey = "queue-authority-A";
+let authorityScopeKey = "actor-A";
 let failRefresh = false;
-let selection: ReturnType<typeof useLeadSelection>;
+let selection!: ReturnType<typeof useLeadSelection>;
 let queryKey = "workspace:queue";
 let pageKey = "page1:size50";
 const observation = (items: { id: string; resourceVersion?: number }[]) => ({ queryKey, pageKey, items });
 let observed = [{ id: document.id, resourceVersion: 0 }, { id: "lead_b", resourceVersion: 0 }];
 function Fixture() {
   selection = useLeadSelection();
-  current = useLeadQueueClaim({ enabled, locale: "vi", refresh: async () => {
+  current = useLeadQueueClaim({ enabled, scopeKey, authorityScopeKey, locale: "vi", refresh: async () => {
     refreshes++;
     if (failRefresh) return; // Real collection records ERROR but resolves refresh.
     current.reconcile(observation(observed));
@@ -86,7 +88,7 @@ await act(async () => selection.selectAll([document.id, "lead_b"], true));
 assert.match(container.textContent ?? "", /Nhận Lead/u);
 assert.equal(container.querySelector('[role="dialog"]'), null);
 project();
-let pending: Promise<void>;
+let pending!: Promise<void>;
 await act(async () => { pending = current.claim(document.id, 0); await current.claim(document.id, 0); });
 assert.equal(requests.length, before + 1, "Double-submit sends only one command");
 assert.equal(services.repository.getById(document.id)?.ownerId, undefined, "No optimistic owner mutation");
@@ -229,6 +231,37 @@ await act(async () => assert.deepEqual(selection.selectedLeadIds, [document.id])
 mode = "SUCCESS";
 await act(async () => { selection.selectAll([document.id, "lead_b"], true); await current.claim(document.id, 2); });
 await act(async () => assert.deepEqual(selection.selectedLeadIds, ["lead_b"], "SV-05 Claim success removes only claimed Lead"));
+project(); mode = "PENDING";
+await act(async () => selection.selectAll([document.id], true));
+const retiredMessages = messages.length;
+const retiredRefreshes = refreshes;
+await act(async () => { pending = current.claim(document.id, 0); });
+const retiredClaim = current.claim;
+scopeKey = "queue-authority-B"; authorityScopeKey = "actor-B"; await render();
+const retiredAdmissionRequests = requests.length;
+await act(async () => retiredClaim(document.id, 0));
+assert.equal(requests.length, retiredAdmissionRequests, "A retired Claim callback must not enter current transport authority");
+const oldRelease = release;
+const oldPending = pending;
+const oldAuthorityKey = requests.at(-1)?.idempotencyKey;
+await act(async () => { pending = current.claim(document.id, 0); });
+const newRelease = release;
+assert.notEqual(requests.at(-1)?.idempotencyKey, oldAuthorityKey, "A new authority must not replay another actor's Claim key");
+mode = "SUCCESS";
+await act(async () => { oldRelease?.(); await oldPending; });
+assert.equal(messages.length, retiredMessages, "A retired authority cannot report Claim success to the current page");
+assert.equal(refreshes, retiredRefreshes, "A retired completion cannot refresh the new scope");
+assert.deepEqual(selection.selectedLeadIds, [document.id], "A retired completion cannot alter current selection");
+assert.equal(current.pendingIds.has(document.id), true, "Retired finally must not clear the new actor's pending Claim");
+await act(async () => { newRelease?.(); await pending; });
+assert.equal(current.pendingIds.has(document.id), false);
+project(); mode = "NETWORK";
+await act(async () => current.claim(document.id, 0));
+const sameActorRetryKey = requests.at(-1)?.idempotencyKey;
+scopeKey = "queue-other-view-B"; await render();
+await act(async () => current.claim(document.id, 0));
+assert.equal(requests.at(-1)?.idempotencyKey, sameActorRetryKey, "Changing views under the same authority preserves ambiguous retry intent");
+
 enabled = false; await render();
 const disabledCount = requests.length;
 await act(async () => current.claim(document.id, 0)); assert.equal(requests.length, disabledCount);
@@ -244,7 +277,7 @@ assert.match(page, /!serverPagination.loading && !serverPagination.stale/u);
 assert.match(page, /assignmentState: "UNASSIGNED"/u);
 assert.match(page, /CAPABILITIES\.LEADS_READ.*CAPABILITIES\.LEADS_QUEUE_READ/u);
 assert.match(page, /CAPABILITIES\.LEADS_CLAIM/u);
-assert.match(page, /activeView === "unassigned" \? serverPagination.items/u);
+assert.match(page, /const serverPageItems = serverPagination.items/u, "All connected views, including Unassigned, keep server rows without local post-filtering");
 for (const file of ["LeadTable", "LeadMobileCardList"]) {
   const source = readFileSync(`src/modules/leads/presentation/components/${file}.tsx`, "utf8");
   assert.match(source, /canClaim && !lead.ownerId && !lead.archivedAt && onClaim/u);

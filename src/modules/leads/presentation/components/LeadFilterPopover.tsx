@@ -16,6 +16,7 @@ interface LeadFilterOwnerOption {
 interface LeadFilterPopoverProps {
   isOpen: boolean;
   serverKanban?: boolean;
+  serverTable?: boolean;
   onClose: () => void;
   owners: LeadFilterOwnerOption[];
   sources: LeadSource[];
@@ -48,6 +49,7 @@ interface LeadFilterPopoverProps {
 export const LeadFilterPopover: React.FC<LeadFilterPopoverProps> = ({
   isOpen,
   serverKanban = false,
+  serverTable = false,
   onClose,
   owners,
   sources,
@@ -113,6 +115,9 @@ export const LeadFilterPopover: React.FC<LeadFilterPopoverProps> = ({
       resetLabel={locale === "vi" ? "Đặt lại" : "Reset"}
       doneLabel={tx("common.done", locale === "vi" ? "Hoàn tất" : "Done")}
     >
+      {serverTable && <p className="mb-3 text-xs text-slate-600">{locale === "vi"
+        ? "Máy chủ sắp xếp theo cập nhật gần nhất. Hỗ trợ tìm kiếm, trạng thái làm việc và chủ sở hữu; tùy chọn khác sẽ hiển thị chưa khả dụng."
+        : "Server order is recently updated. Search, work state and owner are supported; other selections show an unavailable state."}</p>}
       <ListFilterGrid>
           <Select
             label={locale === "vi" ? "Sắp xếp" : "Sort"}
@@ -122,6 +127,7 @@ export const LeadFilterPopover: React.FC<LeadFilterPopoverProps> = ({
               setSort({ field, direction });
             }}
           >
+            {serverTable && <option value="updatedAt:desc">{locale === "vi" ? "Cập nhật gần nhất" : "Recently updated"}</option>}
             <option value="createdAt:desc">{locale === "vi" ? "Mới tạo gần nhất" : "Newest created"}</option>
             <option value="name:asc">{locale === "vi" ? "Tên A–Z" : "Name A–Z"}</option>
             <option value="score:desc">{locale === "vi" ? "Điểm cao nhất" : "Highest score"}</option>

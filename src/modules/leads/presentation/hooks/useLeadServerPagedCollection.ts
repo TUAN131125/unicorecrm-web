@@ -12,6 +12,7 @@ export function useLeadServerPagedCollection(options: {
   project(records: readonly Lead[]): void;
   evictProjection?: () => void;
   onReset?: () => void;
+  retainPreviousPage?: boolean;
 }) {
   const connected = isLeadConnectedApiRuntime();
   const loadPage = React.useCallback((query: ModuleListQuery, signal: AbortSignal) => (
@@ -28,6 +29,7 @@ export function useLeadServerPagedCollection(options: {
     ...(options.evictProjection === undefined ? {} : { evictProjection: options.evictProjection }),
     loadPage,
     errorCodePrefix: "LEADS",
+    ...(options.retainPreviousPage === undefined ? {} : { retainPreviousPage: options.retainPreviousPage }),
     ...(options.onReset === undefined ? {} : { onReset: options.onReset }),
   });
 

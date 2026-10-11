@@ -26,7 +26,7 @@ export interface LeadFiltersState {
   duplicate: boolean | null;
 }
 
-export type LeadSortField = "createdAt" | "name" | "score" | "nextFollowUpAt";
+export type LeadSortField = "updatedAt" | "createdAt" | "name" | "score" | "nextFollowUpAt";
 export interface LeadSortState {
   field: LeadSortField;
   direction: "asc" | "desc";
@@ -55,17 +55,17 @@ function compareNullable(a: string | number | undefined, b: string | number | un
   return String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: "base" });
 }
 
-export const useLeadFilters = (leads: Lead[], activeView: string, ownership: RecordOwnershipContext | null = null) => {
+export const useLeadFilters = (leads: Lead[], activeView: string, ownership: RecordOwnershipContext | null = null, defaultSort = DEFAULT_LEAD_SORT) => {
   const configuration = useWorkspaceOperationalConfiguration();
   const workspaceTimeZone = configuration.localeRegion.timezone;
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState<LeadFiltersState>(INITIAL_LEAD_FILTERS);
-  const [sort, setSort] = useState<LeadSortState>(DEFAULT_LEAD_SORT);
+  const [sort, setSort] = useState<LeadSortState>(defaultSort);
 
   const resetFilters = () => {
     setSearchTerm("");
     setFilters(INITIAL_LEAD_FILTERS);
-    setSort(DEFAULT_LEAD_SORT);
+    setSort(defaultSort);
   };
 
   const hasActiveFilters = useMemo(() => Boolean(

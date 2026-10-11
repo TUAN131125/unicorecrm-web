@@ -22,6 +22,7 @@ export interface UseServerPagedCollectionOptions<T> {
   loadPage(query: ModuleListQuery, signal: AbortSignal): Promise<AuthoritativePage<T>>;
   errorCodePrefix: string;
   onReset?: () => void;
+  retainPreviousPage?: boolean;
 }
 
 export interface ServerPagedCollectionState<T> {
@@ -74,7 +75,7 @@ export function useServerPagedCollection<T>(
     setPageState(1);
     setSnapshot((current) => evictProjection
       ? { state: "IDLE", scopeKey: options.scopeKey }
-      : current.page === undefined
+      : current.page === undefined || options.retainPreviousPage === false
         ? { state: "IDLE", scopeKey: options.scopeKey }
         : {
             state: "IDLE",
@@ -87,7 +88,7 @@ export function useServerPagedCollection<T>(
       else options.project([]);
     }
     options.onReset?.();
-  }, [options.evictProjection, options.project, options.onReset, options.scopeKey]);
+  }, [options.evictProjection, options.project, options.onReset, options.scopeKey, options.retainPreviousPage]);
 
   React.useLayoutEffect(() => {
     if (previousResetKeyRef.current === resetKey) return;
@@ -124,7 +125,7 @@ export function useServerPagedCollection<T>(
     const controller = new AbortController();
     controllerRef.current = controller;
     const requestedAt = new Date().toISOString();
-    const previousPage = snapshot.scopeKey === options.scopeKey ? snapshot.page : undefined;
+    const previousPage = options.retainPreviousPage !== false && snapshot.scopeKey === options.scopeKey ? snapshot.page : undefined;
     setSnapshot({
       state: "LOADING",
       scopeKey: options.scopeKey,
@@ -180,7 +181,7 @@ export function useServerPagedCollection<T>(
     } finally {
       if (requestVersion === requestVersionRef.current) controllerRef.current = undefined;
     }
-  }, [enabled, options.errorCodePrefix, options.loadPage, options.project, options.query, options.scopeKey, page, pageSize, snapshot.page, snapshot.state, snapshot.scopeKey]);
+  }, [enabled, options.errorCodePrefix, options.loadPage, options.project, options.query, options.scopeKey, options.retainPreviousPage, page, pageSize, snapshot.page, snapshot.state, snapshot.scopeKey]);
 
   React.useEffect(() => {
     if (enabled && snapshot.state === "IDLE") void load(false);
@@ -205,7 +206,7 @@ export function useServerPagedCollection<T>(
     controllerRef.current?.abort();
     controllerRef.current = undefined;
     setPageState(normalized);
-    setSnapshot((current) => current.page === undefined
+    setSnapshot((current) => current.page === undefined || options.retainPreviousPage === false
       ? { state: "IDLE", scopeKey: current.scopeKey }
       : {
           state: "IDLE",
@@ -213,7 +214,7 @@ export function useServerPagedCollection<T>(
           page: current.page,
           ...(current.loadedAt === undefined ? {} : { loadedAt: current.loadedAt }),
         });
-  }, [page]);
+  }, [page, options.retainPreviousPage]);
 
   const setPageSize = React.useCallback((nextSize: number) => {
     setPageSizeState(normalizePageSize(nextSize));

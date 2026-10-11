@@ -50,6 +50,8 @@ const PRESENTATION_COMPOSITIONS: Record<string, readonly string[]> = {
   ],
   "src/modules/leads/presentation/pages/LeadListPage.tsx": [
     "src/modules/leads/presentation/components/LeadListResults.tsx",
+    "src/modules/leads/presentation/hooks/useLeadConnectedTable.ts",
+    "src/modules/leads/presentation/model/connectedLeadTableQuery.ts",
   ],
   "src/modules/leads/presentation/pages/LeadDetailPage.tsx": [
     "src/modules/leads/presentation/hooks/useLeadDetailController.tsx",

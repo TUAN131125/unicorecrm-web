@@ -1,3 +1,4 @@
+import { readPresentationComposition } from "../../../scripts/lib/presentationCompositionSource.mts";
 import { repositoryRoot } from "../../../scripts/quality/core/repo-context.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -72,7 +73,7 @@ const expected = [
   ["src/modules/orders/presentation/views/OrderListView.tsx", /serverPagination\.connected/, /pageItems:\s*filteredOrders/],
 ] as const;
 for (const [relativePath, ...patterns] of expected) {
-  const source = fs.readFileSync(path.join(root, relativePath), "utf8");
+  const source = readPresentationComposition(path.join(root, relativePath), "utf8");
   for (const pattern of patterns) assert.match(source, pattern, `${relativePath} is missing ${pattern}.`);
 }
 

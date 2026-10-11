@@ -7,7 +7,7 @@ import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { Archive, Plus, CheckCircle2, Target, ArrowUpRight, UserPlus, RefreshCw, Tag, Sliders, Printer, FileSpreadsheet } from "lucide-react";
 import { normalizeApplicationError, type CRMActivity } from "@/shared/domain";
 import type { Lead, LeadSource, LeadCampaign } from "../../domain/model/lead.types";
-import { isLeadOperationAvailable, LEAD_OPERATION, replaceLeads } from "../../public/leads";
+import { isLeadOperationAvailable, LEAD_OPERATION } from "../../public/leads";
 import { LeadWorkState } from "../../domain/model/leadLifecycle.canonical";
 
 import { useI18n } from "@/i18n";
@@ -43,7 +43,9 @@ import { useLeadDialogs } from "../hooks/useLeadDialogs";
 import { useLeads } from "../hooks/useLeads";
 import { useLeadActions } from "../hooks/useLeadActions";
 import { useLeadKanbanWindows } from "../hooks/useLeadKanbanWindows";
-import { useLeadServerPagedCollection } from "../hooks/useLeadServerPagedCollection";
+import { useLeadConnectedTable } from "../hooks/useLeadConnectedTable";
+import { CONNECTED_LEAD_SORT, resolveConnectedLeadTableQuery } from "../model/connectedLeadTableQuery";
+import { LeadTableUnavailable } from "../components/LeadTableUnavailable";
 import { registerUnsavedWork } from "@/platform/unsaved-work";
 import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
 import { useLeadReferenceData } from "../hooks/useLeadReferenceData";
@@ -138,14 +140,15 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
   };
 
   // 1. Saved Views Custom Hook
-  const savedViews = useLeadSavedViews(DEFAULT_LEAD_SAVED_VIEW_SNAPSHOT, queueOnly ? "unassigned" : "all");
+  const defaultSort = fullCollectionQuery.connected ? CONNECTED_LEAD_SORT : DEFAULT_LEAD_SORT;
+  const savedViews = useLeadSavedViews({ ...DEFAULT_LEAD_SAVED_VIEW_SNAPSHOT, sort: defaultSort }, queueOnly ? "unassigned" : "all");
 
   // 2. Filters Custom Hook
-  const filters = useLeadFilters(scopedLeads, savedViews.activeView, ownership);
+  const filters = useLeadFilters(scopedLeads, savedViews.activeView, ownership, defaultSort);
   useEffect(() => {
     if (globalSearchTerm) filters.setSearchTerm(globalSearchTerm);
   }, [globalSearchTerm]);
-  const leadServerQuery = useMemo(() => {
+  const kanbanServerQuery = useMemo(() => {
     const stateFromFilter = Object.values(LeadWorkState).includes(filters.filters.status as LeadWorkState)
       ? filters.filters.status as LeadWorkState
       : filters.filters.status ? LeadWorkState.CLOSED : undefined;
@@ -174,25 +177,29 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
       } } : ownerId ? { filters: { ownerId } } : {}),
     };
   }, [filters.filters.ownerId, filters.filters.status, filters.searchTerm, ownership?.memberId, savedViews.activeView]);
-  const serverPagination = useLeadServerPagedCollection({
-    scopeKey: workspace.workspaceId,
-    enabled: viewMode === "table",
-    query: leadServerQuery,
-    initialPageSize: 50,
-    project: projectServerLeadPage,
-    evictProjection: clearLeadProjection,
+  const savedOwnershipScope = savedViews.customViews.find(view => view.key === savedViews.activeView)?.presentation?.ownershipScope;
+  const tableResolution = resolveConnectedLeadTableQuery({
+    search: filters.searchTerm, filters: filters.filters, sort: filters.sort, activeView: savedViews.activeView,
+    ...(ownership?.memberId ? { memberId: ownership.memberId } : {}), canReadQueue,
+    ...(savedOwnershipScope ? { savedOwnershipScope } : {}),
   });
+  const serverPagination = useLeadConnectedTable({ enabled: viewMode === "table", resolution: tableResolution,
+    intent: [savedViews.activeView, filters.searchTerm, filters.filters, filters.sort, savedOwnershipScope],
+  });
+  const leadServerQuery = viewMode === "table" && tableResolution.kind === "supported" ? tableResolution.query : kanbanServerQuery;
+  const tableUnavailable = serverPagination.connected && viewMode === "table" && tableResolution.kind === "unavailable";
   const kanbanFilterUnavailable = Boolean(
     filters.filters.source || filters.filters.campaignId || filters.filters.nextFollowUpAt
     || filters.filters.overdue !== null || filters.filters.qualificationOutcome || filters.filters.recontactAt
     || filters.filters.converted || filters.filters.duplicate !== null
     || (filters.filters.status && !Object.values(LeadWorkState).includes(filters.filters.status as LeadWorkState))
-    || filters.sort.field !== DEFAULT_LEAD_SORT.field || filters.sort.direction !== DEFAULT_LEAD_SORT.direction
+    || ![DEFAULT_LEAD_SORT.field, CONNECTED_LEAD_SORT.field].includes(filters.sort.field) || filters.sort.direction !== DEFAULT_LEAD_SORT.direction
     || (!savedViews.activeView.startsWith("custom_") && !["all", "my_leads", "new", "contacted", "qualified", "nurture", "disqualified", "unassigned"].includes(savedViews.activeView))
+    || (savedOwnershipScope !== undefined && savedOwnershipScope !== "ALLOWED")
   );
   const kanban = useLeadKanbanWindows({
-    scopeKey: JSON.stringify([workspace.workspaceId, ownership?.memberId, ownership?.dataScope]),
-    enabled: viewMode === "kanban", activeView: savedViews.activeView, query: leadServerQuery, unavailable: kanbanFilterUnavailable,
+    scopeKey: JSON.stringify([workspace.workspaceId, access.accountId, access.membershipId, ownership?.memberId, ownership?.dataScope, access.authorityRevision]),
+    enabled: viewMode === "kanban", activeView: savedViews.activeView, query: kanbanServerQuery, unavailable: kanbanFilterUnavailable,
   });
   const leads = serverPagination.connected
     ? viewMode === "table" ? serverPagination.items : kanban.items
@@ -220,10 +227,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
     && isLeadOperationAvailable(LEAD_OPERATION.SCHEDULE_FOLLOW_UP_BATCH);
   const canArchiveLeadBatch = access.can(CAPABILITIES.LEADS_DELETE)
     && isLeadOperationAvailable(LEAD_OPERATION.ARCHIVE_BATCH);
-  const serverPageItems = useMemo(
-    () => savedViews.activeView === "unassigned" ? serverPagination.items : filters.filterLeads(serverPagination.items),
-    [filters.filterLeads, savedViews.activeView, serverPagination.items],
-  );
+  const serverPageItems = serverPagination.items;
   const localPagination = useLeadPagination(filters.filteredLeads, 50);
   const pagination = serverPagination.connected && viewMode === "table"
     ? {
@@ -243,8 +247,8 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
   const leadQuery = viewMode === "table" ? serverPagination : kanban.connected ? kanban : fullCollectionQuery;
 
   // 3. Selection Custom Hook
-  const selection = useLeadSelection();
-  const queueClaim = useLeadQueueClaim({ enabled: canClaim, locale, refresh: serverPagination.refresh, notify: showToast,
+  const selection = useLeadSelection(serverPagination.connected ? serverPagination.scopeKey : workspace.workspaceId);
+  const queueClaim = useLeadQueueClaim({ enabled: canClaim, locale, refresh: serverPagination.refresh, notify: showToast, scopeKey: serverPagination.scopeKey, authorityScopeKey: JSON.stringify([workspace.workspaceId, access.accountId, access.membershipId, ownership?.memberId, access.authorityRevision]),
     onClaimed: (leadId) => selection.toggleSelection(leadId, false),
   });
   // Query/page changes may temporarily retain the previous response; never relabel it.
@@ -944,6 +948,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
         columnsLabel={locale === "vi" ? "Cột" : "Columns"}
         filtersPanel={(
           <LeadFilterPopover
+            serverTable={serverPagination.connected && viewMode === "table"}
             serverKanban={kanban.connected && viewMode === "kanban"}
             isOpen={dialogs.isFilterOpen}
             onClose={() => dialogs.setIsFilterOpen(false)}
@@ -985,7 +990,9 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
               setIsViewDropdownOpen={savedViews.setIsViewDropdownOpen}
               isAddViewOpen={savedViews.isAddViewOpen}
               setIsAddViewOpen={savedViews.setIsAddViewOpen}
-              leadsCount={savedViews.activeView === "unassigned" ? pagination.totalItems : scopedLeads.length}
+              leadsCount={serverPagination.connected ? pagination.totalItems : scopedLeads.length}
+              serverTable={serverPagination.connected && viewMode === "table"}
+              serverCountReady={!tableUnavailable && !serverPagination.loading && !serverPagination.error}
               onDeleteCustomView={handleDeleteSavedView}
               onAddViewClick={savedViews.openCreateView}
             />
@@ -1070,7 +1077,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
       </ListBulkActionBar>
 
       {/* 4. LEAD RESULT WORKSPACE */}
-      <AuthoritativeQueryBoundary
+      {tableUnavailable ? <LeadTableUnavailable onReset={() => handleSelectSavedView("all")} /> : <AuthoritativeQueryBoundary
         query={leadQuery}
         hasData={pagination.pageItems.length > 0}
         loadingTitleVi="Đang tải danh sách Lead"
@@ -1139,7 +1146,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
         }}
         onViewDetails={(leadId) => navigate(`/leads/${leadId}`, { state: { returnTo: getReturnToUrl(viewMode), tab: "overview" } })}
       />
-      </AuthoritativeQueryBoundary>
+      </AuthoritativeQueryBoundary>}
 
       {leadToAssign && <LeadOwnerAssignDialog
         key={leadToAssign.id}
@@ -1350,10 +1357,3 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
     </ListPageFrame>
   );
 };
-
-// A page is its own read snapshot, never a global repository collection.
-function projectServerLeadPage(_records: readonly Lead[]): void {}
-
-function clearLeadProjection(): void {
-  replaceLeads([]);
-}

@@ -17,6 +17,8 @@ interface LeadSavedViewSelectorProps {
   isViewDropdownOpen: boolean;
   setIsViewDropdownOpen: (open: boolean) => void;
   leadsCount: number;
+  serverTable?: boolean;
+  serverCountReady?: boolean;
   onDeleteCustomView: (key: string) => void;
   onAddViewClick?: () => void;
   isAddViewOpen?: boolean;
@@ -30,6 +32,8 @@ export const LeadSavedViewSelector: React.FC<LeadSavedViewSelectorProps> = ({
   isViewDropdownOpen,
   setIsViewDropdownOpen,
   leadsCount,
+  serverTable = false,
+  serverCountReady = true,
   onDeleteCustomView,
   onAddViewClick = () => {},
   isAddViewOpen: _isAddViewOpen,
@@ -105,9 +109,9 @@ export const LeadSavedViewSelector: React.FC<LeadSavedViewSelectorProps> = ({
                       <span>{v.icon === "all" ? "📂" : v.icon === "my" ? "👤" : v.icon === "team" ? "👥" : "✅"}</span>
                       <span className="crm-text-wrap">{getMisaViewLabel(v)}</span>
                     </div>
-                    <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-bold shrink-0">
+                    {(!serverTable || (serverCountReady && activeView === v.key)) && <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-bold shrink-0">
                       {leadsCount}
-                    </span>
+                    </span>}
                   </button>
                 ))}
               </div>

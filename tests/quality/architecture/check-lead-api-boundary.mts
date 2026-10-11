@@ -1,3 +1,4 @@
+import { readPresentationComposition } from "../../../scripts/lib/presentationCompositionSource.mts";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
@@ -44,7 +45,9 @@ for (const file of leadSourceFiles) {
 }
 assert.deepEqual(forbidden, [], `Lead API boundary violations:\n${forbidden.join("\n")}`);
 
-const listPage = read("src/modules/leads/presentation/pages/LeadListPage.tsx");
+const listPage = readPresentationComposition(path.join(root, "src/modules/leads/presentation/pages/LeadListPage.tsx"), "utf8");
+assert.match(read("src/modules/leads/presentation/pages/LeadListPage.tsx"), /useLeadConnectedTable/u, "Page must use the dedicated table controller");
+assert.match(read("src/modules/leads/presentation/hooks/useLeadConnectedTable.ts"), /useLeadServerPagedCollection/u, "Controller must preserve the dedicated Lead query boundary");
 assert.match(listPage, /useLeadServerPagedCollection/u);
 assert.doesNotMatch(listPage, /useServerPagedModuleCollection/u);
 const detailController = read("src/modules/leads/presentation/hooks/useLeadDetailController.tsx");

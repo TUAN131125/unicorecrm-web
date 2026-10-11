@@ -185,6 +185,9 @@ try {
   assert.deepEqual(windowCalls.slice(beforeRetry), ["CONTACTING"], "Retry only requests the failed column");
   assert.equal(contactingColumn.querySelector('[role="alert"]'), null);
   console.log("Lead List/Table and Kanban actual-surface disclosure, drag, independent Load More/retry regression PASS");
+  await act(async () => root.render(null));
+  const { checkLeadServerAuthoritativeTable } = await import("../../fixtures/runtime/check-lead-server-authoritative-table.mts");
+  await checkLeadServerAuthoritativeTable();
 } finally {
   await act(async () => root.unmount());
   getLeadCollectionResource().reset();
