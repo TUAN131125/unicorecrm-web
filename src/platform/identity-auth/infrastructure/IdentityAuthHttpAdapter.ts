@@ -69,6 +69,7 @@ const AUTH_FAILURE_CODES = new Set<AuthFailureCode>([
  * keeps only the short-lived access token in memory.
  */
 export class IdentityAuthHttpAdapter implements ConnectedAuthGateway {
+  private credentialGeneration = 0;
   private accessToken: string | undefined;
   private accessTokenExpiresAt: string | undefined;
 
@@ -81,19 +82,20 @@ export class IdentityAuthHttpAdapter implements ConnectedAuthGateway {
     const result = await this.refreshSession(options);
     if (result.ok) return result;
     if (["SESSION_EXPIRED", "SESSION_REVOKED", "TOKEN_INVALID", "TOKEN_EXPIRED", "INVALID_CREDENTIALS"].includes(result.code)) {
-      this.clearCredentials();
       return { ok: true, value: null };
     }
     return result;
   }
 
   async signIn(command: SignInCommand, options: AuthCommandOptions): Promise<AuthResult<ConnectedSignInOutcome>> {
+    const generation = ++this.credentialGeneration;
     try {
       const response = await this.api.signIn<AuthenticatedSessionResponse | MfaChallengeResponse>({
         email: command.email.trim(),
         password: command.password,
         ...(command.deviceLabel ? { deviceLabel: command.deviceLabel } : {}),
       }, requestOptions(options));
+      if (generation !== this.credentialGeneration) return retiredAuthentication();
       if (isMfaChallengeResponse(response)) {
         this.clearCredentials();
         return {
@@ -113,11 +115,13 @@ export class IdentityAuthHttpAdapter implements ConnectedAuthGateway {
   }
 
   async verifyMfa(command: VerifyMfaCommand, options: AuthCommandOptions): Promise<AuthResult<AuthSession>> {
+    const generation = ++this.credentialGeneration;
     try {
       const response = await this.api.verifyMfa(command.challengeId, {
         code: command.code,
         ...(command.deviceLabel ? { deviceLabel: command.deviceLabel } : {}),
       }, requestOptions(options));
+      if (generation !== this.credentialGeneration) return retiredAuthentication();
       return { ok: true, value: this.acceptGrant(response) };
     } catch (error) {
       return authFailure(error);
@@ -134,22 +138,26 @@ export class IdentityAuthHttpAdapter implements ConnectedAuthGateway {
   }
 
   async refreshSession(options: AuthCommandOptions): Promise<AuthResult<AuthSession>> {
+    const generation = this.credentialGeneration;
     try {
       const response = await this.api.refreshSession({}, requestOptions(options));
+      if (generation !== this.credentialGeneration) return retiredAuthentication();
       return { ok: true, value: this.acceptGrant(response) };
     } catch (error) {
+      if (generation !== this.credentialGeneration) return retiredAuthentication();
       this.clearCredentials();
       return authFailure(error);
     }
   }
 
   async signOut(command: SignOutCommand, options: AuthCommandOptions): Promise<AuthResult<SessionRevocationResult>> {
+    const generation = this.credentialGeneration;
     try {
       const response = await this.api.signOut(command.reason ? { reason: command.reason } : {}, requestOptions(options));
-      this.clearCredentials();
+      if (generation === this.credentialGeneration) this.clearCredentials();
       return { ok: true, value: mapRevocation(response) };
     } catch (error) {
-      this.clearCredentials();
+      if (generation === this.credentialGeneration) this.clearCredentials();
       return authFailure(error);
     }
   }
@@ -228,13 +236,15 @@ export class IdentityAuthHttpAdapter implements ConnectedAuthGateway {
   getAccessToken(): string | undefined {
     if (!this.accessToken || !this.accessTokenExpiresAt) return undefined;
     if (Date.parse(this.accessTokenExpiresAt) <= Date.now()) {
-      this.clearCredentials();
+      this.accessToken = undefined;
+      this.accessTokenExpiresAt = undefined;
       return undefined;
     }
     return this.accessToken;
   }
 
   clearCredentials(): void {
+    this.credentialGeneration += 1;
     this.accessToken = undefined;
     this.accessTokenExpiresAt = undefined;
   }
@@ -373,4 +383,8 @@ function mapAuthFailureCode(error: ApiClientError): AuthFailureCode {
 export function createAuthAttemptId(purpose: string): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return `auth-${purpose}-${crypto.randomUUID()}`;
   return `auth-${purpose}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+}
+
+function retiredAuthentication(): AuthResult<never> {
+  return { ok: false, code: "SESSION_REVOKED", message: "The authentication operation belongs to a retired session." };
 }

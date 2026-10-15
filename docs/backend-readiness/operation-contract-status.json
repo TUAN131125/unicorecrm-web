@@ -1900,6 +1900,13 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "searchProductSelections",
+      "method": "GET",
+      "path": "/products/selection",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "sendInvoice",
       "method": "POST",
       "path": "/invoices/{invoiceId}/send",

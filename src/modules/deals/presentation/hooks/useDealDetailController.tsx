@@ -334,7 +334,7 @@ export function useDealDetailController({
   // Opens Product Picker modal instead of inserting random placeholder products
   const handleAddSampleItem = () => {
     if (isTerminal) return;
-    setIsProductPickerOpen(true);
+    triggerToast("error", locale === "vi" ? "Dòng thương mại chưa được hỗ trợ. Hãy thêm sản phẩm quan tâm trong biểu mẫu cơ hội." : "Commercial lines are unavailable. Add interested products in the opportunity form.");
   };
 
   // Deletes line item

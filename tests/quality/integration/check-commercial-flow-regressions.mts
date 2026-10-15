@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import ts from "typescript";
 import fs from "node:fs";
 import path from "node:path";
 import { validateEmail, validatePhone } from "@/platform/contact-data";
@@ -84,19 +85,59 @@ assert.ok(picker.includes("Search by product name or SKU") && picker.includes("O
 assert.equal(picker.includes("DANH MỤC KHẢ DỤNG"), false, "The retired heavy product-picker heading must not return.");
 
 const dealForm = readPresentationComposition(path.resolve("src/modules/deals/presentation/components/DealFormModal.tsx"), "utf8");
-assert.ok(dealForm.includes("!draft.demandSummary.trim() && draft.lineItems.length === 0"), "Deal intent must require either a need statement or selected products, not both.");
+// Execute the production intent-validation branch, rather than matching its spelling.
+// This is focused branch coverage, not connected form/API acceptance.
+const dealAst = ts.createSourceFile("DealFormModal.tsx", dealForm, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+const intentBranches: ts.IfStatement[] = [];
+function findIntentBranch(node: ts.Node): void {
+  if (ts.isIfStatement(node) && ts.isBlock(node.thenStatement)) {
+    const assignsDemandError = node.thenStatement.statements.some(statement =>
+      ts.isExpressionStatement(statement) && ts.isBinaryExpression(statement.expression)
+      && statement.expression.operatorToken.kind === ts.SyntaxKind.EqualsToken
+      && ts.isPropertyAccessExpression(statement.expression.left)
+      && statement.expression.left.expression.getText(dealAst) === "nextErrors"
+      && statement.expression.left.name.text === "demandSummary");
+    if (assignsDemandError) intentBranches.push(node);
+  }
+  ts.forEachChild(node, findIntentBranch);
+}
+findIntentBranch(dealAst);
+assert.equal(intentBranches.length, 1, "Exactly one production demand/interest validation branch must be exercised.");
+const branchJs = ts.transpileModule(intentBranches[0]!.getText(dealAst), {
+  compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext },
+}).outputText;
+const runIntentBranch = new Function("draft", "nextErrors", "vi", branchJs) as
+  (draft: Record<string, unknown>, errors: Record<string, string>, vi: boolean) => void;
+for (const [name, fields, rejected] of [
+  ["empty intent", {}, true],
+  ["whitespace intent", { demandSummary: "  ", notes: "  " }, true],
+  ["need without products", { demandSummary: "Replace CRM" }, false],
+  ["persisted profile notes without products", { notes: "Existing customer need" }, false],
+  ["interest without separate description", { interestedProductIds: ["product-2"] }, false],
+  ["need and interest", { demandSummary: "Replace CRM", interestedProductIds: ["product-2"] }, false],
+  ["commercial lines cannot substitute for interest", { lineItems: [{ productId: "product-2", quantity: 1 }] }, true],
+  ["removing final interest requires description", { interestedProductIds: [] }, true],
+] as const) {
+  const draft = { demandSummary: "", notes: "", interestedProductIds: [], lineItems: [], amountDecimal: "123.456789", currency: "USD", ...fields };
+  const before = JSON.stringify(draft);
+  const errors: Record<string, string> = {};
+  runIntentBranch(draft, errors, false);
+  assert.equal(Boolean(errors.demandSummary), rejected, name);
+  assert.equal(Boolean(errors.products), rejected, `${name}: product error agrees`);
+  assert.equal(JSON.stringify(draft), before, `${name}: validation preserves IDs and exact amount/currency`);
+}
+assert.ok(dealForm.includes('<DealInterestedProductsPicker ids={draft.interestedProductIds}'), "Deal selection must bind canonical interested IDs to the authorized catalog picker.");
 assert.ok(dealForm.includes("createFollowUpTask") && dealForm.includes("Tạo công việc theo dõi sau khi lưu"), "Follow-up must be an optional Task owned by the Tasks workflow.");
 assert.equal(/expectedCloseDate[^\n]*required/.test(dealForm), false, "Expected close date must remain optional in early opportunity creation.");
 
 for (const [relativePath, context] of [
   ["src/modules/leads/presentation/components/LeadFormView.tsx", 'context="lead_interest"'],
-  ["src/workflows/lead-qualification/presentation/pages/LeadQualificationPage.tsx", 'context="lead_interest"'],
-  ["src/modules/deals/presentation/components/DealFormModal.tsx", 'context="deal"'],
+  ["src/workflows/lead-qualification/presentation/views/LeadQualificationView.tsx", '<DealInterestedProductsPicker guidanceId="leads.qualification.products" ids={interestedProductIds} onChange={setInterestedProductIds}'],
   ["src/modules/quotes/presentation/components/QuoteBuilderProductPicker.tsx", 'context="quote"'],
   ["src/modules/orders/presentation/views/OrderFormView.tsx", 'context="order"'],
 ] as const) {
   const source = readPresentationComposition(path.resolve(relativePath), "utf8");
-  assert.ok(source.includes(context), `${relativePath} must use the shared ProductPickerModal context ${context}.`);
+  assert.ok(source.includes(context), `${relativePath} must retain the authorized product-selection binding ${context}.`);
 }
 
 console.log("Commercial flow regression contracts: PASS");

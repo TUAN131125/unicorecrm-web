@@ -106,3 +106,6 @@ assert.deepEqual(
 );
 
 console.log("Auth and session contracts: OK — demo MFA/session semantics and connected HTTP boundary verified");
+
+const { runSharedAuthorityRecoveryRegression } = await import("../../fixtures/runtime/check-shared-authority-recovery.mts");
+await runSharedAuthorityRecoveryRegression();

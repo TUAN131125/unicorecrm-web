@@ -4,7 +4,7 @@
   "openapiVersion": "3.1.0",
   "contractVersion": "0.24.0-contract.0",
   "specPath": "docs/api/openapi.json",
-  "specSha256": "7aaf0b269de362b8bef6b6f2e783a660ef231e599a174fdfecb1e0f3b4d5ec5e",
+  "specSha256": "53ad96db5875b7fb38ef9a4a074b39b22ac60c0918df2f981530609865bbd279",
   "ownershipPath": "scripts/api/openapi/client-ownership.json",
   "coverageLedgerPath": "docs/api/operation-coverage-ledger.json",
   "breakingBaselinePath": "docs/api/openapi-breaking-baseline.json",
@@ -106,7 +106,7 @@
       "output": "src/platform/api/generated/commercialApi.ts",
       "className": "CommercialApiClient",
       "requestOptionsName": "CommercialRequestOptions",
-      "operationCount": 164
+      "operationCount": 165
     },
     {
       "id": "workspace-configuration",
@@ -3973,6 +3973,20 @@
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "leads.update"
+    },
+    {
+      "operationId": "searchProductSelections",
+      "method": "GET",
+      "path": "/products/selection",
+      "boundedContext": "Products",
+      "ownerModule": "products",
+      "generatedClientId": "commercial",
+      "generatedMethod": "searchProductSelections",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "products.read"
     },
     {
       "operationId": "sendInvoice",

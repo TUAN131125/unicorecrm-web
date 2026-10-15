@@ -199,3 +199,34 @@ console.log("HTTP/API foundation: PASS (OpenAPI runtime validation, auth/workspa
 
 function problem(code: string, status: number, retryable: boolean, correlationId: string) { return { type: "urn:unicorecrm:problem", title: code, status, code, retryable, correlationId }; }
 function jsonResponse(payload: unknown, status = 200): Response { return new Response(JSON.stringify(payload), { status, headers: { "Content-Type": status >= 400 ? "application/problem+json" : "application/json" } }); }
+
+// Preflight recovery is before the first send, with the same command intent.
+let recoveryToken: string | undefined, recoveryOwner = "A:1", recoveryWorkspace = "workspace-A";
+let refreshCount = 0, sendCount = 0, finishRefresh: (() => void) | undefined;
+const sentIntents: HttpRequest[] = [];
+const recoveryClient = new FetchHttpClient({ baseUrl: "https://api.example.test", accessTokenProvider: { getAccessToken: () => recoveryToken },
+  workspaceIdProvider: { getWorkspaceId: () => recoveryWorkspace }, getAuthorityKey: () => recoveryOwner,
+  onUnauthorized: async () => { refreshCount++; await new Promise<void>((resolve) => { finishRefresh = resolve; }); recoveryToken = "fresh"; return true; },
+  fetchImplementation: async (_url, init) => { sendCount++; assert.equal(new Headers(init?.headers).get("Authorization"), "Bearer fresh"); return jsonResponse({ ok: true }); },
+});
+const readRequest: HttpRequest = { operationId: "fixtureRead", method: "GET", path: "/fixture", contractAuthority: "semantic-extension" };
+const concurrentRead = recoveryClient.request(readRequest), secondRead = recoveryClient.request(readRequest);
+await new Promise((resolve) => setTimeout(resolve, 0)); assert.equal(refreshCount, 1); assert.equal(sendCount, 0); assert(finishRefresh); finishRefresh();
+await Promise.all([concurrentRead, secondRead]); assert.equal(sendCount, 2);
+recoveryToken = undefined;
+const stableWrite: HttpRequest = { operationId: "fixtureWrite", method: "POST", path: "/fixture", body: { marker: "same-intent" }, idempotencyKey: "intent-fixed", expectedVersion: 7, retry: "never", contractAuthority: "semantic-extension" };
+const writeRecovery = recoveryClient.request(stableWrite); sentIntents.push(structuredClone(stableWrite));
+await new Promise((resolve) => setTimeout(resolve, 0)); assert(finishRefresh); finishRefresh(); await writeRecovery;
+assert.deepEqual(stableWrite, sentIntents[0]); assert.equal(sendCount, 3, "Preflight may send one first write, never duplicate it");
+recoveryToken = undefined;
+const retiredRequest = recoveryClient.request(readRequest); await new Promise((resolve) => setTimeout(resolve, 0)); recoveryOwner = "B:2"; assert(finishRefresh); finishRefresh();
+await assert.rejects(retiredRequest, (e: unknown) => e instanceof ApiClientError && e.code === "REQUEST_CANCELLED"); assert.equal(sendCount, 3);
+recoveryToken = undefined;
+const changedWorkspace = recoveryClient.request(readRequest); await new Promise((resolve) => setTimeout(resolve, 0)); recoveryWorkspace = "workspace-B"; assert(finishRefresh); finishRefresh();
+await assert.rejects(changedWorkspace, (e: unknown) => e instanceof ApiClientError && e.code === "REQUEST_CANCELLED"); assert.equal(sendCount, 3);
+recoveryToken = undefined;
+const abortRefresh = new AbortController(); const cancelledRefresh = recoveryClient.request({ ...readRequest, signal: abortRefresh.signal });
+await new Promise((resolve) => setTimeout(resolve, 0)); abortRefresh.abort();
+await assert.rejects(cancelledRefresh, (e: unknown) => e instanceof ApiClientError && e.code === "REQUEST_CANCELLED"); assert(finishRefresh); finishRefresh();
+assert.equal(sendCount, 3);
+console.log("HTTP preflight recovery: concurrent reads, first-send write, retired actor/workspace and cancellation PASS.");

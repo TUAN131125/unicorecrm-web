@@ -1360,6 +1360,11 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "searchProductSelections",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "sendInvoice",
       "policy": "IF_MATCH_REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"

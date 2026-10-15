@@ -29,3 +29,5 @@ export type { RelationshipActivityAction, RelationshipActivityDraft, Relationshi
 export { useTasksAuthoritative } from "../presentation/hooks/useTasksAuthoritative";
 
 export { getScopedTaskCollectionResource, getActivityCollectionResource } from "../application/vertical-slice/taskAuthoritativeQueries";
+
+export { getTaskReadAuthorityScope } from "../application/vertical-slice/taskAuthoritativeQueries";

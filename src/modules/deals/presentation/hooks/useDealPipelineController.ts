@@ -1,3 +1,4 @@
+import { DealSaveCheckpoint } from "../model/dealSaveCheckpoint";
 import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import type { Deal, DealActivity, DealForecastCategory } from "../../domain/model/deal.types";
@@ -27,7 +28,7 @@ import { ensureDealNextActionTask, isWorkActivationUnavailable } from "@/workflo
 import { notifyProduct, requestConfirmation, requestDecision, requestTextInput } from "@/components/feedback/ProductDialogService";
 import { CAPABILITIES } from "@/platform/access-control";
 import { filterRuntimeRecordsByOwnership, useRecordOwnershipContext, type OwnershipScopeView } from "@/platform/record-ownership";
-import { mapSelectedPickerItemsToDealLineItems, type DealFormDraft } from "../components/DealFormModal";
+import { type DealFormDraft } from "../components/DealFormModal";
 import { createCreateCommandTarget, createDurableId } from "@/shared/ids";
 import { getWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import { getAuthSessionSnapshot } from "@/platform/identity-auth";
@@ -299,41 +300,11 @@ export function useDealPipelineController() {
 
   // Add Deal action
   const handleAddDealSubmit = async (form: DealFormDraft, _opening: Deal | null, intentId: string): Promise<boolean> => {
-    const normalizedName = form.customerName.trim().toLowerCase();
-    const organization = getOrganizationAccountsSnapshot().find((account) =>
-      [account.displayName, account.legalName].some((name) => name?.trim().toLowerCase() === normalizedName),
-    );
-    const contact = getContactsSnapshot().find((item) =>
-      [item.fullName, item.name].some((name) => name?.trim().toLowerCase() === normalizedName),
-    );
-    const buyerRef = organization
-      ? { type: "ORGANIZATION_ACCOUNT" as const, id: organization.id }
-      : contact
-        ? { type: "CONTACT" as const, id: contact.id }
-        : undefined;
-    const customer = buyerRef ? findCustomerByRelationshipRefSnapshot(buyerRef) : undefined;
-    const customerDisplay = customer ? getCustomerPresentationRecordSnapshot(customer.id) : undefined;
-    const relationship = buyerRef
-      ? {
-          buyerRef,
-          organizationAccountId: organization?.id,
-          organizationAccountName: organization?.displayName,
-          contactId: contact?.id,
-          contactName: contact?.fullName,
-          customerId: customer?.id,
-          customerName: customerDisplay?.displayName,
-        }
-      : undefined;
-
-    if (!relationship) {
-      await requestDecision({
-        title: locale === "vi" ? "Chưa thể tạo cơ hội" : "Opportunity cannot be created",
-        message: locale === "vi" ? "Không tìm thấy người liên hệ hoặc doanh nghiệp phù hợp. Hãy liên kết khách hàng trước khi tạo cơ hội." : "No matching contact or organization was found. Link the customer before creating the opportunity.",
-        tone: "warning",
-        actions: [{ id: "back", label: locale === "vi" ? "Quay lại biểu mẫu" : "Back to form", variant: "secondary" }],
-      });
-      return false;
-    }
+    if (!form.buyerRef) return false;
+    const relationship = {
+      buyerRef: form.buyerRef,
+      ...(form.buyerRef.type === "CONTACT" ? { contactId: form.buyerRef.id, contactName: form.customerName } : { organizationAccountId: form.buyerRef.id, organizationAccountName: form.customerName }),
+    };
 
     const selectedStage = stageConfigs.find((stage) => stage.code === form.stage);
     if (selectedStage?.category === "won" || selectedStage?.category === "lost") {
@@ -369,6 +340,7 @@ export function useDealPipelineController() {
       buyerRef: relationship.buyerRef,
       ownerId: form.ownerId,
       amount: form.amount,
+      amountDecimal: form.amountDecimal,
       expectedCloseDate: form.expectedCloseDate,
       nextActionAt,
       nextActionSummary: form.createFollowUpTask ? form.nextActionSummary : undefined,
@@ -386,7 +358,7 @@ export function useDealPipelineController() {
       return false;
     }
 
-    const lineItems = mapSelectedPickerItemsToDealLineItems(form.lineItems);
+    const lineItems: Deal["lineItems"] = [];
     const dealId = `${intentId}:deal`;
     const createdOutcome = await createDealCommand({
       id: dealId,
@@ -394,6 +366,7 @@ export function useDealPipelineController() {
       ...relationship,
       stage: form.stage || DealStage.DISCOVERY,
       amount: form.amount,
+      amountDecimal: form.amountDecimal,
       currency: form.currency,
       opportunityScore: form.probability,
       ownerId: form.ownerId || ownership?.memberId || "unassigned",
@@ -411,7 +384,7 @@ export function useDealPipelineController() {
       } : {}),
       createdAt: now,
       updatedAt: now,
-      interestedProducts: form.lineItems.map((item) => item.product.id),
+      interestedProducts: [...form.interestedProductIds],
       lineItems,
       activities: [{
         id: createDurableId("deal_activity_created"),
@@ -456,8 +429,20 @@ export function useDealPipelineController() {
   };
 
   // Save changes to opportunity
+  const saveCheckpoint = React.useRef(new DealSaveCheckpoint());
   const handleEditDealSubmit = async (form: DealFormDraft, opening: Deal | null, intentId: string): Promise<boolean> => {
     if (!opening) return false;
+    if (saveCheckpoint.current.hasConflict()) {
+      const confirmed = await requestConfirmation({
+        title: locale === "vi" ? "Xác nhận phiên bản mới" : "Confirm the current version",
+        confirmLabel: locale === "vi" ? "Áp dụng phần chưa lưu" : "Apply remaining changes",
+        cancelLabel: locale === "vi" ? "Giữ bản nháp" : "Keep draft",
+        message: locale === "vi" ? "Một lệnh bị từ chối do phiên bản thay đổi. Những phần đã lưu sẽ không chạy lại. Tiếp tục áp dụng phần chưa lưu từ bản nháp lên phiên bản hiện tại?" : "A command was rejected because the version changed. Committed steps will not run again. Apply the remaining draft fields to the current version?",
+        tone: "warning",
+      });
+      if (!confirmed) return false;
+      await saveCheckpoint.current.confirmConflict(opening.id);
+    }
     const nextActionAt = form.createFollowUpTask && form.nextActionAt
       ? new Date(form.nextActionAt).toISOString()
       : undefined;
@@ -479,6 +464,7 @@ export function useDealPipelineController() {
       name: form.name,
       ownerId: form.ownerId,
       amount: form.amount,
+      amountDecimal: form.amountDecimal,
       expectedCloseDate: form.expectedCloseDate,
       nextActionAt,
       nextActionSummary: form.createFollowUpTask ? form.nextActionSummary : undefined,
@@ -526,83 +512,7 @@ export function useDealPipelineController() {
       if (!handoverReason) return false;
     }
 
-    const stageChanged = opening.stage !== form.stage;
-    const lineItems = mapSelectedPickerItemsToDealLineItems(form.lineItems);
-    // No backend operation updates profile, forecast, next action, ownership and stage
-    // together, so this is several authoritative commands. An earlier one can commit and a
-    // later one fail; the committed work stays committed on the server, so it is reported
-    // rather than discarded. Nothing here reverses a committed command.
-    const report = await executeSequentialCommits([
-      {
-        step: "profile",
-        run: () => updateDealCommand(opening.id, {
-          name: form.name,
-          amount: form.amount,
-          currency: form.currency,
-          notes: [form.demandSummary, form.painPoints, form.notes].filter(Boolean).join(" · ") || undefined,
-          interestedProducts: form.lineItems.map((item) => item.product.id),
-          lineItems,
-          ...(!form.createFollowUpTask ? {
-            nextActionAt: undefined,
-            nextActionSummary: undefined,
-            nextActionRef: undefined,
-          } : {}),
-          updatedAt: new Date().toISOString(),
-        }, { idempotencyKey: `${intentId}:profile` }),
-      },
-      {
-        step: "forecast",
-        run: () => updateDealForecastCommand(opening.id, {
-          expectedCloseDate: form.expectedCloseDate,
-          opportunityScore: form.probability,
-          forecastCategory: form.forecastCategory,
-          actor: ownership?.displayName,
-        }, { idempotencyKey: `${intentId}:forecast` }),
-      },
-      // `taskId` is omitted deliberately: the Task id is server-assigned, so there is no
-      // authoritative Task reference to send. A deterministic client key here would persist
-      // a Task foreign reference that matches no Task.
-      ...(nextActionAt ? [{
-        step: "nextAction",
-        run: () => updateDealNextActionCommand(opening.id, {
-          nextActionAt,
-          nextActionSummary: form.nextActionSummary,
-        }, { idempotencyKey: `${intentId}:next-action` }),
-      }, {
-        // WF-21. Unreachable in connected mode (the guard above returns first); demo owns
-        // its own activation, and a failure there is now a reported partial outcome rather
-        // than a special case.
-        step: "activation",
-        run: () => ensureDealNextActionTask({ ...opening, nextActionAt, nextActionSummary: form.nextActionSummary }),
-      }] : []),
-      ...(ownerChanged && handoverReason ? [{
-        step: "owner",
-        run: () => reassignDealCommand(opening.id, {
-          ownerId: form.ownerId,
-          reason: handoverReason,
-          activity: {
-            id: createDurableId("deal_activity_owner"),
-            type: "system" as const,
-            title: locale === "vi" ? "Bàn giao cơ hội" : "Opportunity handover",
-            description: `${locale === "vi" ? "Lý do" : "Reason"}: ${handoverReason}`,
-            createdAt: new Date().toISOString(),
-            author: ownership?.displayName || t("common.system"),
-          },
-        }, { idempotencyKey: `${intentId}:owner` }),
-      }] : []),
-      ...(stageChanged ? [{
-        step: "stage",
-        run: () => transitionDealStageCommand(opening.id, form.stage, {
-          id: createDurableId("deal_activity_stage"),
-          type: "stage" as const,
-          title: t("deals.activities.stageChangedTitle"),
-          description: t("deals.activities.stageChangedDescription", { from: getDealStageLabel(opening.stage), to: getDealStageLabel(form.stage) }),
-          createdAt: new Date().toISOString(),
-          author: t("common.system"),
-          metadata: { fromStage: opening.stage, toStage: form.stage },
-        }, { idempotencyKey: `${intentId}:stage` }),
-      }] : []),
-    ]);
+    const report = await saveCheckpoint.current.save(opening, form, intentId, handoverReason, steps => executeSequentialCommits(steps));
 
     if (report.status !== "FULL_SUCCESS") {
       const stepLabels: Record<string, { vi: string; en: string }> = {

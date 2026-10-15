@@ -75,7 +75,7 @@ export function getOpportunityFieldErrors(command: ExecuteLeadOpportunityCommand
   if (command.deal.expectedCloseDate && !isValidDateValue(command.deal.expectedCloseDate)) {
     errors["deal.expectedCloseDate"] = "Enter a valid target close date.";
   }
-  if (command.deal.estimatedValue !== undefined && (!Number.isFinite(command.deal.estimatedValue) || command.deal.estimatedValue < 0)) {
+  if (command.deal.estimatedValue !== undefined && (!/^(0|[1-9][0-9]*)(\.[0-9]{1,6})?$/.test(String(command.deal.estimatedValue)))) {
     errors["deal.estimatedValue"] = "Estimated value must be a finite, non-negative number.";
   }
   if (command.deal.followUpTask) {

@@ -131,8 +131,14 @@ try{
  await act(async()=>detailState.current?.setIsLostModalOpen(true));await settle();await act(async()=>{detailState.current?.setLostReason('NO_BUDGET');detailState.current?.setLostNotes('A draft');});await settle();entry();
  await act(async()=>{void detailRouter.navigate('/deals/deal-B');});await settle();assert.equal(detailState.current?.deal.id,dealA.id);assert.equal(detailState.current?.lostNotes,'A draft');
  await act(async()=>dealPublic.replaceDeals([{...dealA,resourceVersion:12},dealB]));await settle();assert.equal(detailState.current?.lostNotes,'A draft');
+ // Route B cannot submit a retained A draft; return to A for the legitimate mutation.
+ let refusedLost:boolean|undefined;await act(async()=>{refusedLost=await detailState.current?.handleConfirmLost();});await settle();
+ assert.equal(refusedLost,false);assert.equal(lostCalls.length,0);assert.equal(detailState.current?.deal.id,dealA.id);assert.equal(detailState.current?.lostNotes,'A draft');assert.equal(detailState.current?.isLostModalOpen,true);entry();
+ await act(async()=>{void detailRouter.navigate('/deals/deal-A');});await settle();
+ assert.equal(detailState.current?.deal.id,dealA.id);assert.equal(detailState.current?.lostNotes,'A draft');
  let pendingLost:Promise<boolean>|undefined;await act(async()=>{pendingLost=detailState.current?.handleConfirmLost();void detailState.current?.handleConfirmLost();});await settle();assert.equal(lostCalls.length,1);assert.deepEqual(lostCalls[0],{id:dealA.id,version:12,reason:'NO_BUDGET'});assert.equal(discardDirtyUnsavedWork(),false);
  assert.ok(releaseLost);await act(async()=>releaseLost?.());await pendingLost;await settle();assert.equal(detailState.current?.deal.id,dealA.id);assert.equal(detailState.current?.lostNotes,'A draft');assert.ok(detailState.current?.lostError);entry();
+ await act(async()=>{void detailRouter.navigate('/deals/deal-B');});await settle();assert.equal(detailState.current?.deal.id,dealA.id);assert.equal(detailState.current?.lostNotes,'A draft');
  await act(async()=>{assert.equal(discardDirtyUnsavedWork(),true);});await settle();await act(async()=>detailState.current?.setIsLostModalOpen(true));await settle();assert.equal(detailState.current?.deal.id,dealB.id);assert.equal(detailState.current?.lostReason,'');assert.equal(detailState.current?.lostNotes,'');assert.equal(getDirtyUnsavedWork().length,0);
  await act(async()=>detailRoot.unmount());detailRouter.dispose();dealServices.configureDealApplication(originalDealServices);
 
@@ -162,9 +168,9 @@ try{
  await act(async()=>{assert.equal(discardDirtyUnsavedWork(),true);await workspace.switchWorkspaceContext(originalWorkspace.workspaceKey);});await settle();
  kind='deal';deal=dealA;open=true;await render();assert.equal(getDirtyUnsavedWork().length,0);
  await act(async()=>{await workspace.switchWorkspaceContext(alternateWorkspace.workspaceKey);});await settle();assert.equal(open,false);
- await act(async()=>{await workspace.switchWorkspaceContext(originalWorkspace.workspaceKey);});await settle();open=true;await render();await change('deal-edit-name','Workspace A deal');const dealCount=dealCalls.length;
- await act(async()=>{await workspace.switchWorkspaceContext(alternateWorkspace.workspaceKey);});await settle();assert.equal(open,true);assert.equal(await entry().save(),false);await dealSubmit();assert.equal(dealCalls.length,dealCount);
- await act(async()=>{assert.equal(discardDirtyUnsavedWork(),true);await workspace.switchWorkspaceContext(originalWorkspace.workspaceKey);});await settle();
+ await act(async()=>{await workspace.switchWorkspaceContext(originalWorkspace.workspaceKey);});await settle();open=true;await render();await change('deal-edit-name','Workspace A deal');const dealCount=dealCalls.length;const staleWorkspaceDeal=entry();
+ await act(async()=>{await workspace.switchWorkspaceContext(alternateWorkspace.workspaceKey);});await settle();assert.equal(open,false);assert.equal(await staleWorkspaceDeal.save(),false);assert.equal(dealCalls.length,dealCount);assert.equal(document.querySelector('#deal-edit-name'),null);assert.equal(getDirtyUnsavedWork().length,0);
+ await act(async()=>{await workspace.switchWorkspaceContext(originalWorkspace.workspaceKey);});await settle();assert.equal(open,false);assert.equal(document.querySelector('#deal-edit-name'),null);assert.equal(await staleWorkspaceDeal.save(),false);assert.equal(dealCalls.length,dealCount);
 
  assert.deepEqual(browserErrors,[]);
  console.log('B2 Deal/Product real form PASS: snapshot A/version, refresh, dirty/revert, target switch, keep/discard, global registration, pending veto, duplicate block, server field/focus, retry and truthful programmatic save.');

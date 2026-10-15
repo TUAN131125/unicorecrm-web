@@ -73,7 +73,7 @@ export class LeadQualificationHttpAdapter implements LeadQualificationCommandPor
         expectedCloseDate: dateOnly(command.deal.expectedCloseDate, "qualifyLeadForOpportunity", "deal.expectedCloseDate"),
         interestedProductIds,
         estimatedValue: command.deal.estimatedValue === undefined ? undefined : {
-          amount: normalizeNonNegativeDecimal("qualifyLeadForOpportunity", "deal.estimatedValue", command.deal.estimatedValue),
+          amount: normalizeOpportunityDecimal("qualifyLeadForOpportunity", "deal.estimatedValue", command.deal.estimatedValue),
           currency: normalizedCurrency,
         },
         decisionProcess: text(command.deal.decisionProcess),
@@ -185,7 +185,7 @@ function mapRelationship(
 function requestOptions(operationId: string, options: LeadQualificationCommandOptions) {
   const idempotencyKey = options.idempotencyKey.trim();
   if (!idempotencyKey) throw contractViolation(operationId, "idempotencyKey", `${operationId} requires Idempotency-Key.`);
-  if (!Number.isInteger(options.expectedVersion) || options.expectedVersion < 1) {
+  if (!Number.isInteger(options.expectedVersion) || options.expectedVersion < 0) {
     throw contractViolation(operationId, "expectedVersion", `${operationId} requires a positive integer If-Match resource version.`);
   }
   return {
@@ -213,6 +213,7 @@ function mapAuthoritativeWorkflowResponse(
     throw contractViolation(operationId, "qualificationOutcome", `${operationId} returned an unexpected qualification outcome.`);
   }
   const relationshipRef = response.result.relationship.relationshipRef;
+  if (qualificationOutcome === "OPPORTUNITY" && (!response.result.dealId || !response.result.contactId || relationshipRef.type !== "CONTACT" || relationshipRef.id !== response.result.contactId || !response.result.createdResources.some(resource => resource.resourceType === "DEAL" && resource.resourceId === response.result.dealId))) throw contractViolation(operationId, "result", "Opportunity result must carry consistent authoritative Contact and Deal references.");
   return {
     result: compact({
       leadId,
@@ -248,13 +249,13 @@ function assertAuthoritativeResponse(operationId: string, response: LeadQualific
       throw contractViolation(operationId, field, `${operationId} response is missing authoritative ${field}.`);
     }
   }
-  if (!Number.isInteger(response.version) || response.version < 1) throw contractViolation(operationId, "version", `${operationId} response version must be a positive integer.`);
+  if (!Number.isInteger(response.version) || response.version < 0) throw contractViolation(operationId, "version", `${operationId} response version must be a positive integer.`);
   if (response.outcome !== "COMMITTED" && response.outcome !== "REPLAYED") throw contractViolation(operationId, "outcome", `${operationId} response outcome must be COMMITTED or REPLAYED.`);
   if (!response.occurredAt.endsWith("Z") || !Number.isFinite(Date.parse(response.occurredAt))) throw contractViolation(operationId, "occurredAt", `${operationId} response occurredAt must be UTC.`);
   if (!response.result || typeof response.result !== "object") throw contractViolation(operationId, "result", `${operationId} response is missing its result.`);
   if (!Array.isArray(response.result.createdResources)) throw contractViolation(operationId, "createdResources", `${operationId} response must declare createdResources.`);
   for (const resource of response.result.createdResources) {
-    if (!resource.resourceId?.trim() || !Number.isInteger(resource.resourceVersion) || resource.resourceVersion < 1) {
+    if (!resource.resourceId?.trim() || !Number.isInteger(resource.resourceVersion) || resource.resourceVersion < 0) {
       throw contractViolation(operationId, "createdResources", `${operationId} returned invalid downstream resource evidence.`);
     }
   }
@@ -295,6 +296,13 @@ function dateOnly(value: string | undefined, operationId: string, field: string)
 function normalizePositiveDecimal(operationId: string, field: string, value: number): string {
   if (!Number.isFinite(value) || value <= 0) throw contractViolation(operationId, field, `${field} must be greater than zero.`);
   return normalizeDecimal(String(value));
+}
+
+function normalizeOpportunityDecimal(operationId: string, field: string, value: string | number): string {
+  if (typeof value === "number" && (!Number.isFinite(value) || value > Number.MAX_SAFE_INTEGER)) throw contractViolation(operationId, field, `${field} requires an exact decimal string for this amount.`);
+  const decimal = String(value).trim();
+  if (!/^(0|[1-9][0-9]*)(\.[0-9]{1,6})?$/u.test(decimal)) throw contractViolation(operationId, field, `${field} must be a non-negative decimal with at most six fractional digits.`);
+  return normalizeDecimal(decimal);
 }
 
 function normalizeNonNegativeDecimal(operationId: string, field: string, value: number): string {

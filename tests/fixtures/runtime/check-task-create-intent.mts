@@ -1,0 +1,17 @@
+import assert from "node:assert/strict";
+import { freezeTaskCreateIntent, taskCreateDefinitelyRejected } from "../../../src/modules/tasks/presentation/model/taskCreateIntent";
+const command = { id: "intent-a", title: "Follow up", assigneeId: "member-a", dueAt: "2026-12-01T00:00:00Z", recordRef: { moduleKey: "deals", recordId: "deal-second" }, actorId: "member-a", actorName: "A" };
+const intent = freezeTaskCreateIntent(command, { idempotencyKey: "same-intent-a" });
+command.recordRef.recordId = "deal-wrong"; command.title = "edited after submit";
+assert.equal(intent.command.recordRef?.recordId, "deal-second");
+assert.equal(intent.command.title, "Follow up");
+assert.equal(intent.metadata?.idempotencyKey, "same-intent-a");
+assert(Object.isFrozen(intent.command.recordRef));
+assert(!taskCreateDefinitelyRejected("NETWORK_ERROR"));
+assert(!taskCreateDefinitelyRejected("INTERNAL_ERROR"));
+assert(!taskCreateDefinitelyRejected("IDEMPOTENCY_KEY_REUSED"));
+assert(taskCreateDefinitelyRejected("VALIDATION_FAILED"));
+assert(!taskCreateDefinitelyRejected("RESOURCE_NOT_FOUND", true));
+assert(!taskCreateDefinitelyRejected("ACCESS_DENIED", true));
+assert(!taskCreateDefinitelyRejected("VALIDATION_FAILED", true));
+console.log("PASS frozen Task intent and conservative unknown acknowledgement recovery");

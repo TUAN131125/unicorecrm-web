@@ -14,6 +14,9 @@ export interface DealOwnerOption {
 export interface DealFormDraft {
   name: string;
   customerName: string;
+  buyerRef?: import("@/platform/identity").BuyerRef;
+  interestedProductIds: string[];
+  amountDecimal: string;
   amount: number;
   ownerId: string;
   expectedCloseDate: string;
@@ -63,6 +66,9 @@ export function createDraft(
   return {
     name: initialValues?.name ?? "",
     customerName: initialValues?.customerName ?? "",
+    buyerRef: initialValues?.buyerRef,
+    interestedProductIds: [...(initialValues?.interestedProductIds ?? [])],
+    amountDecimal: initialValues?.amountDecimal ?? String(initialValues?.amount ?? 0),
     amount,
     ownerId: initialValues?.ownerId || owners[0]?.memberId || "",
     expectedCloseDate: initialValues?.expectedCloseDate || "",

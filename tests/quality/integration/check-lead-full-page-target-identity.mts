@@ -151,31 +151,34 @@ try {
     assert.ok(document.querySelector('[role="alert"]'));
     await act(async () => assert.equal(await getDirtyUnsavedWork()[0]?.save(), false, 'application refusal must not report saved'));
     await settle();
-    await act(async () => getDirtyUnsavedWork().forEach(entry => entry.discard())); await settle();
-    assert.match(document.body.textContent ?? '', /Qualification Lead B/); assert.equal(getDirtyUnsavedWork().length, 0);
+    if (outcome === 'OPPORTUNITY') {
+      await act(async () => assert.equal(discardDirtyUnsavedWork(), false, 'Unresolved workflow effects must not lose the frozen intent'));
+      await act(async () => getDirtyUnsavedWork().forEach(entry => entry.discard())); await settle();
+      assert.match(document.body.textContent ?? '', /Qualification Lead A/, 'A failed submitted intent stays on its original target');
+      assert.ok(getDirtyUnsavedWork().length > 0);
+    } else {
+      await act(async () => getDirtyUnsavedWork().forEach(entry => entry.discard())); await settle();
+      assert.match(document.body.textContent ?? '', /Qualification Lead B/); assert.equal(getDirtyUnsavedWork().length, 0);
+    }
   }
-  // Real ProductPicker: cancel preserves draft; catalog refresh preserves an in-modal selection;
-  // applying and discarding are scoped to the bound Qualification target.
+  // The connected-style interested-product picker binds immediately by ID and preserves selections
+  // across search/reference refresh; discard retires the draft from the previous target.
   const { replaceProductCatalog } = await import('@/modules/products');
   await act(async () => { leads.replaceLeads([]); leads.replaceLeads([A, B]); });
   await mount(LeadQualificationPage, 'qualify'); await click('Tạo cơ hội');
-  await click('Chọn sản phẩm');
-  const productButton = document.getElementById(`picker-product-${product.id}`); assert.ok(productButton);
-  await act(async () => productButton.click()); await settle();
-  await click('Hủy'); await click('Chọn sản phẩm');
-  assert.equal(document.getElementById(`picker-product-${product.id}`)?.getAttribute('aria-pressed'), 'false');
-  await act(async () => document.getElementById(`picker-product-${product.id}`)?.click()); await settle();
+  await change('[data-guidance-id="leads.qualification.products"] input', product.sku);
+  await act(async () => { await new Promise(resolve => setTimeout(resolve, 450)); });
+  await click(`${product.name} · ${product.sku}`);
+  assert.equal(document.querySelectorAll(`[data-product-id="${product.id}"]`).length, 1);
   await act(async () => replaceProductCatalog([...getProductCatalogSnapshot()])); await settle();
-  assert.equal(document.getElementById(`picker-product-${product.id}`)?.getAttribute('aria-pressed'), 'true');
+  assert.equal(document.querySelectorAll(`[data-product-id="${product.id}"]`).length, 1, 'Catalog refresh preserves selected identity');
   await act(async () => navigate(`/leads/${B.id}/qualify`)); await settle();
-  await click('Áp dụng (1)');
   assert.match(document.body.textContent ?? '', /Qualification Lead A/);
   const unload = new window.Event('beforeunload', { cancelable: true }); window.dispatchEvent(unload); assert.equal(unload.defaultPrevented, true);
   await act(async () => getDirtyUnsavedWork().forEach(entry => entry.discard())); await settle();
   assert.match(document.body.textContent ?? '', /Qualification Lead B/);
-  await click('Tạo cơ hội'); await click('Chọn sản phẩm');
-  assert.equal(document.getElementById(`picker-product-${product.id}`)?.getAttribute('aria-pressed'), 'false', 'A products cannot leak to B');
-  await click('Hủy');
+  await click('Tạo cơ hội');
+  assert.equal(document.querySelectorAll(`[data-product-id="${product.id}"]`).length, 0, 'A products cannot leak to B');
   // Sell Now uses the real catalog/default line item, reference refresh, command and registry.
   await act(async () => { leads.replaceLeads([]); leads.replaceLeads([{ ...A, interestedProducts: [{ id: "interest-A", productId: product.id, productNameSnapshot: product.name, interestLevel: "high", createdAt: A.createdAt }] }, B]); });
   await mount(LeadSellNowPage, 'sell-now');
@@ -280,9 +283,12 @@ try {
   await act(async () => assert.equal(await getDirtyUnsavedWork()[0]?.save(), false, 'client validation is not successful save'));
   await settle(); assert.ok(document.querySelector('[role="alert"]'));
   await change('#qualification-need-summary', 'A save and continue');
+  await submit();
+  assert.ok([...document.querySelectorAll('button')].some(button => button.textContent?.includes('Xác nhận tạo cơ hội')), 'Opportunity requires explicit review before save');
   await act(async () => {
     const saving = getDirtyUnsavedWork()[0]?.save(); assert.ok(saving);
-    await Promise.resolve(); completeQualification?.();
+    for (let attempt = 0; attempt < 30 && !completeQualification; attempt++) await new Promise(resolve => setTimeout(resolve, 10));
+    assert.ok(completeQualification, 'Reviewed intent must reach the authoritative command'); completeQualification();
     assert.equal(await saving, true, 'only committed persistence reports successful global save');
   }); await settle();
   assert.equal(getDirtyUnsavedWork().length, 0); assert.equal(pathname, `/leads/${A.id}/qualify`);

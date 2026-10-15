@@ -95,3 +95,22 @@ function versionedOptions(product: Product, metadata: MutationCommandMetadata, o
 function productOutcome(commandType: string, metadata: MutationCommandMetadata, product: Product, evidence: ProductMutationEvidence): MutationOutcome<Product> { return { data: product, commandId: evidence.commandId, commandType, aggregateType: evidence.aggregateType, aggregateId: evidence.aggregateId, idempotencyKey: metadata.idempotencyKey, correlationId: evidence.correlationId, occurredAt: evidence.occurredAt, version: evidence.version, outcome: evidence.outcome, warnings: [...evidence.warnings], emittedEvents: [...evidence.emittedEventIds], audit: { authority: evidence.authority === "backend" ? "backend" : "demo", evidenceIds: [...evidence.auditEvidenceIds] } }; }
 function productBatchOutcome(commandType: string, metadata: MutationCommandMetadata, products: readonly Product[], evidence: ProductMutationEvidence): MutationOutcome<Product[]> { return { ...productOutcome(commandType, metadata, products[0] ?? ({ id: evidence.aggregateId } as Product), evidence), data: [...products], aggregateType: "product-batch" }; }
 function assertDemoOnly(operation: string): void { if (!isProductConnectedApiRuntime()) return; throw new MutationCommandError({ code: "PRODUCT_CONNECTED_OPERATION_REQUIRES_BACKEND_CONTRACT", message: `Connected Product operation ${operation} is unavailable until a backend export/import/reset contract exists.`, category: "INFRASTRUCTURE", retryable: false, details: { operation } }); }
+
+
+export type { ProductSelection } from "../application/ports/ProductApiRuntime";
+
+export async function queryProductPage(query: import("@/shared/application").ModuleListQuery, signal?: AbortSignal): Promise<import("@/shared/application").AuthoritativePage<import("../application/ports/ProductApiRuntime").ProductSelection>> {
+  return readProductSelections({ ...(query.search === undefined ? {} : { search: query.search }),
+    ...(query.limit === undefined ? {} : { limit: query.limit }), ...(query.cursor === undefined ? {} : { cursor: query.cursor }) }, signal);
+}
+
+export async function resolveProductSelectionIds(ids: readonly string[], signal?: AbortSignal): Promise<import("../application/ports/ProductApiRuntime").ProductSelection[]> {
+  if (ids.length === 0) return [];
+  return (await readProductSelections({ ids: [...new Set(ids)] }, signal)).items;
+}
+
+function readProductSelections(query: import("../application/ports/ProductApiRuntime").ProductSelectionQuery, signal?: AbortSignal) {
+  const reader = getProductApiRuntime().queries.selections;
+  if (!reader) throw new MutationCommandError({ code: "PRODUCT_SELECTION_UNAVAILABLE", message: "Product selection is unavailable.", category: "INFRASTRUCTURE", retryable: true });
+  return reader.call(getProductApiRuntime().queries, query, signal);
+}

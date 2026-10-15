@@ -287,7 +287,26 @@
       "compensationOwner": "BACKEND",
       "decisionId": null,
       "contractReadiness": "BLOCKED",
-      "blockingDecisionId": "DEC-WORKFLOW-WORK-ACTIVATION"
+      "blockingDecisionId": "DEC-WORKFLOW-WORK-ACTIVATION",
+      "manualFollowUp": {
+        "decisionId": "DEC-WORKFLOW-WORK-ACTIVATION-MANUAL-FOLLOW-UP",
+        "canonicalOwner": "tasks",
+        "publicOperations": [
+          "createTask",
+          "listTasks",
+          "getTask"
+        ],
+        "contractReadiness": "PRODUCTION_CONTRACT_READY",
+        "backendAdmission": "EXACT_SCOPE_OWNER_ADMITTED",
+        "transactionBoundary": "SINGLE_TASK_TRANSACTION",
+        "concurrencyBoundary": "AUTHORIZED_DEAL_VALIDATION_POINT_NO_DEAL_MUTATION",
+        "idempotencyBoundary": "EXISTING_CREATE_TASK",
+        "connectedFrontendCoordinatorAllowed": false,
+        "automaticActivationIncluded": false,
+        "authoritySourceSha256": "40c2dc9f59e62eb1880fd82a3c4b57cc72ec8a7ffe47e9ab255ee3828118333e",
+        "implementationStatus": "IMPLEMENTED_LOCAL",
+        "verificationStatus": "LOCAL_CONNECTED_CHECKS_PASS_NO_FORMAL_VERIFICATION"
+      }
     },
     {
       "workflowId": "WF-22",

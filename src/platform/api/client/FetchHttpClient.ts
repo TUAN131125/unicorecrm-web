@@ -33,6 +33,8 @@ export interface FetchHttpClientOptions {
   defaultTimeoutMs?: number;
   retryPolicy?: Partial<Omit<HttpRetryPolicy, "retryableStatuses">> & { retryableStatuses?: Iterable<number> };
   onUnauthorized?: () => boolean | void | Promise<boolean | void>;
+  /** Opaque host ownership; never derived from token claims in transport. */
+  getAuthorityKey?: () => string | undefined;
 }
 
 export class FetchHttpClient implements HttpClient {
@@ -42,7 +44,7 @@ export class FetchHttpClient implements HttpClient {
   private readonly retryPolicy: HttpRetryPolicy;
   private readonly requestIdProvider: RequestIdProvider;
   private readonly correlationIdProvider: CorrelationIdProvider;
-  private unauthorizedRefresh: Promise<boolean> | undefined;
+  private unauthorizedRefresh: { owner: string | undefined; result: Promise<boolean> } | undefined;
 
   constructor(private readonly options: FetchHttpClientOptions) {
     this.baseUrl = normalizeBaseUrl(options.baseUrl);
@@ -67,12 +69,34 @@ export class FetchHttpClient implements HttpClient {
     }
     const requestId = this.requestIdProvider.createRequestId();
     const correlationId = input.correlationId?.trim() || this.correlationIdProvider.createCorrelationId();
-    let headers = await this.buildHeaders(input, requestId, correlationId);
+    const owner = this.getAuthorityKey();
+    const workspace = this.options.workspaceIdProvider?.getWorkspaceId();
+    const assertAuthority = () => {
+      if (input.signal?.aborted) throw new ApiClientError({ code: "REQUEST_CANCELLED", message: "The request was cancelled.", retryable: false });
+      if (owner !== this.getAuthorityKey() || workspace !== this.options.workspaceIdProvider?.getWorkspaceId()) {
+        throw new ApiClientError({ code: "REQUEST_CANCELLED", message: "The request authority was retired.", retryable: false });
+      }
+    };
+    assertAuthority();
+    let headers: Headers;
+    let authorizationReplayed = false;
+    try { headers = await this.buildHeaders(input, requestId, correlationId); }
+    catch (error) {
+      assertAuthority();
+      if (!(error instanceof ApiClientError) || error.code !== "AUTHENTICATION_REQUIRED"
+        || (input.auth ?? "required") !== "required") throw error;
+      const refreshed = await this.coordinateUnauthorizedRefresh(owner, input.signal, workspace);
+      assertAuthority();
+      if (!refreshed) throw error;
+      headers = await this.buildHeaders(input, requestId, correlationId);
+      authorizationReplayed = true;
+    }
+    assertAuthority();
     const body = input.body === undefined ? undefined : serializeApiPayload(input.body);
     const maxAttempts = this.resolveMaxAttempts(input);
-    let authorizationReplayed = false;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      assertAuthority();
       const attemptSignal = createAttemptSignal(input.signal, input.timeoutMs ?? this.defaultTimeoutMs);
       try {
         const response = await this.fetchImplementation(this.buildUrl(input), {
@@ -83,6 +107,7 @@ export class FetchHttpClient implements HttpClient {
           ...(input.credentials === undefined ? {} : { credentials: input.credentials }),
         });
         const payload = await readJsonResponse(response);
+        assertAuthority();
         if (response.ok) {
           if (input.contractAuthority !== "semantic-extension") {
             assertOpenApiPayload(input.operationId, "response", payload, response.status);
@@ -92,10 +117,12 @@ export class FetchHttpClient implements HttpClient {
 
         const error = mapHttpError(response, payload, requestId, correlationId);
         if (response.status === 401 && !authorizationReplayed && this.canReplayAfterRefresh(input)) {
-          const refreshed = await this.coordinateUnauthorizedRefresh();
+          const refreshed = await this.coordinateUnauthorizedRefresh(owner, input.signal, workspace);
+          assertAuthority();
           if (refreshed) {
             authorizationReplayed = true;
             headers = await this.buildHeaders(input, requestId, correlationId);
+            assertAuthority();
             attempt -= 1;
             continue;
           }
@@ -121,11 +148,18 @@ export class FetchHttpClient implements HttpClient {
     });
   }
 
+  private getAuthorityKey(): string | undefined {
+    const provider = this.options.accessTokenProvider as (AccessTokenProvider & { getAuthorityKey?: () => string | undefined }) | undefined;
+    return (this.options.getAuthorityKey ?? provider?.getAuthorityKey)?.();
+  }
+
   private buildUrl(input: HttpRequest): string {
     const path = input.path.startsWith("/") ? input.path : `/${input.path}`;
     const url = new URL(`${this.baseUrl}${path}`);
     for (const [key, value] of Object.entries(input.query ?? {})) {
-      if (value !== undefined && value !== null) url.searchParams.set(key, String(value));
+      if (Array.isArray(value)) {
+        for (const item of value) url.searchParams.append(key, item);
+      } else if (value !== undefined && value !== null) url.searchParams.set(key, String(value));
     }
     return url.toString();
   }
@@ -208,16 +242,27 @@ export class FetchHttpClient implements HttpClient {
     return isSafeMethod(input.method) || (input.retry === "idempotent" && Boolean(input.idempotencyKey));
   }
 
-  private coordinateUnauthorizedRefresh(): Promise<boolean> {
-    if (this.unauthorizedRefresh) return this.unauthorizedRefresh;
-    const refresh = this.options.onUnauthorized;
-    if (!refresh) return Promise.resolve(false);
-    this.unauthorizedRefresh = Promise.resolve()
-      .then(() => refresh())
-      .then((result) => result === true)
-      .catch(() => false)
-      .finally(() => { this.unauthorizedRefresh = undefined; });
-    return this.unauthorizedRefresh;
+  private coordinateUnauthorizedRefresh(owner: string | undefined, signal?: AbortSignal, workspace?: string): Promise<boolean> {
+    const current = () => owner === this.getAuthorityKey() && workspace === this.options.workspaceIdProvider?.getWorkspaceId();
+    if (!current()) return Promise.resolve(false);
+    const refreshOwner = JSON.stringify([owner, workspace]);
+    if (!this.unauthorizedRefresh || this.unauthorizedRefresh.owner !== refreshOwner) {
+      const refresh = this.options.onUnauthorized;
+      if (!refresh) return Promise.resolve(false);
+      const result = Promise.resolve().then(() => current() ? refresh() : false)
+        .then((value) => value === true && current()).catch(() => false)
+        .finally(() => { if (this.unauthorizedRefresh?.result === result) this.unauthorizedRefresh = undefined; });
+      this.unauthorizedRefresh = { owner: refreshOwner, result };
+    }
+    const result = this.unauthorizedRefresh.result;
+    if (!signal) return result;
+    if (signal.aborted) return Promise.reject(new ApiClientError({ code: "REQUEST_CANCELLED", message: "The request was cancelled.", retryable: false }));
+    return new Promise((resolve, reject) => {
+      const abort = () => { cleanup(); reject(new ApiClientError({ code: "REQUEST_CANCELLED", message: "The request was cancelled.", retryable: false })); };
+      const cleanup = () => signal.removeEventListener("abort", abort);
+      signal.addEventListener("abort", abort, { once: true });
+      result.then((value) => { cleanup(); resolve(value); }, (error: unknown) => { cleanup(); reject(error); });
+    });
   }
 
   private shouldRetry(

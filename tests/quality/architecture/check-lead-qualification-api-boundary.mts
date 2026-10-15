@@ -35,6 +35,7 @@ function response(operationId: string, outcome: "NURTURE" | "OPPORTUNITY" | "DIR
       ...related,
       createdResources: [
         { resourceType: "CONTACT", resourceId: "contact-1", resourceVersion: 2 },
+        ...(outcome === "OPPORTUNITY" ? [{ resourceType: "DEAL" as const, resourceId: `deal-${suffix}`, resourceVersion: 0 }] : []),
       ],
     },
   };

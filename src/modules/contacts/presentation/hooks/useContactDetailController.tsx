@@ -1,3 +1,4 @@
+import { useContactTasksQuery } from "./useContactTasksQuery";
 import { getWorkspaceContextSnapshot, useWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import type { ContactCommandOptions } from "../../application/ports/ContactApiRuntime";
 import { acquireContactInteraction, releaseContactInteraction, getContactInteractionSnapshot, subscribeToContactInteraction } from "../model/contactInteractionOwnership";
@@ -110,6 +111,7 @@ export function useContactDetailController(props: ContactDetailPageProps) {
   const { contacts, setContacts, query: contactQuery } = useContacts({ loadAuthoritative: false });
   const location = useLocation();
   const { contactId } = useParams<{ contactId: string }>();
+  const contactTasksQuery = useContactTasksQuery(contactId);
 
   // Find target contact
   const routeContact = contacts.find(c => c.id === contactId);
@@ -346,7 +348,7 @@ export function useContactDetailController(props: ContactDetailPageProps) {
     ...contactShipping.map((booking) => booking.id),
     ...contactReturns.map((request) => request.id),
   ]);
-  const canonicalTasks = taskActivity.tasks.filter((task) =>
+  const canonicalTasks = (contactTasksQuery.connected ? contactTasksQuery.items : taskActivity.tasks).filter((task) =>
     task.status !== "CANCELLED"
     && (matchesRelationship(task.relationshipRef)
       || matchesCustomerAlias(task.customerId)

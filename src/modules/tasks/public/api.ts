@@ -1,3 +1,4 @@
+import { getTaskReadAuthorityScope } from "../application/vertical-slice/taskAuthoritativeQueries";
 import { getWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import {
   LocalMutationAuthority,
@@ -78,7 +79,11 @@ export const subscribeToTaskActivity = (listener: Parameters<typeof taskActivity
 export const createTaskCommand = async (
   command: Omit<Parameters<typeof createTask>[1], "workspaceId">,
   metadata: Partial<MutationCommandMetadata> = {},
+  transport: { signal?: AbortSignal } = {},
 ): Promise<MutationOutcome<Task>> => {
+  const capturedAuthority = getTaskReadAuthorityScope();
+  const assertAuthority = () => { if (getTaskApiRuntime().mode === "connected" && (capturedAuthority === undefined || capturedAuthority !== getTaskReadAuthorityScope())) throw new DOMException("Task creation authority retired.", "AbortError"); transport.signal?.throwIfAborted(); };
+  assertAuthority();
   const options = commandMetadata(`task.create:${command.id}`, metadata);
   const result = await getTaskApiRuntime().commands.createTask({
     title: command.title,
@@ -90,9 +95,10 @@ export const createTaskCommand = async (
     ...(command.recordRef !== undefined ? { recordRef: command.recordRef } : {}),
     ...(command.sourceRef !== undefined ? { sourceRef: command.sourceRef } : {}),
     ...(command.dedupeKey !== undefined ? { dedupeKey: command.dedupeKey } : {}),
-  }, options);
+  }, { ...options, ...(transport.signal ? { signal: transport.signal } : {}) });
+  assertAuthority();
   projectTask(result.task);
-  return taskOutcome("task.create", options, result);
+  return mutationOutcome("task.create", options, result.evidence, result.task, true, assertAuthority);
 };
 
 export const completeTaskCommand = async (taskId: string, input: Parameters<typeof completeTask>[2], metadata: Partial<MutationCommandMetadata> = {}): Promise<MutationOutcome<Task>> => {
@@ -207,8 +213,11 @@ function activityOutcome(commandType: string, options: MutationCommandMetadata, 
   return mutationOutcome(commandType, options, result.evidence, result.activity);
 }
 
-async function mutationOutcome<T>(commandType: string, options: MutationCommandMetadata, evidence: TaskMutationEvidence, data: T): Promise<MutationOutcome<T>> {
-  await invalidateModuleQueries({ moduleKeys: ["tasks"], commandType, aggregateId: evidence.aggregateId, occurredAt: evidence.occurredAt });
+async function mutationOutcome<T>(commandType: string, options: MutationCommandMetadata, evidence: TaskMutationEvidence, data: T, committedRefreshWarning = false, assertAuthority: () => void = () => {}): Promise<MutationOutcome<T>> {
+  const warnings = [...evidence.warnings];
+  try { await invalidateModuleQueries({ moduleKeys: ["tasks"], commandType, aggregateId: evidence.aggregateId, occurredAt: evidence.occurredAt }); }
+  catch (error) { if (!committedRefreshWarning) throw error; warnings.push("TASK_COMMITTED_READ_REFRESH_FAILED"); }
+  assertAuthority();
   return {
     data,
     commandId: evidence.commandId,
@@ -220,7 +229,7 @@ async function mutationOutcome<T>(commandType: string, options: MutationCommandM
     occurredAt: evidence.occurredAt,
     version: evidence.version,
     outcome: evidence.outcome,
-    warnings: [...evidence.warnings],
+    warnings,
     emittedEvents: [...evidence.emittedEventIds],
     audit: { authority: evidence.authority === "backend" ? "backend" : "demo", evidenceIds: [...evidence.auditEvidenceIds] },
   };

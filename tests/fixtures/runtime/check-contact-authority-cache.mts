@@ -1,9 +1,11 @@
+import { createContactFormDraft } from "@/modules/contacts/presentation/components/ContactFormModal";
+import { contactDraftOwner, checkpointContactDraft, contactDraftRecovery, settleContactDraft, discardContactDraft } from "@/modules/contacts/presentation/model/contactDraftRecovery";
 import assert from "node:assert/strict";
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { I18nProvider } from "@/i18n";
-import { configureDefaultAccessGovernanceRuntime, getAccessGovernanceRuntime, getAccessGovernanceState, refreshAccessGovernance } from "@/platform/access-control";
+import { configureDefaultAccessGovernanceRuntime, getAccessGovernanceRuntime, getAccessGovernanceState, refreshAccessGovernance, resolveEffectiveAccess, configureEffectiveRecordAccessAuthority, getEffectiveRecordAccessAuthority, isEffectiveRecordAccessAuthorityConfigured, resetEffectiveRecordAccessAuthority, type EffectiveRecordAccessAuthority } from "@/platform/access-control";
 import { getWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import { getContactApplicationServices, configureContactApplication } from "@/modules/contacts/application/composition/contactApplicationServices";
 import { getContactDetailResource, getContactRelationshipSummaryResource } from "@/modules/contacts/application/vertical-slice/contactAuthoritativeQueries";
@@ -26,6 +28,22 @@ export async function checkContactAuthorityCache() {
   await React.act(async () => { await refreshAccessGovernance(ws); });
   const secret = "synthetic-contact-secret@example.invalid";
   const contact = { id: "contact_authority_probe", workspaceId: ws, ownerId: authorization.memberId, fullName: "Authority probe", name: "Authority probe", createdAt: "2026-10-09", status: "active" as const, resourceVersion: 1, workEmail: secret };
+  const recoveryOwner = contactDraftOwner();
+  assert.ok(recoveryOwner, "Recovery fixture requires an actual current runtime principal/membership");
+  const baseline = createContactFormDraft(contact, authorization.memberId);
+  const ownedDraft = { ...baseline, notes: "owned-unsaved-recovery" };
+  checkpointContactDraft({ owner: recoveryOwner, contactId: contact.id, version: 1, baseline, draft: ownedDraft, intentId: "owned-recovery-intent", state: "dirty" });
+  const decision = { workspaceId: ws, resourceKey: "contacts", recordId: contact.id, canRead: true, canUpdate: true, canDelete: false, canExport: false, canApprove: false, allowedCommands: ["contact.update"], fieldAccess: { notes: "READ_WRITE" as const }, decisionReasons: [], evaluatedAt: "2026-10-13T00:00:00Z", authority: "backend" as const };
+  assert.equal(contactDraftRecovery(contact.id, 2, baseline, decision).kind, "conflict", "Recovery must never silently rebase to another version");
+  assert.equal(contactDraftRecovery(contact.id, 1, baseline, { ...decision, fieldAccess: { notes: "HIDDEN" } }).kind, "protected", "Hidden draft content must stay quarantined");
+  assert.equal(contactDraftRecovery(contact.id, 1, baseline, { ...decision, canRead: false }).kind, "none", "Revoked record cannot recover a draft");
+  const recovered = contactDraftRecovery(contact.id, 1, baseline, decision);
+  assert.equal(recovered.kind, "available");
+  if (recovered.kind === "available") assert.equal(recovered.draft.notes, "owned-unsaved-recovery");
+  settleContactDraft(recoveryOwner, contact.id, "owned-recovery-intent", "unknown");
+  assert.equal(contactDraftRecovery(contact.id, 1, baseline, decision).kind, "unknown", "Unknown command cannot become a new editable intent");
+  discardContactDraft(contact.id);
+  assert.equal(contactDraftRecovery(contact.id, 1, baseline, decision).kind, "none");
   const services = getContactApplicationServices();
   const unsupported = async (): Promise<never> => { throw new Error("Unexpected fixture command"); };
   let narrow = false, detailReads = 0, summaryReads = 0;
@@ -35,6 +53,30 @@ export async function checkContactAuthorityCache() {
     async get() { detailReads++; if (holdRead) return new Promise<typeof contact>(resolve => { resolveRead = resolve; }); return narrow ? { ...contact, workEmail: undefined } : contact; },
     async getRelationshipSummary() { summaryReads++; return { contact: narrow ? { ...contact, workEmail: undefined } : contact, organizationIds: narrow ? [] : ["organization-sensitive"], customerIds: [], linkedRecords: [], linkedRecordCounts: { tasks: 0, activities: 0, deals: 0, quotes: 0, orders: 0, invoices: 0, payments: 0, shipping: 0, returns: 0, supportCases: 0 }, allowedActions: [], projectionVersion: 1, generatedAt: "2026-10-09", organizationRelationships: [], customerRelationships: [] }; },
   }, commands: { create: unsupported, archive: unsupported, createOrganizationRelationship: unsupported, updateOrganizationRelationship: unsupported, endOrganizationRelationship: unsupported, createCustomerRelationship: unsupported, updateCustomerRelationship: unsupported, endCustomerRelationship: unsupported, async update() { return new Promise<typeof contact>(resolve => { resolveMutation = resolve; }); } } } });
+  const previousFieldAuthority = isEffectiveRecordAccessAuthorityConfigured() ? getEffectiveRecordAccessAuthority() : undefined;
+  // Match the connected Contact fixture with an equally scoped field-decision fixture.
+  // Decisions come from the current test principal/policies, never an allow-all fallback.
+  const fieldAuthority: EffectiveRecordAccessAuthority = {
+    source: "backend",
+    async evaluate(request, signal) {
+      assert.equal(request.workspaceId, ws);
+      assert.equal(request.resourceKey, "contacts");
+      assert.equal(request.recordId, contact.id);
+      if (signal?.aborted) throw new DOMException("Field query aborted", "AbortError");
+      const access = resolveEffectiveAccess(ws);
+      const canRead = access.can("contacts.read") && access.canAccessRecord("contacts", contact);
+      const canUpdate = canRead && access.can("contacts.update");
+      return {
+        workspaceId: ws, resourceKey: "contacts", recordId: contact.id,
+        canRead, canUpdate, canDelete: false, canExport: false, canApprove: false,
+        allowedCommands: canUpdate && request.requestedCommands?.includes("contact.update") ? ["contact.update"] : [],
+        fieldAccess: Object.fromEntries((request.requestedFields ?? []).map(field => [field, canRead ? access.getFieldAccess("contacts", field) : "HIDDEN"])),
+        decisionReasons: [], evaluatedAt: new Date().toISOString(), authority: "backend",
+      };
+    },
+  };
+  configureEffectiveRecordAccessAuthority(fieldAuthority);
+  try {
   const detail = getContactDetailResource(contact.id), summaryResource = getContactRelationshipSummaryResource(contact.id);
   detail.reset(); summaryResource.reset();
   const bodyChildrenBefore = Array.from(document.body.children);
@@ -142,6 +184,12 @@ export async function checkContactAuthorityCache() {
   await React.act(async () => firstMountRoot.render(React.createElement(FirstMount)));
   assert.ok(!firstFrames[0]?.includes(secret), "A newly mounted consumer cannot relabel a prior-principal projection as current");
   await React.act(async () => firstMountRoot.unmount()); firstMountElement.remove();
+  // The first-mount retirement scenario intentionally left a synthetic revoked identity.
+  // Start this independent writable-form case with the authenticated principal and no
+  // owned checkpoint retained from the earlier modal-recovery case.
+  authorization = { ...prior, dataScopes: { ...prior.dataScopes, contacts: "WORKSPACE" }, fieldSecurity: { ...prior.fieldSecurity, contacts: { ...prior.fieldSecurity.contacts, workEmail: "READ_WRITE" } } };
+  await React.act(async () => { await refreshAccessGovernance(ws); });
+  discardContactDraft(contact.id);
   const standaloneElement = document.createElement("div"); document.body.append(standaloneElement);
   const standaloneRoot = createRoot(standaloneElement);
   let standaloneClosed = false;
@@ -165,8 +213,12 @@ export async function checkContactAuthorityCache() {
   await React.act(async () => confirmDiscard.click());
   assert.equal(standaloneClosed, true, "Standalone form retains an explicit confirmed recovery path without disclosing old fields");
   await React.act(async () => standaloneRoot.unmount()); standaloneElement.remove();
-  configureContactApplication(services);
-  configureDefaultAccessGovernanceRuntime(runtime);
-  await React.act(async () => { await refreshAccessGovernance(ws); });
   console.log("Contact authority cache: revision refetch, summary eviction, detached modal host, late read/mutation protection passed.");
+  } finally {
+    if (previousFieldAuthority) configureEffectiveRecordAccessAuthority(previousFieldAuthority);
+    else resetEffectiveRecordAccessAuthority();
+    configureContactApplication(services);
+    configureDefaultAccessGovernanceRuntime(runtime);
+    await React.act(async () => { await refreshAccessGovernance(ws); });
+  }
 }

@@ -14,6 +14,17 @@ export function createProductDemoApiRuntime(repository: ProductRepository): Prod
   return {
     mode: "demo",
     queries: {
+      async selections(query, signal) {
+        signal?.throwIfAborted();
+        const search = query.search?.trim().toLowerCase() ?? "";
+        const matching = repository.list().filter(item => query.ids ? query.ids.includes(item.id)
+          : item.status === "active" && (!search || item.name.toLowerCase().includes(search) || item.sku.toLowerCase().includes(search)));
+        const offset = query.cursor ? Number(query.cursor) : 0;
+        const limit = query.ids ? 100 : Math.min(50, Math.max(1, query.limit ?? 20));
+        const items = matching.slice(offset, offset + limit).map(item => ({ id: item.id, name: item.name, sku: item.sku, status: item.status, version: 1 }));
+        const hasNextPage = offset + limit < matching.length;
+        return { items, pageInfo: { hasNextPage, ...(hasNextPage ? { nextCursor: String(offset + limit) } : {}) }, loadedAt: new Date().toISOString(), authority: "demo" };
+      },
       async list(): Promise<AuthoritativePage<Product>> {
         const items = repository.list().filter((item) => !item.archivedAt);
         return {

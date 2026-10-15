@@ -6,6 +6,7 @@ import { DealDetailCommercialWorkspace } from "./DealDetailCommercialWorkspace";
 import { DealDetailDialogs } from "./DealDetailDialogs";
 import { DealDetailHeaderSection } from "./DealDetailHeaderSection";
 import { DealDetailSidebar } from "./DealDetailSidebar";
+import { DealFollowUpTasks } from "../components/DealFollowUpTasks";
 import type { DealDetailController, DealDetailProductCatalog } from "./dealDetailView.types";
 
 export function DealDetailView({
@@ -23,6 +24,7 @@ export function DealDetailView({
       <div data-deal-detail-layout="responsive" className="grid grid-cols-1 items-start gap-5 xl:grid-cols-12">
         <div className="space-y-5 xl:col-span-8">
           <DealDetailCommercialWorkspace controller={controller} />
+          <DealFollowUpTasks deal={deal} locale={locale} />
           <DealDetailActivityTimeline controller={controller} />
         </div>
         <DealDetailSidebar controller={controller} />

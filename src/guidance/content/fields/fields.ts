@@ -174,7 +174,7 @@ export const FIELD_GUIDANCE: FieldGuidance[] = [
     purpose: { vi: "Biến ý định bán hàng thành một hành động cụ thể có thời hạn để cơ hội không bị bỏ quên.", en: "Turns sales intent into a concrete, time-bound action so the opportunity is not forgotten." },
     example: { vi: "Xác nhận phạm vi giải pháp với khách hàng trước 15:00 ngày mai.", en: "Confirm the solution scope with the customer by 3:00 PM tomorrow." },
     impact: { vi: "Cơ hội thiếu hoặc quá hạn bước tiếp theo sẽ được cảnh báo trên pipeline và ưu tiên cho người phụ trách.", en: "Opportunities with a missing or overdue next step are flagged in the pipeline and prioritized for the owner." },
-    requiredWhen: { vi: "Bắt buộc với mọi cơ hội đang mở.", en: "Required for every open opportunity." },
+    requiredWhen: { vi: "Không bắt buộc trong Opportunity Core; kích hoạt công việc chưa được hỗ trợ ở chế độ kết nối.", en: "Optional for Opportunity Core; task activation is unavailable in connected mode." },
     keywords: { vi: "cơ hội bước tiếp theo hạn follow up", en: "opportunity next step due follow up" },
   },
   {

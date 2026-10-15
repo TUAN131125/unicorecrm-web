@@ -1,11 +1,25 @@
-import type { CommercialApiClient, ProductAvailabilityReadModel, ProductBatchMutationResponse, ProductList, ProductMutationResponse, ProductPriceProjectionReadModel } from "@/platform/api/generated/commercialApi";
+import type { CommercialApiClient, ProductSelectionPage, ProductAvailabilityReadModel, ProductBatchMutationResponse, ProductList, ProductMutationResponse, ProductPriceProjectionReadModel } from "@/platform/api/generated/commercialApi";
 import type { AuthoritativePage } from "@/shared/application";
-import type { ProductApiRuntime, ProductBatchMutationResult, ProductCommandOptions, ProductDraftInput, ProductListQuery, ProductMutationResult, ProductVersionedCommandOptions, ProductQueryPort, ProductCommandPort } from "../../application/ports/ProductApiRuntime";
+import type { ProductSelection, ProductSelectionQuery, ProductApiRuntime, ProductBatchMutationResult, ProductCommandOptions, ProductDraftInput, ProductListQuery, ProductMutationResult, ProductVersionedCommandOptions, ProductQueryPort, ProductCommandPort } from "../../application/ports/ProductApiRuntime";
 import type { Product } from "../../domain/model/product.types";
 import { mapProductDocumentToApplication } from "../openapi/productReadModelMapper";
 import { mapArchiveProductsBatch, mapProductBatchMutation, mapProductDraft, mapProductMutation, mapRestoreProductsBatch } from "./ProductApiMapper";
 export class ProductHttpApiAdapter implements ProductQueryPort, ProductCommandPort {
   constructor(private readonly api: CommercialApiClient) {}
+  async selections(query: ProductSelectionQuery, signal?: AbortSignal): Promise<AuthoritativePage<ProductSelection>> {
+    const response = await this.api.searchProductSelections<ProductSelectionPage>({
+      ...(query.ids ? { ids: [...query.ids] } : {
+        ...(query.search === undefined ? {} : { q: query.search }),
+        ...(query.limit === undefined ? {} : { limit: query.limit }),
+        ...(query.cursor === undefined ? {} : { cursor: query.cursor }),
+      }),
+    }, signal);
+    return {
+      items: response.items.map(item => ({ id: item.id, name: item.name, sku: item.sku, version: item.version,
+        status: item.status === "ACTIVE" ? "active" : item.status === "INACTIVE" ? "inactive" : item.status === "ARCHIVED" ? "archived" : "draft" })),
+      pageInfo: response.pageInfo, loadedAt: new Date().toISOString(), authority: "backend",
+    };
+  }
   async list(_query: ProductListQuery = {}, signal?: AbortSignal): Promise<AuthoritativePage<Product>> { const records = await this.api.listProducts<ProductList>({}, signal); return { items: records.map(mapProductDocumentToApplication), pageInfo: { hasNextPage: false, totalCount: records.length }, loadedAt: new Date().toISOString(), authority: "backend" }; }
   async get(productId: string, signal?: AbortSignal): Promise<Product> { return mapProductDocumentToApplication(await this.api.getProduct(productId, {}, signal)); }
   getAvailability(productId: string, expectedVersion: number, signal?: AbortSignal) { return this.api.getProductAvailability<ProductAvailabilityReadModel>(productId, {}, { expectedVersion, signal }); }

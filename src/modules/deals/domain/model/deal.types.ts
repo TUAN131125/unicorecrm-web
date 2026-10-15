@@ -116,6 +116,8 @@ export interface Deal {
   contactPhone?: string;
   stage: DealStage | string;
   amount: number;
+  /** Exact backend decimal retained separately from the display number. */
+  amountDecimal?: string;
   /** Commercial currency inherited by Quotes and direct Orders. */
   currency?: string;
   /** Configured probability/read model only; never lifecycle truth. */

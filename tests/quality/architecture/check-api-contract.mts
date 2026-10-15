@@ -94,8 +94,8 @@ assert.equal(OPENAPI_CONTRACT_VERSION, packageJson.version);
 assert.equal(OPENAPI_SPEC_SHA256, artifacts.sha256);
 assert.equal(manifest.specSha256, artifacts.sha256);
 assert.equal(manifest.contractVersion, packageJson.version);
-assert.equal(coverage.summary.operations, 303);
-assert.equal(coverage.summary.productionReadyOperations, 275);
+assert.equal(coverage.summary.operations, 304);
+assert.equal(coverage.summary.productionReadyOperations, 276);
 assert.equal(coverage.summary.blockedOperations, 28);
 
 for (const [relativePath, expected] of [
@@ -109,8 +109,8 @@ for (const [relativePath, expected] of [
 ] as const) assert.equal(read(relativePath), expected, `${relativePath} drifted from OpenAPI generation.`);
 
 const operations = collectOperations(spec);
-assert.equal(operations.length, 303);
-assert.equal(new Set(operations.map((operation) => operation.operationId)).size, 303);
+assert.equal(operations.length, 304);
+assert.equal(new Set(operations.map((operation) => operation.operationId)).size, 304);
 assert.deepEqual(manifest.operations.map((operation) => operation.operationId).sort(), operations.map((operation) => operation.operationId).sort());
 assert.deepEqual(coverage.operations.map((operation) => operation.operationId).sort(), operations.map((operation) => operation.operationId).sort());
 
@@ -248,3 +248,11 @@ interface ReleaseIdentity { version: string; backendApiContractStatus: string }
 interface GeneratedManifest { specSha256: string; contractVersion: string; operations: Array<{ operationId: string }> }
 interface CoverageLedger { summary: { operations: number; productionReadyOperations: number; blockedOperations: number }; operations: Array<{ operationId: string }> }
 interface BreakingBaseline { operations: Array<{ operationId: string }>; schemas: Record<string, unknown> }
+
+const productSelection = operations.find(record => record.operation.operationId === "searchProductSelections");
+assert.ok(productSelection, "Products selection operation must be declared exactly once.");
+assert.equal(productSelection.operation["x-required-capability"], "products.read");
+assert.equal(productSelection.operation["x-data-scope"], "WORKSPACE");
+assert.deepEqual(schemas.ProductSelectionItem.properties.version, { type: "integer", minimum: 0 }, "Preserve canonical initial Product version.");
+assert.equal(schemas.ProductSelectionItem.properties.unitPrice, undefined, "Selection must not add pricing authority.");
+assert.equal(schemas.ProductSelectionPageInfo.properties.totalCount, undefined, "Selection must not disclose catalog counts.");

@@ -90,6 +90,7 @@ export function projectDealReadModel(record: DealReadModel): Deal {
     buyerRef: record.buyerRef,
     stage: record.stageCode,
     amount: displayNumber(record.amount.amount, "amount"),
+    amountDecimal: record.amount.amount,
     currency: record.amount.currency,
     opportunityScore: displayNumber(record.opportunityScore, "opportunityScore"),
     ownerId: record.ownerId,

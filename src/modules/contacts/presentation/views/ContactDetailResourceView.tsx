@@ -40,9 +40,15 @@ export function ContactDetailResourceView({ model, children }: { model: ReturnTy
     controller?.discardSuspendedInteraction();
     void detailQuery.refresh();
   };
+  const reopenCurrent = () => {
+    if ([...drafts.current].some(entry => !entry.canDiscard())) { setDiscardBlocked(true); return; }
+    setDiscardBlocked(false);
+    controller?.discardSuspendedInteraction();
+    void detailQuery.refresh();
+  };
   const retained = controller?.hasActiveInteraction || !suspended;
   return <>
-    {controller?.readAuthorityCurrent === false ? <ListStatePanel kind="error" title={locale === "vi" ? "Quyền truy cập đã thay đổi" : "Access changed"} description={locale === "vi" ? "Bản nháp được giữ lại và tạm ngừng. Bỏ bản nháp trước khi mở lại hồ sơ với quyền hiện tại." : "Your draft is preserved and suspended. Discard the draft before reopening with current access."} action={<Button type="button" variant="secondary" onClick={discardDraft}>{locale === "vi" ? "Bỏ bản nháp và tải lại" : "Discard draft and reload"}</Button>} /> : <ContactDetailReadNotice model={model} />}
+    {controller?.readAuthorityCurrent === false ? <ListStatePanel kind="error" title={locale === "vi" ? "Quyền truy cập đã thay đổi" : "Access changed"} description={locale === "vi" ? "Bản nháp được giữ lại và tạm ngừng. Mở lại với quyền hiện tại để đối chiếu và khôi phục, hoặc bỏ bản nháp." : "Your draft is preserved and suspended. Reopen with current access to reconcile and recover, or discard the draft."} action={<><Button type="button" variant="secondary" onClick={reopenCurrent}>{locale === "vi" ? "Mở lại với quyền hiện tại" : "Reopen with current access"}</Button><Button type="button" variant="secondary" onClick={discardDraft}>{locale === "vi" ? "Bỏ bản nháp và tải lại" : "Discard draft and reload"}</Button></>} /> : <ContactDetailReadNotice model={model} />}
     <div ref={host} />
     {discardBlocked && <p role="status">{locale === "vi" ? "Yêu cầu đang xử lý. Chờ hoàn tất trước khi bỏ bản nháp." : "A request is pending. Wait for it to finish before discarding the draft."}</p>}
     {container ? createPortal(<OverlayPortalHostContext.Provider value={portalHost}>{retained ? children : null}</OverlayPortalHostContext.Provider>, container) : null}

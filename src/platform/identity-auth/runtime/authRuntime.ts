@@ -183,6 +183,9 @@ class DevelopmentAuthRuntime {
 
 class ConnectedAuthSessionRuntime {
   private readonly listeners = new Set<SessionListener>();
+  private generation = 0;
+  private pendingRefresh: { generation: number; controller: AbortController; result: Promise<AuthResult<AuthSession>> } | undefined;
+  private bootstrapController: AbortController | undefined;
   private lastBoundaryReason: "SESSION_EXPIRED" | null = null;
   private session: AuthSession | null = null;
   private readonly storage: StoragePort;
@@ -193,7 +196,12 @@ class ConnectedAuthSessionRuntime {
   }
 
   async bootstrap(): Promise<void> {
-    const result = await this.gateway.bootstrap({ idempotencyKey: createAuthAttemptId("bootstrap") });
+    const generation = this.generation;
+    this.bootstrapController?.abort();
+    const controller = new AbortController();
+    this.bootstrapController = controller;
+    const result = await this.gateway.bootstrap({ idempotencyKey: createAuthAttemptId("bootstrap"), signal: controller.signal });
+    if (generation !== this.generation) return;
     if (result.ok && result.value) this.commit(result.value);
     else this.clear(result.ok ? null : result.code === "SESSION_EXPIRED" || result.code === "TOKEN_EXPIRED" ? "SESSION_EXPIRED" : null);
   }
@@ -211,7 +219,11 @@ class ConnectedAuthSessionRuntime {
   }
 
   async signIn(command: SignInCommand): Promise<AuthResult<AuthSession>> {
+    const generation = ++this.generation;
+    this.pendingRefresh?.controller.abort();
+    this.bootstrapController?.abort();
     const result = await this.gateway.signIn(command, { idempotencyKey: createAuthAttemptId("sign-in") });
+    if (generation !== this.generation) return retiredSession();
     if (!result.ok) return result;
     if (result.value.outcome === "MFA_REQUIRED") {
       return { ok: false, code: "MFA_REQUIRED", message: "Multi-factor authentication is required.", challengeId: result.value.challengeId, challengeExpiresAt: result.value.challengeExpiresAt };
@@ -221,19 +233,38 @@ class ConnectedAuthSessionRuntime {
   }
 
   async verifyMfa(command: VerifyMfaCommand): Promise<AuthResult<AuthSession>> {
+    const generation = ++this.generation;
+    this.pendingRefresh?.controller.abort();
+    this.bootstrapController?.abort();
     const result = await this.gateway.verifyMfa(command, { idempotencyKey: createAuthAttemptId("verify-mfa") });
+    if (generation !== this.generation) return retiredSession();
     if (result.ok) this.commit(result.value);
     return result;
   }
 
-  async refresh(): Promise<AuthResult<AuthSession>> {
-    const result = await this.gateway.refreshSession({ idempotencyKey: createAuthAttemptId("refresh") });
-    if (result.ok) this.commit(result.value);
-    else this.clear(result.code === "SESSION_EXPIRED" || result.code === "TOKEN_EXPIRED" ? "SESSION_EXPIRED" : null);
+  refresh(): Promise<AuthResult<AuthSession>> {
+    const generation = this.generation;
+    if (this.pendingRefresh?.generation === generation) return this.pendingRefresh.result;
+    const owner = this.getSnapshot();
+    const controller = new AbortController();
+    const result = this.gateway.refreshSession({ idempotencyKey: createAuthAttemptId("refresh"), signal: controller.signal }).then((result) => {
+      if (generation !== this.generation) return retiredSession();
+      if (result.ok && owner && (result.value.principal.accountId !== owner.principal.accountId || result.value.sessionId !== owner.sessionId)) {
+        this.clear(null);
+        return retiredSession();
+      }
+      if (result.ok) this.commit(result.value);
+      else this.clear(result.code === "SESSION_EXPIRED" || result.code === "TOKEN_EXPIRED" ? "SESSION_EXPIRED" : null);
+      return result;
+    }).finally(() => { if (this.pendingRefresh?.generation === generation) this.pendingRefresh = undefined; });
+    this.pendingRefresh = { generation, controller, result };
     return result;
   }
 
   async signOut(reason = "USER_SIGN_OUT"): Promise<void> {
+    const generation = ++this.generation;
+    this.pendingRefresh?.controller.abort();
+    this.bootstrapController?.abort();
     try {
       // The access token is short lived, so by the time a user signs out it has often
       // expired. Recover it through the backend refresh contract first - the refresh
@@ -242,9 +273,10 @@ class ConnectedAuthSessionRuntime {
       if (!this.gateway.getAccessToken()) {
         await this.gateway.refreshSession({ idempotencyKey: createAuthAttemptId("sign-out-refresh") });
       }
+      if (generation !== this.generation) return;
       await this.gateway.signOut({ reason }, { idempotencyKey: createAuthAttemptId("sign-out") });
     } finally {
-      this.clear(null);
+      if (generation === this.generation) this.clear(null);
     }
   }
 
@@ -259,6 +291,9 @@ class ConnectedAuthSessionRuntime {
     this.emit(this.session);
   }
   private clear(reason: "SESSION_EXPIRED" | null): void {
+    this.generation += 1;
+    this.pendingRefresh?.controller.abort();
+    this.bootstrapController?.abort();
     this.lastBoundaryReason = reason;
     this.session = null;
     this.gateway.clearCredentials();
@@ -347,3 +382,5 @@ export const provisionUserAccount = (command: ProvisionUserAccountCommand): Prov
 export const removeProvisionedUserAccount = (accountId: string): void => { if (connectedRuntime || configuredEnvironmentMode() !== "development") throw new Error("Direct account provisioning requires the Phase 9 server-backed access adapter."); removeProvisionedDevelopmentAccount(accountId); };
 export const rotateProvisionedUserPassword = (accountId: string): string => { if (connectedRuntime || configuredEnvironmentMode() !== "development") throw new Error("Password rotation requires the Phase 9 server-backed access adapter."); return rotateProvisionedDevelopmentAccountPassword(accountId); };
 export const isProvisionedUserAccount = (accountId?: string): boolean => !connectedRuntime && configuredEnvironmentMode() === "development" && isProvisionedDevelopmentAccount(accountId);
+
+function retiredSession(): AuthResult<AuthSession> { return { ok: false, code: "SESSION_REVOKED", message: "The authentication operation belongs to a retired session." }; }

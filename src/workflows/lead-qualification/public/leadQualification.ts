@@ -7,6 +7,7 @@ import {
 } from "@/shared/application";
 import { ApplicationError, normalizeApplicationError } from "@/shared/domain";
 import { getLeadSnapshot } from "@/modules/leads";
+import { getDealSelectionAuthority } from "@/modules/deals";
 import { executeLeadDirectSale } from "../application/executeLeadDirectSale";
 import { executeLeadNurture } from "../application/executeLeadNurture";
 import { executeLeadOpportunity } from "../application/executeLeadOpportunity";
@@ -62,6 +63,9 @@ export async function executeLeadOpportunityCommand(
 ): Promise<MutationOutcome<LeadQualificationResult>> {
   const resolved = createMutationMetadata(`lead.qualify-opportunity:${command.leadId}`, metadata);
   const api = getLeadQualificationApiRuntime();
+  const authority = getDealSelectionAuthority();
+  const ensureCurrent = () => { if (resolved.signal?.aborted || authority !== getDealSelectionAuthority()) throw new ApplicationError({ code: "LEAD_QUALIFICATION_AUTHORITY_CHANGED", message: "Qualification authority retired.", category: "AUTHORIZATION", retryable: false }); };
+  ensureCurrent();
   if (api.mode === "connected") {
     const result = await runConnectedQualification(
       command.leadId,
@@ -70,7 +74,9 @@ export async function executeLeadOpportunityCommand(
         command,
         requireConnectedOptions(command.leadId, "qualifyLeadForOpportunity", resolved),
       ),
+      ensureCurrent,
     );
+    ensureCurrent();
     return commitConnectedOutcome("lead.qualify-opportunity", result, resolved.idempotencyKey, ["leads", "contacts", "tasks", "deals"]);
   }
   return executeMutationCommand(
@@ -107,7 +113,7 @@ function requireConnectedOptions(
 ): LeadQualificationCommandOptions {
   const lead = requireAuthoritativeLead(leadId, operationId);
   const expectedVersion = metadata.expectedVersion ?? lead.resourceVersion;
-  if (!Number.isInteger(expectedVersion) || Number(expectedVersion) < 1) {
+  if (!Number.isInteger(expectedVersion) || Number(expectedVersion) < 0) {
     throw new ApplicationError({
       code: "LEAD_QUALIFICATION_VERSION_REQUIRED",
       message: `${operationId} requires the authoritative Lead resource version.`,
@@ -173,18 +179,21 @@ async function runConnectedQualification(
   leadId: string,
   commandType: string,
   execute: () => Promise<LeadQualificationApiResult>,
+  ensureCurrent?: () => void,
 ): Promise<LeadQualificationApiResult> {
   try {
     return await execute();
   } catch (caught) {
+    ensureCurrent?.();
     const error = normalizeApplicationError(caught);
-    if (error.code.includes("VERSION_CONFLICT") || error.code === "LEAD_QUALIFICATION_VERSION_REQUIRED") {
+    if (ensureCurrent || error.code.includes("VERSION_CONFLICT") || error.code === "LEAD_QUALIFICATION_VERSION_REQUIRED") {
       await invalidateModuleQueries({
-        moduleKeys: ["leads"],
+        moduleKeys: ensureCurrent ? ["leads", "contacts", "tasks", "deals"] : ["leads"],
         commandType: `${commandType}.conflict-refresh`,
         aggregateId: leadId,
         occurredAt: new Date().toISOString(),
-      });
+      }).catch(() => undefined);
+      ensureCurrent?.();
     }
     throw caught;
   }

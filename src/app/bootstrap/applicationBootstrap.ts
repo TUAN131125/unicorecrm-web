@@ -10,6 +10,8 @@ import { WorkspaceProvisioningApiClient } from "@/platform/api/extensions/worksp
 import { IdentityAuthHttpAdapter } from "@/platform/identity-auth/infrastructure/IdentityAuthHttpAdapter";
 import {
   bootstrapAuthSession,
+  getAuthSessionSnapshot,
+  subscribeToAuthSession,
   configureConnectedAuthGateway,
   getConnectedAuthAccessToken,
   refreshAuthSession,
@@ -78,8 +80,9 @@ export function resolveApplicationBootstrapPlan(
     throw new Error("Connected production runtime cannot use the development authentication adapter.");
   }
 
-  const accessTokenProvider: AccessTokenProvider = {
+  const accessTokenProvider: AccessTokenProvider & { getAuthorityKey(): string | undefined } = {
     getAccessToken: async () => (await bindings?.getAccessToken?.())?.trim() || getConnectedAuthAccessToken(),
+    getAuthorityKey: connectedAuthorityKey,
   };
   const workspaceIdProvider = {
     getWorkspaceId: () => bindings?.getWorkspaceId?.()?.trim()
@@ -123,6 +126,7 @@ export async function bootstrapApplicationComposition(
     const identityHttp = new FetchHttpClient({
       baseUrl,
       accessTokenProvider: { getAccessToken: () => getConnectedAuthAccessToken() },
+      getAuthorityKey: connectedAuthorityKey,
       defaultTimeoutMs: parseTimeout(environment.VITE_API_TIMEOUT_MS),
     });
     // The email-verification OTP operations are not described by the pinned OpenAPI
@@ -132,6 +136,7 @@ export async function bootstrapApplicationComposition(
     const workspaceHttp = new FetchHttpClient({
       baseUrl,
       accessTokenProvider: { getAccessToken: () => getConnectedAuthAccessToken() },
+      getAuthorityKey: connectedAuthorityKey,
       defaultTimeoutMs: parseTimeout(environment.VITE_API_TIMEOUT_MS),
       onUnauthorized: createUnauthorizedHandler(bindings),
     });
@@ -147,7 +152,12 @@ export async function bootstrapApplicationComposition(
 
 function createUnauthorizedHandler(bindings?: ConnectedRuntimeBindings): () => Promise<boolean> {
   return async () => {
+    const owner = connectedAuthorityKey();
+    const workspace = getActiveWorkspaceId();
+    const current = () => owner === connectedAuthorityKey() && workspace === getActiveWorkspaceId();
+    if (!getAuthSessionSnapshot()) return false;
     const internalRefresh = await refreshAuthSession().catch(() => ({ ok: false as const }));
+    if (!current()) return false;
     if (internalRefresh.ok) return true;
 
     let hostRefreshed = false;
@@ -156,6 +166,7 @@ function createUnauthorizedHandler(bindings?: ConnectedRuntimeBindings): () => P
     } catch {
       hostRefreshed = false;
     }
+    if (!current()) return false;
     if (hostRefreshed) return true;
 
     try {
@@ -212,4 +223,18 @@ function readViteEnvironment(): ApplicationRuntimeEnvironment {
 
 function readConnectedRuntimeBindings(): ConnectedRuntimeBindings | undefined {
   return typeof window === "undefined" ? undefined : window.__UNICORECRM_CONNECTED_RUNTIME__;
+}
+
+let authorityGeneration = 0;
+let authorityOwner: string | undefined;
+let authoritySubscription: (() => void) | undefined;
+function connectedAuthorityKey(): string | undefined {
+  if (!authoritySubscription) authoritySubscription = subscribeToAuthSession(() => { updateAuthorityOwner(); });
+  return updateAuthorityOwner();
+}
+function updateAuthorityOwner(): string | undefined {
+  const session = getAuthSessionSnapshot();
+  const owner = session ? JSON.stringify([session.sessionId, session.principal.accountId]) : undefined;
+  if (owner !== authorityOwner) { authorityOwner = owner; authorityGeneration += 1; }
+  return owner === undefined ? undefined : JSON.stringify([owner, authorityGeneration]);
 }

@@ -1,18 +1,19 @@
-import { createDraft, calculateLineItemTotal } from "./dealFormModel";
+import { verifyDealProductSelection } from "../hooks/useDealProductSelection";
+import { useDealFormController } from "../hooks/useDealFormController";
+import { DealBuyerPicker } from "./DealBuyerPicker";
+import { DealInterestedProductsPicker } from "./DealInterestedProductsPicker";
+import { getDealSelectionAuthority, useDealSelectionAuthority } from "../hooks/useDealSelectionQueries";
+import { createDraft } from "./dealFormModel";
 import type { DealFormMode, DealPriority, DealOpportunityType, DealOwnerOption, DealFormDraft } from "./dealFormModel";
 export { mapSelectedPickerItemsToDealLineItems } from "./dealFormModel";
 export type { DealFormMode, DealPriority, DealOpportunityType, DealOwnerOption, DealFormDraft } from "./dealFormModel";
 import React from "react";
 import { createDurableId } from "@/shared/ids";
-import { AlertCircle, ChevronDown, ChevronUp, Plus, Trash2, Zap } from "lucide-react";
+import { ChevronDown, ChevronUp, Zap } from "lucide-react";
 import { Button, Checkbox, Input, Modal, Select, Textarea, ConfirmDialog } from "@/shared/components/ui";
 import { FieldHelp } from "@/guidance/presentation/FieldHelp";
 import { useI18n } from "@/i18n";
-import {
-  getProductCatalogSnapshot,
-  ProductPickerModal,
-  type SelectedPickerItem,
-} from "@/modules/products";
+
 import { useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
 import type {
   DealForecastCategory,
@@ -52,13 +53,14 @@ export function DealFormModal({
   owners,
   stages,
   canAssign = true,
-  customerNameLocked = false,
+
   productsEnabled = true,
   onSubmit,
   submitting = false,
   error,
 }: DealFormModalProps) {
   const { t, locale } = useI18n();
+  const formController = useDealFormController();
   const workspaceConfiguration = useWorkspaceOperationalConfiguration();
   const workspace = useWorkspaceContextSnapshot();
   const openingWorkspace = React.useRef(workspace.workspaceId);
@@ -66,13 +68,15 @@ export function DealFormModal({
   const openingMode = React.useRef(requestedMode);
   const mode = openingMode.current;
   const openingSubmit = React.useRef(onSubmit);
-  const draftFactory = React.useCallback(() => createDraft(initialValues, owners, stages, workspaceConfiguration.localeRegion.currencies.baseCurrency), [initialValues, owners, stages, workspaceConfiguration.localeRegion.currencies.baseCurrency]);
+  const authority = useDealSelectionAuthority();
+  const openingAuthority = React.useRef(authority);
+  const draftFactory = React.useCallback(() => createDraft({ ...initialValues, ...(target ? { buyerRef: target.buyerRef, interestedProductIds: target.interestedProducts, amountDecimal: target.amountDecimal ?? String(target.amount), currency: target.currency } : {}), lineItems: [] }, owners, stages, workspaceConfiguration.localeRegion.currencies.baseCurrency), [initialValues, target, owners, stages, workspaceConfiguration.localeRegion.currencies.baseCurrency]);
   const [draft, setDraft] = React.useState<DealFormDraft>(draftFactory);
   const [showAdvanced, setShowAdvanced] = React.useState(mode === "edit");
   const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
-  const [isPickerOpen, setIsPickerOpen] = React.useState(false);
+
   const wasOpen = React.useRef(false);
-  const productCatalog = React.useMemo(() => getProductCatalogSnapshot(), [isOpen]);
+
 
   const opening = React.useRef<Deal | null>(target ? structuredClone(target) : null);
   const openingSourceKey = React.useRef(sourceKey);
@@ -98,6 +102,7 @@ export function DealFormModal({
     }
     if (pending.current || (wasOpen.current && getWorkspaceContextSnapshot().workspaceId !== openingWorkspace.current)) return;
     if (isOpen && (!wasOpen.current || ((target?.id !== opening.current?.id || requestedMode !== openingMode.current || sourceKey !== openingSourceKey.current) && !dirty && !pending.current))) {
+      openingAuthority.current = authority;
       opening.current = target ? structuredClone(target) : null;
       openingMode.current = requestedMode;
       openingSubmit.current = onSubmit;
@@ -112,7 +117,7 @@ export function DealFormModal({
       setValidationErrors({});
       setSaveError("");
       setCloseConfirm(false);
-      setIsPickerOpen(false);
+
     }
     wasOpen.current = isOpen;
   }, [draftFactory, isOpen, requestedMode, target?.id, sourceKey, dirty, localPending]);
@@ -122,7 +127,7 @@ export function DealFormModal({
   const discard = () => {
     if (pending.current || submitting || !mounted.current) return;
     setDraft(initial.current);
-    setIsPickerOpen(false);
+
     setCloseConfirm(false);
     onClose();
   };
@@ -159,36 +164,13 @@ export function DealFormModal({
     });
   }, [mode]);
 
-  const applyLineItems = (items: SelectedPickerItem[]) => {
-    const amount = calculateLineItemTotal(items);
-    setDraft((current) => ({
-      ...current,
-      lineItems: items,
-      amount: items.length > 0 ? amount : current.amount,
-      expectedBudget: items.length > 0 ? amount : current.expectedBudget,
-    }));
-    setIsPickerOpen(false);
-  };
-
-  const updateLineItem = (productId: string, patch: Partial<Pick<SelectedPickerItem, "quantity" | "discountPercent">>) => {
-    const items = draft.lineItems.map((item) => item.product.id === productId ? { ...item, ...patch } : item);
-    const amount = calculateLineItemTotal(items);
-    setDraft((current) => ({ ...current, lineItems: items, amount, expectedBudget: amount }));
-  };
-
-  const removeLineItem = (productId: string) => {
-    const items = draft.lineItems.filter((item) => item.product.id !== productId);
-    const amount = calculateLineItemTotal(items);
-    setDraft((current) => ({ ...current, lineItems: items, amount, expectedBudget: items.length > 0 ? amount : current.expectedBudget }));
-  };
-
   const save = async (): Promise<boolean> => {
-    if (pending.current || submitting || !mounted.current || !isOpen || getWorkspaceContextSnapshot().workspaceId !== openingWorkspace.current) return false;
+    if (openingAuthority.current !== getDealSelectionAuthority() || pending.current || submitting || !mounted.current || !isOpen || getWorkspaceContextSnapshot().workspaceId !== openingWorkspace.current) return false;
     const nextErrors: Record<string, string> = {};
     if (!draft.name.trim()) nextErrors.name = vi ? "Vui lòng nhập tên cơ hội." : "Enter the opportunity name.";
-    if (!draft.customerName.trim()) nextErrors.customerName = vi ? "Vui lòng chọn hoặc nhập khách hàng liên quan." : "Select or enter the related customer.";
+    if (!draft.buyerRef?.id) nextErrors.customerName = vi ? "Vui lòng chọn hoặc nhập khách hàng liên quan." : "Select or enter the related customer.";
     if (!draft.ownerId) nextErrors.ownerId = vi ? "Vui lòng chọn người phụ trách." : "Select an owner.";
-    if (!draft.demandSummary.trim() && draft.lineItems.length === 0) {
+    if (!draft.demandSummary.trim() && !draft.notes.trim() && draft.interestedProductIds.length === 0) {
       const message = vi ? "Hãy mô tả nhu cầu hoặc chọn ít nhất một sản phẩm / dịch vụ." : "Describe the customer need or select at least one product or service.";
       nextErrors.demandSummary = message;
       nextErrors.products = message;
@@ -200,6 +182,7 @@ export function DealFormModal({
       if (!draft.nextActionSummary.trim()) nextErrors.nextActionSummary = vi ? "Nhập tên công việc." : "Enter the task title.";
       if (!draft.nextActionAt || Number.isNaN(new Date(draft.nextActionAt).getTime())) nextErrors.nextActionAt = vi ? "Chọn hạn công việc hợp lệ." : "Choose a valid task due date.";
     }
+    if (!/^(0|[1-9][0-9]*)(\.[0-9]{1,6})?$/.test(draft.amountDecimal)) nextErrors.amount = vi ? "Nhập số thập phân hợp lệ (tối đa 6 chữ số lẻ)." : "Enter a decimal with up to 6 fractional digits.";
     if (draft.amount < 0) nextErrors.amount = vi ? "Giá trị cơ hội không được âm." : "Opportunity amount cannot be negative.";
     const selectedStage = stages.find((stage) => stage.code === draft.stage);
     if (["PROPOSAL", "NEGOTIATION"].includes(String(draft.stage).toUpperCase()) && draft.amount <= 0) {
@@ -220,7 +203,9 @@ export function DealFormModal({
     setLocalPending(true);
     setSaveError("");
     try {
-      const saved = await openingSubmit.current({
+      await verifyDealProductSelection(draft.interestedProductIds, openingAuthority.current);
+      if (!mounted.current || cycle.current !== activeCycle || openingAuthority.current !== getDealSelectionAuthority()) return false;
+      const saved = await openingSubmit.current(formController.prepare({
       ...draft,
       name: draft.name.trim(),
       customerName: draft.customerName.trim(),
@@ -230,13 +215,16 @@ export function DealFormModal({
       painPoints: draft.painPoints.trim(),
       nextActionSummary: draft.nextActionSummary.trim(),
       notes: draft.notes.trim(),
-      }, opening.current, intentId.current, openingSourceKey.current);
-      if (saved === false || !mounted.current || cycle.current !== activeCycle || getWorkspaceContextSnapshot().workspaceId !== openingWorkspace.current) return false;
+      }, intentId.current), opening.current, formController.intentId(intentId.current), openingSourceKey.current);
+      if (saved === false) { formController.complete(); return false; }
+      if (!mounted.current || cycle.current !== activeCycle || getWorkspaceContextSnapshot().workspaceId !== openingWorkspace.current) return false;
+      formController.complete();
       initial.current = draft;
       onClose();
       return true;
     } catch (error) {
       if (mounted.current && cycle.current === activeCycle) {
+        formController.failed(error);
         const normalized = normalizeApplicationError(error);
         const aliases: Record<string, string> = { buyerRef: "customerName", stageCode: "stage", opportunityScore: "probability", lineItems: "products", interestedProductIds: "products" };
         const errors = Object.fromEntries(Object.entries(normalized.fieldErrors ?? {}).map(([field, messages]) => {
@@ -255,6 +243,18 @@ export function DealFormModal({
   const submit = (event: React.FormEvent) => { event.preventDefault(); void save(); };
 
   const activeStages = stages.filter((stage) => stage.isActive && (mode === "edit" || stage.category === "open")).sort((left, right) => left.order - right.order);
+  React.useEffect(() => {
+    if (authority !== openingAuthority.current) {
+      const empty = createDraft(undefined, [], stages, workspaceConfiguration.localeRegion.currencies.baseCurrency);
+      opening.current = null;
+      initial.current = empty;
+      setDraft(empty);
+      openingAuthority.current = authority;
+      onClose();
+    }
+  }, [authority, onClose, stages, workspaceConfiguration.localeRegion.currencies.baseCurrency]);
+  if (isOpen && authority !== openingAuthority.current) return null;
+
   return (
     <>
       <Modal
@@ -280,8 +280,9 @@ export function DealFormModal({
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2" data-guidance-id="deals.form.quick-create">
             <Input id={`deal-${mode}-name`} label={vi ? "Tên cơ hội" : "Opportunity name"} value={draft.name} onChange={(event) => update("name", event.target.value)} required error={validationErrors.name} />
-            <Input id={`deal-${mode}-customerName`} label={vi ? "Khách hàng liên quan" : "Related customer"} value={draft.customerName} onChange={(event) => update("customerName", event.target.value)} disabled={customerNameLocked} required error={validationErrors.customerName} />
-            <Input id={`deal-${mode}-amount`} label={vi ? "Giá trị dự kiến" : "Expected amount"} type="number" min="0" value={String(draft.amount)} onChange={(event) => update("amount", Number(event.target.value) || 0)} disabled={draft.lineItems.length > 0} error={validationErrors.amount} />
+            <DealBuyerPicker value={draft.buyerRef} label={draft.customerName} error={validationErrors.customerName} onChange={(ref, label) => setDraft(current => ({ ...current, buyerRef: ref, customerName: label }))} />
+            <Input id={`deal-${mode}-customerName`} label={vi ? "Tên hiển thị đã chọn" : "Selected display name"} value={draft.customerName} readOnly />
+            <Input id={`deal-${mode}-amount`} label={vi ? "Giá trị dự kiến" : "Expected amount"} type="text" inputMode="decimal" value={draft.amountDecimal} onChange={(event) => setDraft(current => ({ ...current, amountDecimal: event.target.value, amount: Number(event.target.value) }))} error={validationErrors.amount} />
             <Input id={`deal-${mode}-expectedCloseDate`} label={vi ? "Ngày đóng dự kiến" : "Expected close date"} type="date" value={draft.expectedCloseDate} onChange={(event) => update("expectedCloseDate", event.target.value)} error={validationErrors.expectedCloseDate} />
             <div className="md:col-span-2">
               <Textarea id={`deal-${mode}-demandSummary`} label={vi ? "Nhu cầu / vấn đề cần giải quyết" : "Need / problem to solve"} value={draft.demandSummary} onChange={(event) => { update("demandSummary", event.target.value); setValidationErrors((current) => ({ ...current, products: "" })); }} rows={3} error={validationErrors.demandSummary} />
@@ -301,38 +302,8 @@ export function DealFormModal({
 
           <div data-guidance-id="deals.form.owner"><div className="mb-1 flex justify-end"><FieldHelp helpKey="field.deals.owner" /></div><Select id={`deal-${mode}-ownerId`} label={vi ? "Người phụ trách" : "Owner"} value={draft.ownerId} onChange={(event) => update("ownerId", event.target.value)} disabled={!canAssign} required error={validationErrors.ownerId}>{owners.map((owner) => <option key={owner.memberId} value={owner.memberId}>{owner.displayName}</option>)}</Select></div>
 
-          {productsEnabled ? (
-            <section id={`deal-${mode}-products`} tabIndex={-1} className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/50 p-4 outline-none focus:border-violet-500 focus:ring-2 focus:ring-violet-100">
-              <div className="flex items-center justify-between gap-3"><h4 className="text-sm font-medium text-slate-800">{vi ? "Sản phẩm / dịch vụ quan tâm" : "Interested products / services"}</h4><Button type="button" actionIntent="create" variant="secondary" size="xs" icon={<Plus size={12} />} className="min-w-[132px]" onClick={() => setIsPickerOpen(true)}>{vi ? "Chọn sản phẩm" : "Select products"}</Button></div>
-              {draft.lineItems.length === 0 ? (
-                <div className="rounded-lg border border-dashed border-slate-300 bg-white p-4 text-center text-xs text-slate-500"><AlertCircle size={18} className="mx-auto mb-1 text-slate-400" />{vi ? "Chưa chọn sản phẩm. Có thể để trống khi đã mô tả rõ nhu cầu." : "No products selected. This is allowed when the customer need is described clearly."}</div>
-              ) : (
-                <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-                  <table className="w-full min-w-[620px] text-left text-xs"><thead className="border-b bg-slate-100 text-[10px] uppercase text-slate-500"><tr><th className="p-2">{vi ? "Sản phẩm" : "Product"}</th><th className="p-2 text-right">{vi ? "Đơn giá" : "Price"}</th><th className="p-2 text-center">{vi ? "SL" : "Qty"}</th><th className="p-2 text-center">{vi ? "CK %" : "Disc %"}</th><th className="p-2 text-right">{vi ? "Tổng" : "Total"}</th><th className="w-10 p-2" /></tr></thead>
-                    <tbody className="divide-y">{draft.lineItems.map((item) => {
-                      const price = item.customPrice ?? item.product.listPrice ?? 0;
-                      const discount = item.discountPercent ?? 0;
-                      const total = price * item.quantity * (1 - discount / 100);
-                      return (
-                        <tr key={item.product.id}>
-                          <td className="min-w-0 p-2">
-                            <div className="max-w-[260px] break-words [overflow-wrap:anywhere] font-semibold text-slate-900" title={item.product.name}>{item.product.name}</div>
-                            <div className="max-w-[260px] break-words [overflow-wrap:anywhere] font-mono text-[10px] text-slate-400" title={item.product.sku}>{item.product.sku}</div>
-                          </td>
-                          <td className="p-2 text-right font-mono">{price.toLocaleString()}</td>
-                          <td className="p-2 text-center"><input className="w-16 rounded border p-1 text-center" type="number" min="1" value={item.quantity} onChange={(event) => updateLineItem(item.product.id, { quantity: Math.max(1, Number(event.target.value) || 1) })} /></td>
-                          <td className="p-2 text-center"><input className="w-16 rounded border p-1 text-center" type="number" min="0" max="100" value={discount} onChange={(event) => updateLineItem(item.product.id, { discountPercent: Math.min(100, Math.max(0, Number(event.target.value) || 0)) })} /></td>
-                          <td className="p-2 text-right font-mono text-slate-800">{total.toLocaleString()}</td>
-                          <td className="p-2"><button type="button" className="crm-overflow-safe rounded p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-600" onClick={() => removeLineItem(item.product.id)} aria-label={vi ? `Xóa ${item.product.name}` : `Remove ${item.product.name}`}><Trash2 size={13} /></button></td>
-                        </tr>
-                      );
-                    })}</tbody>
-                  </table>
-                </div>
-              )}
-              {validationErrors.products ? <p className="text-[11px] text-rose-600">{validationErrors.products}</p> : null}
-            </section>
-          ) : null}
+          {productsEnabled && <DealInterestedProductsPicker ids={draft.interestedProductIds} onChange={ids => update("interestedProductIds", ids)} />}
+
 
           <section className="space-y-3 rounded-xl border border-slate-200 p-4" data-guidance-id="deals.form.next-step">
             <Checkbox disabled={mode === "edit" && Boolean(initial.current.nextActionAt)} id={`deal-${mode}-follow-up-task`} label={vi ? "Tạo công việc theo dõi sau khi lưu" : "Create a follow-up task after saving"} checked={draft.createFollowUpTask} onChange={(event) => {
@@ -372,7 +343,7 @@ export function DealFormModal({
         message={vi ? "Các thay đổi chưa được lưu." : "Your changes have not been saved."}
         confirmText={vi ? "Bỏ thay đổi" : "Discard changes"}
         cancelText={vi ? "Tiếp tục chỉnh sửa" : "Keep editing"} type="warning" />
-      <ProductPickerModal id={`deal-${mode}-product-picker`} isOpen={isPickerOpen} onClose={() => setIsPickerOpen(false)} onApply={(items) => { applyLineItems(items); setValidationErrors((current) => ({ ...current, demandSummary: "", products: "" })); }} products={productCatalog} initialSelected={draft.lineItems} context="deal" />
+
     </>
   );
 }

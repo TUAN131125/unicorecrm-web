@@ -1,3 +1,4 @@
+import { getAuthSessionSnapshot, isConnectedAuthRuntime, subscribeToAuthSession } from "@/platform/identity-auth";
 import { BrowserStorageAdapter } from "@/platform/persistence";
 import { transitionWorkspaceScope } from "@/platform/workspace-scope/workspaceScopeRuntime";
 import type { WorkspaceMembership } from "@/platform/workspace-membership";
@@ -23,7 +24,22 @@ export class ConnectedWorkspaceContextRuntime {
   private readonly workspaceListeners = new Set<WorkspaceListener>();
   private readonly bootstrapListeners = new Set<BootstrapListener>();
 
-  constructor(private readonly gateway: WorkspaceBootstrapGateway) {}
+  private generation = 0;
+  private entrySequence = 0;
+  private owner = workspaceOwner();
+  private readonly preparedOwners = new WeakMap<WorkspaceBootstrapContext, { generation: number; sequence: number; signal?: AbortSignal }>();
+  constructor(private readonly gateway: WorkspaceBootstrapGateway) {
+    subscribeToAuthSession(() => {
+      const owner = workspaceOwner();
+      if (owner === this.owner) return;
+      this.owner = owner;
+      this.clear();
+    });
+  }
+  private assertOwner(generation: number, signal?: AbortSignal): void {
+    signal?.throwIfAborted();
+    if (generation !== this.generation || this.owner !== workspaceOwner()) throw new Error("WORKSPACE_AUTHORITY_RETIRED");
+  }
 
   listMemberships(): WorkspaceMembership[] { return this.memberships.map(cloneMembership); }
   getActiveContext(): WorkspaceBootstrapContext | null { return this.activeContext ? cloneContext(this.activeContext) : null; }
@@ -44,23 +60,37 @@ export class ConnectedWorkspaceContextRuntime {
    * authoritative list and read the Workspace bootstrap. Nothing is committed here.
    */
   async prepareEntry(workspaceId: string, signal?: AbortSignal): Promise<WorkspaceBootstrapContext> {
+    const generation = this.generation;
+    const sequence = ++this.entrySequence;
     if (this.memberships.length === 0) await this.loadMemberships(signal);
+    this.assertOwner(generation, signal);
     const membership = this.memberships.find((item) => item.workspaceId === workspaceId);
     if (!membership) throw new Error(`WORKSPACE_MEMBERSHIP_NOT_FOUND:${workspaceId}`);
     if (membership.status !== "active") throw new Error(`WORKSPACE_MEMBERSHIP_INACTIVE:${workspaceId}`);
     this.pendingWorkspaceId = workspaceId;
+    signal?.addEventListener("abort", () => {
+      if (sequence === this.entrySequence) this.pendingWorkspaceId = undefined;
+    }, { once: true });
     try {
       const context = await this.gateway.getWorkspaceBootstrap(membership.workspaceId, { signal });
+      this.assertOwner(generation, signal);
       assertContextMatchesMembership(context, membership);
-      return cloneContext(context);
+      const prepared = cloneContext(context);
+      this.preparedOwners.set(prepared, { generation, sequence, ...(signal ? { signal } : {}) });
+      return prepared;
     } catch (error) {
-      this.pendingWorkspaceId = undefined;
+      if (generation === this.generation && sequence === this.entrySequence) this.pendingWorkspaceId = undefined;
       throw error;
     }
   }
 
   /** Final step of canonical workspace entry. Only reached once every backend read succeeded. */
   commitEntry(context: WorkspaceBootstrapContext): WorkspaceBootstrapContext {
+    const prepared = this.preparedOwners.get(context);
+    this.assertOwner(prepared?.generation ?? this.generation, prepared?.signal);
+    if (prepared && prepared.sequence !== this.entrySequence) throw new Error("WORKSPACE_ENTRY_RETIRED");
+    const session = getAuthSessionSnapshot();
+    if (isConnectedAuthRuntime() && context.workspace.accountId !== session?.principal.accountId) throw new Error("WORKSPACE_ACCOUNT_MISMATCH");
     const previousId = this.activeContext?.workspace.workspaceId;
     const commit = () => {
       this.activeContext = cloneContext(context);
@@ -77,14 +107,18 @@ export class ConnectedWorkspaceContextRuntime {
     return cloneContext(context);
   }
 
-  abortEntry(): void { this.pendingWorkspaceId = undefined; }
+  // Entry cancellation belongs to its captured signal; an older caller must not
+  // clear the transport scope of a newer entry in the same runtime.
+  abortEntry(): void {}
   getSnapshot(): WorkspaceMembership {
     if (!this.activeContext) throw new Error("Connected workspace context has not been resolved.");
     return cloneMembership(this.activeContext.workspace);
   }
 
   async loadMemberships(signal?: AbortSignal): Promise<WorkspaceMembership[]> {
+    const generation = this.generation;
     const values = await this.gateway.listMyWorkspaces({ signal });
+    this.assertOwner(generation, signal);
     this.memberships = values.map(cloneMembership);
     if (this.activeContext && !this.memberships.some((membership) => membership.status === "active" && membership.workspaceId === this.activeContext?.workspace.workspaceId)) this.clear();
     return this.listMemberships();
@@ -95,6 +129,7 @@ export class ConnectedWorkspaceContextRuntime {
   }
 
   clear(): void {
+    this.generation += 1;
     this.activeContext = null;
     this.memberships = [];
     this.pendingWorkspaceId = undefined;
@@ -113,3 +148,5 @@ function assertContextMatchesMembership(context: WorkspaceBootstrapContext, memb
 }
 function cloneMembership(value: WorkspaceMembership): WorkspaceMembership { return { ...value, teamIds: [...(value.teamIds ?? [])], roleAssignmentIds: [...(value.roleAssignmentIds ?? [])] }; }
 function cloneContext(value: WorkspaceBootstrapContext): WorkspaceBootstrapContext { return { ...value, workspace: cloneMembership(value.workspace), capabilities: [...value.capabilities], configuration: { ...value.configuration, enabledModuleKeys: [...value.configuration.enabledModuleKeys], availableProductSpaces: [...value.configuration.availableProductSpaces] } }; }
+
+function workspaceOwner(): string { const session = getAuthSessionSnapshot(); return JSON.stringify([session?.sessionId, session?.principal.accountId]); }

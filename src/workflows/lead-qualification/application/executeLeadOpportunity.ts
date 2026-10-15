@@ -42,7 +42,7 @@ export function executeLeadOpportunity(
     id: dealId,
     name: command.deal.name.trim(),
     stage: DealStage.DISCOVERY,
-    amount: command.deal.estimatedValue ?? 0,
+    amount: Number(command.deal.estimatedValue ?? 0), // Demo-only display projection; connected adapter preserves decimal strings.
     opportunityScore: 40,
     ownerId: command.deal.ownerId,
     expectedCloseDate: command.deal.expectedCloseDate?.trim() || "",

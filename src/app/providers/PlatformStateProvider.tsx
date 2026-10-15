@@ -1,7 +1,8 @@
+import { isConnectedWorkspaceRuntime, getWorkspaceBootstrapSnapshot, subscribeToWorkspaceBootstrap } from "@/platform/workspace-context";
+import { getAccessGovernanceRuntimeBinding, isAccessGovernanceRuntimeConfigured } from "@/platform/access-control";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import {
-  getAuthSessionSnapshot,
-  subscribeToAuthSession,
+  useAuthSessionSnapshot,
   type AuthSession,
 } from "@/platform/identity-auth";
 import {
@@ -22,17 +23,26 @@ import { PlatformStateContextProvider, type PlatformStateContextValue } from "@/
 import { startCustomerConversionRuntime } from "@/workflows/customer-conversion";
 
 export const PlatformStateProvider: React.FC<React.PropsWithChildren> = ({ children }) => {
-  const initialSession = getAuthSessionSnapshot();
-  if (!initialSession) throw new Error("PlatformStateProvider requires an authenticated session.");
+  const session = useAuthSessionSnapshot();
+  const [, setRevision] = useState(0);
+  useEffect(() => subscribeToWorkspaceBootstrap(() => setRevision((r) => r + 1)), []);
+  useEffect(() => isAccessGovernanceRuntimeConfigured()
+    ? getAccessGovernanceRuntimeBinding().subscribe(() => setRevision((r) => r + 1)) : undefined, []);
+  if (!session || session.status !== "ACTIVE") return null;
+  if (isConnectedWorkspaceRuntime()) {
+    const context = getWorkspaceBootstrapSnapshot();
+    const access = isAccessGovernanceRuntimeConfigured() && context ? getAccessGovernanceRuntimeBinding().getEffectiveAccess(context.workspace.workspaceId) : undefined;
+    if (!context || !access || access.accountId !== session.principal.accountId
+      || context.workspace.membershipId !== access.membershipId || context.workspace.memberId !== access.memberId) return null;
+  }
+  return <AuthenticatedPlatformStateProvider key={JSON.stringify([session.sessionId, session.principal.accountId])} session={session}>{children}</AuthenticatedPlatformStateProvider>;
+};
 
-  const [session, setSession] = useState<AuthSession>(initialSession);
+const AuthenticatedPlatformStateProvider: React.FC<React.PropsWithChildren<{ session: AuthSession }>> = ({ children, session }) => {
   const [crmConfig, setCrmConfigState] = useState(getWorkspaceConfigSnapshot);
   const [activeWorkspace, setActiveWorkspace] = useState(getWorkspaceContextSnapshot);
   const [workspaceContextRevision, setWorkspaceContextRevision] = useState(0);
 
-  useEffect(() => subscribeToAuthSession((next) => {
-    if (next) setSession(next);
-  }), []);
   useEffect(() => subscribeToWorkspaceConfig(setCrmConfigState), []);
   useEffect(
     () => subscribeToWorkspaceContext((workspace) => {

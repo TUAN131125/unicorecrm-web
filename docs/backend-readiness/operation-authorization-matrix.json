@@ -3526,6 +3526,19 @@
       "backendEnforcement": "REQUIRED"
     },
     {
+      "operationId": "searchProductSelections",
+      "method": "GET",
+      "path": "/products/selection",
+      "moduleOwner": "products",
+      "capability": "products.read",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": false,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
       "operationId": "sendInvoice",
       "method": "POST",
       "path": "/invoices/{invoiceId}/send",

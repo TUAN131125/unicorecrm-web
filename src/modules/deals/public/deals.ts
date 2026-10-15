@@ -342,7 +342,7 @@ function editableProfileInput(deal: Deal): ReplaceDealProfileInput {
   return {
     name: deal.name,
     buyerRef: deal.buyerRef,
-    amount: { amount: String(deal.amount), currency },
+    amount: { amount: deal.amountDecimal ?? String(deal.amount), currency },
     contactId: deal.contactId,
     sourceLeadId: deal.leadId,
     interestedProductIds: [...deal.interestedProducts],
@@ -450,4 +450,10 @@ function assertDemoDealMutationAllowed(operation: string): void {
     retryable: false,
     details: { operation, authority: "docs/api/openapi.json", decisionId: "DEC-PHASE14-DEAL-API-BOUNDARY" },
   });
+}
+
+export async function refreshDealRecord(dealId: string, signal?: AbortSignal): Promise<Deal> {
+  const deal = await getDealApiRuntime().queries.get(dealId, signal);
+  projectDeal(deal);
+  return deal;
 }

@@ -53164,6 +53164,206 @@
         ],
         "description": "Independent column window ordered by updatedAt DESC, id DESC. Cursor is opaque and bound to trusted workspace/member, access-policy fingerprint, column and filters. Invalid or mismatched cursors return 422. No full collection projection."
       }
+    },
+    "/products/selection": {
+      "get": {
+        "operationId": "searchProductSelections",
+        "tags": [
+          "Products"
+        ],
+        "summary": "Search authorized Product identities for selection or resolve referenced identities",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 160
+            },
+            "description": "Trimmed literal name or normalized SKU substring; incompatible with ids."
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "maxLength": 8192
+            },
+            "description": "Protected query and current authority bound continuation; expires after 15 minutes."
+          },
+          {
+            "name": "ids",
+            "in": "query",
+            "style": "form",
+            "explode": true,
+            "schema": {
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 100,
+              "uniqueItems": true,
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 160
+              }
+            },
+            "description": "Bounded historical identity resolution, including authorized inactive/archived Products. Incompatible with q, cursor or explicit limit."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Authorized selection identities; search returns ACTIVE Products, ids resolution may return historical statuses. No catalog totals or pricing.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductSelectionPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "products",
+        "x-required-capability": "products.read",
+        "x-resource-scope": "WORKSPACE",
+        "x-data-scope": "WORKSPACE",
+        "x-workspace-required": true,
+        "x-actor-required": false,
+        "x-idempotency-policy": "NOT_APPLICABLE",
+        "x-concurrency-policy": "NOT_APPLICABLE",
+        "x-audit-requirement": "READ_ACCESS_LOG",
+        "x-event-outbox-expectation": "NOT_APPLICABLE",
+        "x-transaction-boundary": "READ_ONLY",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "RATE_LIMITED",
+          "INTEGRATION_UNAVAILABLE",
+          "INTERNAL_ERROR"
+        ]
+      }
     }
   },
   "components": {
@@ -77756,6 +77956,79 @@
           "NURTURE",
           "DISQUALIFIED"
         ]
+      },
+      "ProductSelectionItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "name",
+          "sku",
+          "status",
+          "version"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "name": {
+            "type": "string"
+          },
+          "sku": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "ACTIVE",
+              "INACTIVE",
+              "ARCHIVED"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "ProductSelectionPageInfo": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "hasNextPage"
+        ],
+        "properties": {
+          "hasNextPage": {
+            "type": "boolean"
+          },
+          "nextCursor": {
+            "type": "string",
+            "maxLength": 8192
+          }
+        }
+      },
+      "ProductSelectionPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "pageInfo"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "$ref": "#/components/schemas/ProductSelectionItem"
+            }
+          },
+          "pageInfo": {
+            "$ref": "#/components/schemas/ProductSelectionPageInfo"
+          }
+        }
       }
     }
   },

@@ -1,6 +1,6 @@
 import { assertMutationCommandSupported, createMutationMetadata, executeMutationCommand, type MutationCommandMetadata, type MutationOutcome } from "@/shared/application";
 import type { OrganizationAccount } from "../domain/model/organizationAccount.types";
-import { isOrganizationConnectedApiRuntime, organizationAccountRepository } from "../application/composition/organizationApplicationServices";
+import { getOrganizationApiRuntime, isOrganizationConnectedApiRuntime, organizationAccountRepository } from "../application/composition/organizationApplicationServices";
 export { createOrganizationViaApi, updateOrganizationViaApi, archiveOrganizationViaApi } from "../application/commands/organizationApiCommands";
 
 /** True when Organization data is served by the backend, where local Organization writes are refused. */
@@ -83,4 +83,11 @@ export function subscribeToOrganizationAccounts(
   listener: (accounts: OrganizationAccount[]) => void,
 ): () => void {
   return organizationAccountRepository.subscribe(listener);
+}
+
+export function queryOrganizationPage(query: import("@/shared/application").ModuleListQuery, signal?: AbortSignal) {
+  return getOrganizationApiRuntime().queries.list(query, signal);
+}
+export function readOrganizationById(id: string, signal?: AbortSignal) {
+  return getOrganizationApiRuntime().queries.get(id, signal);
 }

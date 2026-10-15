@@ -59,7 +59,7 @@ export interface ExecuteLeadOpportunityCommand {
     ownerId: string;
     expectedCloseDate?: string;
     interestedProductIds: string[];
-    estimatedValue?: number;
+    estimatedValue?: string | number;
     decisionProcess?: string;
     buyingWindow?: string;
     followUpTask?: {

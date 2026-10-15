@@ -1,3 +1,4 @@
+import { useAuthSessionSnapshot } from "@/platform/identity-auth";
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { RouteLoadingExperience } from "@/components/loading";
@@ -33,6 +34,9 @@ type GateState =
  */
 export const RequireWorkspaceContext: React.FC<React.PropsWithChildren> = ({ children }) => {
   const location = useLocation();
+  const session = useAuthSessionSnapshot();
+  const owner = JSON.stringify([session?.sessionId, session?.principal.accountId]);
+  const [readyOwner, setReadyOwner] = React.useState<string>();
   const { locale } = useI18n();
   const vi = locale === "vi";
   const [state, setState] = React.useState<GateState>({ status: "loading" });
@@ -42,6 +46,8 @@ export const RequireWorkspaceContext: React.FC<React.PropsWithChildren> = ({ chi
 
   React.useEffect(() => {
     const controller = new AbortController();
+    setState({ status: "loading" });
+    setReadyOwner(undefined);
     void (async () => {
       try {
         if (!isConnectedWorkspaceRuntime()) {
@@ -50,7 +56,7 @@ export const RequireWorkspaceContext: React.FC<React.PropsWithChildren> = ({ chi
             ? await switchWorkspaceContext(routeWorkspaceKey, controller.signal)
             : current;
           await loadAccessGovernance(workspace.workspaceId, controller.signal);
-          setState({ status: "ready" });
+          { setReadyOwner(owner); setState({ status: "ready" }); }
           return;
         }
 
@@ -68,27 +74,27 @@ export const RequireWorkspaceContext: React.FC<React.PropsWithChildren> = ({ chi
             }
             await enterWorkspaceByKey(routeWorkspaceKey, controller.signal);
           }
-          if (!controller.signal.aborted) setState({ status: "ready" });
+          if (!controller.signal.aborted) { setReadyOwner(owner); setState({ status: "ready" }); }
           return;
         }
 
         if (active || await restoreSelectedWorkspaceContext(controller.signal)) {
-          if (!controller.signal.aborted) setState({ status: "ready" });
+          if (!controller.signal.aborted) { setReadyOwner(owner); setState({ status: "ready" }); }
           return;
         }
 
         await resolveCanonicalWorkspaceContext(controller.signal);
         if (controller.signal.aborted) return;
-        setState({ status: "ready" });
+        { setReadyOwner(owner); setState({ status: "ready" }); }
       } catch (error) {
         if (controller.signal.aborted) return;
         setState({ status: "failed", message: describeGateFailure(error, vi) });
       }
     })();
     return () => controller.abort();
-  }, [routeWorkspaceKey, attempt, vi]);
+  }, [routeWorkspaceKey, attempt, vi, owner]);
 
-  if (state.status === "loading") return <RouteLoadingExperience fullScreen />;
+  if (state.status === "loading" || (state.status === "ready" && readyOwner !== owner)) return <RouteLoadingExperience fullScreen />;
   if (state.status === "redirect") return <Navigate to={state.to} replace />;
   if (state.status === "failed") {
     return (

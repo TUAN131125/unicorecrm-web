@@ -1,3 +1,4 @@
+import { getAuthSessionSnapshot } from "@/platform/identity-auth";
 import { getWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import { getAccessControlSnapshot, getAccessGovernanceRuntimeBinding, isAccessGovernanceRuntimeConfigured, resolveEffectiveAccess } from "@/platform/access-control";
 
@@ -6,7 +7,8 @@ export function getContactProjectionAuthorityScope(): string | undefined { retur
 export function markContactProjectionAuthorityScope(scope: string): void { projectionAuthorityScope = scope; }
 
 function key(workspaceId: string, access: { accountId: string; membershipId: string; memberId: string }, revision: number) {
-  return JSON.stringify([workspaceId, access.accountId, access.membershipId, access.memberId, revision]);
+  const session = getAuthSessionSnapshot();
+  return JSON.stringify([workspaceId, access.accountId, access.membershipId, access.memberId, revision, session?.status ?? null, session?.sessionId ?? null, session?.principal.accountId ?? null]);
 }
 export function getContactReadAuthorityScope(): string {
   const { workspaceId } = getWorkspaceContextSnapshot();

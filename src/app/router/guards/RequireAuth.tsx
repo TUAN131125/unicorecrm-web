@@ -1,6 +1,6 @@
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { consumeAuthBoundaryReason, getAuthSessionSnapshot } from "@/platform/identity-auth";
+import { consumeAuthBoundaryReason, useAuthSessionSnapshot } from "@/platform/identity-auth";
 import { ROUTE_KEYS } from "@/platform/navigation";
 import { withRedirectQuery } from "@/features/auth/routing/postLoginRedirect";
 
@@ -10,7 +10,7 @@ interface RequireAuthProps {
 
 export const RequireAuth: React.FC<RequireAuthProps> = ({ children }) => {
   const location = useLocation();
-  const session = getAuthSessionSnapshot();
+  const session = useAuthSessionSnapshot();
 
   if (!session || session.status !== "ACTIVE") {
     const fromPath = location.pathname + location.search;

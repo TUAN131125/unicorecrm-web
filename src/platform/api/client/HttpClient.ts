@@ -8,7 +8,7 @@ export interface HttpRequest<TBody = unknown> {
   operationId: string;
   method: HttpMethod;
   path: string;
-  query?: Record<string, string | number | boolean | null | undefined>;
+  query?: Record<string, string | number | boolean | readonly string[] | null | undefined>;
   body?: TBody;
   headers?: Record<string, string>;
   signal?: AbortSignal;

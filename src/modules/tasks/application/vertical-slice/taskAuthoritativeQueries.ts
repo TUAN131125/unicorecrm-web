@@ -1,3 +1,6 @@
+import { getAuthSessionSnapshot, subscribeToAuthSession, isConnectedAuthRuntime } from "@/platform/identity-auth";
+import { getWorkspaceContextSnapshot, subscribeToWorkspaceContext } from "@/platform/workspace-context";
+import { getAccessGovernanceRuntimeBinding, isAccessGovernanceRuntimeConfigured, resolveEffectiveAccess } from "@/platform/access-control";
 import { registerWorkspaceScopeDisposer } from "@/platform/workspace-scope";
 import {
   createAuthoritativeResource,
@@ -19,11 +22,61 @@ const scopedTaskCollections = new Map<string, AuthoritativeResource<Authoritativ
 const taskDetails = new Map<string, AuthoritativeResource<Task>>();
 const activityCollections = new Map<string, AuthoritativeResource<AuthoritativePage<Activity>>>();
 
+let authorityGeneration = 0;
+let currentAuthority: string | undefined;
+let authoritySubscribed = false;
+
+function taskAuthority(): string | undefined {
+  try {
+    const session = getAuthSessionSnapshot();
+    const workspace = getWorkspaceContextSnapshot();
+    const binding = isAccessGovernanceRuntimeConfigured() ? getAccessGovernanceRuntimeBinding() : undefined;
+    const access = binding ? binding.getEffectiveAccess(workspace.workspaceId) : resolveEffectiveAccess(workspace.workspaceId);
+    if (isConnectedAuthRuntime() && (!session || !access || access.accountId !== session.principal.accountId)) return undefined;
+    return JSON.stringify([session?.sessionId, session?.principal.accountId, workspace.workspaceId,
+      access?.accountId, access?.memberId, access?.membershipId, binding?.getState().authorityRevision]);
+  } catch { return undefined; }
+}
+function retireTasks(): void {
+  authorityGeneration += 1;
+  for (const resource of [taskCollection, ...scopedTaskCollections.values(), ...taskDetails.values(), ...activityCollections.values()]) resource.reset();
+  runWorkspaceScopeReset(() => taskActivityRepository.replace({ tasks: [], activities: [] }));
+}
+function syncTaskAuthority(): void {
+  const next = taskAuthority();
+  if (next !== currentAuthority) { currentAuthority = next; retireTasks(); }
+}
+function ensureTaskAuthority(): void {
+  if (!authoritySubscribed) {
+    authoritySubscribed = true;
+    subscribeToAuthSession(syncTaskAuthority);
+    subscribeToWorkspaceContext(syncTaskAuthority);
+    if (isAccessGovernanceRuntimeConfigured()) getAccessGovernanceRuntimeBinding().subscribe(syncTaskAuthority);
+  }
+  syncTaskAuthority();
+}
+export function getTaskReadAuthorityScope(): string | undefined {
+  ensureTaskAuthority();
+  return currentAuthority === undefined ? undefined : JSON.stringify([currentAuthority, authorityGeneration]);
+}
+function captureTaskAuthority(): () => void {
+  ensureTaskAuthority();
+  const generation = authorityGeneration;
+  const authority = currentAuthority;
+  if (!authority) throw new DOMException("Task authority is unresolved.", "AbortError");
+  return () => {
+    syncTaskAuthority();
+    if (generation !== authorityGeneration || authority !== currentAuthority) throw new DOMException("Task authority was retired.", "AbortError");
+  };
+}
+
 export function getTaskCollectionResource(): AuthoritativeResource<AuthoritativePage<Task>> {
+  ensureTaskAuthority();
   return taskCollection;
 }
 
 export function getTaskDetailResource(taskId: string): AuthoritativeResource<Task> {
+  ensureTaskAuthority();
   let resource = taskDetails.get(taskId);
   if (!resource) {
     resource = createTaskDetailResource(taskId);
@@ -33,6 +86,7 @@ export function getTaskDetailResource(taskId: string): AuthoritativeResource<Tas
 }
 
 export function getActivityCollectionResource(query: ActivityListQuery = {}): AuthoritativeResource<AuthoritativePage<Activity>> {
+  ensureTaskAuthority();
   const key = collectionQueryKey(query);
   let resource = activityCollections.get(key);
   if (!resource) {
@@ -46,15 +100,18 @@ export function getScopedTaskCollectionResource(
   query: Omit<TaskListQuery, "cursor" | "limit">,
 ): AuthoritativeResource<AuthoritativePage<Task>> {
   assertTaskIdentityQuery(query);
+  ensureTaskAuthority();
   const key = collectionQueryKey(query);
   let resource = scopedTaskCollections.get(key);
   if (!resource) {
     const scopedQuery = structuredClone(query);
     resource = createAuthoritativeResource(async (signal) => {
+    const assertAuthority = captureTaskAuthority();
       const page = await loadAllPages((cursor) => getTaskApiRuntime().queries.list({
         ...scopedQuery, limit: PAGE_SIZE, ...(cursor ? { cursor } : {}),
       }, signal));
       signal.throwIfAborted();
+      assertAuthority();
       runBackendProjection("tasks", () => {
         const current = taskActivityRepository.snapshot();
         // The complete identity scope is replaced; unrelated records remain projected.
@@ -88,18 +145,14 @@ function collectionQueryKey(query: TaskListQuery | ActivityListQuery): string {
   ])].sort());
 }
 
-registerWorkspaceScopeDisposer(() => {
-  const resources = [taskCollection, ...scopedTaskCollections.values(), ...taskDetails.values(), ...activityCollections.values()];
-  for (const resource of resources) {
-    if (resource.getSnapshot().state !== "IDLE") resource.reset();
-  }
-  runWorkspaceScopeReset(() => taskActivityRepository.replace({ tasks: [], activities: [] }));
-});
+registerWorkspaceScopeDisposer(() => { currentAuthority = undefined; retireTasks(); });
 
 function createTaskCollectionResource(): AuthoritativeResource<AuthoritativePage<Task>> {
   const resource = createAuthoritativeResource(async (signal) => {
+    const assertAuthority = captureTaskAuthority();
     const page = await loadAllPages((cursor) => getTaskApiRuntime().queries.list({ limit: PAGE_SIZE, ...(cursor ? { cursor } : {}) }, signal));
     signal.throwIfAborted();
+    assertAuthority();
     runBackendProjection("tasks", () => {
       const current = taskActivityRepository.snapshot();
       taskActivityRepository.replace({ tasks: page.items, activities: current.activities });
@@ -115,8 +168,10 @@ function createTaskCollectionResource(): AuthoritativeResource<AuthoritativePage
 
 function createTaskDetailResource(taskId: string): AuthoritativeResource<Task> {
   const resource = createAuthoritativeResource(async (signal) => {
+    const assertAuthority = captureTaskAuthority();
     const task = await getTaskApiRuntime().queries.get(taskId, signal);
     signal.throwIfAborted();
+    assertAuthority();
     runBackendProjection("tasks", () => {
       const current = taskActivityRepository.snapshot();
       const tasks = current.tasks.some((item) => item.id === task.id)
@@ -139,8 +194,10 @@ function createTaskDetailResource(taskId: string): AuthoritativeResource<Task> {
 
 function createActivityCollectionResource(query: ActivityListQuery): AuthoritativeResource<AuthoritativePage<Activity>> {
   const resource = createAuthoritativeResource(async (signal) => {
+    const assertAuthority = captureTaskAuthority();
     const page = await loadAllPages((cursor) => getTaskApiRuntime().queries.listActivities({ ...query, limit: PAGE_SIZE, ...(cursor ? { cursor } : {}) }, signal));
     signal.throwIfAborted();
+    assertAuthority();
     runBackendProjection("tasks", () => {
       const current = taskActivityRepository.snapshot();
       const filters = query.filters ?? {};

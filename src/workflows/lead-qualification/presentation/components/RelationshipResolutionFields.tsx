@@ -1,4 +1,5 @@
 import React from "react";
+import { QualificationContactPicker } from "./QualificationContactPicker";
 import type { Contact } from "@/modules/contacts";
 import type { OrganizationAccount } from "@/modules/organizations";
 import { Input, Select } from "@/shared/components/ui";
@@ -45,10 +46,10 @@ export function RelationshipResolutionFields({ value, onChange, contacts, organi
         </p>
       )}
 
-      {value.mode === "EXISTING" ? (
+      {value.mode === "EXISTING" ? (value.kind === "CONTACT" ? <QualificationContactPicker id={value.selectedId} onChange={selectedId => patch({ selectedId })} locale={locale} error={errors["relationship.selectedId"]} /> : (
         <Select
           id="qualification-relationship-selected"
-          label={value.kind === "CONTACT" ? (vi ? "Chọn Contact" : "Select Contact") : (vi ? "Chọn Organization Account" : "Select Organization Account")}
+          label={vi ? "Chọn Organization Account" : "Select Organization Account"}
           value={value.selectedId || ""}
           onChange={(event) => patch({ selectedId: event.target.value })}
           required
@@ -59,7 +60,7 @@ export function RelationshipResolutionFields({ value, onChange, contacts, organi
             <option key={item.id} value={item.id}>{"fullName" in item ? item.fullName : item.displayName}</option>
           ))}
         </Select>
-      ) : (
+      )) : (
         <>
           {value.kind === "ORGANIZATION_ACCOUNT" && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-slate-50 border border-slate-200 rounded-xl">

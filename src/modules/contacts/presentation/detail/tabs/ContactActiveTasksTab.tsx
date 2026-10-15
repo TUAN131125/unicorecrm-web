@@ -1,3 +1,4 @@
+import { useContactTasksQuery } from "../../hooks/useContactTasksQuery";
 import type { Contact } from "../../../domain/model/contact.types";
 import React, { useState } from "react";
 import { getWorkspaceContextSnapshot, useWorkspaceContextSnapshot } from "@/platform/workspace-context";
@@ -51,6 +52,7 @@ export const ContactActiveTasksTab: React.FC<ContactActiveTasksTabProps> = ({
   const portalHost = React.useContext(OverlayPortalHostContext);
   const portalHostRef = React.useRef(portalHost); portalHostRef.current = portalHost;
   const sourceKey = contactTargetId ?? contact?.id;
+  const query = useContactTasksQuery(sourceKey);
   const { workspaceId } = useWorkspaceContextSnapshot();
   type Intent = { authorityScope: string; task: TaskMocks; contactTargetId: string | undefined; workspaceId: string; initialDate: string; cycle: number; intentId: string; submit: NonNullable<ContactActiveTasksTabProps["onRescheduleTask"]>; notify: ContactActiveTasksTabProps["onModalStateChange"] };
   const [intent, setIntent] = useState<Intent>();
@@ -153,7 +155,7 @@ export const ContactActiveTasksTab: React.FC<ContactActiveTasksTabProps> = ({
         actions={<RelationshipModuleActions secondaryLabel={tx("contactDetail.tasks.openModule", "Mở Công việc")} primaryLabel={!isArchived ? tx("contactDetail.tasks.actions.create", "Tạo công việc") : undefined} onSecondary={onOpenModule} onPrimary={!isArchived ? onCreateTask : undefined} />}
       />
 
-      {activeTasks.length === 0 ? (
+      {query.connected && query.loading ? <p role="status">{locale === "vi" ? "Đang tải công việc…" : "Loading tasks…"}</p> : query.connected && (!query.enabled || query.error) ? <p role="alert">{locale === "vi" ? "Không thể đọc công việc với quyền hiện tại." : "Tasks cannot be read with current access."}</p> : activeTasks.length === 0 ? (
         <div className="flex min-h-[160px] w-full flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-xs text-slate-400">
           <CheckSquare size={24} className="mb-2 text-slate-300" />
           <span className="font-semibold">{tx("contactDetail.empty.noActiveTasks", "Không có công việc nào đang thực hiện.")}</span>
@@ -215,6 +217,8 @@ export const ContactActiveTasksTab: React.FC<ContactActiveTasksTabProps> = ({
           ))}
         </div>
       )}
+
+      {query.connected && query.hasNextPage && <Button type="button" variant="secondary" disabled={query.loading} onClick={() => void query.loadMore()}>{locale === "vi" ? "Tải thêm" : "Load more"}</Button>}
 
       {intent && <Modal variant="form" isOpen onClose={requestClose} title={tx("contactDetail.actions.rescheduleTitle", "Điều chỉnh hạn xử lý")} size="sm">
         <form ref={formRef} noValidate data-contact-target-id={intent.contactTargetId} data-task-target-id={intent.task.id} className="space-y-4 text-left" onSubmit={event => { event.preventDefault(); void save(); }}>

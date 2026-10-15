@@ -113,3 +113,10 @@ export {
   createContactOrganizationRelationshipViaApi, updateContactOrganizationRelationshipViaApi, endContactOrganizationRelationshipViaApi,
   createContactCustomerRelationshipViaApi, updateContactCustomerRelationshipViaApi, endContactCustomerRelationshipViaApi,
 } from "../application/commands/contactRelationshipCommands";
+
+export function queryContactPage(query: import("@/shared/application").ModuleListQuery, signal?: AbortSignal) {
+  return getContactApiRuntime().queries.list(query, signal);
+}
+export function readContactById(id: string, signal?: AbortSignal) {
+  return getContactApiRuntime().queries.get(id, signal);
+}

@@ -1,0 +1,34 @@
+import assert from "node:assert/strict";
+import { JSDOM } from "jsdom";
+import type { AuthoritativePage } from "@/shared/application";
+import type { ProductSelection } from "@/modules/products/application/ports/ProductApiRuntime";
+const dom = new JSDOM("<!doctype html><html><body></body></html>", { url: "http://localhost" });
+for (const key of ["window", "document", "localStorage", "CustomEvent", "Event", "EventTarget"] as const)
+  Object.defineProperty(globalThis, key, { value: key === "window" ? dom.window : dom.window[key], configurable: true });
+const auth = await import("@/platform/identity-auth");
+assert.equal(auth.signIn({ email: "admin@unicorecrm.local", password: "admin123" }).ok, true);
+const { initializeApplicationComposition } = await import("@/app/composition");
+await initializeApplicationComposition({ mode: "demo" });
+const { configureProductApplication, getProductApplicationServices } = await import("@/modules/products/application/composition/productApplicationServices");
+const { verifyDealProductSelection } = await import("@/modules/deals/presentation/hooks/useDealProductSelection");
+const { getDealSelectionAuthority } = await import("@/modules/deals/presentation/hooks/useDealSelectionQueries");
+const services = getProductApplicationServices();
+const selection: ProductSelection = { id: "second", name: "Duplicate", sku: "SECOND", status: "active", version: 0 };
+let release: ((page: AuthoritativePage<ProductSelection>) => void) | undefined;
+configureProductApplication({ ...services, api: { ...services.api, mode: "test", queries: { ...services.api.queries, selections: async query => {
+  assert.deepEqual(query.ids, ["second"]);
+  return new Promise(resolve => { release = resolve; });
+} } } });
+const original = getDealSelectionAuthority();
+const pending = verifyDealProductSelection(["second"], original);
+auth.signOut();
+assert.equal(auth.signIn({ email: "admin@unicorecrm.local", password: "admin123" }).ok, true);
+assert.notEqual(getDealSelectionAuthority(), original, "A→signed-out→A must not reuse the old authority generation");
+assert.ok(release);
+release({ items: [selection], pageInfo: { hasNextPage: false }, loadedAt: new Date().toISOString(), authority: "demo" });
+await assert.rejects(pending, { code: "DEAL_SELECTION_AUTHORITY_CHANGED" });
+configureProductApplication({ ...services, api: { ...services.api, mode: "test", queries: { ...services.api.queries, selections: async () => ({ items: [], pageInfo: { hasNextPage: false }, loadedAt: new Date().toISOString(), authority: "demo" }) } } });
+await assert.rejects(verifyDealProductSelection(["second"], getDealSelectionAuthority()), { code: "DEAL_PRODUCT_REFERENCE_UNAVAILABLE" });
+await verifyDealProductSelection([], getDealSelectionAuthority());
+console.log("Products pending selection/current-authority/no-unverified-submit: PASS (unit fixture, not connected acceptance)");
+dom.window.close();

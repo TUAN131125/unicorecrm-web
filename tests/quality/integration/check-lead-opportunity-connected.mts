@@ -1,0 +1,22 @@
+import assert from "node:assert/strict";
+import { LeadQualificationHttpAdapter } from "@/workflows/lead-qualification/infrastructure/http/LeadQualificationHttpAdapter";
+import { createLeadOpportunityIntent } from "@/workflows/lead-qualification/presentation/model/leadOpportunityIntent";
+import type { LeadQualificationWorkflowResponse } from "@/platform/api/generated/commercialApi";
+
+const response: LeadQualificationWorkflowResponse = { commandId: "command", correlationId: "correlation", aggregateId: "lead", aggregateType: "Lead", version: 3, occurredAt: "2026-10-14T00:00:00Z", outcome: "REPLAYED", warnings: [], emittedEventIds: ["event"], auditEvidenceIds: ["audit"], result: { leadId: "lead", leadVersion: 3, qualificationOutcome: "OPPORTUNITY", contactId: "contact-second", dealId: "deal", relationship: { relationshipRef: { type: "CONTACT", id: "contact-second" }, displayName: "Same name" }, createdResources: [{ resourceType: "DEAL", resourceId: "deal", resourceVersion: 0 }] } };
+const requests: { body: unknown; options: unknown }[] = [];
+const api = { async qualifyLeadForOpportunity(_lead: string, body: unknown, options: unknown) { requests.push({ body, options }); if (requests.length === 1) throw new Error("Fixture acknowledgement lost"); return structuredClone(response); } };
+const adapter = new LeadQualificationHttpAdapter(api as never);
+const command = { leadId: "lead", dealsEnabled: true, currency: "VND", relationship: { kind: "CONTACT" as const, mode: "EXISTING" as const, selectedId: "contact-second", contact: { name: "Same name" } }, deal: { name: "Exact amount", ownerId: "member", estimatedValue: "9007199254740993.123456", interestedProductIds: ["product-second"] } };
+const intent = createLeadOpportunityIntent(command, 0, "A", 1);
+const options = { idempotencyKey: intent.metadata.idempotencyKey, expectedVersion: 0 };
+await assert.rejects(adapter.qualifyForOpportunity(intent.command, options));
+const recovered = await adapter.qualifyForOpportunity(intent.command, options);
+assert.equal(recovered.result.contactId, "contact-second"); assert.equal(recovered.result.dealId, "deal"); assert.equal(recovered.evidence.outcome, "REPLAYED");
+assert.deepEqual(requests[0], requests[1]);
+const payload = requests[1]?.body as { deal: { estimatedValue: { amount: string }; interestedProductIds: string[] }; relationship: { selectedId: string } };
+assert.equal(payload.deal.estimatedValue.amount, "9007199254740993.123456"); assert.equal(payload.relationship.selectedId, "contact-second"); assert.deepEqual(payload.deal.interestedProductIds, ["product-second"]);
+await assert.rejects(adapter.qualifyForOpportunity({ ...intent.command, deal: { ...intent.command.deal, estimatedValue: Number.MAX_SAFE_INTEGER + 1 } }, options));
+const invalid = structuredClone(response); invalid.result.dealId = "inconsistent";
+await assert.rejects(new LeadQualificationHttpAdapter({ async qualifyLeadForOpportunity() { return invalid; } } as never).qualifyForOpportunity(intent.command, options));
+console.log("WF-10 HTTP adapter exact decimals/version 0/replay consistency: PASS (transport fixture; real connected proof is separate).");
