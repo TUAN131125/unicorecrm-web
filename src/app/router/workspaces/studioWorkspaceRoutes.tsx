@@ -4,6 +4,7 @@ import { lazyRouteComponent } from "@/app/router/runtime";
 import { PermissionRouteGuard } from "@/components/PermissionRouteGuard";
 import { useI18n } from "@/i18n";
 import { isApiClientError } from "@/platform/api/errors/ApiClientError";
+import { CommunicationsChannelsEntry } from "@/workspaces/studio/presentation/components/CommunicationsChannelsEntry";
 import {
   STUDIO_SECTIONS,
   type StudioSectionId,
@@ -19,12 +20,14 @@ const InformationFieldsView = lazyRouteComponent("StudioInformationFieldsView", 
 const PaymentInformationView = lazyRouteComponent("StudioPaymentInformationView", () => import("@/workspaces/studio/presentation/views/PaymentInformationView"), (module) => module.PaymentInformationView);
 const InvoiceInformationView = lazyRouteComponent("StudioInvoiceInformationView", () => import("@/workspaces/studio/presentation/views/InvoiceInformationView"), (module) => module.InvoiceInformationView);
 const IntegrationsView = lazyRouteComponent("StudioIntegrationsView", () => import("@/workspaces/studio/presentation/views/IntegrationsView"), (module) => module.IntegrationsView);
+const CommunicationChannels = lazyRouteComponent("CommunicationChannels", () => import("@/modules/communications/channels-route"), (module) => module.default);
 const AiConfigurationView = lazyRouteComponent("StudioAiConfigurationView", () => import("@/workspaces/studio/presentation/views/AiConfigurationView"), (module) => module.AiConfigurationView);
 const WebhooksApiView = lazyRouteComponent("StudioWebhooksApiView", () => import("@/workspaces/studio/presentation/views/WebhooksApiView"), (module) => module.WebhooksApiView);
 const StudioIndexRoute = lazyRouteComponent("StudioIndexRoute", () => import("@/workspaces/studio/presentation/pages/StudioIndexRoute"), (module) => module.StudioIndexRoute);
 
 function resolveStudioRouteScreen(sectionId: StudioSectionId): React.ElementType {
   switch (sectionId) {
+    case "communication-channels": return CommunicationChannels;
     case "quick-setup": return QuickSetupView;
     case "business-information": return BusinessInformationView;
     case "locale-region": return LocaleRegionView;
@@ -139,7 +142,8 @@ export function createStudioWorkspaceRoutes(): RouteObject[] {
       path: section.routePath,
       element: (
         <PermissionRouteGuard capability={section.requiredCapability}>
-          {section.id === "ai" ? <StudioRouteScreen sectionId={section.id} screen={Screen} /> : (
+          {section.id === "integrations" ? <CommunicationsChannelsEntry /> : null}
+          {section.id === "ai" || section.id === "communication-channels" ? <StudioRouteScreen sectionId={section.id} screen={Screen} /> : (
             <StudioCoreRuntimeBoundary includeQuickSetup={section.id === "quick-setup"}>
               <StudioRouteScreen sectionId={section.id} screen={Screen} />
             </StudioCoreRuntimeBoundary>

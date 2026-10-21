@@ -41,7 +41,7 @@ import { formatMoneyDto } from "@/shared/money";
 import { relationshipRefKey, type RelationshipRef } from "@/platform/identity";
 import { getAuthSessionSnapshot } from "@/platform/identity-auth";
 import { listWorkspaceMemberDirectory, resolveWorkspaceMemberName } from "@/platform/member-directory";
-import { useEffectiveAccess } from "@/platform/access-control";
+import { useEffectiveAccess, useEffectiveRecordAccessDecision } from "@/platform/access-control";
 import { recordOperationalAudit } from "@/platform/operational-audit";
 import { useSubscribableSnapshot } from "@/platform/react";
 import { OrganizationDetailTabs, type OrganizationDetailTab } from "../detail/OrganizationDetailTabs";
@@ -49,6 +49,7 @@ import { OrganizationEditModal } from "../detail/OrganizationEditModal";
 import { OrganizationCreateOpportunityModal } from "../detail/OrganizationCreateOpportunityModal";
 import { OrganizationInsightPanel } from "../detail/OrganizationInsightPanel";
 import { OrganizationOverviewTab } from "../detail/OrganizationOverviewTab";
+import { OrganizationConnectedWorkspace } from "../detail/OrganizationConnectedWorkspace";
 import {
   OrganizationQuickActivityModal,
   type OrganizationQuickAction,
@@ -128,7 +129,12 @@ export const OrganizationAccountDetailPage: React.FC = () => {
   const endLifecycle = useBoundFormDraft(Boolean(endRepresentativeContactId), `${account?.id}:${endRepresentativeContactId}`, { account, contactId: endRepresentativeContactId, actorId }, () => ({ reason: "" }), "Organization representative relationship", () => setEndRepresentativeContactId(null));
   const endRepresentativeReason = endLifecycle.draft.reason;
   const setEndRepresentativeReason = (reason: string) => endLifecycle.setDraft({ reason });
-  const canEdit = access.canPerform("organizations", "update");
+  const recordAccess = useEffectiveRecordAccessDecision();
+  const canEdit = access.canPerform("organizations", "update")
+    && (!isOrganizationConnectedMode() || recordAccess?.canUpdate === true);
+  const canArchive = access.canPerform("organizations", "delete")
+    && (!isOrganizationConnectedMode() || recordAccess?.canDelete === true)
+    && access.getFieldAccess("organizations", "status") === "READ_WRITE";
   const canAddRepresentative = access.canPerform("organizations", "update")
     && access.canPerform("contacts", "create")
     && !isContactOrganizationRelationshipUnavailable();
@@ -354,6 +360,7 @@ export const OrganizationAccountDetailPage: React.FC = () => {
 
   return (
     <RecordDetailFrame id="organization-account-detail-page" className="min-w-0 space-y-4 overflow-x-hidden rounded-2xl bg-slate-50 p-1 text-[11px] text-slate-700">
+      {isOrganizationConnectedMode() ? <OrganizationConnectedWorkspace key={account.id} account={account} canEdit={canEdit} onEdit={() => setShowEdit(true)} message={message} onArchive={account.status !== "archived" && canArchive ? () => setArchiveOpen(true) : undefined}/> : <>
       <OrganizationRecordHeader
         account={account}
         primaryContact={primaryContact}
@@ -365,7 +372,7 @@ export const OrganizationAccountDetailPage: React.FC = () => {
         onAddRepresentative={() => setShowAddRepresentative(true)}
         canEdit={canEdit}
         canAddRepresentative={canAddRepresentative}
-        onArchive={isOrganizationConnectedMode() && account.status !== "archived" && canEdit ? () => setArchiveOpen(true) : undefined}
+        onArchive={isOrganizationConnectedMode() && account.status !== "archived" && canArchive ? () => setArchiveOpen(true) : undefined}
       />
 
       {message && <div className="rounded-xl border border-violet-100 bg-violet-50 px-4 py-3 text-xs font-semibold text-violet-800">{message}</div>}
@@ -557,7 +564,9 @@ export const OrganizationAccountDetailPage: React.FC = () => {
         </div>
       </div>
 
-      <OrganizationEditModal isOpen={showEdit} onClose={() => setShowEdit(false)} account={account} representatives={related.representatives} actorId={actorId} onSaved={(next) => setMessage(text(`Đã cập nhật ${next.displayName}.`, `${next.displayName} updated.`))} />
+      </>}
+
+      <OrganizationEditModal isOpen={showEdit} onClose={() => setShowEdit(false)} account={account} representatives={isOrganizationConnectedMode() ? [] : related.representatives} actorId={actorId} onSaved={(next) => setMessage(text(`Đã cập nhật ${next.displayName}.`, `${next.displayName} updated.`))} />
       <ConfirmDialog isOpen={archiveOpen} onClose={() => setArchiveOpen(false)} title={text("Lưu trữ tổ chức", "Archive organization")} message={text("Tổ chức sẽ được lưu trữ trên backend.", "The organization will be archived by the backend.")} confirmText={text("Lưu trữ", "Archive")} variant="danger" onConfirm={async (isCurrent) => { try { if (account.resourceVersion === undefined) throw new Error("ORGANIZATION_VERSION_REQUIRED"); await archiveOrganizationViaApi({ organizationId: account.id, expectedVersion: account.resourceVersion }); if (!isCurrent()) return; setArchiveOpen(false); setMessage(text("Đã lưu trữ tổ chức.", "Organization archived.")); } catch (caught) { setMessage(formatApplicationError(caught, { locale })); } }} />
       {!isContactOrganizationRelationshipUnavailable() && <OrganizationRepresentativeModal isOpen={showAddRepresentative} onClose={() => setShowAddRepresentative(false)} account={account} actorId={actorId} onCreated={(contact) => { setMessage(text(`Đã liên kết ${contact.fullName || contact.name} làm cá nhân đại diện.`, `${contact.fullName || contact.name} linked as a representative.`)); setActiveTab("relationship"); setRelationshipView("people"); }} />}
       <OrganizationQuickActivityModal targetId={quickAction && !quickWasOpen.current ? account.id : quickOpening.current?.account.id ?? account.id} action={quickAction} email={communicationEmail} phone={communicationPhone} onClose={() => setQuickAction(null)} onSave={saveQuickActivity} />

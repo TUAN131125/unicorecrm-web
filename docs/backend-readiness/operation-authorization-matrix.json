@@ -81,6 +81,19 @@
       "backendEnforcement": "REQUIRED"
     },
     {
+      "operationId": "activateTelegramConnection",
+      "method": "POST",
+      "path": "/communications/channel-accounts/{id}/activate",
+      "moduleOwner": "communications",
+      "capability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
       "operationId": "addSupportCaseInternalNote",
       "method": "POST",
       "path": "/support/cases/{caseId}/internal-notes",
@@ -666,6 +679,19 @@
       "backendEnforcement": "REQUIRED"
     },
     {
+      "operationId": "claimConversation",
+      "method": "POST",
+      "path": "/communications/conversations/{id}/claim",
+      "moduleOwner": "communications",
+      "capability": "communications.claim",
+      "resourceScope": "UNASSIGNED_OR_SELF",
+      "dataScope": "DEC-COM-019",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
       "operationId": "claimLeadFromQueue",
       "method": "POST",
       "path": "/workflows/lead-queue/{leadId}/claim",
@@ -855,6 +881,19 @@
       "capability": "access.configure",
       "resourceScope": "WORKSPACE_ROLE",
       "dataScope": "SELECTED_WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "createCommunicationChannelAccount",
+      "method": "POST",
+      "path": "/communications/channel-accounts",
+      "moduleOwner": "communications",
+      "capability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY",
       "status": "PRODUCTION_CONTRACT_READY",
       "workspaceRequired": true,
       "actorRequired": true,
@@ -1199,6 +1238,19 @@
       "backendEnforcement": "REQUIRED"
     },
     {
+      "operationId": "deactivateTelegramConnection",
+      "method": "POST",
+      "path": "/communications/channel-accounts/{id}/deactivate",
+      "moduleOwner": "communications",
+      "capability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
       "operationId": "deleteCrmObjectField",
       "method": "DELETE",
       "path": "/crm-configuration/object-schemas/{objectKey}/fields/{fieldId}",
@@ -1264,6 +1316,19 @@
       "backendEnforcement": "REQUIRED"
     },
     {
+      "operationId": "disableCommunicationChannelAccount",
+      "method": "POST",
+      "path": "/communications/channel-accounts/{id}/disable",
+      "moduleOwner": "communications",
+      "capability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
       "operationId": "discardInvoiceDraft",
       "method": "POST",
       "path": "/invoices/{invoiceId}/discard",
@@ -1271,6 +1336,19 @@
       "capability": "invoices.edit",
       "resourceScope": "RESOURCE",
       "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "disconnectCommunicationChannelAccount",
+      "method": "POST",
+      "path": "/communications/channel-accounts/{id}/disconnect",
+      "moduleOwner": "communications",
+      "capability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY",
       "status": "PRODUCTION_CONTRACT_READY",
       "workspaceRequired": true,
       "actorRequired": true,
@@ -1336,6 +1414,19 @@
       "capability": "orders.create",
       "resourceScope": "RESOURCE",
       "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "enableCommunicationChannelAccount",
+      "method": "POST",
+      "path": "/communications/channel-accounts/{id}/enable",
+      "moduleOwner": "communications",
+      "capability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY",
       "status": "PRODUCTION_CONTRACT_READY",
       "workspaceRequired": true,
       "actorRequired": true,
@@ -1459,6 +1550,19 @@
       "backendEnforcement": "REQUIRED"
     },
     {
+      "operationId": "getCommunicationChannelAccount",
+      "method": "GET",
+      "path": "/communications/channel-accounts/{id}",
+      "moduleOwner": "communications",
+      "capability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
       "operationId": "getContact",
       "method": "GET",
       "path": "/contacts/{contactId}",
@@ -1495,6 +1599,32 @@
       "status": "PRODUCTION_CONTRACT_READY",
       "workspaceRequired": true,
       "actorRequired": false,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "getConversation",
+      "method": "GET",
+      "path": "/communications/conversations/{id}",
+      "moduleOwner": "communications",
+      "capability": "communications.read",
+      "resourceScope": "CURRENT_ASSIGNEE",
+      "dataScope": "DEC-COM-019",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "getConversationCrmContext",
+      "method": "GET",
+      "path": "/communications/conversations/{id}/crm-link",
+      "moduleOwner": "communications",
+      "capability": "communications.read",
+      "resourceScope": "CURRENT_ASSIGNEE",
+      "dataScope": "DEC-COM-019",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
       "backendEnforcement": "REQUIRED"
     },
     {
@@ -1979,6 +2109,19 @@
       "backendEnforcement": "REQUIRED"
     },
     {
+      "operationId": "getTelegramConnection",
+      "method": "GET",
+      "path": "/communications/channel-accounts/{id}/connection",
+      "moduleOwner": "communications",
+      "capability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
       "operationId": "getWorkspaceAccessDirectory",
       "method": "GET",
       "path": "/access/directory",
@@ -2083,6 +2226,19 @@
       "backendEnforcement": "REQUIRED"
     },
     {
+      "operationId": "linkConversationCrmRecord",
+      "method": "POST",
+      "path": "/communications/conversations/{id}/crm-link",
+      "moduleOwner": "communications",
+      "capability": "communications.link",
+      "resourceScope": "CURRENT_ASSIGNEE",
+      "dataScope": "DEC-COM-019",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
       "operationId": "listActivities",
       "method": "GET",
       "path": "/activities",
@@ -2096,6 +2252,32 @@
       "backendEnforcement": "REQUIRED"
     },
     {
+      "operationId": "listCommunicationChannelAccounts",
+      "method": "GET",
+      "path": "/communications/channel-accounts",
+      "moduleOwner": "communications",
+      "capability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "listCommunicationChannelProviders",
+      "method": "GET",
+      "path": "/communications/channel-providers",
+      "moduleOwner": "communications",
+      "capability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
       "operationId": "listContacts",
       "method": "GET",
       "path": "/contacts",
@@ -2106,6 +2288,42 @@
       "status": "PRODUCTION_CONTRACT_READY",
       "workspaceRequired": true,
       "actorRequired": false,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "listConversationMessages",
+      "method": "GET",
+      "path": "/communications/conversations/{id}/messages",
+      "moduleOwner": "communications",
+      "capability": "communications.read",
+      "resourceScope": "CURRENT_ASSIGNEE",
+      "dataScope": "DEC-COM-019",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "listConversations",
+      "method": "GET",
+      "path": "/communications/conversations",
+      "moduleOwner": "communications",
+      "capability": "VIEW_DEPENDENT",
+      "resourceScope": "VIEW_DEPENDENT_ASSIGNEE_OR_UNASSIGNED_QUEUE",
+      "dataScope": "DEC-COM-019",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "conditionalAuthorization": {
+        "assigned": {
+          "capability": "communications.read",
+          "recordScope": "CURRENT_ASSIGNEE"
+        },
+        "unassigned": {
+          "capability": "communications.queue.read",
+          "recordScope": "UNASSIGNED_MINIMAL_PROJECTION"
+        }
+      },
+      "workspaceRequired": true,
+      "actorRequired": true,
       "backendEnforcement": "REQUIRED"
     },
     {
@@ -2837,6 +3055,19 @@
       "backendEnforcement": "REQUIRED"
     },
     {
+      "operationId": "reconnectTelegramConnection",
+      "method": "POST",
+      "path": "/communications/channel-accounts/{id}/reconnect",
+      "moduleOwner": "communications",
+      "capability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
       "operationId": "recordCodCustomerCollection",
       "method": "POST",
       "path": "/payments/{paymentRecordId}/cod/customer-collection",
@@ -2993,6 +3224,19 @@
       "backendEnforcement": "REQUIRED"
     },
     {
+      "operationId": "removeTelegramCredential",
+      "method": "DELETE",
+      "path": "/communications/channel-accounts/{id}/credentials",
+      "moduleOwner": "communications",
+      "capability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
       "operationId": "reopenDisqualifiedLead",
       "method": "POST",
       "path": "/leads/{leadId}/reopen",
@@ -3078,6 +3322,19 @@
       "capability": "support.update",
       "resourceScope": "RESOURCE",
       "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "replaceTelegramCredential",
+      "method": "PUT",
+      "path": "/communications/channel-accounts/{id}/credentials",
+      "moduleOwner": "communications",
+      "capability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY",
       "status": "PRODUCTION_CONTRACT_READY",
       "workspaceRequired": true,
       "actorRequired": true,
@@ -3526,6 +3783,19 @@
       "backendEnforcement": "REQUIRED"
     },
     {
+      "operationId": "searchConversationCrmCandidates",
+      "method": "GET",
+      "path": "/communications/conversations/{id}/crm-candidates",
+      "moduleOwner": "communications",
+      "capability": "communications.link",
+      "resourceScope": "CURRENT_ASSIGNEE",
+      "dataScope": "DEC-COM-019",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
       "operationId": "searchProductSelections",
       "method": "GET",
       "path": "/products/selection",
@@ -3630,6 +3900,19 @@
       "backendEnforcement": "REQUIRED"
     },
     {
+      "operationId": "transitionConversation",
+      "method": "POST",
+      "path": "/communications/conversations/{id}/transition",
+      "moduleOwner": "communications",
+      "capability": "communications.transition",
+      "resourceScope": "CURRENT_ASSIGNEE",
+      "dataScope": "DEC-COM-019",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
       "operationId": "transitionSupportCase",
       "method": "POST",
       "path": "/support/cases/{caseId}/transition",
@@ -3637,6 +3920,32 @@
       "capability": "support.update",
       "resourceScope": "RESOURCE",
       "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "unlinkConversationCrmRecord",
+      "method": "POST",
+      "path": "/communications/conversations/{id}/crm-link/unlink",
+      "moduleOwner": "communications",
+      "capability": "communications.link",
+      "resourceScope": "CURRENT_ASSIGNEE",
+      "dataScope": "DEC-COM-019",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "updateCommunicationChannelAccount",
+      "method": "PATCH",
+      "path": "/communications/channel-accounts/{id}",
+      "moduleOwner": "communications",
+      "capability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY",
       "status": "PRODUCTION_CONTRACT_READY",
       "workspaceRequired": true,
       "actorRequired": true,
@@ -3939,6 +4248,19 @@
       "status": "PRODUCTION_CONTRACT_READY",
       "workspaceRequired": false,
       "actorRequired": false,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "verifyTelegramConnection",
+      "method": "POST",
+      "path": "/communications/channel-accounts/{id}/verify",
+      "moduleOwner": "communications",
+      "capability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
       "backendEnforcement": "REQUIRED"
     },
     {

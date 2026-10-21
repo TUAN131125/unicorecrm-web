@@ -104,6 +104,16 @@
     {
       "name": "AccessGovernance",
       "description": "Authoritative workspace users, roles and access-control contracts."
+    },
+    {
+      "name": "Communications",
+      "x-bounded-context": "communications",
+      "description": "Communications Core; protected reads require current assignee authorization."
+    },
+    {
+      "name": "CommunicationChannels",
+      "x-bounded-context": "communications",
+      "description": "Workspace-owned channel management. Metadata never grants protected conversation access. Live provider access remains separately admitted."
     }
   ],
   "security": [
@@ -53364,6 +53374,3506 @@
           "INTERNAL_ERROR"
         ]
       }
+    },
+    "/communications/conversations": {
+      "get": {
+        "operationId": "listConversations",
+        "tags": [
+          "Communications"
+        ],
+        "summary": "listConversations",
+        "description": "Assigned view returns current-assignee full projection; unassigned view requires communications.queue.read and returns only id/lastActivityAt plus canClaim. Cursor is bound to current Workspace/actor/authority/filter/limit. Authenticated trusted Workspace scope; unknown query/body fields are rejected. Responses are no-store/private. Canonical contract admission does not approve live Telegram access.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "name": "view",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "assigned",
+                "unassigned"
+              ],
+              "default": "assigned"
+            }
+          },
+          {
+            "name": "statusView",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "active",
+                "closed"
+              ],
+              "default": "active"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success/current replay result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationConversationPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or cursor invalid",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Trusted Workspace, active authority, record scope or FLS denied",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or inaccessible account/conversation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, ownership or generation conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Trusted Workspace request/correlation metadata validation failed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Custody, live admission, runtime or provider unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          }
+        },
+        "x-required-capability": "VIEW_DEPENDENT",
+        "x-resource-scope": "VIEW_DEPENDENT_ASSIGNEE_OR_UNASSIGNED_QUEUE",
+        "x-data-scope": "DEC-COM-019",
+        "x-idempotency-policy": "NOT_APPLICABLE",
+        "x-concurrency-policy": "NOT_APPLICABLE",
+        "x-audit-requirement": "NONE",
+        "x-transaction-boundary": "READ_ONLY",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-module-owner": "communications",
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-conditional-authorization": {
+          "assigned": {
+            "capability": "communications.read",
+            "recordScope": "CURRENT_ASSIGNEE"
+          },
+          "unassigned": {
+            "capability": "communications.queue.read",
+            "recordScope": "UNASSIGNED_MINIMAL_PROJECTION"
+          }
+        }
+      }
+    },
+    "/communications/conversations/{id}": {
+      "get": {
+        "operationId": "getConversation",
+        "tags": [
+          "Communications"
+        ],
+        "summary": "getConversation",
+        "description": " Authenticated trusted Workspace scope; unknown query/body fields are rejected. Responses are no-store/private. Canonical contract admission does not approve live Telegram access.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]+$",
+              "description": "Positive Int64 conversation identity encoded as decimal text."
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success/current replay result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationConversation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or cursor invalid",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Trusted Workspace, active authority, record scope or FLS denied",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or inaccessible account/conversation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, ownership or generation conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Trusted Workspace request/correlation metadata validation failed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Custody, live admission, runtime or provider unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          }
+        },
+        "x-required-capability": "communications.read",
+        "x-resource-scope": "CURRENT_ASSIGNEE",
+        "x-data-scope": "DEC-COM-019",
+        "x-idempotency-policy": "NOT_APPLICABLE",
+        "x-concurrency-policy": "NOT_APPLICABLE",
+        "x-audit-requirement": "NONE",
+        "x-transaction-boundary": "READ_ONLY",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-module-owner": "communications",
+        "x-contract-status": "PRODUCTION_CONTRACT_READY"
+      }
+    },
+    "/communications/conversations/{id}/messages": {
+      "get": {
+        "operationId": "listConversationMessages",
+        "tags": [
+          "Communications"
+        ],
+        "summary": "listConversationMessages",
+        "description": "Current-assignee protected timeline; stable sequence ordering, scope-bound cursor. Authenticated trusted Workspace scope; unknown query/body fields are rejected. Responses are no-store/private. Canonical contract admission does not approve live Telegram access.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]+$",
+              "description": "Positive Int64 conversation identity encoded as decimal text."
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success/current replay result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationMessagePage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or cursor invalid",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Trusted Workspace, active authority, record scope or FLS denied",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or inaccessible account/conversation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, ownership or generation conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Trusted Workspace request/correlation metadata validation failed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Custody, live admission, runtime or provider unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          }
+        },
+        "x-required-capability": "communications.read",
+        "x-resource-scope": "CURRENT_ASSIGNEE",
+        "x-data-scope": "DEC-COM-019",
+        "x-idempotency-policy": "NOT_APPLICABLE",
+        "x-concurrency-policy": "NOT_APPLICABLE",
+        "x-audit-requirement": "NONE",
+        "x-transaction-boundary": "READ_ONLY",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-module-owner": "communications",
+        "x-contract-status": "PRODUCTION_CONTRACT_READY"
+      }
+    },
+    "/communications/conversations/{id}/claim": {
+      "post": {
+        "operationId": "claimConversation",
+        "tags": [
+          "Communications"
+        ],
+        "summary": "claimConversation",
+        "description": "No request body. Requires queue.read and communications.read in addition to claim, active membership and permitted queue/read scope. Same actor retry returns prior audit without version increment; another assignee returns409. Idempotency-Key is not consumed by this semantic null-to-self command. Authenticated trusted Workspace scope; unknown query/body fields are rejected. Responses are no-store/private. Canonical contract admission does not approve live Telegram access.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]+$",
+              "description": "Positive Int64 conversation identity encoded as decimal text."
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success/current replay result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationClaim"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or cursor invalid",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Trusted Workspace, active authority, record scope or FLS denied",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or inaccessible account/conversation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, ownership or generation conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Trusted Workspace request/correlation metadata validation failed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Custody, live admission, runtime or provider unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          }
+        },
+        "x-required-capability": "communications.claim",
+        "x-resource-scope": "UNASSIGNED_OR_SELF",
+        "x-data-scope": "DEC-COM-019",
+        "x-idempotency-policy": "NOT_APPLICABLE",
+        "x-concurrency-policy": "ATOMIC_NULL_TO_SELF",
+        "x-audit-requirement": "TRANSACTIONAL_BUSINESS_AUDIT",
+        "x-transaction-boundary": "COMMUNICATIONS_OWNED_TRANSACTION",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-module-owner": "communications",
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-request-body-policy": "FORBIDDEN",
+        "x-concurrency-conflict-status": 409,
+        "x-concurrency-conflict-code": "COMMUNICATION_CLAIM_CONFLICT"
+      }
+    },
+    "/communications/conversations/{id}/transition": {
+      "post": {
+        "operationId": "transitionConversation",
+        "tags": [
+          "Communications"
+        ],
+        "summary": "transitionConversation",
+        "description": "Current assignee plus read and status write FLS. Expected version is authoritative; stale retry409. Idempotency-Key is not consumed. Authenticated trusted Workspace scope; unknown query/body fields are rejected. Responses are no-store/private. Canonical contract admission does not approve live Telegram access.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]+$",
+              "description": "Positive Int64 conversation identity encoded as decimal text."
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success/current replay result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationTransition"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or cursor invalid",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Trusted Workspace, active authority, record scope or FLS denied",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or inaccessible account/conversation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, ownership or generation conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Trusted Workspace request/correlation metadata validation failed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Custody, live admission, runtime or provider unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          }
+        },
+        "x-required-capability": "communications.transition",
+        "x-resource-scope": "CURRENT_ASSIGNEE",
+        "x-data-scope": "DEC-COM-019",
+        "x-idempotency-policy": "NOT_APPLICABLE",
+        "x-concurrency-policy": "EXPECTED_VERSION_IN_BODY",
+        "x-audit-requirement": "TRANSACTIONAL_BUSINESS_AUDIT",
+        "x-transaction-boundary": "COMMUNICATIONS_OWNED_TRANSACTION",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommunicationTransitionRequest"
+              }
+            }
+          }
+        },
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-module-owner": "communications",
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-concurrency-conflict-status": 409,
+        "x-concurrency-conflict-code": "COMMUNICATION_VERSION_CONFLICT"
+      }
+    },
+    "/communications/conversations/{id}/crm-link": {
+      "get": {
+        "operationId": "getConversationCrmContext",
+        "tags": [
+          "Communications"
+        ],
+        "summary": "getConversationCrmContext",
+        "description": " Authenticated trusted Workspace scope; unknown query/body fields are rejected. Responses are no-store/private. Canonical contract admission does not approve live Telegram access.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]+$",
+              "description": "Positive Int64 conversation identity encoded as decimal text."
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success/current replay result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationCrmContext"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or cursor invalid",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Trusted Workspace, active authority, record scope or FLS denied",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or inaccessible account/conversation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, ownership or generation conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Trusted Workspace request/correlation metadata validation failed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Custody, live admission, runtime or provider unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          }
+        },
+        "x-required-capability": "communications.read",
+        "x-resource-scope": "CURRENT_ASSIGNEE",
+        "x-data-scope": "DEC-COM-019",
+        "x-idempotency-policy": "NOT_APPLICABLE",
+        "x-concurrency-policy": "NOT_APPLICABLE",
+        "x-audit-requirement": "NONE",
+        "x-transaction-boundary": "READ_ONLY",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-module-owner": "communications",
+        "x-contract-status": "PRODUCTION_CONTRACT_READY"
+      },
+      "post": {
+        "operationId": "linkConversationCrmRecord",
+        "tags": [
+          "Communications"
+        ],
+        "summary": "linkConversationCrmRecord",
+        "description": "Manual authorized CRM link only; no CRM owner change or auto-create. Expected version enforced; Idempotency-Key is not consumed. Authenticated trusted Workspace scope; unknown query/body fields are rejected. Responses are no-store/private. Canonical contract admission does not approve live Telegram access.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]+$",
+              "description": "Positive Int64 conversation identity encoded as decimal text."
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success/current replay result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationLinkMutation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or cursor invalid",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Trusted Workspace, active authority, record scope or FLS denied",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or inaccessible account/conversation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, ownership or generation conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Trusted Workspace request/correlation metadata validation failed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Custody, live admission, runtime or provider unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          }
+        },
+        "x-required-capability": "communications.link",
+        "x-resource-scope": "CURRENT_ASSIGNEE",
+        "x-data-scope": "DEC-COM-019",
+        "x-idempotency-policy": "NOT_APPLICABLE",
+        "x-concurrency-policy": "EXPECTED_VERSION_IN_BODY",
+        "x-audit-requirement": "TRANSACTIONAL_BUSINESS_AUDIT",
+        "x-transaction-boundary": "COMMUNICATIONS_OWNED_TRANSACTION",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommunicationLinkRequest"
+              }
+            }
+          }
+        },
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-module-owner": "communications",
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-concurrency-conflict-status": 409,
+        "x-concurrency-conflict-code": "COMMUNICATION_VERSION_CONFLICT"
+      }
+    },
+    "/communications/conversations/{id}/crm-candidates": {
+      "get": {
+        "operationId": "searchConversationCrmCandidates",
+        "tags": [
+          "Communications"
+        ],
+        "summary": "searchConversationCrmCandidates",
+        "description": "Requires link/read plus target CRM record authorization; no unauthorized suggestions. Authenticated trusted Workspace scope; unknown query/body fields are rejected. Responses are no-store/private. Canonical contract admission does not approve live Telegram access.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "name": "targetType",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "LEAD",
+                "CONTACT"
+              ]
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]+$",
+              "description": "Positive Int64 conversation identity encoded as decimal text."
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success/current replay result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationCrmCandidates"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or cursor invalid",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Trusted Workspace, active authority, record scope or FLS denied",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or inaccessible account/conversation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, ownership or generation conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Trusted Workspace request/correlation metadata validation failed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Custody, live admission, runtime or provider unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          }
+        },
+        "x-required-capability": "communications.link",
+        "x-resource-scope": "CURRENT_ASSIGNEE",
+        "x-data-scope": "DEC-COM-019",
+        "x-idempotency-policy": "NOT_APPLICABLE",
+        "x-concurrency-policy": "NOT_APPLICABLE",
+        "x-audit-requirement": "NONE",
+        "x-transaction-boundary": "READ_ONLY",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-module-owner": "communications",
+        "x-contract-status": "PRODUCTION_CONTRACT_READY"
+      }
+    },
+    "/communications/conversations/{id}/crm-link/unlink": {
+      "post": {
+        "operationId": "unlinkConversationCrmRecord",
+        "tags": [
+          "Communications"
+        ],
+        "summary": "unlinkConversationCrmRecord",
+        "description": " Authenticated trusted Workspace scope; unknown query/body fields are rejected. Responses are no-store/private. Canonical contract admission does not approve live Telegram access.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^[0-9]+$",
+              "description": "Positive Int64 conversation identity encoded as decimal text."
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success/current replay result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationLinkMutation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or cursor invalid",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Trusted Workspace, active authority, record scope or FLS denied",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or inaccessible account/conversation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, ownership or generation conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Trusted Workspace request/correlation metadata validation failed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Custody, live admission, runtime or provider unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          }
+        },
+        "x-required-capability": "communications.link",
+        "x-resource-scope": "CURRENT_ASSIGNEE",
+        "x-data-scope": "DEC-COM-019",
+        "x-idempotency-policy": "NOT_APPLICABLE",
+        "x-concurrency-policy": "EXPECTED_VERSION_IN_BODY",
+        "x-audit-requirement": "TRANSACTIONAL_BUSINESS_AUDIT",
+        "x-transaction-boundary": "COMMUNICATIONS_OWNED_TRANSACTION",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommunicationVersionRequest"
+              }
+            }
+          }
+        },
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-module-owner": "communications",
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-concurrency-conflict-status": 409,
+        "x-concurrency-conflict-code": "COMMUNICATION_VERSION_CONFLICT"
+      }
+    },
+    "/communications/channel-providers": {
+      "get": {
+        "operationId": "listCommunicationChannelProviders",
+        "tags": [
+          "CommunicationChannels"
+        ],
+        "summary": "listCommunicationChannelProviders",
+        "description": " Authenticated trusted Workspace scope; unknown query/body fields are rejected. Responses are no-store/private. Canonical contract admission does not approve live Telegram access.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success/current replay result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationChannelProviders"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or cursor invalid",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Trusted Workspace, active authority, record scope or FLS denied",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or inaccessible account/conversation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, ownership or generation conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Trusted Workspace request/correlation metadata validation failed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Custody, live admission, runtime or provider unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          }
+        },
+        "x-required-capability": "communications.channels.manage",
+        "x-resource-scope": "WORKSPACE_CHANNEL_ACCOUNT",
+        "x-data-scope": "SAFE_METADATA_ONLY",
+        "x-idempotency-policy": "NOT_APPLICABLE",
+        "x-concurrency-policy": "NOT_APPLICABLE",
+        "x-audit-requirement": "NONE",
+        "x-transaction-boundary": "READ_ONLY",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-module-owner": "communications",
+        "x-contract-status": "PRODUCTION_CONTRACT_READY"
+      }
+    },
+    "/communications/channel-accounts": {
+      "get": {
+        "operationId": "listCommunicationChannelAccounts",
+        "tags": [
+          "CommunicationChannels"
+        ],
+        "summary": "listCommunicationChannelAccounts",
+        "description": "CreatedAt descending then accountId descending. Cursor bound to Workspace/current authority/filter/page size. Summary is Workspace metadata; connected count remains0 in this projection. Authenticated trusted Workspace scope; unknown query/body fields are rejected. Responses are no-store/private. Canonical contract admission does not approve live Telegram access.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 25
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 4096
+            }
+          },
+          {
+            "name": "provider",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "gmail",
+                "telegram",
+                "zalo",
+                "messenger"
+              ]
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "DRAFT",
+                "DISABLED",
+                "UNVERIFIED"
+              ]
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success/current replay result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationChannelPage"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or cursor invalid",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Trusted Workspace, active authority, record scope or FLS denied",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or inaccessible account/conversation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, ownership or generation conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Trusted Workspace request/correlation metadata validation failed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Custody, live admission, runtime or provider unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          }
+        },
+        "x-required-capability": "communications.channels.manage",
+        "x-resource-scope": "WORKSPACE_CHANNEL_ACCOUNT",
+        "x-data-scope": "SAFE_METADATA_ONLY",
+        "x-idempotency-policy": "NOT_APPLICABLE",
+        "x-concurrency-policy": "NOT_APPLICABLE",
+        "x-audit-requirement": "NONE",
+        "x-transaction-boundary": "READ_ONLY",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-module-owner": "communications",
+        "x-contract-status": "PRODUCTION_CONTRACT_READY"
+      },
+      "post": {
+        "operationId": "createCommunicationChannelAccount",
+        "tags": [
+          "CommunicationChannels"
+        ],
+        "summary": "createCommunicationChannelAccount",
+        "description": "Creates metadata draft only. Many accounts of the same provider per Workspace are allowed.201 first create;200 replay. Authenticated trusted Workspace scope; unknown query/body fields are rejected. Responses are no-store/private. Canonical contract admission does not approve live Telegram access.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success/current replay result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationChannelMutation"
+                }
+              }
+            }
+          },
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationChannelMutation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or cursor invalid",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Trusted Workspace, active authority, record scope or FLS denied",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or inaccessible account/conversation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, ownership or generation conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Trusted Workspace request/correlation metadata validation failed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Custody, live admission, runtime or provider unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          }
+        },
+        "x-required-capability": "communications.channels.manage",
+        "x-resource-scope": "WORKSPACE_CHANNEL_ACCOUNT",
+        "x-data-scope": "SAFE_METADATA_ONLY",
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "NOT_APPLICABLE",
+        "x-audit-requirement": "TRANSACTIONAL_BUSINESS_AUDIT",
+        "x-transaction-boundary": "COMMUNICATIONS_OWNED_TRANSACTION",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommunicationChannelCreate"
+              }
+            }
+          }
+        },
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-module-owner": "communications",
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-idempotency-key-scope": "WORKSPACE_ACTOR_KEY"
+      }
+    },
+    "/communications/channel-accounts/{id}": {
+      "get": {
+        "operationId": "getCommunicationChannelAccount",
+        "tags": [
+          "CommunicationChannels"
+        ],
+        "summary": "getCommunicationChannelAccount",
+        "description": " Authenticated trusted Workspace scope; unknown query/body fields are rejected. Responses are no-store/private. Canonical contract admission does not approve live Telegram access.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success/current replay result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationChannelAccount"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or cursor invalid",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Trusted Workspace, active authority, record scope or FLS denied",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or inaccessible account/conversation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, ownership or generation conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Trusted Workspace request/correlation metadata validation failed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Custody, live admission, runtime or provider unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          }
+        },
+        "x-required-capability": "communications.channels.manage",
+        "x-resource-scope": "WORKSPACE_CHANNEL_ACCOUNT",
+        "x-data-scope": "SAFE_METADATA_ONLY",
+        "x-idempotency-policy": "NOT_APPLICABLE",
+        "x-concurrency-policy": "NOT_APPLICABLE",
+        "x-audit-requirement": "NONE",
+        "x-transaction-boundary": "READ_ONLY",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-module-owner": "communications",
+        "x-contract-status": "PRODUCTION_CONTRACT_READY"
+      },
+      "patch": {
+        "operationId": "updateCommunicationChannelAccount",
+        "tags": [
+          "CommunicationChannels"
+        ],
+        "summary": "updateCommunicationChannelAccount",
+        "description": " Authenticated trusted Workspace scope; unknown query/body fields are rejected. Responses are no-store/private. Canonical contract admission does not approve live Telegram access.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success/current replay result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationChannelMutation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or cursor invalid",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Trusted Workspace, active authority, record scope or FLS denied",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or inaccessible account/conversation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, ownership or generation conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Trusted Workspace request/correlation metadata validation failed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Custody, live admission, runtime or provider unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          }
+        },
+        "x-required-capability": "communications.channels.manage",
+        "x-resource-scope": "WORKSPACE_CHANNEL_ACCOUNT",
+        "x-data-scope": "SAFE_METADATA_ONLY",
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "EXPECTED_VERSION_IN_BODY",
+        "x-audit-requirement": "TRANSACTIONAL_BUSINESS_AUDIT",
+        "x-transaction-boundary": "COMMUNICATIONS_OWNED_TRANSACTION",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommunicationChannelRename"
+              }
+            }
+          }
+        },
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-module-owner": "communications",
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-idempotency-key-scope": "WORKSPACE_ACTOR_KEY",
+        "x-concurrency-conflict-status": 409,
+        "x-concurrency-conflict-code": "CHANNEL_VERSION_CONFLICT"
+      }
+    },
+    "/communications/channel-accounts/{id}/disable": {
+      "post": {
+        "operationId": "disableCommunicationChannelAccount",
+        "tags": [
+          "CommunicationChannels"
+        ],
+        "summary": "disableCommunicationChannelAccount",
+        "description": "Administrative account metadata change; enable never auto-activates inbound. Authenticated trusted Workspace scope; unknown query/body fields are rejected. Responses are no-store/private. Canonical contract admission does not approve live Telegram access.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success/current replay result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationChannelMutation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or cursor invalid",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Trusted Workspace, active authority, record scope or FLS denied",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or inaccessible account/conversation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, ownership or generation conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Trusted Workspace request/correlation metadata validation failed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Custody, live admission, runtime or provider unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          }
+        },
+        "x-required-capability": "communications.channels.manage",
+        "x-resource-scope": "WORKSPACE_CHANNEL_ACCOUNT",
+        "x-data-scope": "SAFE_METADATA_ONLY",
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "EXPECTED_VERSION_IN_BODY",
+        "x-audit-requirement": "TRANSACTIONAL_BUSINESS_AUDIT",
+        "x-transaction-boundary": "COMMUNICATIONS_OWNED_TRANSACTION",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommunicationChannelVersion"
+              }
+            }
+          }
+        },
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-module-owner": "communications",
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-idempotency-key-scope": "WORKSPACE_ACTOR_KEY",
+        "x-concurrency-conflict-status": 409,
+        "x-concurrency-conflict-code": "CHANNEL_VERSION_CONFLICT"
+      }
+    },
+    "/communications/channel-accounts/{id}/enable": {
+      "post": {
+        "operationId": "enableCommunicationChannelAccount",
+        "tags": [
+          "CommunicationChannels"
+        ],
+        "summary": "enableCommunicationChannelAccount",
+        "description": "Administrative account metadata change; enable never auto-activates inbound. Authenticated trusted Workspace scope; unknown query/body fields are rejected. Responses are no-store/private. Canonical contract admission does not approve live Telegram access.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success/current replay result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationChannelMutation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or cursor invalid",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Trusted Workspace, active authority, record scope or FLS denied",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or inaccessible account/conversation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, ownership or generation conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Trusted Workspace request/correlation metadata validation failed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Custody, live admission, runtime or provider unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          }
+        },
+        "x-required-capability": "communications.channels.manage",
+        "x-resource-scope": "WORKSPACE_CHANNEL_ACCOUNT",
+        "x-data-scope": "SAFE_METADATA_ONLY",
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "EXPECTED_VERSION_IN_BODY",
+        "x-audit-requirement": "TRANSACTIONAL_BUSINESS_AUDIT",
+        "x-transaction-boundary": "COMMUNICATIONS_OWNED_TRANSACTION",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommunicationChannelVersion"
+              }
+            }
+          }
+        },
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-module-owner": "communications",
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-idempotency-key-scope": "WORKSPACE_ACTOR_KEY",
+        "x-concurrency-conflict-status": 409,
+        "x-concurrency-conflict-code": "CHANNEL_VERSION_CONFLICT"
+      }
+    },
+    "/communications/channel-accounts/{id}/disconnect": {
+      "post": {
+        "operationId": "disconnectCommunicationChannelAccount",
+        "tags": [
+          "CommunicationChannels"
+        ],
+        "summary": "disconnectCommunicationChannelAccount",
+        "description": "Local disconnect fences polling and preserves history and protected credential; it does not revoke the provider token. Authenticated trusted Workspace scope; unknown query/body fields are rejected. Responses are no-store/private. Canonical contract admission does not approve live Telegram access.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success/current replay result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationChannelMutation"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or cursor invalid",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Trusted Workspace, active authority, record scope or FLS denied",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or inaccessible account/conversation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, ownership or generation conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Trusted Workspace request/correlation metadata validation failed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "501": {
+            "description": "Local disconnect currently supports Telegram only; other provider capability is unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Custody, live admission, runtime or provider unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          }
+        },
+        "x-required-capability": "communications.channels.manage",
+        "x-resource-scope": "WORKSPACE_CHANNEL_ACCOUNT",
+        "x-data-scope": "SAFE_METADATA_ONLY",
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "EXPECTED_VERSION_IN_BODY",
+        "x-audit-requirement": "TRANSACTIONAL_BUSINESS_AUDIT",
+        "x-transaction-boundary": "COMMUNICATIONS_OWNED_TRANSACTION",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommunicationChannelVersion"
+              }
+            }
+          }
+        },
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-module-owner": "communications",
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-idempotency-key-scope": "WORKSPACE_ACTOR_KEY",
+        "x-concurrency-conflict-status": 409,
+        "x-concurrency-conflict-code": "CHANNEL_VERSION_CONFLICT"
+      }
+    },
+    "/communications/channel-accounts/{id}/connection": {
+      "get": {
+        "operationId": "getTelegramConnection",
+        "tags": [
+          "CommunicationChannels"
+        ],
+        "summary": "getTelegramConnection",
+        "description": "Safe configuration, current verified identity, activation and evidence-based operational health. No separate redundant health endpoint. Authenticated trusted Workspace scope; unknown query/body fields are rejected. Responses are no-store/private. Canonical contract admission does not approve live Telegram access.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success/current replay result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramConnection"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or cursor invalid",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Trusted Workspace, active authority, record scope or FLS denied",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or inaccessible account/conversation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, ownership or generation conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Trusted Workspace request/correlation metadata validation failed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Custody, live admission, runtime or provider unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          }
+        },
+        "x-required-capability": "communications.channels.manage",
+        "x-resource-scope": "WORKSPACE_CHANNEL_ACCOUNT",
+        "x-data-scope": "SAFE_METADATA_ONLY",
+        "x-idempotency-policy": "NOT_APPLICABLE",
+        "x-concurrency-policy": "NOT_APPLICABLE",
+        "x-audit-requirement": "NONE",
+        "x-transaction-boundary": "READ_ONLY",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-module-owner": "communications",
+        "x-contract-status": "PRODUCTION_CONTRACT_READY"
+      }
+    },
+    "/communications/channel-accounts/{id}/credentials": {
+      "put": {
+        "operationId": "replaceTelegramCredential",
+        "tags": [
+          "CommunicationChannels"
+        ],
+        "summary": "replaceTelegramCredential",
+        "description": "HTTPS required; healthy persistent custody and environment admission for real input. Protected generation update and audit; rotation invalidates verification/activation without resetting checkpoint. No automatic activation. Authenticated trusted Workspace scope; unknown query/body fields are rejected. Responses are no-store/private. Canonical contract admission does not approve live Telegram access.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success/current replay result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramConnection"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or cursor invalid",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Trusted Workspace, active authority, record scope or FLS denied",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or inaccessible account/conversation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, ownership or generation conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Trusted Workspace request/correlation metadata validation failed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Custody, live admission, runtime or provider unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          }
+        },
+        "x-required-capability": "communications.channels.manage",
+        "x-resource-scope": "WORKSPACE_CHANNEL_ACCOUNT",
+        "x-data-scope": "SAFE_METADATA_ONLY",
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "EXPECTED_VERSION_IN_BODY",
+        "x-audit-requirement": "TRANSACTIONAL_BUSINESS_AUDIT",
+        "x-transaction-boundary": "COMMUNICATIONS_OWNED_TRANSACTION",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TelegramCredentialWrite"
+              }
+            }
+          }
+        },
+        "x-sensitive-request": true,
+        "x-max-body-bytes": 4096,
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-module-owner": "communications",
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-idempotency-key-scope": "WORKSPACE_ACTOR_KEY",
+        "x-concurrency-conflict-status": 409,
+        "x-concurrency-conflict-code": "CHANNEL_VERSION_CONFLICT"
+      },
+      "delete": {
+        "operationId": "removeTelegramCredential",
+        "tags": [
+          "CommunicationChannels"
+        ],
+        "summary": "removeTelegramCredential",
+        "description": " Authenticated trusted Workspace scope; unknown query/body fields are rejected. Responses are no-store/private. Canonical contract admission does not approve live Telegram access.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success/current replay result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramConnection"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or cursor invalid",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Trusted Workspace, active authority, record scope or FLS denied",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or inaccessible account/conversation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, ownership or generation conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Trusted Workspace request/correlation metadata validation failed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Custody, live admission, runtime or provider unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          }
+        },
+        "x-required-capability": "communications.channels.manage",
+        "x-resource-scope": "WORKSPACE_CHANNEL_ACCOUNT",
+        "x-data-scope": "SAFE_METADATA_ONLY",
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "EXPECTED_VERSION_IN_BODY",
+        "x-audit-requirement": "TRANSACTIONAL_BUSINESS_AUDIT",
+        "x-transaction-boundary": "COMMUNICATIONS_OWNED_TRANSACTION",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommunicationChannelVersion"
+              }
+            }
+          }
+        },
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-module-owner": "communications",
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-idempotency-key-scope": "WORKSPACE_ACTOR_KEY",
+        "x-concurrency-conflict-status": 409,
+        "x-concurrency-conflict-code": "CHANNEL_VERSION_CONFLICT"
+      }
+    },
+    "/communications/channel-accounts/{id}/verify": {
+      "post": {
+        "operationId": "verifyTelegramConnection",
+        "tags": [
+          "CommunicationChannels"
+        ],
+        "summary": "verifyTelegramConnection",
+        "description": "Verifies getMe bot identity and empty webhook; remains inactive. Same actor intent replay at unchanged configuration version returns fresh metadata without provider dispatch; later generation or changed fingerprint409. Global bot identity conflict does not reveal other Workspace. All mutations enforce status write FLS; provider waits recheck authority. Authenticated trusted Workspace scope; unknown query/body fields are rejected. Responses are no-store/private. Canonical contract admission does not approve live Telegram access.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success/current replay result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramConnection"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or cursor invalid",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Trusted Workspace, active authority, record scope or FLS denied",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or inaccessible account/conversation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, ownership or generation conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Trusted Workspace request/correlation metadata validation failed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Custody, live admission, runtime or provider unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          }
+        },
+        "x-required-capability": "communications.channels.manage",
+        "x-resource-scope": "WORKSPACE_CHANNEL_ACCOUNT",
+        "x-data-scope": "SAFE_METADATA_ONLY",
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "EXPECTED_VERSION_IN_BODY",
+        "x-audit-requirement": "TRANSACTIONAL_BUSINESS_AUDIT",
+        "x-transaction-boundary": "COMMUNICATIONS_OWNED_TRANSACTION",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommunicationChannelVersion"
+              }
+            }
+          }
+        },
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-module-owner": "communications",
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-idempotency-key-scope": "WORKSPACE_ACTOR_KEY",
+        "x-idempotency-replay-policy": "CURRENT_VERSION_ONLY_NO_PROVIDER_REPLAY",
+        "x-concurrency-conflict-status": 409,
+        "x-concurrency-conflict-code": "CHANNEL_VERSION_CONFLICT"
+      }
+    },
+    "/communications/channel-accounts/{id}/activate": {
+      "post": {
+        "operationId": "activateTelegramConnection",
+        "tags": [
+          "CommunicationChannels"
+        ],
+        "summary": "activateTelegramConnection",
+        "description": "Requires current verified identity; rechecks identity/webhook/exclusivity/authority/custody/runtime/admission; STARTING until successful current poll. Same actor intent replay at unchanged configuration version returns fresh metadata without provider dispatch; later generation or changed fingerprint409. Global bot identity conflict does not reveal other Workspace. All mutations enforce status write FLS; provider waits recheck authority. Authenticated trusted Workspace scope; unknown query/body fields are rejected. Responses are no-store/private. Canonical contract admission does not approve live Telegram access.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success/current replay result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramConnection"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or cursor invalid",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Trusted Workspace, active authority, record scope or FLS denied",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or inaccessible account/conversation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, ownership or generation conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Trusted Workspace request/correlation metadata validation failed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Custody, live admission, runtime or provider unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          }
+        },
+        "x-required-capability": "communications.channels.manage",
+        "x-resource-scope": "WORKSPACE_CHANNEL_ACCOUNT",
+        "x-data-scope": "SAFE_METADATA_ONLY",
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "EXPECTED_VERSION_IN_BODY",
+        "x-audit-requirement": "TRANSACTIONAL_BUSINESS_AUDIT",
+        "x-transaction-boundary": "COMMUNICATIONS_OWNED_TRANSACTION",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommunicationChannelVersion"
+              }
+            }
+          }
+        },
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-module-owner": "communications",
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-idempotency-key-scope": "WORKSPACE_ACTOR_KEY",
+        "x-idempotency-replay-policy": "CURRENT_VERSION_ONLY_NO_PROVIDER_REPLAY",
+        "x-concurrency-conflict-status": 409,
+        "x-concurrency-conflict-code": "CHANNEL_VERSION_CONFLICT"
+      }
+    },
+    "/communications/channel-accounts/{id}/deactivate": {
+      "post": {
+        "operationId": "deactivateTelegramConnection",
+        "tags": [
+          "CommunicationChannels"
+        ],
+        "summary": "deactivateTelegramConnection",
+        "description": "Local stop; preserve identity and checkpoint; no provider call. Same actor intent replay at unchanged configuration version returns fresh metadata without provider dispatch; later generation or changed fingerprint409. Global bot identity conflict does not reveal other Workspace. All mutations enforce status write FLS; provider waits recheck authority. Authenticated trusted Workspace scope; unknown query/body fields are rejected. Responses are no-store/private. Canonical contract admission does not approve live Telegram access.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success/current replay result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramConnection"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or cursor invalid",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Trusted Workspace, active authority, record scope or FLS denied",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or inaccessible account/conversation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, ownership or generation conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Trusted Workspace request/correlation metadata validation failed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Custody, live admission, runtime or provider unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          }
+        },
+        "x-required-capability": "communications.channels.manage",
+        "x-resource-scope": "WORKSPACE_CHANNEL_ACCOUNT",
+        "x-data-scope": "SAFE_METADATA_ONLY",
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "EXPECTED_VERSION_IN_BODY",
+        "x-audit-requirement": "TRANSACTIONAL_BUSINESS_AUDIT",
+        "x-transaction-boundary": "COMMUNICATIONS_OWNED_TRANSACTION",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommunicationChannelVersion"
+              }
+            }
+          }
+        },
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-module-owner": "communications",
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-idempotency-key-scope": "WORKSPACE_ACTOR_KEY",
+        "x-idempotency-replay-policy": "CURRENT_VERSION_ONLY_NO_PROVIDER_REPLAY",
+        "x-concurrency-conflict-status": 409,
+        "x-concurrency-conflict-code": "CHANNEL_VERSION_CONFLICT"
+      }
+    },
+    "/communications/channel-accounts/{id}/reconnect": {
+      "post": {
+        "operationId": "reconnectTelegramConnection",
+        "tags": [
+          "CommunicationChannels"
+        ],
+        "summary": "reconnectTelegramConnection",
+        "description": "Reverify retained credential, same bot and empty webhook, then explicitly activate without resetting checkpoint. Same actor intent replay at unchanged configuration version returns fresh metadata without provider dispatch; later generation or changed fingerprint409. Global bot identity conflict does not reveal other Workspace. All mutations enforce status write FLS; provider waits recheck authority. Authenticated trusted Workspace scope; unknown query/body fields are rejected. Responses are no-store/private. Canonical contract admission does not approve live Telegram access.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 128
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Success/current replay result",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramConnection"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Validation or cursor invalid",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthenticated",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Trusted Workspace, active authority, record scope or FLS denied",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Absent or inaccessible account/conversation",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Version, idempotency, ownership or generation conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Trusted Workspace request/correlation metadata validation failed",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Custody, live admission, runtime or provider unavailable",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunicationProblem"
+                }
+              }
+            }
+          }
+        },
+        "x-required-capability": "communications.channels.manage",
+        "x-resource-scope": "WORKSPACE_CHANNEL_ACCOUNT",
+        "x-data-scope": "SAFE_METADATA_ONLY",
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "EXPECTED_VERSION_IN_BODY",
+        "x-audit-requirement": "TRANSACTIONAL_BUSINESS_AUDIT",
+        "x-transaction-boundary": "COMMUNICATIONS_OWNED_TRANSACTION",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CommunicationChannelVersion"
+              }
+            }
+          }
+        },
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-module-owner": "communications",
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-idempotency-key-scope": "WORKSPACE_ACTOR_KEY",
+        "x-idempotency-replay-policy": "CURRENT_VERSION_ONLY_NO_PROVIDER_REPLAY",
+        "x-concurrency-conflict-status": 409,
+        "x-concurrency-conflict-code": "CHANNEL_VERSION_CONFLICT"
+      }
     }
   },
   "components": {
@@ -78027,6 +81537,1000 @@
           },
           "pageInfo": {
             "$ref": "#/components/schemas/ProductSelectionPageInfo"
+          }
+        }
+      },
+      "CommunicationStatus": {
+        "type": "string",
+        "enum": [
+          "NEW",
+          "OPEN",
+          "PENDING",
+          "CLOSED"
+        ]
+      },
+      "CommunicationConversation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "lastActivityAt",
+          "version",
+          "status",
+          "canTransition"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "lastActivityAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "status": {
+            "$ref": "#/components/schemas/CommunicationStatus"
+          },
+          "canTransition": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CommunicationQueueItem": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "lastActivityAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "lastActivityAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "CommunicationMessage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "conversationId",
+          "sequence",
+          "occurredAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "conversationId": {
+            "type": "string"
+          },
+          "sequence": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "text": {
+            "type": "string"
+          }
+        }
+      },
+      "CommunicationConversationPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/CommunicationConversation"
+                },
+                {
+                  "$ref": "#/components/schemas/CommunicationQueueItem"
+                }
+              ]
+            }
+          },
+          "nextCursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "canClaim": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CommunicationMessagePage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommunicationMessage"
+            },
+            "maxItems": 100
+          },
+          "nextCursor": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "CommunicationClaim": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "conversationId",
+          "version",
+          "auditId",
+          "occurredAt",
+          "replayed",
+          "correlationId"
+        ],
+        "properties": {
+          "conversationId": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "auditId": {
+            "type": "string"
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "replayed": {
+            "type": "boolean"
+          },
+          "correlationId": {
+            "type": "string"
+          }
+        }
+      },
+      "CommunicationTransitionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "targetStatus",
+          "expectedVersion"
+        ],
+        "properties": {
+          "targetStatus": {
+            "$ref": "#/components/schemas/CommunicationStatus"
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "CommunicationTransition": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "status",
+          "version",
+          "changed",
+          "occurredAt",
+          "correlationId"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/CommunicationStatus"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "changed": {
+            "type": "boolean"
+          },
+          "auditId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "correlationId": {
+            "type": "string"
+          }
+        }
+      },
+      "CommunicationCrmTarget": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "targetType",
+          "targetId",
+          "eligible"
+        ],
+        "properties": {
+          "targetType": {
+            "type": "string",
+            "enum": [
+              "LEAD",
+              "CONTACT"
+            ]
+          },
+          "targetId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+          },
+          "label": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "eligible": {
+            "type": "boolean"
+          }
+        }
+      },
+      "CommunicationCrmCandidates": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/CommunicationCrmTarget"
+        },
+        "maxItems": 20
+      },
+      "CommunicationCrmContext": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "state",
+          "version",
+          "canLink"
+        ],
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": [
+              "NONE",
+              "AVAILABLE",
+              "UNAVAILABLE"
+            ]
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "canLink": {
+            "type": "boolean"
+          },
+          "target": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CommunicationCrmTarget"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "successor": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CommunicationCrmTarget"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        }
+      },
+      "CommunicationLinkRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "targetType",
+          "targetId",
+          "expectedVersion"
+        ],
+        "properties": {
+          "targetType": {
+            "type": "string",
+            "enum": [
+              "LEAD",
+              "CONTACT"
+            ]
+          },
+          "targetId": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9][A-Za-z0-9._:-]{0,127}$"
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "CommunicationVersionRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "expectedVersion"
+        ],
+        "properties": {
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "CommunicationLinkMutation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "version",
+          "changed",
+          "occurredAt",
+          "correlationId"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "version": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "changed": {
+            "type": "boolean"
+          },
+          "auditId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "correlationId": {
+            "type": "string"
+          }
+        }
+      },
+      "CommunicationChannelProvider": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "key",
+          "name",
+          "channelType",
+          "metadataDraft",
+          "liveConnection",
+          "inbound",
+          "outbound"
+        ],
+        "properties": {
+          "key": {
+            "type": "string",
+            "enum": [
+              "gmail",
+              "telegram",
+              "zalo",
+              "messenger"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "channelType": {
+            "type": "string",
+            "enum": [
+              "EMAIL",
+              "MESSAGING"
+            ]
+          },
+          "metadataDraft": {
+            "type": "string",
+            "enum": [
+              "SUPPORTED"
+            ]
+          },
+          "liveConnection": {
+            "type": "string",
+            "enum": [
+              "NOT_IMPLEMENTED"
+            ]
+          },
+          "inbound": {
+            "type": "string",
+            "enum": [
+              "NOT_IMPLEMENTED"
+            ]
+          },
+          "outbound": {
+            "type": "string",
+            "enum": [
+              "NOT_IMPLEMENTED"
+            ]
+          }
+        }
+      },
+      "CommunicationChannelProviders": {
+        "type": "array",
+        "items": {
+          "$ref": "#/components/schemas/CommunicationChannelProvider"
+        },
+        "maxItems": 100
+      },
+      "CommunicationChannelAccount": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "providerKey",
+          "channelType",
+          "displayName",
+          "status",
+          "configurationVersion",
+          "createdAt",
+          "updatedAt",
+          "externalAccountKey",
+          "lastVerifiedAt"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "providerKey": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "channelType": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "EMAIL",
+                  "MESSAGING"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "displayName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "DRAFT",
+              "DISABLED",
+              "UNVERIFIED"
+            ]
+          },
+          "configurationVersion": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "createdAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "updatedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "externalAccountKey": {
+            "type": "null"
+          },
+          "lastVerifiedAt": {
+            "type": "null"
+          }
+        }
+      },
+      "CommunicationChannelSummary": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "total",
+          "drafts",
+          "connected",
+          "disabled",
+          "unverified",
+          "providerTypes"
+        ],
+        "properties": {
+          "total": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "drafts": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "connected": {
+            "type": "integer",
+            "const": 0
+          },
+          "disabled": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "unverified": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "providerTypes": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "CommunicationChannelPage": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "items",
+          "nextCursor",
+          "totalCount",
+          "summary"
+        ],
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CommunicationChannelAccount"
+            },
+            "maxItems": 100
+          },
+          "nextCursor": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 4096
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "totalCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "summary": {
+            "$ref": "#/components/schemas/CommunicationChannelSummary"
+          }
+        }
+      },
+      "CommunicationChannelCreate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "providerKey",
+          "displayName"
+        ],
+        "properties": {
+          "providerKey": {
+            "type": "string",
+            "enum": [
+              "gmail",
+              "telegram",
+              "zalo",
+              "messenger"
+            ]
+          },
+          "displayName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          }
+        }
+      },
+      "CommunicationChannelRename": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "displayName",
+          "expectedVersion"
+        ],
+        "properties": {
+          "displayName": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 160
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "CommunicationChannelVersion": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "expectedVersion"
+        ],
+        "properties": {
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "CommunicationChannelMutation": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "account",
+          "auditId",
+          "occurredAt",
+          "correlationId",
+          "replayed"
+        ],
+        "properties": {
+          "account": {
+            "$ref": "#/components/schemas/CommunicationChannelAccount"
+          },
+          "auditId": {
+            "type": "string"
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "correlationId": {
+            "type": "string"
+          },
+          "replayed": {
+            "type": "boolean"
+          }
+        }
+      },
+      "TelegramCredentialWrite": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "botToken",
+          "expectedVersion"
+        ],
+        "properties": {
+          "botToken": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256,
+            "writeOnly": true,
+            "x-sensitive": true,
+            "description": "Write-only sensitive input. Never include in examples, telemetry, browser storage or responses. Real input requires separately approved live environment and healthy persistent custody."
+          },
+          "expectedVersion": {
+            "type": "integer",
+            "minimum": 1
+          }
+        }
+      },
+      "TelegramConnection": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "channelAccountId",
+          "provider",
+          "configurationVersion",
+          "configurationState",
+          "credentialPresent",
+          "credentialGeneration",
+          "verificationState",
+          "botId",
+          "lastVerifiedAt",
+          "health",
+          "lastError",
+          "enabled",
+          "securityReady",
+          "liveAllowed",
+          "providerAllowed",
+          "active",
+          "lastSuccessfulPollAt",
+          "lastCommittedUpdateAt",
+          "retryAfter",
+          "connectionGeneration"
+        ],
+        "properties": {
+          "channelAccountId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "provider": {
+            "type": "string",
+            "enum": [
+              "telegram"
+            ]
+          },
+          "configurationVersion": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "configurationState": {
+            "type": "string",
+            "enum": [
+              "NOT_CONFIGURED",
+              "CONFIGURED",
+              "DISCONNECTED"
+            ]
+          },
+          "credentialPresent": {
+            "type": "boolean"
+          },
+          "credentialGeneration": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "verificationState": {
+            "type": "string",
+            "enum": [
+              "UNVERIFIED",
+              "SYNTHETIC_VERIFIED",
+              "VERIFIED"
+            ]
+          },
+          "botId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lastVerifiedAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "health": {
+            "type": "string",
+            "enum": [
+              "NOT_CONFIGURED",
+              "UNVERIFIED",
+              "DISABLED",
+              "READY_TO_ACTIVATE",
+              "STARTING",
+              "HEALTHY",
+              "DEGRADED",
+              "AUTH_FAILED",
+              "WEBHOOK_CONFLICT",
+              "SECURITY_NOT_READY",
+              "RECONNECT_REQUIRED"
+            ]
+          },
+          "lastError": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "enabled": {
+            "type": "boolean"
+          },
+          "securityReady": {
+            "type": "boolean"
+          },
+          "liveAllowed": {
+            "type": "boolean"
+          },
+          "providerAllowed": {
+            "type": "boolean"
+          },
+          "active": {
+            "type": "boolean"
+          },
+          "lastSuccessfulPollAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lastCommittedUpdateAt": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "retryAfter": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "connectionGeneration": {
+            "type": "integer",
+            "minimum": 0
+          }
+        }
+      },
+      "CommunicationProblem": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "type",
+          "title",
+          "status",
+          "code",
+          "retryable",
+          "correlationId"
+        ],
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer"
+          },
+          "code": {
+            "type": "string"
+          },
+          "retryable": {
+            "type": "boolean"
+          },
+          "correlationId": {
+            "type": "string"
+          },
+          "detail": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "instance": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "fieldErrors": {
+            "anyOf": [
+              {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "idempotencyKey": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         }
       }

@@ -19,6 +19,7 @@ export const AuthField: React.FC<AuthFieldProps> = ({
       {icon && <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 transition group-focus-within:text-indigo-600">{icon}</span>}
       <input
         {...props}
+        data-custom-password-reveal={trailing && (props.autoComplete === "current-password" || props.autoComplete === "new-password") ? "true" : undefined}
         className={`h-12 w-full rounded-2xl border border-slate-200 bg-white text-sm font-normal text-slate-900 outline-none transition duration-200 placeholder:text-slate-400 hover:border-slate-300 focus:border-indigo-400 focus:ring-4 focus:ring-indigo-500/10 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:opacity-60 ${icon ? "pl-11" : "pl-4"} ${trailing ? "pr-12" : "pr-4"} ${className}`}
       />
       {trailing && <span className="absolute inset-y-0 right-0 flex items-center pr-3.5">{trailing}</span>}

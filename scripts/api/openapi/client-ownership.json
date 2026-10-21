@@ -305,6 +305,29 @@
         "quality.api-contract",
         "quality.ai-application-contracts"
       ]
+    },
+    {
+      "id": "communications",
+      "tags": [
+        "Communications",
+        "CommunicationChannels"
+      ],
+      "output": "src/platform/api/generated/communicationsApi.ts",
+      "className": "CommunicationsApiClient",
+      "requestOptionsName": "CommunicationsRequestOptions",
+      "ownerByTag": {
+        "Communications": "communications",
+        "CommunicationChannels": "communications"
+      },
+      "adapterByTag": {
+        "Communications": "src/platform/api/extensions/communicationsApi.ts",
+        "CommunicationChannels": "src/modules/communications/infrastructure/http/createChannelManagement.ts"
+      },
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.communication-channels",
+        "quality.communications-inbox"
+      ]
     }
   ],
   "approvedExternalTransports": [

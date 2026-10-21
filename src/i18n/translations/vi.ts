@@ -1,6 +1,7 @@
 import { Translations } from "../types";
 
 export const viTranslations: Translations = {
+  communications: { inbox: "Hộp thư", detail: "Chi tiết hội thoại" },
   app: {
     customerSegments: "Phân khúc khách hàng",
     customerHealth: "Sức khỏe khách hàng",
@@ -3811,6 +3812,7 @@ export const viTranslations: Translations = {
     paymentInformation: "Thông tin thanh toán",
     invoiceInformation: "Thông tin hóa đơn",
     integrations: "Tích hợp",
+    communicationChannels: "Communications · Kênh kết nối",
     webhooksApi: "Webhook & API",
     readOnly: "Bạn chỉ có quyền xem cấu hình Studio.",
     saved: "Cấu hình đã được lưu.",

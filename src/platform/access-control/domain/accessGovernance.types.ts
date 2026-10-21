@@ -14,7 +14,7 @@ import type {
   WorkspaceMembership,
   WorkspaceMembershipStatus,
 } from "@/platform/workspace-membership";
-import type { WorkspaceMemberDirectoryEntry } from "@/platform/member-directory";
+import type { WorkspaceMemberDirectoryEntry } from "@/platform/member-directory/memberDirectory.types";
 
 export type AccessGovernanceRuntimeMode = "demo" | "connected" | "test";
 

@@ -679,6 +679,108 @@ export const API_OPERATION_CATALOG = {
       "quality.order-to-cash-api-contracts"
     ]
   },
+  "activateTelegramConnection": {
+    "operationId": "activateTelegramConnection",
+    "moduleId": "communications",
+    "boundedContext": "CommunicationChannels",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/communications/channel-accounts/{id}/activate",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "communications",
+      "file": "src/platform/api/generated/communicationsApi.ts",
+      "className": "CommunicationsApiClient",
+      "method": "activateTelegramConnection"
+    },
+    "adapter": {
+      "file": "src/modules/communications/infrastructure/http/createChannelManagement.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "CommunicationChannelVersion",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": "uuid",
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "TelegramConnection",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "EXPECTED_VERSION_IN_BODY",
+      "audit": "TRANSACTIONAL_BUSINESS_AUDIT",
+      "transactionBoundary": "COMMUNICATIONS_OWNED_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.communication-channels",
+      "quality.communications-inbox"
+    ]
+  },
   "addSupportCaseInternalNote": {
     "operationId": "addSupportCaseInternalNote",
     "moduleId": "support",
@@ -5916,6 +6018,97 @@ export const API_OPERATION_CATALOG = {
       "quality.write-boundary-authorization"
     ]
   },
+  "claimConversation": {
+    "operationId": "claimConversation",
+    "moduleId": "communications",
+    "boundedContext": "Communications",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/communications/conversations/{id}/claim",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "communications",
+      "file": "src/platform/api/generated/communicationsApi.ts",
+      "className": "CommunicationsApiClient",
+      "method": "claimConversation"
+    },
+    "adapter": {
+      "file": "src/platform/api/extensions/communicationsApi.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": "^[0-9]+$"
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "CommunicationClaim",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "communications.claim",
+      "resourceScope": "UNASSIGNED_OR_SELF",
+      "dataScope": "DEC-COM-019"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "ATOMIC_NULL_TO_SELF",
+      "audit": "TRANSACTIONAL_BUSINESS_AUDIT",
+      "transactionBoundary": "COMMUNICATIONS_OWNED_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.communication-channels",
+      "quality.communications-inbox"
+    ]
+  },
   "claimLeadFromQueue": {
     "operationId": "claimLeadFromQueue",
     "moduleId": "leads",
@@ -7672,6 +7865,97 @@ export const API_OPERATION_CATALOG = {
       "quality.access-governance-api-boundary",
       "quality.api-contract",
       "quality.write-boundary-authorization"
+    ]
+  },
+  "createCommunicationChannelAccount": {
+    "operationId": "createCommunicationChannelAccount",
+    "moduleId": "communications",
+    "boundedContext": "CommunicationChannels",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/communications/channel-accounts",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "communications",
+      "file": "src/platform/api/generated/communicationsApi.ts",
+      "className": "CommunicationsApiClient",
+      "method": "createCommunicationChannelAccount"
+    },
+    "adapter": {
+      "file": "src/modules/communications/infrastructure/http/createChannelManagement.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "CommunicationChannelCreate",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "CommunicationChannelMutation",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "NOT_APPLICABLE",
+      "audit": "TRANSACTIONAL_BUSINESS_AUDIT",
+      "transactionBoundary": "COMMUNICATIONS_OWNED_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.communication-channels",
+      "quality.communications-inbox"
     ]
   },
   "createContact": {
@@ -10292,6 +10576,108 @@ export const API_OPERATION_CATALOG = {
       "quality.task-activity-api-boundary"
     ]
   },
+  "deactivateTelegramConnection": {
+    "operationId": "deactivateTelegramConnection",
+    "moduleId": "communications",
+    "boundedContext": "CommunicationChannels",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/communications/channel-accounts/{id}/deactivate",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "communications",
+      "file": "src/platform/api/generated/communicationsApi.ts",
+      "className": "CommunicationsApiClient",
+      "method": "deactivateTelegramConnection"
+    },
+    "adapter": {
+      "file": "src/modules/communications/infrastructure/http/createChannelManagement.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "CommunicationChannelVersion",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": "uuid",
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "TelegramConnection",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "EXPECTED_VERSION_IN_BODY",
+      "audit": "TRANSACTIONAL_BUSINESS_AUDIT",
+      "transactionBoundary": "COMMUNICATIONS_OWNED_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.communication-channels",
+      "quality.communications-inbox"
+    ]
+  },
   "deleteCrmObjectField": {
     "operationId": "deleteCrmObjectField",
     "moduleId": "platform/workspace-config",
@@ -10775,6 +11161,108 @@ export const API_OPERATION_CATALOG = {
       "quality.api-contract"
     ]
   },
+  "disableCommunicationChannelAccount": {
+    "operationId": "disableCommunicationChannelAccount",
+    "moduleId": "communications",
+    "boundedContext": "CommunicationChannels",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/communications/channel-accounts/{id}/disable",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "communications",
+      "file": "src/platform/api/generated/communicationsApi.ts",
+      "className": "CommunicationsApiClient",
+      "method": "disableCommunicationChannelAccount"
+    },
+    "adapter": {
+      "file": "src/modules/communications/infrastructure/http/createChannelManagement.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "CommunicationChannelVersion",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": "uuid",
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "CommunicationChannelMutation",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "EXPECTED_VERSION_IN_BODY",
+      "audit": "TRANSACTIONAL_BUSINESS_AUDIT",
+      "transactionBoundary": "COMMUNICATIONS_OWNED_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.communication-channels",
+      "quality.communications-inbox"
+    ]
+  },
   "discardInvoiceDraft": {
     "operationId": "discardInvoiceDraft",
     "moduleId": "invoices",
@@ -10887,6 +11375,108 @@ export const API_OPERATION_CATALOG = {
       "quality.financial-operations-api-boundary",
       "quality.financial-vertical-slice",
       "quality.order-to-cash-api-contracts"
+    ]
+  },
+  "disconnectCommunicationChannelAccount": {
+    "operationId": "disconnectCommunicationChannelAccount",
+    "moduleId": "communications",
+    "boundedContext": "CommunicationChannels",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/communications/channel-accounts/{id}/disconnect",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "communications",
+      "file": "src/platform/api/generated/communicationsApi.ts",
+      "className": "CommunicationsApiClient",
+      "method": "disconnectCommunicationChannelAccount"
+    },
+    "adapter": {
+      "file": "src/modules/communications/infrastructure/http/createChannelManagement.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "CommunicationChannelVersion",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": "uuid",
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "CommunicationChannelMutation",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "EXPECTED_VERSION_IN_BODY",
+      "audit": "TRANSACTIONAL_BUSINESS_AUDIT",
+      "transactionBoundary": "COMMUNICATIONS_OWNED_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.communication-channels",
+      "quality.communications-inbox"
     ]
   },
   "disconnectIntegrationConnection": {
@@ -11423,6 +12013,108 @@ export const API_OPERATION_CATALOG = {
       "quality.shipping-returns-api-boundary",
       "quality.support-api-boundary",
       "quality.task-activity-api-boundary"
+    ]
+  },
+  "enableCommunicationChannelAccount": {
+    "operationId": "enableCommunicationChannelAccount",
+    "moduleId": "communications",
+    "boundedContext": "CommunicationChannels",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/communications/channel-accounts/{id}/enable",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "communications",
+      "file": "src/platform/api/generated/communicationsApi.ts",
+      "className": "CommunicationsApiClient",
+      "method": "enableCommunicationChannelAccount"
+    },
+    "adapter": {
+      "file": "src/modules/communications/infrastructure/http/createChannelManagement.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "CommunicationChannelVersion",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": "uuid",
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "CommunicationChannelMutation",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "EXPECTED_VERSION_IN_BODY",
+      "audit": "TRANSACTIONAL_BUSINESS_AUDIT",
+      "transactionBoundary": "COMMUNICATIONS_OWNED_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.communication-channels",
+      "quality.communications-inbox"
     ]
   },
   "endContactCustomerRelationship": {
@@ -12343,6 +13035,97 @@ export const API_OPERATION_CATALOG = {
       "quality.receivables-contracts"
     ]
   },
+  "getCommunicationChannelAccount": {
+    "operationId": "getCommunicationChannelAccount",
+    "moduleId": "communications",
+    "boundedContext": "CommunicationChannels",
+    "kind": "QUERY",
+    "method": "GET",
+    "path": "/communications/channel-accounts/{id}",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "communications",
+      "file": "src/platform/api/generated/communicationsApi.ts",
+      "className": "CommunicationsApiClient",
+      "method": "getCommunicationChannelAccount"
+    },
+    "adapter": {
+      "file": "src/modules/communications/infrastructure/http/createChannelManagement.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": "uuid",
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "CommunicationChannelAccount",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "NOT_APPLICABLE",
+      "audit": "NONE",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.communication-channels",
+      "quality.communications-inbox"
+    ]
+  },
   "getContact": {
     "operationId": "getContact",
     "moduleId": "contacts",
@@ -12762,6 +13545,188 @@ export const API_OPERATION_CATALOG = {
       "quality.shipping-returns-api-boundary",
       "quality.support-api-boundary",
       "quality.task-activity-api-boundary"
+    ]
+  },
+  "getConversation": {
+    "operationId": "getConversation",
+    "moduleId": "communications",
+    "boundedContext": "Communications",
+    "kind": "QUERY",
+    "method": "GET",
+    "path": "/communications/conversations/{id}",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "communications",
+      "file": "src/platform/api/generated/communicationsApi.ts",
+      "className": "CommunicationsApiClient",
+      "method": "getConversation"
+    },
+    "adapter": {
+      "file": "src/platform/api/extensions/communicationsApi.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": "^[0-9]+$"
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "CommunicationConversation",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "communications.read",
+      "resourceScope": "CURRENT_ASSIGNEE",
+      "dataScope": "DEC-COM-019"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "NOT_APPLICABLE",
+      "audit": "NONE",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.communication-channels",
+      "quality.communications-inbox"
+    ]
+  },
+  "getConversationCrmContext": {
+    "operationId": "getConversationCrmContext",
+    "moduleId": "communications",
+    "boundedContext": "Communications",
+    "kind": "QUERY",
+    "method": "GET",
+    "path": "/communications/conversations/{id}/crm-link",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "communications",
+      "file": "src/platform/api/generated/communicationsApi.ts",
+      "className": "CommunicationsApiClient",
+      "method": "getConversationCrmContext"
+    },
+    "adapter": {
+      "file": "src/platform/api/extensions/communicationsApi.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": "^[0-9]+$"
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "CommunicationCrmContext",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "communications.read",
+      "resourceScope": "CURRENT_ASSIGNEE",
+      "dataScope": "DEC-COM-019"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "NOT_APPLICABLE",
+      "audit": "NONE",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.communication-channels",
+      "quality.communications-inbox"
     ]
   },
   "getCrmObjectSchema": {
@@ -16301,6 +17266,97 @@ export const API_OPERATION_CATALOG = {
       "quality.task-activity-api-boundary"
     ]
   },
+  "getTelegramConnection": {
+    "operationId": "getTelegramConnection",
+    "moduleId": "communications",
+    "boundedContext": "CommunicationChannels",
+    "kind": "QUERY",
+    "method": "GET",
+    "path": "/communications/channel-accounts/{id}/connection",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "communications",
+      "file": "src/platform/api/generated/communicationsApi.ts",
+      "className": "CommunicationsApiClient",
+      "method": "getTelegramConnection"
+    },
+    "adapter": {
+      "file": "src/modules/communications/infrastructure/http/createChannelManagement.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": "uuid",
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "TelegramConnection",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "NOT_APPLICABLE",
+      "audit": "NONE",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.communication-channels",
+      "quality.communications-inbox"
+    ]
+  },
   "getWorkspaceAccessDirectory": {
     "operationId": "getWorkspaceAccessDirectory",
     "moduleId": "platform/access-control",
@@ -17050,6 +18106,97 @@ export const API_OPERATION_CATALOG = {
       "quality.order-to-cash-api-contracts"
     ]
   },
+  "linkConversationCrmRecord": {
+    "operationId": "linkConversationCrmRecord",
+    "moduleId": "communications",
+    "boundedContext": "Communications",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/communications/conversations/{id}/crm-link",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "communications",
+      "file": "src/platform/api/generated/communicationsApi.ts",
+      "className": "CommunicationsApiClient",
+      "method": "linkConversationCrmRecord"
+    },
+    "adapter": {
+      "file": "src/platform/api/extensions/communicationsApi.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "CommunicationLinkRequest",
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": "^[0-9]+$"
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "CommunicationLinkMutation",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "communications.link",
+      "resourceScope": "CURRENT_ASSIGNEE",
+      "dataScope": "DEC-COM-019"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "EXPECTED_VERSION_IN_BODY",
+      "audit": "TRANSACTIONAL_BUSINESS_AUDIT",
+      "transactionBoundary": "COMMUNICATIONS_OWNED_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.communication-channels",
+      "quality.communications-inbox"
+    ]
+  },
   "listActivities": {
     "operationId": "listActivities",
     "moduleId": "tasks",
@@ -17269,6 +18416,210 @@ export const API_OPERATION_CATALOG = {
       "quality.shipping-returns-api-boundary",
       "quality.support-api-boundary",
       "quality.task-activity-api-boundary"
+    ]
+  },
+  "listCommunicationChannelAccounts": {
+    "operationId": "listCommunicationChannelAccounts",
+    "moduleId": "communications",
+    "boundedContext": "CommunicationChannels",
+    "kind": "QUERY",
+    "method": "GET",
+    "path": "/communications/channel-accounts",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "communications",
+      "file": "src/platform/api/generated/communicationsApi.ts",
+      "className": "CommunicationsApiClient",
+      "method": "listCommunicationChannelAccounts"
+    },
+    "adapter": {
+      "file": "src/modules/communications/infrastructure/http/createChannelManagement.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "integer",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "provider",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "status",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "CommunicationChannelPage",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "NOT_APPLICABLE",
+      "audit": "NONE",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.communication-channels",
+      "quality.communications-inbox"
+    ]
+  },
+  "listCommunicationChannelProviders": {
+    "operationId": "listCommunicationChannelProviders",
+    "moduleId": "communications",
+    "boundedContext": "CommunicationChannels",
+    "kind": "QUERY",
+    "method": "GET",
+    "path": "/communications/channel-providers",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "communications",
+      "file": "src/platform/api/generated/communicationsApi.ts",
+      "className": "CommunicationsApiClient",
+      "method": "listCommunicationChannelProviders"
+    },
+    "adapter": {
+      "file": "src/modules/communications/infrastructure/http/createChannelManagement.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "CommunicationChannelProviders",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "NOT_APPLICABLE",
+      "audit": "NONE",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.communication-channels",
+      "quality.communications-inbox"
     ]
   },
   "listContacts": {
@@ -17512,6 +18863,243 @@ export const API_OPERATION_CATALOG = {
       "quality.shipping-returns-api-boundary",
       "quality.support-api-boundary",
       "quality.task-activity-api-boundary"
+    ]
+  },
+  "listConversationMessages": {
+    "operationId": "listConversationMessages",
+    "moduleId": "communications",
+    "boundedContext": "Communications",
+    "kind": "QUERY",
+    "method": "GET",
+    "path": "/communications/conversations/{id}/messages",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "communications",
+      "file": "src/platform/api/generated/communicationsApi.ts",
+      "className": "CommunicationsApiClient",
+      "method": "listConversationMessages"
+    },
+    "adapter": {
+      "file": "src/platform/api/extensions/communicationsApi.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": "^[0-9]+$"
+          }
+        },
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "integer",
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "CommunicationMessagePage",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "communications.read",
+      "resourceScope": "CURRENT_ASSIGNEE",
+      "dataScope": "DEC-COM-019"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "NOT_APPLICABLE",
+      "audit": "NONE",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.communication-channels",
+      "quality.communications-inbox"
+    ]
+  },
+  "listConversations": {
+    "operationId": "listConversations",
+    "moduleId": "communications",
+    "boundedContext": "Communications",
+    "kind": "QUERY",
+    "method": "GET",
+    "path": "/communications/conversations",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "communications",
+      "file": "src/platform/api/generated/communicationsApi.ts",
+      "className": "CommunicationsApiClient",
+      "method": "listConversations"
+    },
+    "adapter": {
+      "file": "src/platform/api/extensions/communicationsApi.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "integer",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "statusView",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "view",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "CommunicationConversationPage",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "VIEW_DEPENDENT",
+      "resourceScope": "VIEW_DEPENDENT_ASSIGNEE_OR_UNASSIGNED_QUEUE",
+      "dataScope": "DEC-COM-019"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "NOT_APPLICABLE",
+      "audit": "NONE",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.communication-channels",
+      "quality.communications-inbox"
     ]
   },
   "listCreditNotes": {
@@ -23763,6 +25351,108 @@ export const API_OPERATION_CATALOG = {
       "quality.order-to-cash-api-contracts"
     ]
   },
+  "reconnectTelegramConnection": {
+    "operationId": "reconnectTelegramConnection",
+    "moduleId": "communications",
+    "boundedContext": "CommunicationChannels",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/communications/channel-accounts/{id}/reconnect",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "communications",
+      "file": "src/platform/api/generated/communicationsApi.ts",
+      "className": "CommunicationsApiClient",
+      "method": "reconnectTelegramConnection"
+    },
+    "adapter": {
+      "file": "src/modules/communications/infrastructure/http/createChannelManagement.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "CommunicationChannelVersion",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": "uuid",
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "TelegramConnection",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "EXPECTED_VERSION_IN_BODY",
+      "audit": "TRANSACTIONAL_BUSINESS_AUDIT",
+      "transactionBoundary": "COMMUNICATIONS_OWNED_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.communication-channels",
+      "quality.communications-inbox"
+    ]
+  },
   "recordCodCustomerCollection": {
     "operationId": "recordCodCustomerCollection",
     "moduleId": "payments",
@@ -25091,6 +26781,108 @@ export const API_OPERATION_CATALOG = {
       "quality.task-activity-api-boundary"
     ]
   },
+  "removeTelegramCredential": {
+    "operationId": "removeTelegramCredential",
+    "moduleId": "communications",
+    "boundedContext": "CommunicationChannels",
+    "kind": "COMMAND",
+    "method": "DELETE",
+    "path": "/communications/channel-accounts/{id}/credentials",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "communications",
+      "file": "src/platform/api/generated/communicationsApi.ts",
+      "className": "CommunicationsApiClient",
+      "method": "removeTelegramCredential"
+    },
+    "adapter": {
+      "file": "src/modules/communications/infrastructure/http/createChannelManagement.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "CommunicationChannelVersion",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": "uuid",
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "TelegramConnection",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "EXPECTED_VERSION_IN_BODY",
+      "audit": "TRANSACTIONAL_BUSINESS_AUDIT",
+      "transactionBoundary": "COMMUNICATIONS_OWNED_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.communication-channels",
+      "quality.communications-inbox"
+    ]
+  },
   "reopenDisqualifiedLead": {
     "operationId": "reopenDisqualifiedLead",
     "moduleId": "leads",
@@ -25849,6 +27641,108 @@ export const API_OPERATION_CATALOG = {
       "quality.shipping-returns-api-boundary",
       "quality.support-api-boundary",
       "quality.task-activity-api-boundary"
+    ]
+  },
+  "replaceTelegramCredential": {
+    "operationId": "replaceTelegramCredential",
+    "moduleId": "communications",
+    "boundedContext": "CommunicationChannels",
+    "kind": "COMMAND",
+    "method": "PUT",
+    "path": "/communications/channel-accounts/{id}/credentials",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "communications",
+      "file": "src/platform/api/generated/communicationsApi.ts",
+      "className": "CommunicationsApiClient",
+      "method": "replaceTelegramCredential"
+    },
+    "adapter": {
+      "file": "src/modules/communications/infrastructure/http/createChannelManagement.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "TelegramCredentialWrite",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": "uuid",
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "TelegramConnection",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "EXPECTED_VERSION_IN_BODY",
+      "audit": "TRANSACTIONAL_BUSINESS_AUDIT",
+      "transactionBoundary": "COMMUNICATIONS_OWNED_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.communication-channels",
+      "quality.communications-inbox"
     ]
   },
   "replaceWorkspaceCurrencies": {
@@ -29550,6 +31444,119 @@ export const API_OPERATION_CATALOG = {
       "quality.task-activity-api-boundary"
     ]
   },
+  "searchConversationCrmCandidates": {
+    "operationId": "searchConversationCrmCandidates",
+    "moduleId": "communications",
+    "boundedContext": "Communications",
+    "kind": "QUERY",
+    "method": "GET",
+    "path": "/communications/conversations/{id}/crm-candidates",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "communications",
+      "file": "src/platform/api/generated/communicationsApi.ts",
+      "className": "CommunicationsApiClient",
+      "method": "searchConversationCrmCandidates"
+    },
+    "adapter": {
+      "file": "src/platform/api/extensions/communicationsApi.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": "^[0-9]+$"
+          }
+        },
+        {
+          "name": "search",
+          "in": "query",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "targetType",
+          "in": "query",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "CommunicationCrmCandidates",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "communications.link",
+      "resourceScope": "CURRENT_ASSIGNEE",
+      "dataScope": "DEC-COM-019"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "NOT_APPLICABLE",
+      "audit": "NONE",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.communication-channels",
+      "quality.communications-inbox"
+    ]
+  },
   "searchProductSelections": {
     "operationId": "searchProductSelections",
     "moduleId": "products",
@@ -30396,6 +32403,97 @@ export const API_OPERATION_CATALOG = {
       "quality.api-contract"
     ]
   },
+  "transitionConversation": {
+    "operationId": "transitionConversation",
+    "moduleId": "communications",
+    "boundedContext": "Communications",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/communications/conversations/{id}/transition",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "communications",
+      "file": "src/platform/api/generated/communicationsApi.ts",
+      "className": "CommunicationsApiClient",
+      "method": "transitionConversation"
+    },
+    "adapter": {
+      "file": "src/platform/api/extensions/communicationsApi.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "CommunicationTransitionRequest",
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": "^[0-9]+$"
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "CommunicationTransition",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "communications.transition",
+      "resourceScope": "CURRENT_ASSIGNEE",
+      "dataScope": "DEC-COM-019"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "EXPECTED_VERSION_IN_BODY",
+      "audit": "TRANSACTIONAL_BUSINESS_AUDIT",
+      "transactionBoundary": "COMMUNICATIONS_OWNED_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.communication-channels",
+      "quality.communications-inbox"
+    ]
+  },
   "transitionSupportCase": {
     "operationId": "transitionSupportCase",
     "moduleId": "support",
@@ -30516,6 +32614,199 @@ export const API_OPERATION_CATALOG = {
       "quality.shipping-returns-api-boundary",
       "quality.support-api-boundary",
       "quality.task-activity-api-boundary"
+    ]
+  },
+  "unlinkConversationCrmRecord": {
+    "operationId": "unlinkConversationCrmRecord",
+    "moduleId": "communications",
+    "boundedContext": "Communications",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/communications/conversations/{id}/crm-link/unlink",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "communications",
+      "file": "src/platform/api/generated/communicationsApi.ts",
+      "className": "CommunicationsApiClient",
+      "method": "unlinkConversationCrmRecord"
+    },
+    "adapter": {
+      "file": "src/platform/api/extensions/communicationsApi.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "CommunicationVersionRequest",
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": "^[0-9]+$"
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "CommunicationLinkMutation",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "communications.link",
+      "resourceScope": "CURRENT_ASSIGNEE",
+      "dataScope": "DEC-COM-019"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "EXPECTED_VERSION_IN_BODY",
+      "audit": "TRANSACTIONAL_BUSINESS_AUDIT",
+      "transactionBoundary": "COMMUNICATIONS_OWNED_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.communication-channels",
+      "quality.communications-inbox"
+    ]
+  },
+  "updateCommunicationChannelAccount": {
+    "operationId": "updateCommunicationChannelAccount",
+    "moduleId": "communications",
+    "boundedContext": "CommunicationChannels",
+    "kind": "COMMAND",
+    "method": "PATCH",
+    "path": "/communications/channel-accounts/{id}",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "communications",
+      "file": "src/platform/api/generated/communicationsApi.ts",
+      "className": "CommunicationsApiClient",
+      "method": "updateCommunicationChannelAccount"
+    },
+    "adapter": {
+      "file": "src/modules/communications/infrastructure/http/createChannelManagement.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "CommunicationChannelRename",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": "uuid",
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "CommunicationChannelMutation",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "EXPECTED_VERSION_IN_BODY",
+      "audit": "TRANSACTIONAL_BUSINESS_AUDIT",
+      "transactionBoundary": "COMMUNICATIONS_OWNED_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.communication-channels",
+      "quality.communications-inbox"
     ]
   },
   "updateContact": {
@@ -33013,6 +35304,108 @@ export const API_OPERATION_CATALOG = {
       "quality.auth-session-contracts",
       "quality.auth-ux-contracts",
       "quality.identity-auth-api-boundary"
+    ]
+  },
+  "verifyTelegramConnection": {
+    "operationId": "verifyTelegramConnection",
+    "moduleId": "communications",
+    "boundedContext": "CommunicationChannels",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/communications/channel-accounts/{id}/verify",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "communications",
+      "file": "src/platform/api/generated/communicationsApi.ts",
+      "className": "CommunicationsApiClient",
+      "method": "verifyTelegramConnection"
+    },
+    "adapter": {
+      "file": "src/modules/communications/infrastructure/http/createChannelManagement.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "CommunicationChannelVersion",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "id",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": "uuid",
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "TelegramConnection",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "EXPECTED_VERSION_IN_BODY",
+      "audit": "TRANSACTIONAL_BUSINESS_AUDIT",
+      "transactionBoundary": "COMMUNICATIONS_OWNED_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.communication-channels",
+      "quality.communications-inbox"
     ]
   },
   "voidInvoice": {

@@ -1,4 +1,5 @@
 import React from "react";
+import { ContactHistoryPanel } from "../ContactHistoryPanel";
 import { CalendarClock, Mail, MessageSquare, NotebookPen, Phone, UsersRound } from "lucide-react";
 import {
   RelationshipModuleActions,
@@ -17,6 +18,7 @@ export interface ContactRelationshipActivity {
 }
 
 interface ContactActivitiesTabProps {
+  contactId?: string;
   activities: ContactRelationshipActivity[];
   onLogActivity(): void;
   onOpenTasks(): void;
@@ -48,6 +50,7 @@ const activityLabel = (type: string, isVi: boolean): string => {
 };
 
 export const ContactActivitiesTab: React.FC<ContactActivitiesTabProps> = ({
+  contactId,
   activities,
   onLogActivity,
   onOpenTasks,
@@ -72,7 +75,7 @@ export const ContactActivitiesTab: React.FC<ContactActivitiesTabProps> = ({
         }
       />
 
-      {ordered.length > 0 ? (
+      {contactId ? <ContactHistoryPanel key={contactId} contactId={contactId} locale={locale}/> : ordered.length > 0 ? (
         <div className="space-y-2">
           {ordered.map((activity) => {
             const content = (

@@ -218,6 +218,13 @@ for (const section of orderedSections) {
   const pathname = `/w/unicore-vietnam/studio/${section.routePath}`;
   if (browser.location.hash !== `#${pathname}`) browser.location.hash = pathname;
   await waitForSelector(`[data-router-pathname="${pathname}"]`);
+  if (section.id === "communication-channels") {
+    // Demo administrator deliberately does not inherit channel-management authority.
+    await waitForSelector('[data-access-state="permission-denied"]');
+    assert.equal(browser.document.querySelector('[data-studio-route-section="communication-channels"]'), null,
+      "Channel management must deny a default administrator without an explicit grant");
+    continue;
+  }
   await waitForSelector(`[data-studio-route-section="${section.id}"]`);
   await new Promise((resolve) => setTimeout(resolve, 75));
 

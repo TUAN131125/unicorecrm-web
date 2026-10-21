@@ -1,24 +1,18 @@
-import { getAuthSessionSnapshot, isProvisionedUserAccount, listDevelopmentAccounts } from "@/platform/identity-auth";
-import { getWorkspaceContextSnapshot } from "@/platform/workspace-context";
+import { getAuthSessionSnapshot, isConnectedAuthRuntime, isProvisionedUserAccount, listDevelopmentAccounts } from "@/platform/identity-auth";
+import { getAccessGovernanceRuntimeBinding, isAccessGovernanceRuntimeConfigured } from "@/platform/access-control/application/accessGovernanceBinding";
+import { getActiveWorkspaceId, getWorkspaceContextSnapshot, isConnectedWorkspaceRuntime } from "@/platform/workspace-context";
 import { getWorkspacePeopleSnapshot, listWorkspaceMembershipDirectory } from "@/platform/workspace-membership";
 
-export interface WorkspaceMemberDirectoryEntry {
-  memberId: string;
-  membershipId?: string;
-  accountId?: string;
-  displayName: string;
-  email?: string;
-  accountSource: "seed" | "direct" | "invitation" | "external" | "unknown";
-  accountStatus?: "ACTIVE" | "SUSPENDED";
-  roleLabel?: string;
-  provisionedAt?: string;
-}
+import type { WorkspaceMemberDirectoryEntry } from "./memberDirectory.types";
+export type { WorkspaceMemberDirectoryEntry } from "./memberDirectory.types";
 
 export function listWorkspaceMemberDirectory(): WorkspaceMemberDirectoryEntry[] {
+  if (isConnectedAuthRuntime() || isConnectedWorkspaceRuntime()) return getConnectedMemberDirectory(getActiveWorkspaceId() ?? "").members;
   return listWorkspaceMemberDirectoryFor(getWorkspaceContextSnapshot().workspaceId);
 }
 
 export function listWorkspaceMemberDirectoryFor(workspaceId: string): WorkspaceMemberDirectoryEntry[] {
+  if (isConnectedAuthRuntime() || isConnectedWorkspaceRuntime()) return getConnectedMemberDirectory(workspaceId).members;
   const accounts = new Map(listDevelopmentAccounts().map((account) => [account.accountId, account]));
   const invitations = new Map(getWorkspacePeopleSnapshot(workspaceId).invitations.map((invite) => [invite.membershipId, invite]));
   const session = getAuthSessionSnapshot();
@@ -40,6 +34,29 @@ export function listWorkspaceMemberDirectoryFor(workspaceId: string): WorkspaceM
         provisionedAt: account?.provisionedAt,
       } satisfies WorkspaceMemberDirectoryEntry;
     });
+}
+
+export interface ConnectedMemberDirectory {
+  status: "ready" | "loading" | "empty" | "error";
+  members: WorkspaceMemberDirectoryEntry[];
+}
+
+/** The existing context admits only the caller's identity, never a colleague directory. */
+export function getConnectedMemberDirectory(workspaceId: string): ConnectedMemberDirectory {
+  const session = getAuthSessionSnapshot();
+  if (!isConnectedAuthRuntime() || !session || !workspaceId || workspaceId !== getActiveWorkspaceId())
+    return { status: "empty", members: [] };
+  if (!isAccessGovernanceRuntimeConfigured()) return { status: "error", members: [] };
+  const binding = getAccessGovernanceRuntimeBinding();
+  const state = binding.getState();
+  if (state.workspaceId !== workspaceId || state.loading) return { status: "loading", members: [] };
+  if (state.error) return { status: "error", members: [] };
+  // getEffectiveAccess also verifies session ownership and retires stale authority.
+  const actor = binding.getEffectiveAccess(workspaceId);
+  if (!actor || actor.accountId !== session.principal.accountId || actor.workspaceId !== workspaceId
+    || !actor.memberId || !actor.membershipId) return { status: "empty", members: [] };
+  return { status: "ready", members: [{ memberId: actor.memberId, membershipId: actor.membershipId,
+    accountId: actor.accountId, displayName: session.principal.displayName, accountSource: "external" }] };
 }
 
 export function resolveWorkspaceMemberName(memberId?: string): string {

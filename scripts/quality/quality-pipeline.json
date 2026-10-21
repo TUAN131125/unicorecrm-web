@@ -222,6 +222,8 @@
       "label": "Integration",
       "description": "Cross-module, browser-like runtime, composition and persistence integration checks.",
       "gates": [
+        "quality.communications-inbox",
+        "quality.communication-channels",
         "quality.operational-context-contracts",
         "quality.auth-session-contracts",
         "quality.workspace-isolation-contracts",
@@ -438,6 +440,32 @@
     }
   ],
   "gates": [
+    {
+      "id": "quality.communication-channels",
+      "commandName": "test:communication-channels",
+      "groupId": "integration",
+      "kind": "integration",
+      "owner": "quality-integration",
+      "entry": "tests/contract/communication-channels.test.tsx",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": ["node", "tsx"],
+      "shardKey": "quality.communication-channels",
+      "steps": [{ "type": "node", "entry": "tests/contract/communication-channels.test.tsx", "nodeArgs": ["--import", "tsx"], "args": [] }]
+    },
+    {
+      "id": "quality.communications-inbox",
+      "commandName": "test:communications-inbox",
+      "groupId": "integration",
+      "kind": "integration",
+      "owner": "quality-integration",
+      "entry": "tests/contract/communications-inbox.test.tsx",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": ["node", "tsx"],
+      "shardKey": "quality.communications-inbox",
+      "steps": [{ "type": "node", "entry": "tests/contract/communications-inbox.test.tsx", "nodeArgs": ["--import", "tsx"], "args": [] }]
+    },
     {
       "id": "quality.lint",
       "commandName": "lint",

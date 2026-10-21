@@ -50,7 +50,9 @@ for (const section of STUDIO_SECTIONS) {
 
 assert.deepEqual(new Set(SCREEN_GUIDANCE.map(screen => screen.id)), new Set(Object.values(ROUTE_METADATA).map(meta => meta.guidanceId)), "every routed workspace screen must have exactly one canonical guide");
 assert.equal(SCREEN_GUIDANCE.length, new Set(Object.values(ROUTE_METADATA).map(meta => meta.guidanceId)).size, "duplicate screen guides are forbidden");
-assert.equal(SCREEN_GUIDANCE.filter((screen) => screen.productSpace === "crm").length, 51, "CRM guidance inventory must cover 51 screens");
+assert.equal(SCREEN_GUIDANCE.filter((screen) => screen.productSpace === "crm").length, 53, "CRM guidance inventory must cover 53 screens");
+assert.equal(resolveGuidanceContext("/w/demo/crm/communications", allowAll)?.guidance?.id, "crm.communications.list");
+assert.equal(resolveGuidanceContext("/w/demo/crm/communications/fixture-conversation", allowAll)?.guidance?.id, "crm.communications.detail");
 assert.equal(SCREEN_GUIDANCE.filter((screen) => screen.productSpace === "studio").length, STUDIO_SECTIONS.length, "Studio guidance must cover each canonical section");
 assert.equal(resolveGuidanceContext("/w/demo/studio/settings/ai", allowAll)?.guidance?.id, "studio.ai");
 assert.deepEqual(SCREEN_GUIDANCE.find(screen => screen.id === "studio.ai")?.requiredCapabilities, ["ai.configuration.read"]);
@@ -102,4 +104,4 @@ assert.deepEqual(readGuidanceProgress("workspace-b", "user-a").completedWalkthro
 dom.window.localStorage.setItem(guidanceProgressStorageKey("workspace-a", "broken"), "not-json");
 assert.deepEqual(readGuidanceProgress("workspace-a", "broken").activeWalkthroughs, {}, "corrupt progress must fail safely");
 
-console.log(`Guidance runtime: OK (${SCREEN_GUIDANCE.length} unique guided screens: 51 CRM + ${STUDIO_SECTIONS.length} Studio + 3 People, complete generated walkthroughs, current-screen availability, capability-filtered search, bilingual search, target safety, workspace-scoped progress)`);
+console.log(`Guidance runtime: OK (${SCREEN_GUIDANCE.length} unique guided screens: 53 CRM + ${STUDIO_SECTIONS.length} Studio + 3 People, complete generated walkthroughs, current-screen availability, capability-filtered search, bilingual search, target safety, workspace-scoped progress)`);

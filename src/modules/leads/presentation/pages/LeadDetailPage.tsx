@@ -10,11 +10,13 @@ import { replaceLeads } from "../../public/leads";
 import { AuthoritativeQueryBoundary } from "@/shared/operations";
 import { useLeadAuthoritativeResource } from "../hooks/useLeadAuthoritativeResource";
 import { LeadDetailView } from "../views/LeadDetailView";
+import { getLeadRelationshipAuthority, subscribeLeadRelationshipAuthority } from "../model/leadRelationshipAuthority";
 
 export const LeadDetailPage: React.FC<LeadDetailPageProps> = (props) => {
   const { leadId = "" } = useParams();
   const workspace = useWorkspaceContextSnapshot();
-  const detailQuery = useLeadAuthoritativeResource(getLeadDetailResource(leadId || "__missing__"), { enabled: Boolean(leadId), scopeKey: workspace.workspaceId, onScopeChange: () => replaceLeads([]) });
+  const authority = React.useSyncExternalStore(subscribeLeadRelationshipAuthority, getLeadRelationshipAuthority, getLeadRelationshipAuthority);
+  const detailQuery = useLeadAuthoritativeResource(getLeadDetailResource(leadId || "__missing__"), { enabled: Boolean(leadId), scopeKey: `${workspace.workspaceId}:${authority}`, onScopeChange: () => replaceLeads([]) });
   const hasAuthoritativeData = detailQuery.data !== undefined;
   const feature = useLeadDetailRouteFeature(leadId, detailQuery.data ?? props.authoritativeLead);
   const controller = useLeadDetailReadController({

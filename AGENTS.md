@@ -28,10 +28,10 @@ renewals
 Protected repository inventory:
 
 ```text
-15 registered modules
-80 route keys
-64 loadable route modules
-131 capabilities
+16 registered modules
+83 route keys
+67 loadable route modules
+137 capabilities
 13 workspace module flags
 23 cross-module workflows
 ```

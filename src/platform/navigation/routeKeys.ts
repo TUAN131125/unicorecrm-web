@@ -1,4 +1,6 @@
 export const ROUTE_KEYS = {
+  COMMUNICATIONS: "/communications",
+  COMMUNICATION_DETAIL: "/communications/:conversationId",
   LOGIN: "/login",
   MFA_VERIFICATION: "/mfa",
   FORGOT_PASSWORD: "/forgot-password",
@@ -75,6 +77,7 @@ export const ROUTE_KEYS = {
   SETTINGS_PAYMENT_INFORMATION: "/settings/payment-information",
   SETTINGS_INVOICE_INFORMATION: "/settings/invoice-information",
   SETTINGS_INTEGRATIONS: "/settings/integrations",
+  SETTINGS_COMMUNICATION_CHANNELS: "/settings/communications/channels",
   SETTINGS_AI: "/settings/ai",
   SETTINGS_WEBHOOKS_API: "/settings/webhooks-api",
   SETTINGS_USERS_PERMISSIONS: "/settings/users-permissions",

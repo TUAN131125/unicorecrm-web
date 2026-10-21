@@ -24,3 +24,5 @@ export { IntegrationConfigurationApiClient } from "./integrationConfigurationApi
 export type { IntegrationConfigurationRequestOptions } from "./integrationConfigurationApi";
 export { AiApiClient } from "./aiApi";
 export type { AiRequestOptions } from "./aiApi";
+export { CommunicationsApiClient } from "./communicationsApi";
+export type { CommunicationsRequestOptions } from "./communicationsApi";

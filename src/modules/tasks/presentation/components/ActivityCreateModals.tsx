@@ -1,3 +1,4 @@
+import { useWorkspaceMemberDirectory } from "@/platform/member-directory/useWorkspaceMemberDirectory";
 import { listWorkspaceMemberDirectory } from "@/platform/member-directory";
 import React from "react";
 import { ActivityRecordingTimeNotice } from "./ActivityRecordingTimeNotice";
@@ -251,7 +252,8 @@ export function MeetingActivityCreateModal({ recordingTaskBacked = true,
 }: MeetingActivityCreateModalProps) {
   const { locale } = useI18n();
   const vi = locale === "vi";
-  const taskOwners = React.useMemo(() => listWorkspaceMemberDirectory(), [isOpen]);
+  const directory = useWorkspaceMemberDirectory();
+  const taskOwners = directory.members;
   const createDraft = React.useCallback((): MeetingActivityDraft => {
     const startAt = normalizeLocalDateTime(defaults?.startAt, new Date(Date.now() + 60 * 60 * 1000));
     return {
@@ -286,7 +288,7 @@ export function MeetingActivityCreateModal({ recordingTaskBacked = true,
     if (!recordingTaskBacked && isCustomActivityDateUnavailable(draft.recordingTime)) return false;
     if (!lifecycle.validate({ title: draft.title, startAt: draft.startAt })) return false;
     if (draft.endAt && !lifecycle.validate({ endAt: draft.endAt })) return false;
-    if (recordingOnly && recordingTaskBacked && !taskOwners.some(member => member.memberId === draft.owner)) {
+    if (recordingOnly && recordingTaskBacked && !listWorkspaceMemberDirectory().some(member => member.memberId === draft.owner)) {
       setError(vi ? "Chọn thành viên workspace phụ trách công việc." : "Select the task assignee from workspace members.");
       document.getElementById(`${formId}-owner`)?.focus(); return false;
     }
@@ -309,7 +311,7 @@ export function MeetingActivityCreateModal({ recordingTaskBacked = true,
       formId={formId}
       cancelLabel={vi ? "Hủy" : "Cancel"}
       submitLabel={recordingOnly ? (recordingTaskBacked ? (vi ? "Tạo công việc" : "Create task") : (vi ? "Ghi nhận lịch hẹn" : "Record meeting")) : (vi ? "Lưu lịch hẹn" : "Save meeting")}
-      submitDisabled={lifecycle.busy || !draft.title.trim() || !draft.startAt}
+      submitDisabled={lifecycle.busy || !draft.title.trim() || !draft.startAt || (recordingOnly && recordingTaskBacked && !taskOwners.some(member => member.memberId === draft.owner))}
       onSubmit={async (event) => { event.preventDefault(); await saveDraft(); }}
     >
       {recordingOnly && !recordingTaskBacked && <ActivityRecordingTimeNotice customDateUnavailable={isCustomActivityDateUnavailable(draft.recordingTime)} />}
@@ -325,11 +327,18 @@ export function MeetingActivityCreateModal({ recordingTaskBacked = true,
           <option value="in_person">{vi ? "Trực tiếp" : "In person"}</option>
           <option value="phone">{vi ? "Điện thoại" : "Phone"}</option>
         </Select>
-        {recordingOnly && recordingTaskBacked ? <Select error={lifecycle.errors.owner} id={`${formId}-owner`} label={vi ? "Người phụ trách công việc" : "Task assignee"} value={draft.owner ?? ""} onChange={(event) => setDraft(current => ({ ...current, owner: event.target.value }))} required>
+        {recordingOnly && recordingTaskBacked ? <Select disabled={directory.status !== "ready"} error={lifecycle.errors.owner} id={`${formId}-owner`} label={vi ? "Người phụ trách công việc" : "Task assignee"} value={taskOwners.some(member => member.memberId === draft.owner) ? draft.owner ?? "" : ""} onChange={(event) => setDraft(current => ({ ...current, owner: event.target.value }))} required>
           <option value="">{vi ? "Chọn thành viên workspace" : "Select workspace member"}</option>
           {taskOwners.map(member => <option key={member.memberId} value={member.memberId}>{member.displayName}</option>)}
         </Select> : <Input error={lifecycle.errors.owner} id={`${formId}-owner`} label={vi ? "Người phụ trách" : "Owner"} value={draft.owner ?? ""} onChange={(event) => setDraft((current) => ({ ...current, owner: event.target.value }))} />}
       </div>
+      {recordingOnly && recordingTaskBacked && directory.connected && <div role="status" className="text-xs text-slate-500">
+        {directory.status === "loading" ? (vi ? "Đang xác minh thành viên workspace…" : "Verifying workspace membership…")
+          : directory.status === "error" ? (vi ? "Không tải được thông tin thành viên." : "Member information could not be loaded.")
+          : directory.status === "empty" ? (vi ? "Chưa có thành viên hợp lệ để chọn." : "No eligible member is available.")
+          : (vi ? "Hiện có thể chọn chính bạn trong workspace này." : "You can currently select yourself in this workspace.")}
+        {(directory.status === "error" || directory.status === "empty") && <button type="button" className="ml-2 underline" onClick={() => { void directory.retry(); }}>{vi ? "Thử lại" : "Retry"}</button>}
+      </div>}
       <Input error={lifecycle.errors.location} id={`${formId}-location`} label={vi ? "Địa điểm / liên kết họp" : "Location / meeting link"} value={draft.location ?? ""} onChange={(event) => setDraft((current) => ({ ...current, location: event.target.value }))} />
       <Input error={lifecycle.errors.attendees} id={`${formId}-attendees`} label={vi ? "Người tham dự" : "Attendees"} value={draft.attendees ?? ""} onChange={(event) => setDraft((current) => ({ ...current, attendees: event.target.value }))} />
       <Textarea error={lifecycle.errors.agenda} id={`${formId}-agenda`} label={vi ? "Chương trình / ghi chú" : "Agenda / notes"} value={draft.agenda ?? ""} onChange={(event) => setDraft((current) => ({ ...current, agenda: event.target.value }))} rows={4} />

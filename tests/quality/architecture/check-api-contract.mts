@@ -94,8 +94,9 @@ assert.equal(OPENAPI_CONTRACT_VERSION, packageJson.version);
 assert.equal(OPENAPI_SPEC_SHA256, artifacts.sha256);
 assert.equal(manifest.specSha256, artifacts.sha256);
 assert.equal(manifest.contractVersion, packageJson.version);
-assert.equal(coverage.summary.operations, 304);
-assert.equal(coverage.summary.productionReadyOperations, 276);
+// The existing304 operations are preserved; Communications admits24 additional runtime contracts.
+assert.equal(coverage.summary.operations, 328);
+assert.equal(coverage.summary.productionReadyOperations, 300);
 assert.equal(coverage.summary.blockedOperations, 28);
 
 for (const [relativePath, expected] of [
@@ -109,8 +110,9 @@ for (const [relativePath, expected] of [
 ] as const) assert.equal(read(relativePath), expected, `${relativePath} drifted from OpenAPI generation.`);
 
 const operations = collectOperations(spec);
-assert.equal(operations.length, 304);
-assert.equal(new Set(operations.map((operation) => operation.operationId)).size, 304);
+assert.equal(operations.length, 328);
+assert.equal(new Set(operations.map((operation) => operation.operationId)).size, 328);
+assert.equal(operations.filter(operation => operation.route.startsWith("/communications/")).length, 24);
 assert.deepEqual(manifest.operations.map((operation) => operation.operationId).sort(), operations.map((operation) => operation.operationId).sort());
 assert.deepEqual(coverage.operations.map((operation) => operation.operationId).sort(), operations.map((operation) => operation.operationId).sort());
 
@@ -187,7 +189,12 @@ for (const operationId of ["createCustomer", "updateCustomer", "archiveCustomer"
   assert.ok(readyMutations.some((item) => item.operationId === operationId), `${operationId} must be a ready Customer mutation.`);
 }
 for (const operation of readyMutations) {
-  assert.ok(operation.operation.requestBody?.content?.["application/json"]?.schema?.$ref, `${operation.operationId} requires a typed request.`);
+  if (operation.operation["x-request-body-policy"] === "FORBIDDEN") {
+    assert.equal(operation.operationId, "claimConversation", "Only the admitted conditional Claim forbids a body.");
+    assert.equal(operation.operation.requestBody, undefined, "Claim cannot accept caller-owned actor/assignee fields.");
+  } else {
+    assert.ok(operation.operation.requestBody?.content?.["application/json"]?.schema?.$ref, `${operation.operationId} requires a typed request.`);
+  }
   const success = Object.entries(operation.operation.responses ?? {}).find(([status]) => /^2\d\d$/u.test(status))?.[1];
   assert.ok(success?.content?.["application/json"]?.schema?.$ref, `${operation.operationId} requires a typed response.`);
 }
@@ -225,6 +232,7 @@ function collectOperations(document: OpenApiDocument): OperationRecord[] {
 
 interface OpenApiSchema { type?: string; pattern?: string; additionalProperties?: boolean; required?: string[]; properties: Record<string, { $ref?: string; type?: string }> }
 interface OperationShape {
+  "x-request-body-policy"?: string;
   operationId?: string;
   security?: Array<{ bearerAuth?: string[] }>;
   parameters?: Array<{ $ref?: string; name?: string; schema?: Record<string, unknown> }>;

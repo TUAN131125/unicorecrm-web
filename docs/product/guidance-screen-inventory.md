@@ -2,22 +2,24 @@
 
 > Generated from active route and guidance registries by scripts/generate-guidance-inventory.mts.
 
-The repository defines **80 total route definitions**, **12 access/system routes**, **68 canonical route entries**, and **66 guided screens**. The inventory contains **51 CRM screens**, **12 Studio screens**, and **3 People & Access screens**, with **2 compatibility route aliases**. Access/system routes use inline guidance outside the authenticated shell.
+The repository defines **83 total route definitions**, **12 access/system routes**, **71 canonical route entries**, and **69 guided screens**. The inventory contains **53 CRM screens**, **13 Studio screens**, and **3 People & Access screens**, with **2 compatibility route aliases**. Access/system routes use inline guidance outside the authenticated shell.
 
 | Area | Route entries | Unique guided screens | Detailed VI/EN walkthroughs |
 |---|---:|---:|---:|
-| CRM | 53 | 51 | 51 |
-| Studio | 12 | 12 | 12 |
+| CRM | 55 | 53 | 53 |
+| Studio | 13 | 13 | 13 |
 | People & Access | 3 | 3 | 3 |
-| **Total** | **68** | **66** | **66** |
+| **Total** | **71** | **69** | **69** |
 
-## CRM — 51 screens
+## CRM — 53 screens
 
 | Route | Guidance ID | Tiếng Việt | English | Primary tasks | Walkthrough steps |
 |---|---|---|---|---:|---:|
+| `/communications` | `crm.communications.list` | Hộp thư | Inbox | 5 | 11 |
+| `/communications/:conversationId` | `crm.communications.detail` | Chi tiết hội thoại | Conversation detail | 5 | 11 |
 | `/dashboard` | `crm.dashboard.overview` | Tổng quan CRM | CRM overview | 3 | 13 |
 | `/leads` | `crm.leads.list` | Khách hàng tiềm năng | Leads | 3 | 14 |
-| `/deals` | `crm.deals.pipeline` | Cơ hội bán hàng | Sales opportunities | 3 | 13 |
+| `/deals` | `crm.deals.pipeline` | Cơ hội bán hàng | Sales opportunities | 3 | 15 |
 | `/quotes` | `crm.quotes.list` | Báo giá | Quotes | 4 | 10 |
 | `/orders` | `crm.orders.list` | Đơn hàng | Orders | 3 | 12 |
 | `/orders/new` | `crm.orders.create` | Tạo đơn hàng | Create order | 4 | 14 |
@@ -30,14 +32,14 @@ The repository defines **80 total route definitions**, **12 access/system routes
 | `/calendar` | `crm.calendar.overview` | Lịch công việc | Work calendar | 3 | 9 |
 | `/notifications` | `crm.notifications.center` | Thông báo | Notifications | 3 | 9 |
 | `/tasks` | `crm.tasks.list` | Công việc | Tasks | 3 | 9 |
-| `/tasks/:taskId` | `crm.tasks.detail` | Chi tiết công việc | Task detail | 3 | 9 |
+| `/tasks/:taskId` | `crm.tasks.detail` | Chi tiết công việc | Task detail | 4 | 10 |
 | `/leads/queue` | `crm.leads.queue` | Hàng đợi khách hàng tiềm năng | Lead queue | 3 | 9 |
 | `/leads/:leadId` | `crm.leads.detail` | Chi tiết khách hàng tiềm năng | Lead detail | 5 | 12 |
 | `/leads/:leadId/qualify` | `crm.leads.qualify` | Xác minh khách hàng tiềm năng | Qualify lead | 3 | 9 |
 | `/leads/:leadId/sell-now` | `crm.leads.sell-now` | Bán trực tiếp từ khách hàng tiềm năng | Sell now from lead | 3 | 9 |
 | `/products` | `crm.products.list` | Sản phẩm | Products | 3 | 9 |
 | `/products/:productId` | `crm.products.detail` | Chi tiết sản phẩm | Product detail | 3 | 9 |
-| `/deals/:dealId` | `crm.deals.detail` | Chi tiết cơ hội | Opportunity detail | 3 | 10 |
+| `/deals/:dealId` | `crm.deals.detail` | Chi tiết cơ hội | Opportunity detail | 4 | 11 |
 | `/quotes/new` | `crm.quotes.create` | Tạo báo giá | Create quote | 4 | 11 |
 | `/quotes/:quoteId` | `crm.quotes.detail` | Chi tiết báo giá | Quote detail | 4 | 10 |
 | `/quotes/:quoteId/edit` | `crm.quotes.edit` | Chỉnh sửa báo giá | Edit quote | 4 | 10 |
@@ -67,10 +69,11 @@ The repository defines **80 total route definitions**, **12 access/system routes
 | `/support/cases/:caseId` | `crm.support.detail` | Chi tiết phiếu hỗ trợ | Support ticket detail | 3 | 9 |
 | `/support/cases/:caseId/edit` | `crm.support.edit` | Chỉnh sửa phiếu hỗ trợ | Edit support ticket | 3 | 9 |
 
-## Studio — 12 screens
+## Studio — 13 screens
 
 | Route | Guidance ID | Tiếng Việt | English | Primary tasks | Walkthrough steps |
 |---|---|---|---|---:|---:|
+| `/settings/communications/channels` | `studio.communication-channels` | Communications · Kênh kết nối | Communications · Channel connections | 2 | 8 |
 | `/settings/quick-setup` | `studio.quick-setup` | Thiết lập nhanh | Quick Setup | 2 | 8 |
 | `/settings/business-information` | `studio.business-information` | Thông tin doanh nghiệp | Business information | 2 | 8 |
 | `/settings/locale-region` | `studio.locale-region` | Ngôn ngữ & khu vực | Language & region | 2 | 8 |

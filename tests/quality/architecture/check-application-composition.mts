@@ -19,6 +19,15 @@ import {
   ConnectedSnapshotProjection,
 } from "../../../src/app/composition/connected/connectedProjectionRepositories";
 import type { HttpClient } from "../../../src/platform/api/index";
+import {
+  authenticateUser, bootstrapAuthSession, configureConnectedAuthGateway, getAuthSessionSnapshot, resetConnectedAuthGateway,
+  type AuthResult, type AuthSession, type ConnectedAuthGateway,
+} from "../../../src/platform/identity-auth/index";
+import {
+  configureConnectedWorkspaceBootstrapGateway, enterWorkspace, getActiveWorkspaceId, resetConnectedWorkspaceBootstrapGateway, resetWorkspaceRuntimeParticipant,
+  type WorkspaceBootstrapContext,
+} from "../../../src/platform/workspace-context/index";
+import { configureDefaultAccessGovernanceRuntime, getAccessGovernanceRuntime, getAccessGovernanceState, loadAccessGovernance } from "../../../src/platform/access-control/runtime/accessGovernanceRuntime";
 
 const root = repositoryRoot;
 const compositionHttpClient: HttpClient = {
@@ -216,6 +225,137 @@ const internalIdentityPlan = resolveApplicationBootstrapPlan({ PROD: true, VITE_
 assert.equal(internalIdentityPlan.mode, "connected");
 assert.equal(await internalIdentityPlan.composition.http?.accessTokenProvider?.getAccessToken(), undefined, "The built-in Identity runtime may start without an authenticated session.");
 assert.equal(internalIdentityPlan.composition.http?.workspaceIdProvider?.getWorkspaceId(), undefined, "Workspace bootstrap remains a separate connected boundary.");
+let anonymousHostCalls = 0;
+const anonymousPlan = resolveApplicationBootstrapPlan(
+  { PROD: true, VITE_API_BASE_URL: "https://api.example.test" },
+  { refreshSession: () => { anonymousHostCalls++; return true; }, onUnauthorized: () => { anonymousHostCalls++; }, logout: () => { anonymousHostCalls++; } },
+);
+assert.equal(await anonymousPlan.composition.http?.onUnauthorized?.(), false);
+assert.equal(anonymousHostCalls, 0, "Missing native session without an explicit host token provider must not refresh or invoke host callbacks.");
+
+const nativeSession = (id: string): AuthSession => ({
+  sessionId: id, principal: { accountId: `account-${id}`, memberId: `member-${id}`, email: "native@example.invalid", displayName: "Native fixture" },
+  status: "ACTIVE", issuedAt: new Date().toISOString(), lastSeenAt: new Date().toISOString(),
+  idleExpiresAt: new Date(Date.now() + 60_000).toISOString(), absoluteExpiresAt: new Date(Date.now() + 120_000).toISOString(),
+  refreshCounter: 0, assuranceLevel: "AAL1", device: { deviceId: "fixture-device", label: "Offline test", lastSeenAt: new Date().toISOString() },
+});
+let nextNativeSession = nativeSession("native-A");
+let finishNativeRefresh: ((result: AuthResult<AuthSession>) => void) | undefined;
+let nativeRefreshCalls = 0;
+let nativeSignOutCalls = 0;
+let holdNativeSignOut = false;
+let finishNativeSignOut: (() => void) | undefined;
+const unusedAuthCall = async (): Promise<never> => { throw new Error("Unexpected auth fixture operation"); };
+const nativeGateway: ConnectedAuthGateway = {
+  bootstrap: async () => ({ ok: true, value: nextNativeSession }),
+  signIn: async () => ({ ok: true, value: { outcome: "AUTHENTICATED", grant: { session: nextNativeSession, accessToken: "offline-fixture", accessTokenExpiresAt: nextNativeSession.idleExpiresAt } } }),
+  refreshSession: () => { nativeRefreshCalls++; return new Promise(resolve => { finishNativeRefresh = resolve; }); },
+  signOut: async () => { nativeSignOutCalls++; if (holdNativeSignOut) await new Promise<void>(resolve => { finishNativeSignOut = resolve; }); return { ok: true, value: { sessionId: nextNativeSession.sessionId, revokedAt: new Date().toISOString() } }; },
+  verifyMfa: unusedAuthCall, getCurrentSession: unusedAuthCall, register: unusedAuthCall, verifyEmail: unusedAuthCall,
+  requestEmailVerification: unusedAuthCall, requestPasswordReset: unusedAuthCall, resetPassword: unusedAuthCall, acceptInvitation: unusedAuthCall,
+  getAccessToken: () => "offline-fixture", clearCredentials: () => {},
+};
+configureConnectedAuthGateway(nativeGateway);
+try {
+  await bootstrapAuthSession();
+  let nativeHostCalls = 0;
+  const nativePlan = resolveApplicationBootstrapPlan(
+    { PROD: true, VITE_API_BASE_URL: "https://api.example.test" },
+    { getAccessToken: () => "host-fixture", refreshSession: () => { nativeHostCalls++; return true; }, onUnauthorized: () => { nativeHostCalls++; }, logout: () => { nativeHostCalls++; } },
+  );
+  const nativeRecovery = nativePlan.composition.http?.onUnauthorized?.();
+  assert.equal(nativeRefreshCalls, 1, "An existing native session must try its own refresh first.");
+  assert.ok(finishNativeRefresh);
+  finishNativeRefresh({ ok: true, value: { ...nextNativeSession, refreshCounter: 1 } });
+  assert.equal(await nativeRecovery, true);
+  assert.equal(nativeHostCalls, 0, "Successful native recovery must not invoke host fallback.");
+
+  const retiredRecovery = nativePlan.composition.http?.onUnauthorized?.();
+  assert.equal(nativeRefreshCalls, 2);
+  nextNativeSession = nativeSession("native-B");
+  assert.equal((await authenticateUser({ email: "replacement@example.invalid", password: "fixture-only" })).ok, true);
+  assert.ok(finishNativeRefresh);
+  finishNativeRefresh({ ok: false, code: "SESSION_EXPIRED", message: "Retired fixture session" });
+  assert.equal(await retiredRecovery, false);
+  assert.equal(getAuthSessionSnapshot()?.sessionId, "native-B", "A late failure for the retired owner must not clear the replacement session.");
+  assert.equal(nativeHostCalls, 0, "Retired native authority must not trigger host refresh, notification or logout.");
+  assert.equal(nativeSignOutCalls, 0, "Retired unauthorized completion must not sign out the replacement actor.");
+} finally {
+  resetConnectedAuthGateway();
+}
+
+async function enterReplacementWorkspace() {
+  const context: WorkspaceBootstrapContext = {
+    workspace: { workspaceId: "replacement-workspace", workspaceKey: "replacement", name: "Replacement Workspace", logoText: "B", status: "active",
+      accountId: nextNativeSession.principal.accountId, memberId: nextNativeSession.principal.memberId, membershipId: "replacement-membership" },
+    contextVersion: 1, capabilities: ["communications.channels.manage"], resolvedAt: new Date().toISOString(),
+    configuration: { configurationVersion: 1, locale: "en", timeZone: "UTC", baseCurrency: "USD", enabledModuleKeys: [], availableProductSpaces: ["studio"] },
+  };
+  configureConnectedWorkspaceBootstrapGateway({ listMyWorkspaces: async () => [context.workspace], getWorkspaceBootstrap: async () => context, ensureInitialWorkspace: unusedAuthCall });
+  resetWorkspaceRuntimeParticipant();
+  const runtime = getAccessGovernanceRuntime();
+  configureDefaultAccessGovernanceRuntime({ ...runtime, queries: { ...runtime.queries,
+    getAuthorizationContext: async () => ({ workspaceId: context.workspace.workspaceId, membershipId: "replacement-membership", memberId: nextNativeSession.principal.memberId,
+      accountId: nextNativeSession.principal.accountId, roleIds: [], roleTemplateIds: [], capabilities: ["communications.channels.manage"], productSpaces: ["studio"],
+      dataScopes: {}, fieldSecurity: {}, evaluatedAt: new Date().toISOString() }),
+    getDirectory: unusedAuthCall,
+  } });
+  await enterWorkspace(context.workspace.workspaceId);
+  const state = await loadAccessGovernance(context.workspace.workspaceId);
+  assert.equal(state.snapshot?.authorization.accountId, nextNativeSession.principal.accountId);
+  return state;
+}
+configureConnectedAuthGateway(nativeGateway);
+try {
+  let releaseNotification: (() => void) | undefined;
+  let notifications = 0;
+  let delayedHostLogouts = 0;
+  const delayedPlan = resolveApplicationBootstrapPlan(
+    { PROD: true, VITE_API_BASE_URL: "https://api.example.test" },
+    { getAccessToken: () => "host-fixture", refreshSession: () => false,
+      onUnauthorized: () => { notifications++; return new Promise<void>(resolve => { releaseNotification = resolve; }); },
+      logout: () => { delayedHostLogouts++; } },
+  );
+  const delayedUnauthorized = delayedPlan.composition.http?.onUnauthorized?.();
+  await new Promise(resolve => setTimeout(resolve, 0));
+  assert.equal(notifications, 1);
+  const signOutsBeforeNotification = nativeSignOutCalls;
+  nextNativeSession = nativeSession("native-notification-replacement");
+  await authenticateUser({ email: "replacement@example.invalid", password: "fixture-only" });
+  const replacementAccess = await enterReplacementWorkspace();
+  assert.ok(releaseNotification); releaseNotification();
+  assert.equal(await delayedUnauthorized, false);
+  assert.equal(getAuthSessionSnapshot()?.sessionId, nextNativeSession.sessionId, "Delayed unauthorized notification must preserve a replacement login.");
+  assert.equal(getActiveWorkspaceId(), "replacement-workspace", "Delayed unauthorized notification must preserve the replacement Workspace.");
+  assert.equal(getAccessGovernanceState(), replacementAccess, "Delayed unauthorized notification must preserve replacement access state.");
+  assert.equal(nativeSignOutCalls, signOutsBeforeNotification);
+  assert.equal(delayedHostLogouts, 0);
+
+  resetConnectedWorkspaceBootstrapGateway();
+  resetConnectedAuthGateway(); configureConnectedAuthGateway(nativeGateway);
+  holdNativeSignOut = true;
+  let lateHostLogouts = 0;
+  const lateSignOutPlan = resolveApplicationBootstrapPlan(
+    { PROD: true, VITE_API_BASE_URL: "https://api.example.test" },
+    { getAccessToken: () => "host-fixture", refreshSession: () => false, logout: () => { lateHostLogouts++; } },
+  );
+  const lateSignOut = lateSignOutPlan.composition.http?.onUnauthorized?.();
+  await new Promise(resolve => setTimeout(resolve, 0));
+  assert.ok(finishNativeSignOut, "The test must hold an actual native sign-out completion.");
+  nextNativeSession = nativeSession("native-signout-replacement");
+  await authenticateUser({ email: "replacement@example.invalid", password: "fixture-only" });
+  const signOutReplacementAccess = await enterReplacementWorkspace();
+  finishNativeSignOut();
+  assert.equal(await lateSignOut, false);
+  assert.equal(getAuthSessionSnapshot()?.sessionId, nextNativeSession.sessionId);
+  assert.equal(getActiveWorkspaceId(), "replacement-workspace");
+  assert.equal(getAccessGovernanceState(), signOutReplacementAccess);
+  assert.equal(lateHostLogouts, 0, "A late native sign-out completion must not call the host logout hook for a replacement login.");
+} finally {
+  holdNativeSignOut = false;
+  resetConnectedWorkspaceBootstrapGateway(); resetConnectedAuthGateway();
+  await initializeApplicationComposition({ mode: "connected", http: { client: compositionHttpClient } });
+}
 assert.throws(
   () => resolveApplicationBootstrapPlan({ PROD: true, VITE_RUNTIME_MODE: "demo" }),
   /VITE_ALLOW_PRODUCTION_DEMO/u,

@@ -22,7 +22,7 @@ import { ContactRecordHeader } from "../detail/ContactRecordHeader";
 import { ContactDetailTabs, ContactTab } from "../detail/ContactDetailTabs";
 import { ContactDetailDialogs } from "../detail/ContactDetailDialogs";
 import { ContactDetailTabContent } from "../detail/ContactDetailTabContent";
-import { ContactInsightPanel } from "../detail/ContactInsightPanel";
+import { ContactRelationshipPanel } from "../detail/ContactRelationshipPanel";
 import { Input, Select, RecordTabTransition } from "@/shared/components/ui";
 
 // Import modular action modals
@@ -72,6 +72,7 @@ type Controller = NonNullable<ReturnType<typeof useContactDetailController>>;
 
 export function ContactDetailView({ controller }: { controller: Controller }) {
   const {
+    contactTasksQuery,
     canUpdateContact,
     canArchiveContact,
     contactOpportunityAvailable,
@@ -227,23 +228,7 @@ export function ContactDetailView({ controller }: { controller: Controller }) {
               <ContactDetailTabContent
                 activeTab={activeTab}
                 requestedSubTab={requestedSubTab}
-                overview={{
-                  contact,
-                  customer: canonicalCustomer,
-                  customerName: getCustomerDisplayNameForContact(contact),
-                  ownerName,
-                  locale,
-                  opportunityCount: affiliatedOpportunities.length,
-                  orderCount: displayOrders.length,
-                  invoiceCount: contactInvoices.length,
-                  activeTaskCount: tasks.filter((task) => task.status !== "completed").length,
-                  supportCount: contactCareCases.length,
-                  totalOrderValue,
-                  onSelectTab: setActiveTab,
-                  onOpenCustomer: canonicalCustomer ? () => navigate(`/customers/${canonicalCustomer.id}`) : undefined,
-                  onCreateOpportunity: openOpportunity,
-                  onCreateTask: () => setShowTaskModal(true),
-                }}
+                overview={{ contact, locale, onSelectTab: setActiveTab }}
                 detailInfo={{ contact, ownerName, totalQuotedAmount, totalOrderValue, latestDealStage }}
                 relationships={{
                   contact,
@@ -348,6 +333,7 @@ export function ContactDetailView({ controller }: { controller: Controller }) {
                   isArchived: contact.status === "archived",
                 }}
                 activities={{
+                  contactId: contact.id,
                   activities: careTimelineItems,
                   onLogActivity: () => setShowQuickNoteModal(true),
                   onOpenTasks: () => navigate("/tasks"),
@@ -360,21 +346,19 @@ export function ContactDetailView({ controller }: { controller: Controller }) {
         </main>
 
         {/* Right Interaction Panel (MISA Insight sidebar layout) */}
-              <ContactInsightPanel
+              <ContactRelationshipPanel
                 isVisible={isPanelOpen}
                 contact={contact}
-                tasks={tasks}
-                onAddTask={() => setShowTaskModal(true)}
-                onAddAppointment={() => setShowMeetingModal(true)}
-                onAddNote={() => setShowQuickNoteModal(true)}
+                locale={locale}
+                ownerName={ownerName}
                 onCreateOpportunity={openOpportunity}
-                onCompleteTask={handleCompleteTask}
-                onLogCall={() => setShowLogCallModal(true)}
-                onSendEmail={() => setShowSendEmailModal(true)}
-                onSendSms={() => setShowSendSmsModal(true)}
-                onAddMeeting={() => setShowMeetingModal(true)}
-                recentActivities={careTimelineItems}
-                showToast={showToast}
+                taskQuery={contactTasksQuery}
+                tasks={canonicalTasks}
+                onOpenTask={id => navigate(`/tasks/${id}`)}
+                onQuickAction={action => {
+                  const actions = { call: setShowLogCallModal, email: setShowSendEmailModal, sms: setShowSendSmsModal, task: setShowTaskModal, meeting: setShowMeetingModal, note: setShowQuickNoteModal };
+                  actions[action](true);
+                }}
               />
         </div>
 

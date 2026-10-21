@@ -8,6 +8,7 @@ export type WorkspaceCapabilityMode =
   | "DISABLED";
 
 export type WorkspaceCapabilityKey =
+  | "communications"
   | "leads"
   | "contacts"
   | "organizations"
@@ -75,6 +76,7 @@ export function buildWorkspaceCapabilityManifest(config: CrmWorkspaceConfig): Wo
   const invoices = optional("invoices", config.modules.invoices !== false, ["orders"]);
 
   const entries: Record<WorkspaceCapabilityKey, WorkspaceCapabilityEntry> = {
+    communications: native("communications"),
     leads: native("leads", [], config.modules.leads),
     contacts: native("contacts", [], config.modules.contacts),
     organizations: optional("organizations", config.modules.organizations !== false),

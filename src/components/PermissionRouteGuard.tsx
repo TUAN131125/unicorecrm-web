@@ -12,14 +12,15 @@ import { canWriteModule, moduleAccessPolicy } from "@/platform/access-control/do
 interface PermissionRouteGuardProps {
   moduleKey?: string;
   capability?: Capability;
+  anyCapabilities?: readonly Capability[];
   children: React.ReactNode;
 }
 
-export const PermissionRouteGuard: React.FC<PermissionRouteGuardProps> = ({ moduleKey, capability, children }) => {
+export const PermissionRouteGuard: React.FC<PermissionRouteGuardProps> = ({ moduleKey, capability, anyCapabilities, children }) => {
   const { t, locale } = useI18n();
   const { activeWorkspace } = usePlatformState();
   const access = useEffectiveAccess();
-  const allowed = capability ? access.can(capability) : moduleKey ? access.canAccessModule(moduleKey) : false;
+  const allowed = anyCapabilities ? anyCapabilities.some(item => access.can(item)) : capability ? access.can(capability) : moduleKey ? access.canAccessModule(moduleKey) : false;
 
   if (!allowed) {
     return (

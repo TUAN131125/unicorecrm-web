@@ -1,4 +1,5 @@
 import { isLeadConnectedApiRuntime } from "../../application/composition/leadApplicationServices";
+import { isLeadActivitySourceReachable } from "../model/leadHistory";
 import { useLeadHandover } from "./useLeadHandover";
 import { describePartialCommit, executeSequentialCommits, formatApplicationError } from "@/shared/operations";
 import React, { useState, useEffect } from "react";
@@ -480,7 +481,7 @@ export function useLeadDetailReadController(props: LeadDetailPageProps, feature:
 
   const handleLogExternalSms = async (draft: SmsActivityDraft, deferClose = false): Promise<boolean> => {
     if (!ensureContactAllowed(LeadContactChannel.SMS)) return false;
-    await addTimelineActivity("sms", locale === "vi" ? "SMS đã ghi nhận" : "SMS logged", `${locale === "vi" ? "Tới số" : "To"}: ${draft.phone} | ${locale === "vi" ? "Nội dung" : "Content"}: ${draft.body}`);
+    await addTimelineActivity("message", locale === "vi" ? "SMS đã ghi nhận" : "SMS logged", `${locale === "vi" ? "Tới số" : "To"}: ${draft.phone} | ${locale === "vi" ? "Nội dung" : "Content"}: ${draft.body}`);
     if (!deferClose) setShowSmsModal(false);
     if (!deferClose) setSmsForm((current) => ({ ...current, content: "" }));
     showToast(locale === "vi" ? "Đã ghi nhận hoạt động SMS." : "SMS activity logged.");
@@ -524,7 +525,14 @@ export function useLeadDetailReadController(props: LeadDetailPageProps, feature:
     return true;
   };
 
+  const allowedQuickActions: LeadQuickAction[] = [];
+  const positiveOutcome = Boolean(lead.qualificationOutcome) && lead.qualificationOutcome !== QualificationOutcome.DISQUALIFIED;
+  if (!positiveOutcome) {
+    if (access.can(CAPABILITIES.TASKS_CREATE)) allowedQuickActions.push("task");
+    if (access.can(CAPABILITIES.TASKS_UPDATE) && isLeadActivitySourceReachable(access)) allowedQuickActions.push("call", "email", "sms", "meeting", "note");
+  }
   const handleActivityQuickAction = (action: LeadQuickAction) => {
+    if (!allowedQuickActions.includes(action) || dialogs.interactionPending) return;
     if ((Boolean(lead.qualificationOutcome) && lead.qualificationOutcome !== QualificationOutcome.DISQUALIFIED)) {
       showToast(lt(
         "Lead đã đóng với outcome tích cực. Hoạt động tiếp theo thuộc relationship hoặc transaction record tương ứng.",
@@ -574,6 +582,7 @@ export function useLeadDetailReadController(props: LeadDetailPageProps, feature:
     leadActions,
     referenceData,
     workResources,
+    allowedQuickActions,
     leadActivities,
     leadNotes,
     careCases,
@@ -606,8 +615,7 @@ export function useLeadDetailReadController(props: LeadDetailPageProps, feature:
     showEmptyFields,
     setShowEmptyFields,
     isRightPanelVisible,
-    toggleRightPanel,
-    showNoteForm,
+    toggleRightPanel,    showNoteForm,
     setShowNoteForm,
     showProductForm,
     setShowProductForm,

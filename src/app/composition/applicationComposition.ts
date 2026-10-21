@@ -88,6 +88,7 @@ import {
   type ConnectedApplicationRuntimeProviders,
 } from "./connectedApplicationServiceBundle";
 import type { ApplicationServiceBundle } from "./applicationServiceBundle";
+import { configureCommunicationsHttp } from "@/modules/communications/runtime";
 import { createConfigurationApiClients, type ConfigurationApiClients } from "@/platform/api";
 import { CONNECTED_MODULE_QUERY_RESPONSE_MAPPERS } from "./connectedModuleQueryResponseMappers";
 import { declareConnectedPlatformConfigurationUnavailability } from "./connected/connectedPlatformConfigurationServices";
@@ -181,6 +182,7 @@ export async function initializeApplicationComposition(
   }
 
   configureApplicationServices(services);
+    configureCommunicationsHttp(mode === "connected" ? connectedHttpClient : undefined);
   configureDefaultAccessGovernanceRuntime(mode === "connected"
     ? new AccessGovernanceHttpAdapter(new AccessGovernanceApiClient(connectedHttpClient as HttpClient))
     : createPeopleAccessDemoRuntime());

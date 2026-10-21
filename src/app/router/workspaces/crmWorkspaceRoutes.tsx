@@ -14,6 +14,8 @@ import {
 } from "@/workflows/lead-qualification/application/leadQualificationAvailability";
 
 const DashboardPage = lazyRouteComponent("DashboardPage", () => import("@/workspaces/crm/dashboard"), (m) => m.DashboardPage);
+const CommunicationsListPage = lazyRouteComponent("CommunicationsListPage", () => import("@/modules/communications/list-route"), (m) => m.CommunicationsListRoutePage);
+const CommunicationsDetailPage = lazyRouteComponent("CommunicationsDetailPage", () => import("@/modules/communications/detail-route"), (m) => m.CommunicationsDetailRoutePage);
 const MyWorkPage = lazyRouteComponent("MyWorkPage", () => import("@/workspaces/crm/my-work"), (m) => m.MyWorkPage);
 const WorkCalendarPage = lazyRouteComponent("WorkCalendarPage", () => import("@/workspaces/crm/calendar"), (m) => m.WorkCalendarPage);
 const NotificationsPage = lazyRouteComponent("NotificationsPage", () => import("@/workspaces/crm/notifications"), (m) => m.NotificationsPage);
@@ -116,6 +118,8 @@ export function createCrmWorkspaceRoutes(crmConfig: CrmWorkspaceConfig): RouteOb
   const directSaleQualificationEnabled = canWrite("leads") && !isLeadDirectSaleQualificationUnavailable();
 
   return [
+    { path: relativeRoutePath(ROUTE_KEYS.COMMUNICATIONS), element: <PermissionRouteGuard anyCapabilities={[CAPABILITIES.COMMUNICATIONS_READ, CAPABILITIES.COMMUNICATIONS_QUEUE_READ]}><CommunicationsListPage /></PermissionRouteGuard> },
+    { path: relativeRoutePath(ROUTE_KEYS.COMMUNICATION_DETAIL), element: <PermissionRouteGuard capability={CAPABILITIES.COMMUNICATIONS_READ}><CommunicationsDetailPage /></PermissionRouteGuard> },
     { path: relativeRoutePath(ROUTE_KEYS.DASHBOARD), element: <DashboardPage /> },
     { path: relativeRoutePath(ROUTE_KEYS.MY_WORK), element: <MyWorkPage /> },
     { path: relativeRoutePath(ROUTE_KEYS.CALENDAR), element: <WorkCalendarPage /> },

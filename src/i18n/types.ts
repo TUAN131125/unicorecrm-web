@@ -1,6 +1,7 @@
 export type Locale = "vi" | "en";
 
 export interface Translations {
+  communications: { inbox: string; detail: string };
   app?: any;
   ai?: any;
   auth?: any;

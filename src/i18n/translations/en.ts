@@ -1,6 +1,7 @@
 import { Translations } from "../types";
 
 export const enTranslations: Translations = {
+  communications: { inbox: "Inbox", detail: "Conversation detail" },
   app: {
     customerSegments: "Customer Segments",
     customerHealth: "Customer Health",
@@ -3811,6 +3812,7 @@ export const enTranslations: Translations = {
     paymentInformation: "Payment information",
     invoiceInformation: "Invoice information",
     integrations: "Integrations",
+    communicationChannels: "Communications · Channel connections",
     webhooksApi: "Webhooks & API",
     readOnly: "You have read-only access to Studio configuration.",
     saved: "Configuration is saved.",

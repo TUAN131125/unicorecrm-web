@@ -1,18 +1,7 @@
-import { getAuthSessionSnapshot } from "@/platform/identity-auth";
-import { getWorkspaceContextSnapshot } from "@/platform/workspace-context";
-import { getAccessControlSnapshot, getAccessGovernanceRuntimeBinding, isAccessGovernanceRuntimeConfigured, resolveEffectiveAccess } from "@/platform/access-control";
+import { getContactRelationshipAuthority } from "../queries/contactRelationshipAuthority";
 
 let projectionAuthorityScope: string | undefined;
 export function getContactProjectionAuthorityScope(): string | undefined { return projectionAuthorityScope; }
 export function markContactProjectionAuthorityScope(scope: string): void { projectionAuthorityScope = scope; }
 
-function key(workspaceId: string, access: { accountId: string; membershipId: string; memberId: string }, revision: number) {
-  const session = getAuthSessionSnapshot();
-  return JSON.stringify([workspaceId, access.accountId, access.membershipId, access.memberId, revision, session?.status ?? null, session?.sessionId ?? null, session?.principal.accountId ?? null]);
-}
-export function getContactReadAuthorityScope(): string {
-  const { workspaceId } = getWorkspaceContextSnapshot();
-  const state = isAccessGovernanceRuntimeConfigured() ? getAccessGovernanceRuntimeBinding().getState() : undefined;
-  const revision = state ? state.workspaceId === workspaceId ? state.authorityRevision ?? state.snapshot?.revision ?? (state.loading ? -1 : 0) : 0 : getAccessControlSnapshot(workspaceId).revision;
-  return key(workspaceId, resolveEffectiveAccess(workspaceId), revision);
-}
+export const getContactReadAuthorityScope = getContactRelationshipAuthority;

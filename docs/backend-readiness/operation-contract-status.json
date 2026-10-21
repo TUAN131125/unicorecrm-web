@@ -45,6 +45,13 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "activateTelegramConnection",
+      "method": "POST",
+      "path": "/communications/channel-accounts/{id}/activate",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "addSupportCaseInternalNote",
       "method": "POST",
       "path": "/support/cases/{caseId}/internal-notes",
@@ -360,6 +367,13 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "claimConversation",
+      "method": "POST",
+      "path": "/communications/conversations/{id}/claim",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "claimLeadFromQueue",
       "method": "POST",
       "path": "/workflows/lead-queue/{leadId}/claim",
@@ -461,6 +475,13 @@
       "operationId": "createAccessRole",
       "method": "POST",
       "path": "/access/roles",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "createCommunicationChannelAccount",
+      "method": "POST",
+      "path": "/communications/channel-accounts",
       "status": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null
     },
@@ -647,6 +668,13 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "deactivateTelegramConnection",
+      "method": "POST",
+      "path": "/communications/channel-accounts/{id}/deactivate",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "deleteCrmObjectField",
       "method": "DELETE",
       "path": "/crm-configuration/object-schemas/{objectKey}/fields/{fieldId}",
@@ -682,9 +710,23 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "disableCommunicationChannelAccount",
+      "method": "POST",
+      "path": "/communications/channel-accounts/{id}/disable",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "discardInvoiceDraft",
       "method": "POST",
       "path": "/invoices/{invoiceId}/discard",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "disconnectCommunicationChannelAccount",
+      "method": "POST",
+      "path": "/communications/channel-accounts/{id}/disconnect",
       "status": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null
     },
@@ -720,6 +762,13 @@
       "operationId": "duplicateOrderDraft",
       "method": "POST",
       "path": "/orders/{orderId}/duplicate-draft",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "enableCommunicationChannelAccount",
+      "method": "POST",
+      "path": "/communications/channel-accounts/{id}/enable",
       "status": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null
     },
@@ -787,6 +836,13 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "getCommunicationChannelAccount",
+      "method": "GET",
+      "path": "/communications/channel-accounts/{id}",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "getContact",
       "method": "GET",
       "path": "/contacts/{contactId}",
@@ -804,6 +860,20 @@
       "operationId": "getContactRelationshipSummary",
       "method": "GET",
       "path": "/contacts/{contactId}/relationship-summary",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "getConversation",
+      "method": "GET",
+      "path": "/communications/conversations/{id}",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "getConversationCrmContext",
+      "method": "GET",
+      "path": "/communications/conversations/{id}/crm-link",
       "status": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null
     },
@@ -1067,6 +1137,13 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "getTelegramConnection",
+      "method": "GET",
+      "path": "/communications/channel-accounts/{id}/connection",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "getWorkspaceAccessDirectory",
       "method": "GET",
       "path": "/access/directory",
@@ -1123,6 +1200,13 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "linkConversationCrmRecord",
+      "method": "POST",
+      "path": "/communications/conversations/{id}/crm-link",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "listActivities",
       "method": "GET",
       "path": "/activities",
@@ -1130,9 +1214,37 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "listCommunicationChannelAccounts",
+      "method": "GET",
+      "path": "/communications/channel-accounts",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "listCommunicationChannelProviders",
+      "method": "GET",
+      "path": "/communications/channel-providers",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "listContacts",
       "method": "GET",
       "path": "/contacts",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "listConversationMessages",
+      "method": "GET",
+      "path": "/communications/conversations/{id}/messages",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "listConversations",
+      "method": "GET",
+      "path": "/communications/conversations",
       "status": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null
     },
@@ -1529,6 +1641,13 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "reconnectTelegramConnection",
+      "method": "POST",
+      "path": "/communications/channel-accounts/{id}/reconnect",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "recordCodCustomerCollection",
       "method": "POST",
       "path": "/payments/{paymentRecordId}/cod/customer-collection",
@@ -1613,6 +1732,13 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "removeTelegramCredential",
+      "method": "DELETE",
+      "path": "/communications/channel-accounts/{id}/credentials",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "reopenDisqualifiedLead",
       "method": "POST",
       "path": "/leads/{leadId}/reopen",
@@ -1658,6 +1784,13 @@
       "operationId": "replaceSupportCaseProfile",
       "method": "PUT",
       "path": "/support/cases/{caseId}",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "replaceTelegramCredential",
+      "method": "PUT",
+      "path": "/communications/channel-accounts/{id}/credentials",
       "status": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null
     },
@@ -1900,6 +2033,13 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "searchConversationCrmCandidates",
+      "method": "GET",
+      "path": "/communications/conversations/{id}/crm-candidates",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "searchProductSelections",
       "method": "GET",
       "path": "/products/selection",
@@ -1956,9 +2096,30 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "transitionConversation",
+      "method": "POST",
+      "path": "/communications/conversations/{id}/transition",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "transitionSupportCase",
       "method": "POST",
       "path": "/support/cases/{caseId}/transition",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "unlinkConversationCrmRecord",
+      "method": "POST",
+      "path": "/communications/conversations/{id}/crm-link/unlink",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "updateCommunicationChannelAccount",
+      "method": "PATCH",
+      "path": "/communications/channel-accounts/{id}",
       "status": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null
     },
@@ -2120,6 +2281,13 @@
       "operationId": "verifyMfa",
       "method": "POST",
       "path": "/auth/challenges/{challengeId}/verify",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "verifyTelegramConnection",
+      "method": "POST",
+      "path": "/communications/channel-accounts/{id}/verify",
       "status": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null
     },

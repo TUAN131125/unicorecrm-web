@@ -8,6 +8,8 @@ export interface RouteMeta {
 }
 
 export const ROUTE_METADATA: Record<string, RouteMeta> = {
+  COMMUNICATIONS: { path: ROUTE_KEYS.COMMUNICATIONS, labelKey: "communications.inbox", guidanceId: "crm.communications.list" },
+  COMMUNICATION_DETAIL: { path: ROUTE_KEYS.COMMUNICATION_DETAIL, labelKey: "communications.detail", guidanceId: "crm.communications.detail" },
   MY_WORK: { path: ROUTE_KEYS.MY_WORK, labelKey: "myWork.title", guidanceId: "crm.my-work.overview" },
   CALENDAR: { path: ROUTE_KEYS.CALENDAR, labelKey: "calendar.title", guidanceId: "crm.calendar.overview" },
   NOTIFICATIONS: { path: ROUTE_KEYS.NOTIFICATIONS, labelKey: "notifications.title", guidanceId: "crm.notifications.center" },
@@ -73,6 +75,7 @@ export const ROUTE_METADATA: Record<string, RouteMeta> = {
   SETTINGS_PAYMENT_INFORMATION: { path: ROUTE_KEYS.SETTINGS_PAYMENT_INFORMATION, labelKey: "studio.paymentInformation", guidanceId: "studio.payment-information" },
   SETTINGS_INVOICE_INFORMATION: { path: ROUTE_KEYS.SETTINGS_INVOICE_INFORMATION, labelKey: "studio.invoiceInformation", guidanceId: "studio.invoice-information" },
   SETTINGS_INTEGRATIONS: { path: ROUTE_KEYS.SETTINGS_INTEGRATIONS, labelKey: "studio.integrations", guidanceId: "studio.integrations" },
+  SETTINGS_COMMUNICATION_CHANNELS: { path: ROUTE_KEYS.SETTINGS_COMMUNICATION_CHANNELS, labelKey: "studio.communicationChannels", guidanceId: "studio.communication-channels" },
   SETTINGS_AI: { path: ROUTE_KEYS.SETTINGS_AI, labelKey: "ai.title", guidanceId: "studio.ai" },
   SETTINGS_WEBHOOKS_API: { path: ROUTE_KEYS.SETTINGS_WEBHOOKS_API, labelKey: "studio.webhooksApi", guidanceId: "studio.webhooks-api" },
   SETTINGS_USERS_PERMISSIONS: { path: ROUTE_KEYS.SETTINGS_USERS_PERMISSIONS, labelKey: "sidebar.usersPermissions", guidanceId: "people.members.access" },

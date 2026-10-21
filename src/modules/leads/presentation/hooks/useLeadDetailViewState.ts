@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-import { getLeadPreference, removeLeadPreference, setLeadPreference } from "../../public/leads";
+import { getLeadPreference, setLeadPreference } from "../../public/leads";
 
 export type LeadDetailTab =
   | "details"

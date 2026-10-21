@@ -105,7 +105,7 @@ const admitted = (capabilities: readonly Capability[]): Capability[] =>
   [...new Set(capabilities.filter((capability) => SERVER_ADMITTED_CAPABILITY_SET.has(capability)))];
 
 export const ROLE_TEMPLATES: readonly RoleTemplate[] = [
-  { templateId: "workspace-administrator", name: "Workspace Administrator", description: "Full workspace administration. Keep at least one active assignment with access.configure.", capabilities: [...SERVER_ADMITTED_WORKSPACE_CAPABILITIES], defaultScope: "WORKSPACE" },
+  { templateId: "workspace-administrator", name: "Workspace Administrator", description: "Full workspace administration. Keep at least one active assignment with access.configure.", capabilities: SERVER_ADMITTED_WORKSPACE_CAPABILITIES.filter(capability => !capability.startsWith("communications.")), defaultScope: "WORKSPACE" },
   { templateId: "sales-manager", name: "Sales Manager", description: "Manage a sales team, pipeline, quotes, orders, and reporting.", capabilities: admitted(SALES_MANAGER_CAPABILITIES), defaultScope: "TEAM" },
   { templateId: "sales-representative", name: "Sales Representative", description: "Work assigned leads, contacts, deals, quotes, and orders.", capabilities: admitted(SALES_REP_CAPABILITIES), defaultScope: "OWN" },
   { templateId: "finance", name: "Finance", description: "Manage payment records, reconciliation, refunds, and financial reporting.", capabilities: admitted(FINANCE_CAPABILITIES), defaultScope: "WORKSPACE" },

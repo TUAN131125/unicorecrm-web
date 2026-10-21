@@ -35,6 +35,13 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "activateTelegramConnection",
+      "policy": "EXPECTED_VERSION_IN_BODY",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "conflictStatus": 409,
+      "conflictCode": "CHANNEL_VERSION_CONFLICT"
+    },
+    {
       "operationId": "addSupportCaseInternalNote",
       "policy": "IF_MATCH_REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -260,6 +267,13 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "claimConversation",
+      "policy": "ATOMIC_NULL_TO_SELF",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "conflictStatus": 409,
+      "conflictCode": "COMMUNICATION_CLAIM_CONFLICT"
+    },
+    {
       "operationId": "claimLeadFromQueue",
       "policy": "IF_MATCH_REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -332,6 +346,11 @@
     {
       "operationId": "createAccessRole",
       "policy": "BACKEND_SERIALIZED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "createCommunicationChannelAccount",
+      "policy": "NOT_APPLICABLE",
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
@@ -465,6 +484,13 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "deactivateTelegramConnection",
+      "policy": "EXPECTED_VERSION_IN_BODY",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "conflictStatus": 409,
+      "conflictCode": "CHANNEL_VERSION_CONFLICT"
+    },
+    {
       "operationId": "deleteCrmObjectField",
       "policy": "UNRESOLVED_BLOCKED",
       "status": "BLOCKED"
@@ -490,9 +516,23 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "disableCommunicationChannelAccount",
+      "policy": "EXPECTED_VERSION_IN_BODY",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "conflictStatus": 409,
+      "conflictCode": "CHANNEL_VERSION_CONFLICT"
+    },
+    {
       "operationId": "discardInvoiceDraft",
       "policy": "IF_MATCH_REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "disconnectCommunicationChannelAccount",
+      "policy": "EXPECTED_VERSION_IN_BODY",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "conflictStatus": 409,
+      "conflictCode": "CHANNEL_VERSION_CONFLICT"
     },
     {
       "operationId": "disconnectIntegrationConnection",
@@ -518,6 +558,13 @@
       "operationId": "duplicateOrderDraft",
       "policy": "IF_MATCH_REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "enableCommunicationChannelAccount",
+      "policy": "EXPECTED_VERSION_IN_BODY",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "conflictStatus": 409,
+      "conflictCode": "CHANNEL_VERSION_CONFLICT"
     },
     {
       "operationId": "endContactCustomerRelationship",
@@ -565,6 +612,11 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "getCommunicationChannelAccount",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "getContact",
       "policy": "NOT_APPLICABLE",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -576,6 +628,16 @@
     },
     {
       "operationId": "getContactRelationshipSummary",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "getConversation",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "getConversationCrmContext",
       "policy": "NOT_APPLICABLE",
       "status": "PRODUCTION_CONTRACT_READY"
     },
@@ -765,6 +827,11 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "getTelegramConnection",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "getWorkspaceAccessDirectory",
       "policy": "BACKEND_SERIALIZED",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -805,12 +872,39 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "linkConversationCrmRecord",
+      "policy": "EXPECTED_VERSION_IN_BODY",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "conflictStatus": 409,
+      "conflictCode": "COMMUNICATION_VERSION_CONFLICT"
+    },
+    {
       "operationId": "listActivities",
       "policy": "NOT_APPLICABLE",
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "listCommunicationChannelAccounts",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "listCommunicationChannelProviders",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "listContacts",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "listConversationMessages",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "listConversations",
       "policy": "NOT_APPLICABLE",
       "status": "PRODUCTION_CONTRACT_READY"
     },
@@ -1095,6 +1189,13 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "reconnectTelegramConnection",
+      "policy": "EXPECTED_VERSION_IN_BODY",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "conflictStatus": 409,
+      "conflictCode": "CHANNEL_VERSION_CONFLICT"
+    },
+    {
       "operationId": "recordCodCustomerCollection",
       "policy": "IF_MATCH_REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -1155,6 +1256,13 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "removeTelegramCredential",
+      "policy": "EXPECTED_VERSION_IN_BODY",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "conflictStatus": 409,
+      "conflictCode": "CHANNEL_VERSION_CONFLICT"
+    },
+    {
       "operationId": "reopenDisqualifiedLead",
       "policy": "IF_MATCH_REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -1188,6 +1296,13 @@
       "operationId": "replaceSupportCaseProfile",
       "policy": "IF_MATCH_REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "replaceTelegramCredential",
+      "policy": "EXPECTED_VERSION_IN_BODY",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "conflictStatus": 409,
+      "conflictCode": "CHANNEL_VERSION_CONFLICT"
     },
     {
       "operationId": "replaceWorkspaceCurrencies",
@@ -1360,6 +1475,11 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "searchConversationCrmCandidates",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "searchProductSelections",
       "policy": "NOT_APPLICABLE",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -1400,9 +1520,30 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "transitionConversation",
+      "policy": "EXPECTED_VERSION_IN_BODY",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "conflictStatus": 409,
+      "conflictCode": "COMMUNICATION_VERSION_CONFLICT"
+    },
+    {
       "operationId": "transitionSupportCase",
       "policy": "IF_MATCH_REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "unlinkConversationCrmRecord",
+      "policy": "EXPECTED_VERSION_IN_BODY",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "conflictStatus": 409,
+      "conflictCode": "COMMUNICATION_VERSION_CONFLICT"
+    },
+    {
+      "operationId": "updateCommunicationChannelAccount",
+      "policy": "EXPECTED_VERSION_IN_BODY",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "conflictStatus": 409,
+      "conflictCode": "CHANNEL_VERSION_CONFLICT"
     },
     {
       "operationId": "updateContact",
@@ -1518,6 +1659,13 @@
       "operationId": "verifyMfa",
       "policy": "BACKEND_SERIALIZED",
       "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "verifyTelegramConnection",
+      "policy": "EXPECTED_VERSION_IN_BODY",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "conflictStatus": 409,
+      "conflictCode": "CHANNEL_VERSION_CONFLICT"
     },
     {
       "operationId": "voidInvoice",

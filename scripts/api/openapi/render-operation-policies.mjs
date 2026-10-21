@@ -11,11 +11,16 @@ export function renderOperationPolicySources(normalized) {
       sameKeyDifferentPayload: "409_IDEMPOTENCY_KEY_REUSED",
       concurrentDuplicate: "409_IDEMPOTENCY_REQUEST_IN_PROGRESS",
       retentionExpectation: "AT_LEAST_AGGREGATE_LIFECYCLE_AND_PROVIDER_SETTLEMENT_WINDOW; PROVIDER_ADAPTER_LONGER_RETENTION_PREVAILS",
-      operations: operations.map((operation) => ({ operationId: operation.operationId, policy: operation.idempotencyPolicy, status: operation.contractStatus })),
+      operations: operations.map((operation) => ({ operationId: operation.operationId, policy: operation.idempotencyPolicy, status: operation.contractStatus,
+        ...(operation.operation["x-idempotency-key-scope"] ? { keyScope: operation.operation["x-idempotency-key-scope"] } : {}),
+        ...(operation.operation["x-idempotency-replay-policy"] ? { replayPolicy: operation.operation["x-idempotency-replay-policy"] } : {}),
+      })),
     }),
     concurrencyPolicySource: serialize({
       ...base, conflictStatus: 412, conflictCode: "VERSION_CONFLICT",
-      operations: operations.map((operation) => ({ operationId: operation.operationId, policy: operation.concurrencyPolicy, status: operation.contractStatus })),
+      operations: operations.map((operation) => ({ operationId: operation.operationId, policy: operation.concurrencyPolicy, status: operation.contractStatus,
+        ...(operation.operation["x-concurrency-conflict-status"] ? { conflictStatus: operation.operation["x-concurrency-conflict-status"], conflictCode: operation.operation["x-concurrency-conflict-code"] } : {}),
+      })),
     }),
     authorizationMatrixSource: serialize({
       ...base,
@@ -27,6 +32,7 @@ export function renderOperationPolicySources(normalized) {
           operationId: operation.operationId, method: operation.method, path: operation.route,
           moduleOwner: operation.ownerModule, capability: operation.requiredCapability,
           resourceScope: operation.resourceScope, dataScope: operation.dataScope, status: operation.contractStatus,
+          ...(operation.operation["x-conditional-authorization"] ? { conditionalAuthorization: operation.operation["x-conditional-authorization"] } : {}),
           workspaceRequired: operation.operation["x-workspace-required"], actorRequired: operation.operation["x-actor-required"],
           backendEnforcement: operation.contractStatus === "BLOCKED" ? "BLOCKED_BY_DECISION" : "REQUIRED",
         };

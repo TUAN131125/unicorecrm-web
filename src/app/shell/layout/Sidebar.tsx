@@ -208,6 +208,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const crmNavigation = (
     <>
+      {renderSidebarGroup("crm-communications", label("GIAO TIẾP", "COMMUNICATIONS"), [path("communications")], <>
+        {renderSidebarItem(path("communications"), label("Hộp thư", "Inbox"), <Inbox size={15} />)}
+      </>, shellAccess.can("communications.read") || shellAccess.can("communications.queue.read"))}
       {renderSidebarGroup("crm-overview", label("TỔNG QUAN", "OVERVIEW"), [path("dashboard")], <>
         {renderSidebarItem(path("dashboard"), "Dashboard", <LayoutDashboard size={15} />, { visible: visible("dashboard") })}
       </>, visible("dashboard"))}

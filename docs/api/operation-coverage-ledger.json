@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "generatorVersion": 11,
   "contractVersion": "0.24.0-contract.0",
-  "specSha256": "53ad96db5875b7fb38ef9a4a074b39b22ac60c0918df2f981530609865bbd279",
+  "specSha256": "c0768ffb08cce4d3eceb8692981c8765c5ca0a6256c239d24e30870b99c3ba25",
   "generatedAt": "DETERMINISTIC",
   "coveragePolicy": {
     "ownerModule": "REQUIRED",
@@ -13,12 +13,12 @@
     "concurrency": "DERIVED_FROM_IF_MATCH_HEADER"
   },
   "summary": {
-    "operations": 304,
-    "ownedOperations": 304,
-    "generatedClientMappings": 304,
-    "productionReadyOperations": 276,
+    "operations": 328,
+    "ownedOperations": 328,
+    "generatedClientMappings": 328,
+    "productionReadyOperations": 300,
     "blockedOperations": 28,
-    "declaredConnectedBoundaries": 276,
+    "declaredConnectedBoundaries": 300,
     "blockedByContract": 28,
     "pendingConnectedAdapters": 0
   },
@@ -214,6 +214,35 @@
       "requiredCapability": "payments.plan.activate",
       "resourceScope": "RESOURCE",
       "dataScope": "WORKSPACE"
+    },
+    {
+      "operationId": "activateTelegramConnection",
+      "method": "POST",
+      "path": "/communications/channel-accounts/{id}/activate",
+      "boundedContext": "CommunicationChannels",
+      "ownerModule": "communications",
+      "generatedClient": {
+        "file": "src/platform/api/generated/communicationsApi.ts",
+        "className": "CommunicationsApiClient",
+        "method": "activateTelegramConnection"
+      },
+      "httpAdapter": "src/modules/communications/infrastructure/http/createChannelManagement.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.communication-channels",
+        "quality.communications-inbox"
+      ],
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "EXPECTED_VERSION_IN_BODY",
+      "requestBodySchema": "CommunicationChannelVersion",
+      "responseSchema": "TelegramConnection",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY"
     },
     {
       "operationId": "addSupportCaseInternalNote",
@@ -1860,6 +1889,35 @@
       "dataScope": "SELECTED_WORKSPACE"
     },
     {
+      "operationId": "claimConversation",
+      "method": "POST",
+      "path": "/communications/conversations/{id}/claim",
+      "boundedContext": "Communications",
+      "ownerModule": "communications",
+      "generatedClient": {
+        "file": "src/platform/api/generated/communicationsApi.ts",
+        "className": "CommunicationsApiClient",
+        "method": "claimConversation"
+      },
+      "httpAdapter": "src/platform/api/extensions/communicationsApi.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.communication-channels",
+        "quality.communications-inbox"
+      ],
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "ATOMIC_NULL_TO_SELF",
+      "requestBodySchema": null,
+      "responseSchema": "CommunicationClaim",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.claim",
+      "resourceScope": "UNASSIGNED_OR_SELF",
+      "dataScope": "DEC-COM-019"
+    },
+    {
       "operationId": "claimLeadFromQueue",
       "method": "POST",
       "path": "/workflows/lead-queue/{leadId}/claim",
@@ -2411,6 +2469,35 @@
       "requiredCapability": "access.configure",
       "resourceScope": "WORKSPACE_ROLE",
       "dataScope": "SELECTED_WORKSPACE"
+    },
+    {
+      "operationId": "createCommunicationChannelAccount",
+      "method": "POST",
+      "path": "/communications/channel-accounts",
+      "boundedContext": "CommunicationChannels",
+      "ownerModule": "communications",
+      "generatedClient": {
+        "file": "src/platform/api/generated/communicationsApi.ts",
+        "className": "CommunicationsApiClient",
+        "method": "createCommunicationChannelAccount"
+      },
+      "httpAdapter": "src/modules/communications/infrastructure/http/createChannelManagement.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.communication-channels",
+        "quality.communications-inbox"
+      ],
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "requestBodySchema": "CommunicationChannelCreate",
+      "responseSchema": "CommunicationChannelMutation",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY"
     },
     {
       "operationId": "createContact",
@@ -3309,6 +3396,35 @@
       "dataScope": "WORKSPACE"
     },
     {
+      "operationId": "deactivateTelegramConnection",
+      "method": "POST",
+      "path": "/communications/channel-accounts/{id}/deactivate",
+      "boundedContext": "CommunicationChannels",
+      "ownerModule": "communications",
+      "generatedClient": {
+        "file": "src/platform/api/generated/communicationsApi.ts",
+        "className": "CommunicationsApiClient",
+        "method": "deactivateTelegramConnection"
+      },
+      "httpAdapter": "src/modules/communications/infrastructure/http/createChannelManagement.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.communication-channels",
+        "quality.communications-inbox"
+      ],
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "EXPECTED_VERSION_IN_BODY",
+      "requestBodySchema": "CommunicationChannelVersion",
+      "responseSchema": "TelegramConnection",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY"
+    },
+    {
       "operationId": "deleteCrmObjectField",
       "method": "DELETE",
       "path": "/crm-configuration/object-schemas/{objectKey}/fields/{fieldId}",
@@ -3449,6 +3565,35 @@
       "dataScope": "WORKSPACE"
     },
     {
+      "operationId": "disableCommunicationChannelAccount",
+      "method": "POST",
+      "path": "/communications/channel-accounts/{id}/disable",
+      "boundedContext": "CommunicationChannels",
+      "ownerModule": "communications",
+      "generatedClient": {
+        "file": "src/platform/api/generated/communicationsApi.ts",
+        "className": "CommunicationsApiClient",
+        "method": "disableCommunicationChannelAccount"
+      },
+      "httpAdapter": "src/modules/communications/infrastructure/http/createChannelManagement.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.communication-channels",
+        "quality.communications-inbox"
+      ],
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "EXPECTED_VERSION_IN_BODY",
+      "requestBodySchema": "CommunicationChannelVersion",
+      "responseSchema": "CommunicationChannelMutation",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY"
+    },
+    {
       "operationId": "discardInvoiceDraft",
       "method": "POST",
       "path": "/invoices/{invoiceId}/discard",
@@ -3477,6 +3622,35 @@
       "requiredCapability": "invoices.edit",
       "resourceScope": "RESOURCE",
       "dataScope": "WORKSPACE"
+    },
+    {
+      "operationId": "disconnectCommunicationChannelAccount",
+      "method": "POST",
+      "path": "/communications/channel-accounts/{id}/disconnect",
+      "boundedContext": "CommunicationChannels",
+      "ownerModule": "communications",
+      "generatedClient": {
+        "file": "src/platform/api/generated/communicationsApi.ts",
+        "className": "CommunicationsApiClient",
+        "method": "disconnectCommunicationChannelAccount"
+      },
+      "httpAdapter": "src/modules/communications/infrastructure/http/createChannelManagement.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.communication-channels",
+        "quality.communications-inbox"
+      ],
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "EXPECTED_VERSION_IN_BODY",
+      "requestBodySchema": "CommunicationChannelVersion",
+      "responseSchema": "CommunicationChannelMutation",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY"
     },
     {
       "operationId": "disconnectIntegrationConnection",
@@ -3648,6 +3822,35 @@
       "requiredCapability": "orders.create",
       "resourceScope": "RESOURCE",
       "dataScope": "WORKSPACE"
+    },
+    {
+      "operationId": "enableCommunicationChannelAccount",
+      "method": "POST",
+      "path": "/communications/channel-accounts/{id}/enable",
+      "boundedContext": "CommunicationChannels",
+      "ownerModule": "communications",
+      "generatedClient": {
+        "file": "src/platform/api/generated/communicationsApi.ts",
+        "className": "CommunicationsApiClient",
+        "method": "enableCommunicationChannelAccount"
+      },
+      "httpAdapter": "src/modules/communications/infrastructure/http/createChannelManagement.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.communication-channels",
+        "quality.communications-inbox"
+      ],
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "EXPECTED_VERSION_IN_BODY",
+      "requestBodySchema": "CommunicationChannelVersion",
+      "responseSchema": "CommunicationChannelMutation",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY"
     },
     {
       "operationId": "endContactCustomerRelationship",
@@ -3944,6 +4147,35 @@
       "dataScope": "WORKSPACE"
     },
     {
+      "operationId": "getCommunicationChannelAccount",
+      "method": "GET",
+      "path": "/communications/channel-accounts/{id}",
+      "boundedContext": "CommunicationChannels",
+      "ownerModule": "communications",
+      "generatedClient": {
+        "file": "src/platform/api/generated/communicationsApi.ts",
+        "className": "CommunicationsApiClient",
+        "method": "getCommunicationChannelAccount"
+      },
+      "httpAdapter": "src/modules/communications/infrastructure/http/createChannelManagement.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.communication-channels",
+        "quality.communications-inbox"
+      ],
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "requestBodySchema": null,
+      "responseSchema": "CommunicationChannelAccount",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY"
+    },
+    {
       "operationId": "getContact",
       "method": "GET",
       "path": "/contacts/{contactId}",
@@ -4056,6 +4288,64 @@
       "requiredCapability": "contacts.read",
       "resourceScope": "RESOURCE",
       "dataScope": "WORKSPACE"
+    },
+    {
+      "operationId": "getConversation",
+      "method": "GET",
+      "path": "/communications/conversations/{id}",
+      "boundedContext": "Communications",
+      "ownerModule": "communications",
+      "generatedClient": {
+        "file": "src/platform/api/generated/communicationsApi.ts",
+        "className": "CommunicationsApiClient",
+        "method": "getConversation"
+      },
+      "httpAdapter": "src/platform/api/extensions/communicationsApi.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.communication-channels",
+        "quality.communications-inbox"
+      ],
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "requestBodySchema": null,
+      "responseSchema": "CommunicationConversation",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.read",
+      "resourceScope": "CURRENT_ASSIGNEE",
+      "dataScope": "DEC-COM-019"
+    },
+    {
+      "operationId": "getConversationCrmContext",
+      "method": "GET",
+      "path": "/communications/conversations/{id}/crm-link",
+      "boundedContext": "Communications",
+      "ownerModule": "communications",
+      "generatedClient": {
+        "file": "src/platform/api/generated/communicationsApi.ts",
+        "className": "CommunicationsApiClient",
+        "method": "getConversationCrmContext"
+      },
+      "httpAdapter": "src/platform/api/extensions/communicationsApi.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.communication-channels",
+        "quality.communications-inbox"
+      ],
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "requestBodySchema": null,
+      "responseSchema": "CommunicationCrmContext",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.read",
+      "resourceScope": "CURRENT_ASSIGNEE",
+      "dataScope": "DEC-COM-019"
     },
     {
       "operationId": "getCrmObjectSchema",
@@ -5323,6 +5613,35 @@
       "dataScope": "WORKSPACE"
     },
     {
+      "operationId": "getTelegramConnection",
+      "method": "GET",
+      "path": "/communications/channel-accounts/{id}/connection",
+      "boundedContext": "CommunicationChannels",
+      "ownerModule": "communications",
+      "generatedClient": {
+        "file": "src/platform/api/generated/communicationsApi.ts",
+        "className": "CommunicationsApiClient",
+        "method": "getTelegramConnection"
+      },
+      "httpAdapter": "src/modules/communications/infrastructure/http/createChannelManagement.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.communication-channels",
+        "quality.communications-inbox"
+      ],
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "requestBodySchema": null,
+      "responseSchema": "TelegramConnection",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY"
+    },
+    {
       "operationId": "getWorkspaceAccessDirectory",
       "method": "GET",
       "path": "/access/directory",
@@ -5576,6 +5895,35 @@
       "dataScope": "WORKSPACE"
     },
     {
+      "operationId": "linkConversationCrmRecord",
+      "method": "POST",
+      "path": "/communications/conversations/{id}/crm-link",
+      "boundedContext": "Communications",
+      "ownerModule": "communications",
+      "generatedClient": {
+        "file": "src/platform/api/generated/communicationsApi.ts",
+        "className": "CommunicationsApiClient",
+        "method": "linkConversationCrmRecord"
+      },
+      "httpAdapter": "src/platform/api/extensions/communicationsApi.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.communication-channels",
+        "quality.communications-inbox"
+      ],
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "EXPECTED_VERSION_IN_BODY",
+      "requestBodySchema": "CommunicationLinkRequest",
+      "responseSchema": "CommunicationLinkMutation",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.link",
+      "resourceScope": "CURRENT_ASSIGNEE",
+      "dataScope": "DEC-COM-019"
+    },
+    {
       "operationId": "listActivities",
       "method": "GET",
       "path": "/activities",
@@ -5614,6 +5962,64 @@
       "dataScope": "WORKSPACE"
     },
     {
+      "operationId": "listCommunicationChannelAccounts",
+      "method": "GET",
+      "path": "/communications/channel-accounts",
+      "boundedContext": "CommunicationChannels",
+      "ownerModule": "communications",
+      "generatedClient": {
+        "file": "src/platform/api/generated/communicationsApi.ts",
+        "className": "CommunicationsApiClient",
+        "method": "listCommunicationChannelAccounts"
+      },
+      "httpAdapter": "src/modules/communications/infrastructure/http/createChannelManagement.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.communication-channels",
+        "quality.communications-inbox"
+      ],
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "requestBodySchema": null,
+      "responseSchema": "CommunicationChannelPage",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY"
+    },
+    {
+      "operationId": "listCommunicationChannelProviders",
+      "method": "GET",
+      "path": "/communications/channel-providers",
+      "boundedContext": "CommunicationChannels",
+      "ownerModule": "communications",
+      "generatedClient": {
+        "file": "src/platform/api/generated/communicationsApi.ts",
+        "className": "CommunicationsApiClient",
+        "method": "listCommunicationChannelProviders"
+      },
+      "httpAdapter": "src/modules/communications/infrastructure/http/createChannelManagement.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.communication-channels",
+        "quality.communications-inbox"
+      ],
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "requestBodySchema": null,
+      "responseSchema": "CommunicationChannelProviders",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY"
+    },
+    {
       "operationId": "listContacts",
       "method": "GET",
       "path": "/contacts",
@@ -5650,6 +6056,64 @@
       "requiredCapability": "contacts.read",
       "resourceScope": "WORKSPACE",
       "dataScope": "WORKSPACE"
+    },
+    {
+      "operationId": "listConversationMessages",
+      "method": "GET",
+      "path": "/communications/conversations/{id}/messages",
+      "boundedContext": "Communications",
+      "ownerModule": "communications",
+      "generatedClient": {
+        "file": "src/platform/api/generated/communicationsApi.ts",
+        "className": "CommunicationsApiClient",
+        "method": "listConversationMessages"
+      },
+      "httpAdapter": "src/platform/api/extensions/communicationsApi.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.communication-channels",
+        "quality.communications-inbox"
+      ],
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "requestBodySchema": null,
+      "responseSchema": "CommunicationMessagePage",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.read",
+      "resourceScope": "CURRENT_ASSIGNEE",
+      "dataScope": "DEC-COM-019"
+    },
+    {
+      "operationId": "listConversations",
+      "method": "GET",
+      "path": "/communications/conversations",
+      "boundedContext": "Communications",
+      "ownerModule": "communications",
+      "generatedClient": {
+        "file": "src/platform/api/generated/communicationsApi.ts",
+        "className": "CommunicationsApiClient",
+        "method": "listConversations"
+      },
+      "httpAdapter": "src/platform/api/extensions/communicationsApi.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.communication-channels",
+        "quality.communications-inbox"
+      ],
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "requestBodySchema": null,
+      "responseSchema": "CommunicationConversationPage",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "VIEW_DEPENDENT",
+      "resourceScope": "VIEW_DEPENDENT_ASSIGNEE_OR_UNASSIGNED_QUEUE",
+      "dataScope": "DEC-COM-019"
     },
     {
       "operationId": "listCreditNotes",
@@ -7494,6 +7958,35 @@
       "dataScope": "WORKSPACE"
     },
     {
+      "operationId": "reconnectTelegramConnection",
+      "method": "POST",
+      "path": "/communications/channel-accounts/{id}/reconnect",
+      "boundedContext": "CommunicationChannels",
+      "ownerModule": "communications",
+      "generatedClient": {
+        "file": "src/platform/api/generated/communicationsApi.ts",
+        "className": "CommunicationsApiClient",
+        "method": "reconnectTelegramConnection"
+      },
+      "httpAdapter": "src/modules/communications/infrastructure/http/createChannelManagement.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.communication-channels",
+        "quality.communications-inbox"
+      ],
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "EXPECTED_VERSION_IN_BODY",
+      "requestBodySchema": "CommunicationChannelVersion",
+      "responseSchema": "TelegramConnection",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY"
+    },
+    {
       "operationId": "recordCodCustomerCollection",
       "method": "POST",
       "path": "/payments/{paymentRecordId}/cod/customer-collection",
@@ -7902,6 +8395,35 @@
       "dataScope": "WORKSPACE"
     },
     {
+      "operationId": "removeTelegramCredential",
+      "method": "DELETE",
+      "path": "/communications/channel-accounts/{id}/credentials",
+      "boundedContext": "CommunicationChannels",
+      "ownerModule": "communications",
+      "generatedClient": {
+        "file": "src/platform/api/generated/communicationsApi.ts",
+        "className": "CommunicationsApiClient",
+        "method": "removeTelegramCredential"
+      },
+      "httpAdapter": "src/modules/communications/infrastructure/http/createChannelManagement.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.communication-channels",
+        "quality.communications-inbox"
+      ],
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "EXPECTED_VERSION_IN_BODY",
+      "requestBodySchema": "CommunicationChannelVersion",
+      "responseSchema": "TelegramConnection",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY"
+    },
+    {
       "operationId": "reopenDisqualifiedLead",
       "method": "POST",
       "path": "/leads/{leadId}/reopen",
@@ -8138,6 +8660,35 @@
       "requiredCapability": "support.update",
       "resourceScope": "RESOURCE",
       "dataScope": "WORKSPACE"
+    },
+    {
+      "operationId": "replaceTelegramCredential",
+      "method": "PUT",
+      "path": "/communications/channel-accounts/{id}/credentials",
+      "boundedContext": "CommunicationChannels",
+      "ownerModule": "communications",
+      "generatedClient": {
+        "file": "src/platform/api/generated/communicationsApi.ts",
+        "className": "CommunicationsApiClient",
+        "method": "replaceTelegramCredential"
+      },
+      "httpAdapter": "src/modules/communications/infrastructure/http/createChannelManagement.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.communication-channels",
+        "quality.communications-inbox"
+      ],
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "EXPECTED_VERSION_IN_BODY",
+      "requestBodySchema": "TelegramCredentialWrite",
+      "responseSchema": "TelegramConnection",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY"
     },
     {
       "operationId": "replaceWorkspaceCurrencies",
@@ -9269,6 +9820,35 @@
       "dataScope": "WORKSPACE"
     },
     {
+      "operationId": "searchConversationCrmCandidates",
+      "method": "GET",
+      "path": "/communications/conversations/{id}/crm-candidates",
+      "boundedContext": "Communications",
+      "ownerModule": "communications",
+      "generatedClient": {
+        "file": "src/platform/api/generated/communicationsApi.ts",
+        "className": "CommunicationsApiClient",
+        "method": "searchConversationCrmCandidates"
+      },
+      "httpAdapter": "src/platform/api/extensions/communicationsApi.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.communication-channels",
+        "quality.communications-inbox"
+      ],
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "requestBodySchema": null,
+      "responseSchema": "CommunicationCrmCandidates",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.link",
+      "resourceScope": "CURRENT_ASSIGNEE",
+      "dataScope": "DEC-COM-019"
+    },
+    {
       "operationId": "searchProductSelections",
       "method": "GET",
       "path": "/products/selection",
@@ -9520,6 +10100,35 @@
       "dataScope": "SYNTHETIC_ONLY"
     },
     {
+      "operationId": "transitionConversation",
+      "method": "POST",
+      "path": "/communications/conversations/{id}/transition",
+      "boundedContext": "Communications",
+      "ownerModule": "communications",
+      "generatedClient": {
+        "file": "src/platform/api/generated/communicationsApi.ts",
+        "className": "CommunicationsApiClient",
+        "method": "transitionConversation"
+      },
+      "httpAdapter": "src/platform/api/extensions/communicationsApi.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.communication-channels",
+        "quality.communications-inbox"
+      ],
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "EXPECTED_VERSION_IN_BODY",
+      "requestBodySchema": "CommunicationTransitionRequest",
+      "responseSchema": "CommunicationTransition",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.transition",
+      "resourceScope": "CURRENT_ASSIGNEE",
+      "dataScope": "DEC-COM-019"
+    },
+    {
       "operationId": "transitionSupportCase",
       "method": "POST",
       "path": "/support/cases/{caseId}/transition",
@@ -9556,6 +10165,64 @@
       "requiredCapability": "support.update",
       "resourceScope": "RESOURCE",
       "dataScope": "WORKSPACE"
+    },
+    {
+      "operationId": "unlinkConversationCrmRecord",
+      "method": "POST",
+      "path": "/communications/conversations/{id}/crm-link/unlink",
+      "boundedContext": "Communications",
+      "ownerModule": "communications",
+      "generatedClient": {
+        "file": "src/platform/api/generated/communicationsApi.ts",
+        "className": "CommunicationsApiClient",
+        "method": "unlinkConversationCrmRecord"
+      },
+      "httpAdapter": "src/platform/api/extensions/communicationsApi.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.communication-channels",
+        "quality.communications-inbox"
+      ],
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "EXPECTED_VERSION_IN_BODY",
+      "requestBodySchema": "CommunicationVersionRequest",
+      "responseSchema": "CommunicationLinkMutation",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.link",
+      "resourceScope": "CURRENT_ASSIGNEE",
+      "dataScope": "DEC-COM-019"
+    },
+    {
+      "operationId": "updateCommunicationChannelAccount",
+      "method": "PATCH",
+      "path": "/communications/channel-accounts/{id}",
+      "boundedContext": "CommunicationChannels",
+      "ownerModule": "communications",
+      "generatedClient": {
+        "file": "src/platform/api/generated/communicationsApi.ts",
+        "className": "CommunicationsApiClient",
+        "method": "updateCommunicationChannelAccount"
+      },
+      "httpAdapter": "src/modules/communications/infrastructure/http/createChannelManagement.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.communication-channels",
+        "quality.communications-inbox"
+      ],
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "EXPECTED_VERSION_IN_BODY",
+      "requestBodySchema": "CommunicationChannelRename",
+      "responseSchema": "CommunicationChannelMutation",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY"
     },
     {
       "operationId": "updateContact",
@@ -10308,6 +10975,35 @@
       "requiredCapability": "identity.authenticate",
       "resourceScope": "AUTHENTICATION_CHALLENGE",
       "dataScope": "GLOBAL_IDENTITY"
+    },
+    {
+      "operationId": "verifyTelegramConnection",
+      "method": "POST",
+      "path": "/communications/channel-accounts/{id}/verify",
+      "boundedContext": "CommunicationChannels",
+      "ownerModule": "communications",
+      "generatedClient": {
+        "file": "src/platform/api/generated/communicationsApi.ts",
+        "className": "CommunicationsApiClient",
+        "method": "verifyTelegramConnection"
+      },
+      "httpAdapter": "src/modules/communications/infrastructure/http/createChannelManagement.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.communication-channels",
+        "quality.communications-inbox"
+      ],
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "EXPECTED_VERSION_IN_BODY",
+      "requestBodySchema": "CommunicationChannelVersion",
+      "responseSchema": "TelegramConnection",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.channels.manage",
+      "resourceScope": "WORKSPACE_CHANNEL_ACCOUNT",
+      "dataScope": "SAFE_METADATA_ONLY"
     },
     {
       "operationId": "voidInvoice",

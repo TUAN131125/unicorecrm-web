@@ -516,3 +516,8 @@ body {
   overflow-wrap: anywhere;
   word-break: break-word;
 }
+
+/* Keep the application reveal button as the single control in supported browsers. */
+input[data-custom-password-reveal="true"]::-ms-reveal {
+  display: none;
+}

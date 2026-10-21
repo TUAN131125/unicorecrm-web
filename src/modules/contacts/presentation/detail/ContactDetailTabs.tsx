@@ -23,7 +23,7 @@ export const ContactDetailTabs: React.FC<ContactDetailTabsProps> = ({
   isRightPanelVisible,
   onToggleRightPanel,
 }) => {
-  const { tx } = useI18n();
+  const { locale } = useI18n();
   return (
     <RelationshipDetailTabs
       activeTab={activeTab}
@@ -33,8 +33,8 @@ export const ContactDetailTabs: React.FC<ContactDetailTabsProps> = ({
       onToggleRightPanel={onToggleRightPanel}
       motionId="contact-primary-tabs"
       panelLabel={{
-        visible: tx("contactDetail.panel.hide", "Ẩn lịch sử tương tác"),
-        hidden: tx("contactDetail.panel.show", "Hiện lịch sử tương tác"),
+        visible: locale === "vi" ? "Ẩn bảng quan hệ" : "Hide relationship panel",
+        hidden: locale === "vi" ? "Hiện bảng quan hệ" : "Show relationship panel",
       }}
     />
   );

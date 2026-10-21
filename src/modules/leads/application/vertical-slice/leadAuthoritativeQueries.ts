@@ -8,6 +8,7 @@ import {
 import type { Lead } from "../../domain/model/lead.types";
 import { getLeadApiRuntime } from "../composition/leadApplicationServices";
 import { evictLeadProjection, replaceLeads, saveLeadSnapshot } from "../../public/leads";
+import { getLeadRelationshipAuthority } from "../queries/leadReadAuthorityScope";
 
 const COLLECTION_PAGE_SIZE = 250;
 const COLLECTION_MAX_PAGES = 20;
@@ -15,6 +16,7 @@ const COLLECTION_MAX_PAGES = 20;
 let collectionReaders = 0;
 const collection = createLeadCollectionResource();
 const details = new Map<string, AuthoritativeResource<Lead>>();
+let detailAuthority: string | undefined;
 
 export function getLeadCollectionResource(): AuthoritativeResource<AuthoritativePage<Lead>> {
   return collection;
@@ -35,9 +37,14 @@ export function retainLeadCollectionReader(): () => void {
 
 
 export function getLeadDetailResource(leadId: string): AuthoritativeResource<Lead> {
+  const authority = getLeadApiRuntime().mode === "connected" ? getLeadRelationshipAuthority() : undefined;
+  if (detailAuthority !== authority) {
+    const retired = [...details.values()]; details.clear(); detailAuthority = authority;
+    queueMicrotask(() => retired.forEach(resource => resource.reset()));
+  }
   let resource = details.get(leadId);
   if (!resource) {
-    resource = createLeadDetailResource(leadId);
+    resource = createLeadDetailResource(leadId, authority);
     details.set(leadId, resource);
   }
   return resource;
@@ -83,9 +90,11 @@ function createLeadCollectionResource(): AuthoritativeResource<AuthoritativePage
   return resource;
 }
 
-function createLeadDetailResource(leadId: string): AuthoritativeResource<Lead> {
+function createLeadDetailResource(leadId: string, authority?: string): AuthoritativeResource<Lead> {
   const resource = createAuthoritativeResource(async (signal) => {
     const record = await getLeadApiRuntime().queries.get(leadId, signal);
+    signal.throwIfAborted();
+    if (authority !== undefined && authority !== getLeadRelationshipAuthority()) throw new DOMException("Lead read authority retired", "AbortError");
     runBackendProjection("leads", () => saveLeadSnapshot(record, "AUTHORITATIVE_READ"));
     return record;
   }, {

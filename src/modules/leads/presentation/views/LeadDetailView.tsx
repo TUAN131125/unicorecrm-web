@@ -17,13 +17,13 @@ import type { CrmWorkspaceConfig } from "@/platform/workspace-config";
 import { DEFAULT_CRM_WORKSPACE_CONFIG } from "@/platform/workspace-config/workspaceConfigDefaults";
 import { useI18n } from "@/i18n";
 import { Button, Badge, Modal, Input, Textarea, EmptyState, IconButton, Select, Tabs, ResponsiveTabs, FilterChip, RecordTabTransition } from "@/shared/components/ui";
-import { DetailPanelToggle } from "@/components/detail/DetailPanelToggle";
 import { formatPhone } from "@/shared/lib/format/phone";
 import { LeadForm } from "@/components/LeadForm";
 import type { SelectedPickerItem } from "@/modules/products";
 import { useLeads } from "../hooks/useLeads";
 import { useLeadActions } from "../hooks/useLeadActions";
 import { useLeadDetailDialogs } from "../hooks/useLeadDetailDialogs";
+import { DetailPanelToggle } from "@/components/detail/DetailPanelToggle";
 import { LeadWorkPanel } from "../components/LeadWorkPanel";
 import { LeadCompletedWorkTab, LeadOpenWorkTab } from "../components/LeadWorkActivityTabs";
 import { LeadDetailMoreMenu } from "../components/LeadDetailMoreMenu";
@@ -110,10 +110,10 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
     setIsProductPickerOpen,
     fieldSearch,
     setFieldSearch,
-    showEmptyFields,
-    setShowEmptyFields,
     isRightPanelVisible,
     toggleRightPanel,
+    showEmptyFields,
+    setShowEmptyFields,
     showNoteForm,
     setShowNoteForm,
     showProductForm,
@@ -421,8 +421,8 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
                   onChange={(id) => setActiveTab(id as any)}
                   className="border-b-0 bg-transparent"
                   overflowMode="dropdown"
-                  motionId="lead-primary-tabs"
                   reflowKey={isRightPanelVisible}
+                  motionId="lead-primary-tabs"
                   items={[
                 { id: "details", label: locale === "vi" ? "Thông tin chi tiết" : "Detailed Information", icon: <User size={12} /> },
                 { id: "notes", label: locale === "vi" ? "Ghi chú" : "Notes", icon: <FileText size={12} /> },
@@ -438,12 +438,12 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
                   ]}
                 />
               </div>
-              <DetailPanelToggle
+              <div className="shrink-0" data-i18n-skip="true"><DetailPanelToggle
                 isPanelVisible={isRightPanelVisible}
                 onToggle={toggleRightPanel}
                 visibleLabel={t("leads.hideWorkPanel")}
                 hiddenLabel={t("leads.showWorkPanel")}
-              />
+              /></div>
             </div>
 
             {/* TAB CONTENTS RENDERING */}
@@ -1009,11 +1009,11 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
         </main>
 
         <LeadWorkPanel
+          isVisible={isRightPanelVisible}
           onAssigned={() => showToast(locale === "vi" ? "Đã phân công Lead." : "Lead owner assigned.")}
           key={lead.id}
           lead={lead}
           locale={locale}
-          isVisible={isRightPanelVisible}
           workResources={workResources}
           ownerName={ownerName}
           sourceName={referenceData.sources.find((source) => source.id === lead.source || source.code === lead.source)?.name}
@@ -1025,6 +1025,8 @@ export function LeadDetailView({ controller }: { controller: Controller }) {
           onOpenWork={() => setActiveTab("open_activities")}
           onOpenTask={(task) => navigate(toWorkspacePath(workspace.workspaceKey, "crm", `tasks/${task.id}`))}
           onQuickAction={handleActivityQuickAction}
+          allowedQuickActions={controller.allowedQuickActions}
+          quickActionPending={dialogs.interactionPending}
         />
         </div>
       </div>

@@ -19,6 +19,7 @@ export type StudioSectionIconKey =
   | "webhooks";
 
 export type StudioSectionId =
+  | "communication-channels"
   | "quick-setup"
   | "business-information"
   | "locale-region"
@@ -31,6 +32,7 @@ export type StudioSectionId =
   | "integrations"
   | "ai"
   | "webhooks-api";
+// Communications connections are managed by account ID on a dedicated surface.
 
 export interface StudioSectionDefinition {
   id: StudioSectionId;
@@ -61,6 +63,14 @@ export const STUDIO_SECTION_GROUPS: readonly StudioSectionGroupDefinition[] = [
 ] as const;
 
 export const STUDIO_SECTIONS: readonly StudioSectionDefinition[] = [
+  {
+    id: "communication-channels", groupId: "connections",
+    routePath: relativeRoutePath(ROUTE_KEYS.SETTINGS_COMMUNICATION_CHANNELS),
+    labelVi: "Communications · Kênh kết nối", labelEn: "Communications · Channel connections",
+    descriptionVi: "Quản lý nhiều tài khoản theo ID độc lập; cấu hình nháp không phải kết nối thật.",
+    descriptionEn: "Manage multiple accounts by stable ID; metadata drafts are not live connections.",
+    icon: "integrations", requiredCapability: CAPABILITIES.COMMUNICATIONS_CHANNELS_MANAGE, order: 95,
+  },
   {
     id: "quick-setup",
     groupId: "quick-setup",

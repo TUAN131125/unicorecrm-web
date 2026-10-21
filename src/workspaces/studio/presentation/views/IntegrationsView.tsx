@@ -88,13 +88,16 @@ export function IntegrationsView() {
   const providerFor = (providerCode: string) => source.providers.find((item) => item.code === providerCode);
   const normalizedSearch = search.trim().toLocaleLowerCase(locale === "vi" ? "vi-VN" : "en-US");
   const visibleProviders = source.providers.filter((provider) => {
+    if (provider.category === "EMAIL" || provider.category === "MESSAGING") return false;
     const haystack = `${provider.name} ${provider.descriptionVi} ${provider.descriptionEn} ${provider.category}`.toLocaleLowerCase(locale === "vi" ? "vi-VN" : "en-US");
     return (category === "ALL" || provider.category === category) && (!normalizedSearch || haystack.includes(normalizedSearch));
   });
-  const configuredCount = source.providers.filter((provider) => Boolean(connectionFor(provider.code))).length;
-  const pendingCount = source.connections.filter((item) => item.status === "PENDING_VERIFICATION").length;
-  const verifiedCount = source.connections.filter((item) => item.status === "CONNECTED").length;
-  const attentionCount = source.connections.filter((item) => item.status === "ERROR" || item.status === "DISCONNECTED").length;
+  const genericProviders = source.providers.filter(provider => provider.category !== "EMAIL" && provider.category !== "MESSAGING");
+  const genericConnections = source.connections.filter(item => genericProviders.some(provider => provider.code === item.providerCode));
+  const configuredCount = genericProviders.filter((provider) => Boolean(connectionFor(provider.code))).length;
+  const pendingCount = genericConnections.filter((item) => item.status === "PENDING_VERIFICATION").length;
+  const verifiedCount = genericConnections.filter((item) => item.status === "CONNECTED").length;
+  const attentionCount = genericConnections.filter((item) => item.status === "ERROR" || item.status === "DISCONNECTED").length;
 
   const open = (providerCode: string) => {
     setDialogError("");
@@ -154,7 +157,7 @@ export function IntegrationsView() {
       {!canConfigure ? <p className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{text("Bạn chỉ có quyền xem cấu hình.", "You have read-only access to configuration.")}</p> : null}
 
       <StudioMetricsGrid>
-        <StudioMetricCard label={text("Đã cấu hình", "Configured")} value={`${configuredCount}/${source.providers.length}`} description={text("Có mã tham chiếu xác thực trong workspace.", "Has a credential reference in the workspace.")} icon={<Cable size={17} />} tone="violet" />
+        <StudioMetricCard label={text("Đã cấu hình", "Configured")} value={`${configuredCount}/${genericProviders.length}`} description={text("Có mã tham chiếu xác thực trong workspace.", "Has a credential reference in the workspace.")} icon={<Cable size={17} />} tone="violet" />
         <StudioMetricCard label={text("Chờ xác minh", "Pending verification")} value={pendingCount} description={text("Thông tin xác thực và phạm vi đang được kiểm tra.", "Credentials and scopes are being checked.")} icon={<Clock3 size={17} />} tone="warning" />
         <StudioMetricCard label={text("Đã xác minh", "Verified")} value={verifiedCount} description={text("Kết nối đã hoàn tất kiểm tra và sẵn sàng sử dụng.", "Connections that completed validation and are ready to use.")} icon={<ShieldCheck size={17} />} tone="success" />
         <StudioMetricCard label={text("Cần xử lý", "Needs attention")} value={attentionCount} description={text("Kết nối lỗi hoặc đã ngắt.", "Connections that failed or were disconnected.")} icon={<Unplug size={17} />} tone={attentionCount > 0 ? "danger" : "neutral"} />
@@ -169,8 +172,8 @@ export function IntegrationsView() {
               value={category}
               onChange={setCategory}
               items={[
-                { id: "ALL", label: text("Tất cả", "All"), count: source.providers.length },
-                ...(["EMAIL", "MESSAGING", "SHIPPING", "PAYMENT", "E_INVOICE", "EXCHANGE_RATE"] as const).map((id) => ({ id, label: categoryLabels[id], count: source.providers.filter((provider) => provider.category === id).length })),
+                { id: "ALL", label: text("Tất cả", "All"), count: genericProviders.length },
+                ...(["EMAIL", "MESSAGING", "SHIPPING", "PAYMENT", "E_INVOICE", "EXCHANGE_RATE"] as const).map((id) => ({ id, label: categoryLabels[id], count: genericProviders.filter((provider) => provider.category === id).length })),
               ]}
             />
           </div>

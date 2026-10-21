@@ -5,9 +5,11 @@ import { useWorkspaceConfigSnapshot } from "@/platform/workspace-config";
 import { EFFECTIVE_RECORD_ACCESS_PROFILES, EffectiveRecordAccessBoundary } from "@/platform/access-control";
 import { getLeadsSnapshot, subscribeToLeads } from "./public/leads";
 import { LeadDetailPage as LeadDetailScreen } from "./presentation/pages/LeadDetailPage";
+import { getLeadRelationshipAuthority, subscribeLeadRelationshipAuthority } from "./application/queries/leadReadAuthorityScope";
 
 export const LeadDetailRoutePage: React.FC = () => {
   const { leadId = "" } = useParams();
+  const authority = React.useSyncExternalStore(subscribeLeadRelationshipAuthority, getLeadRelationshipAuthority, getLeadRelationshipAuthority);
   const leads = useSubscribableSnapshot(getLeadsSnapshot, subscribeToLeads);
   const crmConfig = useWorkspaceConfigSnapshot();
   const sources = useMemo(() => [...new Set(leads.map((lead) => lead.source).filter(Boolean))].map((name, index) => ({ id: `source_${index}`, name, code: name, isActive: true })), [leads]);
@@ -15,6 +17,7 @@ export const LeadDetailRoutePage: React.FC = () => {
   const record = leads.find((lead) => lead.id === leadId);
   return (
     <EffectiveRecordAccessBoundary
+      key={`${authority}:${leadId}`}
       resourceKey="leads"
       recordId={leadId}
       record={record}

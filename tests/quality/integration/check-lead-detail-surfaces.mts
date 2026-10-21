@@ -123,7 +123,17 @@ const rail = () => { const element = rootElement.querySelector("aside"); assert.
 const settle = async () => { await act(async () => { await new Promise(resolve => setTimeout(resolve, 80)); }); };
 const globalSave = async (expected: boolean) => { await act(async () => assert.equal(await saveDirtyUnsavedWork(), expected)); };
 try {
+  leads.setLeadPreference("centrix_lead_right_panel_visible", false);
   await render(); await settle();
+  assert.equal(rootElement.querySelector('[aria-label="Thu gọn bảng quan hệ"]'), null);
+  assert.equal(current().isRightPanelVisible, false);
+  assert.equal(rootElement.querySelector('[data-relationship-work-panel]'), null);
+  await click("Hiện bảng công việc"); await settle();
+  assert.ok(rootElement.querySelector('[data-relationship-work-panel]'));
+  await click("Ẩn bảng công việc"); await settle();
+  assert.equal(rootElement.querySelector('[data-relationship-work-panel]'), null);
+  await click("Hiện bảng công việc"); await settle();
+  assert.ok(rootElement.querySelector('[data-relationship-work-panel]'));
   assert.equal(current().canHandover, false);
   assert.doesNotMatch(rail().textContent ?? "", /Bàn giao/);
   const beforeOpen = requests.length;
@@ -183,7 +193,7 @@ try {
   await change("#lead-quick-meeting-form input", "Surface meeting"); await globalSave(true); assert.equal(activities.at(-1)?.type, "MEETING");
   await click("Thao tác khác", rail()); await click("Ghi nhận SMS ngoài CRM", document.querySelector('[role="menu"]') ?? document);
   assert.match(modal().textContent ?? "", /Ghi nhận SMS ngoài CRM/); assert.doesNotMatch(modal().textContent ?? "", /Gửi tin nhắn/);
-  await change("#lead-quick-sms-form textarea", "External SMS"); await globalSave(true); assert.equal(activities.at(-1)?.type, "SYSTEM");
+  await change("#lead-quick-sms-form textarea", "External SMS"); await globalSave(true); assert.equal(activities.at(-1)?.type, "MESSAGE");
   await act(async () => { const button = document.querySelector<HTMLButtonElement>("#header-more-actions-btn"); assert.ok(button); button.click(); }); await click("Lưu trữ Lead", document.querySelector('[role="menu"]') ?? document);
   assert.equal(document.querySelector('[data-surface="drawer"]'), null); assert.ok(document.querySelector('[data-dialog-variant="form"]'));
   await act(async () => current().setShowArchiveConfirm(false));

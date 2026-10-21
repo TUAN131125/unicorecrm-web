@@ -1,5 +1,4 @@
 import React from "react";
-import { getAuthSessionSnapshot } from "@/platform/identity-auth";
 import { MeetingActivityCreateModal, type MeetingActivityDraft } from "@/modules/tasks";
 
 interface ContactMeetingModalProps {
@@ -35,7 +34,7 @@ export const ContactMeetingModal: React.FC<ContactMeetingModalProps> = ({ target
     isOpen={isOpen}
     onClose={onClose}
     formId="contact-meeting-form"
-    defaults={{ owner: getAuthSessionSnapshot()?.principal.memberId ?? "", reminder: false }}
+    defaults={{ reminder: false }}
     contactPolicy={{ restricted: isDoNotContact }}
     onSubmit={async () => {}}
     onSave={(draft: MeetingActivityDraft) => {

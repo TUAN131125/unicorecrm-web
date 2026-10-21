@@ -155,10 +155,15 @@ function createUnauthorizedHandler(bindings?: ConnectedRuntimeBindings): () => P
     const owner = connectedAuthorityKey();
     const workspace = getActiveWorkspaceId();
     const current = () => owner === connectedAuthorityKey() && workspace === getActiveWorkspaceId();
-    if (!getAuthSessionSnapshot()) return false;
-    const internalRefresh = await refreshAuthSession().catch(() => ({ ok: false as const }));
-    if (!current()) return false;
-    if (internalRefresh.ok) return true;
+    const hasInternalSession = getAuthSessionSnapshot() !== null;
+    // Explicit host authentication can operate without a built-in session. Native
+    // requests without a session still stop here rather than reviving retired authority.
+    if (!hasInternalSession && !bindings?.getAccessToken) return false;
+    if (hasInternalSession) {
+      const internalRefresh = await refreshAuthSession().catch(() => ({ ok: false as const }));
+      if (!current()) return false;
+      if (internalRefresh.ok) return true;
+    }
 
     let hostRefreshed = false;
     try {
@@ -172,10 +177,15 @@ function createUnauthorizedHandler(bindings?: ConnectedRuntimeBindings): () => P
     try {
       await bindings?.onUnauthorized?.();
     } finally {
-      resetWorkspaceContextSelection();
-      clearAccessGovernance();
-      await terminateAuthSession("UNAUTHORIZED");
-      await bindings?.logout?.();
+      if (current()) {
+        resetWorkspaceContextSelection();
+        clearAccessGovernance();
+        const clearedWorkspace = getActiveWorkspaceId();
+        await terminateAuthSession("UNAUTHORIZED");
+        // Native termination clears its own session. A replacement login or
+        // Workspace entry during that await must not reach the host logout hook.
+        if (getAuthSessionSnapshot() === null && getActiveWorkspaceId() === clearedWorkspace) await bindings?.logout?.();
+      }
     }
     return false;
   };

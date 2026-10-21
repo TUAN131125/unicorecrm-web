@@ -84,6 +84,8 @@ const client: HttpClient = {
   },
 };
 configureTaskApplication({ repository: new InMemoryTaskActivityRepository({ tasks: [], activities: [] }), api: createTaskConnectedApiRuntime(client) });
+// The unrelated fixture belongs to this authority, after initial stale-projection retirement.
+tasks.getTaskReadAuthorityScope();
 tasks.replaceTaskActivitySnapshot({ tasks: [records[5]], activities: [] });
 const resource = tasks.getScopedTaskCollectionResource({ filters: { recordModuleKey: "leads", recordId: lead.id } });
 assert.equal(resource, tasks.getScopedTaskCollectionResource({ filters: { recordId: lead.id, recordModuleKey: "leads" } }), "Equivalent queries share a deterministic key");
@@ -208,10 +210,12 @@ try {
   assert.match(rootElement.textContent ?? "", /Bắt đầu liên hệ|Thông tin chi tiết/);
   assert.ok(rootElement.querySelector("h2"));
   await act(async () => { rejectTasks = false; await resource.refresh(); });
-  await act(async () => { rejectActivities = true; await activityResource.refresh(); current().setActiveTab("email"); });
+  const { getLeadHistoryQuery } = await import("@/modules/leads/presentation/hooks/useLeadHistory");
+  const leadActivityResource = getLeadHistoryQuery(lead.id).resource;
+  await act(async () => { rejectActivities = true; await leadActivityResource.refresh(); current().setActiveTab("email"); });
   assert.ok(rootElement.querySelector('[data-authoritative-query-notice="stale"]'));
   assert.ok(current().leadNotes.length > 0, "Stale Activity data remains available");
-  await act(async () => { activityResource.reset(); await activityResource.refresh(); });
+  await act(async () => { leadActivityResource.reset(); await leadActivityResource.refresh(); });
   for (const [tab, title] of [["email", "Không thể tải lịch sử Email."], ["sms", "Không thể tải lịch sử SMS."], ["notes", "Không thể tải ghi chú"]] as const) {
     await act(async () => current().setActiveTab(tab));
     assert.match(rootElement.querySelector("main")?.textContent ?? "", new RegExp(title));
@@ -226,7 +230,7 @@ try {
   const retry = [...rootElement.querySelectorAll<HTMLButtonElement>("main button")].find((button) => button.textContent?.trim() === "Thử lại");
   assert.ok(retry);
   await act(async () => { rejectActivities = false; retry.click(); });
-  assert.equal(activityResource.getSnapshot().state, "READY", "Retry reloads the failed Activity resource");
+  assert.equal(leadActivityResource.getSnapshot().state, "READY", "Retry reloads the failed Activity resource");
   for (const channel of ["email", "sms"] as const) {
     await act(async () => { current().setActiveTab(channel); if (channel === "email") current().setShowEmailModal(true); else current().setShowSmsModal(true); });
     assert.match(window.document.body.textContent ?? "", new RegExp(`Ghi nhận ${channel === "email" ? "Email" : "SMS"} ngoài CRM`));

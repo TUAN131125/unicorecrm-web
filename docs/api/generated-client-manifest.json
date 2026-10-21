@@ -4,7 +4,7 @@
   "openapiVersion": "3.1.0",
   "contractVersion": "0.24.0-contract.0",
   "specPath": "docs/api/openapi.json",
-  "specSha256": "53ad96db5875b7fb38ef9a4a074b39b22ac60c0918df2f981530609865bbd279",
+  "specSha256": "c0768ffb08cce4d3eceb8692981c8765c5ca0a6256c239d24e30870b99c3ba25",
   "ownershipPath": "scripts/api/openapi/client-ownership.json",
   "coverageLedgerPath": "docs/api/operation-coverage-ledger.json",
   "breakingBaselinePath": "docs/api/openapi-breaking-baseline.json",
@@ -23,6 +23,7 @@
     "src/platform/api/generated/financialConfigurationApi.ts",
     "src/platform/api/generated/integrationConfigurationApi.ts",
     "src/platform/api/generated/aiApi.ts",
+    "src/platform/api/generated/communicationsApi.ts",
     "src/platform/api/generated/index.ts",
     "src/platform/api/contracts/generatedOpenApiRuntimeContract.ts",
     "src/platform/api/contracts/generatedProductionCommandRegistry.ts",
@@ -177,6 +178,17 @@
       "className": "AiApiClient",
       "requestOptionsName": "AiRequestOptions",
       "operationCount": 9
+    },
+    {
+      "id": "communications",
+      "tags": [
+        "Communications",
+        "CommunicationChannels"
+      ],
+      "output": "src/platform/api/generated/communicationsApi.ts",
+      "className": "CommunicationsApiClient",
+      "requestOptionsName": "CommunicationsRequestOptions",
+      "operationCount": 24
     }
   ],
   "operations": [
@@ -263,6 +275,20 @@
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "payments.plan.activate"
+    },
+    {
+      "operationId": "activateTelegramConnection",
+      "method": "POST",
+      "path": "/communications/channel-accounts/{id}/activate",
+      "boundedContext": "CommunicationChannels",
+      "ownerModule": "communications",
+      "generatedClientId": "communications",
+      "generatedMethod": "activateTelegramConnection",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "EXPECTED_VERSION_IN_BODY",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.channels.manage"
     },
     {
       "operationId": "addSupportCaseInternalNote",
@@ -895,6 +921,20 @@
       "requiredCapability": "access.configure"
     },
     {
+      "operationId": "claimConversation",
+      "method": "POST",
+      "path": "/communications/conversations/{id}/claim",
+      "boundedContext": "Communications",
+      "ownerModule": "communications",
+      "generatedClientId": "communications",
+      "generatedMethod": "claimConversation",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "ATOMIC_NULL_TO_SELF",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.claim"
+    },
+    {
       "operationId": "claimLeadFromQueue",
       "method": "POST",
       "path": "/workflows/lead-queue/{leadId}/claim",
@@ -1103,6 +1143,20 @@
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "access.configure"
+    },
+    {
+      "operationId": "createCommunicationChannelAccount",
+      "method": "POST",
+      "path": "/communications/channel-accounts",
+      "boundedContext": "CommunicationChannels",
+      "ownerModule": "communications",
+      "generatedClientId": "communications",
+      "generatedMethod": "createCommunicationChannelAccount",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.channels.manage"
     },
     {
       "operationId": "createContact",
@@ -1469,6 +1523,20 @@
       "requiredCapability": "tasks.create"
     },
     {
+      "operationId": "deactivateTelegramConnection",
+      "method": "POST",
+      "path": "/communications/channel-accounts/{id}/deactivate",
+      "boundedContext": "CommunicationChannels",
+      "ownerModule": "communications",
+      "generatedClientId": "communications",
+      "generatedMethod": "deactivateTelegramConnection",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "EXPECTED_VERSION_IN_BODY",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.channels.manage"
+    },
+    {
       "operationId": "deleteCrmObjectField",
       "method": "DELETE",
       "path": "/crm-configuration/object-schemas/{objectKey}/fields/{fieldId}",
@@ -1539,6 +1607,20 @@
       "requiredCapability": "ai.configuration.manage"
     },
     {
+      "operationId": "disableCommunicationChannelAccount",
+      "method": "POST",
+      "path": "/communications/channel-accounts/{id}/disable",
+      "boundedContext": "CommunicationChannels",
+      "ownerModule": "communications",
+      "generatedClientId": "communications",
+      "generatedMethod": "disableCommunicationChannelAccount",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "EXPECTED_VERSION_IN_BODY",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.channels.manage"
+    },
+    {
       "operationId": "discardInvoiceDraft",
       "method": "POST",
       "path": "/invoices/{invoiceId}/discard",
@@ -1551,6 +1633,20 @@
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "invoices.edit"
+    },
+    {
+      "operationId": "disconnectCommunicationChannelAccount",
+      "method": "POST",
+      "path": "/communications/channel-accounts/{id}/disconnect",
+      "boundedContext": "CommunicationChannels",
+      "ownerModule": "communications",
+      "generatedClientId": "communications",
+      "generatedMethod": "disconnectCommunicationChannelAccount",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "EXPECTED_VERSION_IN_BODY",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.channels.manage"
     },
     {
       "operationId": "disconnectIntegrationConnection",
@@ -1621,6 +1717,20 @@
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "orders.create"
+    },
+    {
+      "operationId": "enableCommunicationChannelAccount",
+      "method": "POST",
+      "path": "/communications/channel-accounts/{id}/enable",
+      "boundedContext": "CommunicationChannels",
+      "ownerModule": "communications",
+      "generatedClientId": "communications",
+      "generatedMethod": "enableCommunicationChannelAccount",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "EXPECTED_VERSION_IN_BODY",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.channels.manage"
     },
     {
       "operationId": "endContactCustomerRelationship",
@@ -1749,6 +1859,20 @@
       "requiredCapability": "receivables.read"
     },
     {
+      "operationId": "getCommunicationChannelAccount",
+      "method": "GET",
+      "path": "/communications/channel-accounts/{id}",
+      "boundedContext": "CommunicationChannels",
+      "ownerModule": "communications",
+      "generatedClientId": "communications",
+      "generatedMethod": "getCommunicationChannelAccount",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.channels.manage"
+    },
+    {
       "operationId": "getContact",
       "method": "GET",
       "path": "/contacts/{contactId}",
@@ -1789,6 +1913,34 @@
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "contacts.read"
+    },
+    {
+      "operationId": "getConversation",
+      "method": "GET",
+      "path": "/communications/conversations/{id}",
+      "boundedContext": "Communications",
+      "ownerModule": "communications",
+      "generatedClientId": "communications",
+      "generatedMethod": "getConversation",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.read"
+    },
+    {
+      "operationId": "getConversationCrmContext",
+      "method": "GET",
+      "path": "/communications/conversations/{id}/crm-link",
+      "boundedContext": "Communications",
+      "ownerModule": "communications",
+      "generatedClientId": "communications",
+      "generatedMethod": "getConversationCrmContext",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.read"
     },
     {
       "operationId": "getCrmObjectSchema",
@@ -2309,6 +2461,20 @@
       "requiredCapability": "tasks.read"
     },
     {
+      "operationId": "getTelegramConnection",
+      "method": "GET",
+      "path": "/communications/channel-accounts/{id}/connection",
+      "boundedContext": "CommunicationChannels",
+      "ownerModule": "communications",
+      "generatedClientId": "communications",
+      "generatedMethod": "getTelegramConnection",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.channels.manage"
+    },
+    {
       "operationId": "getWorkspaceAccessDirectory",
       "method": "GET",
       "path": "/access/directory",
@@ -2421,6 +2587,20 @@
       "requiredCapability": "invoices.issue"
     },
     {
+      "operationId": "linkConversationCrmRecord",
+      "method": "POST",
+      "path": "/communications/conversations/{id}/crm-link",
+      "boundedContext": "Communications",
+      "ownerModule": "communications",
+      "generatedClientId": "communications",
+      "generatedMethod": "linkConversationCrmRecord",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "EXPECTED_VERSION_IN_BODY",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.link"
+    },
+    {
       "operationId": "listActivities",
       "method": "GET",
       "path": "/activities",
@@ -2435,6 +2615,34 @@
       "requiredCapability": "tasks.read"
     },
     {
+      "operationId": "listCommunicationChannelAccounts",
+      "method": "GET",
+      "path": "/communications/channel-accounts",
+      "boundedContext": "CommunicationChannels",
+      "ownerModule": "communications",
+      "generatedClientId": "communications",
+      "generatedMethod": "listCommunicationChannelAccounts",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.channels.manage"
+    },
+    {
+      "operationId": "listCommunicationChannelProviders",
+      "method": "GET",
+      "path": "/communications/channel-providers",
+      "boundedContext": "CommunicationChannels",
+      "ownerModule": "communications",
+      "generatedClientId": "communications",
+      "generatedMethod": "listCommunicationChannelProviders",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.channels.manage"
+    },
+    {
       "operationId": "listContacts",
       "method": "GET",
       "path": "/contacts",
@@ -2447,6 +2655,34 @@
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "contacts.read"
+    },
+    {
+      "operationId": "listConversationMessages",
+      "method": "GET",
+      "path": "/communications/conversations/{id}/messages",
+      "boundedContext": "Communications",
+      "ownerModule": "communications",
+      "generatedClientId": "communications",
+      "generatedMethod": "listConversationMessages",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.read"
+    },
+    {
+      "operationId": "listConversations",
+      "method": "GET",
+      "path": "/communications/conversations",
+      "boundedContext": "Communications",
+      "ownerModule": "communications",
+      "generatedClientId": "communications",
+      "generatedMethod": "listConversations",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "VIEW_DEPENDENT"
     },
     {
       "operationId": "listCreditNotes",
@@ -3233,6 +3469,20 @@
       "requiredCapability": "payments.reconcile"
     },
     {
+      "operationId": "reconnectTelegramConnection",
+      "method": "POST",
+      "path": "/communications/channel-accounts/{id}/reconnect",
+      "boundedContext": "CommunicationChannels",
+      "ownerModule": "communications",
+      "generatedClientId": "communications",
+      "generatedMethod": "reconnectTelegramConnection",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "EXPECTED_VERSION_IN_BODY",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.channels.manage"
+    },
+    {
       "operationId": "recordCodCustomerCollection",
       "method": "POST",
       "path": "/payments/{paymentRecordId}/cod/customer-collection",
@@ -3401,6 +3651,20 @@
       "requiredCapability": "returns.update"
     },
     {
+      "operationId": "removeTelegramCredential",
+      "method": "DELETE",
+      "path": "/communications/channel-accounts/{id}/credentials",
+      "boundedContext": "CommunicationChannels",
+      "ownerModule": "communications",
+      "generatedClientId": "communications",
+      "generatedMethod": "removeTelegramCredential",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "EXPECTED_VERSION_IN_BODY",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.channels.manage"
+    },
+    {
       "operationId": "reopenDisqualifiedLead",
       "method": "POST",
       "path": "/leads/{leadId}/reopen",
@@ -3497,6 +3761,20 @@
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "support.update"
+    },
+    {
+      "operationId": "replaceTelegramCredential",
+      "method": "PUT",
+      "path": "/communications/channel-accounts/{id}/credentials",
+      "boundedContext": "CommunicationChannels",
+      "ownerModule": "communications",
+      "generatedClientId": "communications",
+      "generatedMethod": "replaceTelegramCredential",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "EXPECTED_VERSION_IN_BODY",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.channels.manage"
     },
     {
       "operationId": "replaceWorkspaceCurrencies",
@@ -3975,6 +4253,20 @@
       "requiredCapability": "leads.update"
     },
     {
+      "operationId": "searchConversationCrmCandidates",
+      "method": "GET",
+      "path": "/communications/conversations/{id}/crm-candidates",
+      "boundedContext": "Communications",
+      "ownerModule": "communications",
+      "generatedClientId": "communications",
+      "generatedMethod": "searchConversationCrmCandidates",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.link"
+    },
+    {
       "operationId": "searchProductSelections",
       "method": "GET",
       "path": "/products/selection",
@@ -4087,6 +4379,20 @@
       "requiredCapability": "ai.configuration.manage"
     },
     {
+      "operationId": "transitionConversation",
+      "method": "POST",
+      "path": "/communications/conversations/{id}/transition",
+      "boundedContext": "Communications",
+      "ownerModule": "communications",
+      "generatedClientId": "communications",
+      "generatedMethod": "transitionConversation",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "EXPECTED_VERSION_IN_BODY",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.transition"
+    },
+    {
       "operationId": "transitionSupportCase",
       "method": "POST",
       "path": "/support/cases/{caseId}/transition",
@@ -4099,6 +4405,34 @@
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "support.update"
+    },
+    {
+      "operationId": "unlinkConversationCrmRecord",
+      "method": "POST",
+      "path": "/communications/conversations/{id}/crm-link/unlink",
+      "boundedContext": "Communications",
+      "ownerModule": "communications",
+      "generatedClientId": "communications",
+      "generatedMethod": "unlinkConversationCrmRecord",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "EXPECTED_VERSION_IN_BODY",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.link"
+    },
+    {
+      "operationId": "updateCommunicationChannelAccount",
+      "method": "PATCH",
+      "path": "/communications/channel-accounts/{id}",
+      "boundedContext": "CommunicationChannels",
+      "ownerModule": "communications",
+      "generatedClientId": "communications",
+      "generatedMethod": "updateCommunicationChannelAccount",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "EXPECTED_VERSION_IN_BODY",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.channels.manage"
     },
     {
       "operationId": "updateContact",
@@ -4421,6 +4755,20 @@
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "identity.authenticate"
+    },
+    {
+      "operationId": "verifyTelegramConnection",
+      "method": "POST",
+      "path": "/communications/channel-accounts/{id}/verify",
+      "boundedContext": "CommunicationChannels",
+      "ownerModule": "communications",
+      "generatedClientId": "communications",
+      "generatedMethod": "verifyTelegramConnection",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "EXPECTED_VERSION_IN_BODY",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "communications.channels.manage"
     },
     {
       "operationId": "voidInvoice",

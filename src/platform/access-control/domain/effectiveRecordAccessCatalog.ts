@@ -6,6 +6,8 @@ export interface EffectiveRecordAccessProfile {
 }
 
 export const EFFECTIVE_RECORD_ACCESS_PROFILES = {
+  communications: { requestedCommands: ["communications.transition", "communications.link"], requestedFields: ["id", "lastActivityAt", "version", "status", "conversationId", "sequence", "occurredAt", "text", "crmLink", "crmContext"] },
+  "communications.queue": { requestedCommands: [], requestedFields: ["id", "lastActivityAt"] },
   leads: {
     requestedCommands: ["lead.assign-owner", "lead.create", "lead.update", "lead.change-work-state", "lead.qualify-opportunity", "lead.qualify-nurture", "lead.disqualify", "lead.record-consent", "lead.merge-duplicates", "lead.confirm-duplicates-distinct", "lead.archive"],
     requestedFields: ["fullName", "phone", "email", "ownerId", "assignedTo", "workState", "qualificationOutcome", "consent", "duplicateResolution"],

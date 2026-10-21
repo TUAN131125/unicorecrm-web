@@ -171,6 +171,7 @@ export const LoginPage: React.FC = () => {
               trailing={
                 <button
                   type="button"
+                  data-i18n-skip="true"
                   onClick={() => setShowPassword((value) => !value)}
                   className="rounded-xl p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
                   aria-label={showPassword ? t("common.hidePassword") : t("common.showPassword")}

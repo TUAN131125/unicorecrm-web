@@ -116,12 +116,8 @@ try {
   await act(async () => window.dispatchEvent(new window.KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
   assert.equal(document.querySelector('[role="menu"]'), null, "Menu closes with Escape");
   await click("Thao tác khác");
-  props = { ...props, isVisible: false };
-  await render();
-  assert.equal(container.querySelector("aside"), null);
-  props = { ...props, isVisible: true };
-  await render();
-  assert.equal(document.querySelector('[role="menu"]'), null, "Hidden panel cannot reopen a menu anchored to a detached button");
+  assert.ok(container.querySelector("aside"), "Lead panel remains visible");
+  await act(async () => window.dispatchEvent(new window.KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
   for (const path of ["views/LeadDetailView.tsx", "hooks/useLeadDetailController.tsx", "hooks/useLeadDetailViewState.ts"]) {
     assert.doesNotMatch(readFileSync(`src/modules/leads/presentation/${path}`, "utf8"), /LeadDetailActivityPanel|timelineFilter|selectedActivity|isFilterExpanded/);
   }

@@ -1,3 +1,4 @@
+import { useEffectiveAccess } from "@/platform/access-control";
 import React from "react";
 import { recordOperationalAudit } from "@/platform/operational-audit";
 import { useWorkspaceContextSnapshot } from "@/platform/workspace-context";
@@ -24,17 +25,21 @@ export const OrganizationCreateModal: React.FC<OrganizationCreateModalProps> = (
   onCreated,
 }) => {
   const workspace = useWorkspaceContextSnapshot();
+  const access = useEffectiveAccess();
+  function writable<T>(key: string, value: T): T | undefined {
+    return access.getFieldAccess("organizations", key) === "READ_WRITE" ? value : undefined;
+  }
   const submit = async (draft: OrganizationAccountFormDraft, _opening: OrganizationAccount | undefined, isCurrent: () => boolean, intentId: string) => {
     try {
       if (isOrganizationConnectedMode()) {
         const organization = await createOrganizationViaApi({
-          displayName: draft.displayName, legalName: draft.legalName.trim() || undefined,
-          taxCode: draft.taxCode.trim() || undefined, industry: draft.industry.trim() || undefined,
-          sizeBand: draft.sizeBand || undefined, website: draft.website.trim() || undefined,
-          domain: draft.domain || undefined, phone: draft.phone.trim() || undefined,
-          email: draft.email.trim() || undefined, address: draft.address.trim() || undefined,
-          source: draft.source.trim() || "manual", relationshipLevel: draft.relationshipLevel,
-          notes: draft.notes.trim() || undefined, status: draft.status === "archived" ? undefined : draft.status,
+          displayName: draft.displayName, legalName: writable("legalName", draft.legalName.trim() || undefined),
+          taxCode: writable("taxCode", draft.taxCode.trim() || undefined), industry: writable("industry", draft.industry.trim() || undefined),
+          sizeBand: writable("sizeBand", draft.sizeBand || undefined), website: writable("website", draft.website.trim() || undefined),
+          domain: writable("domain", draft.domain || undefined), phone: writable("phone", draft.phone.trim() || undefined),
+          email: writable("email", draft.email.trim() || undefined), address: writable("address", draft.address.trim() || undefined),
+          source: writable("source", draft.source.trim() || "manual"), relationshipLevel: writable("relationshipLevel", draft.relationshipLevel),
+          notes: writable("notes", draft.notes.trim() || undefined), status: writable("status", draft.status === "archived" ? undefined : draft.status),
         }, { idempotencyKey: intentId });
         if (isCurrent()) { onCreated(organization); }
         return;

@@ -38,6 +38,13 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "activateTelegramConnection",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "keyScope": "WORKSPACE_ACTOR_KEY",
+      "replayPolicy": "CURRENT_VERSION_ONLY_NO_PROVIDER_REPLAY"
+    },
+    {
       "operationId": "addSupportCaseInternalNote",
       "policy": "REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -263,6 +270,11 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "claimConversation",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "claimLeadFromQueue",
       "policy": "REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -336,6 +348,12 @@
       "operationId": "createAccessRole",
       "policy": "REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "createCommunicationChannelAccount",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "keyScope": "WORKSPACE_ACTOR_KEY"
     },
     {
       "operationId": "createContact",
@@ -468,6 +486,13 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "deactivateTelegramConnection",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "keyScope": "WORKSPACE_ACTOR_KEY",
+      "replayPolicy": "CURRENT_VERSION_ONLY_NO_PROVIDER_REPLAY"
+    },
+    {
       "operationId": "deleteCrmObjectField",
       "policy": "REQUIRED",
       "status": "BLOCKED"
@@ -493,9 +518,21 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "disableCommunicationChannelAccount",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "keyScope": "WORKSPACE_ACTOR_KEY"
+    },
+    {
       "operationId": "discardInvoiceDraft",
       "policy": "REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "disconnectCommunicationChannelAccount",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "keyScope": "WORKSPACE_ACTOR_KEY"
     },
     {
       "operationId": "disconnectIntegrationConnection",
@@ -521,6 +558,12 @@
       "operationId": "duplicateOrderDraft",
       "policy": "REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "enableCommunicationChannelAccount",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "keyScope": "WORKSPACE_ACTOR_KEY"
     },
     {
       "operationId": "endContactCustomerRelationship",
@@ -568,6 +611,11 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "getCommunicationChannelAccount",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "getContact",
       "policy": "NOT_APPLICABLE",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -579,6 +627,16 @@
     },
     {
       "operationId": "getContactRelationshipSummary",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "getConversation",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "getConversationCrmContext",
       "policy": "NOT_APPLICABLE",
       "status": "PRODUCTION_CONTRACT_READY"
     },
@@ -768,6 +826,11 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "getTelegramConnection",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "getWorkspaceAccessDirectory",
       "policy": "NOT_APPLICABLE",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -808,12 +871,37 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "linkConversationCrmRecord",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "listActivities",
       "policy": "NOT_APPLICABLE",
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "listCommunicationChannelAccounts",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "listCommunicationChannelProviders",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "listContacts",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "listConversationMessages",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "listConversations",
       "policy": "NOT_APPLICABLE",
       "status": "PRODUCTION_CONTRACT_READY"
     },
@@ -1098,6 +1186,13 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "reconnectTelegramConnection",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "keyScope": "WORKSPACE_ACTOR_KEY",
+      "replayPolicy": "CURRENT_VERSION_ONLY_NO_PROVIDER_REPLAY"
+    },
+    {
       "operationId": "recordCodCustomerCollection",
       "policy": "REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -1158,6 +1253,12 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "removeTelegramCredential",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "keyScope": "WORKSPACE_ACTOR_KEY"
+    },
+    {
       "operationId": "reopenDisqualifiedLead",
       "policy": "REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -1191,6 +1292,12 @@
       "operationId": "replaceSupportCaseProfile",
       "policy": "REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "replaceTelegramCredential",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "keyScope": "WORKSPACE_ACTOR_KEY"
     },
     {
       "operationId": "replaceWorkspaceCurrencies",
@@ -1363,6 +1470,11 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "searchConversationCrmCandidates",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "searchProductSelections",
       "policy": "NOT_APPLICABLE",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -1403,9 +1515,25 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "transitionConversation",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "transitionSupportCase",
       "policy": "REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "unlinkConversationCrmRecord",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "updateCommunicationChannelAccount",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "keyScope": "WORKSPACE_ACTOR_KEY"
     },
     {
       "operationId": "updateContact",
@@ -1521,6 +1649,13 @@
       "operationId": "verifyMfa",
       "policy": "REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "verifyTelegramConnection",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "keyScope": "WORKSPACE_ACTOR_KEY",
+      "replayPolicy": "CURRENT_VERSION_ONLY_NO_PROVIDER_REPLAY"
     },
     {
       "operationId": "voidInvoice",

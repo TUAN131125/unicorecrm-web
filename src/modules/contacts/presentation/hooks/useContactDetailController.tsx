@@ -1,3 +1,4 @@
+import { useContactHistory } from "./useContactHistory";
 import { useContactTasksQuery } from "./useContactTasksQuery";
 import { getWorkspaceContextSnapshot, useWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import type { ContactCommandOptions } from "../../application/ports/ContactApiRuntime";
@@ -69,16 +70,6 @@ export interface ContactDetailPageProps {
   careCases: SupportCase[];
 }
 
-function resolveTaskAssigneeId(
-  value: string,
-  members: Array<{ memberId: string; displayName: string }>,
-  fallback?: string,
-): string {
-  const normalized = value.trim().toLowerCase();
-  const matched = members.find((member) => member.memberId === value || member.displayName.toLowerCase() === normalized);
-  return matched?.memberId || fallback || members[0]?.memberId || value;
-}
-
 function toDueAt(date: string, time?: string): string {
   if (!date) return new Date().toISOString();
   const candidate = time ? `${date}T${time}` : `${date}T17:00:00`;
@@ -112,6 +103,7 @@ export function useContactDetailController(props: ContactDetailPageProps) {
   const location = useLocation();
   const { contactId } = useParams<{ contactId: string }>();
   const contactTasksQuery = useContactTasksQuery(contactId);
+  const contactHistory = useContactHistory(contactId ?? "");
 
   // Find target contact
   const routeContact = contacts.find(c => c.id === contactId);
@@ -680,7 +672,8 @@ export function useContactDetailController(props: ContactDetailPageProps) {
     reminder?: boolean;
   }): Promise<boolean> => {
     if (!ownsActivity() || activityPending.current) return false;
-    const assigneeId = resolveTaskAssigneeId(meetingData.owner, members, currentMemberId || contact.ownerId);
+    const assigneeId = listWorkspaceMemberDirectory().find(member => member.memberId === meetingData.owner)?.memberId;
+    if (!assigneeId) return false;
     const actorId = currentMemberId || contact.ownerId || assigneeId;
     const meetingTaskId = `task_contact_meeting_${contact.id}_${interaction?.intentId ?? crypto.randomUUID()}`;
     activityPending.current = true;
@@ -835,46 +828,13 @@ export function useContactDetailController(props: ContactDetailPageProps) {
   const totalQuotedAmount = displayQuotes.reduce((acc, curr) => acc + (curr.total || 0), 0);
   const totalOrderValue = displayOrders.reduce((acc, curr) => acc + (curr.order.grandTotal || 0), 0);
 
-  // Timeline combines Contact-owned interactions with canonical relationship activities.
-  const relationshipActivities = taskActivity.activities.filter((activity) =>
-    matchesRelationship(activity.relationshipRef)
-    || matchesCustomerAlias(activity.customerId)
-    || Boolean(activity.recordRef && linkedRecordIds.has(activity.recordRef.recordId)),
-  );
-  const careTimelineItems = [
-    ...(contact.activities ? contact.activities.map(act => ({
-      id: act.id || `contact-activity-${act.createdAt}`,
-      title: act.title,
-      description: act.description,
-      date: act.createdAt ? act.createdAt.split("T")[0] : contact.createdAt.split("T")[0],
-      type: act.type || "system"
-    })) : []),
-    ...relationshipActivities.map((activity) => ({
-      id: activity.id,
-      title: activity.subject,
-      description: activity.body || "",
-      date: activity.occurredAt.split("T")[0],
-      type: activity.type.toLowerCase(),
-      recordRef: activity.recordRef,
-    })),
-    { id: `contact-origin-${contact.id}`, title: tx("contactDetail.timeline.creation", "Khởi tạo liên hệ"), description: `${tx("contactDetail.timeline.creationDesc", "Hồ sơ liên hệ được tạo từ nguồn")}: ${contact.source || tx("common.manual", "Thao tác tay")}.`, date: contact.createdAt.split("T")[0], type: "system" }
-  ].reduce((acc: any[], current) => {
-    // Deduplicate logic: collapse event duplicates having similar descriptors
-    const key = `${current.type}_${current.title}_${current.description}`;
-    const duplicate = acc.find(item => `${item.type}_${item.title}_${item.description}` === key);
-    if (!duplicate) {
-      acc.push(current);
-    }
-    return acc;
-  }, []).sort((a, b) => {
-    const dateA = a.date.includes("/") 
-      ? a.date.split("/").reverse().join("-") 
-      : a.date;
-    const dateB = b.date.includes("/") 
-      ? b.date.split("/").reverse().join("-") 
-      : b.date;
-    return dateB.localeCompare(dateA) || b.id.localeCompare(a.id);
-  });
+  // Only direct Contact Activity records are admitted here; snapshot timestamps are not events.
+  const relationshipActivities = contactHistory.items;
+  const careTimelineItems = relationshipActivities.map(activity => ({
+    id: activity.id, title: activity.subject, description: activity.body ?? "",
+    date: activity.occurredAt, createdAt: activity.occurredAt, author: activity.actorId,
+    type: activity.type === "MESSAGE" ? "sms" : activity.type.toLowerCase(), recordRef: activity.recordRef,
+  }));
   return {
     readAuthorityCurrent: (interaction?.authorityScope ?? ownedInteraction?.authorityScope ?? authorityScope) === authorityScope,
     discardSuspendedInteraction: () => {
@@ -889,6 +849,7 @@ export function useContactDetailController(props: ContactDetailPageProps) {
     canArchiveContact,
     contactOpportunityAvailable,
     contactQuery,
+    contactTasksQuery,
     customers,
     deals,
     quotes,

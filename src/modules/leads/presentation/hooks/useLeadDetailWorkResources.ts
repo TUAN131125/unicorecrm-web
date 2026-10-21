@@ -1,5 +1,6 @@
 import { useAuthoritativeResource } from "@/shared/operations";
-import { getActivityCollectionResource, getScopedTaskCollectionResource, getTaskApiRuntime } from "@/modules/tasks";
+import { getScopedTaskCollectionResource, getTaskApiRuntime } from "@/modules/tasks";
+import { useLeadHistory } from "./useLeadHistory";
 import { useWorkspaceContextSnapshot } from "@/platform/workspace-context";
 
 export function useLeadDetailWorkResources(leadId: string) {
@@ -7,7 +8,7 @@ export function useLeadDetailWorkResources(leadId: string) {
   useWorkspaceContextSnapshot();
   const query = { filters: { recordModuleKey: "leads", recordId: leadId } };
   const taskQuery = useAuthoritativeResource(getScopedTaskCollectionResource(query), { enabled: Boolean(leadId) });
-  const activityQuery = useAuthoritativeResource(getActivityCollectionResource(query), { enabled: Boolean(leadId) });
+  const { query: activityQuery } = useLeadHistory(leadId);
   const tasks = (taskQuery.data?.items ?? []).filter((task) => !task.archivedAt);
   const activities = activityQuery.data?.items ?? [];
   const openTasks = tasks.filter((task) => task.status === "OPEN")

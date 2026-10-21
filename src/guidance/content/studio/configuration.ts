@@ -13,6 +13,14 @@ type StudioGuidanceSeed = {
 
 const seeds: readonly StudioGuidanceSeed[] = [
   {
+    id: "studio.communication-channels", routeKey: "SETTINGS_COMMUNICATION_CHANNELS",
+    title: { vi: "Communications · Kênh kết nối", en: "Communications · Channel connections" },
+    purpose: { vi: "Quản lý nhiều tài khoản trong Workspace theo ChannelAccountId.", en: "Manage multiple Workspace accounts by ChannelAccountId." },
+    task: { vi: "Thêm nhiều tài khoản cùng provider. Với Telegram, xem thông tin xác thực, xác minh Bot rồi kích hoạt Inbound khi môi trường được cho phép; kiểm tra polling và lỗi theo từng tài khoản. Có thể dừng, kết nối lại hoặc ngắt kết nối.", en: "Add multiple accounts for the same provider. For Telegram, review credentials, verify the Bot and activate Inbound only in an admitted environment; review polling and errors per account. Deactivate, reconnect or disconnect as needed." },
+    mistake: { vi: "Không nhập token thật khi live chưa được cho phép. Đã lưu token hoặc xác minh Bot không có nghĩa polling khỏe. Ngắt kết nối giữ thông tin xác thực được bảo vệ và lịch sử, yêu cầu xác minh lại; xóa cục bộ không thu hồi token Telegram. Khi xung đột, tải lại. Quyền quản lý không cấp quyền đọc hội thoại.", en: "Do not enter real tokens while live access is not admitted. Saving a token or verifying a Bot does not prove healthy polling. Disconnect preserves protected credentials and history and requires verification again; local removal does not revoke the Telegram token. Reload after a conflict. Management permission does not grant conversation access." },
+    keywords: { vi: "communications kênh kết nối nhiều tài khoản gmail telegram", en: "communications channels multiple accounts gmail telegram" },
+  },
+  {
     id: "studio.quick-setup",
     routeKey: "SETTINGS_QUICK_SETUP",
     title: { vi: "Thiết lập nhanh", en: "Quick Setup" },
@@ -98,7 +106,7 @@ const seeds: readonly StudioGuidanceSeed[] = [
     routeKey: "SETTINGS_INTEGRATIONS",
     title: { vi: "Tích hợp", en: "Integrations" },
     purpose: { vi: "Quản lý cấu hình kết nối email, nhắn tin, vận chuyển, thanh toán và nhà cung cấp ngoài.", en: "Manage connection configuration for email, messaging, shipping, payments, and external providers." },
-    task: { vi: "Mở đúng nhà cung cấp, nhập thông tin được yêu cầu và xem trạng thái backend trả về.", en: "Open the provider, enter the required details, and review the status returned by the backend." },
+    task: { vi: "Mở Communications · Kênh kết nối để quản lý nhiều tài khoản khi có quyền quản lý kênh. Thẻ Communications vẫn hiển thị khi phần cấu hình Studio khác chưa tải được. Mở đúng nhà cung cấp và xem trạng thái backend trả về.", en: "Open Communications · Channel connections to manage multiple accounts when you have channel management permission. The Communications entry remains available if other Studio configuration fails to load. Open the provider and review the status returned by the backend." },
     mistake: { vi: "Không coi cấu hình đã lưu là đã kết nối nếu backend chưa xác nhận.", en: "Do not treat saved configuration as connected until the backend confirms it." },
     keywords: { vi: "gmail zalo vận chuyển thanh toán tích hợp", en: "gmail zalo shipping payment integration" },
   },
@@ -126,7 +134,7 @@ export const STUDIO_SCREEN_GUIDANCE: readonly ScreenGuidance[] = seeds.map((seed
   id: seed.id,
   routeKey: seed.routeKey,
   productSpace: "studio",
-  version: seed.id === "studio.quick-setup" ? 3 : 2,
+  version: seed.id === "studio.communication-channels" || seed.id === "studio.integrations" ? 3 : seed.id === "studio.quick-setup" ? 3 : 2,
   title: seed.title,
   purpose: seed.purpose,
   audience: {
@@ -135,15 +143,15 @@ export const STUDIO_SCREEN_GUIDANCE: readonly ScreenGuidance[] = seeds.map((seed
   },
   prerequisites: [
     {
-      vi: seed.id === "studio.ai" ? "Bạn cần quyền xem cấu hình AI; quyền chỉnh sửa được kiểm tra riêng khi lưu." : "Bạn cần quyền xem Studio; quyền chỉnh sửa được kiểm tra riêng khi lưu.",
-      en: seed.id === "studio.ai" ? "You need AI configuration read access; edit permission is checked separately when saving." : "You need Studio read access; edit permission is checked separately when saving.",
+      vi: seed.id === "studio.communication-channels" ? "Cần quyền quản lý kênh riêng trong Workspace hiện tại. Live cần phê duyệt môi trường và bảo vệ thông tin xác thực; bình thường vẫn bị chặn." : seed.id === "studio.ai" ? "Bạn cần quyền xem cấu hình AI; quyền chỉnh sửa được kiểm tra riêng khi lưu." : "Bạn cần quyền xem Studio; quyền chỉnh sửa được kiểm tra riêng khi lưu.",
+      en: seed.id === "studio.communication-channels" ? "Explicit channel management permission is required in the current Workspace. Live requires environment admission and credential custody; it remains blocked by default." : seed.id === "studio.ai" ? "You need AI configuration read access; edit permission is checked separately when saving." : "You need Studio read access; edit permission is checked separately when saving.",
     },
   ],
   primaryTasks: [
     {
       id: "configure",
       text: seed.task,
-      requiredCapabilities: [seed.id === "studio.ai" ? CAPABILITIES.AI_CONFIGURATION_READ : CAPABILITIES.STUDIO_READ],
+      requiredCapabilities: [seed.id === "studio.communication-channels" ? CAPABILITIES.COMMUNICATIONS_CHANNELS_MANAGE : seed.id === "studio.ai" ? CAPABILITIES.AI_CONFIGURATION_READ : CAPABILITIES.STUDIO_READ],
     },
     {
       id: "review-impact",
@@ -151,13 +159,17 @@ export const STUDIO_SCREEN_GUIDANCE: readonly ScreenGuidance[] = seeds.map((seed
         vi: "Kiểm tra phạm vi ảnh hưởng và trạng thái lưu trước khi rời màn hình.",
         en: "Review the affected scope and save status before leaving the screen.",
       },
-      requiredCapabilities: [seed.id === "studio.ai" ? CAPABILITIES.AI_CONFIGURATION_READ : CAPABILITIES.STUDIO_READ],
+      requiredCapabilities: [seed.id === "studio.communication-channels" ? CAPABILITIES.COMMUNICATIONS_CHANNELS_MANAGE : seed.id === "studio.ai" ? CAPABILITIES.AI_CONFIGURATION_READ : CAPABILITIES.STUDIO_READ],
     },
   ],
   commonMistakes: [seed.mistake],
-  steps: [],
-  requiredCapabilities: [seed.id === "studio.ai" ? CAPABILITIES.AI_CONFIGURATION_READ : CAPABILITIES.STUDIO_READ],
+  steps: seed.id === "studio.communication-channels" ? [{
+    id: "telegram-lifecycle", targetId: "communications.telegram-lifecycle", optional: true, expectedAction: "view",
+    title: { vi: "Xác minh và vận hành Telegram", en: "Telegram verification and operation" },
+    body: { vi: "Trong tài khoản Telegram, kiểm tra quyền môi trường trước khi nhập token được che. Xác minh Bot rồi chủ động kích hoạt; theo dõi lần polling thành công và cập nhật đã lưu. Đổi token hoặc ngắt kết nối yêu cầu xác minh lại. Nếu bị lỗi hoặc xung đột, cập nhật trạng thái trước khi thử lại.", en: "In a Telegram account, check environment admission before entering a masked token. Verify the Bot, then explicitly activate; monitor successful polling and committed updates. Rotation or disconnect requires verification again. After errors or conflicts, refresh the authoritative state before retrying." },
+  }] : [],
+  requiredCapabilities: [seed.id === "studio.communication-channels" ? CAPABILITIES.COMMUNICATIONS_CHANNELS_MANAGE : seed.id === "studio.ai" ? CAPABILITIES.AI_CONFIGURATION_READ : CAPABILITIES.STUDIO_READ],
   keywords: seed.keywords,
   owner: "product-architecture",
-  reviewedAt: "2026-07-24",
+  reviewedAt: seed.id === "studio.communication-channels" ? "2026-10-17" : "2026-07-24",
 }));

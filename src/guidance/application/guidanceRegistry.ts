@@ -1,4 +1,5 @@
 import { STUDIO_SCREEN_GUIDANCE } from "@/guidance/content/studio/configuration";
+import { COMMUNICATIONS_SCREEN_GUIDANCE } from "@/guidance/content/crm/communications";
 import { CRM_SCREEN_GUIDANCE } from "@/guidance/content/crm/screens";
 import { CRM_EXTENDED_SCREEN_GUIDANCE } from "@/guidance/content/crm/extendedScreens";
 import { PEOPLE_SCREEN_GUIDANCE } from "@/guidance/content/people/screens";
@@ -10,6 +11,7 @@ import { validateGuidanceRegistry } from "@/guidance/domain/guidance.validation"
 import { ensureScreenWalkthrough } from "@/guidance/content/shared/createScreenGuidance";
 
 export const SCREEN_GUIDANCE = [
+  ...COMMUNICATIONS_SCREEN_GUIDANCE,
   ...CRM_SCREEN_GUIDANCE,
   ...CRM_EXTENDED_SCREEN_GUIDANCE,
   ...STUDIO_SCREEN_GUIDANCE,

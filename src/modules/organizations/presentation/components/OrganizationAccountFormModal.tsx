@@ -1,3 +1,4 @@
+import { useEffectiveAccess } from "@/platform/access-control";
 import React from "react";
 import { Building2, Crown, ShieldCheck, UserRound } from "lucide-react";
 import { Button, ConfirmDialog, Input, Modal, SearchableSelect, Select, Textarea } from "@/shared/components/ui";
@@ -106,6 +107,11 @@ export function OrganizationAccountFormModal({
 }: OrganizationAccountFormModalProps) {
   const { locale } = useI18n();
   const vi = locale === "vi";
+  const access = useEffectiveAccess();
+  const field = (key: string, control: React.ReactNode) => {
+    const permission = requestedConnected ? access.getFieldAccess("organizations", key) : "READ_WRITE";
+    return permission === "HIDDEN" ? null : <fieldset className="contents" disabled={permission !== "READ_WRITE"}>{control}</fieldset>;
+  };
   const lifecycle = useBoundFormDraft(isOpen, `${requestedMode}:${account?.id ?? "new"}`, { account, mode: requestedMode, connected: requestedConnected }, () => accountDraft(account), "Organization", onClose);
   const { mode, connected } = lifecycle.opening.current;
   const openingAccount = lifecycle.opening.current.account;
@@ -210,29 +216,29 @@ export function OrganizationAccountFormModal({
             </div>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
-            <Input id={`organization-${mode}-displayName`} label={vi ? "Tên tổ chức" : "Organization name"} required value={draft.displayName} onChange={(event) => update("displayName", event.target.value)} error={validationErrors.displayName} />
-            <Input id={`organization-${mode}-legalName`} label={vi ? "Tên pháp lý" : "Legal name"} error={validationErrors.legalName} value={draft.legalName} onChange={(event) => update("legalName", event.target.value)} />
-            <Input id={`organization-${mode}-taxCode`} label={vi ? "Mã số thuế" : "Tax code"} error={validationErrors.taxCode} value={draft.taxCode} onChange={(event) => update("taxCode", event.target.value)} />
-            <Input id={`organization-${mode}-industry`} label={vi ? "Ngành nghề" : "Industry"} error={validationErrors.industry} value={draft.industry} onChange={(event) => update("industry", event.target.value)} />
-            <Select label={vi ? "Quy mô" : "Size band"} value={draft.sizeBand} onChange={(event) => update("sizeBand", event.target.value)}>
+            {field("displayName", <Input id={`organization-${mode}-displayName`} label={vi ? "Tên tổ chức" : "Organization name"} required value={draft.displayName} onChange={(event) => update("displayName", event.target.value)} error={validationErrors.displayName} />)}
+            {field("legalName", <Input id={`organization-${mode}-legalName`} label={vi ? "Tên pháp lý" : "Legal name"} error={validationErrors.legalName} value={draft.legalName} onChange={(event) => update("legalName", event.target.value)} />)}
+            {field("taxCode", <Input id={`organization-${mode}-taxCode`} label={vi ? "Mã số thuế" : "Tax code"} error={validationErrors.taxCode} value={draft.taxCode} onChange={(event) => update("taxCode", event.target.value)} />)}
+            {field("industry", <Input id={`organization-${mode}-industry`} label={vi ? "Ngành nghề" : "Industry"} error={validationErrors.industry} value={draft.industry} onChange={(event) => update("industry", event.target.value)} />)}
+            {field("sizeBand", <Select label={vi ? "Quy mô" : "Size band"} value={draft.sizeBand} onChange={(event) => update("sizeBand", event.target.value)}>
               <option value="Micro">{vi ? "Siêu nhỏ" : "Micro"}</option>
               <option value="SME">{vi ? "Doanh nghiệp vừa và nhỏ" : "SME"}</option>
               <option value="Mid-market">{vi ? "Doanh nghiệp tầm trung" : "Mid-market"}</option>
               <option value="Enterprise">{vi ? "Doanh nghiệp lớn" : "Enterprise"}</option>
               <option value="Key Account">{vi ? "Khách hàng trọng điểm" : "Key Account"}</option>
-            </Select>
-            <Select label={vi ? "Trạng thái" : "Status"} value={draft.status} onChange={(event) => update("status", event.target.value as OrganizationAccountStatus)}>
+            </Select>)}
+            {field("status", <Select label={vi ? "Trạng thái" : "Status"} value={draft.status} onChange={(event) => update("status", event.target.value as OrganizationAccountStatus)}>
               <option value="prospect">{vi ? "Tiềm năng" : "Prospect"}</option>
               <option value="active">{vi ? "Đang hoạt động" : "Active"}</option>
               <option value="strategic">{vi ? "Chiến lược" : "Strategic"}</option>
               {mode === "edit" ? <option value="inactive">{vi ? "Ngừng hoạt động" : "Inactive"}</option> : null}
-            </Select>
-            <Input id={`organization-${mode}-website`} label="Website" error={validationErrors.website} value={draft.website} onChange={(event) => update("website", event.target.value)} />
-            <Input id={`organization-${mode}-domain`} label={vi ? "Tên miền" : "Domain"} error={validationErrors.domain} value={draft.domain} onChange={(event) => update("domain", event.target.value)} placeholder={normalizedDomain || "acme.vn"} />
-            <Input id={`organization-${mode}-phone`} label={vi ? "Điện thoại doanh nghiệp" : "Business phone"} error={validationErrors.phone} value={draft.phone} onChange={(event) => update("phone", event.target.value)} />
-            <Input id={`organization-${mode}-email`} label={vi ? "Email doanh nghiệp" : "Business email"} type="email" value={draft.email} onChange={(event) => update("email", event.target.value)} error={validationErrors.email} />
-            <Input id={`organization-${mode}-source`} label={vi ? "Nguồn" : "Source"} error={validationErrors.source} value={draft.source} onChange={(event) => update("source", event.target.value)} />
-            <Input id={`organization-${mode}-address`} label={vi ? "Địa chỉ" : "Address"} error={validationErrors.address} value={draft.address} onChange={(event) => update("address", event.target.value)} />
+            </Select>)}
+            {field("website", <Input id={`organization-${mode}-website`} label="Website" error={validationErrors.website} value={draft.website} onChange={(event) => update("website", event.target.value)} />)}
+            {field("domain", <Input id={`organization-${mode}-domain`} label={vi ? "Tên miền" : "Domain"} error={validationErrors.domain} value={draft.domain} onChange={(event) => update("domain", event.target.value)} placeholder={normalizedDomain || "acme.vn"} />)}
+            {field("phone", <Input id={`organization-${mode}-phone`} label={vi ? "Điện thoại doanh nghiệp" : "Business phone"} error={validationErrors.phone} value={draft.phone} onChange={(event) => update("phone", event.target.value)} />)}
+            {field("email", <Input id={`organization-${mode}-email`} label={vi ? "Email doanh nghiệp" : "Business email"} type="email" value={draft.email} onChange={(event) => update("email", event.target.value)} error={validationErrors.email} />)}
+            {field("source", <Input id={`organization-${mode}-source`} label={vi ? "Nguồn" : "Source"} error={validationErrors.source} value={draft.source} onChange={(event) => update("source", event.target.value)} />)}
+            {field("address", <Input id={`organization-${mode}-address`} label={vi ? "Địa chỉ" : "Address"} error={validationErrors.address} value={draft.address} onChange={(event) => update("address", event.target.value)} />)}
           </div>
         </section>
 
@@ -243,11 +249,11 @@ export function OrganizationAccountFormModal({
               <h3 className="text-xs font-semibold text-slate-900">{vi ? "Cá nhân đại diện chính" : "Primary representative"}</h3>
             </div>
             <div className="grid gap-4 md:grid-cols-2">
-              <Input id={`organization-${mode}-representativeName`} label={vi ? "Họ tên người đại diện" : "Representative name"} required value={draft.representativeName} onChange={(event) => update("representativeName", event.target.value)} error={validationErrors.representativeName} />
-              <Input id={`organization-${mode}-representativeRole`} label={vi ? "Vai trò / chức danh" : "Role / title"} error={validationErrors.representativeRole} value={draft.representativeRole} onChange={(event) => update("representativeRole", event.target.value)} />
-              <Input id={`organization-${mode}-representativeDepartment`} label={vi ? "Phòng ban" : "Department"} error={validationErrors.representativeDepartment} value={draft.representativeDepartment} onChange={(event) => update("representativeDepartment", event.target.value)} />
-              <Input id={`organization-${mode}-representativePhone`} label={vi ? "Số điện thoại" : "Phone number"} value={draft.representativePhone} onChange={(event) => update("representativePhone", event.target.value)} error={validationErrors.representativePhone} />
-              <Input id={`organization-${mode}-representativeEmail`} label="Email" type="email" value={draft.representativeEmail} onChange={(event) => update("representativeEmail", event.target.value)} error={validationErrors.representativeEmail} />
+              {field("representativeName", <Input id={`organization-${mode}-representativeName`} label={vi ? "Họ tên người đại diện" : "Representative name"} required value={draft.representativeName} onChange={(event) => update("representativeName", event.target.value)} error={validationErrors.representativeName} />)}
+              {field("representativeRole", <Input id={`organization-${mode}-representativeRole`} label={vi ? "Vai trò / chức danh" : "Role / title"} error={validationErrors.representativeRole} value={draft.representativeRole} onChange={(event) => update("representativeRole", event.target.value)} />)}
+              {field("representativeDepartment", <Input id={`organization-${mode}-representativeDepartment`} label={vi ? "Phòng ban" : "Department"} error={validationErrors.representativeDepartment} value={draft.representativeDepartment} onChange={(event) => update("representativeDepartment", event.target.value)} />)}
+              {field("representativePhone", <Input id={`organization-${mode}-representativePhone`} label={vi ? "Số điện thoại" : "Phone number"} value={draft.representativePhone} onChange={(event) => update("representativePhone", event.target.value)} error={validationErrors.representativePhone} />)}
+              {field("representativeEmail", <Input id={`organization-${mode}-representativeEmail`} label="Email" type="email" value={draft.representativeEmail} onChange={(event) => update("representativeEmail", event.target.value)} error={validationErrors.representativeEmail} />)}
               <div className="flex items-end">
                 <div className="flex min-h-[42px] w-full items-center gap-2 rounded-xl border border-violet-200 bg-white px-3 text-[10px] font-semibold text-violet-700">
                   <ShieldCheck size={14} />
@@ -259,12 +265,12 @@ export function OrganizationAccountFormModal({
         ) : mode === "edit" ? (
           <section className="rounded-2xl border border-amber-100 bg-amber-50/50 p-4">
             <div className="grid gap-4 md:grid-cols-2">
-              <Select label={vi ? "Mức quan hệ" : "Relationship level"} value={draft.relationshipLevel} onChange={(event) => update("relationshipLevel", event.target.value as OrganizationRelationshipLevel)}>
+              {field("relationshipLevel", <Select label={vi ? "Mức quan hệ" : "Relationship level"} value={draft.relationshipLevel} onChange={(event) => update("relationshipLevel", event.target.value as OrganizationRelationshipLevel)}>
                 <option value="new">{vi ? "Mới" : "New"}</option>
                 <option value="developing">{vi ? "Đang phát triển" : "Developing"}</option>
                 <option value="strong">{vi ? "Quan hệ tốt" : "Strong"}</option>
                 <option value="strategic">{vi ? "Chiến lược" : "Strategic"}</option>
-              </Select>
+              </Select>)}
               <div>
                 <SearchableSelect
                   disabled={connected}
@@ -291,7 +297,7 @@ export function OrganizationAccountFormModal({
           </section>
         ) : null}
 
-        <Textarea id={`organization-${mode}-notes`} label={vi ? "Ghi chú account" : "Account notes"} error={validationErrors.notes} value={draft.notes} onChange={(event) => update("notes", event.target.value)} rows={3} />
+        {field("notes", <Textarea id={`organization-${mode}-notes`} label={vi ? "Ghi chú account" : "Account notes"} error={validationErrors.notes} value={draft.notes} onChange={(event) => update("notes", event.target.value)} rows={3} />)}
 
         {submitError || error ? <p className="text-xs text-slate-600" role="alert">{submitError || error}</p> : null}
 

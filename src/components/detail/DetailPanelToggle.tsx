@@ -22,6 +22,7 @@ export const DetailPanelToggle: React.FC<DetailPanelToggleProps> = ({
   return (
     <button
       type="button"
+      data-i18n-skip="true"
       onClick={onToggle}
       aria-label={label}
       title={label}
