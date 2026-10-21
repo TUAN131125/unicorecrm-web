@@ -172,7 +172,8 @@ export const TaskDetailPage: React.FC = () => {
     <RecordDetailFrame id="task-detail-page">
       <button type="button" onClick={() => navigate("..")} className="inline-flex items-center gap-2 text-xs font-medium text-slate-500 hover:text-indigo-700"><ArrowLeft size={14} /> {vi ? "Quay lại Công việc" : "Back to Tasks"}</button>
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
+      {/* These labels already follow locale; the legacy DOM bridge must not restore a previous status literal. */}
+      <div data-i18n-skip="true" className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
         <main className="space-y-5">
           <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">

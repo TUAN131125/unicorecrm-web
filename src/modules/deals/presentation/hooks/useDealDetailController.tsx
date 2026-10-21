@@ -21,7 +21,7 @@ import { DEFAULT_CRM_WORKSPACE_CONFIG } from "@/platform/workspace-config/worksp
 import { useI18n } from "@/i18n";
 import { getOrdersForDeal } from "@/modules/orders";
 import type { CustomerOrder } from "@/modules/orders";
-import { logActivityViaApi, type ActivityType, type NoteActivityDraft, resolveActivityRecordingDate } from "@/modules/tasks";
+import { isManualActivityType, logActivityViaApi, type ActivityType, type NoteActivityDraft, resolveActivityRecordingDate } from "@/modules/tasks";
 import { closeDealLostCommand, closeDealWonCommand, isDealConnectedMode, transitionDealStageCommand, updateDealCommand } from "../../public/deals";
 import { invalidateModuleQueries } from "@/shared/application";
 import type { DealLineItem } from "../../domain/model/deal.types";
@@ -97,6 +97,8 @@ export function useDealDetailController({
     idempotencyKey?: string;
   }): Promise<boolean> => {
     if (!deal) return false;
+    // Automated Quote events cannot be submitted as manual HTTP audit evidence.
+    if (!isManualActivityType(input.taskType)) return false;
     const session = getAuthSessionSnapshot();
     if (!session) throw new Error(locale === "vi" ? "Phiên đăng nhập không còn hợp lệ." : "The authenticated session is no longer available.");
     const outcome = await logActivityViaApi({
@@ -190,12 +192,18 @@ export function useDealDetailController({
   };
 
   const quoteState = deal ? getOpportunityQuoteState(deal, quotes) : "none";
+  const quoteTransitionPending = React.useRef(false);
 
   const handleUpdateQuoteStatus = async (quoteId: string, newStatus: QuoteStatus) => {
     const targetQuote = quotes.find((quote) => quote.id === quoteId);
-    if (!targetQuote) return;
+    if (!targetQuote || quoteTransitionPending.current) return;
+    if (targetQuote.status === newStatus) {
+      triggerToast("success", locale === "vi" ? "Trạng thái báo giá đã được cập nhật." : "Quote status is already updated.");
+      return;
+    }
 
     const now = new Date().toISOString();
+    quoteTransitionPending.current = true;
     try {
       const updatedQuote = newStatus === QuoteStatus.ACCEPTED
         ? (await acceptQuoteAndCloseDealCommand(
@@ -205,46 +213,18 @@ export function useDealDetailController({
         : (await transitionQuoteStatusCommand(quoteId, newStatus, now)).data;
       if (!updatedQuote) return;
 
-      let activityTitle = "";
-      let activityDescription = "";
-      if (newStatus === QuoteStatus.REVIEW) {
-        activityTitle = locale === "vi" ? "Báo giá chuyển sang duyệt" : "Quote submitted for review";
-        activityDescription = `#${targetQuote.quoteNumber} v${targetQuote.version}`;
-      } else if (newStatus === QuoteStatus.SENT) {
-        activityTitle = t("deals.activities.quoteSentTitle");
-        activityDescription = t("deals.activities.quoteSentDescription", { quoteNumber: targetQuote.quoteNumber });
-      } else if (newStatus === QuoteStatus.ACCEPTED) {
-        activityTitle = t("deals.activities.quoteAcceptedTitle");
-        activityDescription = t("deals.activities.quoteAcceptedDescription", { quoteNumber: targetQuote.quoteNumber });
-      } else if (newStatus === QuoteStatus.REJECTED) {
-        activityTitle = t("deals.activities.quoteRejectedTitle");
-        activityDescription = t("deals.activities.quoteRejectedDescription", { quoteNumber: targetQuote.quoteNumber });
-      }
-
-      if (deal && activityTitle) {
-        await logDealTimelineActivity({
-          activityType: "quote",
-          taskType: "SYSTEM",
-          title: activityTitle,
-          description: activityDescription,
-          occurredAt: now,
-          sourceType: "QUOTE_STATUS",
-          sourceId: targetQuote.id,
-          metadata: {
-            quoteId: targetQuote.id,
-            quoteNumber: targetQuote.quoteNumber,
-            quoteStatus: newStatus,
-          },
-        });
-      }
-
+      // The Quote command owns transition evidence. Manual Activity cannot record SYSTEM audit.
       if (newStatus === QuoteStatus.ACCEPTED && deal) {
         triggerToast("success", locale === "vi"
           ? "Quote Accepted đã cung cấp commercial commitment evidence; Deal được đóng WON."
           : "Quote Accepted supplied commercial commitment evidence; the Deal is now WON.");
+      } else {
+        triggerToast("success", locale === "vi" ? "Đã cập nhật trạng thái báo giá." : "Quote status updated.");
       }
     } catch (error) {
       triggerToast("error", formatApplicationError(error, { locale }));
+    } finally {
+      quoteTransitionPending.current = false;
     }
   };
 

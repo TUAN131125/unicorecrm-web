@@ -5,13 +5,6 @@ import type { Contact } from "../../domain/model/contact.types";
 export function findCustomerForContact(
   contact: Pick<Contact, "id" | "organizationAccountId">,
 ): Customer | undefined {
-  if (contact.organizationAccountId) {
-    const organizationCustomer = findCustomerByRelationshipRefSnapshot({
-      type: "ORGANIZATION_ACCOUNT",
-      id: contact.organizationAccountId,
-    });
-    if (organizationCustomer) return organizationCustomer;
-  }
   return findCustomerByRelationshipRefSnapshot({ type: "CONTACT", id: contact.id });
 }
 

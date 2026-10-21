@@ -1,10 +1,10 @@
 import type { EffectiveAccess } from "@/platform/access-control";
 import type { Activity } from "@/modules/tasks";
 
-// Mirrors the existing Tasks Activity fail-closed boundary; this never grants access.
+// The server authorizes referenced CRM records. This only avoids unsupported requests.
 const taskFields = ["id", "title", "status", "priority", "assigneeId", "dueAt", "createdAt", "updatedAt", "resourceVersion", "description", "completedAt", "cancelledAt", "cancellationReason", "outcome", "relationshipRef", "recordRef", "sourceRef", "archivedAt", "archiveReason"];
 export function isLeadActivitySourceReachable(access: EffectiveAccess): boolean {
-  return access.getDataScope("tasks") === "WORKSPACE" && taskFields.every(field => access.getFieldAccess("tasks", field) === "READ_WRITE");
+  return ["OWN", "WORKSPACE"].includes(access.getDataScope("leads")) && taskFields.every(field => access.getFieldAccess("tasks", field) === "READ_WRITE");
 }
 
 export const leadHistoryTypes = ["CALL", "EMAIL", "MESSAGE", "MEETING", "NOTE", "SYSTEM"] as const;

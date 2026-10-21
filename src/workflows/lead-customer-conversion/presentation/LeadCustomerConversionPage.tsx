@@ -31,7 +31,7 @@ export const LeadCustomerConversionPage: React.FC = () => {
     if (initialized.current !== lifecycle.cycle) { initialized.current = lifecycle.cycle; reset(); }
   });
   const saveRef = useRef<() => Promise<boolean>>(async () => false);
-  lifecycle.register(Boolean(!result && (subjectType !== "CONTACT" || subjectId !== "" || intent.current)), reset, () => saveRef.current());
+  lifecycle.register(Boolean(!result && !authoritativeCustomerRef && (subjectType !== "CONTACT" || subjectId !== "" || intent.current)), reset, () => saveRef.current());
 
   const convert = async (): Promise<boolean> => {
     if (!lifecycle.begin()) return false;
@@ -43,8 +43,11 @@ export const LeadCustomerConversionPage: React.FC = () => {
       const response = await convertLeadToCustomer(targetId, current.expectedVersion, current.idempotencyKey, {
         accountSubject: { type: current.subjectType, mode: "EXISTING", id: current.subjectId },
       });
-      await invalidateModuleQueries({ moduleKeys: ["leads", "customers"], commandType: "lead.convert-to-customer", aggregateId: targetId, occurredAt: response.occurredAt });
+      // The mutation has committed. Background read-model refresh must not keep a
+      // hidden conversion draft/pending guard on the persisted Customer link.
       if (lifecycle.isCurrent()) setResult(response);
+      lifecycle.finish();
+      await invalidateModuleQueries({ moduleKeys: ["leads", "customers"], commandType: "lead.convert-to-customer", aggregateId: targetId, occurredAt: response.occurredAt });
       return true;
     } catch (caught) {
       if (!lifecycle.isCurrent()) return false;

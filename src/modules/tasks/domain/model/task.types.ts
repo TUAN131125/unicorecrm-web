@@ -3,6 +3,8 @@ import type { RelationshipRef } from "@/platform/identity";
 export type TaskStatus = "OPEN" | "COMPLETED" | "CANCELLED";
 export type TaskPriority = "LOW" | "NORMAL" | "HIGH" | "URGENT";
 export type ActivityType = "CALL" | "EMAIL" | "MEETING" | "NOTE" | "MESSAGE" | "SYSTEM";
+/** Manual HTTP writes exclude trusted system events; read/history retains ActivityType. */
+export type ManualActivityType = Exclude<ActivityType, "SYSTEM">;
 
 export interface RecordRef {
   moduleKey: string;

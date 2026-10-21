@@ -6213,7 +6213,8 @@
       "openHandleGraceMs": 250,
       "requires": [
         "node",
-        "tsx"
+        "tsx",
+        "typescript"
       ],
       "shardKey": "quality.commercial-flow-regressions",
       "steps": [

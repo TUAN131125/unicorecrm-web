@@ -62,7 +62,7 @@ export function useLeadHistory(recordId: string, type?: ActivityType) {
   const access = useEffectiveAccess();
   const connected = getTaskApiRuntime().mode === "connected";
   const session = getAuthSessionSnapshot();
-  const readable = access.can(CAPABILITIES.TASKS_READ) && (!connected || (session?.status === "ACTIVE" && session.principal.accountId === access.accountId));
+  const readable = access.can(CAPABILITIES.LEADS_READ) && access.can(CAPABILITIES.TASKS_READ) && (!connected || (session?.status === "ACTIVE" && session.principal.accountId === access.accountId));
   const reachable = !connected || isLeadActivitySourceReachable(access);
   const enabled = Boolean(recordId) && readable && reachable;
   const entry = getLeadHistoryQuery(recordId, type);

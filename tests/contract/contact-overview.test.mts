@@ -33,6 +33,18 @@ await ac.loadAccessGovernance(ws.getWorkspaceContextSnapshot().workspaceId);
 const binding = ac.getAccessGovernanceRuntimeBinding();
 const baselineAccess = ac.resolveEffectiveAccess();
 const initialWorkspaceId = ws.getWorkspaceContextSnapshot().workspaceId;
+const { saveCustomerSnapshot } = await import("@/modules/customers");
+const { findCustomerForContact } = await import("@/modules/contacts/presentation/model/contactCustomerLookup");
+const customerFixture: import("@/modules/customers").Customer = {
+  id:"lookup-organization-customer", workspaceId:initialWorkspaceId, customerCode:"CU-ORG-LOOKUP", type:"B2B",
+  relationshipRef:{type:"ORGANIZATION_ACCOUNT",id:"lookup-organization"}, status:"NEW", health:null,
+  firstPurchaseAt:null,lastPurchaseAt:null,tags:[],createdAt:"2026-10-21T00:00:00Z",updatedAt:"2026-10-21T00:00:00Z",
+};
+saveCustomerSnapshot(customerFixture);
+const lookupContact={id:"lookup-contact",organizationAccountId:"lookup-organization"};
+assert.equal(findCustomerForContact(lookupContact),undefined,"An Organization Customer is not a direct Contact Customer");
+saveCustomerSnapshot({...customerFixture,id:"lookup-contact-customer",customerCode:"CU-CONTACT-LOOKUP",type:"B2C",relationshipRef:{type:"CONTACT",id:lookupContact.id}});
+assert.equal(findCustomerForContact(lookupContact)?.id,"lookup-contact-customer","Direct Contact subject wins even with an affiliated Organization Customer");
 const listeners = new Set<() => void>();
 const initialAccount = baselineAccess.accountId;
 let canRelated = true, hiddenProfile = false;
@@ -55,7 +67,7 @@ const at="2026-10-19T10:20:30Z";
 const contact: import("@/modules/contacts").Contact={id:"overview-contact",name:"HEADER-ONLY-NAME",fullName:"HEADER-ONLY-NAME",email:"header-only@example.invalid",phone:"000",department:"HIDDEN-DEPARTMENT",title:"Finance manager",createdAt:at,status:"active"};
 let mode="empty", hasMore=false;
 let release: ((value: import("@/modules/contacts/application/ports/ContactApiRuntime").ContactRelationshipSummary)=>void) | undefined;
-const summary=():import("@/modules/contacts/application/ports/ContactApiRuntime").ContactRelationshipSummary=>({contact,organizationIds:[],customerIds:[],linkedRecords:[],linkedRecordCounts:{tasks:999,activities:999,deals:999,quotes:999,orders:999,invoices:999,payments:999,shipping:999,returns:999,supportCases:999},allowedActions:[],projectionVersion:1,generatedAt:at,
+const summary=():import("@/modules/contacts/application/ports/ContactApiRuntime").ContactRelationshipSummary=>({contact,organizationIds:[],customerIds:mode==="subject"?["canonical-customer"]:[],linkedRecords:mode==="subject"?[{moduleKey:"customers",recordId:"canonical-customer",label:"CANONICAL SUBJECT CUSTOMER"}]:[],linkedRecordCounts:{tasks:999,activities:999,deals:999,quotes:999,orders:999,invoices:999,payments:999,shipping:999,returns:999,supportCases:999},allowedActions:[],projectionVersion:1,generatedAt:at,
  organizationRelationships:mode==="linked" ? [{id:"org-rel",organizationAccountId:"org-exact",organizationLabel:"AUTHORIZED ORG",role:"employee",isPrimaryRepresentative:false,isPrimaryAffiliation:true,effectiveFrom:at,createdAt:at}] : [],
  customerRelationships:mode==="linked" ? [{id:"customer-rel",customerId:"customer-exact",customerLabel:"AUTHORIZED CUSTOMER",role:"primary_contact",effectiveFrom:at,createdAt:at}] : []});
 contactServices.configureContactApplication({...originalContact,api:{...originalContact.api,mode:"connected",queries:{...originalContact.api.queries,async getRelationshipSummary(){if(mode==="delay")return new Promise(resolve=>{release=resolve;});if(mode==="error")throw new ApplicationError({code:"NETWORK_ERROR",category:"NETWORK",message:"SECRET-DIAGNOSTIC"});return summary();}}}});
@@ -72,6 +84,7 @@ try {
  await update(()=>{mode="linked";});assert.match(container.textContent??"",/AUTHORIZED ORG/);assert.match(container.textContent??"",/AUTHORIZED CUSTOMER/);assert.match(container.textContent??"",/Quan hệ chính/);
  const orgButton=Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(b=>b.textContent === "AUTHORIZED ORG");assert.ok(orgButton);await act(async()=>orgButton.click());assert.equal(currentPath,"/organizations/org-exact");
  const customerButton=Array.from(container.querySelectorAll<HTMLButtonElement>("button")).find(b=>b.textContent === "AUTHORIZED CUSTOMER");assert.ok(customerButton);await act(async()=>customerButton.click());assert.equal(currentPath,"/customers/customer-exact");
+ await update(()=>{mode="subject";});assert.match(container.textContent??"",/CANONICAL SUBJECT CUSTOMER/);assert.match(container.textContent??"",/1 hồ sơ khách hàng/);assert.doesNotMatch(container.textContent??"",/Liên hệ chính/);
  await update(()=>{canRelated=false;});assert.doesNotMatch(container.textContent??"",/AUTHORIZED ORG|AUTHORIZED CUSTOMER/);assert.match(container.textContent??"",/chưa khả dụng với quyền/);
  await update(()=>{hiddenProfile=true;hasMore=true;});assert.doesNotMatch(container.textContent??"",/HIDDEN-DEPARTMENT/);assert.match(container.textContent??"",/Chưa có tổng số đáng tin cậy/);
  await update(()=>{mode="error";});assert.match(container.textContent??"",/Không thể tải quan hệ/);assert.doesNotMatch(container.textContent??"",/SECRET-DIAGNOSTIC/);

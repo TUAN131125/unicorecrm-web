@@ -128,7 +128,7 @@
         "tags": [
           "Tasks"
         ],
-        "summary": "Log relationship activity",
+        "summary": "Log a manual CRM Activity",
         "parameters": [
           {
             "$ref": "#/components/parameters/WorkspaceIdHeader"
@@ -215,7 +215,7 @@
             }
           },
           "422": {
-            "description": "Problem Details",
+            "description": "VALIDATION_FAILED Problem Details: unsupported/SYSTEM Activity type, missing supported CRM reference, malformed or structurally contradictory references, or invalid/forged sourceRef. No Activity is written.",
             "content": {
               "application/problem+json": {
                 "schema": {
@@ -282,12 +282,118 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/LogActivityRequest"
+              },
+              "examples": {
+                "contactCall": {
+                  "summary": "Manual Call; sourceRef is optional",
+                  "value": {
+                    "type": "CALL",
+                    "subject": "Follow-up call",
+                    "recordRef": {
+                      "moduleKey": "contacts",
+                      "recordId": "contact_example"
+                    }
+                  }
+                },
+                "relationshipOnlyNote": {
+                  "summary": "Contact relationship-only manual Note",
+                  "value": {
+                    "type": "NOTE",
+                    "subject": "Meeting notes",
+                    "relationshipRef": {
+                      "type": "CONTACT",
+                      "id": "contact_example"
+                    }
+                  }
+                },
+                "customerContactNote": {
+                  "summary": "Both Customer and its canonical Contact must be authorized and related",
+                  "value": {
+                    "type": "NOTE",
+                    "subject": "Customer follow-up",
+                    "recordRef": {
+                      "moduleKey": "customers",
+                      "recordId": "customer_example"
+                    },
+                    "relationshipRef": {
+                      "type": "CONTACT",
+                      "id": "contact_example"
+                    },
+                    "sourceRef": {
+                      "type": "CUSTOMER_360",
+                      "id": "customer_example"
+                    }
+                  }
+                }
               }
             }
           }
         },
         "x-request-projection": "TASK_LOG_ACTIVITY",
-        "x-aggregate-id-policy": "SERVER_ASSIGNED"
+        "x-aggregate-id-policy": "SERVER_ASSIGNED",
+        "description": "Manual HTTP Activity only; SYSTEM and unknown types return 422. At least one supported CRM recordRef (leads, contacts, organizations, customers) or relationshipRef (CONTACT, ORGANIZATION_ACCOUNT) is required. A relationship-only request targets that Contact or Organization. When both are supplied, the record owner must prove the relationship and every target must independently pass current read capability, record scope, field policy, Workspace and write-lifecycle validation. Missing, foreign, denied or ineligible targets return 404 without exposing record existence. Structurally contradictory references return 422; a relationship not proved by owner data returns 404. SourceRef is optional, is only a UI origin marker, and must never contain audit evidence. Data-dependent authorization/relationship checks are Backend authority, not JSON Schema guarantees.",
+        "x-invalid-request-examples": {
+          "systemWrite": {
+            "expectedStatus": 422,
+            "value": {
+              "type": "SYSTEM",
+              "subject": "Forged system event",
+              "recordRef": {
+                "moduleKey": "contacts",
+                "recordId": "contact_example"
+              }
+            }
+          },
+          "unknownType": {
+            "expectedStatus": 422,
+            "value": {
+              "type": "UNKNOWN",
+              "subject": "Invalid activity",
+              "recordRef": {
+                "moduleKey": "contacts",
+                "recordId": "contact_example"
+              }
+            }
+          },
+          "unanchored": {
+            "expectedStatus": 422,
+            "value": {
+              "type": "NOTE",
+              "subject": "No CRM target"
+            }
+          },
+          "contradictoryContact": {
+            "expectedStatus": 422,
+            "value": {
+              "type": "NOTE",
+              "subject": "Contradictory targets",
+              "recordRef": {
+                "moduleKey": "contacts",
+                "recordId": "contact_example"
+              },
+              "relationshipRef": {
+                "type": "CONTACT",
+                "id": "another_contact"
+              }
+            }
+          },
+          "forgedSource": {
+            "expectedStatus": 422,
+            "value": {
+              "type": "NOTE",
+              "subject": "Forged origin",
+              "recordRef": {
+                "moduleKey": "contacts",
+                "recordId": "contact_example"
+              },
+              "sourceRef": {
+                "type": "SYSTEM",
+                "id": "contact_example",
+                "evidence": "untrusted-client-claim"
+              }
+            }
+          }
+        }
       },
       "get": {
         "operationId": "listActivities",
@@ -65262,7 +65368,7 @@
         ],
         "properties": {
           "type": {
-            "$ref": "#/components/schemas/ActivityType"
+            "$ref": "#/components/schemas/ManualActivityType"
           },
           "subject": {
             "type": "string",
@@ -65275,15 +65381,19 @@
             "maxLength": 10000
           },
           "relationshipRef": {
-            "$ref": "#/components/schemas/BuyerRef"
+            "$ref": "#/components/schemas/BuyerRef",
+            "description": "Optional together with recordRef, or the primary target when recordRef is absent. CONTACT and ORGANIZATION_ACCOUNT are supported. All references require consistent owner-owned relationship facts and independent authorization."
           },
           "recordRef": {
-            "$ref": "#/components/schemas/RecordReference"
+            "$ref": "#/components/schemas/RecordReference",
+            "description": "Supported manual Activity target: leads, contacts, organizations or customers. RecordId must exist in the authenticated Workspace and permit the current caller. Task/deal references are not supported by this HTTP Activity operation."
           },
           "sourceRef": {
-            "$ref": "#/components/schemas/TaskSourceReference"
+            "$ref": "#/components/schemas/TaskSourceReference",
+            "description": "Optional UI origin without evidence. Id must equal the primary target ID. Allowed types by primary module: leads LEAD_ACTIVITY/LEAD_DETAIL; contacts CONTACT_ACTIVITY/CONTACT_DETAIL; organizations ORGANIZATION_ACTIVITY/ORGANIZATION_DETAIL; customers CUSTOMER_ACTIVITY/CUSTOMER_DETAIL/CUSTOMER_360. SYSTEM and arbitrary source types are rejected with 422."
           }
-        }
+        },
+        "description": "Manual HTTP Activity only; SYSTEM and unknown types return 422. At least one supported CRM recordRef (leads, contacts, organizations, customers) or relationshipRef (CONTACT, ORGANIZATION_ACCOUNT) is required. A relationship-only request targets that Contact or Organization. When both are supplied, the record owner must prove the relationship and every target must independently pass current read capability, record scope, field policy, Workspace and write-lifecycle validation. Missing, foreign, denied or ineligible targets return 404 without exposing record existence. Structurally contradictory references return 422; a relationship not proved by owner data returns 404. SourceRef is optional, is only a UI origin marker, and must never contain audit evidence. Data-dependent authorization/relationship checks are Backend authority, not JSON Schema guarantees."
       },
       "ManualPaymentRequest": {
         "type": "object",
@@ -82533,6 +82643,17 @@
             ]
           }
         }
+      },
+      "ManualActivityType": {
+        "type": "string",
+        "description": "HTTP manual-write Activity types. SYSTEM is reserved for trusted system events and remains read-only in this contract.",
+        "enum": [
+          "CALL",
+          "EMAIL",
+          "MEETING",
+          "NOTE",
+          "MESSAGE"
+        ]
       }
     }
   },

@@ -49,7 +49,7 @@ const { I18nProvider } = await import("@/i18n"), { MemoryRouter, useLocation } =
 function LocationProbe() { return React.createElement("output", { "data-test-location": useLocation().pathname }); }
 const host = document.getElementById("root"); if (!host) throw new Error("fixture root");
 const root = createRoot(host); let generation = 0;
-async function render(id = "customer-A", visible = true) { await act(async () => root.render(React.createElement(I18nProvider, null, React.createElement(MemoryRouter, null, React.createElement(React.Fragment, null, React.createElement(CustomerRelationshipPanel, { key: ++generation, customerId: id, visible }), React.createElement(LocationProbe)))))); }
+async function render(id = "customer-A", visible = true) { await act(async () => root.render(React.createElement(I18nProvider, null, React.createElement(MemoryRouter, null, React.createElement(React.Fragment, null, React.createElement(CustomerRelationshipPanel, { key: ++generation, customerId: id, customerLabel: "Authorized Customer", visible }), React.createElement(LocationProbe)))))); }
 async function click(text: string) { const b = [...document.querySelectorAll("button")].find(b => b.textContent === text); assert.ok(b, text); await act(async () => b.click()); }
 await render(); assert.equal(document.querySelectorAll("[data-customer-task-id]").length, 50); assert.ok(!document.body.textContent?.includes("WRONG-CUSTOMER")); assert.ok(!document.body.textContent?.includes("CONTACT-TASK"));
 await click("Tải thêm công việc"); assert.equal(document.querySelectorAll("[data-customer-task-id]").length, 51);
@@ -77,6 +77,7 @@ assert.match(document.body.textContent ?? "", /Only authoritative identity/); as
 const meetingButton = [...document.querySelectorAll("button")].find(x => x.textContent === "Tạo cuộc hẹn");
 assert.ok(meetingButton); assert.equal(meetingButton.disabled, true);
 assert.equal(document.querySelector("#customer-meeting-form-title"), null);
-assert.equal([...document.querySelectorAll("button")].some(x => /Tạo công việc/.test(x.textContent ?? "")), false);
+const createButton = document.querySelector<HTMLButtonElement>('[data-guidance-id="customers.detail.create-task"]');
+assert.ok(createButton); assert.equal(createButton.disabled, true, "Task creation requires current Customer record authority");
 assert.ok(document.querySelector('button[aria-controls]')); await act(async () => root.unmount());
-console.log("PASS isolated Customer panel/Overview: exact direct refs, stable dedup paging, Activity detail/Escape, loading/empty/error/retry, scope/FLS refusal, retired response, projected-only identity, Meeting disabled without record authority and generic creation absent. Not connected evidence.");
+console.log("PASS isolated Customer panel/Overview: exact direct refs, stable dedup paging, Activity detail/Escape, loading/empty/error/retry, scope/FLS refusal, retired response, projected-only identity, Meeting and Task creation disabled without record authority. Not connected evidence.");

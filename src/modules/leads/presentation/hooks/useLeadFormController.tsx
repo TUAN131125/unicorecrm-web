@@ -316,7 +316,9 @@ export function useLeadFormController(props: LeadFormProps) {
   };
 
   const save = async (globalSave = false): Promise<boolean> => {
-    globalSave = globalSave || Boolean(props.onSave);
+    // A normal create submit closes its own modal via onSubmit. The explicit
+    // unsaved-work binding and existing edit-target protocol retain onSave semantics.
+    globalSave = globalSave || Boolean(isEdit && props.onSave);
     if (submitInFlightRef.current || !mounted.current || openingWorkspace.current !== getWorkspaceContextSnapshot().workspaceId
       || openingTarget.current !== initialLead?.id || (globalSave && !props.onSave)) return false;
     const newErrors: Record<string, string> = {};

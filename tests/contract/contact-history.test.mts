@@ -104,8 +104,8 @@ try {
   await update(() => { mode = "deny"; revision++; });
   check("403 denied not empty and no diagnostics", () => { assert.match(container.textContent ?? "", /không có quyền/); assert.doesNotMatch(container.textContent ?? "", /Không có hoạt động|secret diagnostic/); });
   const beforeUnavailable = requests.length;
-  await update(() => { scope = "OWN"; revision++; });
-  check("unsupported Activity scope unavailable without querying", () => { assert.match(container.textContent ?? "", /chưa hỗ trợ/); assert.equal(requests.length, beforeUnavailable); });
+  await update(() => { scope = "OWN"; mode = "data"; revision++; });
+  check("OWN delegates record scope to the backend and displays authorized history", () => { assert.ok(requests.length > beforeUnavailable); assert.ok(container.querySelector('[data-history-id]')); });
   await update(() => { scope = "WORKSPACE"; restrictive = true; revision++; });
   check("restrictive FLS unavailable without content", () => { assert.match(container.textContent ?? "", /chưa hỗ trợ/); assert.equal(container.querySelectorAll('[data-history-id]').length, 0); });
   await update(() => { restrictive = false; mode = "error"; revision++; });

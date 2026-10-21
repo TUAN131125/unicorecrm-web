@@ -23,7 +23,7 @@ export function CustomerConnectedWorkspace({ projection }: { projection: Custome
         <CustomerDetailTabs activeTab={tab} setActiveTab={setTab} counts={{}} isRightPanelVisible={visible} onToggleRightPanel={() => setVisible(value => !value)}/>
         <div className="p-4 sm:p-5">{tab === "overview" || tab === "relationship" ? <CustomerConnectedOverview projection={projection}/> : tab === "work" ? <div className="space-y-3"><p>{text("Xem Công việc và Lịch sử trong bảng quan hệ.", "Use Work and History in the relationship panel.")}</p><Button onClick={() => setVisible(true)}>{text("Hiện bảng quan hệ", "Show relationship panel")}</Button></div> : <p role="status">{text("Chưa có dữ liệu liên kết được xác minh cho mục này.", "A verified related-data projection is unavailable for this section.")}</p>}</div>
       </main>
-      <CustomerRelationshipPanel customerId={projection.customer.id} status={projection.customer.status} visible={visible}/>
+      <CustomerRelationshipPanel key={projection.customer.id} customerId={projection.customer.id} customerLabel={`${projection.customer.customerCode} · ${projection.identity.displayName}`} status={projection.customer.status} visible={visible}/>
     </div>
   </div>;
 }

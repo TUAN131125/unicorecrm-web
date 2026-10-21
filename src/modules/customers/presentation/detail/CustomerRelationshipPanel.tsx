@@ -1,4 +1,5 @@
-import { MeetingActivityCreateModal } from "@/modules/tasks";
+import { MeetingActivityCreateModal, TaskCreateModal, getTaskApiRuntime } from "@/modules/tasks";
+import { useEffectiveAccess, useEffectiveRecordAccessDecision } from "@/platform/access-control";
 import { useCustomerMeeting } from "../hooks/useCustomerMeeting";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -9,13 +10,19 @@ import { RelationshipWorkPanelShell, type RelationshipPanelMode } from "@/compon
 import { WorkSection, WorkTaskItem, workHeaderClass, workTitleClass } from "@/components/crm/relationship-panel/RelationshipWorkPresentation";
 import { useCustomerPanelData } from "../hooks/useCustomerPanelData";
 
-export function CustomerRelationshipPanel({ customerId, status, visible }: { customerId: string; status?: string; visible: boolean }) {
+export function CustomerRelationshipPanel({ customerId, customerLabel, status, visible }: { customerId: string; customerLabel: string; status?: string; visible: boolean }) {
   const { locale } = useI18n();
   const vi = locale === "vi";
   const text = (a: string, b: string) => vi ? a : b;
   const navigate = useNavigate();
   const [mode, setMode] = useState<RelationshipPanelMode>("WORK");
   const [selectedId, setSelectedId] = useState<string>();
+  const [taskOpen, setTaskOpen] = useState(false);
+  const [taskCreated, setTaskCreated] = useState(false);
+  const access = useEffectiveAccess();
+  const record = useEffectiveRecordAccessDecision();
+  const canCreateTask = Boolean(record?.canRead && access.can("customers.view") && access.canPerform("tasks", "create")
+    && status && ["NEW", "ACTIVE", "INACTIVE"].includes(status) && getTaskApiRuntime().mode === "connected");
   const data = useCustomerPanelData(customerId, mode === "HISTORY", visible);
   const meeting = useCustomerMeeting(customerId, status, data.taskEntry.refresh);
   useEffect(() => { if (!visible) setSelectedId(undefined); }, [visible]);
@@ -43,11 +50,17 @@ export function CustomerRelationshipPanel({ customerId, status, visible }: { cus
     <p className="text-[10px] text-slate-500">{text("Chỉ gồm hoạt động gắn trực tiếp Customer; không suy diễn từ Task, Contact hoặc Organization. Ghi nhận Email/SMS không xác nhận gửi.", "Direct Customer activities only; no inferred Task, Contact or Organization history. Email/SMS logs do not confirm delivery.")}</p>
     <Modal isOpen={Boolean(selected)} onClose={() => setSelectedId(undefined)} title={text("Chi tiết hoạt động", "Activity detail")} size="sm">{selected && <article className="space-y-3 text-sm [overflow-wrap:anywhere]"><h3>{selected.subject}</h3><time dateTime={selected.occurredAt}>{date(selected.occurredAt)}</time><p>{resolveWorkspaceMemberLabel(selected.actorId, vi ? "vi" : "en")}</p><p className="whitespace-pre-wrap">{selected.body}</p></article>}</Modal>
   </section>;
-  return <><MeetingActivityCreateModal targetId={customerId} recordingOnly guardChanges isOpen={meeting.isOpen} onClose={meeting.close} formId="customer-meeting-form" defaults={{ reminder: false }} onSubmit={async () => {}} onSave={meeting.save}/><RelationshipWorkPanelShell isVisible={visible} motionKey={customerId} panelId="customer-right-work-panel" ariaLabel={text("Bảng quan hệ khách hàng", "Customer relationship panel")}
+  return <><TaskCreateModal key={customerId} targetId={customerId} formId="customer-task-create-form"
+    isOpen={taskOpen && canCreateTask} onClose={() => setTaskOpen(false)}
+    context={{ recordRef: { moduleKey: "customers", recordId: customerId }, sourceRef: { type: "CUSTOMER_360", id: customerId }, label: customerLabel }}
+    onCreated={() => { setTaskCreated(true); void data.taskEntry.refresh(); }}/>
+  <MeetingActivityCreateModal targetId={customerId} recordingOnly guardChanges isOpen={meeting.isOpen} onClose={meeting.close} formId="customer-meeting-form" defaults={{ reminder: false }} onSubmit={async () => {}} onSave={meeting.save}/><RelationshipWorkPanelShell isVisible={visible} motionKey={customerId} panelId="customer-right-work-panel" ariaLabel={text("Bảng quan hệ khách hàng", "Customer relationship panel")}
     bodyClassName="max-h-[60vh] space-y-3 overflow-y-auto pr-1 crm-scroll-y xl:max-h-none"
     header={<div className={workHeaderClass}><h2 className={workTitleClass}>{mode === "WORK" ? text("Công việc khách hàng", "Customer work") : text("Lịch sử khách hàng", "Customer history")}</h2></div>}
     mode={{ value: mode, onChange: value => { setMode(value); setSelectedId(undefined); }, workLabel: text("Công việc", "Work"), historyLabel: text("Lịch sử", "History"), label: text("Chế độ bảng quan hệ", "Relationship panel mode") }} history={history}
-    footer={<div className="space-y-2"><Button data-guidance-id="customers.detail.meeting" disabled={!meeting.canCreate} onClick={meeting.open}>{text("Tạo cuộc hẹn", "Create meeting")}</Button><p className="text-xs text-slate-500">{text("Cuộc hẹn được lưu thành công việc; chọn chính bạn trong Workspace. Khách hàng lưu trữ không nhận cuộc hẹn mới. Lịch sử không tự sinh hoạt động.", "Meetings are saved as tasks; select yourself in the Workspace. Archived customers cannot receive new meetings. History does not fabricate activities.")}</p></div>}>
+    footer={<div className="space-y-2"><Button data-guidance-id="customers.detail.create-task" disabled={!canCreateTask} onClick={() => { setTaskCreated(false); setTaskOpen(true); }}>{text("Tạo công việc", "Create task")}</Button>
+      {taskCreated && <p role="status">{text("Đã tạo công việc.", "Task created.")}</p>}
+      <Button data-guidance-id="customers.detail.meeting" disabled={!meeting.canCreate} onClick={meeting.open}>{text("Tạo cuộc hẹn", "Create meeting")}</Button><p className="text-xs text-slate-500">{text("Công việc gắn trực tiếp khách hàng; chọn thành viên Workspace làm người phụ trách. Khách hàng lưu trữ không nhận công việc mới. Cuộc hẹn vẫn là thao tác riêng; không tự sinh hoạt động.", "Tasks link directly to this Customer; select a Workspace member as assignee. Archived customers cannot receive new tasks. Meeting creation remains a separate action and does not fabricate activities.")}</p></div>}>
     <WorkSection first title={text("Công việc liên quan trực tiếp", "Directly linked work")}>
       {taskMessage && <p role="status">{taskMessage}</p>}
       {data.tasks.error && <Button onClick={() => void data.taskEntry.refresh()}>{text("Thử lại", "Retry")}</Button>}
