@@ -35,6 +35,9 @@ const PRESENTATION_COMPOSITIONS: Record<string, readonly string[]> = {
     "src/modules/contacts/presentation/hooks/useContactListController.tsx",
     "src/modules/contacts/presentation/views/ContactListView.tsx",
   ],
+  "src/modules/deals/presentation/pages/DealPipelinePage.tsx": [
+    "src/modules/deals/presentation/components/DealKanbanCard.tsx",
+  ],
   "src/modules/deals/presentation/pages/DealDetailPage.tsx": [
     "src/modules/deals/presentation/hooks/useDealDetailController.tsx",
     "src/modules/deals/presentation/views/DealDetailView.tsx",

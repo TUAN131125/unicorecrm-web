@@ -17,6 +17,8 @@ const pipelinePage = source("src/modules/deals/presentation/pages/DealPipelinePa
 const pipelineController = source("src/modules/deals/presentation/hooks/useDealPipelineController.ts");
 const pipelineModals = source("src/modules/deals/presentation/components/DealPipelineModals.tsx");
 const pipelineHealth = source("src/modules/deals/presentation/components/DealPipelineHealth.tsx");
+const kanbanCard = source("src/modules/deals/presentation/components/DealKanbanCard.tsx");
+const kanbanCardStyles = source("src/modules/deals/presentation/components/DealKanbanCard.css");
 const dealActionMenu = source("src/modules/deals/presentation/components/DealActionMenu.tsx");
 const contactTable = source("src/modules/contacts/presentation/list/ContactTable.tsx");
 const rowActionPortal = source("src/shared/components/ui/Dialog.tsx");
@@ -145,24 +147,28 @@ assert.ok(quoteSectionHeader.includes('icon={<Plus size={12} />}'));
 assert.ok(quoteSectionHeader.includes('className="h-9 whitespace-nowrap rounded-xl"'));
 
 
-// Opportunity Kanban cards keep the same information while using a calmer, balanced hierarchy.
-assert.ok(pipelinePage.includes('data-deal-kanban-card="balanced"'), "Opportunity cards must expose the balanced card contract");
+// The existing card marker remains the drag/drop boundary; compact content owns presentation only.
+assert.ok(pipelinePage.includes('data-deal-kanban-card="balanced"'), "Opportunity cards must preserve the drag/drop selector contract");
 const balancedCardStart = pipelinePage.search(/data-deal-kanban-card="balanced"\s*\r?\n/u);
 assert.ok(balancedCardStart >= 0, "Opportunity card JSX marker must remain discoverable");
 const balancedCardSurface = pipelinePage.slice(
   balancedCardStart,
   pipelinePage.indexOf('/* LIST / TABLE VIEW MODE */'),
 );
-assert.ok(balancedCardSurface.includes("min-h-[350px]") && balancedCardSurface.includes("mt-auto"), "Opportunity cards must keep a stable body and aligned footer");
+assert.ok(balancedCardSurface.includes("shrink-0") && balancedCardSurface.includes("<DealKanbanCard"), "Opportunity cards must retain their size in long columns and delegate compact content");
+assert.equal(balancedCardSurface.includes("min-h-[350px]"), false, "Compact cards must not reserve the retired tall body");
 assert.equal(balancedCardSurface.includes("font-black"), false, "Opportunity cards must not use black typography");
 assert.equal(balancedCardSurface.includes("font-extrabold"), false, "Opportunity cards must not overuse extra-bold typography");
-assert.ok(balancedCardSurface.includes('data-deal-next-stage-action="contained"'), "The next-stage action must remain contained by the opportunity card");
-assert.ok(balancedCardSurface.includes('data-deal-next-stage-button="contained"'), "The next-stage button must expose its contained control contract");
-assert.ok(balancedCardSurface.includes("-mx-4 -mb-4") && balancedCardSurface.includes("bg-slate-50/80 px-4 py-3"), "The next-stage action must render in a full-width footer clipped by the card surface");
+assert.ok(kanbanCard.includes('data-deal-next-stage-action="contained"'), "The next-stage action must remain contained by the opportunity card");
+assert.ok(kanbanCard.includes('data-deal-next-stage-button="contained"'), "The next-stage button must expose its contained control contract");
+assert.ok(kanbanCard.includes("mt-auto") && kanbanCard.includes('aria-label={t("deals.actions.nextStage")}'), "The shared footer must retain an always-available accessible next-stage control");
+assert.ok(kanbanCardStyles.includes("-webkit-line-clamp: 2") && kanbanCardStyles.includes("text-overflow: ellipsis"), "Long identity, buyer and action text must stay bounded despite global wrap utilities");
+assert.doesNotMatch(kanbanCard, /deal\.(notes|lineItems|forecastHistory|nextActionRef)/, "Kanban must leave detail-only content and raw task references out of the card");
+assert.doesNotMatch(kanbanCard, /transitionDealStageCommand|fetch\(/, "The card must use callbacks rather than own mutations or HTTP");
 assert.ok(balancedCardSurface.includes("overflow-hidden rounded-xl"), "Opportunity cards must contain footer actions at narrow column widths");
 assert.ok(pipelineController.includes("advancingDealIdsRef") && pipelineController.includes("advanceDealStage"), "Opportunity next-stage action must use one duplicate-safe controller path");
 assert.equal(pipelineController.includes("handleAdvanceStage"), false, "Retired next-stage logic must stay removed");
-assert.ok(pipelinePage.includes("isDealAdvancing(deal.id)") && pipelinePage.includes("aria-busy={isDealAdvancing(deal.id)}"), "Opportunity cards must expose smooth pending feedback while advancing");
+assert.ok(balancedCardSurface.includes("advancing={isDealAdvancing(deal.id)}") && kanbanCard.includes("aria-busy={advancing}") && kanbanCard.includes("disabled={advancing}"), "Opportunity cards must expose pending feedback while advancing");
 assert.ok(pipelinePage.includes('data-deal-kanban-dropzone="full-column"'), "The complete Kanban column body must accept drops");
 assert.ok(pipelinePage.includes('data-deal-kanban-drop-indicator="full-column"'), "Kanban must expose a full-column drop affordance");
 assert.ok(pipelinePage.includes('layoutId={`deal-kanban-card-${deal.id}`}'), "Opportunity cards must animate into their settled column position");

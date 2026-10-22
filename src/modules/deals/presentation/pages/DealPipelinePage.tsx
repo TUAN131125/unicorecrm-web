@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence, LayoutGroup } from "motion/react";
-import { TrendingUp, AlertTriangle, User, RefreshCw, Download, Upload, RotateCcw, MoreHorizontal, ArrowRight, LoaderCircle, Plus } from "lucide-react";
+import { TrendingUp, RefreshCw, Download, Upload, RotateCcw, MoreHorizontal, ArrowRight, Plus } from "lucide-react";
 import { DealStage } from "../../domain/model/deal.types";
 import { PageHeader, Button, Input, Select, Table, TableHeader, TableBody, TableRow, TableCell, Badge, IconButton, RowActionPortal } from "@/shared/components/ui";
 import { ModulePageShell } from "@/components/crm/ModulePageShell";
@@ -10,6 +10,7 @@ import { formatCurrency, formatCurrencyTotals } from "@/shared/lib/format/curren
 import { formatDate, formatDateTime } from "@/shared/lib/format/date";
 import { useDealPipelineController } from "../hooks/useDealPipelineController";
 import { DealPipelineModals } from "../components/DealPipelineModals";
+import { DealKanbanCard } from "../components/DealKanbanCard";
 import { DealActionMenu } from "../components/DealActionMenu";
 import { notifyProduct } from "@/components/feedback/ProductDialogService";
 import { AuthoritativeQueryBoundary } from "@/shared/operations";
@@ -438,7 +439,7 @@ export const DealPipelinePage = () => {
                       {/* The whole column body is a drop target; card hover only refines insertion order. */}
                       <div
                         data-deal-kanban-dropzone="full-column"
-                        className={`relative flex min-h-0 flex-1 flex-col overflow-y-auto p-4 transition-colors duration-200 crm-scroll-y ${
+                        className={`relative flex min-h-0 flex-1 flex-col overflow-y-auto p-2 transition-colors duration-200 crm-scroll-y ${
                           draggingId && draggedOverStage === stage
                             ? "bg-indigo-50/35"
                             : ""
@@ -484,7 +485,7 @@ export const DealPipelinePage = () => {
                           )}
                         </AnimatePresence>
 
-                        <div className="relative z-10 flex min-h-full flex-col gap-2.5">
+                        <div className="relative z-10 flex min-h-full flex-col gap-2">
                           <AnimatePresence initial={false}>
                             {stageDeals.map((deal, dealIndex) => {
                               const ownerLabel = resolveWorkspaceMemberLabel(
@@ -594,7 +595,7 @@ export const DealPipelinePage = () => {
                                       );
                                     }}
                                     data-deal-kanban-card="balanced"
-                                    className={`relative flex min-h-[350px] w-full min-w-0 cursor-grab flex-col gap-3 overflow-hidden rounded-xl border p-4 text-xs shadow-sm transition-[border-color,background-color,box-shadow] hover:border-indigo-200 hover:shadow-md active:cursor-grabbing ${
+                                    className={`relative flex min-h-[130px] w-full min-w-0 shrink-0 cursor-grab flex-col gap-1 overflow-hidden rounded-xl border p-2.5 text-xs shadow-sm transition-[border-color,background-color,box-shadow] hover:border-indigo-200 hover:shadow-md active:cursor-grabbing ${
                                       isBeingDragged || isDropSettling
                                         ? "border-indigo-400 border-dashed bg-slate-50 shadow-inner"
                                         : dealOverdue
@@ -610,177 +611,27 @@ export const DealPipelinePage = () => {
                                       })
                                     }
                                   >
-                                    {/* Heading with 3-dot dropdown trigger */}
-                                    <div className="flex justify-between items-start gap-1 pb-1">
-                                      <div className="space-y-1 min-w-0 flex-1 text-left">
-                                        <span
-                                          className="block crm-text-wrap text-[12px] font-semibold leading-snug text-indigo-700 hover:underline"
-                                          title={deal.name}
-                                        >
-                                          {deal.name}
-                                        </span>
-                                        <p className="crm-text-wrap text-[10px] font-normal leading-snug text-slate-500">
-                                          {t("deals.card.customer")}:{" "}
-                                          <span className="crm-text-wrap font-medium text-slate-700">
-                                            {deal.customerName}
-                                          </span>
-                                        </p>
-                                      </div>
-
-                                      {/* Shared Contact-style row action trigger; menu is portaled outside the Kanban scroll container. */}
-                                      <div className="shrink-0">
-                                        <IconButton
-                                          type="button"
-                                          variant="secondary"
-                                          size="xs"
-                                          onClick={(event) => {
-                                            event.stopPropagation();
-                                            if (
-                                              activeActionsDealId === deal.id
-                                            ) {
-                                              closeRowActions();
-                                            } else {
-                                              setActiveActionsDealId(deal.id);
-                                              setRowActionAnchorEl(
-                                                event.currentTarget,
-                                              );
-                                            }
-                                          }}
-                                          title={t(
-                                            "opportunities.actions.rowMenu",
-                                            "Thao tác cơ hội",
-                                          )}
-                                          aria-label={t(
-                                            "opportunities.actions.rowMenu",
-                                            "Thao tác cơ hội",
-                                          )}
-                                          aria-haspopup="menu"
-                                          aria-expanded={
-                                            activeActionsDealId === deal.id
-                                          }
-                                        >
-                                          <MoreHorizontal
-                                            size={14}
-                                            className="text-slate-500"
-                                          />
-                                        </IconButton>
-                                      </div>
-                                    </div>
-
-                                    {/* Display deal amount & probability */}
-                                    <div className="flex md:items-center justify-between gap-2 text-xs">
-                                      <span className="block crm-text-wrap text-[11px] font-semibold tabular-nums text-slate-800">
-                                        {formatCurrency(deal.amount, deal.currency || "VND", locale)}
-                                      </span>
-                                      <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-medium text-slate-700">
-                                        {deal.opportunityScore}%
-                                      </span>
-                                    </div>
-
-                                    <DealPipelineHealthBadges
+                                    <DealKanbanCard
                                       deal={deal}
-                                      compact
+                                      ownerLabel={ownerLabel}
+                                      overdue={dealOverdue}
+                                      canAdvance={Boolean(getNextDealStage(deal.stage))}
+                                      advancing={isDealAdvancing(deal.id)}
+                                      actionsOpen={activeActionsDealId === deal.id}
+                                      onOpen={() => navigate(`/deals/${deal.id}`, {
+                                        state: { returnTo: `/deals?view=kanban`, sourceView: "kanban" },
+                                      })}
+                                      onOpenActions={(event) => {
+                                        event.stopPropagation();
+                                        if (activeActionsDealId === deal.id) {
+                                          closeRowActions();
+                                        } else {
+                                          setActiveActionsDealId(deal.id);
+                                          setRowActionAnchorEl(event.currentTarget);
+                                        }
+                                      }}
+                                      onAdvance={() => { void advanceDealStage(deal.id); }}
                                     />
-
-                                    {/* Overdue Badge */}
-                                    {dealOverdue && (
-                                      <div className="flex min-w-0 items-center gap-1 rounded border border-red-100 bg-red-50 px-2 py-1 text-[9px] font-medium text-red-600">
-                                        <AlertTriangle
-                                          size={10}
-                                          className="shrink-0"
-                                        />
-                                        <span className="crm-text-wrap">
-                                          {t("deals.badges.overdue")}
-                                        </span>
-                                      </div>
-                                    )}
-
-                                    {/* Notes Preview if available */}
-                                    {deal.notes && (
-                                      <p className="w-full border-l-2 border-indigo-200 pl-1.5 text-left text-[10px] font-normal italic text-slate-500 crm-text-wrap">
-                                        {deal.notes}
-                                      </p>
-                                    )}
-
-                                    {/* Next Activity section */}
-                                    {(deal.nextActionAt ||
-                                      deal.nextActionSummary) && (
-                                      <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 space-y-0.5 min-w-0 text-left">
-                                        <p className="block text-[8px] font-medium uppercase leading-3 tracking-wide text-slate-500">
-                                          {t("deals.card.nextActivity")}:
-                                        </p>
-                                        <p
-                                          className="crm-text-wrap text-[11px] font-semibold leading-snug text-slate-800"
-                                          title={deal.nextActionSummary}
-                                        >
-                                          {deal.nextActionSummary}
-                                        </p>
-                                        <p className="text-[8px] font-medium text-amber-700">
-                                          {formatDateTime(
-                                            deal.nextActionAt,
-                                            locale,
-                                          )}
-                                        </p>
-                                      </div>
-                                    )}
-
-                                    {/* Risk Indicator fallback if any */}
-                                    {deal.riskBadge && !dealOverdue && (
-                                      <div className="bg-slate-50 text-slate-500 px-2 py-0.5 rounded border border-slate-200 flex items-center gap-1 text-[9px] font-medium leading-tight min-w-0 justify-start">
-                                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
-                                        <span
-                                          className="crm-text-wrap"
-                                          title={deal.riskBadge}
-                                        >
-                                          {deal.riskBadge}
-                                        </span>
-                                      </div>
-                                    )}
-
-                                    {/* Owner & Expected Close Date */}
-                                    <div className="mt-auto flex min-w-0 items-center justify-between gap-2 border-t border-slate-100 pt-2 text-[10px] font-medium text-slate-500">
-                                      <span className="flex items-center gap-1 min-w-0 flex-1">
-                                        <User size={10} className="shrink-0" />
-                                        <span
-                                          className="crm-text-wrap text-left"
-                                          title={ownerLabel}
-                                        >
-                                          {ownerLabel}
-                                        </span>
-                                      </span>
-                                      <span className="shrink-0 font-sans">
-                                        {formatDate(
-                                          deal.expectedCloseDate,
-                                          locale,
-                                        )}
-                                      </span>
-                                    </div>
-
-                                    {/* Moving stage control stays inside the card at every column width. */}
-                                    <div
-                                      data-deal-next-stage-action="contained"
-                                      className="-mx-4 -mb-4 flex min-w-0 shrink-0 items-center justify-end border-t border-slate-100 bg-slate-50/80 px-4 py-3"
-                                    >
-                                      {getNextDealStage(deal.stage) && (
-                                        <button
-                                          type="button"
-                                          draggable={false}
-                                          data-deal-next-stage-button="contained"
-                                          onMouseDown={(e) => e.stopPropagation()}
-                                          onClick={(event) => {
-                                            event.stopPropagation();
-                                            void advanceDealStage(deal.id);
-                                          }}
-                                          disabled={isDealAdvancing(deal.id)}
-                                          aria-busy={isDealAdvancing(deal.id)}
-                                          className="inline-flex h-8 min-w-[76px] max-w-full shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-indigo-100 bg-white px-3 text-[9px] font-semibold leading-none text-indigo-700 shadow-3xs transition-[background-color,border-color,color,box-shadow,opacity] hover:border-indigo-200 hover:bg-indigo-50 hover:shadow-sm disabled:cursor-wait disabled:opacity-65"
-                                          title={t("deals.actions.nextStage")}
-                                        >
-                                          <span className="whitespace-nowrap">{t("deals.actions.next")}</span>
-                                          {isDealAdvancing(deal.id) ? <LoaderCircle size={11} className="shrink-0 animate-spin" /> : <ArrowRight size={10} className="shrink-0" />}
-                                        </button>
-                                      )}
-                                    </div>
                                   </motion.div>
                                 </React.Fragment>
                               );
