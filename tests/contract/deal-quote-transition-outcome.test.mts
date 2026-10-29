@@ -39,7 +39,7 @@ tservices.configureTaskApplication({ ...toriginal, api: { ...toriginal.api, comm
 const { useDealDetailController } = await import("@/modules/deals/presentation/hooks/useDealDetailController");
 const { I18nProvider } = await import("@/i18n"), { MemoryRouter, Routes, Route } = await import("react-router-dom");
 let model: ReturnType<typeof useDealDetailController> | undefined;
-function Probe() { model = useDealDetailController({ customers: [], contacts: [], setCustomers() {} }); return React.createElement("output", null, model.toast?.type); }
+function Probe() { model = useDealDetailController({ customers: [], contacts: [], setCustomers() {} }); return React.createElement("output", null, model?.toast?.type); }
 const host = document.getElementById("root"); assert.ok(host); const root = createRoot(host);
 async function reset() { persisted = structuredClone(opening); await act(async () => { deals.replaceDeals([deal]); quotes.replaceQuotes([opening]); }); }
 try {
