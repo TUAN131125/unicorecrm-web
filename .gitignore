@@ -17,3 +17,22 @@ artifacts/
 .claude/
 .ai-workflows/design-reconstruction/
 .ai-workflows/
+
+# Disposable tool caches and editor state.
+*.tsbuildinfo
+.vite/
+**/__pycache__/
+*.pyc
+*.swp
+*.swo
+Thumbs.db
+
+# Local credentials and database storage are never source.
+/*.pem
+/*.key
+/*.pfx
+/*.p12
+*.mdf
+*.ndf
+*.ldf
+*.bak
