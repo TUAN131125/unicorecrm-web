@@ -21,6 +21,13 @@ export interface ErrorPresentationOptions {
   fallbackMessage?: string;
 }
 
+const productErrorMessages: Record<string, { vi: string; en: string }> = {
+  CUSTOMER_CREDIT_BLOCKED: {
+    vi: "Chính sách tín dụng khách hàng yêu cầu phê duyệt trước khi tiếp tục.",
+    en: "Customer credit policy requires approval.",
+  },
+};
+
 const englishMessages: Record<ApplicationErrorCategory, string> = {
   VALIDATION: "Review the highlighted information and try again.",
   AUTHENTICATION: "Your session is no longer valid. Sign in again to continue.",
@@ -86,6 +93,7 @@ export const UNSAFE_FOR_DISPLAY_CODES: ReadonlySet<string> = new Set([
   "CONNECTED_CONTRACT_VIOLATION",
   "CONNECTED_COMMAND_VARIANT_BLOCKED",
   "CONNECTED_WORKFLOW_COORDINATOR_FORBIDDEN",
+  "CONNECTED_PIPELINE_API_REQUIRED",
   // Demo/local authority plumbing.
   "LOCAL_MUTATION_EXECUTOR_REQUIRED",
   "IDEMPOTENCY_KEY_REUSED",
@@ -110,8 +118,8 @@ export const UNSAFE_FOR_DISPLAY_CODES: ReadonlySet<string> = new Set([
  * changed, because these refusals are fail-closed guards raised before any mutation.
  */
 export const unavailableMessages = {
-  en: "This action is not available yet: server support has not been released. Nothing was changed.",
-  vi: "Thao tác này chưa khả dụng: hệ thống máy chủ chưa hỗ trợ. Dữ liệu của bạn chưa được thay đổi.",
+  en: "This action is not available yet. Nothing was changed.",
+  vi: "Thao tác này chưa khả dụng. Dữ liệu của bạn chưa được thay đổi.",
 } as const;
 
 /** True when this error's own message is an internal diagnostic, not product copy. */
@@ -126,11 +134,16 @@ export function presentApplicationError(error: unknown, options: ErrorPresentati
   // `userMessage` on it, it is not product copy — map the code to the safe unavailable
   // sentence instead. The diagnostic stays on the returned error for logs and tests.
   const unavailable = isUnsafeForDisplay(normalized.code);
+  const categoryMessage = locale === "vi" ? vietnameseMessages[normalized.category] : englishMessages[normalized.category];
+  // HTTP problem titles/userMessage are remote diagnostics, not approved product copy.
+  // Preserve local validation/business guidance and category-specific recovery feedback.
+  const remote = normalized.status !== undefined;
+  const specificRecovery = ["AUTHENTICATION", "AUTHORIZATION", "VALIDATION", "CONFLICT", "NOT_FOUND", "RATE_LIMIT"].includes(normalized.category);
   const message = unavailable
     ? (locale === "vi" ? unavailableMessages.vi : unavailableMessages.en)
-    : normalized.userMessage
-      ?? options.fallbackMessage
-      ?? (locale === "vi" ? vietnameseMessages[normalized.category] : englishMessages[normalized.category]);
+    : productErrorMessages[normalized.code]?.[locale] ?? (remote
+      ? (specificRecovery ? categoryMessage : options.fallbackMessage ?? categoryMessage)
+      : normalized.userMessage ?? options.fallbackMessage ?? categoryMessage);
   const behavior = behaviorForCategory(normalized.category);
   return {
     error: normalized,
