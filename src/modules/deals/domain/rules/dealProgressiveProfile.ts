@@ -1,4 +1,4 @@
-import { DealStage, type Deal } from "../model/deal.types";
+import { DealStage, type Deal, type OpportunityStageConfig } from "../model/deal.types";
 import { normalizeDealStageCode } from "./dealStages";
 
 export type DealCreateMode = "QUICK" | "COMPLETE";
@@ -12,11 +12,12 @@ export type DealProfileField =
 export function getRequiredDealProfileFields(
   stage: Deal["stage"] = DealStage.DISCOVERY,
   mode: DealCreateMode = "COMPLETE",
+  policy?: OpportunityStageConfig,
 ): DealProfileField[] {
   const normalizedStage = normalizeDealStageCode(String(stage));
   const required: DealProfileField[] = ["name", "buyerRef", "ownerId"];
 
-  if ([DealStage.PROPOSAL, DealStage.NEGOTIATION].includes(normalizedStage as DealStage)) {
+  if (policy?.requiresPositiveAmount ?? [DealStage.PROPOSAL, DealStage.NEGOTIATION].includes(normalizedStage as DealStage)) {
     required.push("amount", "forecastCategory");
   }
 
@@ -27,8 +28,9 @@ export function validateDealProgressiveProfile(
   deal: Partial<Deal>,
   stage: Deal["stage"] = DealStage.DISCOVERY,
   mode: DealCreateMode = "COMPLETE",
+  policy?: OpportunityStageConfig,
 ): DealProfileField[] {
-  return getRequiredDealProfileFields(stage, mode).filter((field) => {
+  return getRequiredDealProfileFields(stage, mode, policy).filter((field) => {
     if (field === "buyerRef") return !deal.buyerRef?.id || !deal.buyerRef.type;
     if (field === "amount") return !Number.isFinite(deal.amount) || Number(deal.amount) <= 0;
     return !String(deal[field] ?? "").trim();

@@ -1,3 +1,4 @@
+import { SellerDocumentRequirements } from "../components/SellerDocumentRequirements";
 import React from "react";
 import {
   BadgeCheck,
@@ -321,13 +322,12 @@ export function BusinessInformationView() {
       message={message}
       actions={<StudioButton tone="primary" icon={<Save size={16} />} disabled={!canConfigure || !dirty || saving} loading={saving} onClick={() => void save()}>{t("common.save")}</StudioButton>}
     >
-      {!canConfigure ? <p className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{t("studio.readOnly")}</p> : null}
       <StudioMetricsGrid>
         <StudioMetricCard label={text("Nhận diện", "Identity")} value={business.displayName.trim() ? text("Sẵn sàng", "Ready") : text("Cần bổ sung", "Needs attention")} description={business.legalName || text("Chưa có tên pháp lý", "Legal name not set")} icon={<Building2 size={17} />} tone={business.displayName.trim() ? "success" : "warning"} />
-        <StudioMetricCard label={text("Kênh liên hệ", "Contact channels")} value={[business.email, business.phone, business.website].filter(Boolean).length} description={text("Email, điện thoại hoặc website đã được khai báo.", "Email, phone, or website values configured.")} icon={<MailCheck size={17} />} />
+        <StudioMetricCard label={text("Kênh liên hệ", "Contact channels")} value={[business.email, business.phone, business.website].filter(Boolean).length}  icon={<MailCheck size={17} />} />
         <StudioMetricCard label={text("Địa chỉ hoạt động", "Active addresses")} value={addresses.filter((address) => address.active).length} description={text("Dùng lại cho hóa đơn, giao nhận và đổi trả.", "Reusable by invoicing, fulfillment, and returns.")} icon={<MapPin size={17} />} tone="violet" />
       </StudioMetricsGrid>
-      <div className="mt-5 space-y-5">{profileSection}{addressSection}</div>
+      <div className="mt-5 space-y-5"><SellerDocumentRequirements business={business} addresses={addresses} vi={locale === "vi"} />{profileSection}{addressSection}</div>
       <ConfirmDialog
         isOpen={Boolean(addressPendingRemoval)}
         onClose={() => setAddressPendingRemoval(null)}

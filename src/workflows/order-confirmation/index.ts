@@ -32,6 +32,11 @@ export interface ExecuteOrderConfirmationCommand {
   orderId: string;
   paymentAccountId?: string;
   creditApprovalId?: string;
+  paymentPlanId?: string;
+  expectedPaymentPlanVersion?: number;
+  operationalReviewConfirmed?: boolean;
+  operationalReviewNotes?: string;
+  fulfillment?: { recipientName: string; recipientPhone: string; shippingAddress: { line1: string; city: string } };
 }
 
 interface DemoOrderConfirmationCommand extends ExecuteOrderConfirmationCommand {

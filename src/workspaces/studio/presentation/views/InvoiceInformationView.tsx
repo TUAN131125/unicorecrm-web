@@ -58,7 +58,6 @@ export function InvoiceInformationView() {
   const content = (
     <>
       {unavailableNotice ? <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{unavailableNotice}</p> : null}
-            {!canConfigure ? <p className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{text("Bạn chỉ có quyền xem cấu hình.", "You have read-only access to configuration.")}</p> : null}
       <StudioMetricsGrid>
         <StudioMetricCard label={text("Thông tin người bán", "Seller identity")} value={draft.sellerName.trim() && draft.taxId.trim() ? text("Sẵn sàng", "Ready") : text("Cần bổ sung", "Needs attention")} description={draft.sellerName || text("Chưa có tên người bán", "Seller name not set")} icon={<ReceiptText size={17} />} tone={draft.sellerName.trim() && draft.taxId.trim() ? "success" : "warning"} />
         <StudioMetricCard label={text("Hạn thanh toán", "Payment term")} value={`${draft.defaultDueDays} ${text("ngày", "days")}`} description={text("Áp dụng mặc định cho hóa đơn mới.", "Applied by default to new invoices.")} icon={<CalendarClock size={17} />} />

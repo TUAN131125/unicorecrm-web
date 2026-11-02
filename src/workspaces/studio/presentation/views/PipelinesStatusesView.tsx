@@ -13,10 +13,8 @@ import {
   Workflow,
 } from "lucide-react";
 import { useI18n } from "@/i18n";
-import { unavailableFeatureMessage } from "@/shared/operations";
-import { getDealPipelines, replaceDealPipelines, subscribeToDealStages, type DealPipelineDefinition, isDealPipelineConfigurationSaveUnavailable } from "@/modules/deals";
-import { CAPABILITIES, useEffectiveAccess } from "@/platform/access-control";
-import { useSubscribableSnapshot } from "@/platform/react";
+import { usePipelinesStatusesController } from "../hooks/usePipelinesStatusesController";
+import type { DealPipelineDefinition } from "@/modules/deals";
 import { ConfirmDialog } from "@/shared/components/ui";
 import { cn } from "@/shared/lib/classnames/cn";
 import {
@@ -56,156 +54,34 @@ const stageColorClasses: Record<StageColor, { dot: string; border: string; backg
 
 const stageColors: StageColor[] = ["blue", "yellow", "orange", "purple", "green", "red", "slate", "teal"];
 
-function subscribeToDealPipelineSnapshot(listener: (pipelines: DealPipelineDefinition[]) => void): () => void {
-  return subscribeToDealStages(() => listener(getDealPipelines()));
-}
-
-function createStage(order: number): PipelineStage {
-  const now = new Date().toISOString();
-  return {
-    id: `stage-${crypto.randomUUID()}`,
-    code: `STAGE_${order}`,
-    labelVi: "Giai đoạn mới",
-    labelEn: "New stage",
-    order,
-    color: "blue",
-    category: "open",
-    probabilityDefault: 10,
-    isActive: true,
-    createdAt: now,
-    updatedAt: now,
-  };
-}
-
 export function PipelinesStatusesView() {
-  const { t, locale } = useI18n();
-  const text = (vi: string, en: string) => locale === "vi" ? vi : en;
-  const [unavailableNotice, setUnavailableNotice] = React.useState<string | null>(null);
-  const access = useEffectiveAccess();
-  const source = useSubscribableSnapshot(getDealPipelines, subscribeToDealPipelineSnapshot);
-  const canConfigure = access.can(CAPABILITIES.STUDIO_CONFIGURE);
-  const [draft, setDraft] = React.useState(source);
-  const [selectedId, setSelectedId] = React.useState(source.find((pipeline) => pipeline.isDefault)?.id ?? source[0]?.id ?? "");
-  const [editingStageId, setEditingStageId] = React.useState<string | null>(null);
-  const [pipelinePendingRemoval, setPipelinePendingRemoval] = React.useState<string | null>(null);
-
-  React.useEffect(() => setDraft(source), [source]);
-  React.useEffect(() => {
-    if (draft.some((pipeline) => pipeline.id === selectedId)) return;
-    setSelectedId(draft.find((pipeline) => pipeline.isDefault)?.id ?? draft[0]?.id ?? "");
-  }, [draft, selectedId]);
-
-  const selected = draft.find((pipeline) => pipeline.id === selectedId) ?? draft[0];
-  const editingStage = selected?.stages.find((stage) => stage.id === editingStageId) ?? null;
-  const dirty = JSON.stringify(draft) !== JSON.stringify(source);
-  const activePipelines = draft.filter((pipeline) => pipeline.active);
-  const allStages = draft.flatMap((pipeline) => pipeline.stages);
-  const validationIssues = React.useMemo(() => {
-    const issues: string[] = [];
-    if (draft.length === 0) issues.push(text("Cần ít nhất một pipeline.", "At least one pipeline is required."));
-    if (draft.filter((pipeline) => pipeline.isDefault).length !== 1) issues.push(text("Phải có đúng một pipeline mặc định.", "Exactly one default pipeline is required."));
-    for (const pipeline of draft) {
-      const label = pipeline.name[locale] || pipeline.name.vi || pipeline.name.en || pipeline.id;
-      if (!pipeline.name.vi.trim() || !pipeline.name.en.trim()) issues.push(text(`Pipeline “${label}” thiếu tên song ngữ.`, `Pipeline “${label}” requires both localized names.`));
-      if (!pipeline.active) continue;
-      const activeStages = pipeline.stages.filter((stage) => stage.isActive);
-      if (activeStages.length === 0) issues.push(text(`Pipeline “${label}” chưa có giai đoạn hoạt động.`, `Pipeline “${label}” has no active stage.`));
-      const codes = activeStages.map((stage) => stage.code.trim().toUpperCase()).filter(Boolean);
-      if (new Set(codes).size !== codes.length) issues.push(text(`Pipeline “${label}” có mã giai đoạn trùng nhau.`, `Pipeline “${label}” contains duplicate stage codes.`));
-      if (!activeStages.some((stage) => stage.category === "open")) issues.push(text(`Pipeline “${label}” cần giai đoạn đang mở.`, `Pipeline “${label}” needs an open stage.`));
-      if (!activeStages.some((stage) => stage.category === "won")) issues.push(text(`Pipeline “${label}” cần giai đoạn thắng.`, `Pipeline “${label}” needs a won stage.`));
-      if (!activeStages.some((stage) => stage.category === "lost")) issues.push(text(`Pipeline “${label}” cần giai đoạn thất bại.`, `Pipeline “${label}” needs a lost stage.`));
-      if (activeStages.some((stage) => !stage.labelVi.trim() || !stage.labelEn.trim() || !stage.code.trim())) issues.push(text(`Pipeline “${label}” có giai đoạn thiếu tên hoặc mã.`, `Pipeline “${label}” contains a stage without a name or code.`));
-      if (activeStages.some((stage) => stage.probabilityDefault < 0 || stage.probabilityDefault > 100)) issues.push(text(`Pipeline “${label}” có xác suất ngoài khoảng 0–100%.`, `Pipeline “${label}” contains a probability outside 0–100%.`));
-    }
-    return issues;
-  }, [draft, locale]);
-
-  const updatePipeline = (id: string, patch: Partial<DealPipelineDefinition>) => setDraft((current) => current.map((pipeline) => pipeline.id === id ? { ...pipeline, ...patch } : pipeline));
-  const updateStage = (stageId: string, patch: Partial<PipelineStage>) => {
-    if (!selected) return;
-    updatePipeline(selected.id, {
-      stages: selected.stages.map((stage) => stage.id === stageId ? { ...stage, ...patch, updatedAt: new Date().toISOString() } : stage),
-      version: selected.version + 1,
-    });
-  };
-  const save = () => {
-    if (validationIssues.length > 0) return;
-    // Every `/crm-configuration/pipelines` write operation is BLOCKED, so connected mode has
-    // no authoritative pipeline write to route this to.
-    if (isDealPipelineConfigurationSaveUnavailable()) {
-      setUnavailableNotice(unavailableFeatureMessage({ vi: "Chưa thể lưu cấu hình pipeline", en: "The pipeline configuration cannot be saved yet" }, { locale }));
-      return;
-    }
-    setDraft(replaceDealPipelines(draft));
-  };
-  const addPipeline = () => {
-    const id = `deal-pipeline-${crypto.randomUUID()}`;
-    setDraft((current) => [...current, {
-      id,
-      objectKey: "deal",
-      name: { vi: "Pipeline mới", en: "New pipeline" },
-      description: { vi: "", en: "" },
-      isDefault: current.length === 0,
-      active: true,
-      stages: [createStage(1)],
-      version: 1,
-    }]);
-    setSelectedId(id);
-  };
-  const removePipeline = (id: string) => {
-    const removing = draft.find((pipeline) => pipeline.id === id);
-    const next = draft.filter((pipeline) => pipeline.id !== id);
-    const normalized = removing?.isDefault && next.length > 0
-      ? next.map((pipeline, index) => ({ ...pipeline, isDefault: index === 0 }))
-      : next;
-    setDraft(normalized);
-    setSelectedId(normalized[0]?.id ?? "");
-    setPipelinePendingRemoval(null);
-  };
-  const addStage = () => {
-    if (!selected) return;
-    const stage = createStage(selected.stages.length + 1);
-    updatePipeline(selected.id, { stages: [...selected.stages, stage], version: selected.version + 1 });
-    setEditingStageId(stage.id);
-  };
-  const moveStage = (stageId: string, delta: -1 | 1) => {
-    if (!selected) return;
-    const index = selected.stages.findIndex((stage) => stage.id === stageId);
-    const target = index + delta;
-    if (index < 0 || target < 0 || target >= selected.stages.length) return;
-    const stages = [...selected.stages];
-    const currentStage = stages[index];
-    const targetStage = stages[target];
-    if (!currentStage || !targetStage) return;
-    stages[index] = targetStage;
-    stages[target] = currentStage;
-    updatePipeline(selected.id, { stages: stages.map((stage, order) => ({ ...stage, order: order + 1 })) });
-  };
-  const categoryLabel = (category: StageCategory) => ({
-    open: text("Đang mở", "Open"),
-    won: text("Thắng", "Won"),
-    lost: text("Thất bại", "Lost"),
-  })[category];
-  const categoryTone = (category: StageCategory) => category === "won" ? "success" : category === "lost" ? "danger" : "info";
-
-
+  const c = usePipelinesStatusesController();
+  const { t, locale, text, unavailableNotice, canConfigure, source, draft, selected, selectedId,
+    setSelectedId, editingStage, setEditingStageId, pipelinePendingRemoval, setPipelinePendingRemoval,
+    dirty, activePipelines, allStages, validationIssues, updatePipeline, updateStage, save, addPipeline,
+    removePipeline, addStage, moveStage, categoryLabel, categoryTone, saving, canSave, configurationReady, unresolved, success, loadError, refresh,
+  } = c;
   const content = (
     <>
+      {!configurationReady && !loadError && <p role="status" className="mb-4 text-sm text-slate-600">{text("Đang tải cấu hình pipeline của workspace từ máy chủ…", "Loading workspace pipeline configuration from the server…")}</p>}
+      {saving && <p role="status" className="mb-4 text-sm text-violet-700">{text("Đang lưu và đọc lại cấu hình từ máy chủ…", "Saving and reading configuration from the server…")}</p>}
+      {unresolved && <p role="alert" className="mb-4 text-sm text-amber-800">{text("Chưa xác nhận kết quả lưu. Thử lại cùng bản nháp để xác nhận; không đổi nội dung khi kết quả chưa rõ.", "The save acknowledgement is unknown. Retry the same draft to confirm before editing.")}</p>}
+      {loadError ? <div role="alert" className="mb-4 rounded-xl border border-red-200 p-4 text-sm text-red-700">{loadError}<StudioButton disabled={unresolved || saving} onClick={() => void refresh()}>{text("Tải lại", "Reload")}</StudioButton></div> : null}
+      {dirty && <p className="mb-4 text-sm text-slate-600">{text("Lưu hoặc tải lại pipeline đã chọn trước khi chuyển pipeline.", "Save or reload the selected pipeline before switching pipelines.")} <StudioButton disabled={unresolved || saving} onClick={() => void refresh()}>{text("Tải lại", "Reload")}</StudioButton></p>}
+      {success ? <p role="status" className="mb-4 text-sm text-emerald-700">{success}</p> : null}
       {unavailableNotice ? <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{unavailableNotice}</p> : null}
-            {!canConfigure ? <p className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{t("studio.readOnly")}</p> : null}
       <StudioMetricsGrid>
         <StudioMetricCard label={text("Pipeline hoạt động", "Active pipelines")} value={`${activePipelines.length}/${draft.length}`} description={text("Dùng cho tạo mới và phân loại cơ hội.", "Available to new opportunities and routing.")} icon={<Workflow size={17} />} tone="violet" />
         <StudioMetricCard label={text("Giai đoạn đang mở", "Open stages")} value={allStages.filter((stage) => stage.isActive && stage.category === "open").length} description={text("Được dùng trên Kanban và dự báo.", "Used by Kanban and forecasting.")} icon={<CircleDot size={17} />} />
         <StudioMetricCard label={text("Điểm kết thúc", "Closing outcomes")} value={allStages.filter((stage) => stage.isActive && stage.category !== "open").length} icon={<Flag size={17} />} tone="success" />
-        <StudioMetricCard label={text("Kiểm tra cấu hình", "Configuration check")} value={validationIssues.length === 0 ? text("Sẵn sàng", "Ready") : validationIssues.length} description={validationIssues.length === 0 ? text("Không phát hiện thiếu sót vòng đời.", "No lifecycle gaps detected.") : text("Cần xử lý trước khi lưu.", "Items must be resolved before saving.")} icon={validationIssues.length === 0 ? <CheckCircle2 size={17} /> : <Target size={17} />} tone={validationIssues.length === 0 ? "success" : "warning"} />
+        <StudioMetricCard label={text("Kiểm tra cấu hình", "Configuration check")} value={!configurationReady ? text("Đang tải", "Loading") : validationIssues.length === 0 ? text("Sẵn sàng", "Ready") : validationIssues.length} description={validationIssues.length === 0 ? text("Không phát hiện thiếu sót vòng đời.", "No lifecycle gaps detected.") : text("Cần xử lý trước khi lưu.", "Items must be resolved before saving.")} icon={validationIssues.length === 0 ? <CheckCircle2 size={17} /> : <Target size={17} />} tone={validationIssues.length === 0 ? "success" : "warning"} />
       </StudioMetricsGrid>
 
       <div className="mt-5 grid gap-5 xl:grid-cols-[300px_minmax(0,1fr)]">
         <StudioSection
           title={t("studio.pipeline.list")}
           description={text("Chọn pipeline để xem luồng và cấu hình chi tiết.", "Select a pipeline to inspect its flow and configuration.")}
-          actions={canConfigure ? <StudioButton tone="accent" size="sm" icon={<Plus size={14} />} onClick={addPipeline}>{t("studio.pipeline.add")}</StudioButton> : undefined}
+          actions={canConfigure ? <StudioButton tone="accent" size="sm" icon={<Plus size={14} />} disabled={!canConfigure || dirty} onClick={addPipeline}>{t("studio.pipeline.add")}</StudioButton> : undefined}
         >
           <div className="space-y-2">
             {draft.map((pipeline) => {
@@ -214,6 +90,7 @@ export function PipelinesStatusesView() {
                 <button
                   key={pipeline.id}
                   type="button"
+                  disabled={dirty && pipeline.id !== selected?.id}
                   onClick={() => setSelectedId(pipeline.id)}
                   className={cn(
                     "w-full rounded-xl border px-3.5 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500/20",
@@ -238,18 +115,18 @@ export function PipelinesStatusesView() {
           <div className="min-w-0 space-y-5">
             <StudioSection
               title={t("studio.pipeline.details")}
-              description={text("Tên, mô tả và quyền sử dụng pipeline trên toàn CRM.", "Names, description, and workspace availability for this pipeline.")}
-              actions={canConfigure && draft.length > 1 ? <StudioButton tone="danger" size="sm" icon={<Trash2 size={14} />} onClick={() => setPipelinePendingRemoval(selected.id)}>{t("common.remove")}</StudioButton> : undefined}
+              description={text("Lưu từng pipeline; đổi mặc định chỉ áp dụng cho cơ hội mới.", "Save each pipeline; changing the default applies to new deals.")}
+              actions={canConfigure && draft.length > 1 ? <StudioButton tone="danger" size="sm" icon={<Trash2 size={14} />} onClick={() => setPipelinePendingRemoval(selected.id)}>{text("Vô hiệu hóa / bỏ bản nháp", "Deactivate / discard draft")}</StudioButton> : undefined}
             >
               <div className="grid gap-4 md:grid-cols-2">
                 <StudioField label={t("studio.pipeline.nameVi")}><StudioInput disabled={!canConfigure} value={selected.name.vi} onChange={(event) => updatePipeline(selected.id, { name: { ...selected.name, vi: event.target.value } })} /></StudioField>
                 <StudioField label={t("studio.pipeline.nameEn")}><StudioInput disabled={!canConfigure} value={selected.name.en} onChange={(event) => updatePipeline(selected.id, { name: { ...selected.name, en: event.target.value } })} /></StudioField>
                 <StudioField label={text("Mô tả tiếng Việt", "Vietnamese description")}><StudioTextarea disabled={!canConfigure} value={selected.description.vi} onChange={(event) => updatePipeline(selected.id, { description: { ...selected.description, vi: event.target.value } })} /></StudioField>
-                <StudioField label={text("Mô tả tiếng Anh", "English description")}><StudioTextarea disabled={!canConfigure} value={selected.description.en} onChange={(event) => updatePipeline(selected.id, { description: { ...selected.description, en: event.target.value } })} /></StudioField>
+                <StudioField label={text("Mô tả tiếng Anh", "English description")}><StudioTextarea disabled value={selected.description.en} onChange={(event) => updatePipeline(selected.id, { description: { ...selected.description, en: event.target.value } })} /></StudioField>
               </div>
               <div className="mt-4 grid gap-3 md:grid-cols-2">
                 <StudioSwitch disabled={!canConfigure} checked={selected.active} onChange={(active) => updatePipeline(selected.id, { active })} label={t("studio.pipeline.active")} description={t("studio.pipeline.activeDescription")} dependency={text("Tạo mới · Bộ lọc · Kanban", "Create · Filters · Kanban")} />
-                <StudioSwitch disabled={!canConfigure} checked={selected.isDefault} onChange={() => setDraft((current) => current.map((pipeline) => ({ ...pipeline, isDefault: pipeline.id === selected.id })))} label={t("studio.pipeline.defaultLabel")} description={t("studio.pipeline.defaultDescription")} dependency={text("Chỉ một pipeline", "Exactly one pipeline")} />
+                <StudioSwitch disabled={!canConfigure} checked={selected.isDefault} onChange={() => updatePipeline(selected.id, { isDefault: true })} label={t("studio.pipeline.defaultLabel")} description={t("studio.pipeline.defaultDescription")} dependency={text("Chỉ một pipeline", "Exactly one pipeline")} />
               </div>
             </StudioSection>
 
@@ -302,7 +179,7 @@ export function PipelinesStatusesView() {
                           <StudioButton size="sm" disabled={!canConfigure} icon={<Edit3 size={13} />} onClick={() => setEditingStageId(stage.id)}>{text("Cấu hình", "Configure")}</StudioButton>
                           <StudioButton size="sm" disabled={!canConfigure || index === 0} icon={<ArrowUp size={13} />} onClick={() => moveStage(stage.id, -1)} aria-label={t("studio.pipeline.moveUp")} />
                           <StudioButton size="sm" disabled={!canConfigure || index === selected.stages.length - 1} icon={<ArrowDown size={13} />} onClick={() => moveStage(stage.id, 1)} aria-label={t("studio.pipeline.moveDown")} />
-                          <StudioButton size="sm" tone="danger" disabled={!canConfigure || stage.isSystem} icon={<Trash2 size={13} />} onClick={() => updatePipeline(selected.id, { stages: selected.stages.filter((item) => item.id !== stage.id) })} aria-label={t("common.remove")} />
+                          <StudioButton size="sm" tone="danger" disabled={!canConfigure || stage.category !== "open"} icon={<Trash2 size={13} />} onClick={() => updatePipeline(selected.id, { stages: selected.stages.filter((item) => item.id !== stage.id) })} aria-label={t("common.remove")} />
                         </div>
                       </div>
                     </article>
@@ -342,11 +219,11 @@ export function PipelinesStatusesView() {
             <div className="grid gap-4 md:grid-cols-2">
               <StudioField label={text("Tên tiếng Việt", "Vietnamese name")}><StudioInput autoFocus disabled={!canConfigure} value={editingStage.labelVi} onChange={(event) => updateStage(editingStage.id, { labelVi: event.target.value })} /></StudioField>
               <StudioField label={text("Tên tiếng Anh", "English name")}><StudioInput disabled={!canConfigure} value={editingStage.labelEn} onChange={(event) => updateStage(editingStage.id, { labelEn: event.target.value })} /></StudioField>
-              <StudioField label={text("Mã ổn định", "Stable code")} hint={text("Được dùng bởi bộ lọc và quy tắc; tránh đổi sau khi đã vận hành.", "Used by filters and rules; avoid changing it after rollout.")}><StudioInput disabled={!canConfigure || editingStage.isSystem} value={editingStage.code} onChange={(event) => updateStage(editingStage.id, { code: event.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, "_") })} /></StudioField>
-              <StudioField label={text("Vai trò vòng đời", "Lifecycle role")}><StudioSelect disabled={!canConfigure} value={editingStage.category} onChange={(event) => { const category = event.target.value as StageCategory; updateStage(editingStage.id, { category, probabilityDefault: category === "won" ? 100 : category === "lost" ? 0 : editingStage.probabilityDefault }); }}><option value="open">{text("Đang mở", "Open")}</option><option value="won">{text("Thắng", "Won")}</option><option value="lost">{text("Thất bại", "Lost")}</option></StudioSelect></StudioField>
-              <StudioField label={text("Xác suất mặc định (%)", "Default probability (%)")}><StudioInput disabled={!canConfigure || editingStage.category !== "open"} type="number" min={0} max={100} value={editingStage.probabilityDefault} onChange={(event) => updateStage(editingStage.id, { probabilityDefault: Math.max(0, Math.min(100, Number(event.target.value) || 0)) })} /></StudioField>
+              <StudioField label={text("Mã ổn định", "Stable code")} hint={text("Được dùng bởi bộ lọc và quy tắc; tránh đổi sau khi đã vận hành.", "Used by filters and rules; avoid changing it after rollout.")}><StudioInput disabled={!canConfigure || source.some(p => p.stages.some(s => s.id === editingStage.id))} value={editingStage.code} onChange={(event) => updateStage(editingStage.id, { code: event.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, "_") })} /></StudioField>
+              <StudioField label={text("Vai trò vòng đời", "Lifecycle role")}><StudioSelect disabled value={editingStage.category} onChange={(event) => { const category = event.target.value as StageCategory; updateStage(editingStage.id, { category, probabilityDefault: category === "won" ? 100 : category === "lost" ? 0 : editingStage.probabilityDefault }); }}><option value="open">{text("Đang mở", "Open")}</option><option value="won">{text("Thắng", "Won")}</option><option value="lost">{text("Thất bại", "Lost")}</option></StudioSelect></StudioField>
+              <StudioField label={text("Xác suất mặc định (%)", "Default probability (%)")}><StudioInput disabled={!canConfigure || editingStage.category !== "open"} type="number" min={0} max={100} step={1} value={editingStage.probabilityDefault} onChange={(event) => updateStage(editingStage.id, { probabilityDefault: Math.max(0, Math.min(100, Number(event.target.value) || 0)) })} /></StudioField>
               <StudioField label={text("Màu hiển thị", "Display color")}><StudioSelect disabled={!canConfigure} value={editingStage.color} onChange={(event) => updateStage(editingStage.id, { color: event.target.value as StageColor })}>{stageColors.map((color) => <option key={color} value={color}>{color.toUpperCase()}</option>)}</StudioSelect></StudioField>
-              <div className="md:col-span-2"><StudioSwitch disabled={!canConfigure} checked={editingStage.isActive} onChange={(isActive) => updateStage(editingStage.id, { isActive })} label={text("Cho phép sử dụng giai đoạn", "Stage is available")} description={text("Giai đoạn không hoạt động được giữ lại trong cấu hình nhưng không dùng cho cơ hội mới.", "Inactive stages remain in configuration but are unavailable to new opportunities.")} dependency={editingStage.isSystem ? text("Giai đoạn hệ thống", "System stage") : text("Pipeline hiện tại", "Current pipeline")} /></div>
+              <div className="md:col-span-2"><StudioSwitch disabled={!canConfigure || editingStage.category !== "open"} checked={editingStage.isActive} onChange={(isActive) => updateStage(editingStage.id, { isActive })} label={text("Cho phép sử dụng giai đoạn", "Stage is available")} description={text("Giai đoạn không hoạt động được giữ lại trong cấu hình nhưng không dùng cho cơ hội mới.", "Inactive stages remain in configuration but are unavailable to new opportunities.")} dependency={editingStage.isSystem ? text("Giai đoạn hệ thống", "System stage") : text("Pipeline hiện tại", "Current pipeline")} /></div>
             </div>
             <div className="space-y-4">
               <div className={cn("rounded-xl border p-4", stageColorClasses[editingStage.color].border, stageColorClasses[editingStage.color].background)}>
@@ -359,7 +236,7 @@ export function PipelinesStatusesView() {
                   </div>
                 </div>
               </div>
-              <StudioCallout title={text("Tác động cấu hình", "Configuration impact")} description={text("Tên và màu xuất hiện trên Kanban; mã dùng trong bộ lọc và quy tắc; xác suất tham gia dự báo.", "Name and color appear in Kanban; code is used by filters and rules; probability feeds forecasting.")} />
+              <StudioCallout title={text("Tác động cấu hình", "Configuration impact")} description={text("Tên và màu xuất hiện trên Kanban; mã dùng trong bộ lọc và quy tắc; xác suất là giá trị cấu hình, không thay điểm cơ hội.", "Name and color appear in Kanban; code is used by filters and rules; probability is configuration and does not change opportunity scores.")} />
             </div>
           </div>
         ) : null}
@@ -377,10 +254,10 @@ export function PipelinesStatusesView() {
      
       locale={locale}
       dirty={dirty}
-      actions={<><StudioButton tone="accent" icon={<Plus size={15} />} disabled={!canConfigure} onClick={addPipeline}>{t("studio.pipeline.add")}</StudioButton><StudioButton tone="primary" icon={<Save size={15} />} disabled={!canConfigure || !dirty || validationIssues.length > 0} onClick={save}>{t("common.save")}</StudioButton></>}
+      actions={<><StudioButton tone="accent" icon={<Plus size={15} />} disabled={!canConfigure || dirty} onClick={addPipeline}>{t("studio.pipeline.add")}</StudioButton><StudioButton tone="primary" icon={<Save size={15} />} disabled={!canSave || !dirty || validationIssues.length > 0} onClick={save}>{t("common.save")}</StudioButton></>}
     >
       {content}
-      <StudioSaveBar dirty={dirty && canConfigure} saving={false} onSave={save} saveLabel={t("common.save")} cleanLabel={t("studio.saved")} dirtyLabel={t("studio.unsaved")} />
+      <StudioSaveBar dirty={dirty && (canSave || saving)} saving={saving} onSave={save} saveLabel={text("Lưu pipeline đã chọn", "Save selected pipeline")} cleanLabel={t("studio.saved")} dirtyLabel={t("studio.unsaved")} />
     </StudioPageFrame>
   );
 }

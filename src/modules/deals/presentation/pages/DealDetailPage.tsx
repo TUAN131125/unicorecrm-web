@@ -10,8 +10,19 @@ import { DealDetailView } from "../views/DealDetailView";
 import { getDealDetailResource } from "../../application/vertical-slice/dealAuthoritativeQueries";
 import { replaceDeals } from "../../public/deals";
 import { AuthoritativeQueryBoundary, useModuleAuthoritativeResource } from "@/shared/operations";
+import { EffectiveRecordAccessBoundary } from "@/platform/access-control";
+
+const detailFields = ["name", "buyerRef", "ownerId", "stageCode", "stageCategory", "stageEnteredAt", "amount", "opportunityScore", "expectedCloseDate", "forecastCategory", "forecastHistory", "nextActionAt", "nextActionSummary", "nextActionRef", "notes", "interestedProductIds", "lineItems", "activities", "riskBadge", "lostReason", "lostReasonNote", "recycleDecision", "revisitAt", "winEvidence", "wonAt", "lostAt", "actualCloseDate"];
+const detailCommands = ["deal.update", "deal.move-stage", "deal.close-won", "deal.close-lost"];
 
 export const DealDetailPage: React.FC<DealDetailPageProps> = (props) => {
+  const { dealId } = useParams();
+  return <EffectiveRecordAccessBoundary resourceKey="deals" recordId={dealId} requestedFields={detailFields} requestedCommands={detailCommands}>
+    <DealDetailContent {...props} />
+  </EffectiveRecordAccessBoundary>;
+};
+
+const DealDetailContent: React.FC<DealDetailPageProps> = (props) => {
   const { t } = useI18n();
   const { dealId = "" } = useParams();
   const workspace = useWorkspaceContextSnapshot();
@@ -23,8 +34,8 @@ export const DealDetailPage: React.FC<DealDetailPageProps> = (props) => {
     <AuthoritativeQueryBoundary
       query={detailQuery}
       hasData={Boolean(controller)}
-      loadingTitleVi="Đang tải cơ hội từ backend"
-      loadingTitleEn="Loading opportunity from backend"
+      loadingTitleVi="Đang tải cơ hội"
+      loadingTitleEn="Loading opportunity"
       errorTitleVi="Không thể tải cơ hội"
       errorTitleEn="Opportunity could not be loaded"
     >

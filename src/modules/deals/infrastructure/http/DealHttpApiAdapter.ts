@@ -56,6 +56,7 @@ export class DealHttpApiAdapter implements DealQueryPort, DealCommandPort {
       sortBy: query.sortBy as "updatedAt" | "createdAt" | "expectedCloseDate" | "amount" | "opportunityScore" | undefined,
       sortDirection: query.sortDirection,
       stageCode: filters.stageCode,
+      pipelineId: filters.pipelineId,
       stageCategory: filters.stageCategory,
       ownerId: filters.ownerId,
       buyerType: filters.buyerType,

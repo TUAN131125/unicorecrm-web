@@ -11,7 +11,7 @@ interface OpportunityMocks {
   id: string;
   name: string;
   stage: string;
-  amount: number;
+  amount: number | null;
   expectedCloseDate: string;
 }
 

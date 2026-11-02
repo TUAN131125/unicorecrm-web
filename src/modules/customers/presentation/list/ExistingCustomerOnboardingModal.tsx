@@ -1,4 +1,5 @@
 import React from "react";
+import { flushSync } from "react-dom";
 import { useBoundFormDraft } from "@/shared/hooks/useBoundFormDraft";
 import { Button, ConfirmDialog, Input, Modal, Select } from "@/shared/components/ui";
 import { getContactsSnapshot } from "@/modules/contacts";
@@ -49,13 +50,15 @@ export function ExistingCustomerOnboardingModal({ isOpen, onClose, isVi, onCompl
     try {
       const customer = await createCustomerCommand({
         relationshipRef: { type: kind, id: relationshipId },
-        segment: segment.trim() || undefined,
+        ...(segment.trim() ? { segment: segment.trim() } : {}),
         tags: tags.split(",").map((value) => value.trim()).filter(Boolean),
-        tier: tier || undefined,
-        serviceLevel: serviceLevel || undefined,
+        ...(tier ? { tier } : {}),
+        ...(serviceLevel ? { serviceLevel } : {}),
       }, { idempotencyKey: lifecycle.intentId });
       if (!operation.isCurrent()) return false;
-      operation.complete(); onCompleted(customer); onClose(); return true;
+      // Completion may navigate; retire the saved form's guard first.
+      flushSync(() => { operation.complete(); operation.finish(); onClose(); });
+      onCompleted(customer); return true;
     } catch (caught) {
       if (operation.isCurrent()) {
         const presentation = presentApplicationError(caught, { locale: isVi ? "vi" : "en" }); setError(presentation.message);
@@ -80,7 +83,7 @@ export function ExistingCustomerOnboardingModal({ isOpen, onClose, isVi, onCompl
       <form onSubmit={event => { event.preventDefault(); void save(); }} className="crm-form-surface space-y-5">
         <fieldset className="contents" disabled={lifecycle.pending}>
         <div className="rounded-2xl border border-violet-100 bg-violet-50/70 p-4 text-xs leading-5 text-violet-900">
-          {isVi ? "Chọn Contact hoặc Tổ chức đã tồn tại. Backend kiểm tra quyền, workspace, trạng thái và chống tạo trùng theo danh tính nguồn." : "Select an existing Contact or Organization. The backend enforces access, workspace, eligibility, and source-identity uniqueness."}
+          {isVi ? "Chọn liên hệ hoặc tổ chức hiện có. Hệ thống sẽ kiểm tra thông tin để tránh tạo khách hàng trùng." : "Select an existing Contact or Organization. The information will be checked to prevent duplicate customers."}
         </div>
         <div className="grid gap-4 md:grid-cols-2">
           <Select label={isVi ? "Loại quan hệ" : "Relationship type"} value={kind} onChange={(event) => { setKind(event.target.value as RelationshipKind); setRelationshipId(""); }}>

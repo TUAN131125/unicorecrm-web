@@ -25,7 +25,7 @@ function adjustmentAmount(adjustment: SalesDocumentAdjustment, basis: number, pr
     : roundMoney(value, precision);
 }
 
-export function normalizeQuoteLineItem(item: any): QuoteLineItem {
+export function normalizeQuoteLineItem(item: any, precision = DEFAULT_MONEY_PRECISION): QuoteLineItem {
   const productNameSnapshot = String(item.productNameSnapshot ?? item.productName ?? "");
   const unitPriceSnapshot = finiteNonNegative(item.unitPriceSnapshot ?? item.unitPrice);
   const descriptionSnapshot = String(item.descriptionSnapshot ?? item.description ?? "");
@@ -39,6 +39,7 @@ export function normalizeQuoteLineItem(item: any): QuoteLineItem {
 
   return calculateQuoteLineTotals({
     id: item.id || createDurableId("line"),
+    ...(item.inputDecimals === undefined ? {} : { inputDecimals: { ...item.inputDecimals } }),
     productId: item.productId || "",
     skuSnapshot: item.skuSnapshot || "",
     productNameSnapshot,
@@ -53,7 +54,7 @@ export function normalizeQuoteLineItem(item: any): QuoteLineItem {
     productName: productNameSnapshot,
     unitPrice: unitPriceSnapshot,
     description: descriptionSnapshot,
-  });
+  }, precision);
 }
 
 export function calculateQuoteLineTotals(item: QuoteLineItem, precision = DEFAULT_MONEY_PRECISION): QuoteLineItem {
@@ -110,7 +111,7 @@ export function calculateQuotePricing(
   discountTotalParam = 0,
   precision = DEFAULT_MONEY_PRECISION,
 ): QuotePricingResult {
-  const lineItems = lines.map((line) => calculateQuoteLineTotals(normalizeQuoteLineItem(line), precision));
+  const lineItems = lines.map((line) => calculateQuoteLineTotals(normalizeQuoteLineItem(line, precision), precision));
   const subtotal = roundMoney(lineItems.reduce((sum, line) => sum + (line.lineSubtotal ?? 0), 0), precision);
   const lineDiscountTotal = roundMoney(lineItems.reduce((sum, line) => sum + (line.lineDiscountAmount ?? 0), 0), precision);
   const lineAmountAfterDiscount = roundMoney(Math.max(0, subtotal - lineDiscountTotal), precision);

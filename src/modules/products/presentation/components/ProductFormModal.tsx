@@ -7,7 +7,7 @@ import {
 } from "@/shared/components/ui";
 import { PRODUCT_TYPES, PRODUCT_CATEGORIES, PRODUCT_UNITS, BILLING_CYCLES, TAX_MODES } from "../../domain/rules/product.config";
 import { getConfiguredProductFields, getConfiguredProductTypes, type ConfiguredProductType } from "../../public/configuration";
-import { useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
+import { useWorkspaceCurrencyChoices, useWorkspaceRuntimeSettings } from "@/platform/workspace-config";
 
 import { createDurableId } from "@/shared/ids";
 import { getWorkspaceContextSnapshot, useWorkspaceContextSnapshot } from "@/platform/workspace-context";
@@ -33,7 +33,8 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   existingProducts,
 }) => {
   const { tx, locale } = useI18n();
-  const workspaceConfiguration = useWorkspaceOperationalConfiguration();
+  const runtimeSettings = useWorkspaceRuntimeSettings();
+  const currencyChoices = useWorkspaceCurrencyChoices();
   const workspace = useWorkspaceContextSnapshot();
   const openingWorkspace = React.useRef(workspace.workspaceId);
 
@@ -62,7 +63,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   const [unit, setUnit] = useState("User/Tháng");
   const [listPrice, setListPrice] = useState<number>(0);
   const [costPrice, setCostPrice] = useState<number>(0);
-  const [currency, setCurrency] = useState(workspaceConfiguration.localeRegion.currencies.baseCurrency);
+  const [currency, setCurrency] = useState(runtimeSettings.baseCurrency);
   const [taxRate, setTaxRate] = useState<number>(10);
   const [taxMode, setTaxMode] = useState<TaxMode>("exclusive");
   const [billingCycle, setBillingCycle] = useState<BillingCycle>("monthly");
@@ -127,7 +128,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
         setUnit(product.unit || "Tháng");
         setListPrice(product.listPrice ?? 0);
         setCostPrice(product.costPrice ?? 0);
-        setCurrency(product.currency || workspaceConfiguration.localeRegion.currencies.baseCurrency);
+        setCurrency(product.currency || runtimeSettings.baseCurrency);
         setTaxRate(product.taxRate ?? 0);
         setTaxMode(product.taxMode || "none");
         setBillingCycle(product.billingCycle || "one_time");
@@ -148,7 +149,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
         setUnit("Tháng");
         setListPrice(0);
         setCostPrice(0);
-        setCurrency(workspaceConfiguration.localeRegion.currencies.baseCurrency);
+        setCurrency(runtimeSettings.baseCurrency);
         setTaxRate(10);
         setTaxMode("exclusive");
         setBillingCycle("monthly");
@@ -468,7 +469,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
               onChange={(e) => setCurrency(e.target.value)}
               className="h-9 text-xs"
             >
-              {workspaceConfiguration.localeRegion.currencies.enabledCurrencies.map((code) => <option key={code} value={code}>{code}</option>)}
+              {[...new Set([...currencyChoices, ...(product?.currency ? [product.currency] : [])])].map((code) => <option key={code} value={code}>{code}</option>)}
             </Select>
           </div>
 
@@ -614,7 +615,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
         {/* Section: Dynamic Configured Attributes */}
         {activeFields.length > 0 && (
           <fieldset disabled>
-          <p className="text-xs text-slate-500">{locale === "vi" ? "Thông tin tùy chỉnh chỉ đọc; lệnh lưu sản phẩm không hỗ trợ chỉnh sửa các trường này." : "Custom information is read-only; the product save command does not support these fields."}</p>
+          
           <div className="bg-white p-4 rounded-xl border border-slate-200 text-left space-y-3.5">
             <span className="text-[11px] font-black text-indigo-700 uppercase tracking-widest block border-b pb-1">
               {locale === "vi" ? "THUỘC TÍNH ĐẶC TẢ MỞ RỘNG" : "DYNAMIC CONFIGURED SPECIFICATIONS"}

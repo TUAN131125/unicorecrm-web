@@ -3,12 +3,14 @@ import type { DealApiRuntime } from "../ports/DealApiRuntime";
 import type { DealExporter } from "../ports/DealExporter";
 import type { DealRepository } from "../ports/DealRepository";
 import type { DealStageRepository } from "../ports/DealStageRepository";
+import type { DealPipelineGateway } from "../ports/DealPipelineGateway";
 
 export interface DealApplicationServices {
   api: DealApiRuntime;
   repository: DealRepository;
   stages: DealStageRepository;
   exporter: DealExporter;
+  pipelines?: DealPipelineGateway;
 }
 
 const binding = createApplicationServiceBinding<DealApplicationServices>("Deals");

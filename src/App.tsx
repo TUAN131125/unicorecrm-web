@@ -7,6 +7,7 @@ import { getAuthSessionSnapshot } from "./platform/identity-auth";
 import { RouteLoadingExperience } from "./components/loading";
 
 const LoginPage = React.lazy(() => import("./features/auth/pages/LoginPage").then((module) => ({ default: module.LoginPage })));
+const CustomerQuoteAcceptancePage = React.lazy(() => import("./modules/quotes/customer-acceptance-route").then(module => ({ default: module.CustomerQuoteAcceptancePage })));
 const MfaVerificationPage = React.lazy(() => import("./features/auth/pages/MfaVerificationPage").then((module) => ({ default: module.MfaVerificationPage })));
 const RegisterPage = React.lazy(() => import("./features/auth/pages/RegisterPage").then((module) => ({ default: module.RegisterPage })));
 const VerifyEmailPage = React.lazy(() => import("./features/auth/pages/VerifyEmailPage").then((module) => ({ default: module.VerifyEmailPage })));
@@ -31,6 +32,7 @@ export const App: React.FC = () => (
       <Route path="/" element={<AuthEntryRedirect />} />
 
       <Route path={ROUTE_KEYS.LOGIN} element={<LoginPage />} />
+      <Route path={ROUTE_KEYS.CUSTOMER_QUOTE_ACCEPTANCE} element={<CustomerQuoteAcceptancePage />} />
       <Route path={ROUTE_KEYS.MFA_VERIFICATION} element={<MfaVerificationPage />} />
       <Route path={ROUTE_KEYS.REGISTER} element={<RegisterPage />} />
       <Route path={ROUTE_KEYS.VERIFY_EMAIL} element={<VerifyEmailPage />} />

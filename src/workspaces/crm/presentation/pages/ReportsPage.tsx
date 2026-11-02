@@ -52,7 +52,7 @@ import {
   type StatusDistribution,
 } from "@/workspaces/crm/read-models/analytics/reportReadModel";
 import { useReportsReadModel } from "@/workspaces/crm/read-models/analytics/useReportsReadModel";
-import { useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
+import { useWorkspaceRuntimeSettings } from "@/platform/workspace-config";
 import { buildCohortFunnel, buildCrmMetric, CRM_METRIC_IDS, getCrmMetricDefinition, resolveMetricPeriod, resolvePreviousMetricPeriod, type CrmMetricId, type MetricPeriodKey, type MetricResult } from "@/workspaces/crm/metrics";
 import { MetricDrilldownDrawer } from "@/workspaces/crm/metrics/presentation/MetricDrilldownDrawer";
 import { AdvancedForecastPanel } from "@/workspaces/crm/forecast/AdvancedForecastPanel";
@@ -174,7 +174,7 @@ export const ReportsPage: React.FC = () => {
   const { leads, customers, contacts, deals, quotes, orders, cases } = useReportsReadModel();
   const { locale } = useI18n();
   const workspace = useWorkspaceContextSnapshot();
-  const configuration = useWorkspaceOperationalConfiguration();
+  const configuration = useWorkspaceRuntimeSettings();
   const access = useEffectiveAccess();
   const [searchParams, setSearchParams] = useSearchParams();
   const isVi = locale === "vi";
@@ -188,7 +188,7 @@ export const ReportsPage: React.FC = () => {
   const allowedPeriods: MetricPeriodKey[] = ["current_month", "current_quarter", "current_year", "all_time", "custom"];
   const requestedPeriod = searchParams.get("period") as MetricPeriodKey | null;
   const periodKey: MetricPeriodKey = requestedPeriod && allowedPeriods.includes(requestedPeriod) ? requestedPeriod : "current_year";
-  const timezone = configuration.localeRegion.timezone;
+  const timezone = configuration.timeZone;
   const todayKey = new Date().toISOString().slice(0, 10);
   const defaultStartDate = `${new Date().getFullYear()}-01-01`;
   const customStartDate = searchParams.get("start") ?? defaultStartDate;
@@ -239,7 +239,7 @@ export const ReportsPage: React.FC = () => {
   const crmPath = (relativePath: string) => toWorkspacePath(workspace.workspaceKey, "crm", relativePath);
   const formatMoney = (amount: number) => new Intl.NumberFormat(isVi ? "vi-VN" : "en-US", {
     style: "currency",
-    currency: configuration.localeRegion.currencies.baseCurrency,
+    currency: configuration.baseCurrency,
     maximumFractionDigits: 0,
   }).format(amount);
   const formatCompactMoney = (amount: number) => new Intl.NumberFormat(isVi ? "vi-VN" : "en-US", {
@@ -404,7 +404,7 @@ export const ReportsPage: React.FC = () => {
       for (const deal of deals) {
         const current = grouped.get(deal.ownerId) ?? { count: 0, value: 0 };
         current.count += 1;
-        current.value += deal.amount;
+        if (deal.amount !== null) current.value += deal.amount;
         grouped.set(deal.ownerId, current);
       }
       return [...grouped.entries()].map(([ownerId, aggregate]) => ({ id: ownerId, label: resolveWorkspaceMemberName(ownerId), count: aggregate.count, value: aggregate.value, route: crmPath("deals") }));
@@ -470,14 +470,14 @@ export const ReportsPage: React.FC = () => {
 
       <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <MetricCard label={completedRevenueMetric.definition.title[locale]} value={formatMetricValue(completedRevenueMetric)} hint={comparisonHint(completedRevenueMetric, previousCompletedRevenueMetric, isVi ? `${completedOrders} đơn nguồn · Nhấn để kiểm tra` : `${completedOrders} source orders · Click to inspect`)} icon={<CircleDollarSign size={18} />} tone="emerald" onClick={() => openMetric(completedRevenueMetric)} guidanceId="reports.metric.completed-revenue" />
-        <MetricCard label={openPipelineMetric.definition.title[locale]} value={formatMetricValue(openPipelineMetric)} hint={isVi ? `${openDeals} cơ hội đang mở · Ảnh chụp hiện tại` : `${openDeals} open deals · Current snapshot`} icon={<TrendingUp size={18} />} tone="violet" onClick={() => openMetric(openPipelineMetric)} guidanceId="reports.metric.open-pipeline" />
+        <MetricCard label={openPipelineMetric.definition.title[locale]} value={formatMetricValue(openPipelineMetric)} hint={isVi ? `${openDeals} cơ hội đang mở · Ảnh chụp hiện tại` : `${openDeals} open deals · Current total`} icon={<TrendingUp size={18} />} tone="violet" onClick={() => openMetric(openPipelineMetric)} guidanceId="reports.metric.open-pipeline" />
         <MetricCard label={leadQualificationMetric.definition.title[locale]} value={formatMetricValue(leadQualificationMetric)} hint={comparisonHint(leadQualificationMetric, previousLeadQualificationMetric, isVi ? `${leadQualificationMetric.numerator ?? 0}/${leadQualificationMetric.denominator ?? 0} khách hàng tiềm năng trong kỳ` : `${leadQualificationMetric.numerator ?? 0}/${leadQualificationMetric.denominator ?? 0} period leads`)} icon={<Target size={18} />} tone="blue" onClick={() => openMetric(leadQualificationMetric)} guidanceId="reports.metric.lead-qualification" />
         <MetricCard label={quoteAcceptanceMetric.definition.title[locale]} value={formatMetricValue(quoteAcceptanceMetric)} hint={comparisonHint(quoteAcceptanceMetric, previousQuoteAcceptanceMetric, isVi ? `${quoteAcceptanceMetric.numerator ?? 0}/${quoteAcceptanceMetric.denominator ?? 0} báo giá trong kỳ` : `${quoteAcceptanceMetric.numerator ?? 0}/${quoteAcceptanceMetric.denominator ?? 0} period quotes`)} icon={<FileCheck2 size={18} />} tone="amber" onClick={() => openMetric(quoteAcceptanceMetric)} guidanceId="reports.metric.quote-acceptance" />
       </div>
 
       <div className="flex flex-col gap-1 rounded-2xl border border-sky-100 bg-sky-50 px-4 py-3 text-xs text-sky-900 sm:flex-row sm:items-center sm:justify-between">
         <span className="font-semibold">{isVi ? "Phạm vi dữ liệu" : "Data scope"}</span>
-        <span>{completedRevenueMetric.period.label[locale]}{reportPeriod.startDate && reportPeriod.endDate ? ` · ${reportPeriod.startDate} → ${reportPeriod.endDate}` : ""} · {timezone} · {isVi ? "KPI snapshot được ghi nhãn riêng và không bị hiểu nhầm là dữ liệu theo kỳ." : "Snapshot KPIs are labeled separately and are not presented as period metrics."}</span>
+        <span>{completedRevenueMetric.period.label[locale]}{reportPeriod.startDate && reportPeriod.endDate ? ` · ${reportPeriod.startDate} → ${reportPeriod.endDate}` : ""} · {timezone} · {isVi ? "" : ""}</span>
       </div>
 
       <ReportAnalysisTable
@@ -541,7 +541,7 @@ export const ReportsPage: React.FC = () => {
       {(section === "overview" || section === "sales") && (
         <div className="space-y-3">
           <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600">
-            <strong className="text-slate-900">{isVi ? "Ảnh chụp độc lập:" : "Independent snapshots:"}</strong> {isVi ? "Các tập dữ liệu độc lập bên dưới là ảnh chụp hiện tại và không được dùng như một funnel chuyển đổi." : "The independent datasets below are current snapshots and must not be interpreted as a conversion funnel."}
+            <strong className="text-slate-900">{isVi ? "Ảnh chụp độc lập:" : "Current totals:"}</strong> {isVi ? "Các tập dữ liệu độc lập bên dưới là ảnh chụp hiện tại và không được dùng như một funnel chuyển đổi." : "Current totals are independent and cannot be used to calculate conversion rates."}
           </div>
           <div className="grid min-w-0 grid-cols-1 gap-4 lg:grid-cols-3">
           <ReportCard title={isVi ? "Cơ hội theo giai đoạn" : "Deals by stage"} icon={<BriefcaseBusiness size={16} />}><StatusDonut items={dealStats} labelFor={statusLabel} formatMoney={formatMoney} emptyText={isVi ? "Chưa có dữ liệu cơ hội." : "No deal data yet."} /></ReportCard>

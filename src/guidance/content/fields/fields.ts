@@ -109,7 +109,7 @@ export const FIELD_GUIDANCE: FieldGuidance[] = [
     title: { vi: "Chiết khấu báo giá", en: "Quote discount" },
     purpose: { vi: "Điều chỉnh giá thương mại theo dòng hàng hoặc toàn báo giá trong phạm vi được phép.", en: "Adjusts commercial pricing by line or quote within permitted limits." },
     example: { vi: "Chiết khấu theo phần trăm hoặc số tiền theo chính sách bán hàng.", en: "Percentage or amount discount according to sales policy." },
-    impact: { vi: "Thay đổi tổng tiền, lợi nhuận và có thể kích hoạt yêu cầu phê duyệt.", en: "Changes totals and margin and may trigger approval." },
+    impact: { vi: "Thay đổi tổng tiền và lợi nhuận. Kiểm tra thỏa thuận với khách hàng trước khi phát hành.", en: "Changes totals and margin. Review the customer agreement before issuance." },
     requiredWhen: { vi: "Chỉ nhập khi có thỏa thuận hoặc chính sách cho phép.", en: "Use only when supported by an agreement or policy." },
   },
   {

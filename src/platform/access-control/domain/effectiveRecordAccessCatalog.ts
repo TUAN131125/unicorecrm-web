@@ -21,7 +21,7 @@ export const EFFECTIVE_RECORD_ACCESS_PROFILES = {
     includeApproval: true,
   },
   quotes: {
-    requestedCommands: ["quote.create", "quote.update", "quote.request-approval", "quote.approve", "quote.reject-approval", "quote.accept", "quote.delete", "quote.export", "order.create"],
+    requestedCommands: ["quote.issueDocument", "quote.create", "quote.update", "quote.request-approval", "quote.approve", "quote.reject-approval", "quote.accept", "quote.delete", "quote.archive", "quote.export", "order.create"],
     requestedFields: ["title", "buyerRef", "ownerId", "items", "subtotal", "discountAmount", "taxAmount", "grandTotal", "status", "approvalStatus"],
     includeExport: true,
     includeApproval: true,

@@ -20,7 +20,7 @@ export function queryDeals(deals: readonly Deal[], filters: DealQueryFilters): D
       .some((value) => String(value).toLocaleLowerCase().includes(search))) return false;
     if (filters.ownerId && filters.ownerId !== "all" && deal.ownerId !== filters.ownerId) return false;
     if (filters.stage && filters.stage !== "all" && deal.stage !== filters.stage) return false;
-    if (filters.minAmount != null && deal.amount < filters.minAmount) return false;
+    if (filters.minAmount != null && (deal.amount === null || deal.amount < filters.minAmount)) return false;
     return true;
   });
 }

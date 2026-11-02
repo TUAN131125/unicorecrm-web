@@ -1,3 +1,5 @@
+import { getApplicationRuntimeMode } from "@/app/composition";
+import { AppsServicesView } from "./AppsServicesView";
 import React from "react";
 import {
   ArrowLeftRight,
@@ -59,6 +61,10 @@ const categoryIcons: Record<IntegrationCategory, React.ReactNode> = {
 const tone = (status: IntegrationStatus) => status === "CONNECTED" ? "success" : status === "PENDING_VERIFICATION" ? "warning" : status === "ERROR" ? "danger" : "neutral";
 
 export function IntegrationsView() {
+  return getApplicationRuntimeMode() === "connected" ? <AppsServicesView /> : <DemoIntegrationsView />;
+}
+
+function DemoIntegrationsView() {
   const { locale } = useI18n();
   const text = (vi: string, en: string) => locale === "vi" ? vi : en;
   const canConfigure = useEffectiveAccess().can(CAPABILITIES.STUDIO_CONFIGURE);
@@ -154,7 +160,6 @@ export function IntegrationsView() {
   const content = (
     <>
       {unavailableNotice ? <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{unavailableNotice}</p> : null}
-      {!canConfigure ? <p className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{text("Bạn chỉ có quyền xem cấu hình.", "You have read-only access to configuration.")}</p> : null}
 
       <StudioMetricsGrid>
         <StudioMetricCard label={text("Đã cấu hình", "Configured")} value={`${configuredCount}/${genericProviders.length}`} description={text("Có mã tham chiếu xác thực trong workspace.", "Has a credential reference in the workspace.")} icon={<Cable size={17} />} tone="violet" />
@@ -248,7 +253,7 @@ export function IntegrationsView() {
 
 
   return (
-    <StudioPageFrame title={text("Tích hợp", "Integrations")} locale={locale} revision={source.revision}>
+    <StudioPageFrame title={text("Ứng dụng & dịch vụ · Demo", "Apps & Services · Demo")} description={text("Dữ liệu mô phỏng trong trình duyệt; không xác nhận kết nối dịch vụ thật.", "Browser demo data; does not verify a live service connection.")} locale={locale} revision={source.revision}>
       {content}
     </StudioPageFrame>
   );

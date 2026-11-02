@@ -700,7 +700,6 @@ const baseLegacyUiCopyPairs: LegacyUiCopyPair[] = [
   ["đơn hoàn tất", "completed orders"],
   ["ƯỚC TÍNH GIÁ CẤU HÌNH CƠ SỞ:", "ESTIMATED BASE CONFIGURATION PRICE:"],
   ["Ấm / Sẵn sàng bàn luận (Warm)", "Warm / ready to discuss"],
-  ["⚡ Mô phỏng cấu hình kỹ thuật (Product Configuration Engine)", "⚡ Technical configuration simulation (Product Configuration Engine)"],
   ["✓ Thay đổi phân quyền có giá trị lập tức sau khi gán phê duyệt cho toàn bộ thành viên gán Nhóm vai trò này.", "✓ Permission changes take effect immediately for every member assigned to this role group after approval."],
   ["🔴 HOT", "🔴 HOT"],
   ["🛑 Hạn chế:", "🛑 Restrictions:"],

@@ -21,16 +21,16 @@ export const CapabilityUnavailableState: React.FC<CapabilityUnavailableStateProp
         icon: <Cable size={26} />,
         title: vi ? "Nghiệp vụ do hệ thống bên ngoài quản lý" : "This capability is managed externally",
         description: vi
-          ? "Dữ liệu authoritative và thao tác mới thuộc hệ thống tích hợp. CRM chỉ hiển thị khi adapter đọc hoặc đồng bộ được cấu hình."
-          : "Authoritative data and new operations belong to an integrated system. CRM can display them after a read or synchronization adapter is configured.",
+          ? "Chưa thể mở nội dung này. Liên hệ quản trị viên để được hỗ trợ."
+          : "This content cannot be opened. Contact your administrator for help.",
       }
     : entry.mode === "HISTORICAL_ONLY"
       ? {
           icon: <Archive size={26} />,
           title: vi ? "Chỉ giữ dữ liệu lịch sử" : "Historical records only",
           description: vi
-            ? "Luồng nghiệp vụ mới đã được tắt. Dữ liệu cũ được giữ để kiểm toán nhưng native workspace hiện không mở đường ghi mới."
-            : "The new-business path is disabled. Existing records are retained for audit, while the native workspace does not expose new write paths.",
+            ? "Bạn có thể xem lịch sử; hiện chưa thể tạo giao dịch mới."
+            : "You can review historical records; new transactions are currently unavailable.",
         }
       : {
           icon: <CircleOff size={26} />,
@@ -51,9 +51,6 @@ export const CapabilityUnavailableState: React.FC<CapabilityUnavailableStateProp
       <h2 className="crm-text-wrap mt-4 max-w-full break-words text-base font-extrabold text-slate-900 [overflow-wrap:anywhere]">{content.title}</h2>
       <p className="crm-text-wrap mt-2 max-w-xl break-words text-xs font-medium leading-6 text-slate-500 [overflow-wrap:anywhere]">{content.description}</p>
       {entry.mode === "EXTERNAL" && <ExternalAuthorityHealthPanel capabilityKey={entry.key} />}
-      {entry.reasonCodes.length > 0 && (
-        <div className="crm-text-wrap mt-3 max-w-full break-all rounded-lg bg-slate-50 px-3 py-2 font-mono text-[10px] text-slate-500">{entry.reasonCodes.join(" · ")}</div>
-      )}
       <div className="mt-6 flex flex-wrap justify-center gap-2">
         <Link to={toWorkspacePath(workspace.workspaceKey, "crm", "dashboard")} className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-extrabold text-white hover:bg-indigo-700">
           <ArrowLeft size={13} /> {vi ? "Về Dashboard" : "Back to dashboard"}

@@ -3,6 +3,7 @@ import { useDealFormController } from "../hooks/useDealFormController";
 import { DealBuyerPicker } from "./DealBuyerPicker";
 import { DealInterestedProductsPicker } from "./DealInterestedProductsPicker";
 import { getDealSelectionAuthority, useDealSelectionAuthority } from "../hooks/useDealSelectionQueries";
+import { useDealStages } from "../hooks/useDealStages";
 import { createDraft } from "./dealFormModel";
 import type { DealFormMode, DealPriority, DealOpportunityType, DealOwnerOption, DealFormDraft } from "./dealFormModel";
 export { mapSelectedPickerItemsToDealLineItems } from "./dealFormModel";
@@ -14,7 +15,7 @@ import { Button, Checkbox, Input, Modal, Select, Textarea, ConfirmDialog } from 
 import { FieldHelp } from "@/guidance/presentation/FieldHelp";
 import { useI18n } from "@/i18n";
 
-import { useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
+import { useWorkspaceCurrencyChoices, useWorkspaceRuntimeSettings } from "@/platform/workspace-config";
 import type {
   DealForecastCategory,
   OpportunityStageConfig,
@@ -51,7 +52,7 @@ export function DealFormModal({
   target,
   sourceKey,
   owners,
-  stages,
+  stages: initialStages,
   canAssign = true,
 
   productsEnabled = true,
@@ -61,7 +62,8 @@ export function DealFormModal({
 }: DealFormModalProps) {
   const { t, locale } = useI18n();
   const formController = useDealFormController();
-  const workspaceConfiguration = useWorkspaceOperationalConfiguration();
+  const currencyChoices = useWorkspaceCurrencyChoices();
+  const runtimeSettings = useWorkspaceRuntimeSettings();
   const workspace = useWorkspaceContextSnapshot();
   const openingWorkspace = React.useRef(workspace.workspaceId);
   const vi = locale === "vi";
@@ -70,8 +72,10 @@ export function DealFormModal({
   const openingSubmit = React.useRef(onSubmit);
   const authority = useDealSelectionAuthority();
   const openingAuthority = React.useRef(authority);
-  const draftFactory = React.useCallback(() => createDraft({ ...initialValues, ...(target ? { buyerRef: target.buyerRef, interestedProductIds: target.interestedProducts, amountDecimal: target.amountDecimal ?? String(target.amount), currency: target.currency } : {}), lineItems: [] }, owners, stages, workspaceConfiguration.localeRegion.currencies.baseCurrency), [initialValues, target, owners, stages, workspaceConfiguration.localeRegion.currencies.baseCurrency]);
+  const draftFactory = React.useCallback(() => createDraft({ ...initialValues, ...(target ? { buyerRef: target.buyerRef, interestedProductIds: target.interestedProducts, amountDecimal: target.amountDecimal ?? (target.amount === null ? "" : String(target.amount)), currency: target.currency } : {}), lineItems: [] }, owners, initialStages, runtimeSettings.baseCurrency), [initialValues, target, owners, initialStages, runtimeSettings.baseCurrency]);
   const [draft, setDraft] = React.useState<DealFormDraft>(draftFactory);
+  const registry = useDealStages(mode === "edit" ? (target?.pipelineId ?? draft.pipeline) || undefined : undefined);
+  const stages = registry.pipeline?.stages ?? (registry.pipelineQuery.connected ? [] : initialStages);
   const [showAdvanced, setShowAdvanced] = React.useState(mode === "edit");
   const [validationErrors, setValidationErrors] = React.useState<Record<string, string>>({});
 
@@ -182,14 +186,15 @@ export function DealFormModal({
       if (!draft.nextActionSummary.trim()) nextErrors.nextActionSummary = vi ? "Nhập tên công việc." : "Enter the task title.";
       if (!draft.nextActionAt || Number.isNaN(new Date(draft.nextActionAt).getTime())) nextErrors.nextActionAt = vi ? "Chọn hạn công việc hợp lệ." : "Choose a valid task due date.";
     }
-    if (!/^(0|[1-9][0-9]*)(\.[0-9]{1,6})?$/.test(draft.amountDecimal)) nextErrors.amount = vi ? "Nhập số thập phân hợp lệ (tối đa 6 chữ số lẻ)." : "Enter a decimal with up to 6 fractional digits.";
-    if (draft.amount < 0) nextErrors.amount = vi ? "Giá trị cơ hội không được âm." : "Opportunity amount cannot be negative.";
+    if (draft.amountDecimal !== "" && !/^(0|[1-9][0-9]*)(\.[0-9]{1,6})?$/.test(draft.amountDecimal)) nextErrors.amount = vi ? "Nhập số thập phân hợp lệ (tối đa 6 chữ số lẻ)." : "Enter a decimal with up to 6 fractional digits.";
+    if (mode === "create" && draft.amount === null) nextErrors.amount = vi ? "Nhập giá trị dự kiến." : "Enter an expected amount.";
+    if (draft.amount !== null && draft.amount < 0) nextErrors.amount = vi ? "Giá trị cơ hội không được âm." : "Opportunity amount cannot be negative.";
     const selectedStage = stages.find((stage) => stage.code === draft.stage);
-    if (["PROPOSAL", "NEGOTIATION"].includes(String(draft.stage).toUpperCase()) && draft.amount <= 0) {
+    if (selectedStage?.requiresPositiveAmount && (draft.amount === null || draft.amount <= 0)) {
       nextErrors.amount = vi ? "Giai đoạn đề xuất hoặc đàm phán cần có giá trị cơ hội lớn hơn 0." : "Proposal or negotiation requires a positive opportunity amount.";
     }
     if (draft.probability < 0 || draft.probability > 100) nextErrors.probability = vi ? "Xác suất phải từ 0 đến 100%." : "Probability must be between 0 and 100%.";
-    if (mode === "create" && selectedStage && selectedStage.category !== "open") {
+    if (mode === "create" && (!selectedStage?.isActive || selectedStage.category !== "open" || !registry.pipeline?.active)) {
       nextErrors.stage = vi ? "Cơ hội mới phải bắt đầu ở giai đoạn đang mở." : "A new opportunity must start in an open stage.";
     }
     if (Object.keys(nextErrors).length > 0) {
@@ -226,7 +231,7 @@ export function DealFormModal({
       if (mounted.current && cycle.current === activeCycle) {
         formController.failed(error);
         const normalized = normalizeApplicationError(error);
-        const aliases: Record<string, string> = { buyerRef: "customerName", stageCode: "stage", opportunityScore: "probability", lineItems: "products", interestedProductIds: "products" };
+        const aliases: Record<string, string> = { buyerRef: "customerName", stageCode: "stage", pipelineId: "pipeline", opportunityScore: "probability", lineItems: "products", interestedProductIds: "products" };
         const errors = Object.fromEntries(Object.entries(normalized.fieldErrors ?? {}).map(([field, messages]) => {
           const root = field.split(/[.[\/]/)[0] ?? field;
           return [aliases[root] ?? root, messages.join(" ")];
@@ -242,17 +247,17 @@ export function DealFormModal({
   };
   const submit = (event: React.FormEvent) => { event.preventDefault(); void save(); };
 
-  const activeStages = stages.filter((stage) => stage.isActive && (mode === "edit" || stage.category === "open")).sort((left, right) => left.order - right.order);
+  const activeStages = stages.filter((stage) => stage.isActive && stage.category === "open").sort((left, right) => left.order - right.order);
   React.useEffect(() => {
     if (authority !== openingAuthority.current) {
-      const empty = createDraft(undefined, [], stages, workspaceConfiguration.localeRegion.currencies.baseCurrency);
+      const empty = createDraft(undefined, [], stages, runtimeSettings.baseCurrency);
       opening.current = null;
       initial.current = empty;
       setDraft(empty);
       openingAuthority.current = authority;
       onClose();
     }
-  }, [authority, onClose, stages, workspaceConfiguration.localeRegion.currencies.baseCurrency]);
+  }, [authority, onClose, stages, runtimeSettings.baseCurrency]);
   if (isOpen && authority !== openingAuthority.current) return null;
 
   return (
@@ -262,7 +267,7 @@ export function DealFormModal({
         isOpen={isOpen}
         onClose={requestClose}
         title={mode === "create" ? (vi ? "Tạo cơ hội" : "Create opportunity") : (vi ? "Chỉnh sửa cơ hội" : "Edit opportunity")}
-        size="lg"
+        size="md"
       >
         <form id={`deal-${mode}-form`} onSubmit={submit} className="crm-form-surface space-y-5 text-left" data-guidance-id="deals.form.canonical">
           {saveError ? <div role="alert" className="text-xs text-rose-600"><p>{saveError}</p><ul>{Object.entries(validationErrors).filter(([, message]) => message).map(([field, message]) => <li key={field}>{message}</li>)}</ul></div> : null}
@@ -279,10 +284,12 @@ export function DealFormModal({
           ) : null}
 
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2" data-guidance-id="deals.form.quick-create">
+            <Input id={`deal-${mode}-pipeline`} label={vi ? "Pipeline của Workspace" : "Workspace pipeline"}
+              value={registry.pipeline?.name[locale] || (registry.pipelineQuery.loading ? (vi ? "Đang tải…" : "Loading…") : "—")} readOnly error={validationErrors.pipeline} />
             <Input id={`deal-${mode}-name`} label={vi ? "Tên cơ hội" : "Opportunity name"} value={draft.name} onChange={(event) => update("name", event.target.value)} required error={validationErrors.name} />
             <DealBuyerPicker value={draft.buyerRef} label={draft.customerName} error={validationErrors.customerName} onChange={(ref, label) => setDraft(current => ({ ...current, buyerRef: ref, customerName: label }))} />
             <Input id={`deal-${mode}-customerName`} label={vi ? "Tên hiển thị đã chọn" : "Selected display name"} value={draft.customerName} readOnly />
-            <Input id={`deal-${mode}-amount`} label={vi ? "Giá trị dự kiến" : "Expected amount"} type="text" inputMode="decimal" value={draft.amountDecimal} onChange={(event) => setDraft(current => ({ ...current, amountDecimal: event.target.value, amount: Number(event.target.value) }))} error={validationErrors.amount} />
+            <Input id={`deal-${mode}-amount`} label={vi ? "Giá trị dự kiến" : "Expected amount"} type="text" inputMode="decimal" value={draft.amountDecimal} onChange={(event) => setDraft(current => ({ ...current, amountDecimal: event.target.value, amount: event.target.value === "" ? null : Number(event.target.value) }))} error={validationErrors.amount} />
             <Input id={`deal-${mode}-expectedCloseDate`} label={vi ? "Ngày đóng dự kiến" : "Expected close date"} type="date" value={draft.expectedCloseDate} onChange={(event) => update("expectedCloseDate", event.target.value)} error={validationErrors.expectedCloseDate} />
             <div className="md:col-span-2">
               <Textarea id={`deal-${mode}-demandSummary`} label={vi ? "Nhu cầu / vấn đề cần giải quyết" : "Need / problem to solve"} value={draft.demandSummary} onChange={(event) => { update("demandSummary", event.target.value); setValidationErrors((current) => ({ ...current, products: "" })); }} rows={3} error={validationErrors.demandSummary} />
@@ -293,8 +300,7 @@ export function DealFormModal({
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <Select id={`deal-${mode}-stage`} label={vi ? "Giai đoạn" : "Stage"} value={draft.stage} error={validationErrors.stage} onChange={(event) => {
               const stage = event.target.value;
-              const stageConfig = stages.find((candidate) => candidate.code === stage);
-              setDraft((current) => ({ ...current, stage, probability: stageConfig?.probabilityDefault ?? current.probability }));
+              setDraft((current) => ({ ...current, stage }));
             }}>{activeStages.map((stage) => <option key={stage.code} value={stage.code}>{vi ? stage.labelVi : stage.labelEn}</option>)}</Select>
             <Input id={`deal-${mode}-probability`} label={vi ? "Xác suất (%)" : "Probability (%)"} type="number" min="0" max="100" value={String(draft.probability)} onChange={(event) => update("probability", Number(event.target.value) || 0)} error={validationErrors.probability} />
             <div data-guidance-id="deals.form.forecast-category"><Select label={vi ? "Dự báo" : "Forecast category"} value={draft.forecastCategory} onChange={(event) => update("forecastCategory", event.target.value as DealForecastCategory)}><option value="PIPELINE">Pipeline</option><option value="BEST_CASE">Best case</option><option value="COMMIT">Commit</option></Select></div>
@@ -320,11 +326,10 @@ export function DealFormModal({
 
           {(mode === "edit" || showAdvanced) ? (
             <div className="space-y-4 border-t border-slate-100 pt-5">
-              <p className="text-xs text-slate-500">{vi ? "Nguồn, pipeline, mức ưu tiên, loại cơ hội và ngân sách tham chiếu chỉ đọc vì lệnh lưu hiện không hỗ trợ các trường này." : "Source, pipeline, priority, opportunity type and reference budget are read-only because the save contract does not support them."}</p>
+              
               <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <Input disabled label={vi ? "Nguồn" : "Source"} value={draft.source} onChange={(event) => update("source", event.target.value)} />
-                <Input disabled label="Pipeline" value={draft.pipeline} onChange={(event) => update("pipeline", event.target.value)} />
-                <Select label={vi ? "Tiền tệ" : "Currency"} value={draft.currency} onChange={(event) => update("currency", event.target.value)}>{workspaceConfiguration.localeRegion.currencies.enabledCurrencies.map((code) => <option key={code} value={code}>{code}</option>)}</Select>
+                <Select label={vi ? "Tiền tệ" : "Currency"} value={draft.currency} onChange={(event) => update("currency", event.target.value)}>{[...new Set([...currencyChoices, draft.currency])].map((code) => <option key={code} value={code}>{code}</option>)}</Select>
                 <Select disabled label={vi ? "Mức ưu tiên" : "Priority"} value={draft.priority} onChange={(event) => update("priority", event.target.value as DealPriority)}><option value="LOW">{vi ? "Thấp" : "Low"}</option><option value="MEDIUM">{vi ? "Trung bình" : "Medium"}</option><option value="HIGH">{vi ? "Cao" : "High"}</option><option value="URGENT">{vi ? "Khẩn cấp" : "Urgent"}</option></Select>
                 <Select disabled label={vi ? "Loại cơ hội" : "Opportunity type"} value={draft.opportunityType} onChange={(event) => update("opportunityType", event.target.value as DealOpportunityType)}><option value="new_sale">{vi ? "Bán mới" : "New sale"}</option><option value="upsell">Upsell</option><option value="cross_sell">Cross-sell</option><option value="renewal">{vi ? "Gia hạn" : "Renewal"}</option><option value="consulting">{vi ? "Tư vấn" : "Consulting"}</option></Select>
                 <Input disabled label={vi ? "Ngân sách dự kiến" : "Expected budget"} type="number" min="0" value={String(draft.expectedBudget)} onChange={(event) => update("expectedBudget", Number(event.target.value) || 0)} />

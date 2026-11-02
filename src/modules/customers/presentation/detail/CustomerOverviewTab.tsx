@@ -95,8 +95,8 @@ export const CustomerOverviewTab: React.FC<CustomerOverviewTabProps> = ({
           </h2>
           <p className="mt-2 text-sm text-slate-600">
             {isVi
-              ? "Backend không cung cấp đánh giá sức khỏe đang hoạt động cho khách hàng này."
-              : "The backend did not provide an active Health assessment for this Customer."}
+              ? "Chưa có đánh giá sức khỏe cho khách hàng này."
+              : "A health assessment is not available for this customer."}
           </p>
         </section>
       </div>
@@ -348,7 +348,7 @@ export const CustomerOverviewTab: React.FC<CustomerOverviewTabProps> = ({
               </span>
               <div className="min-w-0">
                 <h3 className="text-sm font-semibold text-slate-900">
-                  {isVi ? "Thông tin khách hàng" : "Customer snapshot"}
+                  {isVi ? "Thông tin khách hàng" : "Customer information"}
                 </h3>
                 <p className="mt-0.5 text-xs font-normal text-slate-500">
                   {isVi

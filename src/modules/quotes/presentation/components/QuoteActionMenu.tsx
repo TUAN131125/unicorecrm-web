@@ -9,7 +9,6 @@ import {
   Mail,
   MessageCircle,
   RefreshCw,
-  ShieldCheck,
   ShoppingBag,
   Sparkles,
   Archive,
@@ -26,9 +25,6 @@ import type { QuoteActionId } from "../model/quoteActionPolicy";
 export interface QuoteActionMenuHandlers {
   onView(quote: Quote): void;
   onEdit(quote: Quote): void;
-  onRequestApproval(quote: Quote): void;
-  onApprove(quote: Quote): void;
-  onRequestChanges(quote: Quote): void;
   onSend(quote: Quote): void;
   onConfirmSent(quote: Quote): void;
   onExportPdf(quote: Quote): void;
@@ -72,30 +68,6 @@ export const QuoteActionMenu: React.FC<QuoteActionMenuProps> = ({
       label: vi ? "Tiếp tục soạn" : "Continue editing",
       icon: <Edit3 size={14} />,
       onClick: () => handlers.onEdit(quote),
-    },
-    "request-approval": {
-      id: "request-approval",
-      label: vi ? "Gửi duyệt" : "Request approval",
-      icon: <ShieldCheck size={14} />,
-      badge: "INTERNAL",
-      badgeTone: "warning",
-      onClick: () => handlers.onRequestApproval(quote),
-    },
-    approve: {
-      id: "approve",
-      label: vi ? "Phê duyệt" : "Approve",
-      icon: <CheckCircle2 size={14} />,
-      badge: "INTERNAL",
-      badgeTone: "success",
-      onClick: () => handlers.onApprove(quote),
-    },
-    "request-changes": {
-      id: "request-changes",
-      label: vi ? "Yêu cầu chỉnh sửa" : "Request changes",
-      icon: <RefreshCw size={14} />,
-      badge: "INTERNAL",
-      badgeTone: "warning",
-      onClick: () => handlers.onRequestChanges(quote),
     },
     send: {
       id: "send",
@@ -175,9 +147,6 @@ export const QuoteActionMenu: React.FC<QuoteActionMenuProps> = ({
 
   const actionItems = actionIds.map((actionId) => itemById[actionId]);
   const workflowIds = new Set<QuoteActionId>([
-    "request-approval",
-    "approve",
-    "request-changes",
     "send",
     "confirm-sent",
     "accept",

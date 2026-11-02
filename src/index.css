@@ -99,7 +99,7 @@ body {
 .crm-form-surface :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]), select),
 .crm-form-page :where(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]), select) {
   min-height: var(--crm-form-control-height);
-  font-weight: 600;
+  font-weight: var(--crm-form-control-weight, 600);
   box-shadow: 0 1px 2px rgba(15, 23, 42, 0.03);
 }
 
@@ -119,6 +119,22 @@ body {
 .crm-form-surface :where(label),
 .crm-form-page :where(label) {
   color: #475569;
+}
+
+/* Semantic field states take precedence over the neutral form control surface. */
+.crm-form-surface :where(input, select, textarea)[aria-invalid="true"],
+.crm-form-page :where(input, select, textarea)[aria-invalid="true"] {
+  border-color: var(--crm-form-error-border, #e11d48);
+  background-color: #fff1f2;
+  box-shadow: 0 0 0 1px rgba(225, 29, 72, 0.12);
+}
+
+#quote-builder-page [data-field-error="true"],
+#lead-qualification-page [data-field-error="true"] {
+  font-size: 0.75rem;
+  font-weight: 400;
+  font-style: italic;
+  line-height: 1.5;
 }
 
 .crm-form-surface :where(button),

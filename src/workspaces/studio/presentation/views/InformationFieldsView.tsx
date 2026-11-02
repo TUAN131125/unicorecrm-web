@@ -151,11 +151,10 @@ export function InformationFieldsView() {
   const content = (
     <>
       {unavailableNotice ? <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{unavailableNotice}</p> : null}
-      {!canConfigure ? <p className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{text("Bạn chỉ có quyền xem cấu hình.", "You have read-only access to configuration.")}</p> : null}
       <StudioMetricsGrid>
-        <StudioMetricCard label={text("Tổng số trường", "Total fields")} value={allFields.length} description={text(`${draft.length} đối tượng dùng cùng một nguồn cấu hình.`, `${draft.length} objects share one configuration source.`)} icon={<Braces size={17} />} tone="violet" />
-        <StudioMetricCard label={text("Trường tùy chỉnh", "Custom fields")} value={allFields.filter((field) => field.origin === "CUSTOM").length} description={text("Có thể quản lý vòng đời trong Studio.", "Lifecycle can be managed in Studio.")} icon={<Settings2 size={17} />} />
-        <StudioMetricCard label={text("Bắt buộc", "Required")} value={allFields.filter((field) => field.required && field.status === "ACTIVE").length} description={text("Được kiểm tra trên biểu mẫu nghiệp vụ.", "Validated by business forms.")} icon={<ShieldCheck size={17} />} tone="success" />
+        <StudioMetricCard label={text("Tổng số trường", "Total fields")} value={allFields.length}  icon={<Braces size={17} />} tone="violet" />
+        <StudioMetricCard label={text("Trường tùy chỉnh", "Custom fields")} value={allFields.filter((field) => field.origin === "CUSTOM").length}  icon={<Settings2 size={17} />} />
+        <StudioMetricCard label={text("Bắt buộc", "Required")} value={allFields.filter((field) => field.required && field.status === "ACTIVE").length}  icon={<ShieldCheck size={17} />} tone="success" />
         <StudioMetricCard label={text("Tạm ẩn hoặc cũ", "Inactive or deprecated")} value={allFields.filter((field) => field.status !== "ACTIVE").length} description={text("Vẫn giữ mã để bảo toàn dữ liệu cũ.", "Codes remain available for historical data.")} icon={<Archive size={17} />} tone="warning" />
       </StudioMetricsGrid>
 

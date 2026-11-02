@@ -2,7 +2,7 @@ import { useState, useSyncExternalStore } from "react";
 import { getAuthSessionSnapshot } from "@/platform/identity-auth";
 import type { ActivityType } from "@/modules/tasks";
 import { Button, Modal, Select } from "@/shared/components/ui";
-import { useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
+import { useWorkspaceRuntimeSettings } from "@/platform/workspace-config";
 import { getContactRelationshipAuthority, subscribeContactRelationshipAuthority } from "../model/contactRelationshipAuthority";
 import { useContactHistory } from "../hooks/useContactHistory";
 import { contactHistoryTypeLabel, contactHistoryTypes } from "../model/contactHistory";
@@ -16,21 +16,21 @@ function ContactHistoryPanelBody({ contactId, locale }: { contactId: string; loc
   const [type, setType] = useState<ActivityType>();
   const [selectedId, setSelectedId] = useState<string>();
   const history = useContactHistory(contactId, type);
-  const config = useWorkspaceOperationalConfiguration();
+  const config = useWorkspaceRuntimeSettings();
   const vi = locale === "vi";
   const text = (a: string, b: string) => vi ? a : b;
   const messages = {
     ACCESS_DENIED: text("Bạn không có quyền đọc lịch sử.", "You cannot read this history."),
-    UNAVAILABLE: text("Nguồn hoạt động chưa hỗ trợ phạm vi hoặc chính sách trường hiện tại.", "The activity source does not support the current scope or field policy."),
+    UNAVAILABLE: text("Chưa thể mở lịch sử này.", "This history cannot be opened."),
     LOADING: text("Đang tải lịch sử…", "Loading history…"),
     ERROR: text("Không thể tải lịch sử.", "Could not load history."),
     STALE: text("Lịch sử có thể chưa mới nhất. Thử lại để cập nhật.", "History may be out of date. Retry to refresh."),
-    READY_EMPTY: text("Không có hoạt động trong phạm vi và bộ lọc này.", "No activities in this scope and filter."),
+    READY_EMPTY: text("Không có hoạt động phù hợp với bộ lọc.", "No activities match these filters."),
     READY_WITH_DATA: "",
   };
   const selected = history.items.find(item => item.id === selectedId);
   const timestamp = (value: string) => Number.isFinite(Date.parse(value))
-    ? new Intl.DateTimeFormat(vi ? "vi-VN" : "en-US", { dateStyle: "short", timeStyle: "short", timeZone: config.localeRegion.timezone }).format(new Date(value))
+    ? new Intl.DateTimeFormat(vi ? "vi-VN" : "en-US", { dateStyle: "short", timeStyle: "short", timeZone: config.timeZone }).format(new Date(value))
     : text("Thời điểm chưa khả dụng", "Time unavailable");
   return <section data-guidance-id="contacts.relationship.history" aria-label={text("Lịch sử Contact", "Contact history")} className="space-y-3" aria-busy={history.query.loading}>
     <Select label={text("Loại hoạt động", "Activity type")} value={type ?? ""} onChange={event => {

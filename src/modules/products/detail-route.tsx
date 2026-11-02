@@ -22,8 +22,8 @@ const ProductDetailContent: React.FC = () => {
     <AuthoritativeQueryBoundary
       query={detailQuery}
       hasData={products.some((item) => item.id === productId)}
-      loadingTitleVi="Đang tải sản phẩm từ backend"
-      loadingTitleEn="Loading product from backend"
+      loadingTitleVi="Đang tải sản phẩm"
+      loadingTitleEn="Loading product"
       errorTitleVi="Không thể tải sản phẩm"
       errorTitleEn="Product could not be loaded"
     >

@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Check, ChevronDown, ChevronUp, Minus, Plus, Search } from "lucide-react";
+import { ChevronDown, ChevronUp, Minus, Plus, Search } from "lucide-react";
 import { Modal } from "@/shared/components/ui";
 import { useI18n } from "@/i18n";
 import type {
@@ -17,6 +17,7 @@ import {
 } from "../../domain/rules/product.helpers";
 import { getConfiguredProductTypes } from "../../public/configuration";
 
+import { ProductSelectionRow } from "./ProductSelectionRow";
 export type { SelectedPickerItem };
 
 const EMPTY_SELECTED_ITEMS: readonly SelectedPickerItem[] = [];
@@ -31,6 +32,10 @@ interface ProductPickerModalProps {
   products: Product[];
   initialSelected?: SelectedPickerItem[];
   context?: ProductPickerContext;
+  onSearchCatalog?: (search: string) => void;
+  catalogLoading?: boolean;
+  catalogError?: string;
+  catalogPriceOnly?: boolean;
 }
 
 function defaultConfiguration(product: Product): ProductConfiguration {
@@ -71,6 +76,7 @@ export const ProductPickerModal: React.FC<ProductPickerModalProps> = ({
   products,
   initialSelected,
   context = "deal",
+  onSearchCatalog, catalogLoading = false, catalogError = "", catalogPriceOnly = false,
 }) => {
   const { locale, t } = useI18n();
   const vi = locale === "vi";
@@ -136,7 +142,7 @@ export const ProductPickerModal: React.FC<ProductPickerModalProps> = ({
   const selectedItems = useMemo(() => Object.values(selections), [selections]);
 
   const summaryTotals = useMemo(() => selectedItems.reduce<Map<string, number>>((totals, item) => {
-    const price = item.customPrice ?? calculateConfiguredPrice(item.product, item.configuration);
+    const price = (catalogPriceOnly ? item.product.listPrice : item.customPrice ?? calculateConfiguredPrice(item.product, item.configuration));
     const discount = Math.max(0, Math.min(100, item.discountPercent ?? 0));
     const lineTotal = price * Math.max(1, item.quantity) * (1 - discount / 100);
     totals.set(item.product.currency, (totals.get(item.product.currency) ?? 0) + lineTotal);
@@ -209,6 +215,7 @@ export const ProductPickerModal: React.FC<ProductPickerModalProps> = ({
           <button
             type="button"
             onClick={apply}
+            disabled={catalogLoading || Boolean(catalogError)}
             className="h-10 w-full rounded-lg bg-violet-700 px-6 text-xs font-medium text-white hover:bg-violet-800 sm:w-auto"
           >
             {vi ? `Áp dụng (${selectedItems.length})` : `Apply (${selectedItems.length})`}
@@ -223,6 +230,9 @@ export const ProductPickerModal: React.FC<ProductPickerModalProps> = ({
             : "Search by product name or SKU. Only active products are shown."}
         </p>
 
+        {catalogLoading && <p role="status" className="text-xs">{vi ? "Đang tải danh mục…" : "Loading catalog…"}</p>}
+        {catalogError && <p role="alert" className="text-xs text-rose-700">{catalogError}</p>}
+        {catalogPriceOnly && <p className="text-xs">{vi ? "Đơn giá và thuế lấy từ danh mục cùng tiền tệ." : "Unit price and tax use the matching-currency catalog."}</p>}
         <div className="grid shrink-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_190px_210px]">
           <div className="relative sm:col-span-2 lg:col-span-1">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" size={15} />
@@ -232,7 +242,7 @@ export const ProductPickerModal: React.FC<ProductPickerModalProps> = ({
               type="search"
               placeholder={vi ? "Tên hoặc mã sản phẩm" : "Product name or SKU"}
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) => { setSearch(event.target.value); onSearchCatalog?.(event.target.value); }}
               autoFocus
               className="h-11 w-full rounded-lg border border-slate-300 bg-white pl-10 pr-3 text-sm text-slate-800 placeholder:text-slate-400 focus:border-violet-600 focus:outline-none focus:ring-2 focus:ring-violet-500/15"
             />
@@ -289,31 +299,9 @@ export const ProductPickerModal: React.FC<ProductPickerModalProps> = ({
               ) : filteredProducts.map((p) => {
                 const isSelected = Boolean(selections[p.id]);
                 return (
-                  <button
-                    key={p.id}
-                    id={`picker-product-${p.id}`}
-                    type="button"
-                    aria-pressed={isSelected}
-                    onClick={() => toggleProduct(p)}
-                    className={`mb-2 flex w-full items-center justify-between gap-4 rounded-lg border px-4 py-3 text-left last:mb-0 ${isSelected ? "border-violet-500 bg-violet-50" : "border-slate-200 bg-white hover:border-violet-300"}`}
-                  >
-                    <span className="min-w-0">
-                      <span className="block break-words text-sm font-medium text-slate-900">{p.name}</span>
-                      <span className="mt-1 block break-all text-[11px] text-slate-500">
-                        {p.sku}{p.category ? ` · ${p.category}` : ""} · {getProductTypeLabel(p.type, t)}
-                      </span>
-                    </span>
-                    <span className="flex shrink-0 items-center gap-3">
-                      {!interestOnly && (
-                        <span className="hidden whitespace-nowrap text-xs text-slate-700 sm:inline">
-                          {formatProductPrice(p.listPrice, p.currency, locale)}
-                        </span>
-                      )}
-                      <span className={`flex h-5 w-5 items-center justify-center rounded border ${isSelected ? "border-violet-700 bg-violet-700 text-white" : "border-slate-300 bg-white"}`}>
-                        {isSelected && <Check size={12} />}
-                      </span>
-                    </span>
-                  </button>
+                  <ProductSelectionRow key={p.id} product={p} selected={isSelected} onToggle={() => toggleProduct(p)}
+                    detail={<>{p.sku}{p.category ? ` · ${p.category}` : ""} · {getProductTypeLabel(p.type, t)}</>}
+                    trailing={!interestOnly ? <span className="hidden whitespace-nowrap text-xs text-slate-700 sm:inline">{formatProductPrice(p.listPrice, p.currency, locale)}</span> : undefined} />
                 );
               })}
             </div>
@@ -338,7 +326,7 @@ export const ProductPickerModal: React.FC<ProductPickerModalProps> = ({
                 <div className="space-y-3">
                   {selectedItems.map((item) => {
                     const expanded = Boolean(expandedCardIds[item.product.id]);
-                    const configuredPrice = item.customPrice ?? calculateConfiguredPrice(item.product, item.configuration);
+                    const configuredPrice = (catalogPriceOnly ? item.product.listPrice : item.customPrice ?? calculateConfiguredPrice(item.product, item.configuration));
                     const discount = Math.max(0, Math.min(100, item.discountPercent ?? 0));
                     const lineTotal = configuredPrice * Math.max(1, item.quantity) * (1 - discount / 100);
                     return (
@@ -388,16 +376,16 @@ export const ProductPickerModal: React.FC<ProductPickerModalProps> = ({
                               </label>
                             </div>
 
-                            <button
+                            {!catalogPriceOnly && <button
                               type="button"
                               onClick={() => setExpandedCardIds((current) => ({ ...current, [item.product.id]: !current[item.product.id] }))}
                               className="mt-3 flex items-center gap-1 text-[11px] text-slate-600 hover:text-slate-900"
                             >
                               {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
                               {expanded ? (vi ? "Ẩn cấu hình" : "Hide configuration") : (vi ? "Cấu hình sản phẩm" : "Configure product")}
-                            </button>
+                            </button>}
 
-                            {expanded && (
+                            {!catalogPriceOnly && expanded && (
                               <div className="mt-3 space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
                                 {(item.product.type === "subscription" || item.product.isSubscription || item.product.type === "license") && (
                                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -563,3 +551,4 @@ export const ProductPickerModal: React.FC<ProductPickerModalProps> = ({
     </Modal>
   );
 };
+

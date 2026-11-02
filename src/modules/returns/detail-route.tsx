@@ -21,8 +21,8 @@ const ReturnDetailContent: React.FC = () => {
     <AuthoritativeQueryBoundary
       query={detailQuery}
       hasData={snapshot.requests.some((item) => item.id === returnId)}
-      loadingTitleVi="Đang tải yêu cầu trả hàng từ backend"
-      loadingTitleEn="Loading return request from backend"
+      loadingTitleVi="Đang tải yêu cầu trả hàng"
+      loadingTitleEn="Loading return request"
       errorTitleVi="Không thể tải yêu cầu trả hàng"
       errorTitleEn="Return request could not be loaded"
     >

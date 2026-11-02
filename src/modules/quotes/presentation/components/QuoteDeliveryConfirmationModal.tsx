@@ -1,7 +1,7 @@
 import { getWorkspaceContextSnapshot, useWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import { registerUnsavedWork } from "@/platform/unsaved-work";
 import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
-import { formatApplicationError } from "@/shared/operations";
+import { quoteDeliveryFailureMessage } from "../model/quoteDeliveryFeedback";
 import React from "react";
 import { createDurableId } from "@/shared/ids";
 import { CheckCircle2 } from "lucide-react";
@@ -169,7 +169,7 @@ export const QuoteDeliveryConfirmationModal: React.FC<QuoteDeliveryConfirmationM
       if (globalSave) { openRef.current = false; guard.setIsDirty(false); opening.current.onClose(); }
       return true;
     } catch (caught) {
-      if (mounted.current && capturedCycle === cycle.current) setError(formatApplicationError(caught, { locale }));
+      if (mounted.current && capturedCycle === cycle.current) setError(quoteDeliveryFailureMessage(caught, locale));
       return false;
     } finally {
       pending.current = false; if (mounted.current) setBusy(false);
@@ -203,8 +203,8 @@ export const QuoteDeliveryConfirmationModal: React.FC<QuoteDeliveryConfirmationM
       <div className="crm-form-surface space-y-4 text-sm text-slate-600">
         <p>
           {vi
-            ? "Chỉ xác nhận sau khi Báo giá đã thực sự được gửi. CRM sẽ chuyển trạng thái sang Đã gửi và lưu kênh liên hệ làm bằng chứng."
-            : "Confirm only after the quote was actually delivered. CRM will move it to Sent and retain the contact channel as evidence."}
+            ? "Chỉ xác nhận sau khi bạn đã gửi báo giá cho khách hàng."
+            : "Confirm only after you have sent the quote to the customer."}
         </p>
 
         <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs">
@@ -247,7 +247,7 @@ export const QuoteDeliveryConfirmationModal: React.FC<QuoteDeliveryConfirmationM
         <Input disabled={busy}
           id="quote-delivery-sent-at"
           type="datetime-local"
-          label={vi ? "Thời điểm đã gửi *" : "Sent at *"}
+          label={vi ? "Thời điểm gửi do bạn khai báo *" : "Your reported sent time *"}
           value={sentAt}
           onChange={(event) => { setSentAt(event.target.value); setError(""); }}
         />

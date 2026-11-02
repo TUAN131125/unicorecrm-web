@@ -28,7 +28,7 @@ export function InboxView({ state, locale, detail = false, onOpen, onMore, queue
     loading: vi ? "Đang tải hội thoại…" : "Loading conversations…",
     error: vi ? "Không tải được hội thoại. Vui lòng thử lại sau." : "Conversations could not be loaded. Please try again later.",
     denied: vi ? "Bạn không có quyền đọc hội thoại này." : "You do not have access to this conversation.",
-    missing: vi ? "Không tìm thấy hội thoại trong phạm vi truy cập." : "Conversation not found within your access scope.",
+    missing: vi ? "Không tìm thấy hội thoại." : "Conversation not found.",
   };
   return (
     <section className="mx-auto max-w-5xl space-y-5 p-6" data-guidance-id="communications-content" aria-busy={state.kind === "loading"}>
@@ -53,7 +53,7 @@ export function InboxView({ state, locale, detail = false, onOpen, onMore, queue
           {state.messages.length === 0 && <li role="status">{vi ? "Chưa có tin nhắn." : "No messages yet."}</li>}
           {state.messages.map(message => <li key={message.id} className="rounded-xl border border-slate-200 bg-white p-4">
             <time className="text-xs text-slate-500" dateTime={message.occurredAt}>{message.occurredAt}</time>
-            <p className="whitespace-pre-wrap break-words text-sm text-slate-800">{message.text ?? (vi ? "Nội dung bị giới hạn theo quyền truy cập." : "Content withheld by access policy.")}</p>
+            <p className="whitespace-pre-wrap break-words text-sm text-slate-800">{message.text ?? (vi ? "—" : "—")}</p>
           </li>)}
         </ol>
       ) : (

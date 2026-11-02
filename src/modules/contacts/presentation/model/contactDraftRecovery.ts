@@ -1,7 +1,7 @@
 import { getAuthSessionSnapshot } from "@/platform/identity-auth";
 import { getWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import { resolveEffectiveAccess, type EffectiveRecordAccess } from "@/platform/access-control";
-import type { ContactFormDraft } from "../components/ContactFormModal";
+import type { ContactFormDraft } from "./contactFormDraft";
 
 export const contactDraftFields = {
   name: "fullName", title: "jobTitle", department: "department", decisionRole: "decisionRole",

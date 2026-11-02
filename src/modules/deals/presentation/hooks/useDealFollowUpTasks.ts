@@ -6,6 +6,7 @@ import { getTaskApiRuntime, getTaskReadAuthorityScope, type Task } from "@/modul
 import { formatApplicationError } from "@/shared/operations";
 import { getDealApiRuntime } from "../../application/composition/dealApplicationServices";
 import type { Deal } from "../../domain/model/deal.types";
+import { subscribeModuleQueryInvalidation } from "@/shared/application";
 
 export function useDealFollowUpTasks(dealId: string, locale: "vi" | "en") {
   useAuthSessionSnapshot(); useWorkspaceContextSnapshot();
@@ -18,6 +19,9 @@ export function useDealFollowUpTasks(dealId: string, locale: "vi" | "en") {
   const [state, setState] = React.useState<{ key: string; tasks: Task[]; loading: boolean; error: string; next?: string; deal?: Deal }>({ key: "", tasks: [], loading: true, error: "" });
   const key = JSON.stringify([authority, dealId, cursor, revision]);
   React.useEffect(() => setCursor(undefined), [authority, dealId]);
+  React.useEffect(() => subscribeModuleQueryInvalidation("tasks", async event => {
+    if (event.commandType !== "task.log-activity") { setCursor(undefined); refresh(); }
+  }), [authority, dealId]);
   React.useEffect(() => {
     if (!enabled && !mayCreate) return;
     const abort = new AbortController(); let retired = false;

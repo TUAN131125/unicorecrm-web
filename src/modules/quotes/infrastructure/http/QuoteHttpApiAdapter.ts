@@ -1,3 +1,10 @@
+import type { QuoteAcceptanceReadiness, QuoteAcceptanceReadPort } from "../../application/read-models/quoteAcceptanceReadiness";
+import type { QuoteCustomerAcceptanceReadiness as ApiAcceptanceReadiness } from "@/platform/api/generated/commercialApi";
+import type { QuoteCommercialPreviewRead as DocumentPreview } from "../../application/read-models/quoteDocumentModels";
+import type { QuoteReadModel as ApiDocumentPreview } from "@/platform/api/generated/commercialApi";
+import type { QuoteDocumentPort, QuoteDocumentPage, QuoteSellerReadiness, QuoteDocumentIssueResult, IssuedQuoteDocument } from "../../application/read-models/quoteDocumentModels";
+import type { QuoteDocumentSeller, QuoteDocumentList, QuoteDocumentIssueResponse, QuoteIssuedDocument } from "@/platform/api/generated/commercialApi";
+import { ApiClientError } from "@/platform/api/errors/ApiClientError";
 import type {
   CommercialApiClient,
   QuoteBatchMutationResponse,
@@ -19,6 +26,7 @@ import type {
   QuoteQueryPort,
   QuoteVersionedCommandOptions,
   RecordQuoteSendEvidenceInput,
+  RecordQuoteCustomerDecisionInput,
   RejectQuoteInput,
   RequestQuoteApprovalBatchInput,
   RequestQuoteApprovalChangesInput,
@@ -46,16 +54,51 @@ import {
   mapReviseQuoteRequest,
 } from "./QuoteApiMapper";
 
-export class QuoteHttpApiAdapter implements QuoteQueryPort, QuoteCommandPort {
+export class QuoteHttpApiAdapter implements QuoteQueryPort, QuoteCommandPort, QuoteDocumentPort, QuoteAcceptanceReadPort {
   constructor(private readonly api: CommercialApiClient) {}
+
+  async acceptanceReadiness(quoteId: string, documentId?: string, signal?: AbortSignal): Promise<QuoteAcceptanceReadiness> {
+    const dto = await this.api.getQuoteCustomerAcceptanceReadiness<ApiAcceptanceReadiness>(quoteId, documentId ? { documentId } : {}, signal);
+    return { ...dto, blockerCodes: [...dto.blockerCodes], ...(dto.binding ? { binding: { ...dto.binding, buyerRef: { ...dto.binding.buyerRef } } } : {}) };
+  }
+
+  async preview(quoteId: string, signal?: AbortSignal): Promise<DocumentPreview> {
+    const dto = await this.api.getQuote<ApiDocumentPreview>(quoteId, {}, signal);
+    return { quoteNumber: dto.quoteNumber, quoteRevision: dto.quoteRevision, title: dto.title, buyerRef: dto.buyerRef,
+      validUntil: dto.validUntil, currency: dto.currency, lineItems: dto.lineItems.map(line => ({ ...line })),
+      subtotal: dto.subtotal, discountTotal: dto.discountTotal, taxTotal: dto.taxTotal, grandTotal: dto.grandTotal, notes: dto.notes, adjustments: dto.adjustments?.map(a => ({ id: a.id, label: a.label, amount: { ...a.amount } })) };
+  }
+  async seller(signal?: AbortSignal): Promise<QuoteSellerReadiness> {
+    const result = await this.api.getQuoteDocumentSeller<QuoteDocumentSeller>({}, signal);
+    return { ready: result.ready, blockerCodes: result.blockerCodes, ...(result.seller ? { seller: { ...result.seller } } : {}) };
+  }
+  async listDocuments(quoteId: string, cursor?: string, signal?: AbortSignal): Promise<QuoteDocumentPage> {
+    const result = await this.api.listQuoteDocuments<QuoteDocumentList>(quoteId, { limit: 20, ...(cursor ? { cursor } : {}) }, signal);
+    return { items: result.items.map(mapIssuedDocument), ...(result.pageInfo.nextCursor ? { nextCursor: result.pageInfo.nextCursor } : {}) };
+  }
+  async issueDocument(quoteId: string, reason: string, options: QuoteVersionedCommandOptions): Promise<QuoteDocumentIssueResult> {
+    const result = await this.api.issueQuoteDocumentCommand<QuoteDocumentIssueResponse>(quoteId, reason ? { reason } : {}, options);
+    const mapped = mapQuoteMutationResponse({ ...result, warnings: [], emittedEventIds: result.eventIds ?? [], auditEvidenceIds: result.auditIds ?? [], result: { quote: result.result.quote } });
+    return { ...mapped, document: mapIssuedDocument(result.result.document) };
+  }
+  async downloadDocument(quoteId: string, documentId: string, signal?: AbortSignal): Promise<{ document: IssuedQuoteDocument; blob: Blob }> {
+    const metadata = await this.api.getQuoteDocument<QuoteIssuedDocument>(quoteId, documentId, {}, signal);
+    const blob = await this.api.downloadQuoteDocument<Blob>(quoteId, documentId, {}, signal);
+    const bytes = await blob.arrayBuffer();
+    const hash = Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", bytes)), x => x.toString(16).padStart(2, "0")).join("").toUpperCase();
+    if (blob.size !== metadata.fileSize || hash !== metadata.pdfSha256.toUpperCase()) throw new ApiClientError({ code: "RESPONSE_DESERIALIZATION_FAILED", message: "Issued PDF integrity mismatch.", retryable: false });
+    return { document: mapIssuedDocument(metadata), blob };
+  }
 
   async list(query: QuoteListQuery = {}, signal?: AbortSignal): Promise<AuthoritativePage<Quote>> {
     const filters = query.filters ?? {};
     const response = await this.api.listQuotes<QuoteListResponse>(compact({
       cursor: query.cursor,
+      rootQuoteId: filters.rootQuoteId,
+      archived: filters.archived,
       limit: query.limit,
       search: query.search,
-      sortBy: query.sortBy as "updatedAt" | "createdAt" | "validUntil" | "grandTotal" | "quoteNumber" | undefined,
+      sortBy: query.sortBy as "updatedAt" | "createdAt" | "validUntil" | "grandTotal" | "quoteNumber" | "quoteRevision" | undefined,
       sortDirection: query.sortDirection,
       status: filters.status,
       sourceDealId: filters.sourceDealId,
@@ -105,6 +148,13 @@ export class QuoteHttpApiAdapter implements QuoteQueryPort, QuoteCommandPort {
     return mapQuoteMutationResponse(await this.api.recordQuoteSendEvidenceCommand<QuoteMutationResponse>(quoteId, mapRecordQuoteSendEvidenceRequest(input), options));
   }
 
+  async recordCustomerDecision(quoteId: string, input: RecordQuoteCustomerDecisionInput, options: QuoteVersionedCommandOptions): Promise<QuoteMutationResult> {
+    return mapQuoteMutationResponse(await this.api.recordQuoteCustomerDecisionCommand<QuoteMutationResponse>(quoteId, compact({
+      decisionId: input.decisionId, evidenceType: input.evidenceType, sourceChannel: input.sourceChannel,
+      sourceDescription: input.sourceDescription, reportedCustomerDecisionAt: input.reportedCustomerDecisionAt, note: input.note,
+    }), options));
+  }
+
   async reject(quoteId: string, input: RejectQuoteInput, options: QuoteVersionedCommandOptions): Promise<QuoteMutationResult> {
     return mapQuoteMutationResponse(await this.api.rejectQuoteCommand<QuoteMutationResponse>(quoteId, mapRejectQuoteRequest(input), options));
   }
@@ -133,3 +183,5 @@ export class QuoteHttpApiAdapter implements QuoteQueryPort, QuoteCommandPort {
 function compact<T extends Record<string, unknown>>(value: T): T {
   return Object.fromEntries(Object.entries(value).filter(([, item]) => item !== undefined)) as T;
 }
+
+function mapIssuedDocument(dto: QuoteIssuedDocument): IssuedQuoteDocument { return { ...dto }; }

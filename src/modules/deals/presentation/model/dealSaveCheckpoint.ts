@@ -62,7 +62,7 @@ export class DealSaveCheckpoint {
       const buyerRef = draft.buyerRef ?? opening.buyerRef;
       const profile = { name: draft.name, buyerRef, amount: draft.amount, amountDecimal: draft.amountDecimal, currency: draft.currency, notes, interestedProducts: [...draft.interestedProductIds], lineItems: [] };
       const profileChanged = opening.name !== draft.name || JSON.stringify(opening.buyerRef) !== JSON.stringify(buyerRef)
-        || (opening.amountDecimal ?? String(opening.amount)) !== draft.amountDecimal || opening.currency !== draft.currency
+        || (opening.amountDecimal ?? (opening.amount === null ? "" : String(opening.amount))) !== draft.amountDecimal || opening.currency !== draft.currency
         || opening.notes !== notes || JSON.stringify(opening.interestedProducts) !== JSON.stringify(draft.interestedProductIds);
       if (profileChanged) capture("profile", version => updateDealCommand(opening.id, { ...profile, contactId: buyerRef.type === "CONTACT" ? buyerRef.id : undefined }, metadata("profile", version)));
       if (opening.expectedCloseDate !== draft.expectedCloseDate || opening.opportunityScore !== draft.probability || opening.forecastCategory !== draft.forecastCategory)

@@ -51,7 +51,6 @@ export const OrderToCashPanel: React.FC<{ locale: "vi" | "en"; orders: CustomerO
   return <section data-guidance-id="reports.order-to-cash" className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
     <header className="border-b border-slate-100 px-5 py-4">
       <div className="text-sm font-semibold text-slate-950">{vi ? "Chất lượng vận hành Order-to-Cash" : "Order-to-Cash operational quality"}</div>
-      <p className="mt-1 text-xs text-slate-500">{vi ? "Công nợ lấy từ Invoice/Allocation/Credit Note authoritative; các chỉ số còn lại lấy từ owner nghiệp vụ tương ứng." : "Receivables come from authoritative Invoice/Allocation/Credit Note data; other metrics come from their owning modules."}</p>
     </header>
     <div className="grid gap-3 p-5 sm:grid-cols-2 xl:grid-cols-5">{cards.map((item) => <div key={item.key} className="rounded-2xl bg-slate-50 p-4">
       <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">{item.icon}{item.label}</div>

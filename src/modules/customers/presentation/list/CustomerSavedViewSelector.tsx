@@ -22,7 +22,7 @@ interface CustomerSavedViewSelectorProps {
   onSelectView(view: string): void;
   isOpen: boolean;
   onOpenChange(open: boolean): void;
-  customerCount: number;
+  customerCount?: number;
   onAddViewClick(): void;
 }
 
@@ -95,7 +95,7 @@ interface ViewGroupProps {
   title: string;
   views: CustomerSavedViewItem[];
   activeView: string;
-  customerCount: number;
+  customerCount?: number;
   label(view: CustomerSavedViewItem): string;
   onSelectView(view: string): void;
   className?: string;
@@ -126,7 +126,7 @@ const ViewGroup: React.FC<ViewGroupProps> = ({
             {viewIcon(view.key)}
             <span className="crm-text-wrap">{label(view)}</span>
           </div>
-          {activeView === view.key && (
+          {activeView === view.key && customerCount !== undefined && (
             <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded font-medium shrink-0">
               {customerCount}
             </span>

@@ -35,6 +35,7 @@ import {
 import type {
   DealBatchMutationResult,
   DealCommandOptions,
+  DealListQuery,
   DealLineInput,
   DealMutationEvidence,
   DealMutationResult,
@@ -100,6 +101,7 @@ export async function createDealCommand(deal: Deal, metadata: DealLifecycleMutat
   const options = createMutationMetadata(`deal.create:${deal.id}`, { ...metadata, actor: metadata.actor ?? { id: deal.ownerId } });
   const result = await getDealApiRuntime().commands.createDeal({
     dealId: deal.id,
+    pipelineId: deal.pipelineId,
     ...editableProfileInput(deal),
     stageCode: String(deal.stage),
     opportunityScore: String(deal.opportunityScore),
@@ -289,11 +291,11 @@ export function isDealStageResetUnavailable(): boolean {
 }
 
 /**
- * True when Deal pipeline configuration cannot be saved authoritatively. Every
- * `/crm-configuration/pipelines` write operation is BLOCKED in OpenAPI.
+ * Compatibility availability query. Connected saves use saveDealPipelineCommand
+ * and the verified Deals-owned pipeline configuration API.
  */
 export function isDealPipelineConfigurationSaveUnavailable(): boolean {
-  return isBusinessOperationUnavailable("Deal pipeline configuration save");
+  return false;
 }
 
 export function resetDealStages(): OpportunityStageConfig[] {
@@ -309,6 +311,7 @@ export function getDealPipelines(): import("../domain/model/deal.types").DealPip
 }
 
 export function replaceDealPipelines(pipelines: import("../domain/model/deal.types").DealPipelineDefinition[]) {
+  assertDemoDealMutationAllowed("replaceDealPipelines");
   return dealStageRepository.replacePipelines(pipelines);
 }
 
@@ -342,7 +345,7 @@ function editableProfileInput(deal: Deal): ReplaceDealProfileInput {
   return {
     name: deal.name,
     buyerRef: deal.buyerRef,
-    amount: { amount: deal.amountDecimal ?? String(deal.amount), currency },
+    amount: deal.amount === null ? null : { amount: deal.amountDecimal ?? String(deal.amount), currency },
     contactId: deal.contactId,
     sourceLeadId: deal.leadId,
     interestedProductIds: [...deal.interestedProducts],
@@ -456,4 +459,14 @@ export async function refreshDealRecord(dealId: string, signal?: AbortSignal): P
   const deal = await getDealApiRuntime().queries.get(dealId, signal);
   projectDeal(deal);
   return deal;
+}
+
+/** Aggregate read through the Deals owner; never hydrate a collection to derive a total. */
+export function readDealForecastSummary(signal?: AbortSignal) {
+  return getDealApiRuntime().queries.getForecastSummary({}, signal);
+}
+
+/** Bounded owner query for related records; never replaces the shared Deal collection. */
+export function readDealPage(query: DealListQuery = {}, signal?: AbortSignal) {
+  return getDealApiRuntime().queries.list(query, signal);
 }

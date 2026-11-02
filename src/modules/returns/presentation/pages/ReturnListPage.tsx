@@ -314,7 +314,7 @@ export const ReturnListPage: React.FC = () => {
         onClose={() => setShowStats(false)}
         size="lg"
         title={text("Thống kê Đổi / Trả hàng", "Return statistics")}
-        description={text("Tổng hợp các hồ sơ cần duyệt, nhận hàng và hoàn tất xử lý.", "Summary of cases awaiting approval, receipt, and resolution.")}
+        
         bodyClassName="bg-slate-50/70"
       >
         <OperationMetricGrid items={[

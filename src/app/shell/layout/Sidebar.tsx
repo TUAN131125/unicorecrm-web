@@ -55,6 +55,7 @@ import type { CrmWorkspaceConfig } from "@/platform/workspace-config";
 
 import {
   STUDIO_SECTION_GROUPS,
+  STUDIO_SECTIONS,
   listStudioSectionsForGroup,
   type StudioSectionIconKey,
 } from "@/workspaces/studio/navigation/studioSectionRegistry";
@@ -93,6 +94,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const location = useLocation();
   const [isWorkspaceDropdownOpen, setIsWorkspaceDropdownOpen] = useState(false);
   const workspaceRef = useRef<HTMLDivElement>(null);
+  const navigationRef = useRef<HTMLDivElement>(null);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
   const reduceMotion = useReducedMotion();
 
@@ -127,9 +129,46 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const canReadNavigationModule = (moduleKey: string) => ["calendar", "notifications"].includes(moduleKey) ? can("dashboard") : can(moduleKey);
   const visible = (moduleKey: string, enabled = true) => enabled && canReadNavigationModule(moduleKey) && isPrimary(moduleKey);
   const organizationVisible = isOrganizationsEnabled && canReadNavigationModule("organizations");
+  // Dashboard is CRM home: match the workspace/product-space guards. Its widgets enforce
+  // owner permissions; dashboard.read is absent from the current server capability contract.
+  const dashboardVisible = activeWorkspace.status === "active"
+    && shellAccess.workspaceId === activeWorkspace.workspaceId
+    && Boolean(shellAccess.membershipId)
+    && shellAccess.productSpaces.has("crm");
+
+  useEffect(() => {
+    if (activeProductSpace !== "studio") return;
+    const section = STUDIO_SECTIONS.find((item) => location.pathname === toWorkspacePath(activeWorkspace.workspaceKey, "studio", item.routePath));
+    if (!section) return;
+    const groupKey = `studio-${section.groupId}`;
+    setExpandedGroups((current) => current[groupKey] === false ? { ...current, [groupKey]: true } : current);
+  }, [location.pathname, activeProductSpace, activeWorkspace.workspaceKey]);
+
+  useEffect(() => {
+    if (activeProductSpace !== "studio") return;
+    const navigation = navigationRef.current;
+    if (!navigation) return;
+    const revealActiveItem = () => {
+      const item = navigation.querySelector<HTMLElement>('[aria-current="page"]');
+      const group = item?.closest<HTMLElement>("[data-sidebar-group]");
+      if (!item || !group) return;
+      const viewport = navigation.getBoundingClientRect();
+      const bounds = item.getBoundingClientRect();
+      if (bounds.top < viewport.top || bounds.bottom > viewport.bottom) {
+        navigation.scrollTop += group.getBoundingClientRect().top - viewport.top - 16;
+      }
+    };
+    // Group animations and sidebar width changes can move the active item after navigation.
+    const observer = new ResizeObserver(revealActiveItem);
+    observer.observe(navigation);
+    const group = navigation.querySelector('[aria-current="page"]')?.closest("[data-sidebar-group]");
+    if (group) observer.observe(group);
+    const frame = requestAnimationFrame(revealActiveItem);
+    return () => { observer.disconnect(); cancelAnimationFrame(frame); };
+  }, [location.pathname, activeProductSpace, activeWorkspace.workspaceKey, shellAccess, expandedGroups, isSidebarCollapsed, isMobileMenuOpen, locale]);
 
   const toggleGroup = (groupKey: string) => {
-    setExpandedGroups((current) => ({ ...current, [groupKey]: !current[groupKey] }));
+    setExpandedGroups((current) => ({ ...current, [groupKey]: !(current[groupKey] ?? true) }));
   };
 
   const renderSidebarItem = (
@@ -208,12 +247,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   const crmNavigation = (
     <>
+      {renderSidebarGroup("crm-overview", label("TỔNG QUAN", "OVERVIEW"), [path("dashboard")], <>
+        {renderSidebarItem(path("dashboard"), "Dashboard", <LayoutDashboard size={15} />, { visible: dashboardVisible })}
+      </>, dashboardVisible)}
       {renderSidebarGroup("crm-communications", label("GIAO TIẾP", "COMMUNICATIONS"), [path("communications")], <>
         {renderSidebarItem(path("communications"), label("Hộp thư", "Inbox"), <Inbox size={15} />)}
       </>, shellAccess.can("communications.read") || shellAccess.can("communications.queue.read"))}
-      {renderSidebarGroup("crm-overview", label("TỔNG QUAN", "OVERVIEW"), [path("dashboard")], <>
-        {renderSidebarItem(path("dashboard"), "Dashboard", <LayoutDashboard size={15} />, { visible: visible("dashboard") })}
-      </>, visible("dashboard"))}
 
       {renderSidebarGroup("crm-work", label("LÀM VIỆC", "WORK"), [path("tasks"), path("calendar"), path("notifications")], <>
         {renderSidebarItem(path("tasks"), label("Công việc", "Tasks"), <ListTodo size={15} />, { visible: visible("tasks", isTasksEnabled) })}
@@ -318,17 +357,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside
       id="unicore-sidebar"
+      data-navigation-profile={navigationProfile.id}
+      data-guidance-id="shell.navigation.profile"
       data-product-space={activeProductSpace}
-      className={`fixed inset-y-0 left-0 z-40 flex flex-col border-r border-slate-200/80 bg-white/95 shadow-[14px_0_38px_-32px_rgba(15,23,42,.35)] backdrop-blur-xl transform transition-[width,transform] duration-300 ease-[cubic-bezier(.22,1,.36,1)] md:relative md:transform-none ${
+      className={`fixed inset-y-0 left-0 z-40 flex flex-col border-r border-slate-200/80 bg-white shadow-[14px_0_38px_-32px_rgba(15,23,42,.35)] transform transition-[width,transform] duration-300 ease-[cubic-bezier(.22,1,.36,1)] md:relative md:transform-none ${
         isMobileMenuOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
       } ${isSidebarCollapsed ? "md:w-[76px]" : "md:w-[264px] w-[264px]"}`}
     >
-      <div className={`h-16 border-b border-slate-200/80 flex items-center justify-between ${isSidebarCollapsed ? "md:px-2 md:justify-center" : "px-4"}`}>
+      <div className={`h-16 flex items-center justify-between ${isSidebarCollapsed ? "md:px-2 md:justify-center" : "px-4"}`}>
         <div className={`flex min-w-0 items-center gap-2.5 ${isSidebarCollapsed ? "md:justify-center" : ""}`}>
           <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 via-indigo-600 to-sky-500 text-xs font-black text-white shadow-lg shadow-indigo-500/20"><span className="relative z-10">U</span><span className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,.5),transparent_35%)]" /></div>
           <div className={isSidebarCollapsed ? "md:hidden" : ""}>
             <h1 className="crm-text-wrap text-[13px] font-black tracking-tight text-slate-950">UnicoreCRM</h1>
-            <p className="mt-0.5 crm-text-wrap text-[9px] font-bold uppercase tracking-[0.12em] text-violet-600" data-navigation-profile={navigationProfile.id} data-guidance-id="shell.navigation.profile">{vi ? navigationProfile.labelVi : navigationProfile.labelEn}</p>
           </div>
         </div>
         <button type="button" className="text-slate-500 md:hidden" onClick={() => setIsMobileMenuOpen(false)} aria-label={vi ? "Đóng điều hướng" : "Close navigation"}>
@@ -336,7 +376,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </button>
       </div>
 
-      <div ref={workspaceRef} className="relative z-40 border-b border-slate-200/80 bg-gradient-to-b from-slate-50/90 to-white p-3 select-none">
+      <div ref={workspaceRef} className="relative z-40 p-3 select-none">
         <div className="relative flex justify-center">
           <button
             type="button"
@@ -388,7 +428,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </div>
 
-      <div className="crm-sidebar-scroll flex-1 space-y-5 overflow-y-auto px-2.5 py-4">
+      <div ref={navigationRef} className="crm-sidebar-scroll min-h-0 flex-1 space-y-5 overflow-y-auto px-2.5 py-4">
         <div className={`px-3 ${isSidebarCollapsed ? "md:hidden" : ""}`}>
           <div className="text-[10px] font-black uppercase tracking-[0.16em] text-indigo-600">{activeSpaceInfo.title}</div>
           <div className="mt-0.5 text-[10px] font-semibold text-slate-400">{activeSpaceInfo.subtitle}</div>

@@ -130,7 +130,14 @@ export class ConnectedAiRuntime implements AiRuntime {
 
   private conversationHistory(request: AiAskRequest) {
     const thread = this.readThreads(request.scope).find((item) => item.id === request.conversationId);
-    return (thread?.messages ?? []).slice(-12).filter((item) => item.role !== "system" && item.content.trim()).map((item) => ({ role: item.role as "user" | "assistant", content: item.content.slice(0, 2000) }));
+    let remaining = 8000;
+    return (thread?.messages ?? []).slice(-12).reverse()
+      .filter((item) => item.role !== "system" && item.content.trim())
+      .flatMap((item) => {
+        const content = item.content.slice(0, Math.min(2000, remaining));
+        remaining -= content.length;
+        return content ? [{ role: item.role as "user" | "assistant", content }] : [];
+      }).reverse();
   }
 
   private readThreads(scope: AiWorkspaceScope): AiChatThread[] {

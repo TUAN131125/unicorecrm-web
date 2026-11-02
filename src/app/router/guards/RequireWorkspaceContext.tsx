@@ -1,3 +1,5 @@
+import { normalizeApplicationError } from "@/shared/domain";
+import { formatApplicationError } from "@/shared/operations";
 import { useAuthSessionSnapshot } from "@/platform/identity-auth";
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
@@ -5,6 +7,7 @@ import { RouteLoadingExperience } from "@/components/loading";
 import { productSpaceHome, ROUTE_KEYS } from "@/platform/navigation";
 import { useI18n } from "@/i18n";
 import { loadAccessGovernance } from "@/platform/access-control/governance";
+import { retireWorkspaceRuntimeSettings } from "@/platform/workspace-config/workspaceRuntimeSettings";
 import {
   enterWorkspaceByKey,
   getWorkspaceBootstrapSnapshot,
@@ -35,7 +38,7 @@ type GateState =
 export const RequireWorkspaceContext: React.FC<React.PropsWithChildren> = ({ children }) => {
   const location = useLocation();
   const session = useAuthSessionSnapshot();
-  const owner = JSON.stringify([session?.sessionId, session?.principal.accountId]);
+  const owner = JSON.stringify([session?.sessionId, session?.principal.accountId, workspaceKeyFromPath(location.pathname)]);
   const [readyOwner, setReadyOwner] = React.useState<string>();
   const { locale } = useI18n();
   const vi = locale === "vi";
@@ -63,6 +66,7 @@ export const RequireWorkspaceContext: React.FC<React.PropsWithChildren> = ({ chi
         const active = getWorkspaceBootstrapSnapshot();
         if (routeWorkspaceKey) {
           if (active?.workspace.workspaceKey !== routeWorkspaceKey) {
+            retireWorkspaceRuntimeSettings();
             const memberships = (await loadWorkspaceMemberships(controller.signal))
               .filter((membership) => membership.status === "active");
             if (memberships.length === 0) {
@@ -141,7 +145,8 @@ const WorkspaceRuntimeFailure: React.FC<{
 );
 
 function describeGateFailure(error: unknown, vi: boolean): string {
-  const code = error instanceof Error ? error.message : String(error);
+  const normalized = normalizeApplicationError(error);
+  const code = normalized.code;
   if (code.startsWith("WORKSPACE_MEMBERSHIP_NOT_FOUND")) {
     return vi
       ? "Tài khoản của bạn không có quyền truy cập không gian làm việc này."
@@ -152,14 +157,9 @@ function describeGateFailure(error: unknown, vi: boolean): string {
       ? "Quyền truy cập không gian làm việc này đang bị tạm ngưng."
       : "Your access to this workspace is suspended.";
   }
-  if (code.includes("ACCESS_CONTEXT_UNAVAILABLE") || code.includes("ACCESS_GOVERNANCE")) {
-    return vi
-      ? "Không đọc được ngữ cảnh phân quyền từ máy chủ."
-      : "The authorization context could not be read from the server.";
-  }
-  return vi
-    ? `Máy chủ không phản hồi hợp lệ khi mở không gian làm việc. (${code})`
-    : `The server did not return a usable workspace runtime. (${code})`;
+  return formatApplicationError(normalized, { locale: vi ? "vi" : "en", fallbackMessage: vi
+    ? "Không thể mở không gian làm việc. Vui lòng thử lại hoặc liên hệ người quản trị."
+    : "The workspace could not be opened. Retry or contact your administrator." });
 }
 
 function workspaceKeyFromPath(pathname: string): string | undefined {

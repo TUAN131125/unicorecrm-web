@@ -1,3 +1,4 @@
+import type { MoneyDto } from "@/shared/money";
 import type { BuyerRef } from "@/platform/identity";
 import type { ExchangeRateSnapshot } from "@/shared/money";
 import type { CustomerDocumentDeliveryChannel, CustomerDocumentDeliveryRecord } from "@/shared/domain";
@@ -127,9 +128,12 @@ export interface CustomerOrder {
   discountTotal?: number;
   taxTotal?: number;
   grandTotal?: number;
+  commercialTotal?: MoneyDto;
   totalAmount: number;
   currency?: string;
   exchangeRateSnapshot?: ExchangeRateSnapshot;
+  confirmationOrigin?: string;
+  confirmationPolicyVersion?: string;
   confirmedAt?: string;
   completedAt?: string;
   completion?: OrderCompletionAudit;
@@ -146,6 +150,9 @@ export interface CustomerOrder {
   shippingAddress?: OrderShippingAddress;
   /** Immutable payment agreement copied from the accepted Quote or authored on the Order draft. */
   paymentAgreementSnapshot?: PaymentAgreementSnapshot;
+  acceptance?: { source: "CUSTOMER_LINK" | "STAFF_RECORDED"; assuranceLevel: string; acceptedAt: string; recordedBy: string; evidence: string; operationalApprovalRequired: boolean };
+  commercialSnapshotFingerprint?: string;
+  sourceQuoteResourceVersion?: number;
   /** Payment guidance generated when the Order is confirmed. */
   paymentInstruction?: OrderPaymentInstruction;
   creditApproval?: { approvedBy: string; approvedByName?: string; approvedAt: string; reason: string; policyRevision?: number; approvedAmount: number; currency: string };

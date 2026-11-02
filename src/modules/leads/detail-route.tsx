@@ -21,7 +21,6 @@ export const LeadDetailRoutePage: React.FC = () => {
       resourceKey="leads"
       recordId={leadId}
       record={record}
-      showNotice={false}
       {...EFFECTIVE_RECORD_ACCESS_PROFILES.leads}
     >
       <LeadDetailScreen sources={sources} campaigns={campaigns} crmConfig={crmConfig} />

@@ -55,18 +55,18 @@ export function normalizeDealStageConfigs(configs: unknown): OpportunityStageCon
 }
 
 export function getActiveDealStages(configs: readonly OpportunityStageConfig[]): OpportunityStageConfig[] {
-  return normalizeDealStageConfigs(configs).filter((stage) => stage.isActive).sort((a, b) => a.order - b.order);
+  return [...configs].filter((stage) => stage.isActive).sort((a, b) => a.order - b.order);
 }
 
 export function isWonStage(stageCode: string, configs: readonly OpportunityStageConfig[]): boolean {
-  const normalizedCode = normalizeDealStageCode(stageCode);
-  const config = normalizeDealStageConfigs(configs).find((stage) => stage.code === normalizedCode);
+  const normalizedCode = stageCode;
+  const config = configs.find((stage) => stage.code === normalizedCode);
   return config ? config.category === "won" : normalizedCode === DealStage.WON;
 }
 
 export function isLostStage(stageCode: string, configs: readonly OpportunityStageConfig[]): boolean {
-  const normalizedCode = normalizeDealStageCode(stageCode);
-  const config = normalizeDealStageConfigs(configs).find((stage) => stage.code === normalizedCode);
+  const normalizedCode = stageCode;
+  const config = configs.find((stage) => stage.code === normalizedCode);
   return config ? config.category === "lost" : normalizedCode === DealStage.LOST;
 }
 
@@ -75,18 +75,9 @@ export function isOpenStage(stageCode: string, configs: readonly OpportunityStag
 }
 
 export function getStageLabel(stageCode: string, configs: readonly OpportunityStageConfig[], locale: string): string {
-  const normalizedCode = normalizeDealStageCode(stageCode);
-  const config = normalizeDealStageConfigs(configs).find((stage) => stage.code === normalizedCode);
+  const normalizedCode = stageCode;
+  const config = configs.find((stage) => stage.code === normalizedCode);
   if (!config) return String(normalizedCode);
-
-  // Canonical system stages always use the product-owned bilingual labels.
-  // This prevents older persisted workspace snapshots from leaking English-only
-  // or stale labels into the Vietnamese UI while still allowing custom stages
-  // to use their administrator-defined Vietnamese and English names.
-  const canonical = DEFAULT_DEAL_STAGES.find((stage) => stage.code === normalizedCode);
-  if (canonical && config.isSystem !== false) {
-    return locale === "vi" ? canonical.labelVi : canonical.labelEn;
-  }
 
   const localizedLabel = locale === "vi" ? config.labelVi : config.labelEn;
   const fallbackLabel = locale === "vi" ? config.labelEn : config.labelVi;
@@ -96,7 +87,7 @@ export function getStageLabel(stageCode: string, configs: readonly OpportunitySt
 /** Terminal WON/LOST outcomes are explicit commands and are never an automatic "next" stage. */
 export function getNextStage(stageCode: string, configs: readonly OpportunityStageConfig[]): string | null {
   const activeOpen = getActiveDealStages(configs).filter((stage) => stage.category === "open");
-  const normalizedCode = normalizeDealStageCode(stageCode);
+  const normalizedCode = stageCode;
   const currentIndex = activeOpen.findIndex((stage) => stage.code === normalizedCode);
   if (currentIndex < 0 || currentIndex >= activeOpen.length - 1) return null;
   return activeOpen[currentIndex + 1].code;

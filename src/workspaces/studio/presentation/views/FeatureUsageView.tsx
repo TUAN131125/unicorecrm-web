@@ -85,7 +85,6 @@ export function FeatureUsageView() {
       error={error}
       actions={<StudioButton tone="primary" icon={<Save size={16} />} loading={saving} disabled={!canConfigure || !dirty || saving} onClick={() => void save()}>{t("common.save")}</StudioButton>}
     >
-      {!canConfigure ? <p className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{t("studio.readOnly")}</p> : null}
 
       <div className="grid min-w-0 gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(100%,14rem),1fr))]">
         <StudioMetricCard

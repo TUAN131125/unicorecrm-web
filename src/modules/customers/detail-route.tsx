@@ -37,10 +37,10 @@ const CustomerDetailContent: React.FC = () => {
     <AuthoritativeQueryBoundary
       query={detailQuery}
       hasData={Boolean(customer) && (!connected || !detailQuery.error)}
-      loadingTitleVi="Đang tải Customer 360 từ backend"
-      loadingTitleEn="Loading Customer 360 from backend"
-      errorTitleVi="Không thể tải Customer 360"
-      errorTitleEn="Customer 360 could not be loaded"
+      loadingTitleVi="Đang tải thông tin khách hàng"
+      loadingTitleEn="Loading customer information"
+      errorTitleVi="Không thể tải thông tin khách hàng"
+      errorTitleEn="Customer information could not be loaded"
     >
       {customer
         ? projection ? <CustomerConnectedWorkspace projection={projection}/> : <Customer360Page customer={customer} />

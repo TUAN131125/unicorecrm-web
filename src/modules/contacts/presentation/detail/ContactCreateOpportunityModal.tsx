@@ -89,7 +89,7 @@ export const ContactCreateOpportunityModal: React.FC<ContactCreateOpportunityMod
       canAssign={ownership?.canAssign}
       customerNameLocked
       onSubmit={(draft, _opening, _intentId, openingSourceKey) => {
-        if (openingSourceKey !== contact.id) return false;
+        if (openingSourceKey !== contact.id || draft.amount === null) return false;
         return onSave({
         name: draft.name,
         amount: draft.amount,

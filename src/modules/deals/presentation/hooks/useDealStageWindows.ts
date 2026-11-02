@@ -20,6 +20,8 @@ interface DealStageWindowSnapshot {
 
 export interface UseDealStageWindowsOptions {
   enabled: boolean;
+  pipelineId?: string;
+  pipelineVersion?: number;
   stages: readonly string[];
   search?: string;
   ownerId?: string;
@@ -29,9 +31,11 @@ export interface UseDealStageWindowsOptions {
   currency?: string;
   ownershipScope?: "MINE" | "TEAM" | "ALLOWED";
   windowSize?: number;
+  publishToRepository?: boolean;
 }
 
 export interface DealStageWindowQuery {
+  items: readonly Deal[];
   connected: boolean;
   enabled: boolean;
   loading: boolean;
@@ -72,8 +76,9 @@ export function useDealStageWindows(options: UseDealStageWindowsOptions): DealSt
     sortDirection: "desc",
     filters: {
       ownerId: normalizeFilter(options.ownerId, "all"),
+      pipelineId: options.pipelineId,
     },
-  }), [options.ownerId, options.search]);
+  }), [options.ownerId, options.search, options.pipelineId]);
   const requestedStages = React.useMemo(
     () => options.stageFilter && options.stageFilter !== "all"
       ? stages.filter((stage) => stage === options.stageFilter)
@@ -81,8 +86,8 @@ export function useDealStageWindows(options: UseDealStageWindowsOptions): DealSt
     [options.stageFilter, stages],
   );
   const resetKey = React.useMemo(
-    () => JSON.stringify({ workspaceId: workspace.workspaceId, stages: requestedStages, query, windowSize }),
-    [query, requestedStages, windowSize, workspace.workspaceId],
+    () => JSON.stringify({ workspaceId: workspace.workspaceId, pipelineVersion: options.pipelineVersion, stages: requestedStages, query, windowSize }),
+    [query, requestedStages, windowSize, workspace.workspaceId, options.pipelineVersion],
   );
   const [windows, setWindows] = React.useState<Record<string, DealStageWindowSnapshot>>({});
   const controllersRef = React.useRef(new Map<string, AbortController>());
@@ -100,8 +105,8 @@ export function useDealStageWindows(options: UseDealStageWindowsOptions): DealSt
     abortAll();
     initialLoadKeyRef.current = undefined;
     setWindows({});
-    replaceDeals([]);
-  }, [abortAll]);
+    if (enabled && options.publishToRepository !== false) replaceDeals([]);
+  }, [abortAll, enabled, options.publishToRepository]);
 
   React.useLayoutEffect(() => {
     if (previousResetKeyRef.current === resetKey) return;
@@ -118,10 +123,10 @@ export function useDealStageWindows(options: UseDealStageWindowsOptions): DealSt
   }, [abortAll]);
 
   React.useEffect(() => {
-    if (!enabled) return;
+    if (!enabled || options.publishToRepository === false) return;
     const merged = requestedStages.flatMap((stage) => windows[stage]?.items ?? []);
     replaceDeals(merged);
-  }, [enabled, requestedStages, windows]);
+  }, [enabled, requestedStages, windows, options.publishToRepository]);
 
   const loadStage = React.useCallback(async (stage: string, append: boolean) => {
     if (!enabled || !requestedStages.includes(stage)) return;
@@ -158,7 +163,7 @@ export function useDealStageWindows(options: UseDealStageWindowsOptions): DealSt
         },
       }, controller.signal);
       if (controller.signal.aborted || requestVersionsRef.current.get(stage) !== requestVersion) return;
-      if (result.items.some((deal) => deal.stage !== stage)) {
+      if (result.items.some((deal) => deal.stage !== stage || (options.pipelineId && deal.pipelineId !== options.pipelineId))) {
         throw new Error(`DEAL_STAGE_WINDOW_MISMATCH:${stage}`);
       }
       if (result.pageInfo.hasNextPage && !result.pageInfo.nextCursor?.trim()) {
@@ -192,7 +197,7 @@ export function useDealStageWindows(options: UseDealStageWindowsOptions): DealSt
     } finally {
       if (requestVersionsRef.current.get(stage) === requestVersion) controllersRef.current.delete(stage);
     }
-  }, [enabled, query, requestedStages, windowSize, windows]);
+  }, [enabled, query, requestedStages, windowSize, windows, options.pipelineId]);
 
   const refresh = React.useCallback(async () => {
     await Promise.all(requestedStages.map((stage) => loadStage(stage, false)));
@@ -228,6 +233,7 @@ export function useDealStageWindows(options: UseDealStageWindowsOptions): DealSt
     .at(-1);
 
   return {
+    items: requestedStages.flatMap(stage => windows[stage]?.items ?? []),
     connected,
     enabled,
     loading,

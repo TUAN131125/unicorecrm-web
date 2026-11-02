@@ -12,6 +12,7 @@ import {
 } from "./recordDetailHeaderContract";
 
 export interface RecordDetailHeaderProps {
+  typography?: "default" | "commercial";
   backLabel: string;
   onBack(): void;
   identityIcon: React.ReactNode;
@@ -27,6 +28,7 @@ export interface RecordDetailHeaderProps {
 }
 
 export const RecordDetailHeader: React.FC<RecordDetailHeaderProps> = ({
+  typography = "default",
   backLabel,
   onBack,
   identityIcon,
@@ -76,7 +78,7 @@ export const RecordDetailHeader: React.FC<RecordDetailHeaderProps> = ({
               <div className="min-w-0 flex-1 space-y-1 text-left">
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
                   <h2
-                    className={`${recordDetailHeaderTitleClassName} ${titleOverflow === "wrap-mobile" ? "crm-text-wrap break-words [overflow-wrap:anywhere] sm:crm-text-wrap sm:crm-text-wrap" : "crm-text-wrap"}`}
+                    className={`${typography === "commercial" ? "text-2xl font-semibold leading-snug text-slate-800" : recordDetailHeaderTitleClassName} ${titleOverflow === "wrap-mobile" ? "crm-text-wrap break-words [overflow-wrap:anywhere] sm:crm-text-wrap sm:crm-text-wrap" : "crm-text-wrap"}`}
                     title={accessibleTitle}
                     aria-label={accessibleTitle}
                   >{title}</h2>

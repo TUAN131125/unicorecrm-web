@@ -1,4 +1,5 @@
 import React from "react";
+import { useI18n } from "@/i18n";
 import {
   RelationshipDetailTabs,
   type RelationshipDetailCounts,
@@ -18,6 +19,7 @@ interface CustomerDetailTabsProps {
   counts: RelationshipDetailCounts;
   isRightPanelVisible: boolean;
   onToggleRightPanel(): void;
+  visibleTabs?: readonly CustomerDetailTab[];
 }
 
 export const CustomerDetailTabs: React.FC<CustomerDetailTabsProps> = ({
@@ -26,7 +28,10 @@ export const CustomerDetailTabs: React.FC<CustomerDetailTabsProps> = ({
   counts,
   isRightPanelVisible,
   onToggleRightPanel,
-}) => (
+  visibleTabs,
+}) => {
+  const { locale } = useI18n();
+  return (
   <RelationshipDetailTabs
     activeTab={activeTab}
     onChange={setActiveTab}
@@ -34,5 +39,8 @@ export const CustomerDetailTabs: React.FC<CustomerDetailTabsProps> = ({
     isRightPanelVisible={isRightPanelVisible}
     onToggleRightPanel={onToggleRightPanel}
     motionId="customer-primary-tabs"
+    visibleTabs={visibleTabs}
+    panelLabel={{ visible: locale === "vi" ? "Ẩn bảng quan hệ" : "Hide relationship panel", hidden: locale === "vi" ? "Hiện bảng quan hệ" : "Show relationship panel" }}
   />
-);
+  );
+};

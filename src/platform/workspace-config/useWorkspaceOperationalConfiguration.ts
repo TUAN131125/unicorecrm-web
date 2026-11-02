@@ -1,6 +1,9 @@
-import { useSubscribableSnapshot } from "@/platform/react";
-import { getWorkspaceOperationalConfiguration, subscribeToWorkspaceOperationalConfiguration } from "./workspaceOperationalConfigurationRuntime";
+import { useMemo, useSyncExternalStore } from "react";
+import { getWorkspaceOperationalConfigurationRevision, readWorkspaceOperationalConfiguration, subscribeToWorkspaceOperationalConfigurationState } from "./workspaceOperationalConfigurationRuntime";
+import { getWorkspaceRuntimeSettingsRevision, subscribeToWorkspaceRuntimeSettings } from "./workspaceRuntimeSettings";
 
 export function useWorkspaceOperationalConfiguration() {
-  return useSubscribableSnapshot(getWorkspaceOperationalConfiguration, subscribeToWorkspaceOperationalConfiguration);
+  const revision = useSyncExternalStore(subscribeToWorkspaceOperationalConfigurationState, getWorkspaceOperationalConfigurationRevision);
+  const ownerRevision = useSyncExternalStore(subscribeToWorkspaceRuntimeSettings, getWorkspaceRuntimeSettingsRevision);
+  return useMemo(readWorkspaceOperationalConfiguration, [revision, ownerRevision]);
 }

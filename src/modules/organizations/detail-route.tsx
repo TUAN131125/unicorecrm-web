@@ -32,8 +32,8 @@ const OrganizationAccountDetailContent: React.FC<{ recordId: string }> = ({ reco
     <AuthoritativeQueryBoundary
       query={detailQuery}
       hasData={accounts.some((account) => account.id === recordId)}
-      loadingTitleVi="Đang tải tổ chức từ backend"
-      loadingTitleEn="Loading organization from backend"
+      loadingTitleVi="Đang tải tổ chức"
+      loadingTitleEn="Loading organization"
       errorTitleVi="Không thể tải tổ chức"
       errorTitleEn="Organization could not be loaded"
     >

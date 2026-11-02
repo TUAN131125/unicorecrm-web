@@ -12,6 +12,7 @@ export type DealApiRuntimeMode = "demo" | "connected" | "test";
 
 export interface DealListQuery extends ModuleListQuery {
   filters?: {
+    pipelineId?: string;
     stageCode?: string;
     stageCategory?: "OPEN" | "WON" | "LOST";
     ownerId?: string;
@@ -34,7 +35,7 @@ export interface DealLineInput {
 export interface DealEditableProfileInput {
   name: string;
   buyerRef: BuyerRef;
-  amount: MoneyDto;
+  amount: MoneyDto | null;
   contactId?: string;
   sourceLeadId?: string;
   interestedProductIds?: readonly string[];
@@ -43,6 +44,7 @@ export interface DealEditableProfileInput {
 }
 
 export interface CreateDealInput extends DealEditableProfileInput {
+  pipelineId?: string;
   dealId: string;
   stageCode: string;
   opportunityScore: string;

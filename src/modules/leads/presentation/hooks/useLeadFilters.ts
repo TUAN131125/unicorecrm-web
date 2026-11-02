@@ -8,7 +8,7 @@ import {
   getLeadLifecycleDisplayKey,
   isPositiveQualificationOutcome,
 } from "../../domain/model/leadLifecycle.canonical";
-import { useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
+import { useWorkspaceRuntimeSettings } from "@/platform/workspace-config";
 import { toDateKeyInTimeZone } from "@/shared/lib/datetime/workspaceDateTime";
 import { buildLeadDuplicateIndex } from "../../application/queries/leadDuplicateIndex";
 
@@ -56,8 +56,8 @@ function compareNullable(a: string | number | undefined, b: string | number | un
 }
 
 export const useLeadFilters = (leads: Lead[], activeView: string, ownership: RecordOwnershipContext | null = null, defaultSort = DEFAULT_LEAD_SORT) => {
-  const configuration = useWorkspaceOperationalConfiguration();
-  const workspaceTimeZone = configuration.localeRegion.timezone;
+  const configuration = useWorkspaceRuntimeSettings();
+  const workspaceTimeZone = configuration.timeZone;
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState<LeadFiltersState>(INITIAL_LEAD_FILTERS);
   const [sort, setSort] = useState<LeadSortState>(defaultSort);

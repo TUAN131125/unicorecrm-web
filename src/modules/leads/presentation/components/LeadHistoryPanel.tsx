@@ -1,23 +1,23 @@
 import { useState } from "react";
 import type { ActivityType } from "@/modules/tasks";
 import { Button, Select } from "@/shared/components/ui";
-import { useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
+import { useWorkspaceRuntimeSettings } from "@/platform/workspace-config";
 import { useLeadHistory } from "../hooks/useLeadHistory";
 import { leadHistoryTypeLabel, leadHistoryTypes } from "../model/leadHistory";
 
 export function LeadHistoryPanel({ leadId, locale }: { leadId: string; locale: string }) {
   const [type, setType] = useState<ActivityType | undefined>();
   const history = useLeadHistory(leadId, type);
-  const config = useWorkspaceOperationalConfiguration();
+  const config = useWorkspaceRuntimeSettings();
   const vi = locale === "vi";
   const text = (a: string, b: string) => vi ? a : b;
   const messages = {
     ACCESS_DENIED: text("Bạn không có quyền đọc lịch sử.", "You cannot read this history."),
-    UNAVAILABLE: text("Nguồn hoạt động chưa hỗ trợ phạm vi hoặc chính sách trường hiện tại.", "The activity source does not support the current scope or field policy."),
+    UNAVAILABLE: text("Chưa thể mở lịch sử này.", "This history cannot be opened."),
     LOADING: text("Đang tải lịch sử…", "Loading history…"),
     ERROR: text("Không thể tải lịch sử.", "Could not load history."),
     STALE: text("Lịch sử có thể chưa mới nhất. Thử lại để cập nhật.", "History may be out of date. Retry to refresh."),
-    READY_EMPTY: text("Không có hoạt động trong phạm vi và bộ lọc này.", "No activities in this scope and filter."),
+    READY_EMPTY: text("Không có hoạt động phù hợp với bộ lọc.", "No activities match these filters."),
     READY_WITH_DATA: "",
   };
   return <section data-guidance-id="leads.relationship.history" aria-label={text("Lịch sử Lead", "Lead history")} className="space-y-3" aria-busy={history.query.loading}>
@@ -30,7 +30,7 @@ export function LeadHistoryPanel({ leadId, locale }: { leadId: string; locale: s
       {history.items.map(item => <li key={item.id} data-history-source="tasks.activity" data-history-id={item.id} className="min-w-0 rounded-lg border border-slate-100 p-3 text-xs [overflow-wrap:anywhere]">
         <p className="text-[10px] font-semibold text-indigo-600">{leadHistoryTypeLabel(item.type, vi)}</p>
         <h5 className="mt-1 font-semibold text-slate-800">{item.subject}</h5>
-        {Number.isFinite(Date.parse(item.occurredAt)) ? <time dateTime={item.occurredAt} className="text-[10px] text-slate-500">{new Intl.DateTimeFormat(vi ? "vi-VN" : "en-US", { dateStyle: "short", timeStyle: "short", timeZone: config.localeRegion.timezone }).format(new Date(item.occurredAt))}</time> : <p>{text("Thời điểm hoạt động chưa khả dụng", "Activity time unavailable")}</p>}
+        {Number.isFinite(Date.parse(item.occurredAt)) ? <time dateTime={item.occurredAt} className="text-[10px] text-slate-500">{new Intl.DateTimeFormat(vi ? "vi-VN" : "en-US", { dateStyle: "short", timeStyle: "short", timeZone: config.timeZone }).format(new Date(item.occurredAt))}</time> : <p>{text("Thời điểm hoạt động chưa khả dụng", "Activity time unavailable")}</p>}
         <p className="mt-1 text-[10px] text-slate-500">{text("Người ghi nhận", "Recorded by")}: {item.actorId}</p>
         {item.body && <details className="mt-2 text-slate-600"><summary className="cursor-pointer rounded focus-visible:outline focus-visible:outline-indigo-600">{text("Xem nội dung đã ghi nhận", "View recorded content")}</summary><p className="mt-1 whitespace-pre-wrap">{item.body}</p></details>}
       </li>)}

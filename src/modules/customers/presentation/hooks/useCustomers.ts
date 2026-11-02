@@ -6,6 +6,7 @@ import { useModuleAuthoritativeResource, useServerPagedCollection } from "@/shar
 import { runBackendProjection, type ModuleListQuery } from "@/shared/application";
 import { useWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import { getCustomerApiRuntime, isCustomerConnectedApiRuntime } from "../../application/composition/customerApplicationServices";
+import type { CustomerListItem } from "../../application/ports/CustomerApiRuntime";
 
 export function useCustomers(options: {
   loadAuthoritative?: boolean;
@@ -19,15 +20,15 @@ export function useCustomers(options: {
     scopeKey: workspace.workspaceId,
     onScopeChange: () => replaceCustomerSnapshot({ customers: [], careCards: getAllCustomerCareCardsSnapshot() }),
   });
-  const project = useCallback((records: readonly Customer[]) => {
+  const project = useCallback((records: readonly CustomerListItem[]) => {
     runBackendProjection("customers", () =>
-      replaceCustomerSnapshot({ customers: [...records], careCards: getAllCustomerCareCardsSnapshot() }),
+      replaceCustomerSnapshot({ customers: records.map(({ listIdentity: _identity, ...customer }) => customer), careCards: getAllCustomerCareCardsSnapshot() }),
     );
   }, []);
   const loadPage = useCallback((request: ModuleListQuery, signal: AbortSignal) => (
     getCustomerApiRuntime().queries.list(request, signal)
   ), []);
-  const serverPagination = useServerPagedCollection({
+  const serverPagination = useServerPagedCollection<CustomerListItem>({
     connected,
     scopeKey: workspace.workspaceId,
     query: options.query,
@@ -41,5 +42,6 @@ export function useCustomers(options: {
     customers: connected ? serverPagination.items : customers,
     query: connected ? serverPagination : query,
     serverPagination,
+    listIdentities: new Map(serverPagination.items.map(item => [item.id, item.listIdentity])),
   };
 }

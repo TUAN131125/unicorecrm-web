@@ -26,7 +26,7 @@ export function executeLeadOpportunity(
     ports.tasks.create({
       id: taskId,
       title: followUpTask.title,
-      description: followUpTask.description || command.deal.needSummary,
+      description: followUpTask.description || command.deal.needSummary || undefined,
       assigneeId: command.deal.ownerId,
       dueAt: followUpDueAt,
       relationshipRef: relationship.relationshipRef,
@@ -42,7 +42,9 @@ export function executeLeadOpportunity(
     id: dealId,
     name: command.deal.name.trim(),
     stage: DealStage.DISCOVERY,
-    amount: Number(command.deal.estimatedValue ?? 0), // Demo-only display projection; connected adapter preserves decimal strings.
+    amount: command.deal.estimatedValue == null ? null : Number(command.deal.estimatedValue),
+    amountDecimal: command.deal.estimatedValue == null ? undefined : String(command.deal.estimatedValue),
+    currency: command.currency,
     opportunityScore: 40,
     ownerId: command.deal.ownerId,
     expectedCloseDate: command.deal.expectedCloseDate?.trim() || "",

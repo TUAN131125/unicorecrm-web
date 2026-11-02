@@ -1922,6 +1922,139 @@ export const API_OPERATION_CATALOG = {
       "quality.task-activity-api-boundary"
     ]
   },
+  "approveQuoteAcceptanceEvidenceSource": {
+    "operationId": "approveQuoteAcceptanceEvidenceSource",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/quotes/{quoteId}/acceptance-evidence-sources/{sourceId}/approve",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "approveQuoteAcceptanceEvidenceSource"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "QuoteEvidenceSourceAction",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "IdempotencyKey",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "If-Match",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "quoteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "sourceId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "QuoteEvidenceSourceMutation",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "quotes.manageAcceptanceEvidenceSources",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "IF_MATCH_REQUIRED",
+      "audit": "IMMUTABLE_COMMAND_AUDIT",
+      "transactionBoundary": "SINGLE_QUOTE_IDENTITY_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
   "approveQuoteCommand": {
     "operationId": "approveQuoteCommand",
     "moduleId": "quotes",
@@ -3974,6 +4107,139 @@ export const API_OPERATION_CATALOG = {
       "concurrency": "IF_MATCH_REQUIRED",
       "audit": "IMMUTABLE_COMMAND_AUDIT",
       "transactionBoundary": "SINGLE_TASK_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
+  "assessQuoteIdentityAuthority": {
+    "operationId": "assessQuoteIdentityAuthority",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/identity-authority/assessments",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "assessQuoteIdentityAuthority"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "QuoteIdentityActionRequest",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "IdempotencyKey",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "If-Match",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "caseId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "quoteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "QuoteIdentityCaseMutation",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "quotes.assessAcceptanceIdentityAuthority",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "IF_MATCH_REQUIRED",
+      "audit": "IMMUTABLE_COMMAND_AUDIT",
+      "transactionBoundary": "SINGLE_QUOTE_IDENTITY_TRANSACTION"
     },
     "testGateIds": [
       "quality.api-contract",
@@ -7542,6 +7808,95 @@ export const API_OPERATION_CATALOG = {
       "quality.task-activity-api-boundary"
     ]
   },
+  "consentCustomerQuoteAcceptance": {
+    "operationId": "consentCustomerQuoteAcceptance",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/public/quote-acceptance/consent",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "consentCustomerQuoteAcceptance"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "CustomerQuoteConsentRequest",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "IdempotencyKey",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "QuoteSalesAcceptanceView",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "NONE",
+      "workspace": "NOT_REQUIRED",
+      "capability": "PUBLIC_INVITATION_TOKEN",
+      "resourceScope": "PUBLIC",
+      "dataScope": "TOKEN_BOUND_WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "BACKEND_SERIALIZED",
+      "audit": "IMMUTABLE_COMMAND_AUDIT",
+      "transactionBoundary": "SINGLE_QUOTE_AGGREGATE_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
   "convertAcceptedQuoteToOrderDraft": {
     "operationId": "convertAcceptedQuoteToOrderDraft",
     "moduleId": "orders",
@@ -8394,13 +8749,13 @@ export const API_OPERATION_CATALOG = {
   },
   "createCrmPipeline": {
     "operationId": "createCrmPipeline",
-    "moduleId": "platform/workspace-config",
-    "boundedContext": "CrmConfiguration",
+    "moduleId": "deals",
+    "boundedContext": "DealPipelines",
     "kind": "COMMAND",
     "method": "POST",
     "path": "/crm-configuration/pipelines",
-    "contractStatus": "BLOCKED",
-    "blockingDecisionId": "DEC-CREATECRMPIPELINE",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
     "generatedClient": {
       "id": "crm-configuration",
       "file": "src/platform/api/generated/crmConfigurationApi.ts",
@@ -8408,11 +8763,11 @@ export const API_OPERATION_CATALOG = {
       "method": "createCrmPipeline"
     },
     "adapter": {
-      "file": "src/platform/api/runtime/configurationApiClients.ts",
-      "status": "BLOCKED_BY_CONTRACT"
+      "file": "src/modules/deals/infrastructure/http/DealPipelineHttpAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
     },
     "request": {
-      "schema": null,
+      "schema": "SaveDealPipelineRequest",
       "parameters": [
         {
           "name": "Idempotency-Key",
@@ -8426,12 +8781,23 @@ export const API_OPERATION_CATALOG = {
           }
         },
         {
-          "name": "If-Match",
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
           "in": "header",
           "required": true,
           "schema": {
-            "ref": null,
-            "type": "string",
+            "ref": "RequestId",
+            "type": null,
             "format": null,
             "pattern": null
           }
@@ -8450,8 +8816,8 @@ export const API_OPERATION_CATALOG = {
       ]
     },
     "response": {
-      "schema": null,
-      "successStatus": null
+      "schema": "DealPipelineMutationResponse",
+      "successStatus": "201"
     },
     "authorization": {
       "auth": "REQUIRED",
@@ -8462,9 +8828,9 @@ export const API_OPERATION_CATALOG = {
     },
     "delivery": {
       "idempotency": "REQUIRED",
-      "concurrency": "UNRESOLVED_BLOCKED",
+      "concurrency": "BACKEND_SERIALIZED",
       "audit": "IMMUTABLE_COMMAND_AUDIT",
-      "transactionBoundary": "UNRESOLVED_BLOCKED"
+      "transactionBoundary": "SINGLE_WORKSPACE_PIPELINE_REGISTRY_TRANSACTION"
     },
     "testGateIds": [
       "quality.api-contract",
@@ -9827,6 +10193,250 @@ export const API_OPERATION_CATALOG = {
     "testGateIds": [
       "quality.api-contract",
       "quality.studio-api-contract"
+    ]
+  },
+  "createQuoteAcceptanceCase": {
+    "operationId": "createQuoteAcceptanceCase",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/quotes/{quoteId}/acceptance-cases",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "createQuoteAcceptanceCase"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "CreateQuoteAcceptanceCaseRequest",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "IdempotencyKey",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "If-Match",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "quoteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "QuoteAcceptanceStorageMutation",
+      "successStatus": "201"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "quotes.submitAcceptanceEvidence",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "IF_MATCH_REQUIRED",
+      "audit": "IMMUTABLE_COMMAND_AUDIT",
+      "transactionBoundary": "SINGLE_QUOTE_PROOF_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
+  "createQuoteAcceptanceInvitation": {
+    "operationId": "createQuoteAcceptanceInvitation",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/quotes/{quoteId}/acceptance-invitations",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "createQuoteAcceptanceInvitation"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "QuoteInvitationRequest",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "IdempotencyKey",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "If-Match",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "quoteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "QuoteInvitationView",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "quotes.update",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "IF_MATCH_REQUIRED",
+      "audit": "IMMUTABLE_COMMAND_AUDIT",
+      "transactionBoundary": "SINGLE_QUOTE_AGGREGATE_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
     ]
   },
   "createQuoteCommand": {
@@ -11893,6 +12503,239 @@ export const API_OPERATION_CATALOG = {
       "quality.task-activity-api-boundary"
     ]
   },
+  "downloadQuoteAcceptanceProofContent": {
+    "operationId": "downloadQuoteAcceptanceProofContent",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "QUERY",
+    "method": "GET",
+    "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/proofs/{proofId}/content",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "downloadQuoteAcceptanceProofContent"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "caseId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "proofId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "quoteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "QuoteAcceptanceProofPdf",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "quotes.readAcceptanceProofContent",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "NOT_APPLICABLE",
+      "audit": "READ_ACCESS_LOG",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
+  "downloadQuoteDocument": {
+    "operationId": "downloadQuoteDocument",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "QUERY",
+    "method": "GET",
+    "path": "/quotes/{quoteId}/documents/{documentId}/content",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "downloadQuoteDocument"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "documentId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "quoteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "QuotePdfBytes",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "quotes.read",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "NOT_APPLICABLE",
+      "audit": "READ_ACCESS_LOG",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
   "duplicateOrderDraft": {
     "operationId": "duplicateOrderDraft",
     "moduleId": "orders",
@@ -12462,6 +13305,128 @@ export const API_OPERATION_CATALOG = {
       "quality.access-governance-api-boundary",
       "quality.api-contract",
       "quality.write-boundary-authorization"
+    ]
+  },
+  "evaluateQuoteCustomerAcceptance": {
+    "operationId": "evaluateQuoteCustomerAcceptance",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/quotes/{quoteId}/customer-acceptance/evaluate",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "evaluateQuoteCustomerAcceptance"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "EvaluateQuoteCustomerAcceptanceRequest",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "IdempotencyKey",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "If-Match",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "quoteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "QuoteCustomerAcceptanceReadiness",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "quotes.readAcceptanceEvidence",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "IF_MATCH_REQUIRED",
+      "audit": "READ_ACCESS_LOG",
+      "transactionBoundary": "READ_ONLY_LOCKED_QUOTE_ASSESSMENT"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
     ]
   },
   "expireQuoteCommand": {
@@ -13777,6 +14742,96 @@ export const API_OPERATION_CATALOG = {
     },
     "response": {
       "schema": "ConfigurationDocumentResponse",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "studio.read",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "NOT_APPLICABLE",
+      "audit": "READ_ACCESS_LOG",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.studio-api-contract"
+    ]
+  },
+  "getCrmPipeline": {
+    "operationId": "getCrmPipeline",
+    "moduleId": "deals",
+    "boundedContext": "DealPipelines",
+    "kind": "QUERY",
+    "method": "GET",
+    "path": "/crm-configuration/pipelines/{pipelineId}",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "crm-configuration",
+      "file": "src/platform/api/generated/crmConfigurationApi.ts",
+      "className": "CrmConfigurationApiClient",
+      "method": "getCrmPipeline"
+    },
+    "adapter": {
+      "file": "src/modules/deals/infrastructure/http/DealPipelineHttpAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "pipelineId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "DealPipelineDocument",
       "successStatus": "200"
     },
     "authorization": {
@@ -16403,6 +17458,1038 @@ export const API_OPERATION_CATALOG = {
       "quality.task-activity-api-boundary"
     ]
   },
+  "getQuoteAcceptanceCase": {
+    "operationId": "getQuoteAcceptanceCase",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "QUERY",
+    "method": "GET",
+    "path": "/quotes/{quoteId}/acceptance-cases/{caseId}",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "getQuoteAcceptanceCase"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "caseId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "quoteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "QuoteAcceptanceCase",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "quotes.readAcceptanceEvidence",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "NOT_APPLICABLE",
+      "audit": "READ_ACCESS_LOG",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
+  "getQuoteAcceptanceProof": {
+    "operationId": "getQuoteAcceptanceProof",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "QUERY",
+    "method": "GET",
+    "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/proofs/{proofId}",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "getQuoteAcceptanceProof"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "caseId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "proofId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "quoteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "QuoteAcceptanceProof",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "quotes.readAcceptanceEvidence",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "NOT_APPLICABLE",
+      "audit": "READ_ACCESS_LOG",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
+  "getQuoteAcceptanceProofScanHistory": {
+    "operationId": "getQuoteAcceptanceProofScanHistory",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "QUERY",
+    "method": "GET",
+    "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/proofs/{proofId}/scans",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "getQuoteAcceptanceProofScanHistory"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "caseId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "proofId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "quoteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": "^[0-9]{1,5}$"
+          }
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "integer",
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "QuoteProofScanHistory",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "quotes.readAcceptanceEvidence",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "NOT_APPLICABLE",
+      "audit": "READ_ACCESS_LOG",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
+  "getQuoteAcceptanceProofSecurity": {
+    "operationId": "getQuoteAcceptanceProofSecurity",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "QUERY",
+    "method": "GET",
+    "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/proofs/{proofId}/security",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "getQuoteAcceptanceProofSecurity"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "caseId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "proofId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "quoteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "QuoteAcceptanceProofSecurity",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "quotes.readAcceptanceEvidence",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "NOT_APPLICABLE",
+      "audit": "READ_ACCESS_LOG",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
+  "getQuoteCustomerAcceptanceReadiness": {
+    "operationId": "getQuoteCustomerAcceptanceReadiness",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "QUERY",
+    "method": "GET",
+    "path": "/quotes/{quoteId}/customer-acceptance",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "getQuoteCustomerAcceptanceReadiness"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "quoteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "documentId",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "QuoteCustomerAcceptanceReadiness",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "quotes.readAcceptanceEvidence",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "NOT_APPLICABLE",
+      "audit": "READ_ACCESS_LOG",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
+  "getQuoteDocument": {
+    "operationId": "getQuoteDocument",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "QUERY",
+    "method": "GET",
+    "path": "/quotes/{quoteId}/documents/{documentId}",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "getQuoteDocument"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "documentId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "quoteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "QuoteIssuedDocument",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "quotes.read",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "NOT_APPLICABLE",
+      "audit": "READ_ACCESS_LOG",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
+  "getQuoteDocumentSeller": {
+    "operationId": "getQuoteDocumentSeller",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "QUERY",
+    "method": "GET",
+    "path": "/quotes/document-seller",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "getQuoteDocumentSeller"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "QuoteDocumentSeller",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "quotes.read",
+      "resourceScope": "COLLECTION",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "NOT_APPLICABLE",
+      "audit": "READ_ACCESS_LOG",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
+  "getQuoteIdentityAuthority": {
+    "operationId": "getQuoteIdentityAuthority",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "QUERY",
+    "method": "GET",
+    "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/identity-authority",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "getQuoteIdentityAuthority"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "caseId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "quoteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "QuoteIdentityCaseView",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "quotes.readAcceptanceEvidence",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "NOT_APPLICABLE",
+      "audit": "READ_ACCESS_LOG",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
+  "getQuoteIndependentReview": {
+    "operationId": "getQuoteIndependentReview",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "QUERY",
+    "method": "GET",
+    "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/independent-review",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "getQuoteIndependentReview"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "caseId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "quoteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "QuoteIndependentReviewView",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "quotes.readAcceptanceEvidence",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "NOT_APPLICABLE",
+      "audit": "READ_ACCESS_LOG",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
   "getReceivablesAging": {
     "operationId": "getReceivablesAging",
     "moduleId": "invoices",
@@ -18106,6 +20193,128 @@ export const API_OPERATION_CATALOG = {
       "quality.order-to-cash-api-contracts"
     ]
   },
+  "issueQuoteDocumentCommand": {
+    "operationId": "issueQuoteDocumentCommand",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/quotes/{quoteId}/documents/issue",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "issueQuoteDocumentCommand"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "IssueQuoteDocumentRequest",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "IdempotencyKey",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "If-Match",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "quoteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "QuoteDocumentIssueResponse",
+      "successStatus": "201"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "quotes.issueDocument",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "IF_MATCH_REQUIRED",
+      "audit": "IMMUTABLE_COMMAND_AUDIT",
+      "transactionBoundary": "SINGLE_QUOTE_DOCUMENT_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
   "linkConversationCrmRecord": {
     "operationId": "linkConversationCrmRecord",
     "moduleId": "communications",
@@ -19253,8 +21462,8 @@ export const API_OPERATION_CATALOG = {
   },
   "listCrmPipelines": {
     "operationId": "listCrmPipelines",
-    "moduleId": "platform/workspace-config",
-    "boundedContext": "CrmConfiguration",
+    "moduleId": "deals",
+    "boundedContext": "DealPipelines",
     "kind": "QUERY",
     "method": "GET",
     "path": "/crm-configuration/pipelines",
@@ -19267,12 +21476,34 @@ export const API_OPERATION_CATALOG = {
       "method": "listCrmPipelines"
     },
     "adapter": {
-      "file": "src/platform/api/runtime/configurationApiClients.ts",
+      "file": "src/modules/deals/infrastructure/http/DealPipelineHttpAdapter.ts",
       "status": "CONNECTED_BOUNDARY_DECLARED"
     },
     "request": {
       "schema": null,
       "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
         {
           "name": "X-Workspace-Id",
           "in": "header",
@@ -19287,7 +21518,7 @@ export const API_OPERATION_CATALOG = {
       ]
     },
     "response": {
-      "schema": "ConfigurationDocumentResponse",
+      "schema": "DealPipelineListResponse",
       "successStatus": "200"
     },
     "authorization": {
@@ -19678,6 +21909,17 @@ export const API_OPERATION_CATALOG = {
         },
         {
           "name": "ownerId",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "pipelineId",
           "in": "query",
           "required": false,
           "schema": {
@@ -21650,6 +23892,1004 @@ export const API_OPERATION_CATALOG = {
       "quality.task-activity-api-boundary"
     ]
   },
+  "listQuoteAcceptanceCases": {
+    "operationId": "listQuoteAcceptanceCases",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "QUERY",
+    "method": "GET",
+    "path": "/quotes/{quoteId}/acceptance-cases",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "listQuoteAcceptanceCases"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "quoteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": "^[0-9]{1,5}$"
+          }
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "integer",
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "QuoteAcceptanceCaseList",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "quotes.readAcceptanceEvidence",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "NOT_APPLICABLE",
+      "audit": "READ_ACCESS_LOG",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
+  "listQuoteAcceptanceEvidenceSourceHistory": {
+    "operationId": "listQuoteAcceptanceEvidenceSourceHistory",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "QUERY",
+    "method": "GET",
+    "path": "/quotes/{quoteId}/acceptance-evidence-sources/{sourceId}/history",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "listQuoteAcceptanceEvidenceSourceHistory"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "quoteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "sourceId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": "^[0-9]{1,5}$"
+          }
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "integer",
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "QuoteEvidenceSources",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "quotes.readAcceptanceEvidence",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "NOT_APPLICABLE",
+      "audit": "READ_ACCESS_LOG",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
+  "listQuoteAcceptanceEvidenceSources": {
+    "operationId": "listQuoteAcceptanceEvidenceSources",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "QUERY",
+    "method": "GET",
+    "path": "/quotes/{quoteId}/acceptance-evidence-sources",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "listQuoteAcceptanceEvidenceSources"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "quoteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": "^[0-9]{1,5}$"
+          }
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "integer",
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "QuoteEvidenceSources",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "quotes.readAcceptanceEvidence",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "NOT_APPLICABLE",
+      "audit": "READ_ACCESS_LOG",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
+  "listQuoteAcceptanceInvitations": {
+    "operationId": "listQuoteAcceptanceInvitations",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "QUERY",
+    "method": "GET",
+    "path": "/quotes/{quoteId}/acceptance-invitations",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "listQuoteAcceptanceInvitations"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "quoteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "QuoteInvitationHistory",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "quotes.read",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "NOT_APPLICABLE",
+      "audit": "READ_ACCESS_LOG",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
+  "listQuoteAcceptanceProofs": {
+    "operationId": "listQuoteAcceptanceProofs",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "QUERY",
+    "method": "GET",
+    "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/proofs",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "listQuoteAcceptanceProofs"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "caseId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "quoteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": "^[0-9]{1,5}$"
+          }
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "integer",
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "QuoteAcceptanceProofList",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "quotes.readAcceptanceEvidence",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "NOT_APPLICABLE",
+      "audit": "READ_ACCESS_LOG",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
+  "listQuoteDocuments": {
+    "operationId": "listQuoteDocuments",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "QUERY",
+    "method": "GET",
+    "path": "/quotes/{quoteId}/documents",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "listQuoteDocuments"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "quoteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "integer",
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "QuoteDocumentList",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "quotes.read",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "NOT_APPLICABLE",
+      "audit": "READ_ACCESS_LOG",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
+  "listQuoteIdentityAuthorityHistory": {
+    "operationId": "listQuoteIdentityAuthorityHistory",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "QUERY",
+    "method": "GET",
+    "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/identity-authority/history",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "listQuoteIdentityAuthorityHistory"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "caseId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "quoteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": "^[0-9]{1,5}$"
+          }
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "integer",
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "QuoteIdentityHistory",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "quotes.readAcceptanceEvidence",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "NOT_APPLICABLE",
+      "audit": "READ_ACCESS_LOG",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
+  "listQuoteIndependentReviewHistory": {
+    "operationId": "listQuoteIndependentReviewHistory",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "QUERY",
+    "method": "GET",
+    "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/independent-review/history",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "listQuoteIndependentReviewHistory"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": null,
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "caseId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "quoteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "cursor",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": "^[0-9]{1,5}$"
+          }
+        },
+        {
+          "name": "limit",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "integer",
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "QuoteIndependentReviewHistory",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "quotes.readAcceptanceEvidence",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "NOT_APPLICABLE",
+      "audit": "READ_ACCESS_LOG",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
   "listQuotes": {
     "operationId": "listQuotes",
     "moduleId": "quotes",
@@ -21706,6 +24946,17 @@ export const API_OPERATION_CATALOG = {
           }
         },
         {
+          "name": "archived",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
           "name": "buyerId",
           "in": "query",
           "required": false,
@@ -21745,6 +24996,17 @@ export const API_OPERATION_CATALOG = {
           "schema": {
             "ref": null,
             "type": "integer",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "rootQuoteId",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
             "format": null,
             "pattern": null
           }
@@ -24239,6 +27501,84 @@ export const API_OPERATION_CATALOG = {
       "quality.studio-api-contract"
     ]
   },
+  "previewCustomerQuoteAcceptance": {
+    "operationId": "previewCustomerQuoteAcceptance",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/public/quote-acceptance/preview",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "previewCustomerQuoteAcceptance"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "QuoteInvitationPreviewRequest",
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "CustomerQuotePreview",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "NONE",
+      "workspace": "NOT_REQUIRED",
+      "capability": "PUBLIC_INVITATION_TOKEN",
+      "resourceScope": "PUBLIC",
+      "dataScope": "TOKEN_BOUND_WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "NOT_APPLICABLE",
+      "concurrency": "BACKEND_SERIALIZED",
+      "audit": "TOKEN_SCOPED_READ",
+      "transactionBoundary": "READ_ONLY"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
   "previewPaymentPlan": {
     "operationId": "previewPaymentPlan",
     "moduleId": "payments",
@@ -26131,6 +29471,383 @@ export const API_OPERATION_CATALOG = {
       "quality.order-to-cash-api-contracts"
     ]
   },
+  "recordQuoteAcceptanceSourceCheck": {
+    "operationId": "recordQuoteAcceptanceSourceCheck",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/identity-authority/source-checks",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "recordQuoteAcceptanceSourceCheck"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "QuoteIdentityActionRequest",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "IdempotencyKey",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "If-Match",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "caseId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "quoteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "QuoteIdentityCaseMutation",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "quotes.recordAcceptanceSourceCheck",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "IF_MATCH_REQUIRED",
+      "audit": "IMMUTABLE_COMMAND_AUDIT",
+      "transactionBoundary": "SINGLE_QUOTE_IDENTITY_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
+  "recordQuoteCustomerDecisionCommand": {
+    "operationId": "recordQuoteCustomerDecisionCommand",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/quotes/{quoteId}/customer-decisions",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "recordQuoteCustomerDecisionCommand"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "RecordQuoteCustomerDecisionRequest",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "IdempotencyKey",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "If-Match",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "quoteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "QuoteMutationResponse",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "quotes.update",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "IF_MATCH_REQUIRED",
+      "audit": "IMMUTABLE_COMMAND_AUDIT",
+      "transactionBoundary": "SINGLE_QUOTE_AGGREGATE_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
+  "recordQuoteSalesAcceptance": {
+    "operationId": "recordQuoteSalesAcceptance",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/quotes/{quoteId}/sales-acceptances",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "recordQuoteSalesAcceptance"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "StaffQuoteAcceptanceRequest",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "IdempotencyKey",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "If-Match",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "quoteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "QuoteSalesAcceptanceView",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "quotes.update",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "IF_MATCH_REQUIRED",
+      "audit": "IMMUTABLE_COMMAND_AUDIT",
+      "transactionBoundary": "SINGLE_QUOTE_AGGREGATE_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
   "recordQuoteSendEvidenceCommand": {
     "operationId": "recordQuoteSendEvidenceCommand",
     "moduleId": "quotes",
@@ -26413,6 +30130,128 @@ export const API_OPERATION_CATALOG = {
       "quality.auth-session-contracts",
       "quality.auth-ux-contracts",
       "quality.identity-auth-api-boundary"
+    ]
+  },
+  "registerQuoteAcceptanceEvidenceSource": {
+    "operationId": "registerQuoteAcceptanceEvidenceSource",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/quotes/{quoteId}/acceptance-evidence-sources",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "registerQuoteAcceptanceEvidenceSource"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "QuoteEvidenceSourceRequest",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "IdempotencyKey",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "If-Match",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "quoteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "QuoteEvidenceSourceMutation",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "quotes.manageAcceptanceEvidenceSources",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "IF_MATCH_REQUIRED",
+      "audit": "IMMUTABLE_COMMAND_AUDIT",
+      "transactionBoundary": "SINGLE_QUOTE_IDENTITY_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
     ]
   },
   "rejectOrderCreditApproval": {
@@ -30453,6 +34292,139 @@ export const API_OPERATION_CATALOG = {
       "quality.order-to-cash-api-contracts"
     ]
   },
+  "reviseQuoteAcceptanceEvidenceSource": {
+    "operationId": "reviseQuoteAcceptanceEvidenceSource",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "COMMAND",
+    "method": "PUT",
+    "path": "/quotes/{quoteId}/acceptance-evidence-sources/{sourceId}",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "reviseQuoteAcceptanceEvidenceSource"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "QuoteEvidenceSourceRequest",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "IdempotencyKey",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "If-Match",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "quoteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "sourceId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "QuoteEvidenceSourceMutation",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "quotes.manageAcceptanceEvidenceSources",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "IF_MATCH_REQUIRED",
+      "audit": "IMMUTABLE_COMMAND_AUDIT",
+      "transactionBoundary": "SINGLE_QUOTE_IDENTITY_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
   "reviseQuoteCommand": {
     "operationId": "reviseQuoteCommand",
     "moduleId": "quotes",
@@ -30681,6 +34653,139 @@ export const API_OPERATION_CATALOG = {
       "concurrency": "IF_MATCH_REQUIRED",
       "audit": "IMMUTABLE_COMMAND_AUDIT",
       "transactionBoundary": "SINGLE_CREDIT_APPROVAL_AGGREGATE"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
+  "revokeQuoteAcceptanceEvidenceSource": {
+    "operationId": "revokeQuoteAcceptanceEvidenceSource",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/quotes/{quoteId}/acceptance-evidence-sources/{sourceId}/revoke",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "revokeQuoteAcceptanceEvidenceSource"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "QuoteEvidenceSourceAction",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "IdempotencyKey",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "If-Match",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "quoteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "sourceId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "QuoteEvidenceSourceMutation",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "quotes.manageAcceptanceEvidenceSources",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "IF_MATCH_REQUIRED",
+      "audit": "IMMUTABLE_COMMAND_AUDIT",
+      "transactionBoundary": "SINGLE_QUOTE_IDENTITY_TRANSACTION"
     },
     "testGateIds": [
       "quality.api-contract",
@@ -31342,6 +35447,139 @@ export const API_OPERATION_CATALOG = {
       "quality.financial-operations-api-boundary",
       "quality.financial-vertical-slice",
       "quality.order-to-cash-api-contracts"
+    ]
+  },
+  "saveQuoteIdentityAuthorityBinding": {
+    "operationId": "saveQuoteIdentityAuthorityBinding",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "COMMAND",
+    "method": "PUT",
+    "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/identity-authority/binding",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "saveQuoteIdentityAuthorityBinding"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "SaveQuoteIdentityBindingRequest",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "IdempotencyKey",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "If-Match",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "caseId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "quoteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "QuoteIdentityCaseMutation",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "quotes.submitAcceptanceEvidence",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "IF_MATCH_REQUIRED",
+      "audit": "IMMUTABLE_COMMAND_AUDIT",
+      "transactionBoundary": "SINGLE_QUOTE_IDENTITY_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
     ]
   },
   "scheduleLeadFollowUpBatch": {
@@ -32178,6 +36416,139 @@ export const API_OPERATION_CATALOG = {
       "quality.api-contract",
       "quality.studio-api-contract",
       "quality.studio-core-api-boundary"
+    ]
+  },
+  "submitQuoteIndependentReviewDecision": {
+    "operationId": "submitQuoteIndependentReviewDecision",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/independent-review/decisions",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "submitQuoteIndependentReviewDecision"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "SubmitQuoteIndependentReview",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "IdempotencyKey",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "If-Match",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "caseId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "quoteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "QuoteIndependentReviewMutation",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "quotes.verifyAcceptanceEvidence",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "IF_MATCH_REQUIRED",
+      "audit": "IMMUTABLE_COMMAND_AUDIT",
+      "transactionBoundary": "SINGLE_QUOTE_IDENTITY_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
     ]
   },
   "syncShippingBookingCommand": {
@@ -33300,13 +37671,13 @@ export const API_OPERATION_CATALOG = {
   },
   "updateCrmPipeline": {
     "operationId": "updateCrmPipeline",
-    "moduleId": "platform/workspace-config",
-    "boundedContext": "CrmConfiguration",
+    "moduleId": "deals",
+    "boundedContext": "DealPipelines",
     "kind": "COMMAND",
     "method": "PATCH",
     "path": "/crm-configuration/pipelines/{pipelineId}",
-    "contractStatus": "BLOCKED",
-    "blockingDecisionId": "DEC-UPDATECRMPIPELINE",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
     "generatedClient": {
       "id": "crm-configuration",
       "file": "src/platform/api/generated/crmConfigurationApi.ts",
@@ -33314,11 +37685,11 @@ export const API_OPERATION_CATALOG = {
       "method": "updateCrmPipeline"
     },
     "adapter": {
-      "file": "src/platform/api/runtime/configurationApiClients.ts",
-      "status": "BLOCKED_BY_CONTRACT"
+      "file": "src/modules/deals/infrastructure/http/DealPipelineHttpAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
     },
     "request": {
-      "schema": null,
+      "schema": "SaveDealPipelineRequest",
       "parameters": [
         {
           "name": "Idempotency-Key",
@@ -33343,6 +37714,28 @@ export const API_OPERATION_CATALOG = {
           }
         },
         {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
           "name": "X-Workspace-Id",
           "in": "header",
           "required": true,
@@ -33358,8 +37751,8 @@ export const API_OPERATION_CATALOG = {
           "in": "path",
           "required": true,
           "schema": {
-            "ref": null,
-            "type": "string",
+            "ref": "EntityId",
+            "type": null,
             "format": null,
             "pattern": null
           }
@@ -33367,8 +37760,8 @@ export const API_OPERATION_CATALOG = {
       ]
     },
     "response": {
-      "schema": null,
-      "successStatus": null
+      "schema": "DealPipelineMutationResponse",
+      "successStatus": "200"
     },
     "authorization": {
       "auth": "REQUIRED",
@@ -33379,9 +37772,9 @@ export const API_OPERATION_CATALOG = {
     },
     "delivery": {
       "idempotency": "REQUIRED",
-      "concurrency": "UNRESOLVED_BLOCKED",
+      "concurrency": "IF_MATCH_REQUIRED",
       "audit": "IMMUTABLE_COMMAND_AUDIT",
-      "transactionBoundary": "UNRESOLVED_BLOCKED"
+      "transactionBoundary": "SINGLE_WORKSPACE_PIPELINE_REGISTRY_TRANSACTION"
     },
     "testGateIds": [
       "quality.api-contract",
@@ -35041,6 +39434,161 @@ export const API_OPERATION_CATALOG = {
       "quality.api-contract",
       "quality.studio-api-contract",
       "quality.studio-core-api-boundary"
+    ]
+  },
+  "uploadQuoteAcceptanceProof": {
+    "operationId": "uploadQuoteAcceptanceProof",
+    "moduleId": "quotes",
+    "boundedContext": "Quotes",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/proofs",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "uploadQuoteAcceptanceProof"
+    },
+    "adapter": {
+      "file": "src/modules/quotes/infrastructure/http/QuoteHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "QuoteAcceptanceProofPdf",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "IdempotencyKey",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "If-Match",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Proof-Evidence-Type",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Proof-File-Name",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": null,
+            "type": "string",
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "caseId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "quoteId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "ref": "EntityId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "QuoteAcceptanceStorageMutation",
+      "successStatus": "201"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "quotes.submitAcceptanceEvidence",
+      "resourceScope": "RESOURCE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "IF_MATCH_REQUIRED",
+      "audit": "IMMUTABLE_COMMAND_AUDIT",
+      "transactionBoundary": "SINGLE_QUOTE_PROOF_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
     ]
   },
   "verifyEmail": {

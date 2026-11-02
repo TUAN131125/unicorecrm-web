@@ -32,7 +32,7 @@ export function ConversationLifecycleView({ conversation, locale, onTransition, 
       unchanged: vi ? "Trạng thái không đổi; không tạo thay đổi mới." : "Status unchanged; no new change recorded.",
       conflict: vi ? "Hội thoại đã thay đổi hoặc thao tác không còn hợp lệ. Đã tải lại dữ liệu." : "Conversation changed or transition is no longer valid. Data refreshed.",
       denied: vi ? "Bạn không còn quyền đổi trạng thái." : "You no longer have permission to change status.",
-      missing: vi ? "Hội thoại không còn trong phạm vi truy cập." : "Conversation is no longer in your access scope.",
+      missing: vi ? "Không thể mở hội thoại này." : "This conversation cannot be opened.",
       error: vi ? "Không xác nhận được thay đổi. Hãy làm mới trước khi thử lại." : "Status change could not be confirmed. Refresh before retrying.",
     }[status]}</p>}
   </div>;

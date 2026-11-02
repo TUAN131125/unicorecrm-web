@@ -146,7 +146,6 @@ export function ProductTypesView() {
       actions={<><StudioButton tone="accent" icon={<Plus size={15} />} disabled={!canConfigure} onClick={add}>{text("Thêm loại", "Add type")}</StudioButton><StudioButton tone="primary" icon={<Save size={15} />} disabled={!canConfigure || !dirty || validationIssues.length > 0} onClick={save}>{text("Lưu", "Save")}</StudioButton></>}
     >
       {unavailableNotice ? <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{unavailableNotice}</p> : null}
-            {!canConfigure ? <p className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{text("Bạn chỉ có quyền xem cấu hình.", "You have read-only access to configuration.")}</p> : null}
 
       <StudioMetricsGrid>
         <StudioMetricCard label={text("Loại hoạt động", "Active types")} value={`${activeTypes.length}/${draft.length}`} description={text("Được hiển thị trong biểu mẫu và bộ chọn sản phẩm.", "Available in product forms and pickers.")} icon={<Box size={17} />} tone="violet" />

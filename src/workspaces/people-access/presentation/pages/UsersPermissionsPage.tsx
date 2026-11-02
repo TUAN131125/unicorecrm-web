@@ -144,7 +144,6 @@ export const UsersPermissionsPage: React.FC = () => {
         ) : undefined}
       />
 
-      {!canConfigure && <div className="flex justify-end"><span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-[10px] font-semibold text-amber-700">{text("Chế độ chỉ xem", "Read-only mode")}</span></div>}
       <AnimatePresence mode="wait" initial={false}>{message && <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} role={message.tone === "error" ? "alert" : "status"} className={`flex items-center justify-between gap-3 rounded-xl border px-4 py-3 text-[11px] font-medium ${message.tone === "error" ? "border-rose-200 bg-rose-50 text-rose-700" : "border-emerald-200 bg-emerald-50 text-emerald-700"}`}><span>{message.text}</span><button type="button" onClick={() => setMessage(undefined)} className="shrink-0 rounded-lg px-2 py-1 text-[9px] font-semibold opacity-70 hover:bg-white/60">{text("Đóng", "Dismiss")}</button></motion.div>}</AnimatePresence>
 
       <AnimatePresence mode="wait" initial={false}>

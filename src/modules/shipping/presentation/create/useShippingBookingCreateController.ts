@@ -350,7 +350,7 @@ export function useShippingBookingCreateController(props: ShippingBookingCreateP
     ...(chargeableWeight > actualWeight && actualWeight > 0 ? [text("Khối lượng quy đổi lớn hơn khối lượng thực; provider có thể tính cước theo khối lượng quy đổi.", "Volumetric weight exceeds actual weight; the carrier may charge by volumetric weight.")] : []),
     ...(handling.hazardousGoods ? [text("Hàng nguy hiểm cần xác nhận tuyến vận chuyển, quy cách đóng gói và chứng từ trước khi gửi.", "Dangerous goods require route, packaging and document verification before dispatch.")] : []),
     ...(handling.containsBattery ? [text("Kiện có pin/ắc quy có thể bị hạn chế theo tuyến và phương thức vận chuyển.", "Battery shipments may be restricted by route and transport method.")] : []),
-    ...(recipientChangedFromOrder ? [text("Thông tin người nhận đã khác Order; booking sẽ lưu snapshot vận chuyển và không tự sửa Order.", "Recipient data differs from the Order; the booking stores an operational snapshot and does not update the Order automatically.")] : []),
+    ...(recipientChangedFromOrder ? [text("Thông tin người nhận khác đơn hàng. Thay đổi chỉ áp dụng cho vận đơn này.", "Recipient details differ from the order. Changes apply only to this shipment.")] : []),
   ];
   const missingRequired = [...(baseReadiness?.missingRequired ?? []), ...extraMissing];
   const ready = Boolean(baseReadiness?.ready) && extraMissing.length === 0 && canonicalOrderMissing.length === 0;
@@ -462,7 +462,7 @@ export function useShippingBookingCreateController(props: ShippingBookingCreateP
       if (!lifecycle.isCurrent()) return;
       if (booking.bookingStatus === "BOOKED") baseline.current = fingerprint;
       onCreated(booking, booking.bookingStatus === "BOOKED"
-        ? text("Đã tạo vận đơn và lưu đầy đủ snapshot gửi, nhận, hàng hóa, COD và yêu cầu xử lý.", "Shipment created with sender, recipient, goods, COD and handling snapshots.")
+        ? text("Đã tạo vận đơn.", "Shipment created.")
         : booking.lastErrorMessage || text("Tạo vận đơn thất bại.", "Shipment creation failed."));
     } catch (error) {
       if (lifecycle.isCurrent()) setSubmitError(formatApplicationError(error, { locale }));

@@ -240,7 +240,7 @@ export const AccountStatementPage: React.FC = () => {
   };
 
   if (statementQuery.loading && !statementQuery.data) {
-    return <RecordDetailFrame id="account-statement-loading"><Card className="p-8 text-center text-sm text-slate-600"><p>{text("Đang tải sao kê authoritative...", "Loading the authoritative statement...")}</p><Button className="mt-4" variant="secondary" onClick={statementQuery.cancel}>{text("Hủy tải", "Cancel loading")}</Button></Card></RecordDetailFrame>;
+    return <RecordDetailFrame id="account-statement-loading"><Card className="p-8 text-center text-sm text-slate-600"><p>{text("Đang tải sao kê...", "Loading statement...")}</p><Button className="mt-4" variant="secondary" onClick={statementQuery.cancel}>{text("Hủy tải", "Cancel loading")}</Button></Card></RecordDetailFrame>;
   }
 
   if (statementQuery.state === "ERROR" && !statementQuery.data) {

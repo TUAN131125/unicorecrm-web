@@ -6,7 +6,7 @@ export interface OrderActionAvailabilityReadModel { allowed: boolean; blockerCod
 export interface OrderReadActions { confirm: OrderActionAvailabilityReadModel; cancel: OrderActionAvailabilityReadModel }
 export interface OrderLineReadModel {
   id: string;
-  productId: string;
+  productId?: string;
   skuSnapshot?: string;
   productNameSnapshot: string;
   productTypeSnapshot?: string;
@@ -27,6 +27,11 @@ export interface OrderShippingAddressReadModel { line1: string; line2?: string; 
 export interface CreditPolicyEvaluationReadModel { status: "NOT_REQUIRED" | "APPROVAL_REQUIRED"; blockerCodes: string[]; policyVersion?: string; evaluatedAt?: string }
 export interface OrderCreditApprovalSummaryReadModel { id: string; state: "REQUESTED" | "APPROVED" | "REJECTED" | "REVOKED" | "CONSUMED" | "SUPERSEDED"; amount: MoneyDto; policyVersion: string; orderResourceVersion: number; paymentPlanResourceVersion: number; resourceVersion: number }
 export interface OrderReadModel {
+  paymentAgreementSnapshot?: import("@/shared/order-to-cash").PaymentAgreementSnapshot;
+  acceptance?: CustomerOrder["acceptance"];
+  commercialSnapshotFingerprint?: string;
+  sourceQuoteResourceVersion?: number;
+  buyerNameSnapshot?: string;
   id: string;
   orderNumber: string;
   orderDate: string;
@@ -44,6 +49,8 @@ export interface OrderReadModel {
   taxTotal: MoneyDto;
   grandTotal: MoneyDto;
   currency: string;
+  confirmationOrigin?: string;
+  confirmationPolicyVersion?: string;
   confirmedAt?: string;
   completedAt?: string;
   cancelledAt?: string;
@@ -67,6 +74,8 @@ export interface OrderReadModel {
 /** UI display projection for existing Order views; never a financial authority. */
 export function projectOrderReadModel(record: OrderReadModel): CustomerOrder {
   return {
+    ...(record.confirmationOrigin == null ? {} : { confirmationOrigin: record.confirmationOrigin }),
+    ...(record.confirmationPolicyVersion == null ? {} : { confirmationPolicyVersion: record.confirmationPolicyVersion }),
     id: record.id,
     orderNumber: record.orderNumber,
     orderDate: record.orderDate,
@@ -77,6 +86,7 @@ export function projectOrderReadModel(record: OrderReadModel): CustomerOrder {
     subtotal: displayNumber(record.subtotal.amount, "subtotal"),
     discountTotal: displayNumber(record.discountTotal.amount, "discountTotal"),
     taxTotal: displayNumber(record.taxTotal.amount, "taxTotal"),
+    commercialTotal: { ...record.grandTotal },
     grandTotal: displayNumber(record.grandTotal.amount, "grandTotal"),
     totalAmount: displayNumber(record.grandTotal.amount, "grandTotal"),
     currency: record.currency,
@@ -84,6 +94,11 @@ export function projectOrderReadModel(record: OrderReadModel): CustomerOrder {
     updatedAt: record.updatedAt,
     resourceVersion: record.resourceVersion,
     authoritativeActions: structuredClone(record.actions),
+    ...(record.paymentAgreementSnapshot === undefined ? {} : { paymentAgreementSnapshot: structuredClone(record.paymentAgreementSnapshot) }),
+    ...(record.acceptance === undefined ? {} : { acceptance: structuredClone(record.acceptance) }),
+    ...(record.commercialSnapshotFingerprint === undefined ? {} : { commercialSnapshotFingerprint: record.commercialSnapshotFingerprint }),
+    ...(record.sourceQuoteResourceVersion === undefined ? {} : { sourceQuoteResourceVersion: record.sourceQuoteResourceVersion }),
+    ...(record.buyerNameSnapshot === undefined ? {} : { customerName: record.buyerNameSnapshot }),
     ...(record.contactId === undefined ? {} : { contactId: record.contactId }),
     ...(record.sourceLeadId === undefined ? {} : { sourceLeadId: record.sourceLeadId }),
     ...(record.sourceQuoteId === undefined ? {} : { sourceQuoteId: record.sourceQuoteId }),
@@ -107,7 +122,7 @@ export function projectOrderReadModel(record: OrderReadModel): CustomerOrder {
 function projectLine(line: OrderLineReadModel): OrderItem {
   return {
     id: line.id,
-    productId: line.productId,
+    productId: line.productId ?? "",
     productNameSnapshot: line.productNameSnapshot,
     quantity: displayNumber(line.quantity, "quantity"),
     unitPriceSnapshot: displayNumber(line.unitPrice.amount, "unitPrice"),

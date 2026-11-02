@@ -22,7 +22,7 @@ import {
   type ExternalAuthProvider,
 } from "../components";
 import { startExternalAuth } from "../routing/externalAuthRedirect";
-import { resolveSafePostLoginRedirect } from "../routing/postLoginRedirect";
+import { resolveSafePostLoginRedirect, withRedirectQuery } from "../routing/postLoginRedirect";
 import { emailVerificationNavigationState, resolveEmailVerificationSubject } from "../routing/emailVerificationContext";
 
 export const LoginPage: React.FC = () => {
@@ -51,8 +51,8 @@ export const LoginPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const resolvePostLoginDestination = (accountId: string) => {
-    if (isConnectedAuthRuntime()) return ROUTE_KEYS.WORKSPACE_SELECTION;
     if (redirect) return redirect;
+    if (isConnectedAuthRuntime()) return ROUTE_KEYS.WORKSPACE_SELECTION;
     const memberships = listWorkspaceMembershipsForAccount(accountId).filter((membership) => membership.status === "active");
     if (memberships.length === 1) return productSpaceHome(memberships[0].workspaceKey, "crm");
     if (memberships.length > 1) return ROUTE_KEYS.WORKSPACE_SELECTION;
@@ -92,7 +92,7 @@ export const LoginPage: React.FC = () => {
         // A refused sign-in that names an unverified address is not a rejected credential.
         // It is a route into verification, and it carries the address it was refused for.
         if (result.code === "EMAIL_NOT_VERIFIED") {
-          navigate(ROUTE_KEYS.VERIFY_EMAIL, { state: emailVerificationNavigationState(email.trim()) });
+          navigate(redirect ? withRedirectQuery(ROUTE_KEYS.VERIFY_EMAIL, redirect) : ROUTE_KEYS.VERIFY_EMAIL, { state: emailVerificationNavigationState(email.trim()) });
           return;
         }
         setError(describeSignInFailure(result.code, vi));
@@ -121,7 +121,7 @@ export const LoginPage: React.FC = () => {
       footer={
         <span>
           {vi ? "Chưa có tài khoản?" : "New to UnicoreCRM?"}{" "}
-          <Link className="font-semibold text-indigo-600 transition hover:text-indigo-800 hover:underline" to={ROUTE_KEYS.REGISTER}>
+          <Link className="font-semibold text-indigo-600 transition hover:text-indigo-800 hover:underline" to={redirect ? withRedirectQuery(ROUTE_KEYS.REGISTER, redirect) : ROUTE_KEYS.REGISTER}>
             {vi ? "Tạo tài khoản" : "Create an account"}
           </Link>
         </span>

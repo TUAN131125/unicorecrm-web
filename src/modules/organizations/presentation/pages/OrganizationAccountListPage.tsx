@@ -132,7 +132,7 @@ export const OrganizationAccountListPage: React.FC = () => {
 
   const exportOrganizations = () => {
     if (connected) {
-      setMessage(vi ? "Xuất dữ liệu tổ chức chưa được backend hỗ trợ." : "Organization export is not supported by the backend yet.");
+      setMessage(vi ? "Xuất dữ liệu tổ chức chưa khả dụng." : "Organization export is not available yet.");
       return;
     }
     const selected = selectedIds.length > 0

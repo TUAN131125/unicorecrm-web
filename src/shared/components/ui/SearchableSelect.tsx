@@ -99,7 +99,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
         <ChevronDown size={16} className={cn("shrink-0 text-slate-400 transition-transform", open && "rotate-180")} />
       </button>
       {required && <input type="text" required tabIndex={-1} aria-hidden="true" value={value} onChange={() => undefined} className="pointer-events-none absolute h-px w-px opacity-0" />}
-      {error && <span id={errorId} role="alert" className="mt-1 flex items-center gap-1 text-[10px] font-bold text-rose-600"><AlertCircle size={10} aria-hidden="true" /><span>{error}</span></span>}
+      {error && <span id={errorId} role="alert" data-field-error="true" className="mt-1 flex items-center gap-1 text-[10px] font-bold text-rose-600"><AlertCircle size={10} aria-hidden="true" /><span>{error}</span></span>}
       <RowActionPortal
         open={open}
         anchorEl={anchor}
@@ -170,3 +170,4 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
     </div>
   );
 };
+

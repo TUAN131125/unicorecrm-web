@@ -74,3 +74,27 @@ function serializationError(path: string, message: string): ApiClientError {
     retryable: false,
   });
 }
+
+
+/** Consume only the admitted bounded PDF response; errors still use Problem Details. */
+export async function readPdfResponse(response: Response): Promise<Blob> {
+  const invalid = () => new ApiClientError({ code: "RESPONSE_DESERIALIZATION_FAILED", message: "The issued PDF response is invalid.", status: response.status, retryable: false });
+  const lengthHeader = response.headers.get("content-length");
+  const length = lengthHeader === null ? undefined : Number(lengthHeader);
+  if (response.headers.get("content-type")?.split(";")[0]?.trim() !== "application/pdf"
+    || length !== undefined && (!Number.isSafeInteger(length) || length < 1 || length > 10485760)) throw invalid();
+  const reader = response.body?.getReader(); if (!reader) throw invalid();
+  const parts: ArrayBuffer[] = []; let size = 0;
+  try {
+    while (true) {
+      const chunk = await reader.read(); if (chunk.done) break;
+      size += chunk.value.byteLength;
+      if (size > 10485760) { await reader.cancel(); throw invalid(); }
+      parts.push(new Uint8Array(chunk.value).buffer);
+    }
+  } finally { reader.releaseLock(); }
+  if (size < 5 || length !== undefined && size !== length) throw invalid();
+  const blob = new Blob(parts, { type: "application/pdf" });
+  if (new TextDecoder().decode(await blob.slice(0, 5).arrayBuffer()) !== "%PDF-") throw invalid();
+  return blob;
+}

@@ -9,6 +9,8 @@ import { customerColumnLabel, formatCustomerCurrency, formatCustomerDate } from 
 import type { CustomerListRow } from "./customerList.types";
 import { getWorkspaceMemberOptions } from "@/platform/member-directory";
 import { localizeBusinessDescriptor } from "@/shared/lib/i18n/businessDescriptorLabels";
+import { CustomerCode } from "../components/CustomerCode";
+import { customerBusinessTags } from "../model/customerPresentationLabels";
 
 interface CustomerTableProps {
   rows: CustomerListRow[];
@@ -203,7 +205,7 @@ function renderCustomerCell(
 
   switch (columnKey) {
     case "code":
-      return <span className="font-mono text-[10.5px] font-medium text-slate-500 bg-slate-100/70 px-1.5 py-0.5 rounded">{customer.customerCode}</span>;
+      return <CustomerCode key={customer.customerCode} code={customer.customerCode} />;
     case "customer":
       return (
         <div className="flex items-center gap-2 min-w-0">
@@ -214,13 +216,15 @@ function renderCustomerCell(
             <button
               type="button"
               onClick={() => onViewDetails(customer.id)}
-              className="font-semibold text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer text-xs whitespace-nowrap crm-text-wrap block max-w-full"
+              className="block max-w-full whitespace-normal break-words text-left text-xs font-semibold text-indigo-600 hover:text-indigo-800 hover:underline"
+              title={model.identity.displayName}
+              data-customer-name
             >
               {model.identity.displayName}
             </button>
             <div className="flex items-center gap-1 mt-0.5 min-w-0">
-              {customer.segment && <span className="text-[9px] text-slate-400 crm-text-wrap">{localizeBusinessDescriptor(customer.segment, isVi ? "vi" : "en")}</span>}
-              {customer.tags.slice(0, 1).map((tag) => <Badge key={tag} variant="neutral" className="text-[8px] px-1 py-0">{localizeBusinessDescriptor(tag, isVi ? "vi" : "en")}</Badge>)}
+              {customer.segment && <span className="break-words whitespace-normal text-[9px] text-slate-400">{localizeBusinessDescriptor(customer.segment, isVi ? "vi" : "en")}</span>}
+              {customerBusinessTags(customer.tags).slice(0, 1).map((tag) => <Badge key={tag} variant="neutral" className="text-[8px] px-1 py-0">{localizeBusinessDescriptor(tag, isVi ? "vi" : "en")}</Badge>)}
             </div>
           </div>
         </div>
@@ -238,7 +242,7 @@ function renderCustomerCell(
       return model.identity.email ? <span className="font-medium text-slate-600 crm-text-wrap flex items-center gap-1"><Mail size={11} className="text-slate-400 shrink-0" /><span className="crm-text-wrap">{model.identity.email}</span></span> : "—";
     case "status": return <CustomerStatusBadge status={customer.status} locale={isVi ? "vi" : "en"} />;
     case "health": return <CustomerHealthBadge health={customer.healthAssessment?.healthBand ?? customer.health} locale={isVi ? "vi" : "en"} />;
-    case "type": return <CustomerTypeBadge type={customer.type} />;
+    case "type": return <CustomerTypeBadge type={customer.type} locale={isVi ? "vi" : "en"} />;
     case "segment": return customer.segment ? localizeBusinessDescriptor(customer.segment, isVi ? "vi" : "en") : "—";
     case "owner":
       return owner ? (

@@ -6,10 +6,11 @@ import { getSupportCasesSnapshot, subscribeToSupportCases } from "@/modules/supp
 import { getTaskActivitySnapshot, subscribeToTaskActivity } from "@/modules/tasks";
 import { getQuotesSnapshot, subscribeToQuotes } from "@/modules/quotes";
 import { getOrdersSnapshot, subscribeToOrders } from "@/modules/orders";
-import { useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
+import { useWorkspaceRuntimeSettings } from "@/platform/workspace-config";
 import { useRepositorySnapshot } from "../core/useRepositorySnapshot";
 
-export function useDashboardReadModel() {
+/** Local demo snapshots only. Connected Dashboard uses owner queries in useConnectedDashboardReadModel. */
+export function useDashboardDemoReadModel() {
   const leads = useRepositorySnapshot(subscribeToLeads, getLeadsSnapshot);
   const deals = useRepositorySnapshot(subscribeToDeals, getDealsSnapshot);
   const customers = useRepositorySnapshot(subscribeToCustomers, getCustomersSnapshot);
@@ -17,7 +18,7 @@ export function useDashboardReadModel() {
   const taskActivity = useRepositorySnapshot(subscribeToTaskActivity, getTaskActivitySnapshot);
   const quotes = useRepositorySnapshot(subscribeToQuotes, getQuotesSnapshot);
   const orders = useRepositorySnapshot(subscribeToOrders, getOrdersSnapshot);
-  const configuration = useWorkspaceOperationalConfiguration();
+  const configuration = useWorkspaceRuntimeSettings();
 
   return useMemo(() => ({
     leads,
@@ -28,7 +29,7 @@ export function useDashboardReadModel() {
     activities: taskActivity.activities,
     quotes,
     orders,
-    timezone: configuration.localeRegion.timezone,
-    baseCurrency: configuration.localeRegion.currencies.baseCurrency,
-  }), [leads, deals, customers, cases, taskActivity.tasks, taskActivity.activities, quotes, orders, configuration.localeRegion.timezone, configuration.localeRegion.currencies.baseCurrency]);
+    timezone: configuration.timeZone,
+    baseCurrency: configuration.baseCurrency,
+  }), [leads, deals, customers, cases, taskActivity.tasks, taskActivity.activities, quotes, orders, configuration.timeZone, configuration.baseCurrency]);
 }

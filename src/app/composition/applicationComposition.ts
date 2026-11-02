@@ -8,6 +8,7 @@ import { configureCommercialEvidenceApplication } from "@/modules/commercial-evi
 import { configureContactApplication } from "@/modules/contacts/application/composition/contactApplicationServices";
 import { configureCustomerApplication } from "@/modules/customers/application/composition/customerApplicationServices";
 import { configureDealApplication } from "@/modules/deals/application/composition/dealApplicationServices";
+import { configureDealPipelineScopeObservers } from "@/modules/deals/public/dealPipelines";
 import { configureInvoiceApplication } from "@/modules/invoices/application/composition/invoiceApplicationServices";
 import { configureLeadApplication } from "@/modules/leads/application/composition/leadApplicationServices";
 import { createLeadModuleDataAuthorityBridge } from "@/modules/leads/infrastructure/http/LeadModuleDataAuthorityBridge";
@@ -42,10 +43,14 @@ import { AccessGovernanceHttpAdapter } from "@/platform/access-control/infrastru
 import { WorkspaceConfigurationApiClient } from "@/platform/api/generated/workspaceConfigurationApi";
 import { StudioQuickSetupApiClient } from "@/platform/api/generated/studioQuickSetupApi";
 import { AiApiClient } from "@/platform/api/generated/aiApi";
-import { AiConfigurationHttpAdapter } from "@/workspaces/studio/infrastructure/AiConfigurationHttpAdapter";
+import { AiConfigurationHttpAdapter, withAiConfigurationTestTimeout } from "@/workspaces/studio/infrastructure/AiConfigurationHttpAdapter";
 import { configureAiConfigurationGateway, resetAiConfigurationGateway } from "@/workspaces/studio/application/composition/aiConfigurationApplicationServices";
 import { StudioCoreHttpAdapter } from "@/workspaces/studio/infrastructure/StudioCoreHttpAdapter";
 import { configureConnectedStudioCoreGateway, resetStudioCoreRuntime } from "@/workspaces/studio/runtime/studioCoreRuntime";
+import { toOperationalConfiguration } from "@/workspaces/studio/application/studioCore.types";
+import { ApplicationError } from "@/shared/domain";
+import { configureWorkspaceOperationalConfigurationLoader } from "@/platform/workspace-config/workspaceOperationalConfigurationRuntime";
+import { captureWorkspaceConfigurationOwner, configureWorkspaceRuntimeSettings, isCurrentWorkspaceConfigurationOwner } from "@/platform/workspace-config/workspaceRuntimeSettings";
 import { configureConnectedAiRuntime, resetAiRuntime } from "@/ai/runtime/aiRuntimeBinding";
 import {
   configureDefaultAccessGovernanceRuntime,
@@ -140,6 +145,7 @@ export async function initializeApplicationComposition(
   options: InitializeApplicationCompositionOptions = {},
 ): Promise<ApplicationRuntimeMode> {
   const mode = options.mode ?? "demo";
+  configureWorkspaceRuntimeSettings(mode === "connected");
   if (mode === "connected" && options.services) {
     throw new Error(
       "Connected application composition owns HTTP application services. Host-injected ApplicationServiceBundle values are not accepted.",
@@ -209,12 +215,22 @@ export async function initializeApplicationComposition(
   if (mode === "connected" && connectedHttpClient) {
     configureLeadCustomerConversionGateway(createLeadCustomerConversionGateway(new CommercialApiClient(connectedHttpClient)));
     configureOutboundWebhookGateway(createConnectedOutboundWebhookGateway(new IntegrationConfigurationApiClient(connectedHttpClient)));
-    configureConnectedStudioCoreGateway(new StudioCoreHttpAdapter(
+    const studioGateway = new StudioCoreHttpAdapter(
       new WorkspaceConfigurationApiClient(connectedHttpClient as HttpClient),
       new StudioQuickSetupApiClient(connectedHttpClient as HttpClient),
-    ));
-    configureAiConfigurationGateway(new AiConfigurationHttpAdapter(new AiApiClient(connectedHttpClient as HttpClient)));
+    );
+    configureConnectedStudioCoreGateway(studioGateway);
+    configureWorkspaceOperationalConfigurationLoader(async (signal) => {
+      const owner = captureWorkspaceConfigurationOwner();
+      const configuration = await studioGateway.getConfiguration(signal);
+      if (!isCurrentWorkspaceConfigurationOwner(owner) || configuration.workspaceId !== owner.workspaceId) {
+        throw new ApplicationError({ code: "WORKSPACE_CONFIGURATION_OWNER_RETIRED", category: "CANCELLED", message: "Workspace configuration request retired." });
+      }
+      return toOperationalConfiguration(configuration);
+    });
+    configureAiConfigurationGateway(new AiConfigurationHttpAdapter(new AiApiClient(withAiConfigurationTestTimeout(connectedHttpClient as HttpClient))));
   } else {
+    configureWorkspaceOperationalConfigurationLoader();
     resetStudioCoreRuntime();
     resetAiConfigurationGateway();
     resetLeadCustomerConversionGateway();
@@ -238,6 +254,7 @@ export async function initializeApplicationComposition(
     resetAuditTrailAuthority();
   }
 
+  configureDealPipelineScopeObservers();
   currentMode = mode;
   currentHttpClient = connectedHttpClient;
   currentConfigurationApiClients = connectedHttpClient ? createConfigurationApiClients(connectedHttpClient) : undefined;

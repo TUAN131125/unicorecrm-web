@@ -162,8 +162,8 @@ function DemoWebhooksApiView() {
 
   return (
     <StudioPageFrame
-      title={text("Webhook & API", "Webhooks & API")}
-      description={text("Quản lý đăng ký sự kiện, endpoint và khóa truy cập cho các kết nối hệ thống.", "Manage event subscriptions, endpoints, and access keys for system connections.")}
+      title={text("Webhook gửi đi · Demo", "Outbound Webhooks · Demo")}
+      description={text("Dữ liệu mô phỏng trong trình duyệt; không xác nhận webhook hoặc khóa API thật.", "Browser demo data; does not confirm real webhooks or API keys.")}
       locale={locale}
       dirty={dirty}
       revision={source.revision}

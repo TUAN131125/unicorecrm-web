@@ -141,8 +141,9 @@ export function useServerPagedCollection<T>(
       }, controller.signal);
       if (controller.signal.aborted || requestVersion !== requestVersionRef.current || previousScopeKeyRef.current !== options.scopeKey) return;
 
-      const authoritativePageCount = Math.max(1, Math.ceil((result.pageInfo.totalCount ?? result.items.length) / pageSize));
-      if (page > authoritativePageCount) {
+      // Cursor pages do not imply a total. Only a server-provided count may clamp the page.
+      const authoritativePageCount = result.pageInfo.totalCount === undefined ? undefined : Math.max(1, Math.ceil(result.pageInfo.totalCount / pageSize));
+      if (authoritativePageCount !== undefined && page > authoritativePageCount) {
         setPageState(authoritativePageCount);
         setSnapshot((current) => current.page === undefined
           ? { state: "IDLE", scopeKey: options.scopeKey }

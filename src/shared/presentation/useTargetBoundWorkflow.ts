@@ -10,7 +10,7 @@ export function useTargetBoundWorkflow(routeId: string | undefined, name: string
   const mounted = useRef(true);
   const activeCycle = useRef(cycle);
   activeCycle.current = cycle;
-  const state = useRef({ dirty: false, reset: () => {}, save: async () => false });
+  const state = useRef<{ dirty: boolean; reset: () => void; save: () => Promise<boolean>; canDiscard?: () => boolean }>({ dirty: false, reset: () => {}, save: async () => false });
 
   useEffect(() => {
     mounted.current = true;
@@ -23,17 +23,17 @@ export function useTargetBoundWorkflow(routeId: string | undefined, name: string
     }
   });
 
-  function register(dirty: boolean, reset: () => void, save: () => Promise<boolean>) {
-    state.current = { dirty, reset, save };
+  function register(dirty: boolean, reset: () => void, save: () => Promise<boolean>, canDiscard?: () => boolean) {
+    state.current = { dirty, reset, save, canDiscard };
   }
   useEffect(() => registerUnsavedWork({
     id: `${name}:${targetId}:${cycle}`,
     title: `${name}: ${targetId ?? ""}`,
     isDirty: state.current.dirty || pending,
     save: () => pendingRef.current || !mounted.current || activeCycle.current !== cycle ? Promise.resolve(false) : state.current.save(),
-    canDiscard: () => !pendingRef.current && mounted.current && activeCycle.current === cycle,
+    canDiscard: () => !pendingRef.current && mounted.current && activeCycle.current === cycle && state.current.canDiscard?.() !== false,
     discard: () => {
-      if (pendingRef.current || !mounted.current || activeCycle.current !== cycle) return;
+      if (pendingRef.current || !mounted.current || activeCycle.current !== cycle || state.current.canDiscard?.() === false) return;
       state.current.reset();
       state.current.dirty = false;
       if (routeId !== targetId) {

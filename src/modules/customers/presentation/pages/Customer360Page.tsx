@@ -170,6 +170,7 @@ export const Customer360Page: React.FC<Customer360PageProps> = ({
   }, [dealOpen, customer.id]);
 
   const createDeal = async (draft: DealFormDraft) => {
+    if (draft.amount === null) return false;
     const opening = dealOpening.current;
     if (!opening || dealWorkspace.current !== getWorkspaceContextSnapshot().workspaceId) return false;
     const commandWorkspace = dealWorkspace.current;

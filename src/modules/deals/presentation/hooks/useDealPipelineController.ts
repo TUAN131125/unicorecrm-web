@@ -8,7 +8,7 @@ import { validateDealProgressiveProfile } from "../../domain/rules/dealProgressi
 import { useDeals } from "../hooks/useDeals";
 import { useDealStageWindows } from "../hooks/useDealStageWindows";
 import { useDealStages } from "../hooks/useDealStages";
-import { assertDealDemoImportAllowed, exportDealsSnapshot, isDealStageResetUnavailable } from "../../public/deals";
+import { assertDealDemoImportAllowed, exportDealsSnapshot, isDealStageResetUnavailable, isDealConnectedMode } from "../../public/deals";
 import { useI18n } from "@/i18n";
 import { getContactsSnapshot } from "@/modules/contacts";
 import { getOrganizationAccountsSnapshot } from "@/modules/organizations";
@@ -56,7 +56,13 @@ export function useDealPipelineController() {
   const viewMode: "kanban" | "table" = requestedView === "kanban" || requestedView === "table"
     ? requestedView
     : defaultView;
+  const { stageConfigs, setStageConfigs, resetStageConfigs, pipelines, pipeline, pipelineQuery } = useDealStages();
+  const pipelineId = pipeline?.id;
   const { deals, setDeals, query: collectionQuery } = useDeals({ loadAuthoritative: viewMode !== "kanban" });
+  useEffect(() => {
+    if (!searchParams.has("pipeline")) return;
+    setSearchParams(previous => { const next = new URLSearchParams(previous); next.delete("pipeline"); return next; }, { replace: true });
+  }, [searchParams, setSearchParams]);
   const ownership = useRecordOwnershipContext("deals", CAPABILITIES.DEALS_ASSIGN);
   const [ownershipScope, setOwnershipScope] = useState<OwnershipScopeView>("ALLOWED");
   /**
@@ -92,6 +98,7 @@ export function useDealPipelineController() {
   const [dateStatusFilter, setDateStatusFilter] = useState("all"); // "all", "overdue", "month"
   const [minAmountFilter, setMinAmountFilter] = useState("");
   const [currencyFilter, setCurrencyFilter] = useState("all");
+  useEffect(() => { setStageFilter("all"); setKanbanCardOrder([]); }, [pipelineId, viewMode]);
 
   // Create Deal Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -110,13 +117,14 @@ export function useDealPipelineController() {
   const [moreActionsAnchor, setMoreActionsAnchor] = useState<HTMLElement | null>(null);
 
   // Stage configuration is owned by the Deal module repository.
-  const { stageConfigs, setStageConfigs, resetStageConfigs } = useDealStages();
   const activeStageCodes = useMemo(
-    () => stageConfigs.filter((stage) => stage.isActive).sort((left, right) => left.order - right.order).map((stage) => stage.code),
+    () => stageConfigs.slice().sort((left, right) => left.order - right.order).map((stage) => stage.code),
     [stageConfigs],
   );
   const stageWindowQuery = useDealStageWindows({
-    enabled: viewMode === "kanban",
+    enabled: viewMode === "kanban" && Boolean(pipelineId),
+    pipelineId,
+    pipelineVersion: pipeline?.version,
     stages: activeStageCodes,
     search: searchTerm,
     ownerId: ownerFilter,
@@ -126,7 +134,7 @@ export function useDealPipelineController() {
     currency: currencyFilter,
     ownershipScope,
   });
-  const query = viewMode === "kanban" && stageWindowQuery.connected ? stageWindowQuery : collectionQuery;
+  const query = pipelineQuery.loading || pipelineQuery.error ? pipelineQuery : viewMode === "kanban" && stageWindowQuery.connected ? stageWindowQuery : collectionQuery;
 
   // Creation Stage custom values
   const [newDealStage, setNewDealStage] = useState("");
@@ -155,7 +163,7 @@ export function useDealPipelineController() {
       const activeConfigs = stageConfigs.filter(s => s.isActive && s.category === "open").sort((a,b) => a.order - b.order);
       if (activeConfigs.length > 0) {
         setNewDealStage(activeConfigs[0].code);
-        setNewOpportunityScore(String(activeConfigs[0].probabilityDefault));
+        setNewOpportunityScore("40");
       } else {
         setNewDealStage(DealStage.DISCOVERY);
         setNewOpportunityScore("40");
@@ -182,6 +190,7 @@ export function useDealPipelineController() {
 
   const handleDropCard = async (draggedId: string, targetStage: string, targetCardId?: string) => {
     const targetConfig = stageConfigs.find((stage) => stage.code === targetStage);
+    if (!targetConfig?.isActive) return;
     if (targetConfig?.category === "won" || targetConfig?.category === "lost") {
       const decision = await requestDecision({
         title: locale === "vi" ? "Cập nhật kết quả cơ hội" : "Update opportunity outcome",
@@ -228,13 +237,16 @@ export function useDealPipelineController() {
     });
   };
 
-  const getDealStageLabel = (stage: string | DealStage) => {
-    return getStageLabel(stage, stageConfigs, locale);
+  const stagesForPipeline = (assignedPipelineId?: string) => assignedPipelineId
+    ? pipelines.find(item => item.id === assignedPipelineId)?.stages ?? [] : stageConfigs;
+  const getDealStageLabel = (stage: string | DealStage, assignedPipelineId?: string) => {
+    return getStageLabel(stage, stagesForPipeline(assignedPipelineId), locale);
   };
 
   // Helper: Overdue Detection
-  const isOverdue = (expectedCloseDate: string, stage: string | DealStage) => {
-    if (isWonStage(stage, stageConfigs) || isLostStage(stage, stageConfigs)) return false;
+  const isOverdue = (expectedCloseDate: string, stage: string | DealStage, assignedPipelineId?: string) => {
+    const assignedStages = stagesForPipeline(assignedPipelineId);
+    if (isWonStage(stage, assignedStages) || isLostStage(stage, assignedStages)) return false;
     if (!expectedCloseDate) return false;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -251,7 +263,7 @@ export function useDealPipelineController() {
     return closeDate.getFullYear() === today.getFullYear() && closeDate.getMonth() === today.getMonth();
   };
 
-  const getNextDealStage = (stage: string | DealStage): string | null => getNextStage(stage, stageConfigs);
+  const getNextDealStage = (stage: string | DealStage, assignedPipelineId?: string): string | null => getNextStage(stage, stagesForPipeline(assignedPipelineId));
   const isDealAdvancing = (dealId: string) => advancingDealIds.has(dealId);
 
   const advanceDealStage = async (dealId: string) => {
@@ -263,7 +275,7 @@ export function useDealPipelineController() {
       return;
     }
 
-    const nextStage = getNextDealStage(deal.stage);
+    const nextStage = getNextDealStage(deal.stage, deal.pipelineId);
     if (!nextStage) return;
 
     advancingDealIdsRef.current.add(dealId);
@@ -275,8 +287,8 @@ export function useDealPipelineController() {
         type: "stage",
         title: t("deals.activities.stageChangedTitle"),
         description: t("deals.activities.stageChangedDescription", {
-          from: getDealStageLabel(deal.stage),
-          to: getDealStageLabel(nextStage),
+          from: getDealStageLabel(deal.stage, deal.pipelineId),
+          to: getDealStageLabel(nextStage, deal.pipelineId),
         }),
         createdAt: now,
         author: t("common.system"),
@@ -306,7 +318,9 @@ export function useDealPipelineController() {
       ...(form.buyerRef.type === "CONTACT" ? { contactId: form.buyerRef.id, contactName: form.customerName } : { organizationAccountId: form.buyerRef.id, organizationAccountName: form.customerName }),
     };
 
-    const selectedStage = stageConfigs.find((stage) => stage.code === form.stage);
+    const selectedPipelineId = pipelineId;
+    const selectedStage = pipelines.find((item) => item.id === selectedPipelineId)?.stages.find((stage) => stage.code === form.stage);
+    if (!selectedStage?.isActive) return false;
     if (selectedStage?.category === "won" || selectedStage?.category === "lost") {
       await requestDecision({
         title: locale === "vi" ? "Chọn giai đoạn đang mở" : "Choose an open stage",
@@ -347,7 +361,7 @@ export function useDealPipelineController() {
       forecastCategory: form.forecastCategory,
       stage: form.stage,
     } satisfies Partial<Deal>;
-    const missingFields = validateDealProgressiveProfile(validationDraft, form.stage, "QUICK");
+    const missingFields = validateDealProgressiveProfile(validationDraft, form.stage, "QUICK", selectedStage);
     if (missingFields.length > 0) {
       await requestDecision({
         title: t("deals.quickCreate.validationTitle"),
@@ -364,7 +378,8 @@ export function useDealPipelineController() {
       id: dealId,
       name: form.name,
       ...relationship,
-      stage: form.stage || DealStage.DISCOVERY,
+      stage: form.stage,
+      ...(isDealConnectedMode() ? {} : { pipelineId: selectedPipelineId }),
       amount: form.amount,
       amountDecimal: form.amountDecimal,
       currency: form.currency,
@@ -471,7 +486,9 @@ export function useDealPipelineController() {
       forecastCategory: form.forecastCategory,
       stage: form.stage,
     } satisfies Partial<Deal>;
-    const missingEditFields = validateDealProgressiveProfile(editDraft, form.stage, "COMPLETE");
+    const targetStage = pipelines.find((item) => item.id === (opening.pipelineId || form.pipeline || pipelineId))?.stages.find((stage) => stage.code === form.stage);
+    if (!targetStage) return false;
+    const missingEditFields = validateDealProgressiveProfile(editDraft, form.stage, "COMPLETE", targetStage);
     if (missingEditFields.length > 0) {
       await requestDecision({
         title: t("deals.quickCreate.validationTitle"),
@@ -482,7 +499,6 @@ export function useDealPipelineController() {
       return false;
     }
 
-    const targetStage = stageConfigs.find((stage) => stage.code === form.stage);
     if (targetStage?.category === "won" || targetStage?.category === "lost") {
       await requestDecision({
         title: locale === "vi" ? "Cập nhật kết quả bằng hành động riêng" : "Use an outcome action",
@@ -556,8 +572,13 @@ export function useDealPipelineController() {
   // Clone opportunity
   const handleDuplicateDeal = async (deal: Deal) => {
     const copySuffix = t("opportunities.copySuffix", "Copy");
+    const initialStage = stageConfigs.find(stage => stage.isActive && stage.category === "open");
+    if (!initialStage) return;
+    const { pipelineId: _assignedPipelineId, ...source } = deal;
     const duplicated: Deal = {
-      ...deal,
+      ...source,
+      ...(isDealConnectedMode() ? {} : { pipelineId }),
+      stage: initialStage.code,
       id: createCreateCommandTarget("deal"),
       name: `${deal.name} (${copySuffix})`,
       ownerId: ownership?.memberId || deal.ownerId,
@@ -672,8 +693,8 @@ export function useDealPipelineController() {
       { key: "id", label: "ID", value: (deal) => deal.id },
       { key: "name", label: locale === "vi" ? "Tên cơ hội" : "Name", value: (deal) => deal.name },
       { key: "customer", label: locale === "vi" ? "Khách hàng" : "Customer", value: (deal) => deal.customerName ?? "" },
-      { key: "amount", label: locale === "vi" ? "Giá trị" : "Amount", value: (deal) => deal.amount },
-      { key: "stage", label: locale === "vi" ? "Giai đoạn" : "Stage", value: (deal) => getDealStageLabel(deal.stage) },
+      { key: "amount", label: locale === "vi" ? "Giá trị" : "Amount", value: (deal) => deal.amount ?? "" },
+      { key: "stage", label: locale === "vi" ? "Giai đoạn" : "Stage", value: (deal) => getDealStageLabel(deal.stage, deal.pipelineId) },
       { key: "closeDate", label: locale === "vi" ? "Ngày chốt dự kiến" : "Close date", value: (deal) => deal.expectedCloseDate },
       { key: "owner", label: locale === "vi" ? "Người phụ trách" : "Owner", value: (deal) => ownership?.visibleOwners.find((owner) => owner.memberId === deal.ownerId)?.displayName || deal.ownerId },
         { key: "score", label: locale === "vi" ? "Điểm (%)" : "Score (%)", value: (deal) => deal.opportunityScore },
@@ -773,7 +794,7 @@ export function useDealPipelineController() {
     // Expected Close status filter
     let matchesDateStatus = true;
     if (dateStatusFilter === "overdue") {
-      matchesDateStatus = isOverdue(deal.expectedCloseDate, deal.stage);
+      matchesDateStatus = isOverdue(deal.expectedCloseDate, deal.stage, deal.pipelineId);
     } else if (dateStatusFilter === "month") {
       matchesDateStatus = isClosingThisMonth(deal.expectedCloseDate);
     }
@@ -781,12 +802,14 @@ export function useDealPipelineController() {
     // Min Amount Filter
     const minVal = parseFloat(minAmountFilter) || 0;
     const matchesCurrency = currencyFilter === "all" || (deal.currency || "VND") === currencyFilter;
-    const matchesAmount = !minAmountFilter || (currencyFilter !== "all" && deal.amount >= minVal);
+    const matchesAmount = !minAmountFilter || (currencyFilter !== "all" && deal.amount !== null && deal.amount >= minVal);
 
-    return !!(matchesSearch && matchesOwner && matchesStage && matchesDateStatus && matchesCurrency && matchesAmount);
+    const matchesPipeline = viewMode !== "kanban" || !pipelineId || (deal.pipelineId ?? pipelineId) === pipelineId;
+    return !!(matchesPipeline && matchesSearch && matchesOwner && matchesStage && matchesDateStatus && matchesCurrency && matchesAmount);
   });
 
-  const pipelineStages = activeStageCodes;
+  const pipelineStages = viewMode === "kanban" ? activeStageCodes
+    : [...new Set(pipelines.flatMap(item => item.stages.map(stage => stage.code)))];
 
   // Active filter metric
   const activeFilterCount = [
@@ -838,6 +861,7 @@ export function useDealPipelineController() {
     moreActionsAnchor,
     setMoreActionsAnchor,
     stageConfigs,
+    pipelines, pipeline, pipelineId, pipelineQuery,
     newDealStage,
     newOpportunityScore,
     newNotes,

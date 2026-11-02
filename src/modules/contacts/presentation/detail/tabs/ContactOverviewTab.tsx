@@ -51,7 +51,7 @@ export const ContactOverviewTab: React.FC<ContactOverviewTabProps> = ({ contact,
     <section aria-label={text("Các chỉ số quan trọng", "Important metrics")} className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(100%,13rem),16rem))]">
       <button type="button" disabled={!model.canOpenTasks} onClick={() => onSelectTab("work", "tasks")} className="min-h-20 rounded-xl border border-slate-200 bg-white p-3 text-left transition hover:border-indigo-200 hover:bg-indigo-50/20 focus-visible:outline focus-visible:outline-indigo-600 disabled:cursor-default">
         <span className="block text-xs text-slate-500">{text("Công việc đang mở", "Open tasks")}</span><span className="mt-2 block text-lg font-semibold">{model.taskCount ?? "—"}</span>
-        {model.taskCount === undefined && <span className="text-[10px] text-slate-500">{text("Chưa có tổng số đáng tin cậy trong phạm vi hiện tại.", "A reliable total is not available in the current scope.")}</span>}
+        {model.taskCount === undefined && <span className="text-[10px] text-slate-500">{text("Chưa có tổng số để hiển thị.", "No total is available.")}</span>}
       </button>
     </section>
     <section className="grid min-w-0 items-start gap-3 lg:grid-cols-2" aria-label={text("Hồ sơ và quan hệ", "Profile and relationships")}>
@@ -63,21 +63,21 @@ export const ContactOverviewTab: React.FC<ContactOverviewTabProps> = ({ contact,
       </article>
       <article className="min-w-0 rounded-xl border border-slate-200 p-4">
         <h3 className="text-sm font-semibold">{text("Tổ chức liên kết", "Organization connections")}</h3>
-        {!model.canReadOrganizations ? <p role="status" className="mt-2 text-xs text-slate-500">{text("Quan hệ tổ chức chưa khả dụng với quyền hiện tại.", "Organization relationships unavailable with current access.")}</p> : model.ready && !model.organizations.length ? <p className="mt-2 text-xs text-slate-500">{text("Chưa có liên kết tổ chức hiển thị trong phạm vi hiện tại.", "No organization link is visible in the current scope.")}</p> : null}
+        {!model.canReadOrganizations ? <p role="status" className="mt-2 text-xs text-slate-500">{text("Chưa thể mở thông tin tổ chức liên quan.", "Related organization information cannot be opened.")}</p> : model.ready && !model.organizations.length ? <p className="mt-2 text-xs text-slate-500">{text("Không có liên kết tổ chức để hiển thị.", "No organization links to display.")}</p> : null}
         {!model.ready && unavailable && model.canReadOrganizations && <p role="status" className="mt-2 text-xs text-slate-500">{unavailable}</p>}
         <ul className="mt-2 space-y-2">{model.organizations.slice(0,3).map(item => <li key={item.id} className="text-xs [overflow-wrap:anywhere]"><button type="button" className="inline-flex min-h-9 max-w-full items-center gap-2 rounded text-left font-semibold text-indigo-700 hover:underline focus-visible:outline focus-visible:outline-indigo-600" onClick={() => navigate(`/organizations/${item.organizationAccountId}`)}><Building2 size={14} className="shrink-0" aria-hidden="true"/><span className="min-w-0 break-words [overflow-wrap:anywhere]">{item.organizationLabel || item.organizationAccountId}</span><ArrowUpRight size={13} className="shrink-0" aria-hidden="true"/></button><p className="mt-1 text-slate-500">{item.roleTitle || roleLabel(item.role)}{item.isPrimaryAffiliation ? text(" · Quan hệ chính", " · Primary affiliation") : ""}</p></li>)}</ul>
         {model.organizations.length > 3 && <Button size="xs" variant="secondary" className="mt-2" onClick={() => onSelectTab("relationship","people")}>{text("Xem tất cả", "View all")}</Button>}
       </article>
       <article className="min-w-0 rounded-xl border border-slate-200 p-4 lg:col-span-2">
         <h3 className="text-sm font-semibold">{text("Liên kết hồ sơ khách hàng", "Customer profile links")}</h3>
-        {!model.canReadCustomers ? <p role="status" className="mt-2 text-xs text-slate-500">{text("Hồ sơ khách hàng chưa khả dụng với quyền hiện tại.", "Customer profiles unavailable with current access.")}</p> : model.ready && !model.customers.length ? <p className="mt-2 text-xs text-slate-500">{text("Chưa liên kết hồ sơ khách hàng trong phạm vi hiển thị.", "No customer profile linked in the visible scope.")}</p> : null}
+        {!model.canReadCustomers ? <p role="status" className="mt-2 text-xs text-slate-500">{text("Chưa thể mở hồ sơ khách hàng liên quan.", "Related customer profiles cannot be opened.")}</p> : model.ready && !model.customers.length ? <p className="mt-2 text-xs text-slate-500">{text("Không có hồ sơ khách hàng liên quan để hiển thị.", "No related customer profiles to display.")}</p> : null}
         {!model.ready && unavailable && model.canReadCustomers && <p role="status" className="mt-2 text-xs text-slate-500">{unavailable}</p>}
         <ul className="mt-2 space-y-2">{model.customers.slice(0,3).map(item => <li key={item.id} className="text-xs [overflow-wrap:anywhere]"><button type="button" className="inline-flex min-h-9 max-w-full items-center gap-2 rounded text-left font-semibold text-indigo-700 hover:underline focus-visible:outline focus-visible:outline-indigo-600" onClick={() => navigate(`/customers/${item.customerId}`)}><UserRoundCheck size={14} className="shrink-0" aria-hidden="true"/><span className="min-w-0 break-words [overflow-wrap:anywhere]">{item.customerLabel || item.customerId}</span><ArrowUpRight size={13} className="shrink-0" aria-hidden="true"/></button><p className="text-slate-500">{roleLabel(item.role)}</p></li>)}</ul>
         <Button size="xs" variant="secondary" className="mt-3" onClick={() => onSelectTab("relationship","people")}>{text("Xem các quan hệ", "Review relationships")}</Button>
       </article>
     </section>
     <section aria-label={text("Bối cảnh kinh doanh và dịch vụ", "Business and service context")} className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-xs text-slate-500">
-      {text("Chưa có tổng hợp kinh doanh và dịch vụ đáng tin cậy cho liên hệ này. Xem các tab nghiệp vụ để kiểm tra bản ghi liên quan trong phạm vi được phép.", "A reliable business and service summary is unavailable for this contact. Review the business tabs for related records within your access.")}
+      {text("Xem các tab nghiệp vụ để kiểm tra giao dịch và dịch vụ liên quan.", "Open the business tabs to review related transactions and services.")}
     </section>
   </div>;
 };

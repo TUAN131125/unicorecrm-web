@@ -1,5 +1,5 @@
 import type { BuyerRef } from "@/platform/identity";
-import type { ExchangeRateSnapshot } from "@/shared/money";
+import type { MoneyDto, ExchangeRateSnapshot } from "@/shared/money";
 import type { PaymentAgreementSnapshot } from "@/shared/order-to-cash";
 
 export enum SalesDocumentAdjustmentType {
@@ -17,6 +17,8 @@ export enum SalesDocumentAdjustmentType {
 export type SalesDocumentAdjustmentCalculation = "FIXED_AMOUNT" | "PERCENTAGE";
 
 export interface SalesDocumentAdjustment {
+  /** Exact accepted/input decimal retained across display projection. */
+  valueDecimal?: string;
   id: string;
   type: SalesDocumentAdjustmentType;
   label: string;
@@ -71,6 +73,13 @@ export type QuoteDeliveryChannel =
   | "PDF";
 
 export interface QuoteDeliveryRecord {
+  recordedAt?: string;
+  reportedSentAt?: string;
+  quoteRevision?: number;
+  resourceVersion?: number;
+  approvalContentFingerprint?: string;
+  approvalPolicyVersion?: string;
+  documentAuthority?: "COMMERCIAL_CONTENT_ONLY";
   id: string;
   channel: QuoteDeliveryChannel;
   evidenceType?: "USER_CONFIRMED_SENT" | "PROVIDER_ACCEPTED" | "PROVIDER_DELIVERED";
@@ -83,11 +92,28 @@ export interface QuoteDeliveryRecord {
   contentFingerprint: string;
 }
 
+export interface QuoteCustomerDecisionRecord {
+  id: string; workspaceId: string; quoteId: string; quoteRevision: number; resourceVersion: number;
+  buyerRef: BuyerRef;
+  decisionType: "ACCEPTANCE" | "REJECTION";
+  evidenceType: "USER_REPORTED_ACCEPTANCE" | "USER_REPORTED_REJECTION";
+  verificationStatus: "UNVERIFIED";
+  evidenceSource: string; sourceDescription: string; recordedAt: string; recordedBy: string;
+  commercialContentFingerprint: string; policyVersion: string;
+  reportedCustomerDecisionAt?: string; reason?: string; note?: string; approvalPolicyVersion?: string;
+}
+
+export interface QuoteValidity {
+  state: "VALID" | "OVERDUE" | "NO_EXPIRY" | "TIMEZONE_UNAVAILABLE";
+  evaluatedAt: string; timeZone?: string; localDate?: string;
+}
 export interface Quote {
+  validity?: QuoteValidity;
+  customerDecisionHistory?: QuoteCustomerDecisionRecord[];
   /** Backend optimistic-concurrency token, distinct from the business quote revision. */
   resourceVersion?: number;
   /** Backend-projected action hints for presentation only; authorization remains server enforced. */
-  authoritativeActions?: { accept: { allowed: boolean; blockerCodes: string[] } };
+  authoritativeActions?: { issueDocument?: { allowed: boolean; blockerCodes: string[] }; revise?: { allowed: boolean; blockerCodes: string[] }; expire?: { allowed: boolean; blockerCodes: string[] }; archive?: { allowed: boolean; blockerCodes: string[] }; accept: { allowed: boolean; blockerCodes: string[] }; reject?: { allowed: boolean; blockerCodes: string[] }; recordCustomerResponse?: { allowed: boolean; blockerCodes: string[] } };
   id: string;
   quoteNumber: string;
   version: number;
@@ -130,6 +156,8 @@ export interface Quote {
   paymentMethod?: QuotePaymentMethod;
   /** Versioned commercial payment commitment. Legacy timing/method fields remain read compatibility only. */
   paymentAgreement?: PaymentAgreementSnapshot;
+  ordinarySales?: boolean;
+  salesAcceptance?: import("./salesAcceptance.types").SalesAcceptance;
   deliveryHistory?: QuoteDeliveryRecord[];
   title: string;
   currency?: string;
@@ -141,6 +169,7 @@ export interface Quote {
   discountTotal?: number;
   taxTotal?: number;
   grandTotal: number;
+  commercialMoney?: { subtotal: MoneyDto; discountTotal: MoneyDto; taxTotal: MoneyDto; grandTotal: MoneyDto };
   validUntil?: string;
   createdAt: string;
   updatedAt?: string;
@@ -161,6 +190,9 @@ export interface Quote {
 }
 
 export interface QuoteLineItem {
+  /** Exact accepted/input decimals; numeric aliases below serve preview only. */
+  commercialMoney?: { unitPrice: MoneyDto; lineTotal: MoneyDto; lineTaxAmount: MoneyDto };
+  inputDecimals?: Partial<Record<"quantity" | "unitPrice" | "discountRate" | "taxRate", string>>;
   id: string;
   productId?: string;
   skuSnapshot?: string;

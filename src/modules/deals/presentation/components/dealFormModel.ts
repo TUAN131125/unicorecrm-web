@@ -17,7 +17,7 @@ export interface DealFormDraft {
   buyerRef?: import("@/platform/identity").BuyerRef;
   interestedProductIds: string[];
   amountDecimal: string;
-  amount: number;
+  amount: number | null;
   ownerId: string;
   expectedCloseDate: string;
   stage: string;
@@ -57,32 +57,32 @@ export function createDraft(
   defaultCurrency: string,
 ): DealFormDraft {
   const openStages = stages.filter((stage) => stage.isActive && stage.category === "open").sort((left, right) => left.order - right.order);
-  const stage = initialValues?.stage || openStages[0]?.code || "DISCOVERY";
+  const stage = initialValues?.stage || openStages[0]?.code || "";
   const stageConfig = stages.find((candidate) => candidate.code === stage);
   const lineItems = initialValues?.lineItems || [];
   const lineItemTotal = calculateLineItemTotal(lineItems);
-  const amount = lineItems.length > 0 ? lineItemTotal : (initialValues?.amount ?? 0);
+  const amount = lineItems.length > 0 ? lineItemTotal : (initialValues?.amount === undefined ? 0 : initialValues.amount);
 
   return {
     name: initialValues?.name ?? "",
     customerName: initialValues?.customerName ?? "",
     buyerRef: initialValues?.buyerRef,
     interestedProductIds: [...(initialValues?.interestedProductIds ?? [])],
-    amountDecimal: initialValues?.amountDecimal ?? String(initialValues?.amount ?? 0),
+    amountDecimal: initialValues?.amountDecimal ?? (initialValues?.amount === null ? "" : String(initialValues?.amount ?? 0)),
     amount,
     ownerId: initialValues?.ownerId || owners[0]?.memberId || "",
     expectedCloseDate: initialValues?.expectedCloseDate || "",
     stage,
-    probability: initialValues?.probability ?? stageConfig?.probabilityDefault ?? 10,
+    probability: initialValues?.probability ?? 40,
     forecastCategory: initialValues?.forecastCategory ?? "PIPELINE",
     source: initialValues?.source ?? "Direct",
-    pipeline: initialValues?.pipeline ?? "standard",
+    pipeline: initialValues?.pipeline ?? "",
     currency: initialValues?.currency ?? defaultCurrency,
     priority: initialValues?.priority ?? "MEDIUM",
     opportunityType: initialValues?.opportunityType ?? "new_sale",
     demandSummary: initialValues?.demandSummary ?? "",
     painPoints: initialValues?.painPoints ?? "",
-    expectedBudget: initialValues?.expectedBudget ?? amount,
+    expectedBudget: initialValues?.expectedBudget ?? amount ?? 0,
     nextActionSummary: initialValues?.nextActionSummary ?? "",
     nextActionAt: normalizeDateTime(initialValues?.nextActionAt),
     createFollowUpTask: initialValues?.createFollowUpTask ?? Boolean(initialValues?.nextActionSummary || initialValues?.nextActionAt),

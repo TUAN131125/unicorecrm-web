@@ -19,11 +19,26 @@ type OperationRuntimeContract = {
   contractStatus: string | null;
   requestSchema: string | null;
   responseSchema: string | null;
-  responseSchemas?: Readonly<Record<string, string>>;
+  responseSchemas?: Readonly<Record<string, string | null>>;
 };
 
 const operations = OPENAPI_OPERATION_RUNTIME_CONTRACTS as Readonly<Record<string, OperationRuntimeContract>>;
 const schemas = OPENAPI_RUNTIME_SCHEMAS as Readonly<Record<string, JsonSchema>>;
+
+/** Binary decoding is selected from the generated contract, never a caller bypass flag. */
+export function isOpenApiBinaryResponse(operationId: string, status: number): boolean {
+  const operation = operations[operationId];
+  if (operation?.contractStatus !== "PRODUCTION_CONTRACT_READY") return false;
+  const name = operation.responseSchemas?.[String(status)];
+  return Boolean(name && schemas[name]?.format === "binary" && schemas[name]?.contentMediaType === "application/pdf");
+}
+
+/** Only admitted generated binary request schemas select raw transport. */
+export function isOpenApiBinaryRequest(operationId: string): boolean {
+  const operation = operations[operationId];
+  const schema = operation?.requestSchema ? schemas[operation.requestSchema] : undefined;
+  return operation?.contractStatus === "PRODUCTION_CONTRACT_READY" && schema?.format === "binary" && schema?.contentMediaType === "application/pdf";
+}
 
 export function validateOpenApiRequest(operationId: string, value: unknown): OpenApiValidationResult {
   return validateOperationPayload(operationId, "request", value);
@@ -44,11 +59,15 @@ function validateOperationPayload(
   if (operation.contractStatus !== "PRODUCTION_CONTRACT_READY") {
     return invalid("$", `Operation ${operationId} is ${operation.contractStatus ?? "UNCLASSIFIED"}.`);
   }
+  if (direction === "response" && responseStatus !== undefined &&
+      !Object.hasOwn(operation.responseSchemas ?? {}, String(responseStatus))) {
+    return invalid("$", `Operation ${operationId} has no declared response for HTTP ${responseStatus}.`);
+  }
   const schemaName = direction === "request"
     ? operation.requestSchema
     : responseStatus === undefined
       ? operation.responseSchema
-      : operation.responseSchemas?.[String(responseStatus)] ?? operation.responseSchema;
+      : operation.responseSchemas?.[String(responseStatus)];
   if (!schemaName) {
     return value === undefined
       ? { valid: true, issues: [] }
@@ -68,6 +87,11 @@ function validateSchema(
 ): void {
   if (!schema) {
     issues.push({ path, message: "Referenced schema is missing." });
+    return;
+  }
+  if (schema.format === "binary" && schema.contentMediaType === "application/pdf") {
+    if (!(value instanceof Blob) || value.type !== "application/pdf" || value.size < 1 || value.size > 10485760)
+      issues.push({ path, message: "Expected a bounded PDF Blob." });
     return;
   }
   const ref = stringValue(schema.$ref);

@@ -11,6 +11,8 @@ import { getOrderApiRuntime, isOrderConnectedApiRuntime, orderPreferences, order
 
 export function getOrdersSnapshot(): OrderCollection { return orderRepository.snapshot(); }
 export function getOrderListSnapshot(): CustomerOrder[] { return orderRepository.list(); }
+/** Fresh, Workspace-scoped owner read. No cached fallback on denied or failed requests. */
+export function readOrderById(orderId: string, signal?: AbortSignal): Promise<CustomerOrder> { return getOrderApiRuntime().queries.get(orderId, signal); }
 export function getOrderSnapshot(orderId: string): CustomerOrder | undefined { return orderRepository.getById(orderId); }
 export function replaceOrders(orders: OrderCollection): void { orderRepository.replace(orders); }
 export function replaceOrderList(orders: readonly CustomerOrder[]): void { const next: OrderCollection = {}; for (const order of orders) { const key = relationshipRefKey(order.buyerRef); next[key] = [...(next[key] ?? []), structuredClone(order)]; } orderRepository.replace(next); }

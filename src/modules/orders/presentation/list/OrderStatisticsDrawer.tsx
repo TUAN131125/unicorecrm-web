@@ -29,7 +29,7 @@ export const OrderStatisticsDrawer: FC<OrderStatisticsDrawerProps> = ({
     onClose={onClose}
     size="md"
     title={<span className="inline-flex items-center gap-2"><BarChart3 className="text-indigo-600" size={20} />{title}</span>}
-    description={locale === "vi" ? "Tổng quan giá trị, trạng thái và tiến độ xử lý đơn hàng." : "Overview of order value, status, and processing progress."}
+    
     bodyClassName="bg-slate-50/70"
   >
     <div className="space-y-4">

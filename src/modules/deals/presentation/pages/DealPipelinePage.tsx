@@ -11,6 +11,7 @@ import { formatDate, formatDateTime } from "@/shared/lib/format/date";
 import { useDealPipelineController } from "../hooks/useDealPipelineController";
 import { DealPipelineModals } from "../components/DealPipelineModals";
 import { DealKanbanCard } from "../components/DealKanbanCard";
+import { DealAssignedPipelineBoard } from "../components/DealAssignedPipelineBoards";
 import { DealActionMenu } from "../components/DealActionMenu";
 import { notifyProduct } from "@/components/feedback/ProductDialogService";
 import { AuthoritativeQueryBoundary } from "@/shared/operations";
@@ -18,9 +19,17 @@ import { OwnershipScopeSelector } from "@/components/crm/OwnershipScopeSelector"
 import { ListFilterGrid, ListFilterPopover, ListToolbar } from "@/components/crm/list-archetype";
 import { DealPipelineHealthBadges } from "../components/DealPipelineHealth";
 import { resolveWorkspaceMemberLabel } from "@/platform/member-directory";
+import { useLocation } from "react-router-dom";
+import { useWorkspaceContextSnapshot } from "@/platform/workspace-context";
+import { toWorkspacePath } from "@/platform/navigation/canonicalRoutes";
 
 export const DealPipelinePage = () => {
   const controller = useDealPipelineController();
+  const listLocation = useLocation();
+  const workspace = useWorkspaceContextSnapshot();
+  const openDealDetail = (id: string) => controller.navigate(toWorkspacePath(workspace.workspaceKey, "crm", `deals/${encodeURIComponent(id)}`), {
+    state: { returnTo: `${listLocation.pathname}${listLocation.search}` },
+  });
   const {
     deals,
     query: dealQuery,
@@ -285,6 +294,7 @@ export const DealPipelinePage = () => {
             doneLabel={locale === "vi" ? "Hoàn tất" : "Done"}
           >
             <ListFilterGrid>
+              <p className="col-span-full text-xs text-slate-500">{locale === "vi" ? "Giai đoạn, ngày đóng và giá trị áp dụng cho bảng chính. Tìm kiếm và người phụ trách áp dụng cho mọi bảng." : "Stage, close date and value apply to the main board. Search and owner filters apply to every board."}</p>
               <Select
                 label={t("deals.filters.owner")}
                 value={ownerFilter}
@@ -299,7 +309,7 @@ export const DealPipelinePage = () => {
               </Select>
 
               <Select
-                label={t("deals.filters.stage")}
+                label={locale === "vi" ? "Giai đoạn pipeline mặc định" : "Default pipeline stage"}
                 value={stageFilter}
                 onChange={(event) => setStageFilter(event.target.value)}
               >
@@ -359,6 +369,7 @@ export const DealPipelinePage = () => {
         /* KANBAN GRID BOARD VIEW (With isolated horizontal scrollbar) */
         <div
           id="deals-kanban-section"
+          data-deal-default-pipeline={controller.pipelineId}
           className="flex-1 min-h-0 overflow-hidden"
         >
           <div className="h-full min-h-0 overflow-x-auto overflow-y-hidden pb-3 crm-scroll-x">
@@ -376,6 +387,7 @@ export const DealPipelinePage = () => {
                   return (
                     <div
                       key={stage}
+                      data-stage-active={stageConfigs.find(item => item.code === stage)?.isActive}
                       data-deal-kanban-column={stage}
                       onDragOver={(e) => {
                         e.preventDefault();
@@ -423,7 +435,8 @@ export const DealPipelinePage = () => {
                             className="font-extrabold text-slate-800 text-[11px] uppercase tracking-wide crm-text-wrap max-w-[190px]"
                             title={getDealStageLabel(stage)}
                           >
-                            {getDealStageLabel(stage)}
+                            <span className="mr-1.5 inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: ({ blue: "#3b82f6", yellow: "#eab308", orange: "#f97316", purple: "#a855f7", green: "#22c55e", red: "#ef4444", slate: "#64748b", teal: "#14b8a6" })[stageConfigs.find(item => item.code === stage)?.color ?? "slate"] }} />{getDealStageLabel(stage)}
+                            {stageConfigs.find(item => item.code === stage)?.isActive === false && <small className="block normal-case">{locale === "vi" ? "Ngừng sử dụng" : "Inactive"}</small>}
                           </span>
                           <span className="bg-slate-200/85 text-slate-800 px-2 py-0.5 rounded-full font-extrabold text-[10px] shrink-0">
                             {viewMode === "kanban" && stageWindowQuery.connected
@@ -603,24 +616,17 @@ export const DealPipelinePage = () => {
                                           : "border-slate-200 bg-white"
                                     }`}
                                     onClick={() =>
-                                      navigate(`/deals/${deal.id}`, {
-                                        state: {
-                                          returnTo: `/deals?view=kanban`,
-                                          sourceView: "kanban",
-                                        },
-                                      })
+                                      openDealDetail(deal.id)
                                     }
                                   >
                                     <DealKanbanCard
                                       deal={deal}
                                       ownerLabel={ownerLabel}
                                       overdue={dealOverdue}
-                                      canAdvance={Boolean(getNextDealStage(deal.stage))}
+                                      canAdvance={Boolean(getNextDealStage(deal.stage, deal.pipelineId))}
                                       advancing={isDealAdvancing(deal.id)}
                                       actionsOpen={activeActionsDealId === deal.id}
-                                      onOpen={() => navigate(`/deals/${deal.id}`, {
-                                        state: { returnTo: `/deals?view=kanban`, sourceView: "kanban" },
-                                      })}
+                                      onOpen={() => openDealDetail(deal.id)}
                                       onOpenActions={(event) => {
                                         event.stopPropagation();
                                         if (activeActionsDealId === deal.id) {
@@ -713,12 +719,13 @@ export const DealPipelinePage = () => {
                   const dealOverdue = isOverdue(
                     deal.expectedCloseDate,
                     deal.stage,
+                    deal.pipelineId,
                   );
 
                   let dealStageVariant:
                     "success" | "warning" | "danger" | "info" | "neutral" =
                     "neutral";
-                  const config = stageConfigs.find(
+                  const config = (controller.pipelines.find(item => item.id === deal.pipelineId)?.stages ?? stageConfigs).find(
                     (s) => s.code === deal.stage,
                   );
                   if (config) {
@@ -738,17 +745,13 @@ export const DealPipelinePage = () => {
                       <TableCell>
                         <span
                           onClick={() =>
-                            navigate(`/deals/${deal.id}`, {
-                              state: {
-                                returnTo: `/deals?view=table`,
-                                sourceView: "table",
-                              },
-                            })
+                            openDealDetail(deal.id)
                           }
                           className="font-bold text-indigo-700 hover:underline cursor-pointer block text-xs"
                         >
                           {deal.name}
                         </span>
+                        <span className="mt-1 block text-[10px] text-slate-500">{controller.pipelines.find(item => item.id === deal.pipelineId)?.name[locale] || deal.pipelineId || "—"}</span>
                       </TableCell>
                       <TableCell className="max-w-[150px] crm-text-wrap">
                         <div className="font-extrabold text-slate-800 text-[11px]">
@@ -763,7 +766,7 @@ export const DealPipelinePage = () => {
                       <TableCell>
                         <div className="space-y-1.5">
                           <Badge variant={dealStageVariant}>
-                            {getDealStageLabel(deal.stage)}
+                            {getDealStageLabel(deal.stage, deal.pipelineId)}
                           </Badge>
                           <DealPipelineHealthBadges deal={deal} compact />
                         </div>
@@ -871,28 +874,21 @@ export const DealPipelinePage = () => {
                 deal.ownerId,
                 locale,
               );
-              const dealOverdue = isOverdue(deal.expectedCloseDate, deal.stage);
+              const dealOverdue = isOverdue(deal.expectedCloseDate, deal.stage, deal.pipelineId);
 
               let dealStageVariant:
                 "success" | "warning" | "danger" | "info" | "neutral" =
                 "neutral";
-              if (deal.stage === DealStage.WON) dealStageVariant = "success";
-              else if (deal.stage === DealStage.LOST)
-                dealStageVariant = "danger";
-              else if (deal.stage === DealStage.DISCOVERY)
-                dealStageVariant = "info";
+              const assignedStage = controller.pipelines.find(item => item.id === deal.pipelineId)?.stages.find(item => item.code === deal.stage);
+              if (assignedStage?.category === "won") dealStageVariant = "success";
+              else if (assignedStage?.category === "lost") dealStageVariant = "danger";
               else dealStageVariant = "warning";
 
               return (
                 <div
                   key={deal.id}
                   onClick={() =>
-                    navigate(`/deals/${deal.id}`, {
-                      state: {
-                        returnTo: `/deals?view=table`,
-                        sourceView: "table",
-                      },
-                    })
+                    openDealDetail(deal.id)
                   }
                   className={`bg-white p-4 rounded-xl border border-slate-200 hover:shadow-xs transition-all text-xs space-y-3 cursor-pointer relative ${
                     dealOverdue ? "border-red-300 bg-red-50/10" : ""
@@ -903,6 +899,7 @@ export const DealPipelinePage = () => {
                       <span className="font-extrabold text-indigo-700 hover:underline block text-[13px] leading-tight crm-text-wrap">
                         {deal.name}
                       </span>
+                      <span className="block text-[10px] text-slate-500">{controller.pipelines.find(item => item.id === deal.pipelineId)?.name[locale] || deal.pipelineId || "—"}</span>
                       <p className="text-[11px] text-slate-500 font-semibold crm-text-wrap leading-none">
                         {deal.customerName}
                       </p>
@@ -911,7 +908,7 @@ export const DealPipelinePage = () => {
                       variant={dealStageVariant}
                       className="shrink-0 text-[10px] font-bold py-0.5 px-2"
                     >
-                      {getDealStageLabel(deal.stage)}
+                      {getDealStageLabel(deal.stage, deal.pipelineId)}
                     </Badge>
                   </div>
 
@@ -974,12 +971,7 @@ export const DealPipelinePage = () => {
                     <Button
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigate(`/deals/${deal.id}`, {
-                          state: {
-                            returnTo: `/deals?view=table`,
-                            sourceView: "table",
-                          },
-                        });
+                        openDealDetail(deal.id);
                       }}
                       variant="secondary"
                       size="sm"
@@ -988,7 +980,7 @@ export const DealPipelinePage = () => {
                       {t("deals.actions.viewDetail")}
                     </Button>
 
-                    {getNextDealStage(deal.stage) && (
+                    {getNextDealStage(deal.stage, deal.pipelineId) && (
                       <Button
                         onClick={(event) => {
                           event.stopPropagation();
@@ -1034,12 +1026,7 @@ export const DealPipelinePage = () => {
             deal={activeActionsDeal}
             onViewDetails={(deal) => {
               closeRowActions();
-              navigate(`/deals/${deal.id}`, {
-                state: {
-                  returnTo: `/deals?view=${viewMode}`,
-                  sourceView: viewMode,
-                },
-              });
+              openDealDetail(deal.id);
             }}
             onEdit={(deal) => {
               closeRowActions();
@@ -1078,6 +1065,11 @@ export const DealPipelinePage = () => {
 
       <DealPipelineModals controller={controller} />
     </ModulePageShell>
+    {viewMode === "kanban" && <div data-guidance-id="deals.pipeline.assigned-boards">
+      {controller.pipelines.filter(item => item.id !== controller.pipelineId).map(assigned => <DealAssignedPipelineBoard
+        key={`${workspace.workspaceId}:${assigned.id}`} pipeline={assigned} demoDeals={deals} search={searchTerm}
+        ownerId={ownerFilter} ownershipScope={ownershipScope} onOpen={openDealDetail} />)}
+    </div>}
     </AuthoritativeQueryBoundary>
   );
 };

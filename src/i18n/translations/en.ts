@@ -8,6 +8,7 @@ export const enTranslations: Translations = {
     renewals: "Renewals & Subscriptions",
   },
   ai: {
+    workspaceTitle: "UniCore AI",
     title: "AI Assistant",
     chatTitle: "Chat AI",
     subtitle: "Ask about customers, sales, orders, and customer care.",
@@ -2713,7 +2714,6 @@ export const enTranslations: Translations = {
     },
     invoices: {
       placeholderNotice: "No data is available from the official Invoices module yet.",
-      authoritativeBoundary: "This tab only shows documents issued by the official Invoices module. Payment plans and obligations are not presented as invoices or receivables."
     },
     notExistError: "Contact profile does not exist or has been archived.",
     contractRenewal: "Contract Auto-Renewal",
@@ -2762,7 +2762,6 @@ export const enTranslations: Translations = {
       emailSubject: "Subject",
       emailBody: "Body",
       emailComposeSend: "Compose & Send",
-      smsSimulationGateway: "SMS Simulation Gateway"
     },
 
     sales: {
@@ -3677,7 +3676,7 @@ export const enTranslations: Translations = {
   quote: {
     status: {
       draft: "Draft",
-      review: "In review",
+      review: "In preparation",
       sent: "Sent",
       accepted: "Accepted",
       rejected: "Rejected",
@@ -3811,10 +3810,12 @@ export const enTranslations: Translations = {
     informationFields: "Information fields",
     paymentInformation: "Payment information",
     invoiceInformation: "Invoice information",
-    integrations: "Integrations",
+    integrations: "Apps & Services",
+    connectionsOverview: "Overview",
+    connectionsInbound: "Inbound Sources",
+    apiAccess: "Developer API",
     communicationChannels: "Communications · Channel connections",
-    webhooksApi: "Webhooks & API",
-    readOnly: "You have read-only access to Studio configuration.",
+    webhooksApi: "Outbound Webhooks",
     saved: "Configuration is saved.",
     unsaved: "There are unsaved changes.",
     validation: {
@@ -4796,7 +4797,6 @@ export const enTranslations: Translations = {
     fieldsLayouts: {
       title: "Fields & layouts",
       subtitle: "Manage visible fields, custom fields, and layouts by feature.",
-      scopeNotice: "Custom fields are currently unavailable. You can still review the configuration scope for each feature."
     },
     templatesNumbering: {
       title: "Documents & numbering",
@@ -4821,7 +4821,7 @@ export const enTranslations: Translations = {
   },
   permissions: {
     denied: {
-      title: "Access denied",
+      title: "This content cannot be opened",
       description: "You do not have permission to access this page."
     }
   },

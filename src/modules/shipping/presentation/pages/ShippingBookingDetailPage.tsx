@@ -167,10 +167,10 @@ export const ShippingBookingDetailPage: React.FC = () => {
   }
 
   const blockers = [
-    ...(record.readiness?.missingRequired ?? []).map((item) => `Thiếu dữ liệu booking: ${item}`),
-    ...(record.bookingStatus === "FAILED" ? [record.lastErrorMessage || "Booking attempt thất bại."] : []),
+    ...(record.readiness?.missingRequired.length ? [text("Bổ sung thông tin bắt buộc của vận đơn rồi thử lại.", "Complete the required shipment information and try again.")] : []),
+    ...(record.bookingStatus === "FAILED" ? [text("Không thể tạo vận đơn. Vui lòng thử lại.", "The shipment could not be created. Please try again.")] : []),
     ...(record.externalStatus === "DELIVERY_FAILED" ? ["Carrier báo giao thất bại; cần xử lý lại tuyến giao."] : []),
-    ...(record.lastErrorCode || record.lastErrorMessage ? [`Sync/provider error: ${record.lastErrorCode || record.lastErrorMessage}`] : []),
+    ...(record.lastErrorCode || record.lastErrorMessage ? [text("Không thể cập nhật vận đơn. Vui lòng thử lại.", "The shipment could not be updated. Please try again.")] : []),
   ];
   const baseReadiness = record.readiness?.score ?? 100;
   const operationalScore = Math.max(0, Math.min(100, baseReadiness - (record.bookingStatus === "FAILED" ? 25 : 0) - (record.externalStatus === "DELIVERY_FAILED" ? 20 : 0)));
@@ -227,8 +227,8 @@ export const ShippingBookingDetailPage: React.FC = () => {
               </>}
 
               {activeTab === "PARTIES" && <>
-                <RecordDetailSection title="Người nhận"><div className="grid gap-3 p-5 md:grid-cols-2"><Info label="Tên người nhận" value={record.recipientSnapshot.name} hint={record.recipientSnapshot.phone} /><Info label="Địa chỉ giao" value={`${record.recipientSnapshot.address.line1}, ${record.recipientSnapshot.address.city}`} hint={[record.recipientSnapshot.address.district, record.recipientSnapshot.address.ward].filter(Boolean).join(" · ") || "Không có district/ward snapshot"} /></div></RecordDetailSection>
-                <RecordDetailSection title="Điểm lấy & hoàn hàng"><div className="grid gap-3 p-5 md:grid-cols-2"><Info label="Điểm lấy hàng" value={record.pickupLocationSnapshot?.name || record.pickupLocationSnapshot?.line1 || "—"} hint={record.pickupLocationSnapshot ? `${record.pickupLocationSnapshot.contactName || "—"} · ${record.pickupLocationSnapshot.phone || "—"}` : "Authoritative pickup projection not included"} /><Info label="Địa chỉ hoàn thất bại" value={record.returnLocationSnapshot?.name || record.returnLocationSnapshot?.line1 || "Chưa tách riêng"} hint={record.returnLocationSnapshot ? `${record.returnLocationSnapshot.city}` : "Đang dùng policy mặc định"} /></div></RecordDetailSection>
+                <RecordDetailSection title="Người nhận"><div className="grid gap-3 p-5 md:grid-cols-2"><Info label="Tên người nhận" value={record.recipientSnapshot.name} hint={record.recipientSnapshot.phone} /><Info label="Địa chỉ giao" value={`${record.recipientSnapshot.address.line1}, ${record.recipientSnapshot.address.city}`} hint={[record.recipientSnapshot.address.district, record.recipientSnapshot.address.ward].filter(Boolean).join(" · ") || "—"} /></div></RecordDetailSection>
+                <RecordDetailSection title="Điểm lấy & hoàn hàng"><div className="grid gap-3 p-5 md:grid-cols-2"><Info label="Điểm lấy hàng" value={record.pickupLocationSnapshot?.name || record.pickupLocationSnapshot?.line1 || "—"} hint={record.pickupLocationSnapshot ? `${record.pickupLocationSnapshot.contactName || "—"} · ${record.pickupLocationSnapshot.phone || "—"}` : "—"} /><Info label="Địa chỉ hoàn thất bại" value={record.returnLocationSnapshot?.name || record.returnLocationSnapshot?.line1 || "Chưa tách riêng"} hint={record.returnLocationSnapshot ? `${record.returnLocationSnapshot.city}` : "Đang dùng policy mặc định"} /></div></RecordDetailSection>
                 <RecordDetailSection title="Delivery instructions"><div className="p-5"><div className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm font-medium leading-relaxed text-slate-700">{record.packageSnapshot.deliveryNote || "Không có ghi chú giao hàng."}</div></div></RecordDetailSection>
               </>}
 
@@ -241,7 +241,7 @@ export const ShippingBookingDetailPage: React.FC = () => {
 
               {activeTab === "JOURNEY" && <>
                 <RecordDetailSection title="Hành trình vận chuyển"><div className="p-5"><OperationLifecycleRail steps={lifecycle} /></div></RecordDetailSection>
-                <RecordDetailSection title="Delivery evidence"><div className="grid gap-3 p-5 sm:grid-cols-2 xl:grid-cols-4"><Info label="Delivered at" value={record.deliveredAt ? new Date(record.deliveredAt).toLocaleString("vi-VN") : "Chưa có evidence"} /><Info label="External booking ID" value={record.externalBookingId || "—"} /><Info label="Correlation" value={record.correlationId} /><Info label="COD collected" value={record.codCollectedAt ? new Date(record.codCollectedAt).toLocaleString("vi-VN") : "Chưa có carrier evidence"} /></div></RecordDetailSection>
+                <RecordDetailSection title="Delivery evidence"><div className="grid gap-3 p-5 sm:grid-cols-2 xl:grid-cols-4"><Info label="Delivered at" value={record.deliveredAt ? new Date(record.deliveredAt).toLocaleString("vi-VN") : "Chưa có evidence"} /><Info label="External booking ID" value={record.externalBookingId || "—"} /><Info label="COD collected" value={record.codCollectedAt ? new Date(record.codCollectedAt).toLocaleString("vi-VN") : "Chưa có carrier evidence"} /></div></RecordDetailSection>
                 <EvidencePanel title={text("Bằng chứng vận chuyển", "Shipping evidence")} items={deliveryEvidence} locale={locale} />
               </>}
 

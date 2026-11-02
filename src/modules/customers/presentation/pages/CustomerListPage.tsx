@@ -7,7 +7,7 @@ import { Archive, Pencil, Plus, RefreshCw, Sparkles, Trash2, Users } from "lucid
 import { PageHeaderActions } from "@/components/crm/PageHeaderActions";
 import { SavedViewNameModal } from "@/components/crm/SavedViewNameModal";
 import { ListBulkActionBar, ListPageFrame, ListPageHeader, ListPaginationBar, ListStatePanel, ListToolbar, useListPagination } from "@/components/crm/list-archetype";
-import { ConfirmDialog, IconButton } from "@/shared/components/ui";
+import { ConfirmDialog, IconButton, Select } from "@/shared/components/ui";
 import { useI18n } from "@/i18n";
 import { getAuthSessionSnapshot } from "@/platform/identity-auth";
 import { CAPABILITIES, useEffectiveAccess } from "@/platform/access-control";
@@ -26,7 +26,7 @@ import { CustomerDataQualityPanel } from "../list/CustomerDataQualityPanel";
 import { customerSourceIdentityPath } from "../list/customerList.helpers";
 import type { CustomerListPresentationSnapshot, CustomerListRow } from "../list/customerList.types";
 import { buildCustomer360ReadModel } from "../model/customer360ReadModel";
-import type { Customer360ReadModel } from "../model/customer360ReadModel.types";
+import { buildConnectedCustomerListModel } from "../model/customerConnectedListModel";
 import { CUSTOMER_COLUMNS_METADATA } from "../model/customerColumns";
 import { captureCustomerPresentationSnapshot, getDefaultCustomerFilters, resolveCustomerPresentationSnapshot } from "../model/customerListPresentationPreferences";
 import { getWorkspaceMemberOptions } from "@/platform/member-directory";
@@ -87,7 +87,7 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
     });
   }, [activeView, ownerFilter, searchTerm, segmentFilter, session?.principal.memberId, statusFilter, typeFilter]);
   const customerSource = useCustomers({ query: backendQuery });
-  const customers = providedCustomers ?? customerSource.customers;
+  const customers = customerSource.query.connected ? customerSource.customers : providedCustomers ?? customerSource.customers;
 
   const [viewMode, setViewMode] = useState<"card" | "table">("table");
   const [isFilterOpen, setIsFilterOpen] = useState(false);
@@ -109,9 +109,9 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
   const rows = useMemo<CustomerListRow[]>(
     () => customers.map((customer) => ({
       customer,
-      model: customerSource.query.connected ? buildConnectedCustomerListModel(customer) : buildCustomer360ReadModel(customer),
+      model: customerSource.query.connected ? buildConnectedCustomerListModel(customer, customerSource.listIdentities.get(customer.id), isVi) : buildCustomer360ReadModel(customer),
     })),
-    [customerSource.query.connected, customers, refreshToken],
+    [customerSource.query.connected, customers, refreshToken, isVi],
   );
 
   const segments = useMemo(() => [...new Set(rows.map((row) => row.customer.segment).filter((value): value is string => Boolean(value)))].sort(), [rows]);
@@ -325,8 +325,8 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
   return (
     <><AuthoritativeQueryNotice connected={customerSource.query.connected} loading={customerSource.query.loading} refreshing={customerSource.query.refreshing} stale={customerSource.query.stale} loadedAt={customerSource.query.loadedAt} error={customerSource.query.error} onRefresh={() => void customerSource.query.refresh()} compact /><ListPageFrame id="customer-workspace" className="text-slate-700">
       <ListPageHeader
-        title={isVi ? "Khách hàng" : "Customers"}
-        count={filteredRows.length}
+        title={<>{isVi ? "Khách hàng" : "Customers"}{customerSource.query.connected && <span data-customer-visible-count className="ml-2 text-[11px] font-medium text-slate-500">{rows.length} {isVi ? "đang hiển thị" : "currently shown"}</span>}</>}
+        count={customerSource.query.connected ? undefined : filteredRows.length}
         context={isVi ? "Customer relationship center" : "Customer relationship center"}
         icon={<Users size={18} />}
         actions={(
@@ -375,7 +375,7 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
       <ListToolbar
         searchValue={searchTerm}
         onSearchChange={setSearchTerm}
-        searchPlaceholder={isVi ? "Tìm theo tên, mã khách hàng, SĐT, email, mã số thuế..." : "Search name, customer code, phone, email, tax code..."}
+        searchPlaceholder={customerSource.query.connected ? (isVi ? "Tìm mã, phân khúc, nhãn khách hàng…" : "Search customer code, segment, tags…") : (isVi ? "Tìm theo tên, mã khách hàng, SĐT, email, mã số thuế..." : "Search name, customer code, phone, email, tax code...")}
         viewMode={viewMode}
         onViewModeChange={(value) => setViewMode(value as "table" | "card")}
         viewOptions={[
@@ -427,7 +427,7 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
               onSelectView={handleSelectSavedView}
               isOpen={isViewDropdownOpen}
               onOpenChange={setIsViewDropdownOpen}
-              customerCount={filteredRows.length}
+              customerCount={customerSource.query.connected ? undefined : filteredRows.length}
               onAddViewClick={handleAddViewClick}
             />
             {activeCustomView && (
@@ -443,14 +443,17 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
           </div>
         )}
         rightSlot={(
-          <button
+          <div className="flex items-center gap-2"><Select disabled aria-label={isVi ? "Sắp xếp khách hàng" : "Sort customers"} title={isVi ? "Sắp xếp theo ngày tạo gần nhất" : "Sorted by most recently created"} value="createdDesc">
+            <option value="createdDesc">{isVi ? "Tạo gần nhất" : "Recently created"}</option>
+          </Select><button
             type="button"
-            onClick={() => showToast(isVi ? "Đã làm mới dữ liệu." : "Data refreshed.")}
+            onClick={() => void customerSource.query.refresh()}
+            disabled={customerSource.query.refreshing}
             className="p-2.5 text-slate-600 hover:text-violet-700 bg-white hover:bg-slate-50 rounded-xl border border-slate-200 shadow-xs transition-all flex items-center justify-center h-10 w-10 cursor-pointer"
             title={isVi ? "Làm mới" : "Refresh"}
           >
             <RefreshCw size={14} />
-          </button>
+          </button></div>
         )}
       />
 
@@ -536,6 +539,7 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
           </div>
           <ListPaginationBar
             {...pagination}
+            totalKnown={!customerSource.query.connected}
             itemLabelVi="khách hàng"
             itemLabelEn="customers"
           />
@@ -552,7 +556,7 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
       />
 
 
-      <CustomerStatisticsPanel show={showStatisticsPanel} onClose={() => setShowStatisticsPanel(false)} statsSummary={statistics} />
+      <CustomerStatisticsPanel show={showStatisticsPanel} onClose={() => setShowStatisticsPanel(false)} statsSummary={statistics} pageScoped={customerSource.query.connected} />
 
       <ConfirmDialog
         key={JSON.stringify(archiveTargets.map((row) => row.customer.id))}
@@ -590,15 +594,3 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
     </ListPageFrame>
   </>);
 };
-
-function buildConnectedCustomerListModel(customer: Customer): Customer360ReadModel {
-  return {
-    customer,
-    identity: { displayName: customer.customerCode, ownerId: customer.ownerId ?? undefined, contacts: [] },
-    leads: [], deals: [], quotes: [], orders: [], paymentObligations: [], paymentTransactions: [], invoices: [], receivables: [],
-    shippingBookings: [], returns: [], returnIntents: [], supportCases: [], tasks: [], activities: [], careCards: [], purchaseEvidence: [], timeline: [],
-    metrics: {},
-    integrity: { status: "UNKNOWN" },
-    productsPurchased: [],
-  };
-}

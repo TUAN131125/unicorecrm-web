@@ -546,7 +546,7 @@ export const TemporalInput: React.FC<TemporalInputProps> = ({
         </span>
       </button>
       {error && (
-        <p id={errorId} role="alert" className="mt-1 flex items-center gap-1 text-[10px] font-bold text-rose-600">
+        <p id={errorId} role="alert" data-field-error="true" className="mt-1 flex items-center gap-1 text-[10px] font-bold text-rose-600">
           <span>{error}</span>
         </p>
       )}
@@ -554,3 +554,4 @@ export const TemporalInput: React.FC<TemporalInputProps> = ({
     </div>
   );
 };
+

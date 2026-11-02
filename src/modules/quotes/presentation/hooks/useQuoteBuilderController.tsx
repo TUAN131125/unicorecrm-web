@@ -1,35 +1,39 @@
+import { getDirtyUnsavedWork, getUnsavedWorkVersion, subscribeUnsavedWork } from "@/platform/unsaved-work";
+import { compareQuotePricing, quotePricingReconciliationNotice } from "../model/quotePricingReconciliation";
+import { quoteBuilderFieldFeedback, quoteBuilderSubmissionIssues, type QuoteBuilderIssue } from "../model/quoteBuilderErrors";
+import { useQuoteBuyer } from "./useQuoteBuyer";
+import { toWorkspacePath } from "@/platform/navigation";
+import { normalizeApplicationError } from "@/shared/domain";
+import { useWorkspaceContextSnapshot } from "@/platform/workspace-context";
+import type { BuyerRef } from "@/platform/identity";
+import { getQuoteDetailResource } from "../../application/vertical-slice/quoteAuthoritativeQueries";
 import { saveQuoteDeliveryEvidence } from "../services/saveQuoteDeliveryEvidence";
 import { useQuoteFormLifecycle } from "./useQuoteFormLifecycle";
-import { formatApplicationError } from "@/shared/operations";
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import { useModuleAuthoritativeResource, formatApplicationError } from "@/shared/operations";
+import React, { useState, useEffect, useMemo, useRef, useSyncExternalStore } from "react";
 import { useSearchParams, useNavigate, useParams } from "react-router-dom";
-import { AlertCircle, ArrowLeft, CheckCircle2, Download, FileText, Landmark, Mail, MessageCircle, Percent, Plus, PlusCircle, Save, ShieldCheck, ShoppingBag, Trash2 } from "lucide-react";
 import type { CustomerDisplay as Customer } from "@/modules/customers";
-import { getQuoteDocumentLabel, type CrmWorkspaceConfig } from "@/platform/workspace-config";
-import { DealStage, isDealConnectedMode, updateDeals, type Deal, type DealActivity } from "@/modules/deals";
+import { type CrmWorkspaceConfig } from "@/platform/workspace-config";
+import { getDealDetailResource, DealStage, isDealConnectedMode, updateDeals, type Deal, type DealActivity } from "@/modules/deals";
 import { invalidateModuleQueries } from "@/shared/application";
 import { validateQuoteDraft } from "../../application/queries/quoteDraftValidation";
-import { QuoteApprovalStatus, QuoteStatus, SalesDocumentAdjustmentType, type Quote, type QuoteDeliveryChannel, type QuoteLineItem, type QuotePaymentMethod, type QuotePaymentTiming, type SalesDocumentAdjustment } from "../../domain/model/quote.types";
-import { applyQuoteApprovalAssessment, canQuoteBeSent, DEFAULT_QUOTE_APPROVAL_POLICY, evaluateQuoteApproval } from "../../domain/rules/quoteApprovalPolicy";
+import { QuoteStatus, SalesDocumentAdjustmentType, type Quote, type QuoteDeliveryChannel, type QuoteLineItem, type QuotePaymentMethod, type QuotePaymentTiming, type SalesDocumentAdjustment } from "../../domain/model/quote.types";
 import { normalizeQuoteLineItem } from "../../domain/rules/quoteCalculations";
-import { getQuoteConversionIssues } from "../../domain/rules/quoteConversion";
+
 import { calculateQuoteDraftTotals } from "../../domain/rules/quoteDraftPricing";
-import { isQuoteVersionImmutable, quoteContentFingerprint } from "../../domain/rules/quoteVersioning";
-import { allocateQuoteIdentitySnapshot, createQuoteRevisionCommand, requestQuoteApprovalCommand, saveQuoteCommand } from "../../public/quotes";
+
+import { isQuoteConnectedMode, allocateQuoteIdentitySnapshot, saveQuoteCommand } from "../../public/quotes";
 
 import { useQuotes } from "../hooks/useQuotes";
 import { useDeals } from "../hooks/useDeals";
 import { DEFAULT_CRM_WORKSPACE_CONFIG } from "@/platform/workspace-config/workspaceConfigDefaults";
 import { useI18n } from "@/i18n";
-import { Input, SearchableSelect, Select, Textarea, Button, Badge, PageHeader, SectionHeader, getQuoteStatusBadgeVariant, Table, TableHeader, TableBody, TableRow, TableCell } from "@/shared/components/ui";
 import { getProductCatalogSnapshot } from "@/modules/products";
 import { findCustomerByRelationshipRefSnapshot, getCustomerSnapshot } from "@/modules/customers";
 import { getContactSnapshot } from "@/modules/contacts";
 import { getOrganizationAccountSnapshot } from "@/modules/organizations";
-import { QuoteBuilderPreview } from "../components/QuoteBuilderPreview";
-import { QuoteBuilderProductPicker } from "../components/QuoteBuilderProductPicker";
-import { QuoteDeliveryConfirmationModal, type QuoteDeliveryConfirmationValue } from "../components/QuoteDeliveryConfirmationModal";
-import { useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
+import type { QuoteDeliveryConfirmationValue } from "../components/QuoteDeliveryConfirmationModal";
+import { useWorkspaceOperationalConfigurationResource, useWorkspaceRuntimeSettings } from "@/platform/workspace-config";
 import { getInvoiceSellerInformation, subscribeToInvoiceConfiguration } from "@/modules/invoices";
 import { useSubscribableSnapshot } from "@/platform/react";
 import { createQuotePdfFromElement, downloadQuotePdf } from "../services/quotePdfExport";
@@ -37,102 +41,9 @@ import { launchQuoteGmailDelivery } from "../services/quoteGmailDelivery";
 import { usePlatformState } from "@/platform/application-state";
 import { resolveWorkspaceMemberLabel } from "@/platform/member-directory";
 import { getPaymentMethodCatalogSnapshot } from "@/modules/payments";
-import { formatMoneyDto, money } from "@/shared/money";
+import { getCurrencyMinorUnit } from "@/shared/money";
 import { createDurableId } from "@/shared/ids";
-import { OperationGuideButton } from "@/components/crm/OperationGuide";
-import { canonicalPaymentMethodCodeForKind, canonicalPaymentMethodKindForCode, isCanonicalCodMethodCode, type PaymentAgreementLineSnapshot, type PaymentAgreementSnapshot, type PaymentFulfillmentGate, type PaymentPurpose } from "@/shared/order-to-cash";
-
-interface PaymentAgreementDraftLine {
-  id: string;
-  label: string;
-  purpose: PaymentPurpose;
-  amountMode: "PERCENTAGE" | "REMAINDER";
-  percentage: number;
-  timing: QuotePaymentTiming;
-  dueDays: number;
-  methodCode: string;
-  fulfillmentGate: PaymentFulfillmentGate;
-}
-
-function allocateAgreementLineId(): string {
-  return createDurableId("payment-term");
-}
-
-function legacyAgreementDraftLine(input?: Pick<Quote, "paymentTiming" | "paymentDueDays" | "paymentMethod">): PaymentAgreementDraftLine {
-  const timing = input?.paymentTiming ?? "PREPAID";
-  const methodKind = input?.paymentMethod ?? "BANK_TRANSFER";
-  const methodCode = canonicalPaymentMethodCodeForKind(methodKind);
-  return {
-    id: allocateAgreementLineId(),
-    label: "Thanh toán toàn bộ",
-    purpose: "FULL",
-    amountMode: "REMAINDER",
-    percentage: 100,
-    timing,
-    dueDays: input?.paymentDueDays ?? 0,
-    methodCode,
-    fulfillmentGate: methodKind === "COD" ? "NONE" : timing === "PREPAID" ? "BEFORE_COMPLETION" : "NONE",
-  };
-}
-
-function draftLinesFromAgreement(quote?: Quote): PaymentAgreementDraftLine[] {
-  if (!quote?.paymentAgreement?.lines.length) return [legacyAgreementDraftLine(quote)];
-  return quote.paymentAgreement.lines.map((line) => ({
-    id: line.id,
-    label: line.label,
-    purpose: line.purpose,
-    amountMode: line.amountRule.type === "REMAINDER" ? "REMAINDER" : "PERCENTAGE",
-    percentage: line.amountRule.type === "PERCENTAGE" ? Number(line.amountRule.percentage) : 0,
-    timing: line.dueRule.type === "EVENT_RELATIVE" && line.dueRule.event === "DELIVERY_CONFIRMED"
-      ? "ON_DELIVERY"
-      : line.dueRule.type === "EVENT_RELATIVE" && line.dueRule.offsetDays > 0
-        ? "POSTPAID"
-        : line.dueRule.type === "MILESTONE"
-          ? "CUSTOM"
-          : "PREPAID",
-    dueDays: line.dueRule.type === "EVENT_RELATIVE" ? Math.max(0, line.dueRule.offsetDays) : 0,
-    methodCode: line.preferredMethodCode ?? line.allowedMethodCodes[0] ?? canonicalPaymentMethodCodeForKind("BANK_TRANSFER"),
-    fulfillmentGate: line.fulfillmentGate,
-  }));
-}
-
-function buildPaymentAgreementSnapshot(
-  draftLines: readonly PaymentAgreementDraftLine[],
-  total: number,
-  currency: string,
-  sourceQuoteId?: string,
-): PaymentAgreementSnapshot {
-  let allocated = 0;
-  const lines: PaymentAgreementLineSnapshot[] = draftLines.map((line, index) => {
-    const isRemainder = line.amountMode === "REMAINDER" || index === draftLines.length - 1;
-    const preview = isRemainder ? Math.max(0, total - allocated) : Math.max(0, total * Math.max(0, line.percentage) / 100);
-    allocated += preview;
-    const dueRule = line.timing === "ON_DELIVERY"
-      ? { type: "EVENT_RELATIVE" as const, event: "DELIVERY_CONFIRMED" as const, offsetDays: 0, dayBasis: "CALENDAR" as const }
-      : line.timing === "POSTPAID"
-        ? { type: "EVENT_RELATIVE" as const, event: "INVOICE_ISSUED" as const, offsetDays: Math.max(0, line.dueDays), dayBasis: "CALENDAR" as const }
-        : line.timing === "CUSTOM"
-          ? { type: "MILESTONE" as const, milestoneCode: `PAYMENT_${index + 1}`, offsetDays: Math.max(0, line.dueDays) }
-          : { type: "EVENT_RELATIVE" as const, event: "ORDER_CONFIRMED" as const, offsetDays: 0, dayBasis: "CALENDAR" as const };
-    return {
-      id: line.id,
-      sequence: index + 1,
-      label: line.label.trim() || `Đợt ${index + 1}`,
-      purpose: line.purpose,
-      amountRule: isRemainder
-        ? { type: "REMAINDER" as const }
-        : { type: "PERCENTAGE" as const, percentage: String(Math.max(0, line.percentage)) },
-      previewAmount: money(String(preview), currency),
-      dueRule,
-      allowedMethodCodes: [line.methodCode],
-      preferredMethodCode: line.methodCode,
-      fulfillmentGate: isCanonicalCodMethodCode(line.methodCode) ? "NONE" : line.fulfillmentGate,
-      invoicePolicyCode: line.purpose === "DEPOSIT" ? "DEPOSIT_INVOICE_ALLOWED" : "STANDARD_ORDER_INVOICE",
-    };
-  });
-  const kind = lines.length === 1 ? "FULL_PAYMENT" : lines.some((line) => line.purpose === "DEPOSIT") ? "DEPOSIT_AND_BALANCE" : "INSTALLMENT";
-  return { version: 1, kind, currency, lines, sourceQuoteId, policyVersion: "quote-payment-agreement/v1" };
-}
+import { canEditAgreementWithDraftControls, resolveDraftPaymentAgreement, allocateAgreementLineId, legacyAgreementDraftLine, draftLinesFromAgreement, buildPaymentAgreementSnapshot, type PaymentAgreementDraftLine } from "../model/quotePaymentAgreementDraft";
 
 export interface QuoteBuilderPageProps {
   crmConfig?: CrmWorkspaceConfig;
@@ -159,37 +70,41 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
 } = props;
   const navigate = useNavigate();
   const { t, locale } = useI18n();
-  const workspaceConfiguration = useWorkspaceOperationalConfiguration();
+  const workspaceConfigurationResource = useWorkspaceOperationalConfigurationResource();
+  const workspaceConfiguration = workspaceConfigurationResource.data;
+  const runtimeSettings = useWorkspaceRuntimeSettings();
+  const workspace = useWorkspaceContextSnapshot();
+  const connected = isQuoteConnectedMode();
   const invoiceConfiguration = useSubscribableSnapshot(getInvoiceSellerInformation, subscribeToInvoiceConfiguration);
-  const invoiceAddress = workspaceConfiguration.addresses.find((address) => address.id === invoiceConfiguration.invoiceAddressId);
-  const senderCompanyName = invoiceConfiguration.sellerName || workspaceConfiguration.businessInformation.legalName || workspaceConfiguration.businessInformation.displayName;
+  const invoiceAddress = workspaceConfiguration?.addresses.find((address) => address.id === invoiceConfiguration.invoiceAddressId);
+  const senderCompanyName = invoiceConfiguration.sellerName || workspaceConfiguration?.businessInformation.legalName || workspaceConfiguration?.businessInformation.displayName || "";
   const senderAddress = invoiceAddress?.addressLine1 || "";
-  const senderEmail = invoiceConfiguration.email || workspaceConfiguration.businessInformation.billingEmail || workspaceConfiguration.businessInformation.email;
-  const senderTaxId = invoiceConfiguration.taxId || workspaceConfiguration.businessInformation.taxId;
+  const senderEmail = invoiceConfiguration.email || workspaceConfiguration?.businessInformation.billingEmail || workspaceConfiguration?.businessInformation.email || "";
+  const senderTaxId = invoiceConfiguration.taxId || workspaceConfiguration?.businessInformation.taxId || "";
   const operationGuide = {
     title: locale === "vi" ? "Hướng dẫn tạo Báo giá" : "Quotation creation guide",
     steps: locale === "vi" ? [
       "Kiểm tra cơ hội hoặc khách hàng liên kết trước khi nhập nội dung.",
       "Thêm hàng hóa/dịch vụ, số lượng, đơn giá, chiết khấu và thuế.",
-      "Thiết lập điều khoản thanh toán và kiểm tra yêu cầu phê duyệt.",
-      "Lưu nháp hoặc gửi duyệt. Chỉ gửi khách khi nội dung đã sẵn sàng.",
+      "Thiết lập và kiểm tra điều khoản thanh toán.",
+      "Lưu nháp, rồi phát hành PDF tại trang chi tiết báo giá.",
       "Dùng Xem trước để kiểm tra bố cục trước khi xuất PDF.",
     ] : [
       "Review the linked deal or customer before entering the quotation.",
       "Add products/services, quantities, prices, discounts, and tax.",
-      "Configure payment terms and review approval requirements.",
-      "Save a draft or request approval. Send only when the content is ready.",
+      "Configure and review payment terms.",
+      "Save a draft, then issue its PDF on the Quote detail page.",
       "Use Preview to verify the document before PDF export.",
     ],
     tips: locale === "vi" ? [
-      "Nút hành động cố định ở cuối trang là nơi duy nhất để lưu, duyệt và xuất PDF.",
+      "Nút hành động cố định ở cuối trang là nơi duy nhất để lưu và xem trước.",
       "Phần tài liệu chỉ dùng để xem trước, không lặp lại hành động gửi hoặc xuất.",
     ] : [
-      "The sticky action bar is the single place for save, approval, and PDF actions.",
+      "The sticky action bar is the single place for save and preview actions.",
       "The document card is preview-only and does not duplicate delivery actions.",
     ],
   } as const;
-  const { session } = usePlatformState();
+  const { session, activeWorkspace } = usePlatformState();
   const actorId = session.principal.accountId;
   const { quotes } = useQuotes();
   const { deals } = useDeals();
@@ -207,9 +122,16 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
   const organizationIdParam = searchParams.get("organizationId");
   const publishAction = searchParams.get("action");
 
-  const liveEditingQuote = quotes.find(q => q.id === quoteIdParam);
+  const [persistedDraft, setPersistedDraft] = useState<Quote | undefined>();
+  const [savedNavigation, setSavedNavigation] = useState<{ path: string; notice: string | undefined } | null>(null);
+  const unsavedVersion = useSyncExternalStore(subscribeUnsavedWork, getUnsavedWorkVersion, () => "");
+  const [directBuyer, setDirectBuyer] = useState<{ ref: BuyerRef; label: string } | null>(null);
+  const sourceDealVersion = useRef<number | undefined>(undefined);
+  const saveIntent = useRef<{ fingerprint: string; key: string; unresolved: boolean } | null>(null);
+  const detailQuery = useModuleAuthoritativeResource(getQuoteDetailResource(quoteIdParam || "__new__"), { enabled: Boolean(quoteIdParam), scopeKey: workspace.workspaceId });
+  const liveEditingQuote = persistedDraft || (connected && quoteIdParam ? detailQuery.data : quotes.find(q => q.id === quoteIdParam));
   const openingQuote = useRef(liveEditingQuote);
-  if (openingQuote.current?.id !== quoteIdParam) openingQuote.current = liveEditingQuote ? structuredClone(liveEditingQuote) : undefined;
+  if (persistedDraft || openingQuote.current?.id !== quoteIdParam) openingQuote.current = liveEditingQuote ? structuredClone(liveEditingQuote) : undefined;
   const editingQuote = openingQuote.current;
   const referencedOrganization = organizationIdParam ? getOrganizationAccountSnapshot(organizationIdParam) : undefined;
   const organizationCustomer = referencedOrganization
@@ -225,11 +147,16 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
     if (editingQuote) return editingQuote.dealId || "";
     if (dealIdParam) return dealIdParam;
     if (customerIdParam || organizationIdParam) return "";
-    return deals[0]?.id || "";
+    return "";
   });
   
   // Find referenced deal
-  const referencedDeal = selectedDealId ? (deals.find(d => d.id === selectedDealId) || null) : null;
+  const sourceDealQuery = useModuleAuthoritativeResource(getDealDetailResource(selectedDealId || "__none__"), { enabled: Boolean(selectedDealId), scopeKey: workspace.workspaceId });
+  const referencedDeal = selectedDealId ? (connected ? sourceDealQuery.data?.id === selectedDealId ? sourceDealQuery.data : null : deals.find(d => d.id === selectedDealId) || null) : null;
+  const currentBuyerRef = referencedDeal?.buyerRef ?? editingQuote?.buyerRef ?? directBuyer?.ref
+    ?? (referencedOrganization ? { type: "ORGANIZATION_ACCOUNT" as const, id: referencedOrganization.id } : customerIdParam ? resolveBuyerRefFromCustomer(customerIdParam) ?? undefined : undefined);
+  const buyerInfo = useQuoteBuyer(currentBuyerRef, connected);
+  const buyerSourcePath = currentBuyerRef ? toWorkspacePath(activeWorkspace.workspaceKey, "crm", `${currentBuyerRef.type === "CONTACT" ? "contacts" : "organizations"}/${encodeURIComponent(currentBuyerRef.id)}`) : undefined;
   const quoteSourceInitializationKey = editingQuote
     ? `edit:${editingQuote.id}`
     : selectedDealId
@@ -243,14 +170,15 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
   const isDealLocked = !!dealIdParam || !!editingQuote || !!customerIdParam || !!organizationIdParam;
 
   // Identity allocation belongs to the Quote application boundary, not collection length or component time.
-  const [newQuoteIdentity, setNewQuoteIdentity] = useState(() => allocateQuoteIdentitySnapshot());
+  const allocateOpeningIdentity = () => connected ? { id: createDurableId("quote-intent"), quoteNumber: "" } : allocateQuoteIdentitySnapshot();
+  const [newQuoteIdentity, setNewQuoteIdentity] = useState(allocateOpeningIdentity);
   const identityCycle = useRef(lifecycle.cycle);
-  useEffect(() => { if (identityCycle.current !== lifecycle.cycle) { identityCycle.current = lifecycle.cycle; setNewQuoteIdentity(allocateQuoteIdentitySnapshot()); setSavedDraftFingerprint(null); setDraftHydrated(false); initializedQuoteSourceRef.current = null; } }, [lifecycle.cycle]);
+  useEffect(() => { if (identityCycle.current !== lifecycle.cycle) { identityCycle.current = lifecycle.cycle; setSelectedDealId(dealIdParam || ""); setNewQuoteIdentity(allocateOpeningIdentity()); setPersistedDraft(undefined); setSavedNavigation(null); setDirectBuyer(null); saveIntent.current = null; sourceDealVersion.current = undefined; openingQuote.current = undefined; setSavedDraftFingerprint(null); setDraftHydrated(false); initializedQuoteSourceRef.current = null; } }, [lifecycle.cycle, dealIdParam]);
   const quoteNumber = editingQuote?.quoteNumber ?? newQuoteIdentity.quoteNumber;
 
   // Dynamic Quote fields
   const [quoteTitle, setQuoteTitle] = useState("");
-  const [currency, setCurrency] = useState(() => editingQuote?.currency || referencedDeal?.currency || workspaceConfiguration.localeRegion.currencies.baseCurrency);
+  const [currency, setCurrency] = useState(() => editingQuote?.currency || workspaceConfiguration?.localeRegion.currencies.baseCurrency || runtimeSettings.baseCurrency);
   const [quoteLines, setQuoteLines] = useState<QuoteLineItem[]>([]);
   const [adjustments, setAdjustments] = useState<SalesDocumentAdjustment[]>([]);
   const [taxPercent, setTaxPercent] = useState(10); // Default 10%
@@ -278,13 +206,14 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastType, setToastType] = useState<"success" | "info" | "error">("info");
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [titleError, setTitleError] = useState<string | undefined>();
+  const [validationAttempt, setValidationAttempt] = useState(0);
+  const [validationKind, setValidationKind] = useState<"FIELD" | "STATUS">("FIELD");
+  const [serverFieldIssues, setServerFieldIssues] = useState<QuoteBuilderIssue[]>([]);
   const [saveBusy, setSaveBusy] = useState(false);
   const titleInputRef = useRef<HTMLInputElement>(null);
   const firstLineActionRef = useRef<HTMLSpanElement>(null);
   const [savedDraftFingerprint, setSavedDraftFingerprint] = useState<string | null>(null);
   const [draftHydrated, setDraftHydrated] = useState(false);
-  const validationSummaryRef = useRef<HTMLDivElement>(null);
 
   const triggerToast = (msg: string, type: "success" | "info" | "error" = "info") => {
     setToastMessage(msg);
@@ -293,7 +222,7 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
   };
 
   // Check if deal stage is WON or LOST (terminal stages)
-  const isClosedDeal = referencedDeal && (referencedDeal.stage === DealStage.WON || referencedDeal.stage === DealStage.LOST);
+  const isClosedDeal = referencedDeal && (Boolean(referencedDeal.archivedAt) || referencedDeal.stageCategory === "WON" || referencedDeal.stageCategory === "LOST" || referencedDeal.stage === DealStage.WON || referencedDeal.stage === DealStage.LOST);
 
   const getDealStageLabel = (stage: DealStage) => {
     switch (stage) {
@@ -318,15 +247,18 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
   // refreshes for the same Deal/Quote must not wipe edits already made in the builder.
   useEffect(() => {
     if (initializedQuoteSourceRef.current === quoteSourceInitializationKey) return;
+    if (connected && !workspaceConfiguration) return;
     if (quoteIdParam && !editingQuote) return;
+    if (dealIdParam && selectedDealId !== dealIdParam) return;
     if (selectedDealId && !referencedDeal) return;
     if (customerIdParam && !referencedCustomer) return;
     if (organizationIdParam && !referencedOrganization) return;
 
+    if (referencedDeal) sourceDealVersion.current = referencedDeal.resourceVersion;
     if (editingQuote) {
       setSelectedDealId(editingQuote.dealId || "");
       setQuoteTitle(editingQuote.title);
-      setCurrency(editingQuote.currency || workspaceConfiguration.localeRegion.currencies.baseCurrency);
+      setCurrency(editingQuote.currency || runtimeSettings.baseCurrency);
       setQuoteLines(editingQuote.lineItems || []);
       setTaxPercent(editingQuote.taxPercent ?? 10);
       setDiscountAmount(editingQuote.discountTotal ?? editingQuote.discountAmountToTotal ?? 0);
@@ -346,7 +278,7 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
         ]);
       }
       setQuoteNotes(editingQuote.notes ?? editingQuote.termsAndNotes ?? "");
-      setRecipientEmail(editingQuote.recipientEmail || referencedDeal?.contactEmail || referencedCustomer?.email || "");
+      setRecipientEmail(editingQuote.recipientEmail || (connected ? "" : referencedDeal?.contactEmail || referencedCustomer?.email || ""));
       setPaymentTiming(editingQuote.paymentTiming ?? "PREPAID");
       setPaymentDueDays(editingQuote.paymentDueDays ?? 0);
       setPaymentMethod(editingQuote.paymentMethod ?? "BANK_TRANSFER");
@@ -356,8 +288,8 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
       }
     } else if (referencedDeal) {
       setQuoteTitle(t("quoteBuilder.defaultTitle", { deal: referencedDeal.name }));
-      setCurrency(referencedDeal.currency || workspaceConfiguration.localeRegion.currencies.baseCurrency);
-      const initialLines: QuoteLineItem[] = (referencedDeal.lineItems || []).map(item => normalizeQuoteLineItem({
+      setCurrency(workspaceConfiguration?.localeRegion.currencies.baseCurrency || runtimeSettings.baseCurrency);
+      const initialLines: QuoteLineItem[] = (referencedDeal.currency === (workspaceConfiguration?.localeRegion.currencies.baseCurrency || runtimeSettings.baseCurrency) ? referencedDeal.lineItems || [] : []).map(item => normalizeQuoteLineItem({
         id: item.id,
         productId: item.productId,
         productName: item.productName,
@@ -376,7 +308,7 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
         totalAmount: item.totalAmount || ((item.quantity || 1) * (item.unitPrice || 0))
       }));
       setQuoteLines(initialLines);
-      setRecipientEmail(referencedDeal.contactEmail || "");
+      setRecipientEmail(connected ? "" : referencedDeal.contactEmail || "");
       setPaymentTiming("PREPAID");
       setPaymentDueDays(0);
       setPaymentMethod("BANK_TRANSFER");
@@ -384,15 +316,15 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
       setQuoteNotes(t("quoteBuilder.terms.default", "Điều khoản thanh toán: 100% sau khi ký hợp đồng."));
     } else {
       // Direct Quote mode
-      const custName = referencedOrganization?.displayName || referencedCustomer?.displayName || referencedCustomer?.name || "Khách hàng";
+      const custName = connected ? (locale === "vi" ? "khách hàng" : "customer") : referencedOrganization?.displayName || referencedCustomer?.displayName || referencedCustomer?.name || "Khách hàng";
       setQuoteTitle(locale === "vi"
         ? `Báo giá cho ${custName}`
         : `Quote for ${custName}`
       );
-      setCurrency(workspaceConfiguration.localeRegion.currencies.baseCurrency);
+      setCurrency(workspaceConfiguration?.localeRegion.currencies.baseCurrency || runtimeSettings.baseCurrency);
       setQuoteLines([]);
       setRecipientEmail(
-        organizationPrimaryContact?.workEmail
+        connected ? "" : organizationPrimaryContact?.workEmail
           || organizationPrimaryContact?.email
           || organizationPrimaryContact?.personalEmail
           || referencedOrganization?.email
@@ -409,12 +341,14 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
 
     initializedQuoteSourceRef.current = quoteSourceInitializationKey;
     setDraftHydrated(true);
-  }, [draftHydrated,quoteSourceInitializationKey, quoteIdParam, customerIdParam, organizationIdParam, selectedDealId, referencedDeal, editingQuote, t, locale, referencedCustomer, referencedOrganization, organizationPrimaryContact]);
+  }, [workspaceConfiguration, runtimeSettings.baseCurrency, connected, dealIdParam, draftHydrated,quoteSourceInitializationKey, quoteIdParam, customerIdParam, organizationIdParam, selectedDealId, referencedDeal, editingQuote, t, locale, referencedCustomer, referencedOrganization, organizationPrimaryContact]);
 
   // Handle value modifications inside table
   const handleUpdateLineField = (id: string, field: keyof QuoteLineItem, value: any) => {
+    const decimalKey = field === "quantity" ? "quantity" : field === "unitPrice" ? "unitPrice" : field === "discountPercent" ? "discountRate" : field === "taxRateSnapshot" ? "taxRate" : undefined;
+    const display = decimalKey ? Number(value) : value;
     setQuoteLines((previous) => previous.map((item) => item.id === id
-      ? normalizeQuoteLineItem({ ...item, [field]: value })
+      ? normalizeQuoteLineItem({ ...item, [field]: display, ...(field === "unitPrice" ? { unitPriceSnapshot: display } : {}), ...(field === "productName" ? { productNameSnapshot: value } : {}), ...(field === "description" ? { descriptionSnapshot: value } : {}), ...(decimalKey ? { inputDecimals: { ...item.inputDecimals, [decimalKey]: String(value) } } : {}) })
       : item));
   };
 
@@ -447,14 +381,13 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
     taxTotal: computedTaxes,
     grandTotal: quoteGrandTotal,
     adjustments: pricedAdjustments,
-  } = calculateQuoteDraftTotals(quoteLines, adjustments);
+  } = calculateQuoteDraftTotals(quoteLines, adjustments, getCurrencyMinorUnit(currency));
 
-  const paymentAgreement = useMemo(() => buildPaymentAgreementSnapshot(
-    paymentAgreementLines,
-    quoteGrandTotal,
-    currency,
-    editingQuote?.id ?? newQuoteIdentity.id,
-  ), [currency, editingQuote?.id, newQuoteIdentity.id, paymentAgreementLines, quoteGrandTotal]);
+  const paymentAgreementReadOnly = connected && !canEditAgreementWithDraftControls(editingQuote);
+  const paymentAgreement = useMemo(() => connected
+    ? resolveDraftPaymentAgreement(editingQuote, paymentAgreementLines, quoteGrandTotal, currency, editingQuote?.id ?? newQuoteIdentity.id)
+    : buildPaymentAgreementSnapshot(paymentAgreementLines, quoteGrandTotal, currency, editingQuote?.id ?? newQuoteIdentity.id),
+  [connected, currency, editingQuote, newQuoteIdentity.id, paymentAgreementLines, quoteGrandTotal]);
   const paymentAgreementPercent = paymentAgreementLines
     .filter((line) => line.amountMode === "PERCENTAGE")
     .reduce((sum, line) => sum + Math.max(0, line.percentage), 0);
@@ -471,7 +404,11 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
     paymentMethod,
     paymentAgreement,
     currency,
-  }), [currency, paymentAgreement, paymentDueDays, paymentMethod, paymentTiming, pricedAdjustments, pricedQuoteLines, quoteNotes, quoteTitle, recipientEmail, validUntil]);
+    directBuyer,
+  }), [directBuyer, currency, paymentAgreement, paymentDueDays, paymentMethod, paymentTiming, pricedAdjustments, pricedQuoteLines, quoteNotes, quoteTitle, recipientEmail, validUntil]);
+
+  const { fieldBinding, fieldIssueCurrent } = quoteBuilderFieldFeedback({ title: quoteTitle, recipientEmail, currency, validUntil,
+    lineItems: quoteLines, buyerRef: currentBuyerRef, sourceDealId: selectedDealId, paymentAgreement, adjustments, notes: quoteNotes }, buyerInfo);
 
   useEffect(() => {
     if (draftHydrated && savedDraftFingerprint === null) setSavedDraftFingerprint(currentDraftFingerprint);
@@ -485,49 +422,32 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
     setDraftHydrated(false);
   }, () => saveHandlerRef.current());
 
-  const approvalPolicy = crmConfig.moduleSettings?.quotes?.approval ?? DEFAULT_QUOTE_APPROVAL_POLICY;
-  const approvalAssessment = useMemo(() => evaluateQuoteApproval({
-    lineItems: pricedQuoteLines,
-    subtotal: rawSubtotal,
-    discountTotal: computedDiscounts,
-    grandTotal: quoteGrandTotal,
-    paymentTiming,
-    paymentDueDays,
-  }, approvalPolicy), [pricedQuoteLines, rawSubtotal, computedDiscounts, quoteGrandTotal, paymentTiming, paymentDueDays, approvalPolicy]);
-
-  const approvalIsCurrent = useMemo(() => {
-    if (!editingQuote || editingQuote.approvalStatus !== QuoteApprovalStatus.APPROVED || !editingQuote.approvalContentFingerprint) return false;
-    const fingerprint = quoteContentFingerprint({
-      ...editingQuote,
-      title: quoteTitle,
-      lineItems: pricedQuoteLines,
-      subtotal: rawSubtotal,
-      discountTotal: computedDiscounts,
-      discountAmountToTotal: computedDiscounts,
-      taxPercent: adjustments.find((item) => item.type === "TAX" && item.calculation === "PERCENTAGE")?.value ?? taxPercent,
-      taxTotal: computedTaxes,
-      grandTotal: quoteGrandTotal,
-      notes: quoteNotes,
-      termsAndNotes: quoteNotes,
-      validUntil,
-      expiryDate: validUntil,
-      adjustments: pricedAdjustments,
-      recipientEmail: recipientEmail.trim() || undefined,
-      paymentTiming,
-      paymentDueDays: paymentTiming === "POSTPAID" ? Math.max(0, paymentDueDays) : 0,
-      paymentMethod,
-      paymentAgreement,
+  // A successful command clears dirty/pending state before navigation reaches the shell blocker.
+  // Wait for this form's registry effect and the shell's subscribed commit; other dirty forms keep their guard.
+  useEffect(() => {
+    if (!savedNavigation || lifecycle.pending || hasUnsavedChanges) return;
+    const ownEntry = `quote-builder:${lifecycle.targetId}:${lifecycle.cycle}`;
+    if (getDirtyUnsavedWork().some(entry => entry.id === ownEntry)) return;
+    const frame = window.requestAnimationFrame(() => {
+      if (!lifecycle.isCurrent()) return;
+      setSavedNavigation(null);
+      navigate(savedNavigation.path, { state: savedNavigation.notice ? { quotePricingNotice: savedNavigation.notice } : undefined });
     });
-    return fingerprint === editingQuote.approvalContentFingerprint;
-  }, [currency, editingQuote, quoteTitle, pricedQuoteLines, rawSubtotal, computedDiscounts, taxPercent, computedTaxes, quoteGrandTotal, quoteNotes, validUntil, pricedAdjustments, recipientEmail, paymentTiming, paymentDueDays, paymentMethod, paymentAgreement]);
-  const approvalPending = Boolean(editingQuote?.approvalRequired && editingQuote.approvalStatus === QuoteApprovalStatus.PENDING && editingQuote.approvalRequestedAt && approvalIsCurrent === false);
-  const mustRequestApproval = approvalAssessment.required && !approvalIsCurrent;
+    return () => window.cancelAnimationFrame(frame);
+  }, [savedNavigation, lifecycle.pending, lifecycle.targetId, lifecycle.cycle, hasUnsavedChanges, unsavedVersion, navigate]);
 
   // Execute Quote saving
   const validateCurrentDraft = (): boolean => {
+    setValidationKind("FIELD");
+    setValidationAttempt(value => value + 1);
+    setServerFieldIssues([]);
     setValidationError(null);
-    setTitleError(undefined);
-    const validation = validateQuoteDraft(quoteTitle, pricedQuoteLines, {
+    if (quoteLines.some(line => Object.entries(line.inputDecimals ?? {}).some(([key, value]) =>
+      !/^(0|[1-9][0-9]*)(\.[0-9]{1,6})?$/.test(value) || (key === "quantity" && Number(value) <= 0) || ((key === "discountRate" || key === "taxRate") && Number(value) > 100))) || adjustments.some(item => item.valueDecimal !== undefined && !/^(0|[1-9][0-9]*)(\.[0-9]{1,6})?$/.test(item.valueDecimal))) {
+      setValidationError(locale === "vi" ? "Nhập số thập phân không âm, tối đa sáu chữ số lẻ; số lượng phải dương và tỷ lệ không vượt 100%." : "Enter non-negative decimals with at most six fractional digits; quantity must be positive and rates cannot exceed 100%.");
+      return false;
+    }
+    const validation = validateQuoteDraft(quoteTitle, quoteLines, {
       minOneLineItem: t("quoteBuilder.validation.minOneLineItem"),
       productRequired: t("quoteBuilder.validation.productRequired"),
       rowNumber: (row) => t("quoteBuilder.validation.rowNumber", { row }),
@@ -538,18 +458,10 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
     });
     if (validation) {
       setValidationError(validation);
-      if (!quoteTitle.trim()) {
-        setTitleError(validation);
-        window.requestAnimationFrame(() => titleInputRef.current?.focus());
-      } else if (pricedQuoteLines.length === 0) {
-        window.requestAnimationFrame(() => firstLineActionRef.current?.focus());
-      } else {
-        window.requestAnimationFrame(() => (document.querySelector<HTMLElement>('[data-quote-line-invalid="true"]') ?? validationSummaryRef.current)?.focus());
-      }
       return false;
     }
-    if (paymentAgreementLines.length === 0 || paymentAgreement.lines.some((line) => Number(line.previewAmount.amount) <= 0)) {
-      setValidationError(locale === "vi" ? "Thỏa thuận thanh toán phải có ít nhất một đợt với số tiền hợp lệ." : "Payment Agreement requires at least one positive line.");
+    if (paymentAgreementLines.length === 0 || paymentAgreement.lines.some((line) => Number(line.previewAmount.amount) < 0)) {
+      setValidationError(locale === "vi" ? "Thỏa thuận thanh toán phải có ít nhất một đợt hợp lệ." : "Payment Agreement requires at least one valid line.");
       return false;
     }
     if (paymentAgreementPercent > 100.000001) {
@@ -560,10 +472,15 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
   };
 
   const buildCurrentQuote = (): Quote | null => {
+    if (connected && !workspaceConfiguration) { setValidationError(locale === "vi" ? "Chưa tải được cấu hình tiền tệ. Hãy tải lại trang rồi thử lại." : "Currency settings could not be loaded. Reload the page and retry."); return null; }
+    if ((quoteIdParam && !editingQuote) || (selectedDealId && !referencedDeal) || (connected && (detailQuery.loading || sourceDealQuery.loading))) {
+      setValidationError(locale === "vi" ? "Hãy đợi dữ liệu nguồn tải xong." : "Wait for the source record to finish loading.");
+      return null;
+    }
     if (!validateCurrentDraft()) return null;
 
     if (editingQuote) {
-      return applyQuoteApprovalAssessment({
+      return {
         ...editingQuote,
         title: quoteTitle,
         lineItems: pricedQuoteLines,
@@ -584,7 +501,7 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
         paymentMethod,
         paymentAgreement,
         updatedAt: new Date().toISOString(),
-      }, approvalPolicy);
+      };
     }
 
     let finalCustId = "";
@@ -626,14 +543,16 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
     }
 
     const buyerRef = referencedDeal?.buyerRef
+      || directBuyer?.ref
       || (referencedOrganization ? { type: "ORGANIZATION_ACCOUNT" as const, id: referencedOrganization.id } : resolveBuyerRefFromCustomer(finalCustId));
     if (!buyerRef) {
       setValidationError(locale === "vi" ? "Không thể xác định buyer Contact/Organization Account." : "Could not resolve Contact/Organization Account buyer.");
+      setServerFieldIssues([{ target: "quote-buyer", message: locale === "vi" ? "Vui lòng chọn người mua." : "Select a buyer.", binding: fieldBinding("quote-buyer") }]);
       return null;
     }
 
     const newQuoteId = newQuoteIdentity.id;
-    return applyQuoteApprovalAssessment({
+    return {
       id: newQuoteId,
       quoteNumber,
       version: 1,
@@ -644,7 +563,7 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
       sourceDealId: referencedDeal ? finalDealId : undefined,
       dealName: referencedDeal ? finalDealName : undefined,
       customerId: finalCustId,
-      customerName: finalCustName,
+      customerName: directBuyer?.label || finalCustName,
       customerAddress: finalCustAddress,
       customerContact: finalCustContact || undefined,
       contactId: finalContactId,
@@ -657,7 +576,7 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
       status: QuoteStatus.DRAFT,
       title: quoteTitle,
       currency,
-      ownerId: referencedDeal?.ownerId || actorId,
+      ownerId: referencedDeal?.ownerId,
       ownerName: resolveWorkspaceMemberLabel(referencedDeal?.ownerId || actorId, locale),
       createdAt: new Date().toISOString(),
       expiryDate: validUntil,
@@ -678,7 +597,7 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
       paymentMethod,
       paymentAgreement,
       deliveryHistory: [],
-    }, approvalPolicy);
+    };
   };
 
   const appendDealActivity = (quote: Quote, activityKind: "created" | "updated") => {
@@ -721,22 +640,55 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
   };
 
   const persistCurrentQuote = async (shouldNavigate = false): Promise<Quote | null> => {
+    if (editingQuote?.archivedAt) {
+      setValidationKind("STATUS");
+      setValidationError(locale === "vi" ? "Không thể sửa Báo giá đã lưu trữ." : "Archived Quotes cannot be edited.");
+      return null;
+    }
     if (lifecycle.pending) return null;
     const candidate = buildCurrentQuote();
     if (!candidate) return null;
     if (!lifecycle.begin()) return null;
+    const intentFingerprint = JSON.stringify({ draft: currentDraftFingerprint, buyer: candidate.buyerRef, sourceDealId: candidate.sourceDealId, expectedVersion: editingQuote?.resourceVersion ?? sourceDealVersion.current });
+    if (saveIntent.current?.unresolved && saveIntent.current.fingerprint !== intentFingerprint) {
+      setValidationKind("STATUS");
+      setValidationError(locale === "vi" ? "Chưa xác định được kết quả lần lưu trước. Giữ nguyên nội dung yêu cầu trước để thử lại hoặc kiểm tra danh sách báo giá trước khi tạo yêu cầu mới." : "The previous save outcome is unknown. Retry its original contents or check the quote list before starting another request.");
+      lifecycle.finish();return null;
+    }
+    if (saveIntent.current?.fingerprint !== intentFingerprint) saveIntent.current = { fingerprint: intentFingerprint, key: createDurableId("quote-save"), unresolved: false };
     setSaveBusy(true);
     try {
       const wasNew = !editingQuote;
-      const saved = (await saveQuoteCommand(candidate)).data;
+      const saved = (await saveQuoteCommand(candidate, {
+        idempotencyKey: saveIntent.current.key,
+        expectedVersion: editingQuote?.resourceVersion ?? sourceDealVersion.current,
+      })).data;
       if (!lifecycle.isCurrent()) return null;
+      setPersistedDraft(saved);
+      openingQuote.current = structuredClone(saved);
+      // Keep the accepted identity and version even when saving from the unsaved-work dialog.
+      saveIntent.current = null;
       appendDealActivity(saved, wasNew ? "created" : "updated");
-      setSavedDraftFingerprint(currentDraftFingerprint);
-      triggerToast(locale === "vi" ? "Đã lưu Báo giá." : "Quote saved.", "success");
-      if (shouldNavigate) navigateAfterSave(saved);
+      setDraftHydrated(false);
+      initializedQuoteSourceRef.current = null;
+      setSavedDraftFingerprint(null);
+      const pricingDifferences = compareQuotePricing(candidate, saved, getCurrencyMinorUnit(currency));
+      const pricingReconciled = pricingDifferences.length > 0;
+      const pricingNotice = quotePricingReconciliationNotice(pricingDifferences, currency, locale);
+      triggerToast(pricingReconciled ? pricingNotice : (locale === "vi" ? "Đã lưu Báo giá." : "Quote saved."), pricingReconciled ? "info" : "success");
+      if (shouldNavigate) setSavedNavigation({ path: `/quotes/${saved.id}${pricingReconciled ? "?pricing=updated" : ""}`, notice: pricingReconciled ? pricingNotice : undefined });
       return saved;
     } catch (error) {
-      if (lifecycle.isCurrent()) setValidationError(formatApplicationError(error, { locale }));
+      if (lifecycle.isCurrent()) {
+        const normalized = normalizeApplicationError(error);
+        const issues = quoteBuilderSubmissionIssues(normalized, quoteLines, locale === "vi");
+        setValidationKind(issues.length ? "FIELD" : "STATUS");
+        setValidationError(issues.length ? (locale === "vi" ? "Kiểm tra các mục dưới đây rồi lưu lại báo giá." : "Review the items below, then save the quote again.") : formatApplicationError(error, { locale }));
+        setServerFieldIssues(issues.map(issue => ({ ...issue, binding: fieldBinding(issue.target), ...(issue.target === "quote-buyer" && buyerInfo.version !== undefined ? { buyerVersion: buyerInfo.version } : {}) })));
+        setValidationAttempt(value => value + 1);
+        const requestValidation = normalized.code === "CONTRACT_VIOLATION" && normalized.details && typeof normalized.details === "object" && "direction" in normalized.details && normalized.details.direction === "request";
+        if (saveIntent.current) saveIntent.current.unresolved = !(requestValidation || normalized.status === 422 || normalized.status === 401 || normalized.status === 403 || normalized.status === 412);
+      }
       return null;
     } finally {
       if (lifecycle.isCurrent()) setSaveBusy(false);
@@ -772,28 +724,14 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
     }
   };
 
-  const handleRequestApproval = async () => {
-    const saved = await persistCurrentQuote(false);
-    if (!saved) return;
-    if (!saved.approvalRequired) {
-      triggerToast(locale === "vi" ? "Báo giá này không cần phê duyệt và có thể gửi thẳng." : "This Quote does not require approval and can be sent directly.", "info");
-      return;
-    }
-    try {
-      await requestQuoteApprovalCommand(saved.id, { actorId });
-      triggerToast(locale === "vi" ? "Đã gửi yêu cầu phê duyệt Báo giá." : "Quote approval requested.", "success");
-    } catch (error) {
-      triggerToast(formatApplicationError(error, { locale }), "error");
-    }
-  };
-
   const handleSendGmail = async () => {
-    const saved = await persistCurrentQuote(false);
-    if (!saved) return;
-    if (!canQuoteBeSent(saved)) {
-      triggerToast(locale === "vi" ? "Báo giá đang cần phê duyệt. Hãy hoàn tất phê duyệt trước khi gửi khách." : "Approval is required before this Quote can be sent.", "error");
+    if (connected && hasUnsavedChanges) {
+      triggerToast(locale === "vi" ? "Lưu thay đổi trước khi gửi báo giá." : "Save changes before sending the Quote.", "error");
       return;
     }
+    // Opening an external compose window must not rewrite the approved commercial snapshot.
+    const saved = connected ? editingQuote : await persistCurrentQuote(false);
+    if (!saved) return;
     const email = recipientEmail.trim();
     if (!/^\S+@\S+\.\S+$/.test(email)) {
       setValidationError(locale === "vi" ? "Cần email người nhận hợp lệ để gửi qua Gmail." : "A valid recipient email is required for Gmail delivery.");
@@ -835,10 +773,6 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
   const handleOpenDeliveryConfirmation = async () => {
     const saved = await persistCurrentQuote(false);
     if (!saved) return;
-    if (!canQuoteBeSent(saved)) {
-      triggerToast(locale === "vi" ? "Báo giá đang cần phê duyệt trước khi xác nhận gửi." : "Approval is required before confirming delivery.", "error");
-      return;
-    }
     setDeliveryConfirmation({
       quoteId: saved.id,
         expectedVersion: saved.resourceVersion,
@@ -857,7 +791,7 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
   };
 
   useEffect(() => {
-    if (!publishAction || !editingQuote || initializedQuoteSourceRef.current !== quoteSourceInitializationKey) return;
+    if ((connected && publishAction !== "pdf" && publishAction !== "gmail") || !publishAction || !editingQuote || initializedQuoteSourceRef.current !== quoteSourceInitializationKey) return;
     if (!quoteTitle.trim() || quoteLines.length === 0) return;
     const key = `${editingQuote.id}:${publishAction}`;
     if (autoPublishActionRef.current === key) return;
@@ -870,6 +804,7 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
     return () => window.cancelAnimationFrame(frame);
   }, [publishAction, editingQuote?.id, quoteSourceInitializationKey, quoteTitle, quoteLines.length]);
   return {
+    connected, workspaceConfigurationResource, detailQuery, sourceDealQuery, directBuyer, setDirectBuyer,
     formPending: lifecycle.pending,
     crmConfig,
     customers,
@@ -889,7 +824,13 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
     products,
     paymentMethods,
     currency,
-    setCurrency,
+    setCurrency: (next: string) => {
+      if (next === currency) return;
+      if (editingQuote || quoteLines.length > 0 || adjustments.length > 0) {
+        triggerToast(locale === "vi" ? "Không thể đổi tiền tệ khi đã có số tiền. Hãy tạo báo giá mới với sản phẩm cùng tiền tệ; hiện chưa hỗ trợ quy đổi." : "Currency cannot change while amounts exist. Create a Quote with matching-currency products; conversion is unavailable.", "info"); return;
+      }
+      setCurrency(next);
+    },
     setDeals,
     quoteId,
     searchParams,
@@ -946,9 +887,15 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
     toastType,
     setToastType,
     validationError,
+    validationAttempt,
+    validationKind,
+    fieldBinding,
+    fieldIssueCurrent,
+    buyerInfo,
+    buyerSourcePath,
+    currentBuyerRef,
+    serverFieldIssues,
     setValidationError,
-    titleError,
-    setTitleError,
     saveBusy,
     setSaveBusy,
     titleInputRef,
@@ -957,7 +904,6 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
     setSavedDraftFingerprint,
     draftHydrated,
     setDraftHydrated,
-    validationSummaryRef,
     triggerToast,
     isClosedDeal,
     getDealStageLabel,
@@ -972,14 +918,10 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
     quoteGrandTotal,
     pricedAdjustments,
     paymentAgreement,
+    paymentAgreementReadOnly,
     paymentAgreementPercent,
     currentDraftFingerprint,
     hasUnsavedChanges,
-    approvalPolicy,
-    approvalAssessment,
-    approvalIsCurrent,
-    approvalPending,
-    mustRequestApproval,
     validateCurrentDraft,
     buildCurrentQuote,
     appendDealActivity,
@@ -989,7 +931,6 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
     getPdfSourceElement,
     createCurrentQuotePdf,
     handleExportPdf,
-    handleRequestApproval,
     handleSendGmail,
     handleOpenDeliveryConfirmation,
     confirmQuoteSent,

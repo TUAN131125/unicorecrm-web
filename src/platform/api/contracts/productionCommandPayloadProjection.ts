@@ -28,7 +28,7 @@ export function projectProductionCommandPayload(
       if (input.creditApproval !== undefined) {
         throw blockedVariant(contract.operationId, "creditApproval", "DEC-P02-ORDER-CONFIRMATION-NO-INLINE-CREDIT-OVERRIDE");
       }
-      return pick(input, ["paymentAccountId", "creditApprovalId"]);
+      return pick(input, ["paymentAccountId", "creditApprovalId", "paymentPlanId", "expectedPaymentPlanVersion", "operationalReviewConfirmed", "operationalReviewNotes", "fulfillment"]);
     case "ORDER_CONVERT_ACCEPTED_QUOTE":
       return { quoteId: requiredString(input.quoteId, contract.operationId, "quoteId") };
     case "ORDER_CREDIT_APPROVAL_REQUEST":

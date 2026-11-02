@@ -38,7 +38,7 @@ export function ChannelSettingsView(c: ReturnType<typeof useChannelSettings>) {
       {row.providerKey !== "telegram" && <button disabled title={t("Chưa có provider adapter", "Provider adapter not implemented")}>{t("Kết nối / Xác minh / Ngắt provider chưa hỗ trợ", "Connect / Verify / Provider disconnect unsupported")}</button>}
     </li>)}</ul>
     <div className="flex gap-3"><button onClick={c.first}>{t("Trang đầu", "First page")}</button><button disabled={!page.nextCursor} onClick={c.more}>{t("Trang tiếp", "Next page")}</button><span>{t("Tổng theo bộ lọc", "Filtered total")}: {page.totalCount}</span></div>
-    {c.draft && <form className="space-y-3 rounded border bg-white p-4" onSubmit={e => { e.preventDefault(); c.save(); }} aria-label={t("Cấu hình kênh", "Channel configuration")}>
+    {c.draft && <form className="crm-form-surface space-y-3 rounded border bg-white p-4" onSubmit={e => { e.preventDefault(); c.save(); }} aria-label={t("Cấu hình kênh", "Channel configuration")}>
       <label className="block">Provider <select aria-label="Provider" disabled={busy || c.draft.id !== null} value={c.draft.providerKey} onChange={e => c.draft && c.changeDraft({ ...c.draft, providerKey: e.target.value })}>{providers.map(p => <option key={p.key} value={p.key}>{p.name}</option>)}</select></label>
       <label className="block">{t("Tên kết nối", "Display name")} <input aria-label={t("Tên kết nối", "Display name")} required maxLength={160} disabled={busy} value={c.draft.displayName} onChange={e => c.draft && c.changeDraft({ ...c.draft, displayName: e.target.value })} /></label>
       <p>{t("Chỉ lưu bản nháp, không nhập mật khẩu, API key hoặc token.", "Save a draft only. Do not enter passwords, API keys or tokens.")}</p>

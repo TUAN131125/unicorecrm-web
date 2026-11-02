@@ -5,7 +5,7 @@ import { useI18n } from "@/i18n";
 import { formatOperationUnavailableError, backendUnavailableMessage } from "@/shared/operations";
 import { useModuleAuthoritativeResource } from "@/shared/operations";
 import { getWorkspaceContextSnapshot, useWorkspaceContextSnapshot } from "@/platform/workspace-context";
-import { useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
+import { useWorkspaceRuntimeSettings } from "@/platform/workspace-config";
 import { getProductCollectionResource } from "../../application/vertical-slice/productAuthoritativeQueries";
 import { normalizeApplicationError } from "@/shared/domain";
 import { CAPABILITIES, useEffectiveAccess } from "@/platform/access-control";
@@ -59,7 +59,7 @@ export function useProductListController({
 }: ProductListPageProps) {
   const { tx, locale } = useI18n();
   const workspace = useWorkspaceContextSnapshot();
-  const workspaceConfiguration = useWorkspaceOperationalConfiguration();
+  const workspaceConfiguration = useWorkspaceRuntimeSettings();
   const productQuery = useModuleAuthoritativeResource(getProductCollectionResource(), {
     scopeKey: workspace.workspaceId,
     onScopeChange: () => replaceProductCatalog([]),
@@ -380,7 +380,7 @@ export function useProductListController({
     importPending.current = true;
     try {
       assertProductCatalogImportAvailable();
-      const importedList = parseProductsCsv(csvText, workspaceConfiguration.localeRegion.currencies.baseCurrency);
+      const importedList = parseProductsCsv(csvText, workspaceConfiguration.baseCurrency);
       if (importedList.length === 0) {
         triggerToast("Không tìm thấy dòng sản phẩm hợp lệ nào.", "error");
         document.getElementById("product-import-csv-textarea")?.focus();

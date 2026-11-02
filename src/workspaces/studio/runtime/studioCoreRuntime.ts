@@ -14,9 +14,12 @@ import type {
 import {
   clearConnectedWorkspaceOperationalConfigurationProjection,
   getWorkspaceOperationalConfiguration,
+  isConnectedWorkspaceOperationalConfigurationProjection,
   replaceConnectedWorkspaceOperationalConfigurationProjection,
   updateWorkspaceOperationalConfiguration,
 } from "@/platform/workspace-config/workspaceOperationalConfigurationRuntime";
+import { ApplicationError } from "@/shared/domain";
+import { captureWorkspaceConfigurationOwner, isCurrentWorkspaceConfigurationOwner, type WorkspaceConfigurationOwner } from "@/platform/workspace-config/workspaceRuntimeSettings";
 import { getActiveWorkspaceId } from "@/platform/workspace-context/workspaceContextRuntime";
 import { createWorkspaceScopedRepository } from "@/platform/workspace-scope/createWorkspaceScopedRepository";
 import { WorkspaceScopedStorageAdapter } from "@/platform/workspace-scope/WorkspaceScopedStorageAdapter";
@@ -37,7 +40,9 @@ import { BrowserQuickSetupRepository } from "../infrastructure/BrowserQuickSetup
 
 class ConnectedStudioCoreRuntime implements StudioCoreRuntime {
   readonly mode = "connected" as const;
+  private generation = 0;
   private configuration: StudioCoreConfiguration | undefined;
+  private configurationOwner: WorkspaceConfigurationOwner | undefined;
   private quickSetup: QuickSetupState | undefined;
   private readonly configurationListeners = new Set<(configuration: StudioCoreConfiguration) => void>();
   private readonly quickSetupListeners = new Set<(state: QuickSetupState) => void>();
@@ -45,13 +50,15 @@ class ConnectedStudioCoreRuntime implements StudioCoreRuntime {
   constructor(private readonly gateway: StudioCoreGateway) {}
 
   async loadConfiguration(signal?: AbortSignal): Promise<StudioCoreConfiguration> {
-    const value = await this.gateway.getConfiguration(signal);
+    const value = await this.owned(() => this.gateway.getConfiguration(signal));
     this.commitConfiguration(value);
     return this.getConfiguration();
   }
 
   getConfiguration(): StudioCoreConfiguration {
     if (!this.configuration) throw new Error("STUDIO_CORE_CONFIGURATION_NOT_LOADED");
+    if (!this.configurationOwner || !isCurrentWorkspaceConfigurationOwner(this.configurationOwner)) throw new ApplicationError({
+      code: "WORKSPACE_CONFIGURATION_OWNER_RETIRED", category: "CANCELLED", message: "Workspace configuration request retired." });
     return structuredClone(this.configuration);
   }
 
@@ -65,21 +72,21 @@ class ConnectedStudioCoreRuntime implements StudioCoreRuntime {
     addresses: BusinessAddress[],
     options?: StudioCommandOptions,
   ): Promise<StudioConfigurationMutationResult> {
-    return this.commitMutation(await this.gateway.updateBusinessInformation(
+    return this.commitMutation(await this.owned(() => this.gateway.updateBusinessInformation(
       businessInformation,
       addresses,
       this.resolveOptions("business-information", options),
-    ));
+    )));
   }
 
   async updateLocaleRegion(
     localeRegion: WorkspaceLocaleRegionConfiguration,
     options?: StudioCommandOptions,
   ): Promise<StudioConfigurationMutationResult> {
-    return this.commitMutation(await this.gateway.updateLocaleRegion(
+    return this.commitMutation(await this.owned(() => this.gateway.updateLocaleRegion(
       localeRegion,
       this.resolveOptions("locale-region", options),
-    ));
+    )));
   }
 
   async updateBlueprint(
@@ -87,33 +94,33 @@ class ConnectedStudioCoreRuntime implements StudioCoreRuntime {
     features: CrmModuleVisibilityConfig,
     options?: StudioCommandOptions,
   ): Promise<StudioConfigurationMutationResult> {
-    return this.commitMutation(await this.gateway.updateBlueprint(
+    return this.commitMutation(await this.owned(() => this.gateway.updateBlueprint(
       blueprint,
       features,
       this.resolveOptions("blueprint", options),
-    ));
+    )));
   }
 
   async updateFeatures(
     features: CrmModuleVisibilityConfig,
     options?: StudioCommandOptions,
   ): Promise<StudioConfigurationMutationResult> {
-    return this.commitMutation(await this.gateway.updateFeatures(
+    return this.commitMutation(await this.owned(() => this.gateway.updateFeatures(
       features,
       this.resolveOptions("features", options),
-    ));
+    )));
   }
 
   async publish(note: string | undefined, options?: StudioCommandOptions): Promise<StudioConfigurationMutationResult> {
-    return this.commitMutation(await this.gateway.publish(note, this.resolveOptions("publish", options)));
+    return this.commitMutation(await this.owned(() => this.gateway.publish(note, this.resolveOptions("publish", options))));
   }
 
   listAudit(signal?: AbortSignal): Promise<StudioConfigurationAuditEntry[]> {
-    return this.gateway.listAudit(signal);
+    return this.owned(() => this.gateway.listAudit(signal));
   }
 
   async loadQuickSetup(signal?: AbortSignal): Promise<QuickSetupState> {
-    const state = await this.gateway.getQuickSetup(signal);
+    const state = await this.owned(() => this.gateway.getQuickSetup(signal));
     this.commitQuickSetup(state);
     return this.getQuickSetup();
   }
@@ -129,26 +136,37 @@ class ConnectedStudioCoreRuntime implements StudioCoreRuntime {
   }
 
   async openQuickSetup(options?: StudioCommandOptions): Promise<StudioQuickSetupMutationResult> {
-    return this.commitQuickSetupMutation(await this.gateway.openQuickSetup(this.resolveQuickSetupOptions("open", options)));
+    return this.commitQuickSetupMutation(await this.owned(() => this.gateway.openQuickSetup(this.resolveQuickSetupOptions("open", options))));
   }
 
   async dismissQuickSetupAutoOpen(options?: StudioCommandOptions): Promise<StudioQuickSetupMutationResult> {
-    return this.commitQuickSetupMutation(await this.gateway.dismissQuickSetupAutoOpen(this.resolveQuickSetupOptions("dismiss", options)));
+    return this.commitQuickSetupMutation(await this.owned(() => this.gateway.dismissQuickSetupAutoOpen(this.resolveQuickSetupOptions("dismiss", options))));
   }
 
   async completeQuickSetupStep(stepId: QuickSetupStepId, options?: StudioCommandOptions): Promise<StudioQuickSetupMutationResult> {
-    return this.commitQuickSetupMutation(await this.gateway.completeQuickSetupStep(stepId, this.resolveQuickSetupOptions(`complete-${stepId}`, options)));
+    return this.commitQuickSetupMutation(await this.owned(() => this.gateway.completeQuickSetupStep(stepId, this.resolveQuickSetupOptions(`complete-${stepId}`, options))));
   }
 
   async skipQuickSetupStep(stepId: QuickSetupStepId, options?: StudioCommandOptions): Promise<StudioQuickSetupMutationResult> {
-    return this.commitQuickSetupMutation(await this.gateway.skipQuickSetupStep(stepId, this.resolveQuickSetupOptions(`skip-${stepId}`, options)));
+    return this.commitQuickSetupMutation(await this.owned(() => this.gateway.skipQuickSetupStep(stepId, this.resolveQuickSetupOptions(`skip-${stepId}`, options))));
   }
 
   clear(): void {
+    this.generation += 1;
     this.configuration = undefined;
+    this.configurationOwner = undefined;
     this.quickSetup = undefined;
     clearConnectedWorkspaceConfigProjection();
     clearConnectedWorkspaceOperationalConfigurationProjection();
+  }
+
+  private async owned<T>(request: () => Promise<T>): Promise<T> {
+    const generation = this.generation;
+    const owner = captureWorkspaceConfigurationOwner();
+    const result = await request();
+    if (generation !== this.generation || !isCurrentWorkspaceConfigurationOwner(owner)) throw new ApplicationError({
+      code: "WORKSPACE_CONFIGURATION_OWNER_RETIRED", category: "CANCELLED", message: "Workspace configuration request retired." });
+    return result;
   }
 
   private resolveOptions(purpose: string, options?: StudioCommandOptions): StudioCommandOptions {
@@ -173,7 +191,15 @@ class ConnectedStudioCoreRuntime implements StudioCoreRuntime {
   }
 
   private commitConfiguration(value: StudioCoreConfiguration): void {
+    const owner = captureWorkspaceConfigurationOwner();
+    if (owner.workspaceId && value.workspaceId !== owner.workspaceId) throw new ApplicationError({
+      code: "WORKSPACE_CONFIGURATION_OWNER_RETIRED", category: "CANCELLED", message: "Workspace configuration request retired." });
+    if (this.configuration && this.configurationOwner && isCurrentWorkspaceConfigurationOwner(this.configurationOwner)) {
+      if (value.revision < this.configuration.revision) return;
+      if (isConnectedWorkspaceOperationalConfigurationProjection() && JSON.stringify(value) === JSON.stringify(this.configuration)) return;
+    }
     this.configuration = structuredClone(value);
+    this.configurationOwner = owner;
     const current = getWorkspaceConfigSnapshot();
     replaceConnectedWorkspaceConfigProjection({
       ...current,

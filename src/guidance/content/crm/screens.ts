@@ -1,7 +1,7 @@
 import { CAPABILITIES } from "@/platform/access-control/domain/capabilityCatalog";
 import type { ScreenGuidance } from "@/guidance/domain/guidance.types";
 
-const reviewedAt = "2026-07-12";
+const reviewedAt = "2026-11-01";
 const owner = "Product Enablement";
 
 export const CRM_SCREEN_GUIDANCE: ScreenGuidance[] = [
@@ -9,15 +9,15 @@ export const CRM_SCREEN_GUIDANCE: ScreenGuidance[] = [
     id: "crm.dashboard.overview",
     routeKey: "DASHBOARD",
     productSpace: "crm",
-    version: 4,
+    version: 9,
     title: { vi: "Tổng quan CRM", en: "CRM overview" },
     purpose: { vi: "Theo dõi nhanh khối lượng công việc, khách hàng tiềm năng, cơ hội, doanh thu và các yêu cầu đang cần xử lý.", en: "Review workload, leads, opportunities, revenue, and customer requests that need attention." },
     audience: { vi: "Nhân viên bán hàng, vận hành, chăm sóc khách hàng và quản lý.", en: "Sales, operations, customer care, and managers." },
-    prerequisites: [{ vi: "Bạn cần quyền xem Tổng quan.", en: "You need permission to view the Dashboard." }],
+    prerequisites: [{ vi: "Mở Dashboard trong nhóm Tổng quan ở đầu sidebar CRM. Workspace phải đang hoạt động và bạn phải có quyền vào CRM; mỗi chỉ số tuân theo quyền đọc dữ liệu riêng.", en: "Open Dashboard in Overview at the top of the CRM sidebar. You need an active workspace and CRM access; each metric follows its own data-read permissions." }],
     primaryTasks: [
-      { id: "review-metrics", text: { vi: "Mở từng KPI để xem công thức, kỳ tính, thời điểm cập nhật và bản ghi nguồn.", en: "Open each KPI to inspect its formula, period, freshness, and source records." } },
+      { id: "review-metrics", text: { vi: "Bốn chỉ số đầu trang phản ánh trạng thái hiện tại: pipeline, việc quá hạn, việc đến hạn hôm nay và hỗ trợ đang mở. Chọn chỉ số để mở danh sách. Giá trị tiền đầy đủ có trong nhãn trợ năng và khi rê chuột; không cộng các loại tiền. Các số liệu chưa hỗ trợ được ghi ở cuối trang.", en: "The four top metrics show current pipeline, overdue work, work due today and open support. Select a metric to open its list. Full amounts are available through accessible labels and on hover; currencies are never combined. Unsupported metrics are noted at the bottom." } },
       { id: "open-leads", text: { vi: "Mở khách hàng tiềm năng cần theo dõi.", en: "Open leads that need follow-up." }, route: "leads", requiredCapabilities: [CAPABILITIES.LEADS_READ] },
-      { id: "open-tasks", text: { vi: "Mở công việc được giao và ưu tiên việc quá hạn.", en: "Open assigned tasks and prioritize overdue work." }, route: "tasks", requiredCapabilities: [CAPABILITIES.TASKS_READ] },
+      { id: "open-tasks", text: { vi: "Chọn chỉ số quá hạn hoặc hôm nay để mở đúng bộ lọc công việc của bạn. Quá hạn so thời điểm đến hạn với hiện tại; hôm nay dùng múi giờ Workspace và có thể đồng thời là quá hạn.", en: "Select overdue or due today to open the matching filter for your tasks. Overdue compares the due instant with now; today uses Workspace timezone and can also be overdue." }, route: "tasks", requiredCapabilities: [CAPABILITIES.TASKS_READ] },
     ],
     commonMistakes: [
       { vi: "Không suy diễn tăng trưởng khi kỳ trước bằng 0; hệ thống sẽ ghi rõ khi không thể tính phần trăm so sánh.", en: "Do not infer growth when the previous period is zero; the system explicitly marks the comparison as unavailable." },
@@ -26,8 +26,8 @@ export const CRM_SCREEN_GUIDANCE: ScreenGuidance[] = [
     relatedWorkflowIds: ["workflow.lead-to-order", "workflow.support-to-task"],
     steps: [
       { id: "screen", targetId: "dashboard.overview.screen", title: { vi: "Tổng quan trong ngày", en: "Today at a glance" }, body: { vi: "Bắt đầu từ chỉ số và các hàng đợi đang cần hành động, sau đó mở bản ghi gốc để xử lý.", en: "Start with metrics and action queues, then open the source record to work on it." }, placement: "bottom", expectedAction: "view" },
-      { id: "metric", targetId: "dashboard.metric.completed-revenue", title: { vi: "KPI có thể kiểm chứng", en: "Verifiable KPI" }, body: { vi: "Chọn thẻ để xem công thức, kỳ tính, múi giờ và các đơn hàng nguồn. Khi kỳ trước bằng 0, hệ thống không hiển thị tỷ lệ tăng trưởng giả.", en: "Select the card to inspect formula, period, timezone, and source orders. When the previous period is zero, no fabricated growth rate is shown." }, placement: "bottom", expectedAction: "click", requiredCapabilities: [CAPABILITIES.REPORTS_READ, CAPABILITIES.ORDERS_READ] },
-      { id: "role-navigation", targetId: "shell.navigation.profile", title: { vi: "Không gian theo vai trò", en: "Role-focused workspace" }, body: { vi: "Sidebar ưu tiên các khu vực phù hợp với trách nhiệm hiện tại. Màn hình liên quan ở bộ phận khác vẫn có thể mở ở chế độ chỉ xem khi quyền cho phép.", en: "The sidebar prioritizes areas relevant to your current responsibility. Related cross-team screens can still open read-only when access permits." }, placement: "right", expectedAction: "view" },
+      { id: "metric", targetId: "dashboard.metric.open-pipeline", title: { vi: "Pipeline hiện tại", en: "Current pipeline" }, body: { vi: "Trong chế độ trực tiếp, pipeline hiển thị số cơ hội đang mở và giá trị theo từng loại tiền. Chọn thẻ để mở danh sách cơ hội. Số liệu chưa tải, không có quyền hoặc chưa hỗ trợ không được tính thành số 0.", en: "In Connected Mode, pipeline shows open deal counts and amounts by currency. Select the card to open deals. Loading, denied or unsupported data is never interpreted as zero." }, placement: "bottom", expectedAction: "view", requiredCapabilities: [CAPABILITIES.DEALS_READ] },
+      { id: "role-navigation", targetId: "shell.navigation.profile", title: { vi: "Không gian theo vai trò", en: "Role-focused workspace" }, body: { vi: "Sidebar ưu tiên các khu vực phù hợp với trách nhiệm hiện tại; không có nhãn vai trò dưới logo. Các thao tác khả dụng tùy theo quyền của bạn.", en: "The sidebar prioritizes areas relevant to your responsibility without a role subtitle beneath the logo. Available actions depend on your permissions." }, placement: "right", expectedAction: "view" },
       { id: "spaces", targetId: "shell.product-space.crm", title: { vi: "Chuyển khu vực làm việc", en: "Switch work areas" }, body: { vi: "Dùng thanh này để chuyển giữa CRM, Thiết lập và Người dùng & Quyền khi bạn có quyền truy cập.", en: "Use this navigation to move between CRM, Settings, and Users & Access when permitted." }, placement: "bottom", expectedAction: "view" },
     ],
     requiredCapabilities: [CAPABILITIES.DASHBOARD_READ],
@@ -42,7 +42,7 @@ export const CRM_SCREEN_GUIDANCE: ScreenGuidance[] = [
     version: 12,
     title: { vi: "Khách hàng tiềm năng", en: "Leads" },
     purpose: { vi: "Tiếp nhận, phân công, xác minh nhu cầu và quyết định bước bán hàng tiếp theo cho khách hàng tiềm năng.", en: "Capture, assign, verify, and determine the next selling outcome for leads." },
-    prerequisites: [{ vi: "Có quyền xem khách hàng tiềm năng; quyền tạo, sửa, giao hoặc chốt kết quả được kiểm tra riêng.", en: "Lead read permission is required; create, update, assign, and qualification permissions are checked separately." }],
+    prerequisites: [{ vi: "Chuẩn bị thông tin liên hệ và người phụ trách.", en: "Prepare the contact details and owner." }],
     primaryTasks: [
       { id: "create", text: { vi: "Lưu tên và ít nhất một kênh liên hệ. Nguồn có thể để trống, kể cả khi mở phần nâng cao trong Workspace mới. Lưu thành công đóng biểu mẫu; mở bản ghi để kiểm tra dữ liệu đã lưu.", en: "Save a name and at least one contact channel. Source may be empty, including in advanced details in a new Workspace. A successful save closes the form; open the record to verify persisted data." }, requiredCapabilities: [CAPABILITIES.LEADS_CREATE] },
       { id: "qualify", text: { vi: "Đưa Lead tới Đang xác minh. Tạo cơ hội với Contact đã có theo ID hoặc Contact mới; tìm sản phẩm theo tên/SKU, nhập giá trị và xem lại trước khi xác nhận. Khi mất phản hồi, tiếp tục cùng thao tác đã gửi.", en: "Advance the Lead to Verifying. Create an opportunity with an existing Contact ID or a new Contact; search products by name/SKU, enter the amount and review before confirming. Resume the same submitted intent after a lost response." }, requiredCapabilities: [CAPABILITIES.LEADS_QUALIFY] },
@@ -70,12 +70,13 @@ export const CRM_SCREEN_GUIDANCE: ScreenGuidance[] = [
     id: "crm.deals.pipeline",
     routeKey: "DEALS",
     productSpace: "crm",
-    version: 6,
+    version: 10,
     title: { vi: "Cơ hội bán hàng", en: "Sales opportunities" },
     purpose: { vi: "Theo dõi cơ hội theo giai đoạn, giá trị, người phụ trách và bước tiếp theo cho đến khi thắng hoặc thua.", en: "Track opportunities by stage, value, owner, and next step until won or lost." },
-    prerequisites: [{ vi: "Cơ hội chỉ xuất hiện khi workspace bật quy trình cơ hội và bạn có quyền xem.", en: "Opportunities appear only when the workspace enables the opportunity path and you have read access." }],
+    prerequisites: [{ vi: "Chuẩn bị người mua, giá trị và ngày dự kiến chốt.", en: "Prepare the buyer, amount and expected close date." }],
     primaryTasks: [
-      { id: "create", text: { vi: "Tạo cơ hội khi nhu cầu đã đủ rõ để theo dõi pipeline.", en: "Create an opportunity when the need is clear enough for pipeline tracking." }, requiredCapabilities: [CAPABILITIES.DEALS_CREATE] },
+      { id: "pipeline", text: { vi: "Pipeline và tên giai đoạn được đọc từ máy chủ. Quản trị viên cấu hình trong Studio; đổi mặc định không chuyển cơ hội cũ.", en: "Pipeline and stage labels come from the server. Administrators configure them in Studio; changing the default does not move existing deals." } },
+      { id: "create", text: { vi: "Tạo cơ hội, chọn người mua, người phụ trách và giai đoạn bán hàng phù hợp.", en: "Create an opportunity and select the buyer, owner and appropriate sales stage." }, requiredCapabilities: [CAPABILITIES.DEALS_CREATE] },
       { id: "progress", text: { vi: "Ưu tiên cơ hội thiếu hoặc quá hạn bước tiếp theo, ở stage quá lâu hoặc không có tương tác gần đây.", en: "Prioritize opportunities with a missing or overdue next step, excessive time in stage, or stale activity." }, requiredCapabilities: [CAPABILITIES.DEALS_UPDATE] },
       { id: "close", text: { vi: "Chốt thắng hoặc thua bằng hành động kết thúc chuyên biệt.", en: "Close as won or lost through the dedicated closing action." }, requiredCapabilities: [CAPABILITIES.DEALS_CLOSE] },
     ],
@@ -86,6 +87,7 @@ export const CRM_SCREEN_GUIDANCE: ScreenGuidance[] = [
     ],
     relatedWorkflowIds: ["workflow.lead-to-order"],
     steps: [
+      { id: "assigned-pipelines", targetId: "deals.pipeline.assigned-boards", title: { vi: "Cơ hội thuộc pipeline trước", en: "Opportunities in earlier pipelines" }, body: { vi: "Mở chi tiết cơ hội để cập nhật giai đoạn và bước tiếp theo.", en: "Open opportunity details to update its stage and next step." }, placement: "bottom", expectedAction: "view", optional: true },
       { id: "scope", targetId: "deals.pipeline.scope", title: { vi: "Phạm vi pipeline", en: "Pipeline scope" }, body: { vi: "Chuyển giữa cơ hội của bạn, của đội và toàn bộ cơ hội được phép xem mà không thay đổi quyền dữ liệu.", en: "Switch between your opportunities, your team's opportunities, and all allowed opportunities without changing data permissions." }, placement: "bottom", expectedAction: "select" },
       { id: "buyer", targetId: "deals.form.buyer", title: { vi: "Chọn đúng người mua", en: "Select the exact buyer" }, body: { vi: "Tìm Contact hoặc Organization, kiểm tra ID khi tên trùng nhau. Lựa chọn liên kết bằng ID và giữ nguyên khi tên thay đổi.", en: "Search Contacts or Organizations and check the ID when names match. The selected relationship keeps its ID when a name changes." }, placement: "right", expectedAction: "view", optional: true },
       { id: "interest", targetId: "deals.form.interested-products", title: { vi: "Sản phẩm quan tâm", en: "Interested products" }, body: { vi: "Tìm theo tên hoặc SKU, chọn nhiều sản phẩm đang hoạt động qua các trang. Khi mở lại, tên và SKU được xác minh theo quyền hiện tại. Giá trị dự kiến độc lập với sản phẩm quan tâm; dòng thương mại chưa được hỗ trợ.", en: "Search by name or SKU and select active products across pages. On reopen, names and SKUs are verified under current access. Expected amount is independent of interest; commercial lines are unavailable." }, placement: "right", expectedAction: "view", optional: true },
@@ -95,25 +97,26 @@ export const CRM_SCREEN_GUIDANCE: ScreenGuidance[] = [
     ],
     requiredCapabilities: [CAPABILITIES.DEALS_READ],
     owner,
-    reviewedAt: "2026-10-13",
+    reviewedAt: "2026-11-01",
   },
   {
     id: "crm.quotes.list",
     routeKey: "QUOTES",
     productSpace: "crm",
-    version: 2,
+    version: 7,
     title: { vi: "Báo giá", en: "Quotes" },
-    purpose: { vi: "Lập đề xuất thương mại, kiểm soát phiên bản và phê duyệt trước khi khách hàng chấp nhận.", en: "Prepare commercial proposals, control revisions, and approve them before customer acceptance." },
+    purpose: { vi: "Tìm kiếm báo giá và quản lý các bản nháp.", en: "Search quotes and manage drafts." },
     prerequisites: [{ vi: "Báo giá có thể bắt nguồn từ cơ hội hoặc luồng bán trực tiếp, tùy cấu hình workspace.", en: "A quote may start from an opportunity or direct sale, depending on workspace configuration." }],
     primaryTasks: [
-      { id: "create", text: { vi: "Tạo báo giá và chọn sản phẩm, giá, thuế và điều khoản.", en: "Create a quote with products, pricing, tax, and terms." }, requiredCapabilities: [CAPABILITIES.QUOTES_CREATE] },
-      { id: "approve", text: { vi: "Phê duyệt báo giá trước khi phát hành khi chính sách yêu cầu.", en: "Approve a quote before issuance when policy requires it." }, requiredCapabilities: [CAPABILITIES.QUOTES_APPROVE] },
-      { id: "deliver", text: { vi: "Gửi qua Gmail hoặc xác nhận kênh đã gửi như Zalo, ứng dụng chat, SMS và email khác.", en: "Send with Gmail or confirm delivery through Zalo, a chat app, SMS, or another email channel." }, requiredCapabilities: [CAPABILITIES.QUOTES_UPDATE] },
-      { id: "order", text: { vi: "Tạo đơn hàng từ báo giá đã được chấp nhận.", en: "Create an order from an accepted quote." }, requiredCapabilities: [CAPABILITIES.ORDERS_CREATE] },
+      { id: "archive-view", text: { vi: "Mở Bộ lọc và chọn Phạm vi lưu trữ: Đang sử dụng, Đã lưu trữ hoặc Tất cả. Đặt lại để trở về Đang sử dụng.", en: "Open Filters and choose Archive view: Active, Archived, or All. Reset returns to Active." } },
+      { id: "browse", text: { vi: "Tìm theo mã hoặc tên báo giá; lọc trạng thái và cơ hội liên quan. Chuyển trang để xem thêm kết quả.", en: "Search by quote number or title and filter by status or related opportunity. Use pagination to see more results." } },
+      { id: "retry", text: { vi: "Danh sách rỗng chỉ xuất hiện sau phản hồi tải thành công. Nếu tải lỗi, dùng Thử lại hoặc Làm mới; dữ liệu cũ còn hiển thị sẽ có thông báo lỗi.", en: "An empty state follows a successful load. On failure, use Retry or Refresh; retained rows display a failure notice." } },
+      { id: "create", text: { vi: "Tạo báo giá trực tiếp hoặc từ cơ hội, lưu và mở chi tiết để kiểm tra.", en: "Create a direct quote or start from an opportunity, save and open its details to review." }, requiredCapabilities: [CAPABILITIES.QUOTES_CREATE] },
+      { id: "edit", text: { vi: "Chỉnh sửa bản nháp; kiểm tra trạng thái phê duyệt, gửi và chấp nhận trước khi tiếp tục.", en: "Edit drafts and review approval, delivery and acceptance status before continuing." }, requiredCapabilities: [CAPABILITIES.QUOTES_UPDATE] },
     ],
     commonMistakes: [
-      { vi: "Không xác nhận đã gửi trước khi Báo giá thực sự đến kênh liên hệ của khách.", en: "Do not confirm delivery before the quote actually reaches the customer's contact channel." },
-      { vi: "Không sửa trực tiếp bằng chứng báo giá đã phát hành; hãy tạo phiên bản tiếp theo khi cần thay đổi.", en: "Do not overwrite issued quote evidence; create the next revision when changes are needed." },
+      { vi: "Không coi lỗi tải là không có Báo giá, và không áp dụng bộ lọc chỉ trên một trang rồi suy ra toàn bộ kết quả.", en: "Do not treat a load failure as an empty list or filter one page and infer the full result set." },
+      { vi: "Chuyển Workspace sẽ xóa bộ lọc và dữ liệu trang cũ trước khi tải đúng phạm vi mới.", en: "Switching Workspace clears filters and the old page before loading the new scope." },
     ],
     relatedWorkflowIds: ["workflow.lead-to-order"],
     requiredCapabilities: [CAPABILITIES.QUOTES_READ],
@@ -124,12 +127,13 @@ export const CRM_SCREEN_GUIDANCE: ScreenGuidance[] = [
     id: "crm.orders.list",
     routeKey: "ORDERS",
     productSpace: "crm",
-    version: 3,
+    version: 7,
     title: { vi: "Đơn hàng", en: "Orders" },
-    purpose: { vi: "Quản lý cam kết mua đã xác nhận và theo dõi bằng chứng Thanh toán, Vận đơn và Đổi/Trả liên quan.", en: "Manage confirmed purchase commitments and follow the related Payment, Shipping, and Return evidence." },
-    prerequisites: [{ vi: "Bạn cần quyền xem đơn hàng. Tạo đơn yêu cầu thông tin người mua, người nhận, sản phẩm và điều kiện vận hành hợp lệ.", en: "Order read access is required. Creating an order requires valid buyer, recipient, product, and operational information." }],
+    purpose: { vi: "Theo dõi đơn nháp từ báo giá được chấp nhận, xác nhận vận hành và các khoản thanh toán, giao nhận liên quan.", en: "Track draft orders from accepted quotes, operational confirmation, payments, and delivery." },
+    prerequisites: [{ vi: "Bạn cần quyền xem đơn hàng. Đơn nháp được tạo từ báo giá đã được khách hàng chấp nhận theo điều kiện hợp lệ.", en: "Order read access is required. Draft orders originate from valid customer acceptance of a quote." }],
     primaryTasks: [
-      { id: "create", text: { vi: "Tạo đơn hàng mới hoặc tạo từ báo giá đã chấp nhận.", en: "Create a new order or create one from an accepted quote." }, route: "orders/new", requiredCapabilities: [CAPABILITIES.ORDERS_CREATE] },
+      { id: "confirm", text: { vi: "Hành động Xác nhận mở Chi tiết đơn hàng để kiểm tra và phê duyệt vận hành với đúng Payment Plan/version. Chỉ xác nhận sau khi đủ điều kiện.", en: "Confirm opens Order Detail to review and approve operations against the matching Payment Plan/version. Confirm only after requirements are satisfied." }, route: "orders", requiredCapabilities: [CAPABILITIES.ORDERS_CONFIRM] },
+      { id: "source", text: { vi: "Mở Báo giá để theo dõi phản hồi khách hàng và đơn nháp được tạo sau khi chấp nhận hợp lệ.", en: "Open Quotes to follow customer responses and draft orders created after valid acceptance." }, route: "quotes", requiredCapabilities: [CAPABILITIES.QUOTES_READ] },
       { id: "payment", text: { vi: "Mở Thanh toán để ghi nhận khoản thu; không cập nhật trạng thái thanh toán trực tiếp trên đơn.", en: "Open Payments to record collections; do not change payment state directly on the order." }, route: "payments", requiredCapabilities: [CAPABILITIES.PAYMENTS_READ] },
       { id: "shipping", text: { vi: "Tạo vận đơn khi đơn đã xác nhận và có đủ thông tin giao nhận.", en: "Create a shipping booking after confirmation and when delivery information is complete." }, route: "shipping", requiredCapabilities: [CAPABILITIES.SHIPPING_READ] },
     ],
@@ -140,8 +144,6 @@ export const CRM_SCREEN_GUIDANCE: ScreenGuidance[] = [
     relatedWorkflowIds: ["workflow.order-to-shipping", "workflow.order-return-resolution"],
     steps: [
       { id: "screen", targetId: "orders.list.screen", title: { vi: "Hàng đợi đơn hàng", en: "Order work queue" }, body: { vi: "Dùng tìm kiếm, chế độ xem và bộ lọc để tìm đơn cần xử lý. Mở chi tiết trước khi thực hiện hành động trạng thái.", en: "Use search, views, and filters to find orders that need work. Open details before changing state." }, placement: "bottom", expectedAction: "view" },
-      { id: "create", targetId: "orders.list.create", title: { vi: "Tạo đơn hàng", en: "Create an order" }, body: { vi: "Hành động này chỉ khả dụng khi vai trò có quyền tạo đơn hàng.", en: "This action is available only when your role can create orders." }, placement: "left", expectedAction: "click", route: "orders/new", requiredCapabilities: [CAPABILITIES.ORDERS_CREATE] },
-      { id: "read-only", targetId: "access.read-only.notice", title: { vi: "Theo dõi xuyên bộ phận", en: "Cross-team visibility" }, body: { vi: "Khi chỉ có quyền xem, bạn vẫn theo dõi được trạng thái đơn hàng nhưng các hành động cập nhật thuộc đội chịu trách nhiệm sẽ không xuất hiện.", en: "With read access only, you can still follow order status while update actions owned by the responsible team remain unavailable." }, placement: "bottom", expectedAction: "view", optional: true },
     ],
     requiredCapabilities: [CAPABILITIES.ORDERS_READ],
     keywords: { vi: "đơn hàng tạo đơn xác nhận thanh toán vận đơn", en: "orders create confirm payment shipping" },
@@ -274,9 +276,9 @@ export const CRM_SCREEN_GUIDANCE: ScreenGuidance[] = [
     id: "crm.reports.overview",
     routeKey: "REPORTS",
     productSpace: "crm",
-    version: 4,
+    version: 5,
     title: { vi: "Báo cáo", en: "Reports" },
-    purpose: { vi: "Đọc KPI có công thức rõ ràng, kiểm tra bản ghi nguồn và phân biệt funnel cohort với các ảnh chụp dữ liệu độc lập.", en: "Review formula-backed KPIs, inspect source records, and distinguish cohort funnels from independent data snapshots." },
+    purpose: { vi: "Theo dõi chỉ tiêu bán hàng và mở các bản ghi liên quan để kiểm tra chi tiết.", en: "Track sales metrics and open related records to review details." },
     prerequisites: [{ vi: "Bạn cần quyền xem báo cáo và quyền đọc domain nguồn; xuất CSV yêu cầu quyền xuất riêng.", en: "Report access and source-domain read permission are required; CSV export needs a separate permission." }],
     primaryTasks: [
       { id: "period", text: { vi: "Chọn kỳ báo cáo và xác nhận múi giờ đang áp dụng.", en: "Choose a reporting period and confirm the applied timezone." } },
@@ -284,9 +286,9 @@ export const CRM_SCREEN_GUIDANCE: ScreenGuidance[] = [
       { id: "cohort", text: { vi: "Dùng funnel cohort để theo cùng một nhóm Lead qua chuỗi giao dịch.", en: "Use the cohort funnel to follow one lead group through the commercial chain." } },
       { id: "export", text: { vi: "Xuất CSV khi cần phân tích ngoài hệ thống.", en: "Export CSV for analysis outside the system." }, requiredCapabilities: [CAPABILITIES.REPORTS_EXPORT] },
       { id: "forecast", text: { vi: "Chụp forecast snapshot và theo dõi độ chính xác Commit theo kỳ.", en: "Capture forecast snapshots and monitor Commit accuracy by period." } },
-      { id: "order-to-cash", text: { vi: "Theo dõi chu kỳ thu tiền đơn hàng, giao hàng, COD, hoàn tiền và tuổi nợ Receivables; DSO kế toán chờ dữ liệu backend bền vững và quy tắc kỳ báo cáo.", en: "Monitor Order collection, delivery, COD, refunds, and Receivables aging; accounting DSO requires durable backend data and reporting-period rules." } },
+      { id: "order-to-cash", text: { vi: "Theo dõi thu tiền, giao hàng, COD, hoàn tiền và tuổi nợ. Chỉ số DSO kế toán chưa khả dụng.", en: "Track collections, deliveries, COD, refunds and Receivables aging. Accounting DSO is unavailable." } },
     ],
-    commonMistakes: [{ vi: "Không coi biểu đồ trạng thái độc lập là funnel chuyển đổi; chúng là ảnh chụp của các tập dữ liệu khác nhau.", en: "Do not interpret independent status charts as a conversion funnel; they are snapshots of different datasets." }],
+    commonMistakes: [{ vi: "Các biểu đồ trạng thái phản ánh tổng số hiện tại; không dùng để tính tỷ lệ chuyển đổi.", en: "Status charts show current totals and cannot be used to calculate conversion rates." }],
     steps: [
       { id: "period", targetId: "reports.period.selector", title: { vi: "Chọn kỳ tính", en: "Choose the period" }, body: { vi: "Các KPI theo kỳ dùng ngày nghiệp vụ và múi giờ được khai báo trong Metric Catalog.", en: "Period KPIs use the business date and timezone declared in the Metric Catalog." }, placement: "bottom", expectedAction: "select" },
       { id: "metric", targetId: "reports.metric.completed-revenue", title: { vi: "Kiểm tra KPI", en: "Inspect a KPI" }, body: { vi: "Chọn thẻ để mở công thức, trạng thái được tính, thời điểm cập nhật và danh sách bản ghi nguồn.", en: "Select the card to open its formula, included states, freshness, and source-record list." }, placement: "bottom", expectedAction: "click" },

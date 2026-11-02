@@ -2,18 +2,21 @@ import type { BuyerRef } from "@/platform/identity";
 import type { MoneyDto } from "@/shared/money";
 import type { PaymentAgreementSnapshot } from "@/shared/order-to-cash";
 import {
+  SalesDocumentAdjustmentType,
   QuoteStatus,
   type Quote,
   type QuoteApprovalReason,
   type QuoteApprovalStatus,
   type QuoteDeliveryRecord,
+  type QuoteCustomerDecisionRecord,
+  type QuoteValidity,
   type QuoteLineItem,
   type QuoteSourcePath,
   type SalesDocumentAdjustment,
 } from "../../domain/model/quote.types";
 
 export interface QuoteActionAvailabilityReadModel { allowed: boolean; blockerCodes: string[] }
-export interface QuoteReadActions { accept: QuoteActionAvailabilityReadModel }
+export interface QuoteReadActions { issueDocument?: { allowed: boolean; blockerCodes: string[] }; revise?: QuoteActionAvailabilityReadModel; expire?: QuoteActionAvailabilityReadModel; archive?: QuoteActionAvailabilityReadModel; accept: QuoteActionAvailabilityReadModel; reject?: QuoteActionAvailabilityReadModel; recordCustomerResponse?: QuoteActionAvailabilityReadModel }
 export interface QuoteLineReadModel {
   id: string;
   productId?: string;
@@ -35,7 +38,7 @@ export interface QuoteLineReadModel {
 export interface CommercialAdjustmentReadModel {
   id: string;
   label: string;
-  type: SalesDocumentAdjustment["type"];
+  type: SalesDocumentAdjustment["type"] | "SHIPPING";
   calculation: SalesDocumentAdjustment["calculation"];
   value: string;
   amount: MoneyDto;
@@ -48,6 +51,9 @@ export interface QuoteApprovalReasonReadModel {
 }
 export interface QuoteDeliveryRecordReadModel extends Omit<QuoteDeliveryRecord, "sentBy"> { sentBy?: string; }
 export interface QuoteReadModel {
+  ordinarySales?: boolean;
+  validity?: QuoteValidity;
+  customerDecisionHistory?: QuoteCustomerDecisionRecord[];
   id: string;
   quoteNumber: string;
   quoteRevision: number;
@@ -85,6 +91,7 @@ export interface QuoteReadModel {
   approvalContentFingerprint?: string;
   approvalPolicyVersion?: string;
   paymentAgreement?: PaymentAgreementSnapshot;
+  salesAcceptance?: import("../ports/QuoteSalesAcceptancePort").SalesAcceptance;
   deliveryHistory?: QuoteDeliveryRecordReadModel[];
   reviewRequestedAt?: string;
   sentAt?: string;
@@ -103,6 +110,7 @@ export interface QuoteReadModel {
 /** UI display projection for existing Quote views; never a pricing authority. */
 export function projectQuoteReadModel(record: QuoteReadModel): Quote {
   return {
+    ordinarySales: record.ordinarySales === true,
     id: record.id,
     quoteNumber: record.quoteNumber,
     version: record.quoteRevision,
@@ -112,6 +120,7 @@ export function projectQuoteReadModel(record: QuoteReadModel): Quote {
     status: record.status,
     title: record.title,
     currency: record.currency,
+    commercialMoney: structuredClone({ subtotal: record.subtotal, discountTotal: record.discountTotal, taxTotal: record.taxTotal, grandTotal: record.grandTotal }),
     lineItems: record.lineItems.map(projectLine),
     subtotal: displayNumber(record.subtotal.amount, "subtotal"),
     discountTotal: displayNumber(record.discountTotal.amount, "discountTotal"),
@@ -121,6 +130,8 @@ export function projectQuoteReadModel(record: QuoteReadModel): Quote {
     updatedAt: record.updatedAt,
     resourceVersion: record.resourceVersion,
     authoritativeActions: structuredClone(record.actions),
+    ...(record.validity === undefined ? {} : { validity: structuredClone(record.validity) }),
+    ...(record.customerDecisionHistory === undefined ? {} : { customerDecisionHistory: structuredClone(record.customerDecisionHistory) }),
     ...(record.revisionOfQuoteId === undefined ? {} : { revisionOfQuoteId: record.revisionOfQuoteId }),
     ...(record.sourceDealId === undefined ? {} : { sourceDealId: record.sourceDealId, dealId: record.sourceDealId }),
     ...(record.contactId === undefined ? {} : { contactId: record.contactId }),
@@ -144,6 +155,7 @@ export function projectQuoteReadModel(record: QuoteReadModel): Quote {
     ...(record.approvalContentFingerprint === undefined ? {} : { approvalContentFingerprint: record.approvalContentFingerprint }),
     ...(record.approvalPolicyVersion === undefined ? {} : { approvalPolicyVersion: record.approvalPolicyVersion }),
     ...(record.paymentAgreement === undefined ? {} : { paymentAgreement: structuredClone(record.paymentAgreement) }),
+      ...(record.salesAcceptance === undefined ? {} : { salesAcceptance: structuredClone(record.salesAcceptance) }),
     ...(record.deliveryHistory === undefined ? {} : { deliveryHistory: structuredClone(record.deliveryHistory) }),
     ...(record.reviewRequestedAt === undefined ? {} : { reviewRequestedAt: record.reviewRequestedAt }),
     ...(record.sentAt === undefined ? {} : { sentAt: record.sentAt }),
@@ -158,7 +170,12 @@ export function projectQuoteReadModel(record: QuoteReadModel): Quote {
 function projectLine(line: QuoteLineReadModel): QuoteLineItem {
   return {
     id: line.id,
+    commercialMoney: structuredClone({ unitPrice: line.unitPrice, lineTotal: line.lineTotal, lineTaxAmount: line.lineTaxAmount }),
+    inputDecimals: { quantity: line.quantity, unitPrice: line.unitPrice.amount, discountRate: line.discountRate, ...(line.taxRate === undefined ? {} : { taxRate: line.taxRate }) },
     productNameSnapshot: line.productNameSnapshot,
+    productName: line.productNameSnapshot,
+    unitPrice: displayNumber(line.unitPrice.amount, "unitPrice"),
+    ...(line.descriptionSnapshot === undefined ? {} : { description: line.descriptionSnapshot }),
     quantity: displayNumber(line.quantity, "quantity"),
     unitPriceSnapshot: displayNumber(line.unitPrice.amount, "unitPrice"),
     discountPercent: displayNumber(line.discountRate, "discountRate"),
@@ -176,7 +193,7 @@ function projectLine(line: QuoteLineReadModel): QuoteLineItem {
   };
 }
 function projectAdjustment(item: CommercialAdjustmentReadModel): SalesDocumentAdjustment {
-  return { id: item.id, label: item.label, type: item.type, calculation: item.calculation, value: displayNumber(item.value, "adjustmentValue"), amount: displayNumber(item.amount.amount, "adjustmentAmount") };
+  return { id: item.id, label: item.label, valueDecimal: item.value, type: item.type === "SHIPPING" ? SalesDocumentAdjustmentType.SHIPPING_FEE : item.type, calculation: item.calculation, value: displayNumber(item.value, "adjustmentValue"), amount: displayNumber(item.amount.amount, "adjustmentAmount") };
 }
 function displayNumber(value: string, field: string): number {
   const parsed = Number(value);

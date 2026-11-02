@@ -1,4 +1,6 @@
 import React, { Component, type ErrorInfo, type ReactNode } from "react";
+import { ApplicationError } from "@/shared/domain";
+import { clearConnectedWorkspaceOperationalConfigurationProjection } from "@/platform/workspace-config/workspaceOperationalConfigurationRuntime";
 import {
   classifyRouteScreenError,
   type RouteScreenErrorKind,
@@ -39,8 +41,8 @@ const ERROR_COPY: Record<RouteScreenErrorKind, ErrorCopy> = {
   RENDER: {
     titleVi: "Màn hình gặp lỗi khi hiển thị.",
     titleEn: "The screen encountered a rendering error.",
-    descriptionVi: "Logic giao diện đã dừng để bảo vệ phiên làm việc. Hãy thử hiển thị lại màn hình hoặc quay lại workspace.",
-    descriptionEn: "The interface stopped to protect the current session. Retry the screen or return to the workspace.",
+    descriptionVi: "Không thể hiển thị nội dung. Vui lòng thử lại hoặc quay về trang chủ.",
+    descriptionEn: "Content could not be displayed. Please retry or return home.",
   },
 };
 
@@ -59,12 +61,10 @@ export class LazyRouteErrorBoundary extends Component<Props, State> {
     };
   }
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo): void {
+  public componentDidCatch(error: Error, _errorInfo: ErrorInfo): void {
     console.error("Uncaught route screen error:", {
       routeId: this.props.routeId ?? "unknown",
       kind: classifyRouteScreenError(error),
-      error,
-      componentStack: errorInfo.componentStack,
     });
   }
 
@@ -73,6 +73,9 @@ export class LazyRouteErrorBoundary extends Component<Props, State> {
   };
 
   private handleRetry = (): void => {
+    if (this.state.error instanceof ApplicationError && this.state.error.code === "WORKSPACE_CONFIGURATION_UNAVAILABLE") {
+      clearConnectedWorkspaceOperationalConfigurationProjection();
+    }
     this.setState({ hasError: false, error: null, kind: null });
   };
 
@@ -125,9 +128,7 @@ export class LazyRouteErrorBoundary extends Component<Props, State> {
             <p className="text-xs font-medium leading-relaxed text-slate-500">
               {isVi ? copy.descriptionVi : copy.descriptionEn}
             </p>
-            <p className="text-[11px] text-slate-400">
-              {isVi ? "Tham chiếu" : "Reference"}: {this.props.routeId ?? "route-screen"}
-            </p>
+
           </div>
 
           <div className="flex justify-center gap-3 pt-2">

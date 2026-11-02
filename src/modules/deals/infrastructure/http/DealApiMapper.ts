@@ -42,7 +42,8 @@ export function mapDealReadModel(value: ApiDealReadModel): Deal {
 export function mapCreateDealRequest(input: CreateDealInput): CreateDealRequest {
   return compact({
     ...mapEditableProfileRequest(input),
-    stageCode: input.stageCode.trim(),
+    pipelineId: input.pipelineId,
+    stageCode: input.stageCode.trim() || undefined,
     opportunityScore: normalizeDecimal(input.opportunityScore),
     ownerId: input.ownerId.trim(),
     expectedCloseDate: input.expectedCloseDate,
@@ -135,7 +136,7 @@ function mapEditableProfileRequest(input: ReplaceDealProfileInput | CreateDealIn
   return compact({
     name: input.name.trim(),
     buyerRef: input.buyerRef,
-    amount: { amount: normalizeDecimal(input.amount.amount), currency: input.amount.currency.trim().toUpperCase() },
+    amount: input.amount === null ? null : { amount: normalizeDecimal(input.amount.amount), currency: input.amount.currency.trim().toUpperCase() },
     contactId: input.contactId?.trim(),
     sourceLeadId: input.sourceLeadId?.trim(),
     interestedProductIds: input.interestedProductIds ? [...input.interestedProductIds] : undefined,

@@ -441,7 +441,7 @@ export function OrderFormView({ controller }: { controller: OrderFormViewControl
                   ))}
                 </Select>
                 <div className="rounded-xl border border-violet-100 bg-white p-3 text-xs text-slate-600">
-                  <div className="font-semibold text-slate-800">{locale === "vi" ? "Payment instruction snapshot" : "Payment instruction snapshot"}</div>
+                  <div className="font-semibold text-slate-800">{locale === "vi" ? "Payment instructions" : "Payment instructions"}</div>
                   <p className="mt-1 leading-relaxed">
                     {paymentAccountId
                       ? (locale === "vi" ? "Khi lưu, Order giữ bản chụp tài khoản, nội dung chuyển khoản và payload QR theo phiên bản cấu hình workspace hiện tại." : "Saving captures the account, transfer content and QR payload from the current workspace configuration version.")

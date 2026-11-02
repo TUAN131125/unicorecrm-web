@@ -2,6 +2,7 @@ import React from "react";
 import { AlertTriangle, Clock3, History, TimerReset } from "lucide-react";
 import { useI18n } from "@/i18n";
 import type { Deal } from "../../domain/model/deal.types";
+import { isDealConnectedMode } from "../../public/deals";
 import { getDealPipelineHealth } from "../../domain/rules/dealPipelineHealth";
 import { formatDate } from "@/shared/lib/format/date";
 
@@ -12,7 +13,7 @@ interface DealPipelineHealthBadgesProps {
 
 export function DealPipelineHealthBadges({ deal, compact = false }: DealPipelineHealthBadgesProps) {
   const { t, locale } = useI18n();
-  const health = getDealPipelineHealth(deal);
+  const health = getDealPipelineHealth(deal, new Date(), { deriveMissingForecast: !isDealConnectedMode() });
   return (
     <div className="flex min-w-0 flex-wrap items-center gap-1.5" data-guidance-id="deals.pipeline.health-indicators">
       <span className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[9px] font-medium text-slate-600" title={t("deals.pipelineHealth.daysInStageDescription")}>
@@ -33,9 +34,9 @@ export function DealPipelineHealthBadges({ deal, compact = false }: DealPipeline
           <TimerReset size={10} /> {t("deals.pipelineHealth.stale")}
         </span>
       )}
-      <span className="inline-flex items-center rounded-lg border border-violet-200 bg-violet-50 px-2 py-1 text-[9px] font-semibold text-violet-700">
+      {health.forecastCategory && <span className="inline-flex items-center rounded-lg border border-violet-200 bg-violet-50 px-2 py-1 text-[9px] font-semibold text-violet-700">
         {t(`deals.forecast.${health.forecastCategory === "BEST_CASE" ? "bestCase" : health.forecastCategory.toLowerCase()}`)}
-      </span>
+      </span>}
     </div>
   );
 }

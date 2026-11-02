@@ -52,7 +52,7 @@ export function OrderLineItemsEditor({
     <div className="text-center py-10 bg-slate-50/50 border border-dashed border-slate-200 rounded-xl">
       <Package className="w-8 h-8 text-slate-300 mx-auto mb-2" />
       <p className="text-xs text-slate-600">
-        {locale === "vi" ? "Đơn hàng chưa có sản phẩm nào. Chọn một tài sản ở bộ lọc trên để thêm mới." : "No line items drafted yet. Select a product snapshot from the catalog filter above."}
+        {locale === "vi" ? "Đơn hàng chưa có sản phẩm nào. Chọn một tài sản ở bộ lọc trên để thêm mới." : "No line items drafted yet. Select a product from the catalog above."}
       </p>
     </div>
   ) : (

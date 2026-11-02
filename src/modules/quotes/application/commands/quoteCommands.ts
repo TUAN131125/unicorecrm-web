@@ -6,7 +6,6 @@ import {
   type QuoteDeliveryRecord,
 } from "../../domain/model/quote.types";
 import { canTransitionQuoteStatus, quoteContentFingerprint } from "../../domain/rules/quoteVersioning";
-import { canQuoteBeSent } from "../../domain/rules/quoteApprovalPolicy";
 import { allocateQuoteIdentity, saveQuote, updateQuote } from "./quoteRepositoryCommands";
 import { CAPABILITIES, assertRuntimeCommandAccess } from "@/platform/access-control";
 import { isQuotePastValidity } from "../../domain/rules/quoteConversion";
@@ -22,9 +21,6 @@ export function changeQuoteStatus(repository: QuoteRepository, quoteId: string, 
   }
   if ([QuoteStatus.REVIEW, QuoteStatus.SENT, QuoteStatus.ACCEPTED].includes(status) && isQuotePastValidity(current, now)) {
     throw new Error("Quote validity has expired. Create a revision with current commercial terms instead.");
-  }
-  if (status === QuoteStatus.SENT && !canQuoteBeSent(current)) {
-    throw new Error("Quote requires a current internal approval before it can be sent.");
   }
   return updateQuote(repository, quoteId, (quote) => ({
     ...quote,
@@ -113,9 +109,6 @@ export function recordQuoteDelivery(
   assertRuntimeCommandAccess(CAPABILITIES.QUOTES_UPDATE, "quotes", current);
   if (![QuoteStatus.DRAFT, QuoteStatus.REVIEW, QuoteStatus.SENT].includes(current.status)) {
     throw new Error("Only a Draft, Review, or Sent Quote can record customer delivery.");
-  }
-  if (current.status !== QuoteStatus.SENT && !canQuoteBeSent(current)) {
-    throw new Error("Quote cannot be sent until the required approval is current.");
   }
   if (current.deliveryHistory?.some((record) => record.id === input.id)) return current;
   const emailChannel = input.channel === "GMAIL" || input.channel === "EMAIL";

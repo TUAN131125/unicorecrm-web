@@ -1,6 +1,7 @@
 import React from "react";
 import { AlertTriangle, ArrowRight, Clock3, LoaderCircle, MoreHorizontal } from "lucide-react";
 import type { Deal } from "../../domain/model/deal.types";
+import { isDealConnectedMode } from "../../public/deals";
 import { getDealPipelineHealth } from "../../domain/rules/dealPipelineHealth";
 import { useI18n } from "@/i18n";
 import { IconButton } from "@/shared/components/ui";
@@ -26,7 +27,7 @@ export function DealKanbanCard({
   onOpen, onOpenActions, onAdvance,
 }: DealKanbanCardProps) {
   const { t, locale } = useI18n();
-  const health = getDealPipelineHealth(deal);
+  const health = getDealPipelineHealth(deal, new Date(), { deriveMissingForecast: !isDealConnectedMode() });
   const buyerName = (deal.buyerRef.type === "CONTACT" ? deal.contactName : deal.organizationAccountName)
     || deal.customerName;
   const amount = formatCurrency(deal.amount, deal.currency || "VND", locale);

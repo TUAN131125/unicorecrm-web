@@ -50,7 +50,7 @@ export const LeadStatisticsModal: React.FC<LeadStatisticsModalProps> = ({ isOpen
       onClose={onClose}
       size="lg"
       title={<span className="inline-flex items-center gap-2"><BarChart3 className="text-indigo-600" size={20} />{vi ? "Thống kê Lead" : "Lead statistics"}</span>}
-      description={vi ? "Tổng quan hàng đợi xác minh, kết quả xử lý và giá trị dự kiến." : "Overview of the qualification queue, outcomes, and expected value."}
+      
       bodyClassName="bg-slate-50/70"
     >
       <div className="space-y-6">

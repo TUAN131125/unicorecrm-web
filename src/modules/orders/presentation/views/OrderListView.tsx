@@ -489,7 +489,7 @@ export function OrderListView({ controller }: { controller: OrderListViewControl
         {/* 1. Page Header (Lead-List operational style) */}
         <ListPageHeader
           title={tx("orders.list.title", "Orders")}
-          count={filteredOrders.length}
+          count={orderQuery.connected ? (orderQuery.loading || orderQuery.error ? undefined : view === "kanban" ? filteredOrders.length : serverPagination.totalItems) : filteredOrders.length}
           context={locale === "vi" ? "Cam kết mua · Thanh toán và vận đơn được quản lý độc lập" : "Purchase commitment · Payment and Shipping Booking have separate owners"}
           icon={<Package size={18} />}
           actions={
@@ -498,6 +498,7 @@ export function OrderListView({ controller }: { controller: OrderListViewControl
                 actions={[
                 {
                   id: "add-order",
+                  hidden: !canCreateOrder,
                   label: tx("orders.actions.create", "Create order"),
                   icon: canCreateOrder ? <Plus size={14} /> : <Lock size={12} />,
                   onClick: () => navigate(path("orders/new")),
@@ -512,7 +513,7 @@ export function OrderListView({ controller }: { controller: OrderListViewControl
         />
 
         {/* 2. Shared list toolbar */}
-        <AuthoritativeQueryNotice connected={orderQuery.connected} loading={orderQuery.loading} refreshing={orderQuery.refreshing} stale={orderQuery.stale} loadedAt={orderQuery.loadedAt} error={orderQuery.error} onRefresh={() => void orderQuery.refresh()} compact />
+        {flatOrders.length > 0 && <AuthoritativeQueryNotice connected={orderQuery.connected} loading={orderQuery.loading} refreshing={orderQuery.refreshing} stale={orderQuery.stale} loadedAt={orderQuery.loadedAt} error={orderQuery.error} onRefresh={() => void orderQuery.refresh()} compact />}
 
         <ListToolbar
           searchValue={searchTerm}
@@ -671,13 +672,15 @@ export function OrderListView({ controller }: { controller: OrderListViewControl
         {/* 6. Content Section - Responsive Views (Flex-1 avoids parent overflow-x scroll) */}
         <div className="flex-1 min-h-[350px] overflow-hidden">
           {orderQuery.connected && orderQuery.loading && flatOrders.length === 0 ? (
-            <ListStatePanel kind="loading" title={locale === "vi" ? "Đang tải danh sách đơn hàng" : "Loading orders from backend"} action={<button type="button" onClick={orderQuery.cancel} className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-semibold">{locale === "vi" ? "Hủy" : "Cancel"}</button>} />
+            <ListStatePanel key="order-list-loading" kind="loading" title={locale === "vi" ? "Đang tải danh sách đơn hàng" : "Loading orders"} action={<button type="button" onClick={orderQuery.cancel} className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-semibold">{locale === "vi" ? "Hủy" : "Cancel"}</button>} />
           ) : orderQuery.connected && orderQuery.error && flatOrders.length === 0 ? (
-            <ListStatePanel kind="error" title={locale === "vi" ? "Không thể tải danh sách đơn hàng" : "Order list could not be loaded"} action={<button type="button" onClick={() => void orderQuery.refresh()} className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-semibold">{locale === "vi" ? "Thử lại" : "Retry"}</button>} />
+            <ListStatePanel key="order-list-error" kind="error" title={locale === "vi" ? "Không thể tải danh sách đơn hàng" : "Order list could not be loaded"} action={<button type="button" onClick={() => void orderQuery.refresh()} className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-semibold">{locale === "vi" ? "Thử lại" : "Retry"}</button>} />
           ) : filteredOrders.length === 0 ? (
             <ListStatePanel
+              key="order-list-empty"
               kind="empty"
-              title={flatOrders.length === 0 ? tx("orders.empty.noOrders", "Chưa có đơn hàng") : tx("orders.empty.noFilteredOrders", "Không có đơn hàng phù hợp")}
+              title={flatOrders.length === 0 ? (orderQuery.connected ? (locale === "vi" ? "Chưa có đơn hàng" : "No orders yet") : tx("orders.empty.noOrders", "Chưa có đơn hàng")) : tx("orders.empty.noFilteredOrders", "Không có đơn hàng phù hợp")}
+              description={orderQuery.connected && flatOrders.length === 0 ? (locale === "vi" ? "Đơn nháp sẽ xuất hiện sau khi báo giá được khách hàng chấp nhận hợp lệ." : "Draft orders appear after valid customer acceptance of a quote.") : undefined}
               action={canCreateOrder ? <button type="button" onClick={() => navigate(path("orders/new"))} className="rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-indigo-700">{locale === "vi" ? "Tạo đơn hàng" : "Create order"}</button> : undefined}
             />
           ) : (

@@ -47,6 +47,8 @@ export interface OpportunityStageConfig {
   color: "blue" | "yellow" | "orange" | "purple" | "green" | "red" | "slate" | "teal";
   category: "open" | "won" | "lost";
   probabilityDefault: number;
+  forecastFloor?: DealForecastCategory;
+  requiresPositiveAmount?: boolean;
   probability?: number;
   isSystem?: boolean;
   isActive: boolean;
@@ -56,6 +58,8 @@ export interface OpportunityStageConfig {
 
 export interface DealPipelineDefinition {
   id: string;
+  workspaceId?: string;
+  updatedAt?: string;
   objectKey: "deal";
   name: { vi: string; en: string };
   description: { vi: string; en: string };
@@ -97,6 +101,8 @@ export type DealActivity = {
 };
 
 export interface Deal {
+  pipelineId?: string;
+  stageCategory?: "OPEN" | "WON" | "LOST";
   /** Backend optimistic-concurrency token. Never derived from pipeline or browser revision state. */
   resourceVersion?: number;
   id: string;
@@ -115,7 +121,7 @@ export interface Deal {
   contactEmail?: string;
   contactPhone?: string;
   stage: DealStage | string;
-  amount: number;
+  amount: number | null;
   /** Exact backend decimal retained separately from the display number. */
   amountDecimal?: string;
   /** Commercial currency inherited by Quotes and direct Orders. */
