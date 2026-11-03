@@ -440,11 +440,16 @@ if (wf21.connectedFrontendCoordinatorAllowed === false && wf21.contractReadiness
     wf21Handlers.map((entry) => `${entry.file} -> ${entry.handler}`).sort(),
     [
       "src/modules/deals/presentation/hooks/useDealPipelineController.ts -> handleAddDealSubmit",
-      "src/modules/deals/presentation/hooks/useDealPipelineController.ts -> handleEditDealSubmit",
       "src/modules/organizations/presentation/detail/OrganizationCreateOpportunityModal.tsx -> submit",
     ],
     "The WF-21 caller inventory must match exactly.",
   );
+
+  // Deal editing now delegates profile/forecast/owner/stage changes to a resumable
+  // checkpoint. It must not silently grow the retired next-action + Task sequence.
+  const checkpoint = sourceOf("src/modules/deals/presentation/model/dealSaveCheckpoint.ts");
+  assert.doesNotMatch(stripComments(checkpoint), /ensureDealNextActionTask\s*\(|updateDealNextActionCommand\s*\(/u,
+    "The Deal save checkpoint must not coordinate WF-21 through an unguarded extracted helper.");
 
   for (const entry of wf21Handlers) {
     const guard = entry.body.search(/isWorkActivationUnavailable|refuseUnavailableWorkActivation/u);

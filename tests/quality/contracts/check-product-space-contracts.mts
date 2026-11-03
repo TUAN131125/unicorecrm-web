@@ -114,8 +114,8 @@ for (const required of [
 for (const label of ["KHÁCH HÀNG", "BÁN HÀNG", "SẢN PHẨM", "VẬN HÀNH ĐƠN HÀNG", "DỊCH VỤ"]) assert.match(sidebar, new RegExp(label), `Sidebar must contain ${label}`);
 for (const removedLabel of ["Signal Inbox", "Care Queue", "Renewals", "Onboarding", "Fulfillment"]) assert.equal(sidebar.includes(removedLabel), false, `Sidebar must not expose ${removedLabel}`);
 const studioNavigation = `${sidebar}\n${source("src/workspaces/studio/navigation/studioSectionRegistry.ts")}`;
-for (const studioLabel of ["WORKSPACE", "DỮ LIỆU CRM", "TÀI CHÍNH", "KẾT NỐI", "Thông tin doanh nghiệp", "Ngôn ngữ & khu vực", "Tính năng sử dụng", "Pipeline & trạng thái", "Loại sản phẩm", "Trường thông tin", "Thông tin thanh toán", "Thông tin hóa đơn", "Tích hợp", "Webhook & API"]) assert.match(studioNavigation, new RegExp(studioLabel), `Studio navigation must contain ${studioLabel}`);
-for (const obsoleteStudioLabel of ["Tổng quan", "Thiết lập doanh nghiệp", "Quy trình bán hàng", "Thiết lập chăm sóc khách hàng", "Sản phẩm chủ lực", "Tùy chỉnh nâng cao"]) assert.equal(studioNavigation.includes(obsoleteStudioLabel), false, `Studio navigation must not expose ${obsoleteStudioLabel}`);
+for (const studioLabel of ["WORKSPACE", "DỮ LIỆU CRM", "TÀI CHÍNH", "KẾT NỐI", "Thông tin doanh nghiệp", "Ngôn ngữ & khu vực", "Tính năng sử dụng", "Pipeline & trạng thái", "Loại sản phẩm", "Trường thông tin", "Thông tin thanh toán", "Thông tin hóa đơn", "Ứng dụng & dịch vụ", "Webhook gửi đi", "Tổng quan kết nối", "Nhận dữ liệu", "Truy cập API"]) assert.match(studioNavigation, new RegExp(studioLabel), `Studio navigation must contain ${studioLabel}`);
+for (const obsoleteStudioLabel of ["Tổng quan thiết lập", "Thiết lập doanh nghiệp", "Quy trình bán hàng", "Thiết lập chăm sóc khách hàng", "Sản phẩm chủ lực", "Tùy chỉnh nâng cao"]) assert.equal(studioNavigation.includes(obsoleteStudioLabel), false, `Studio navigation must not expose ${obsoleteStudioLabel}`);
 
 assert.match(studioNavigation, /ROUTE_KEYS\.SETTINGS_PAYMENT_INFORMATION/);
 assert.match(studioRoutes, /StudioBusinessInformationView/);

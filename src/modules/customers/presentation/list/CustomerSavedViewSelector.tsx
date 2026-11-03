@@ -48,7 +48,7 @@ export const CustomerSavedViewSelector: React.FC<CustomerSavedViewSelectorProps>
         onClick={() => onOpenChange(!isOpen)}
         className="inline-flex items-center gap-1.5 bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-800 text-xs px-3.5 py-1.5 rounded-xl font-medium transition-all h-8 shrink-0 shadow-sm max-w-[160px] sm:max-w-[220px]"
       >
-        <span className="text-indigo-600 crm-text-wrap flex-1 block text-left">
+        <span data-i18n-skip="true" className="text-indigo-600 crm-text-wrap flex-1 block text-left">
           {active ? label(active) : isVi ? "Tất cả khách hàng" : "All customers"}
         </span>
         <ChevronDown size={14} className="text-slate-400 shrink-0" />

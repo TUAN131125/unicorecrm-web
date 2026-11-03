@@ -5,6 +5,7 @@ import { getAllCustomerCareCardsSnapshot } from "../../public/api";
 import { useModuleAuthoritativeResource, useServerPagedCollection } from "@/shared/operations";
 import { runBackendProjection, type ModuleListQuery } from "@/shared/application";
 import { useWorkspaceContextSnapshot } from "@/platform/workspace-context";
+import { useEffectiveAccess } from "@/platform/access-control";
 import { getCustomerApiRuntime, isCustomerConnectedApiRuntime } from "../../application/composition/customerApplicationServices";
 import type { CustomerListItem } from "../../application/ports/CustomerApiRuntime";
 
@@ -13,6 +14,8 @@ export function useCustomers(options: {
   query?: Omit<ModuleListQuery, "cursor" | "limit">;
 } = {}) {
   const workspace = useWorkspaceContextSnapshot();
+  const access = useEffectiveAccess();
+  const authorityScope = JSON.stringify([workspace.workspaceId, access.accountId, access.membershipId, access.authorityRevision]);
   const connected = isCustomerConnectedApiRuntime();
   const [customers, setCustomers] = useState<Customer[]>(getCustomersSnapshot);
   const query = useModuleAuthoritativeResource(getCustomerCollectionResource(), {
@@ -31,11 +34,13 @@ export function useCustomers(options: {
   const serverPagination = useServerPagedCollection<CustomerListItem>({
     connected,
     scopeKey: workspace.workspaceId,
+    authorizationScopeKey: authorityScope,
     query: options.query,
     enabled: options.loadAuthoritative ?? true,
     project,
     loadPage,
     errorCodePrefix: "CUSTOMERS",
+    refreshIntervalMs: 5000,
   });
   useEffect(() => subscribeToCustomers(setCustomers), []);
   return {

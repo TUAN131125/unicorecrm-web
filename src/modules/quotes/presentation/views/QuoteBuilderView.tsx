@@ -1,4 +1,7 @@
+import { clearConnectedWorkspaceOperationalConfigurationProjection } from "@/platform/workspace-config";
 import { QuoteBuyerSelector } from "../components/QuoteBuyerSelector";
+import { QuoteDealProductSuggestions } from "../components/QuoteDealProductSuggestions";
+import { QuoteDraftReview } from "../components/QuoteDraftReview";
 import { QuoteBuyerField } from "../components/QuoteBuyerField";
 import { focusFirstQuoteBuilderIssue, quoteBuilderIssues } from "../model/quoteBuilderErrors";
 import { AuthoritativeQueryBoundary } from "@/shared/operations";
@@ -45,6 +48,7 @@ import type { useQuoteBuilderController } from "../hooks/useQuoteBuilderControll
 type QuoteBuilderViewController = ReturnType<typeof useQuoteBuilderController>;
 
 export function QuoteBuilderView({ controller }: { controller: QuoteBuilderViewController }) {
+  const [reviewOpen, setReviewOpen] = React.useState(false);
   const workspaceCurrencies = useWorkspaceCurrencyChoices();
   const {
     crmConfig,
@@ -182,10 +186,11 @@ export function QuoteBuilderView({ controller }: { controller: QuoteBuilderViewC
     return () => cancelAnimationFrame(frame);
   }, [controller.validationAttempt]);
 
+  if (controller.sourceBuyer.required && !controller.sourceBuyer.buyer) return <div className="space-y-3 p-5" role={controller.sourceBuyer.error ? "alert" : "status"}><p>{controller.sourceBuyer.error || (locale === "vi" ? "Đang xác minh người mua nguồn…" : "Verifying source buyer…")}</p>{controller.sourceBuyer.error && <Button variant="secondary" onClick={controller.sourceBuyer.retry}>{locale === "vi" ? "Thử lại" : "Retry"}</Button>}</div>;
   // Render safe not-found state if quoteId param was passed but quote wasn't found
   if (controller.connected && !controller.workspaceConfigurationResource.data) return <div className="space-y-3 p-5" role={controller.workspaceConfigurationResource.error ? "alert" : "status"}>
     <p>{controller.workspaceConfigurationResource.error ? (locale === "vi" ? "Không tải được cấu hình báo giá. Hãy thử lại." : "Quote settings could not be loaded. Please retry.") : (locale === "vi" ? "Đang tải cấu hình báo giá…" : "Loading Quote settings…")}</p>
-    {controller.workspaceConfigurationResource.error && <Button variant="secondary" onClick={() => window.location.reload()}>{locale === "vi" ? "Thử lại" : "Retry"}</Button>}
+    {controller.workspaceConfigurationResource.error && <Button variant="secondary" onClick={clearConnectedWorkspaceOperationalConfigurationProjection}>{locale === "vi" ? "Thử lại" : "Retry"}</Button>}
   </div>;
   if ((quoteIdParam && controller.detailQuery.connected && (controller.detailQuery.loading || controller.detailQuery.error)) || (selectedDealId && controller.sourceDealQuery.connected && (controller.sourceDealQuery.loading || controller.sourceDealQuery.error))) {
     return <AuthoritativeQueryBoundary query={quoteIdParam ? controller.detailQuery : controller.sourceDealQuery} hasData={false} loadingTitleVi="Đang tải dữ liệu nguồn" loadingTitleEn="Loading source record" errorTitleVi="Không thể tải dữ liệu nguồn" errorTitleEn="Source record could not be loaded"><div /></AuthoritativeQueryBoundary>;
@@ -294,11 +299,11 @@ export function QuoteBuilderView({ controller }: { controller: QuoteBuilderViewC
   return (
     <fieldset disabled={controller.formPending || !draftHydrated} className="contents">
     <div id="quote-builder-page" style={{ "--crm-form-control-weight": 500, "--crm-form-error-border": "#fb7185" } as React.CSSProperties} className="crm-form-page !max-w-7xl space-y-6 rounded-2xl bg-slate-100/70 p-4 text-sm leading-6 sm:p-6">
-      
+
       {/* Toast Alert Mock */}
       {toastMessage && (
         <div className={`fixed top-4 right-4 z-50 flex items-center gap-2 px-4 py-3 rounded-xl border shadow-lg transition-transform animate-bounce ${
-          toastType === "success" 
+          toastType === "success"
             ? "bg-emerald-50 border-emerald-200 text-emerald-800"
             : toastType === "error"
               ? "bg-rose-50 border-rose-200 text-rose-800"
@@ -346,10 +351,10 @@ export function QuoteBuilderView({ controller }: { controller: QuoteBuilderViewC
 
       {/* TWO COLUMN WORKSPACE */}
       <div className="grid grid-cols-1 gap-5 items-start xl:grid-cols-12">
-        
+
         {/* FULL-WIDTH EDIT CONTROLS; document preview opens in a modal. */}
         <div className="space-y-4 xl:col-span-12">
-          
+
           {/* Linked Deal or Direct Customer card */}
           {referencedDeal ? (
             <div className="rounded-2xl border border-violet-200 bg-violet-50/60 p-5 shadow-sm">
@@ -420,9 +425,9 @@ export function QuoteBuilderView({ controller }: { controller: QuoteBuilderViewC
           {/* Quote info Card */}
           <EffectiveFieldAccessScope fieldKey="title">
           <section tabIndex={-1} data-quote-error-target="quote-info" className="rounded-2xl border border-slate-200 bg-white p-5 text-left shadow-sm sm:p-6">
-            <SectionHeader title={t("quoteBuilder.sections.quoteInfo")} icon={<FileText size={14} />} />
+            <SectionHeader title={locale === "vi" ? "1. Người mua và nguồn báo giá" : "1. Buyer and source"} icon={<FileText size={14} />} />
             <div className="mt-5 grid grid-cols-1 gap-x-6 gap-y-5 sm:grid-cols-2">
-              
+
               <div className="sm:col-span-2">
                 <Input
                   id="quote-title"
@@ -488,7 +493,7 @@ export function QuoteBuilderView({ controller }: { controller: QuoteBuilderViewC
                     : deals.map((deal) => ({ value: deal.id, label: deal.name, description: deal.customerName || deal.organizationAccountName || deal.contactName || deal.stage || deal.id, keywords: `${deal.customerName || ""} ${deal.organizationAccountName || ""} ${deal.contactName || ""} ${deal.stage || ""}` }))}
                 />
                 <span className="text-xs text-slate-600 font-medium block mt-1">
-                  {isDealLocked 
+                  {isDealLocked
                     ? t("quoteBuilder.fields.dealLockedHelp")
                     : t("quoteBuilder.fields.dealUnlockedHelp")}
                 </span>
@@ -528,11 +533,12 @@ export function QuoteBuilderView({ controller }: { controller: QuoteBuilderViewC
           </EffectiveFieldAccessScope>
 
           {/* Product lines and pricing */}
-          {!selectedDealId && !editingQuote && !customerIdParam && !searchParams.get("organizationId") && <QuoteBuyerSelector value={controller.directBuyer ? { ...controller.directBuyer, label: controller.connected ? controller.buyerInfo.name || (locale === "vi" ? "Người mua đã chọn" : "Selected buyer") : controller.directBuyer.label } : null} onChange={controller.setDirectBuyer} locale={locale} validationError={!controller.directBuyer ? fieldError("quote-buyer") : undefined} />}
-          <EffectiveFieldAccessScope fieldKey="lineItems">
+          {!selectedDealId && !editingQuote && !customerIdParam && !searchParams.get("organizationId") && !searchParams.get("contactId") && <QuoteBuyerSelector value={controller.directBuyer ? { ...controller.directBuyer, label: controller.connected ? controller.buyerInfo.name || (locale === "vi" ? "Người mua đã chọn" : "Selected buyer") : controller.directBuyer.label } : null} onChange={controller.setDirectBuyer} locale={locale} validationError={!controller.directBuyer ? fieldError("quote-buyer") : undefined} />}
+            {controller.connected && referencedDeal && referencedDeal.interestedProducts.length > 0 && <QuoteDealProductSuggestions ids={referencedDeal.interestedProducts} onAdd={id => { controller.setSuggestedProductId(id); setIsProductPickerOpen(true); }}/>}
+            <EffectiveFieldAccessScope fieldKey="lineItems">
           <section tabIndex={-1} data-quote-error-target="quote-lines" aria-invalid={Boolean(fieldError("quote-lines")) || undefined} aria-describedby={fieldError("quote-lines") ? "quote-lines-error" : undefined} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
             <SectionHeader
-              title={t("quotes.adjustLinesStep")}
+                title={locale === "vi" ? "2. Sản phẩm và giá" : "2. Products and prices"}
               icon={<ShoppingBag size={14} />}
               actions={
                 <div className="flex flex-wrap items-center gap-2">
@@ -568,17 +574,18 @@ export function QuoteBuilderView({ controller }: { controller: QuoteBuilderViewC
               <Table>
                 <TableHeader className="border-b border-slate-100 bg-transparent">
                   <TableRow>
-                    <TableCell className="w-[40%] font-medium text-xs text-slate-500 uppercase tracking-wider px-2 py-3 border-none">{t("quotes.colProduct")}</TableCell>
+                    <TableCell className="w-[32%] font-medium text-xs text-slate-500 uppercase tracking-wider px-2 py-3 border-none">{locale === "vi" ? "Sản phẩm / dịch vụ" : "Product / service"}</TableCell>
                     <TableCell className="w-[12%] text-center font-medium text-xs text-slate-500 uppercase tracking-wider px-2 py-3 border-none">{t("quotes.colQuantity")}</TableCell>
                     <TableCell className="w-[22%] font-medium text-xs text-slate-500 uppercase tracking-wider px-2 py-3 border-none">{t("quotes.colUnitPrice")}</TableCell>
                     <TableCell className="w-[16%] text-center font-medium text-xs text-slate-500 uppercase tracking-wider px-2 py-3 border-none">{t("quotes.colDiscount")} (%)</TableCell>
+                    <TableCell className="text-right text-xs font-medium text-slate-500">{locale === "vi" ? "Thuế" : "Tax"}</TableCell>
                     <TableCell className="w-[10%] text-right font-medium text-xs text-slate-500 uppercase tracking-wider px-2 py-3 border-none">{t("quotes.colSubtotal")}</TableCell>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {quoteLines.map((item, index) => {
                     const lineDiscounted = (item.unitPrice ?? 0) * (1 - (item.discountPercent || 0) / 100);
-                    const lineSub = lineDiscounted * (item.quantity || 0);
+                    const lineSub = pricedQuoteLines.find(line => line.id === item.id)?.lineTotal ?? lineDiscounted * (item.quantity || 0);
 
                     return (
                       <TableRow key={item.id} className="border-b border-slate-100">
@@ -602,7 +609,7 @@ export function QuoteBuilderView({ controller }: { controller: QuoteBuilderViewC
  className="w-full bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5 font-medium text-xs text-slate-800 focus:bg-white focus:ring-1 focus:ring-violet-500 focus:outline-none"
                             />
                           </div>
-                          <input 
+                          <input
                             type="text"
                             value={item.description || ""}
                             aria-label={`${t("quoteBuilder.placeholders.description")} ${index + 1}`}
@@ -647,6 +654,7 @@ export function QuoteBuilderView({ controller }: { controller: QuoteBuilderViewC
  className="w-full bg-slate-50 border border-slate-200 rounded-lg p-1.5 text-center font-medium text-xs text-indigo-700 focus:bg-white focus:ring-1 focus:ring-violet-500 focus:outline-none"
                           />
                         </TableCell>
+                        <TableCell className="text-right text-xs text-slate-600">{formatCurrency(pricedQuoteLines.find(line => line.id === item.id)?.lineTaxAmount ?? 0, currency, locale)}</TableCell>
                         <TableCell className="text-right text-slate-900 font-mono font-semibold text-xs py-3 px-2 border-none">
                           {formatCurrency(lineSub, currency, locale)}
                         </TableCell>
@@ -661,7 +669,7 @@ export function QuoteBuilderView({ controller }: { controller: QuoteBuilderViewC
             <div className="block md:hidden space-y-3">
               {quoteLines.map((item, index) => {
                 const lineDiscounted = (item.unitPrice ?? 0) * (1 - (item.discountPercent || 0) / 100);
-                const lineSub = lineDiscounted * (item.quantity || 0);
+                const lineSub = pricedQuoteLines.find(line => line.id === item.id)?.lineTotal ?? lineDiscounted * (item.quantity || 0);
 
                 return (
                   <div key={item.id} className="rounded-xl border border-slate-200 bg-white p-4 shadow-xs relative space-y-3 text-left">
@@ -688,7 +696,7 @@ export function QuoteBuilderView({ controller }: { controller: QuoteBuilderViewC
                     </div>
 
                     <div>
-                      <input 
+                      <input
                         type="text"
                         value={item.description || ""}
                         aria-label={`${t("quoteBuilder.placeholders.description")} ${index + 1}`}
@@ -873,7 +881,7 @@ export function QuoteBuilderView({ controller }: { controller: QuoteBuilderViewC
           {/* Commercial terms */}
           <EffectiveFieldAccessScope fieldKey="paymentAgreement">
           <section tabIndex={-1} data-quote-error-target="quote-payment-terms" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-            <SectionHeader title={locale === "vi" ? "Điều khoản thương mại & thanh toán" : "Commercial and payment terms"} />
+            <SectionHeader title={locale === "vi" ? "3. Điều khoản" : "3. Terms"} />
             {fieldError("quote-payment-terms") && <p id="quote-payment-error" role="alert" data-field-error="true" className="mt-2 text-xs text-rose-700">{fieldError("quote-payment-terms")}</p>}
             {controller.paymentAgreementReadOnly && <p className="mb-4 text-sm text-slate-600">{locale === "vi" ? "Điều khoản đã lưu được giữ nguyên. Biểu mẫu hiện tại chưa hỗ trợ chỉnh sửa đầy đủ các quy tắc này." : "Saved terms are preserved. This form does not yet support editing all of these rules."}</p>}
             <fieldset disabled={controller.paymentAgreementReadOnly} aria-invalid={Boolean(fieldError("quote-payment-terms")) || undefined} aria-describedby={fieldError("quote-payment-terms") ? "quote-payment-error" : undefined} className="grid gap-4 md:grid-cols-3">
@@ -954,7 +962,10 @@ export function QuoteBuilderView({ controller }: { controller: QuoteBuilderViewC
 
           {/* Shared form action surface */}
           {validationError && controller.validationKind === "STATUS" && <div id="quote-action-status" tabIndex={-1} role="alert" className="rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">{validationError}</div>}
-          <div data-quote-builder-actions="v1" data-mobile-action-bar="true" className="sticky bottom-3 z-10 flex flex-wrap items-center justify-end gap-3 rounded-2xl border border-violet-200 bg-white p-4 shadow-lg">
+          <div data-quote-builder-actions="v1" data-i18n-skip="true" data-mobile-action-bar="true" className="sticky bottom-3 z-10 flex flex-wrap items-center justify-end gap-3 rounded-2xl border border-violet-200 bg-white p-4 shadow-lg">
+            <div className="mr-auto"><h3 className="text-sm font-semibold">{locale === "vi" ? "4. Xác nhận" : "4. Confirmation"}</h3><p className="text-xs text-slate-600">{locale === "vi" ? "Tổng dự kiến" : "Estimated total"}: {formatCurrency(quoteGrandTotal, currency, locale)}</p></div>
+            {controller.connected && <Button type="button" variant="secondary" onClick={() => setReviewOpen(true)}>{locale === "vi" ? "Xem trước" : "Preview"}</Button>}
+            {controller.connected && <Button type="button" variant="secondary" disabled={saveBusy || exportBusy || sendBusy} onClick={controller.handleSaveDraft}>{locale === "vi" ? "Lưu nháp" : "Save draft"}</Button>}
             <Button
               type="button"
               variant="secondary"
@@ -968,7 +979,7 @@ export function QuoteBuilderView({ controller }: { controller: QuoteBuilderViewC
             >
               {t("common.cancel")}
             </Button>
-            <Button
+            {!controller.connected && (            <Button
               type="button"
               variant="info"
               size="sm"
@@ -976,10 +987,10 @@ export function QuoteBuilderView({ controller }: { controller: QuoteBuilderViewC
               onClick={handleExportPdf}
               icon={<Download size={13} />}
               disabled={controller.connected || exportBusy || sendBusy}
-              title={controller.connected ? (locale === "vi" ? "Lưu nháp để mở tài liệu tại trang chi tiết báo giá." : "Save the draft to open documents on the quote detail page.") : undefined}
+              title={controller.connected ? (locale === "vi" ? "Tạo & phát hành để mở PDF chính thức tại trang chi tiết báo giá." : "Create and issue the Quote to open its official PDF on the detail page.") : undefined}
             >
               {exportBusy ? "Đang tạo PDF..." : "Xuất PDF"}
-            </Button>
+            </Button>)}
             {!controller.connected && (
               <>
                 <Button
@@ -1017,7 +1028,7 @@ export function QuoteBuilderView({ controller }: { controller: QuoteBuilderViewC
               icon={<Save size={13} />}
               disabled={saveBusy || exportBusy || sendBusy}
             >
-              {saveBusy ? (locale === "vi" ? "Đang lưu..." : "Saving...") : t("quoteBuilder.actions.saveDraft")}
+              {saveBusy ? (locale === "vi" ? "Đang lưu..." : "Saving...") : controller.connected ? (locale === "vi" ? "Tạo & phát hành báo giá" : "Create & issue Quote") : t("quoteBuilder.actions.saveDraft")}
             </Button>
           </div>
 
@@ -1066,13 +1077,15 @@ export function QuoteBuilderView({ controller }: { controller: QuoteBuilderViewC
 
       <QuoteBuilderProductPicker
         isOpen={isProductPickerOpen}
-        onClose={() => setIsProductPickerOpen(false)}
+        onClose={() => { setIsProductPickerOpen(false); controller.setSuggestedProductId(undefined); }}
+        suggestedProductId={controller.suggestedProductId}
         products={products}
         quoteLines={quoteLines}
         currency={currency}
         onChangeLines={setQuoteLines}
         onToast={triggerToast}
       />
+      <QuoteDraftReview open={reviewOpen} onClose={() => setReviewOpen(false)} title={quoteTitle} buyer={controller.buyerInfo.name} lines={pricedQuoteLines} currency={currency} total={quoteGrandTotal}/>
 
     </div>
     </fieldset>

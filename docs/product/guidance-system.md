@@ -7,9 +7,9 @@ The guidance system provides bilingual, capability-aware help for CRM, Studio, a
 
 ## Current screen inventory
 
-The repository defines **83 total route definitions**, **12 access/system routes**, **71 canonical route entries**, and **69 guided screens**. The inventory contains **53 CRM screens**, **13 Studio screens**, and **3 People & Access screens**, with **2 compatibility route aliases**. Access/system routes use inline guidance outside the authenticated shell.
+The repository defines **87 total route definitions**, **13 access/system routes**, **74 canonical route entries**, and **72 guided screens**. The inventory contains **53 CRM screens**, **16 Studio screens**, and **3 People & Access screens**, with **2 compatibility route aliases**. Access/system routes use inline guidance outside the authenticated shell.
 
-The 12 access/system routes are Login, MFA verification, Forgot password, Register, Verify email, Reset password, Invitation acceptance, Workspace selection, Initial setup, Session expired, Access denied, and Account suspended. They are intentionally excluded from contextual walkthroughs because the Guidance Center is not mounted before authentication or workspace selection.
+The 13 access/system routes are Login, MFA verification, Forgot password, Register, Verify email, Reset password, Invitation acceptance, Workspace selection, Initial setup, Session expired, Access denied, Account suspended, and Customer Quote acceptance. They are intentionally excluded from contextual walkthroughs because the Guidance Center is not mounted before authentication or workspace selection.
 
 A complete route-by-route list is maintained in [`guidance-screen-inventory.md`](./guidance-screen-inventory.md).
 
@@ -19,7 +19,7 @@ The catalog also contains:
 - 22 field-help entries.
 - 4 CRM-oriented checklists.
 
-Quick Setup is one of the 13 Studio screens. It is optional orchestration metadata, not a mandatory onboarding checklist or a configuration authority. There is no redirect guidance for removed Studio routes.
+Quick Setup is one of the 16 Studio screens. It is optional orchestration metadata, not a mandatory onboarding checklist or a configuration authority. There is no redirect guidance for removed Studio routes.
 
 ## Walkthrough completeness
 

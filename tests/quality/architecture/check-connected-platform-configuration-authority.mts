@@ -147,7 +147,7 @@ const authoritativeWriteCandidates: Record<string, readonly string[]> = {
   "Integration connection disconnect": ["disconnectIntegrationConnection"],
   "Integration connection verify": ["verifyIntegrationConnection"],
   "CRM object schema save": ["createCrmObjectField", "updateCrmObjectField", "deleteCrmObjectField"],
-  "Developer webhook configuration save": [],
+  "Browser developer webhook save": [],
 };
 
 for (const { label } of declaredOperations) {
@@ -168,13 +168,17 @@ for (const { label } of declaredOperations) {
     );
   }
   if (candidates.length === 0) {
-    const webhookOperations = [...operationStatus.keys()].filter((operationId) => /webhook/iu.test(operationId));
-    assert.deepEqual(
-      webhookOperations,
-      [],
-      "\"" + label + "\" is declared unavailable because OpenAPI publishes no webhook operation in either direction. "
-        + "One now exists, so the refusal must be replaced by real routing.",
-    );
+    assert.equal(label, "Browser developer webhook save",
+      "Only the retired browser-owned webhook model has no authoritative write candidate.");
+    // A real outbound webhook API must never revive browser persistence. The
+    // backend-owned Connected view and the demo repository remain distinct authorities.
+    const runtime = sourceOf("src/platform/developer-configuration/developerConfigurationRuntime.ts");
+    assert.match(runtime, /assertConfigurationOperationAvailable\(DEVELOPER_WEBHOOK_SAVE_OPERATION\)/u);
+    assert.doesNotMatch(runtime, /OutboundWebhookApiClient|createOutboundWebhookSubscription\s*\(/u);
+    const view = sourceOf("src/workspaces/studio/presentation/views/WebhooksApiView.tsx");
+    assert.match(view, /getApplicationRuntimeMode\(\)\s*===\s*"connected"/u);
+    assert.match(view, /return\s+getApplicationRuntimeMode\(\)\s*===\s*"connected"\s*\?\s*<ConnectedOutboundWebhooksView/u,
+      "Connected webhooks must render the separate backend-owned surface.");
   }
 }
 

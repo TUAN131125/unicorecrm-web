@@ -1,3 +1,4 @@
+import { resolveQuoteLifecycleAvailability, resolveQuoteActionIds } from "../../../src/modules/quotes/presentation/model/quoteActionPolicy";
 import { repositoryRoot } from "../../../scripts/quality/core/repo-context.mjs";
 import assert from "node:assert/strict";
 import path from "node:path";
@@ -95,14 +96,12 @@ for (const marker of [
 }
 
 const commands = read("src/modules/quotes/application/commands/quoteCommands.ts");
-assert.ok(commands.includes("canQuoteBeSent(current)"), "Send command must enforce approval readiness");
+assert.equal(commands.includes("canQuoteBeSent(current)"), false, "D1 does not use retired internal approval to gate delivery");
 assert.ok(commands.includes("recordQuoteDelivery"), "Customer delivery must have a canonical command");
 assert.ok(commands.includes("deliveryHistory"), "Customer delivery must preserve delivery evidence");
 
 const builder = read("src/modules/quotes/presentation/pages/QuoteBuilderPage.tsx");
 for (const marker of [
-  'data-quote-approval-assessment="v1"',
-  "handleRequestApproval",
   "handleSendGmail",
   "handleOpenDeliveryConfirmation",
   "handleExportPdf",
@@ -113,7 +112,8 @@ for (const marker of [
 ]) {
   assert.ok(builder.includes(marker), `Quote Builder must retain ${marker}`);
 }
-assert.ok(builder.includes("canQuoteBeSent(saved)"), "Builder must block Gmail delivery until approval is satisfied");
+assert.equal(builder.includes("canQuoteBeSent(saved)"), false, "D1 removes the internal approval prerequisite");
+assert.equal(builder.includes("handleRequestApproval"), false);
 
 const preview = read("src/modules/quotes/presentation/components/QuoteBuilderPreview.tsx");
 assert.ok(preview.includes('data-quote-pdf-source="true"'), "PDF capture must target the Quote document only");
@@ -139,7 +139,7 @@ assert.ok(gmailService.includes("downloadQuotePdf"), "Gmail fallback must make t
 
 const dealDetail = read("src/modules/deals/presentation/pages/DealDetailPage.tsx");
 assert.ok(dealDetail.includes("action=gmail") && dealDetail.includes("action=pdf") && dealDetail.includes("action=confirm"));
-assert.ok(dealDetail.includes("QuoteApprovalStatus"));
+assert.equal(dealDetail.includes("QuoteApprovalStatus"), false);
 
 console.log("Quote approval, Gmail delivery and PDF contracts: PASS");
 
@@ -163,3 +163,20 @@ function createQuote(overrides: Partial<Quote> = {}): Quote {
     ...overrides,
   };
 }
+
+const lifecycleAccess = { canView: true, canCreate: true, canUpdate: true, canArchive: true };
+const lifecycleQuote = { resourceVersion: 3, authoritativeActions: { accept: { allowed: false, blockerCodes: ["QUOTE_ACCEPTANCE_BLOCKED"] },
+  revise: { allowed: true, blockerCodes: [] }, expire: { allowed: true, blockerCodes: [] }, archive: { allowed: true, blockerCodes: [] } } };
+assert.deepEqual(resolveQuoteLifecycleAvailability(lifecycleQuote, lifecycleAccess), { revise: true, expire: true, archive: true });
+for (const guarded of [{ ...lifecycleQuote, resourceVersion: undefined }, { ...lifecycleQuote, resourceVersion: 0 }, { ...lifecycleQuote, archivedAt: "2026-10-25T00:00:00Z" }, { resourceVersion: 3 }]) {
+  assert.deepEqual(resolveQuoteLifecycleAvailability(guarded, lifecycleAccess), { revise: false, expire: false, archive: false });
+}
+assert.deepEqual(resolveQuoteLifecycleAvailability(lifecycleQuote, { ...lifecycleAccess, canCreate: false, canArchive: false }), { revise: false, expire: true, archive: false });
+assert.deepEqual(resolveQuoteLifecycleAvailability(lifecycleQuote, { ...lifecycleAccess, canView: false }), { revise: false, expire: false, archive: false });
+
+const archivedActions = resolveQuoteActionIds({ status: QuoteStatus.REVIEW, approvalStatus: QuoteApprovalStatus.APPROVED, archivedAt: "2026-10-25T00:00:00Z" },
+  { canView: true, canUpdate: true, canApprove: true, canCreate: true, canDelete: true, canCreateOrder: true, draftCoreOnly: true, approvalCommandsReady: true, deliveryCommandsReady: true });
+assert.deepEqual(archivedActions, ["view", "export-pdf"]);
+const archivedDraftActions = resolveQuoteActionIds({ status: QuoteStatus.DRAFT, archivedAt: "2026-10-25T00:00:00Z" },
+  { canView: true, canUpdate: true, canApprove: true, canCreate: true, canDelete: true, canCreateOrder: true });
+assert.deepEqual(archivedDraftActions, ["view", "export-pdf"]);

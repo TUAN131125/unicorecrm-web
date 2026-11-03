@@ -46,15 +46,51 @@ export function operationParameters(document, operationRecord) {
   };
 }
 
+export function primarySuccessStatus(operation) {
+  const explicit = operation["x-primary-success-status"];
+  if (explicit !== undefined) {
+    if (typeof explicit !== "string" || !/^2\d\d$/u.test(explicit) || !Object.hasOwn(operation.responses ?? {}, explicit)) {
+      throw new Error(`Operation ${operation.operationId} has an invalid or undeclared primary success status.`);
+    }
+    return explicit;
+  }
+  // Preserve the established primary of contracts without explicit metadata.
+  return ["200", "201", "202", "204", "205"].find((status) => operation.responses?.[status]) ?? null;
+}
+
+export function successResponseSchemas(operation) {
+  return Object.fromEntries(Object.entries(operation.responses ?? {})
+    .filter(([status]) => /^2\d\d$/u.test(status))
+    .map(([status, response]) => {
+      if (status === "204" || status === "205") {
+        if (Object.keys(response?.content ?? {}).length > 0) {
+          throw new Error(`Operation ${operation.operationId} status ${status} must not declare response content.`);
+        }
+        return [status, null];
+      }
+      const ref = response?.content?.["application/json"]?.schema?.$ref ?? response?.content?.["application/pdf"]?.schema?.$ref;
+      if (typeof ref !== "string" || !ref.startsWith("#/components/schemas/")) {
+        throw new Error(`Operation ${operation.operationId} status ${status} must use a named success response schema.`);
+      }
+      return [status, refName(ref)];
+    }));
+}
+
+export function primarySuccessSchema(operation) {
+  const primary = primarySuccessStatus(operation);
+  const schemas = successResponseSchemas(operation);
+  if (!primary || !Object.hasOwn(schemas, primary)) {
+    throw new Error(`Operation ${operation.operationId} must declare a primary success response schema.`);
+  }
+  return schemas[primary];
+}
+
 export function responseType(operation) {
-  const success = operation.responses?.["200"] ?? operation.responses?.["201"] ?? operation.responses?.["202"] ?? operation.responses?.["202"];
-  const schema = success?.content?.["application/json"]?.schema;
-  if (!schema?.$ref) throw new Error(`Operation ${operation.operationId} must use a named success response schema.`);
-  return refName(schema.$ref);
+  return primarySuccessSchema(operation) ?? "void";
 }
 
 export function requestBodyType(operation) {
-  const schema = operation.requestBody?.content?.["application/json"]?.schema;
+  const schema = operation.requestBody?.content?.["application/json"]?.schema ?? operation.requestBody?.content?.["application/pdf"]?.schema;
   return schema?.$ref ? refName(schema.$ref) : undefined;
 }
 
@@ -139,11 +175,19 @@ export function validateDocument(document, ownership, qualityGateIds = new Set()
     const contractStatus = record.operation["x-contract-status"] ?? "PRODUCTION_CONTRACT_READY";
     if (contractStatus === "BLOCKED") {
       if (!record.operation["x-blocking-decision-id"]) throw new Error(`Blocked operation ${record.operationId} requires x-blocking-decision-id.`);
-      if (["200", "201", "202", "204"].some((status) => record.operation.responses?.[status])) {
+      if (Object.keys(record.operation.responses ?? {}).some((status) => /^2(?:\d\d|XX)$/u.test(status))) {
         throw new Error(`Blocked operation ${record.operationId} must not declare a success response.`);
+      }
+      if (record.operation["x-primary-success-status"] !== undefined) {
+        throw new Error(`Blocked operation ${record.operationId} must not declare a primary success status.`);
       }
     } else {
       responseType(record.operation);
+      for (const schemaName of Object.values(successResponseSchemas(record.operation))) {
+        if (schemaName !== null && !Object.hasOwn(document.components?.schemas ?? {}, schemaName)) {
+          throw new Error(`Operation ${record.operationId} references missing success schema ${schemaName}.`);
+        }
+      }
       if (record.operation.requestBody && !requestBodyType(record.operation)) {
         throw new Error(`Operation ${record.operationId} must use a named request body schema.`);
       }

@@ -36,7 +36,7 @@ interface QuoteDeliveryConfirmationModalProps {
 const CUSTOMER_CHANNELS: QuoteDeliveryChannel[] = ["GMAIL", "EMAIL", "ZALO", "CHAT_APP", "SMS", "OTHER"];
 
 const channelLabel = (channel: QuoteDeliveryChannel, vi: boolean): string => ({
-  GMAIL: "Gmail",
+  GMAIL: vi ? "Gmail bên ngoài CRM" : "Gmail outside CRM",
   EMAIL: vi ? "Email khác" : "Other email",
   ZALO: "Zalo",
   CHAT_APP: vi ? "Ứng dụng chat" : "Chat app",
@@ -183,7 +183,7 @@ export const QuoteDeliveryConfirmationModal: React.FC<QuoteDeliveryConfirmationM
       onClose={close}
       size="md"
       variant="form"
-      title={vi ? "Xác nhận Báo giá đã được gửi" : "Confirm quote delivery"}
+      title={vi ? "Ghi nhận gửi qua kênh khác" : "Record delivery through another channel"}
       footer={(
         <>
           <Button type="button" variant="secondary" disabled={busy} onClick={close}>{vi ? "Chưa gửi" : "Not sent yet"}</Button>

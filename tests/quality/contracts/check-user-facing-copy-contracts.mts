@@ -33,7 +33,7 @@ const contracts: Array<{ file: string; forbidden: RegExp[]; required?: RegExp[] 
     required: [
       /Thông tin doanh nghiệp/, /Ngôn ngữ & khu vực/, /Tính năng sử dụng/,
       /Pipeline & trạng thái/, /Loại sản phẩm/, /Trường thông tin/,
-      /Thông tin thanh toán/, /Thông tin hóa đơn/, /Tích hợp/, /Webhook & API/,
+      /Thông tin thanh toán/, /Thông tin hóa đơn/, /Ứng dụng & dịch vụ/, /Webhook gửi đi/, /Tổng quan kết nối/, /Nhận dữ liệu/, /Truy cập API/,
     ],
   },
 ];

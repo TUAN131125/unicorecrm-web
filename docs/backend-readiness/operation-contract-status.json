@@ -122,6 +122,13 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "approveQuoteAcceptanceEvidenceSource",
+      "method": "POST",
+      "path": "/quotes/{quoteId}/acceptance-evidence-sources/{sourceId}/approve",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "approveQuoteCommand",
       "method": "POST",
       "path": "/quotes/{quoteId}/approve",
@@ -244,6 +251,13 @@
       "operationId": "archiveTask",
       "method": "POST",
       "path": "/tasks/{taskId}/archive",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "assessQuoteIdentityAuthority",
+      "method": "POST",
+      "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/identity-authority/assessments",
       "status": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null
     },
@@ -458,6 +472,13 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "consentCustomerQuoteAcceptance",
+      "method": "POST",
+      "path": "/public/quote-acceptance/consent",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "convertAcceptedQuoteToOrderDraft",
       "method": "POST",
       "path": "/order-drafts/from-accepted-quote",
@@ -517,8 +538,8 @@
       "operationId": "createCrmPipeline",
       "method": "POST",
       "path": "/crm-configuration/pipelines",
-      "status": "BLOCKED",
-      "blockingDecisionId": "DEC-CREATECRMPIPELINE"
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
     },
     {
       "operationId": "createCrmPipelineStage",
@@ -617,6 +638,20 @@
       "path": "/products/configuration/types",
       "status": "BLOCKED",
       "blockingDecisionId": "DEC-CREATEPRODUCTCONFIGURATIONTYPE"
+    },
+    {
+      "operationId": "createQuoteAcceptanceCase",
+      "method": "POST",
+      "path": "/quotes/{quoteId}/acceptance-cases",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "createQuoteAcceptanceInvitation",
+      "method": "POST",
+      "path": "/quotes/{quoteId}/acceptance-invitations",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
     },
     {
       "operationId": "createQuoteCommand",
@@ -759,6 +794,20 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "downloadQuoteAcceptanceProofContent",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/proofs/{proofId}/content",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "downloadQuoteDocument",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/documents/{documentId}/content",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "duplicateOrderDraft",
       "method": "POST",
       "path": "/orders/{orderId}/duplicate-draft",
@@ -790,6 +839,13 @@
       "operationId": "evaluateEffectiveRecordAccess",
       "method": "POST",
       "path": "/access/records/evaluate",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "evaluateQuoteCustomerAcceptance",
+      "method": "POST",
+      "path": "/quotes/{quoteId}/customer-acceptance/evaluate",
       "status": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null
     },
@@ -881,6 +937,13 @@
       "operationId": "getCrmObjectSchema",
       "method": "GET",
       "path": "/crm-configuration/object-schemas/{objectKey}",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "getCrmPipeline",
+      "method": "GET",
+      "path": "/crm-configuration/pipelines/{pipelineId}",
       "status": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null
     },
@@ -1074,6 +1137,69 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "getQuoteAcceptanceCase",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/acceptance-cases/{caseId}",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "getQuoteAcceptanceProof",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/proofs/{proofId}",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "getQuoteAcceptanceProofScanHistory",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/proofs/{proofId}/scans",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "getQuoteAcceptanceProofSecurity",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/proofs/{proofId}/security",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "getQuoteCustomerAcceptanceReadiness",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/customer-acceptance",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "getQuoteDocument",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/documents/{documentId}",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "getQuoteDocumentSeller",
+      "method": "GET",
+      "path": "/quotes/document-seller",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "getQuoteIdentityAuthority",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/identity-authority",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "getQuoteIndependentReview",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/independent-review",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "getReceivablesAging",
       "method": "GET",
       "path": "/receivables/aging",
@@ -1196,6 +1322,13 @@
       "operationId": "issueInvoice",
       "method": "POST",
       "path": "/invoices/{invoiceId}/issue",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "issueQuoteDocumentCommand",
+      "method": "POST",
+      "path": "/quotes/{quoteId}/documents/issue",
       "status": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null
     },
@@ -1424,6 +1557,62 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "listQuoteAcceptanceCases",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/acceptance-cases",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "listQuoteAcceptanceEvidenceSourceHistory",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/acceptance-evidence-sources/{sourceId}/history",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "listQuoteAcceptanceEvidenceSources",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/acceptance-evidence-sources",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "listQuoteAcceptanceInvitations",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/acceptance-invitations",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "listQuoteAcceptanceProofs",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/proofs",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "listQuoteDocuments",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/documents",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "listQuoteIdentityAuthorityHistory",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/identity-authority/history",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "listQuoteIndependentReviewHistory",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/independent-review/history",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "listQuotes",
       "method": "GET",
       "path": "/quotes",
@@ -1571,6 +1760,13 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "previewCustomerQuoteAcceptance",
+      "method": "POST",
+      "path": "/public/quote-acceptance/preview",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "previewPaymentPlan",
       "method": "POST",
       "path": "/payment-plans/{planId}/preview",
@@ -1690,6 +1886,27 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "recordQuoteAcceptanceSourceCheck",
+      "method": "POST",
+      "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/identity-authority/source-checks",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "recordQuoteCustomerDecisionCommand",
+      "method": "POST",
+      "path": "/quotes/{quoteId}/customer-decisions",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "recordQuoteSalesAcceptance",
+      "method": "POST",
+      "path": "/quotes/{quoteId}/sales-acceptances",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "recordQuoteSendEvidenceCommand",
       "method": "POST",
       "path": "/quotes/{quoteId}/send",
@@ -1707,6 +1924,13 @@
       "operationId": "registerAccount",
       "method": "POST",
       "path": "/auth/accounts",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "registerQuoteAcceptanceEvidenceSource",
+      "method": "POST",
+      "path": "/quotes/{quoteId}/acceptance-evidence-sources",
       "status": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null
     },
@@ -1970,6 +2194,13 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "reviseQuoteAcceptanceEvidenceSource",
+      "method": "PUT",
+      "path": "/quotes/{quoteId}/acceptance-evidence-sources/{sourceId}",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "reviseQuoteCommand",
       "method": "POST",
       "path": "/quotes/{quoteId}/revise",
@@ -1980,6 +2211,13 @@
       "operationId": "revokeOrderCreditApproval",
       "method": "POST",
       "path": "/order-credit-approvals/{approvalId}/revoke",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "revokeQuoteAcceptanceEvidenceSource",
+      "method": "POST",
+      "path": "/quotes/{quoteId}/acceptance-evidence-sources/{sourceId}/revoke",
       "status": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null
     },
@@ -2022,6 +2260,13 @@
       "operationId": "savePaymentPlanDraft",
       "method": "PATCH",
       "path": "/payment-plans/{planId}/draft",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "saveQuoteIdentityAuthorityBinding",
+      "method": "PUT",
+      "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/identity-authority/binding",
       "status": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null
     },
@@ -2078,6 +2323,13 @@
       "operationId": "skipStudioQuickSetupStep",
       "method": "POST",
       "path": "/studio/quick-setup/steps/{stepId}/skip",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "submitQuoteIndependentReviewDecision",
+      "method": "POST",
+      "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/independent-review/decisions",
       "status": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null
     },
@@ -2155,8 +2407,8 @@
       "operationId": "updateCrmPipeline",
       "method": "PATCH",
       "path": "/crm-configuration/pipelines/{pipelineId}",
-      "status": "BLOCKED",
-      "blockingDecisionId": "DEC-UPDATECRMPIPELINE"
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
     },
     {
       "operationId": "updateCrmPipelineStage",
@@ -2260,6 +2512,13 @@
       "operationId": "updateWorkspaceLocaleRegion",
       "method": "PATCH",
       "path": "/workspace-configuration/locale-region",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "uploadQuoteAcceptanceProof",
+      "method": "POST",
+      "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/proofs",
       "status": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null
     },

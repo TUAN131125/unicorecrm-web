@@ -68,8 +68,8 @@ assert.match(taskDetail, /rescheduleTaskCommand/, "Task detail must allow resche
 assert.match(taskDetail, /completeTaskCommand/, "Task detail must complete canonical tasks.");
 assert.match(taskDetail, /reassignTaskCommand/, "Task detail must reassign canonical tasks instead of displaying a fake assignee action.");
 assert.doesNotMatch(taskCreateModal + taskDetail, /(?:create|reschedule|complete|reassign)TaskSnapshot/, "Task presentation must not write through retired browser snapshots.");
-assert.match(taskList, /variant="success" size="xs" className="text-white \[&_svg\]:stroke-white"/, "Task complete actions must use a white foreground on the semantic success background.");
-assert.ok((taskList.match(/variant="danger" size="xs" className="text-white \[&_svg\]:stroke-white"/g) || []).length >= 2, "Task cancel and delete actions must use a white foreground on the semantic danger background.");
+assert.match(taskList, /actionIntent="complete" size="sm" icon=\{<CheckCircle2 size=\{14\} \/>\} className="text-white \[&_svg\]:stroke-white"/, "Task complete actions must use a white foreground on the semantic success background.");
+assert.ok((taskList.match(/actionIntent="destructive" size="sm" icon=\{<(?:XCircle|Archive) size=\{14\} \/>\} className="text-white \[&_svg\]:stroke-white"/g) || []).length >= 2, "Task cancel and delete actions must use a white foreground on the semantic danger background.");
 assert.doesNotMatch(taskDetail, /label:\s*vi\s*\?\s*["']Ngữ cảnh["']|label:\s*["']Context["']/, "Task detail must not expose a duplicated technical Context tab.");
 assert.doesNotMatch(taskDetail, /font-black|font-extrabold/, "Task detail must keep a restrained typography hierarchy.");
 assert.match(notificationsPage, /bg-violet-50\/35/ , "Unread notifications must use a soft surface rather than only heavy text.");

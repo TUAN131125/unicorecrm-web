@@ -122,7 +122,7 @@ assert.match(login, /common\.showPassword/u);
 
 for (const [file, pattern] of [
   ["src/app/shell/layout/Sidebar.tsx", /aria-label=\{vi \? "Đóng điều hướng" : "Close navigation"\}/u],
-  ["src/modules/deals/presentation/components/DealFormModal.tsx", /Remove \$\{item\.product\.name\}/u],
+  ["src/modules/deals/presentation/components/DealInterestedProductsPicker.tsx", /aria-label=\{vi \? `Xóa \$\{product\?\.name \?\? id\}` : `Remove \$\{product\?\.name \?\? id\}`\}/u],
   ["src/components/crm/ColumnSettingsDrawer.tsx", /Move \$\{keyLabel\} up/u],
 ] as const) {
   assert.match(read(file), pattern, `${file} must expose localized accessible names for icon controls`);

@@ -4,6 +4,10 @@ import type { Product } from "../domain/model/product.types";
 import { getProductApiRuntime, isProductConnectedApiRuntime, productCatalogExporter, productPreferences, productRepository, resetProductRepositoryToDemo } from "../application/composition/productApplicationServices";
 
 export function getProductCatalogSnapshot(): Product[] { return productRepository.list(); }
+/** Full authorized catalog DTOs in one owner read, without detail fan-out. */
+export function readProductCatalogPage(query: import("@/shared/application").ModuleListQuery = {}, signal?: AbortSignal) {
+  return getProductApiRuntime().queries.list(query, signal);
+}
 export function replaceProductCatalog(products: Product[]): void { productRepository.replace(products); }
 export type ProductRetentionMutationMetadata = Partial<MutationCommandMetadata>;
 

@@ -5,7 +5,8 @@ import { formatVnd } from "@/shared/lib/format/currency";
 import { Contact } from "../../domain/model/contact.types";
 import { getActiveContactOrganizationRelationships } from "../../domain/model/contactOrganizationRelationships";
 import type { CustomerDisplay as Customer } from "@/modules/customers";
-import { Deal, DealStage } from "@/modules/deals";
+import { Deal, DealStage, BuyerDealForm } from "@/modules/deals";
+import { useEffectiveAccess } from "@/platform/access-control";
 import { Quote } from "@/modules/quotes";
 import { QuoteStatus } from "@/modules/quotes";
 import type { CrmWorkspaceConfig } from "@/platform/workspace-config";
@@ -37,7 +38,7 @@ import { getAuthSessionSnapshot } from "@/platform/identity-auth";
 import { listWorkspaceMemberDirectory, resolveWorkspaceMemberName } from "@/platform/member-directory";
 import { getDisplayOrdersForContact } from "@/modules/orders";
 import { useContacts } from "../hooks/useContacts";
-import { getContactPreference, setContactPreference } from "../../public/contacts";
+import { getContactPreference, setContactPreference, isContactConnectedMode } from "../../public/contacts";
 import { findCustomerForContact, getCustomerDisplayNameForContact } from "../model/contactCustomerLookup";
 
 interface ContactDetailPageProps {
@@ -176,10 +177,11 @@ export function ContactDetailView({ controller }: { controller: Controller }) {
     relationshipActivities,
     careTimelineItems,
   } = controller;
-  const openOpportunity = contactOpportunityAvailable ? () => setShowOpportunityModal(true) : undefined;
+  const commercialAccess = useEffectiveAccess();
+  const openOpportunity = (isContactConnectedMode() ? commercialAccess.can("deals.create") && contact.status !== "archived" : contactOpportunityAvailable) ? () => setShowOpportunityModal(true) : undefined;
   return (
     <RecordDetailFrame id="contact-detail-page-workspace" className="min-w-0 space-y-4 rounded-2xl bg-slate-50 p-1 text-[11px] text-slate-700">
-      
+
       {/* 1. COMPACT CRM RECORD HEADER */}
       <ContactRecordHeader
         contact={contact}
@@ -193,7 +195,7 @@ export function ContactDetailView({ controller }: { controller: Controller }) {
           setActiveTab("attachments");
           showToast(tx("contactDetail.toast.attachmentPrompt", "Mở khung tài liệu đính kèm."));
         }}
-        onCreateQuoteClick={handleRequestCreateQuote}
+        onCreateQuoteClick={isContactConnectedMode() ? () => navigate(`/quotes/new?contactId=${encodeURIComponent(contact.id)}`) : handleRequestCreateQuote}
         onAddAppointmentClick={() => setShowMeetingModal(true)}
         onAddTaskClick={() => setShowTaskModal(true)}
         onDeleteClick={() => setShowDeleteModal(true)}
@@ -212,9 +214,11 @@ export function ContactDetailView({ controller }: { controller: Controller }) {
               setActiveTab={setActiveTab}
               counts={{
                 relationship: contactNotes.length + (canonicalCustomer ? 1 : 0) + getActiveContactOrganizationRelationships(contact).length,
-                sales: affiliatedOpportunities.length + displayQuotes.length,
-                transactions: displayOrders.length + contactInvoices.length + contactReceivables.length + contactPayments.length + contactShipping.length + contactReturns.length + displayPurchasedProducts.length,
-                service: contactCareCases.length,
+                ...(!isContactConnectedMode() ? {
+                  sales: affiliatedOpportunities.length + displayQuotes.length,
+                  transactions: displayOrders.length + contactInvoices.length + contactReceivables.length + contactPayments.length + contactShipping.length + contactReturns.length + displayPurchasedProducts.length,
+                  service: contactCareCases.length,
+                } : {}),
                 work: tasks.length + careTimelineItems.length,
                 attachments: contactAttachments.length,
               }}
@@ -382,7 +386,7 @@ export function ContactDetailView({ controller }: { controller: Controller }) {
           onSave: handleSaveContact,
         }}
         opportunity={{
-          isOpen: contactOpportunityAvailable && showOpportunityModal,
+          isOpen: !isContactConnectedMode() && contactOpportunityAvailable && showOpportunityModal,
           onClose: () => setShowOpportunityModal(false),
           contact,
           onSave: handleCreateOpportunity,
@@ -404,6 +408,7 @@ export function ContactDetailView({ controller }: { controller: Controller }) {
         sms={{ targetId: contact.id, isOpen: showSendSmsModal, onClose: () => setShowSendSmsModal(false), prefilledPhone: contact.phone || contact.mobilePhone || "", onSend: handleSendSms, isDoNotContact: contact.status === "do_not_contact" || contact.doNotContact }}
       />
 
+      {isContactConnectedMode() && showOpportunityModal && <BuyerDealForm buyer={{ type: "CONTACT", id: contact.id }} label={contact.fullName || contact.name} open onClose={() => setShowOpportunityModal(false)} onCreated={() => { setActiveTab("sales", "opportunities"); }}/>}
     </RecordDetailFrame>
   );
 }

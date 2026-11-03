@@ -36,11 +36,8 @@ assert.equal(canWriteModule(customerSuccess, "shipping"), false);
 
 const root = repositoryRoot;
 const guard = fs.readFileSync(path.join(root, "src/components/PermissionRouteGuard.tsx"), "utf8");
-assert.ok(guard.includes("ReadOnlyAccessBanner"), "Read-only routes must explain the access mode");
-assert.ok(guard.includes('data-access-mode="read-only"'), "Read-only mode must be testable and accessible to guidance");
-const banner = fs.readFileSync(path.join(root, "src/components/access/ReadOnlyAccessBanner.tsx"), "utf8");
-assert.ok(banner.includes('data-guidance-id="access.read-only.notice"'));
-assert.ok(banner.includes("chịu trách nhiệm") && banner.includes("owns update actions"));
+assert.ok(guard.includes('data-access-mode="read-only"'), "Read-only guard semantics remain testable.");
+assert.ok(!guard.includes("ReadOnlyAccessBanner"), "Read-only guards must not render informational access banners.");
 
 const routes = fs.readFileSync(path.join(root, "src/app/router/workspaces/crmWorkspaceRoutes.tsx"), "utf8");
 for (const capability of ["QUOTES_CREATE", "QUOTES_UPDATE", "ORDERS_CREATE", "ORDERS_UPDATE", "SHIPPING_CREATE", "RETURNS_UPDATE", "SUPPORT_CREATE", "SUPPORT_UPDATE"]) {
@@ -49,4 +46,4 @@ for (const capability of ["QUOTES_CREATE", "QUOTES_UPDATE", "ORDERS_CREATE", "OR
 assert.ok(routes.includes("moduleActionRoute"), "Write routes must not rely on read permission alone");
 assert.match(routes, /path: relativeRoutePath\(ROUTE_KEYS\.RETURN_NEW\), element: moduleActionRoute\(canWrite\("returns"\), CAPABILITIES\.RETURNS_UPDATE, <ReturnFormPage \/>\)/, "Return creation must use returns.update, the admitted createReturnRequestCommand capability.");
 
-console.log("Read-only cross-domain access: PASS — route guards, ownership banners, and Finance/Operations/Customer Success modes verified");
+console.log("Read-only cross-domain access: PASS — route guards, omitted informational notices, and Finance/Operations/Customer Success modes verified");

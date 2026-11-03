@@ -55,7 +55,7 @@ await render(); assert.equal(document.querySelectorAll("[data-customer-task-id]"
 await click("Tải thêm công việc"); assert.equal(document.querySelectorAll("[data-customer-task-id]").length, 51);
 assert.deepEqual([...document.querySelectorAll("[data-customer-task-id]")].map(x => x.getAttribute("data-customer-task-id")), Array.from({ length: 51 }, (_, i) => "T" + i));
 const taskLink = document.querySelector<HTMLButtonElement>('[data-customer-task-id="T0"] button'); assert.ok(taskLink);
-await act(async () => taskLink.click()); assert.equal(document.querySelector("[data-test-location]")?.getAttribute("data-test-location"), "/tasks/T0");
+await act(async () => taskLink.click()); assert.equal(document.querySelector("[data-test-location]")?.getAttribute("data-test-location"), `/w/${ws.getWorkspaceContextSnapshot().workspaceKey}/crm/tasks/T0`);
 await click("Lịch sử"); await click("Tải thêm hoạt động"); assert.equal(document.querySelectorAll("[data-customer-history-id]").length, 2);
 const activity = document.querySelector<HTMLButtonElement>("[data-customer-history-id] button"); assert.ok(activity); activity.focus(); await act(async () => activity.click()); assert.match(document.body.textContent ?? "", /Authorized Activity body/);
 await act(async () => dom.window.dispatchEvent(new dom.window.KeyboardEvent("keydown", { key: "Escape", bubbles: true }))); assert.equal(document.querySelectorAll('[role="dialog"]').length, 0);
@@ -73,11 +73,30 @@ await act(async () => root.render(React.createElement(I18nProvider, null, React.
   customer: { id: "customer-C", workspaceId: baseline.workspaceId, customerCode: "SYNTHETIC-C", type: "B2C", relationshipRef: { type: "CONTACT", id: "contact-C" }, status: "NEW", health: null, firstPurchaseAt: null, lastPurchaseAt: null, tags: [], segment: "WITHHELD-SEGMENT", createdAt: at, updatedAt: at },
   identity: { displayName: "Only authoritative identity", contactId: "contact-C" }, metrics: {}, linkedRecords: [], stakeholderContacts: [], allowedActions: [], projectionVersion: 0, generatedAt: at,
 } })))));
-assert.match(document.body.textContent ?? "", /Only authoritative identity/); assert.ok(!document.body.textContent?.includes("WITHHELD-SEGMENT")); assert.match(document.body.textContent ?? "", /Chưa có tổng hợp doanh thu/);
+assert.match(document.body.textContent ?? "", /Only authoritative identity/); assert.ok(!document.body.textContent?.includes("WITHHELD-SEGMENT")); assert.match(document.body.textContent ?? "", /Chưa thể hiển thị tổng hợp doanh thu/);
 const meetingButton = [...document.querySelectorAll("button")].find(x => x.textContent === "Tạo cuộc hẹn");
 assert.ok(meetingButton); assert.equal(meetingButton.disabled, true);
 assert.equal(document.querySelector("#customer-meeting-form-title"), null);
 const createButton = document.querySelector<HTMLButtonElement>('[data-guidance-id="customers.detail.create-task"]');
 assert.ok(createButton); assert.equal(createButton.disabled, true, "Task creation requires current Customer record authority");
-assert.ok(document.querySelector('button[aria-controls]')); await act(async () => root.unmount());
+assert.ok(document.querySelector('button[aria-controls]'));
+mode = "data";
+const beforeShared = requests.length;
+await act(async () => root.render(React.createElement(I18nProvider, null, React.createElement(MemoryRouter, { key: "shared-customer-work", initialEntries: ["/?tab=work"] }, React.createElement(CustomerConnectedWorkspace, { projection: {
+  customer: { id: "customer-A", workspaceId: baseline.workspaceId, customerCode: "SYNTHETIC-A", type: "B2C", relationshipRef: { type: "CONTACT", id: "contact-A" }, status: "NEW", health: null, firstPurchaseAt: null, lastPurchaseAt: null, tags: [], createdAt: at, updatedAt: at },
+  identity: { displayName: "Shared Customer work" }, metrics: {}, linkedRecords: [], stakeholderContacts: [], allowedActions: [], projectionVersion: 0, generatedAt: at,
+} })))));
+assert.equal(requests.length, beforeShared + 1, "Main Work and visible side panel must share one Task request");
+assert.equal(document.querySelectorAll('[data-customer-main-work] [data-customer-task-id]').length, 50);
+const mainClick = async (label: string) => {
+  const button = [...document.querySelectorAll<HTMLButtonElement>('[data-customer-main-work] button')].find(node => node.textContent === label);
+  assert.ok(button); await act(async () => button.click());
+};
+await mainClick("Lịch sử");
+assert.equal(requests.length, beforeShared + 2, "One shared Activity request must serve both surfaces");
+assert.equal(document.querySelectorAll('[data-customer-main-work] [data-customer-history-id]').length, 1);
+await mainClick("Công việc"); await mainClick("Lịch sử");
+assert.equal(requests.length, beforeShared + 2, "Changing shared modes must not refetch an unchanged authorized page");
+assert.equal(document.querySelectorAll('[data-guidance-id="customers.detail.create-task"]').length, 1, "Only one create entry point/modal owner is active");
+await act(async () => root.unmount());
 console.log("PASS isolated Customer panel/Overview: exact direct refs, stable dedup paging, Activity detail/Escape, loading/empty/error/retry, scope/FLS refusal, retired response, projected-only identity, Meeting and Task creation disabled without record authority. Not connected evidence.");

@@ -39,8 +39,8 @@ assert.equal(sidebar.includes('data-sidebar-toggle="v4"'), false, "Sidebar must 
 assert.ok(topBar.includes('data-sidebar-toggle="v5"'), "Sidebar collapse control must live in the top toolbar.");
 assert.ok(topBar.includes("PanelLeftOpen") && topBar.includes("PanelLeftClose"), "Sidebar toggle must use standard panel affordances.");
 
-assert.ok(aiButton.includes("<Bot") && aiButton.includes("<Sparkles"), "AI floating utility must use a friendly assistant identity.");
-assert.ok(aiButton.includes("bg-gradient-to-r from-violet-600 via-indigo-600 to-sky-500"), "AI floating utility must avoid the retired black launcher surface.");
+assert.ok(aiButton.includes("<Bot") && !aiButton.includes("repeat: Infinity"), "AI floating utility must use a friendly assistant identity.");
+assert.ok(aiButton.includes("bg-white") && !aiButton.includes("bg-gradient"), "AI floating utility must use a neutral enterprise surface without a decorative gradient.");
 assert.ok(aiButton.includes("whileHover") && aiButton.includes("whileTap") && aiButton.includes("useReducedMotion"), "AI launcher motion must be responsive and reduced-motion safe.");
 assert.ok(aiButton.includes('data-ai-floating-utility="enterprise"'), "AI floating utility must expose the enterprise launcher contract.");
 assert.ok(aiButton.includes("createPortal") && aiButton.includes("document.body"), "AI floating utility must portal to document.body so its fixed position is anchored to the viewport, not transformed page content.");
@@ -50,8 +50,8 @@ assert.equal(aiButton.includes("proactiveCount"), false, "AI floating utility mu
 assert.ok(aiButton.includes("Trợ lý AI") && aiButton.includes("AI assistant"), "AI launcher must expose a clear product label on supported viewports.");
 assert.ok(aiDrawer.includes('data-ai-workspace="v3"'), "AI must retain a full-screen workspace contract.");
 assert.ok(aiDrawer.includes('data-ai-layout="chat-history"'), "AI workspace must use chat plus conversation history.");
-assert.ok(aiDrawer.includes('transformOrigin: "calc(100% - 44px) calc(100% - 44px)"') && aiDrawer.includes("scale: 0.96"), "AI workspace must open from the launcher with a polished transition.");
-assert.ok(aiDrawer.includes("listAiConversations") && aiDrawer.includes("createAiConversation"), "AI workspace must load and create persistent chat threads.");
+assert.ok(aiDrawer.includes("useAccessibleOverlay") && aiDrawer.includes('role="dialog"') && aiDrawer.includes("reduceMotion ? 0 : 0.14"), "AI workspace must manage modal focus and respect reduced motion.");
+assert.ok(aiDrawer.includes("listAiConversations") && aiDrawer.includes("createAiConversation"), "AI workspace must load and create scoped chat threads through its runtime.");
 assert.ok(aiDrawer.includes("useAiAssistantScope()"), "AI conversations must be scoped to the active workspace and actor.");
 assert.equal(aiDrawer.includes("localStorage"), false, "AI workspace must not own browser persistence directly.");
 assert.equal(aiDrawer.includes("buildProactiveAiReminders"), false, "AI page must not render the previous reminder dashboard.");

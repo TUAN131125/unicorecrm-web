@@ -75,7 +75,7 @@ export interface RequestQuoteApprovalChangesInput { note: string; }
 export interface RecordQuoteSendEvidenceInput {
   deliveryId: string;
   channel: QuoteDeliveryChannel;
-  evidenceType: NonNullable<QuoteDeliveryRecord["evidenceType"]>;
+  evidenceType: "USER_CONFIRMED_SENT";
   recipientEmail?: string;
   recipient?: string;
   note?: string;

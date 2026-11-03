@@ -222,6 +222,7 @@
       "label": "Integration",
       "description": "Cross-module, browser-like runtime, composition and persistence integration checks.",
       "gates": [
+        "quality.deal-pipeline-authority",
         "quality.communications-inbox",
         "quality.communication-channels",
         "quality.operational-context-contracts",
@@ -449,9 +450,22 @@
       "entry": "tests/contract/communication-channels.test.tsx",
       "timeoutMs": 180000,
       "openHandleGraceMs": 250,
-      "requires": ["node", "tsx"],
+      "requires": [
+        "node",
+        "tsx"
+      ],
       "shardKey": "quality.communication-channels",
-      "steps": [{ "type": "node", "entry": "tests/contract/communication-channels.test.tsx", "nodeArgs": ["--import", "tsx"], "args": [] }]
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/contract/communication-channels.test.tsx",
+          "nodeArgs": [
+            "--import",
+            "tsx"
+          ],
+          "args": []
+        }
+      ]
     },
     {
       "id": "quality.communications-inbox",
@@ -462,9 +476,22 @@
       "entry": "tests/contract/communications-inbox.test.tsx",
       "timeoutMs": 180000,
       "openHandleGraceMs": 250,
-      "requires": ["node", "tsx"],
+      "requires": [
+        "node",
+        "tsx"
+      ],
       "shardKey": "quality.communications-inbox",
-      "steps": [{ "type": "node", "entry": "tests/contract/communications-inbox.test.tsx", "nodeArgs": ["--import", "tsx"], "args": [] }]
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/contract/communications-inbox.test.tsx",
+          "nodeArgs": [
+            "--import",
+            "tsx"
+          ],
+          "args": []
+        }
+      ]
     },
     {
       "id": "quality.lint",
@@ -2261,6 +2288,15 @@
             "./tests/fixtures/runtime/bootstrap-demo-application-composition.mjs"
           ],
           "args": []
+        },
+        {
+          "type": "node",
+          "entry": "tests/contract/customer-related-deals.test.mts",
+          "nodeArgs": [
+            "--import",
+            "tsx"
+          ],
+          "args": []
         }
       ]
     },
@@ -2315,6 +2351,32 @@
             "tsx",
             "--import",
             "./tests/fixtures/runtime/bootstrap-demo-application-composition.mjs"
+          ],
+          "args": []
+        }
+      ]
+    },
+    {
+      "id": "quality.deal-pipeline-authority",
+      "commandName": "test:deal-pipeline-authority",
+      "groupId": "integration",
+      "kind": "integration",
+      "owner": "quality-integration",
+      "entry": "tests/quality/integration/check-deal-pipeline-authority.mts",
+      "timeoutMs": 180000,
+      "openHandleGraceMs": 250,
+      "requires": [
+        "node",
+        "tsx"
+      ],
+      "shardKey": "quality.deal-pipeline-authority",
+      "steps": [
+        {
+          "type": "node",
+          "entry": "tests/quality/integration/check-deal-pipeline-authority.mts",
+          "nodeArgs": [
+            "--import",
+            "tsx"
           ],
           "args": []
         }
@@ -4551,7 +4613,8 @@
       "openHandleGraceMs": 250,
       "requires": [
         "node",
-        "tsx"
+        "tsx",
+        "typescript"
       ],
       "shardKey": "quality.studio-configuration-experience",
       "steps": [
@@ -4972,6 +5035,17 @@
           "nodeArgs": [
             "--import",
             "tsx"
+          ],
+          "args": []
+        },
+        {
+          "type": "node",
+          "entry": "tests/contract/dashboard-connected.test.mts",
+          "nodeArgs": [
+            "--import",
+            "tsx",
+            "--import",
+            "./tests/fixtures/runtime/bootstrap-demo-application-composition.mjs"
           ],
           "args": []
         }
@@ -6019,7 +6093,9 @@
       "openHandleGraceMs": 250,
       "requires": [
         "node",
-        "tsx"
+        "tsx",
+        "esbuild",
+        "jsdom"
       ],
       "shardKey": "quality.route-module-loads",
       "steps": [

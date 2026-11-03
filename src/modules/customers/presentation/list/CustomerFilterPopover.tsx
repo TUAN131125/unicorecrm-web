@@ -6,6 +6,7 @@ import { getWorkspaceMemberOptions } from "@/platform/member-directory";
 import type { CustomerHealth, CustomerStatus, CustomerType } from "../../domain/model/customer.types";
 
 interface CustomerFilterPopoverProps {
+  sortControl?: React.ReactNode;
   isOpen: boolean;
   onClose(): void;
   typeFilter: CustomerType | "all";
@@ -26,6 +27,7 @@ interface CustomerFilterPopoverProps {
 }
 
 export const CustomerFilterPopover: React.FC<CustomerFilterPopoverProps> = ({
+  sortControl,
   isOpen,
   onClose,
   typeFilter,
@@ -58,6 +60,7 @@ export const CustomerFilterPopover: React.FC<CustomerFilterPopoverProps> = ({
       doneLabel={isVi ? "Hoàn tất" : "Done"}
     >
       <ListFilterGrid>
+        {sortControl}
         <Select
           label={isVi ? "Loại khách hàng" : "Customer type"}
           value={typeFilter}

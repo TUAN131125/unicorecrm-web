@@ -1,7 +1,9 @@
 import { walkAllFiles } from "../../../scripts/quality/core/filesystem.mjs";
 import { repositoryRoot } from "../../../scripts/quality/core/repo-context.mjs";
 import assert from "node:assert/strict";
+import ts from "typescript";
 import { existsSync, readFileSync } from "node:fs";
+import { readPresentationComposition } from "../../../scripts/lib/presentationCompositionSource.mts";
 import { join, relative } from "node:path";
 import { enTranslations } from "../../../src/i18n/translations/en";
 import { viTranslations } from "../../../src/i18n/translations/vi";
@@ -9,9 +11,9 @@ import { viTranslations } from "../../../src/i18n/translations/vi";
 const root = repositoryRoot;
 const read = (file: string): string => {
   assert.ok(existsSync(file), `${file} must exist`);
-  return readFileSync(file, "utf8");
+  return readPresentationComposition(file, "utf8");
 };
-const lines = (file: string): number => read(file).split(/\r?\n/).length;
+const lines = (file: string): number => readFileSync(file, "utf8").split(/\r?\n/).length;
 
 const featureModuleKeys = ["leads", "contacts", "organizations", "customers", "deals", "quotes", "orders", "invoices", "payments", "shipping", "returns", "support", "tasks"] as const;
 const requiredStudioTranslations = [
@@ -162,8 +164,9 @@ const pipeline = read(views.pipeline);
 for (const marker of ["validationIssues", "Sales-flow preview", "Xem trước luồng bán hàng", "probabilityDefault", "stageColorClasses", "Lifecycle flow is complete"]) {
   assert.ok(pipeline.includes(marker), `Pipeline experience must include ${marker}`);
 }
-assert.ok(pipeline.includes("validationIssues.length > 0) return;"), "Invalid pipeline lifecycle configuration must not be saved");
-assert.ok(pipeline.includes("disabled={!canConfigure || !dirty || validationIssues.length > 0}"), "Invalid pipeline lifecycle configuration must disable Save");
+assert.match(pipeline, /if \(!selected \|\| !canSave \|\| pending\.current \|\| validationIssues\.length\) return;/u, "Invalid or pending pipeline configuration must refuse before the authoritative command");
+assert.ok(pipeline.indexOf("validationIssues.length) return;") < pipeline.indexOf("await saveDealPipelineCommand("), "Pipeline validation must precede the owner write");
+assert.ok(pipeline.includes("disabled={!canSave || !dirty || validationIssues.length > 0}"), "Invalid pipeline lifecycle configuration must disable Save");
 
 const fields = read(views.fields);
 for (const marker of ["FieldPreview", "Option set", "Danh sách lựa chọn", "validation", "StudioSectionNavigation", "archiveField"]) {
@@ -220,7 +223,8 @@ const userFacingBoundaryFiles = [
   { file: "src/workspaces/people-access/presentation/components/access-control/RoleManagementView.tsx", source: read("src/workspaces/people-access/presentation/components/access-control/RoleManagementView.tsx") },
 ];
 for (const { file, source } of userFacingBoundaryFiles) {
-  assert.doesNotMatch(source, /\b(?:backend|frontend|server-backed|workspace backend|demo-browser|connected-backend)\b/i, `${file} must not expose implementation topology in user-facing configuration or permission UI`);
+    const executable = ts.createPrinter({ removeComments: true }).printFile(ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX));
+    assert.doesNotMatch(executable, /\b(?:backend|frontend|server-backed|workspace backend|demo-browser|connected-backend)\b/i, `${file} must not expose implementation topology in user-facing configuration or permission UI`);
 }
 for (const { file, source } of presentationSources) {
   assert.doesNotMatch(source, /t\(\s*["']studio\.[^"']+["']\s*,\s*["']/, `${file} must not rely on an English fallback for a Studio translation key`);

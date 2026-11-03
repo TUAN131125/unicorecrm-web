@@ -53,6 +53,7 @@ const routeKeys = new Set(Object.keys(ROUTE_METADATA));
 const allRouteKeys = new Set(Object.keys(ROUTE_KEYS));
 const nonContextualRouteKeys = [...allRouteKeys].filter((routeKey) => !routeKeys.has(routeKey));
 const expectedNonContextualRouteKeys = new Set([
+  "CUSTOMER_QUOTE_ACCEPTANCE",
   "LOGIN",
   "MFA_VERIFICATION",
   "FORGOT_PASSWORD",

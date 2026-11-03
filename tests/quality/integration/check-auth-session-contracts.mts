@@ -109,3 +109,7 @@ console.log("Auth and session contracts: OK — demo MFA/session semantics and c
 
 const { runSharedAuthorityRecoveryRegression } = await import("../../fixtures/runtime/check-shared-authority-recovery.mts");
 await runSharedAuthorityRecoveryRegression();
+
+await import("../../fixtures/runtime/check-invitation-navigation.mts");
+
+await import("../../fixtures/runtime/check-password-recovery.mts");

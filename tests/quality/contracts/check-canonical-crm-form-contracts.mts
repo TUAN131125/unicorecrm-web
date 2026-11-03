@@ -67,7 +67,8 @@ for (const token of [
   'id={`deal-${mode}-form`}',
   'data-guidance-id="deals.form.canonical"',
   "mapSelectedPickerItemsToDealLineItems",
-  "ProductPickerModal",
+  "DealInterestedProductsPicker",
+  "verifyDealProductSelection",
   "nextActionSummary",
   "forecastCategory",
 ]) {

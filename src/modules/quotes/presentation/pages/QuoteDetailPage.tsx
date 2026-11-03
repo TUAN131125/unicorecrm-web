@@ -2,6 +2,7 @@ import { QuoteCommercialTerms } from "../components/QuoteCommercialTerms";
 import { formatCommercialMoney } from "@/shared/lib/format/commercialMoney";
 import { QuoteWorkflow } from "../components/QuoteWorkflow";
 import { useQuoteBuyer } from "../hooks/useQuoteBuyer";
+import { useQuoteLiveRefresh } from "../hooks/useQuoteLiveRefresh";
 import { QuoteCommercialPreview } from "../components/QuoteCommercialPreview";
 import { QuoteLifecyclePanel } from "../components/QuoteLifecyclePanel";
 import { saveQuoteDeliveryEvidence } from "../services/saveQuoteDeliveryEvidence";
@@ -66,13 +67,13 @@ export const QuoteDetailPage: React.FC = () => {
     steps: locale === "vi" ? [
       "Tiếp tục soạn nếu Báo giá còn ở trạng thái có thể chỉnh sửa.",
       "Phát hành báo giá hợp lệ, rồi gửi khách hàng.",
-      "Dùng menu ba chấm để xuất PDF, gửi Gmail và xác nhận đã gửi.",
+      "Gửi qua Gmail tại bước Gửi khách hàng; ghi nhận riêng nếu đã gửi qua kênh khác.",
       "Ghi nhận khách hàng thông báo đồng ý ở mức Chưa xác minh, hoặc ghi nhận từ chối với lý do bắt buộc.",
       "Theo dõi đơn hàng được xác nhận tự động sau khi khách chấp nhận.",
     ] : [
       "Continue editing while the quotation remains mutable.",
       "Issue a valid quote, then send it to the customer.",
-      "Use the three-dot menu for PDF export, Gmail, and delivery confirmation.",
+      "Send via Gmail in the delivery step; record delivery separately for other channels.",
       "Record customer-reported agreement as Unverified, or record rejection with a mandatory reason.",
       "Follow automatic Order confirmation after customer acceptance.",
     ],
@@ -80,6 +81,8 @@ export const QuoteDetailPage: React.FC = () => {
   const access = useEffectiveAccess();
   const effectiveRecordAccess = useEffectiveRecordAccessDecision();
   const { session } = usePlatformState();
+  useQuoteLiveRefresh(getQuoteDetailResource(quoteId || "__missing__"), detailQuery.connected && Boolean(quoteId) && access.can(CAPABILITIES.QUOTES_READ),
+    `${workspace.workspaceId}:${access.accountId}:${access.authorityRevision}`);
   const actorId = session.principal.accountId;
   const { quotes } = useQuotes({ loadAuthoritative: false, includeArchived: true });
   const [toast, setToast] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -93,11 +96,12 @@ export const QuoteDetailPage: React.FC = () => {
   const autoExportRef = useRef<string | null>(null);
 
   const quote = useMemo(() => {
+    if (["AUTHENTICATION", "AUTHORIZATION", "NOT_FOUND"].includes(detailQuery.error?.category ?? "")) return undefined;
     const cached = quotes.find(item => item.id === quoteId);
     const detail = detailQuery.connected && detailQuery.data?.id === quoteId ? detailQuery.data : undefined;
     const selected = detail && (!cached || (detail.resourceVersion ?? 0) >= (cached.resourceVersion ?? 0)) ? detail : cached;
     return selected;
-  }, [quotes, quoteId, detailQuery.connected, detailQuery.data]);
+  }, [quotes, quoteId, detailQuery.connected, detailQuery.data, detailQuery.error]);
   const sourceDeal = useMemo(() => {
     const sourceDealId = quote?.sourceDealId || quote?.dealId;
     return sourceDealId ? getDealSnapshot(sourceDealId) : undefined;
@@ -298,9 +302,12 @@ export const QuoteDetailPage: React.FC = () => {
   const confirmQuoteSent = async (value: QuoteDeliveryConfirmationValue, deferClose = false, deliveryId = createDurableId("quote_delivery")): Promise<boolean> => {
     const deliveryCycle = renderedDeliveryCycle;
     if (!(await saveQuoteDeliveryEvidence(quote.id, quote.resourceVersion, value, deliveryId, actorId))) return false;
+    // The mutation snapshot has no action hints. Read fresh server eligibility before
+    // presenting Gmail/acceptance actions for the newly SENT Quote.
+    await detailQuery.refresh();
     if (deliveryIdentity.current.cycle !== deliveryCycle) return false;
     if (!deferClose) setIsDeliveryConfirmationOpen(false);
-    triggerToast("success", locale === "vi" ? "Đã xác nhận Báo giá được gửi và lưu kênh liên hệ." : "Quote delivery was confirmed with its contact channel.");
+    triggerToast("success", locale === "vi" ? "Đã ghi nhận gửi qua kênh khác." : "Delivery through another channel was recorded.");
     return true;
   };
 
@@ -395,7 +402,7 @@ export const QuoteDetailPage: React.FC = () => {
     switch (actionId) {
       case "edit": return { id: actionId, label: locale === "vi" ? "Tiếp tục soạn" : "Continue editing", icon: <Edit3 size={14} />, onClick: () => navigate(`/quotes/${quote.id}/edit`) };
       case "send": return { id: actionId, label: locale === "vi" ? "Gửi qua Gmail" : "Send with Gmail", icon: <Send size={14} />, onClick: () => navigate(`/quotes/${quote.id}/edit?action=gmail`), variant: "primary" };
-      case "confirm-sent": return { id: actionId, label: locale === "vi" ? "Xác nhận đã gửi" : "Confirm sent", icon: <MessageCircle size={14} />, onClick: () => setIsDeliveryConfirmationOpen(true), variant: "success" };
+      case "confirm-sent": return { id: actionId, label: locale === "vi" ? "Ghi nhận gửi qua kênh khác" : "Record delivery through another channel", icon: <MessageCircle size={14} />, onClick: () => setIsDeliveryConfirmationOpen(true), variant: "success" };
       case "accept": return { id: actionId, label: locale === "vi" ? "Chấp nhận" : "Accept", icon: <CheckCircle2 size={14} />, onClick: () => handleStatusChange(QuoteStatus.ACCEPTED), variant: "success" };
       case "reject": return { id: actionId, label: locale === "vi" ? "Từ chối" : "Reject", icon: <X size={14} />, onClick: () => handleStatusChange(QuoteStatus.REJECTED), destructive: true };
       case "expire": return { id: actionId, label: locale === "vi" ? "Đánh dấu hết hạn" : "Mark expired", icon: <Clock size={14} />, onClick: () => handleStatusChange(QuoteStatus.EXPIRED) };
@@ -557,30 +564,31 @@ export const QuoteDetailPage: React.FC = () => {
                 <div className="flex items-center justify-between gap-4 text-slate-600"><span>{locale === "vi" ? "Tạm tính" : "Subtotal"}</span><span className="whitespace-nowrap font-medium text-slate-800">{formatCommercialMoney(quote.commercialMoney?.subtotal ?? { amount: String(quote.subtotal ?? 0), currency: quote.currency ?? "" }, locale)}</span></div>
                 {quote.discountTotal ? <div className="flex items-center justify-between gap-4 text-amber-700"><span>{locale === "vi" ? "Chiết khấu" : "Discount"}</span><span className="whitespace-nowrap font-medium">- {formatCommercialMoney(quote.commercialMoney?.discountTotal ?? { amount: String(quote.discountTotal ?? 0), currency: quote.currency ?? "" }, locale)}</span></div> : null}
                 {quote.taxTotal ? <div className="flex items-center justify-between gap-4 text-slate-600"><span>{locale === "vi" ? "Thuế" : "Tax"}</span><span className="whitespace-nowrap font-medium text-slate-800">+ {formatCommercialMoney(quote.commercialMoney?.taxTotal ?? { amount: String(quote.taxTotal ?? 0), currency: quote.currency ?? "" }, locale)}</span></div> : null}
-                <div className="flex items-center justify-between gap-4 border-t border-slate-200 pt-3"><span className="font-semibold text-slate-900">{locale === "vi" ? "Tổng cộng" : "Total"}</span><span className="whitespace-nowrap text-sm font-semibold text-violet-700">{formatCommercialMoney(quote.commercialMoney?.grandTotal ?? { amount: String(quote.grandTotal ?? 0), currency: quote.currency ?? "" }, locale)}</span></div>
               </div>
             </div>
           </section>
 
       {detailQuery.connected && <QuoteWorkflow key={`${workspace.workspaceId}:${quote.id}`} quote={quote} workspaceId={workspace.workspaceId ?? ""} vi={locale === "vi"}
         canIssue={actionPermissions.canView && access.can(CAPABILITIES.QUOTES_ISSUE_DOCUMENT) && effectiveRecordAccess?.allowedCommands.includes("quote.issueDocument") === true}
-        canRecord={actionPermissions.canView && actionPermissions.canUpdate && access.can(CAPABILITIES.ORDERS_CREATE)}
+        canSend={actionPermissions.canView && quote.authoritativeActions?.sendGmail?.allowed === true}
+        canRecord={actionPermissions.canView && quote.authoritativeActions?.recordSalesAcceptance?.allowed === true}
+        canRecordDelivery={actionPermissions.canView && actionPermissions.canUpdate}
         onConfirmSent={() => setIsDeliveryConfirmationOpen(true)} onCommitted={() => { void detailQuery.refresh(); }} timeZone={workspaceConfiguration.timeZone} primaryActionHost={workflowActionHost} />}
           <QuoteCommercialTerms agreement={quote.paymentAgreement} notes={quote.notes || quote.termsAndNotes} vi={locale === "vi"} />
         </main>
 
         <aside className="min-w-0 space-y-5">
 
-          <details><summary className="cursor-pointer p-2 text-sm font-medium text-slate-600">{locale === "vi" ? "Phiên bản & lưu trữ" : "Versions & archive"}</summary>
+          <section><h2 className="p-2 text-sm font-medium text-slate-600">{locale === "vi" ? "Phiên bản & lưu trữ" : "Versions & archive"}</h2>
           {detailQuery.connected && <QuoteLifecyclePanel key={`lifecycle:${workspace.workspaceId}:${quote.id}`} quote={quote} workspaceId={workspace.workspaceId ?? ""} actorId={actorId} vi={locale === "vi"}
             canView={actionPermissions.canView} canCreate={actionPermissions.canCreate} canUpdate={actionPermissions.canUpdate} canArchive={actionPermissions.canDelete}
             onCreated={id => navigate(`/quotes/${id}/edit`)} onOpen={id => navigate(`/quotes/${id}`)} onCommitted={() => { void detailQuery.refresh(); }} />}
 
-          </details>
+          </section>
         </aside>
       </div>
 
-      {detailQuery.connected && access.can(CAPABILITIES.QUOTES_READ_ACCEPTANCE_EVIDENCE) && <details className={detailSectionClassName}><summary>{locale === "vi" ? "Bằng chứng & xác minh người đại diện" : "Evidence & signing authority"}</summary><React.Suspense fallback={null}><QuoteAcceptanceReadinessPanel key={`acceptance:${workspace.workspaceId}:${quote.id}`} quoteId={quote.id} workspaceId={workspace.workspaceId ?? ""} resourceVersion={quote.resourceVersion} vi={locale === "vi"} /></React.Suspense></details>}
+      {detailQuery.connected && access.can(CAPABILITIES.QUOTES_READ_ACCEPTANCE_EVIDENCE) && <section className={detailSectionClassName}><h2 className="mb-3 text-sm font-medium">{locale === "vi" ? "Bằng chứng & xác minh người đại diện" : "Evidence & signing authority"}</h2><React.Suspense fallback={null}><QuoteAcceptanceReadinessPanel key={`acceptance:${workspace.workspaceId}:${quote.id}`} quoteId={quote.id} workspaceId={workspace.workspaceId ?? ""} resourceVersion={quote.resourceVersion} vi={locale === "vi"} /></React.Suspense></section>}
       <CommercialLineagePanel anchorType="QUOTE" anchorId={quote.id} locale={locale} />
 
       {!detailQuery.connected && <div data-quote-detail-pdf-host={quote.id}>

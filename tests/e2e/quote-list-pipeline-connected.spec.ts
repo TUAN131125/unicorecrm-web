@@ -1,0 +1,166 @@
+import { expect, test } from "@playwright/test";
+import { writeFile } from "node:fs/promises";
+import path from "node:path";
+import { validateOpenApiResponse } from "../../src/platform/api/contracts/openApiRuntimeValidation";
+import type { QuoteListResponse } from "../../src/platform/api/generated/commercialApi";
+import type { DealPipelineListResponse } from "../../src/platform/api/generated/crmConfigurationApi";
+const directory = process.env.UNICORECRM_TEST_EVIDENCE_DIR || "";
+const workspace = process.env.UNICORECRM_TEST_WORKSPACE_KEY || "";
+test("Connected Quote list and Workspace pipeline ownership", async ({ page, context }) => {
+  const responses: unknown[] = [];
+  const pending: Promise<void>[] = [];
+  page.on("response", response => {
+    if (!response.url().startsWith("http://127.0.0.1:5098/") || !/\/(quotes|deals|crm-configuration\/pipelines)(?:\/|$)/u.test(new URL(response.url()).pathname)) return;
+    pending.push((async () => responses.push({ url: response.url(), method: response.request().method(), status: response.status(), workspaceId: response.request().headers()["x-workspace-id"], correlationId: response.request().headers()["x-correlation-id"], body: await response.json().catch(() => null) }))().then(() => undefined));
+  });
+  try {
+    await page.goto("/#/login");
+    await page.getByLabel("Email", { exact: true }).fill(process.env.UNICORECRM_TEST_EMAIL || "");
+    await page.getByLabel(/^(Mật khẩu|Password)$/u).fill(process.env.UNICORECRM_TEST_PASSWORD || "");
+    await page.getByRole("button", { name: /^(Đăng nhập|Sign in)$/u }).click();
+    await page.waitForURL(/#\/(?:select-workspace|w\/)/u);
+    await page.goto(`/#/w/${workspace}/crm/quotes`);
+    if (process.env.UNICORECRM_TEST_LIST_MODE === "Before") {
+      await expect(page.getByText(/Không thể tải danh sách Báo giá|Quote list could not be loaded/u)).toBeVisible();
+      await page.screenshot({ path: path.join(directory, "list-before.png"), fullPage: true });
+      return;
+    }
+    const rows = page.getByRole("table").locator("tbody tr");
+    await expect(rows).toHaveCount(25);
+    await expect(page.locator("[data-authoritative-query-notice=error]")).toHaveCount(0);
+    console.log("PASS list initial load");
+    const firstTitle = (await rows.first().locator("td").nth(1).innerText()).trim();
+    const listResponse = (predicate: (url: URL) => boolean = () => true) => page.waitForResponse(response => new URL(response.url()).pathname === "/quotes" && predicate(new URL(response.url())));
+    let loaded = listResponse(url => url.searchParams.has("cursor"));
+    await page.getByRole("button", { name: /^(Trang sau|Next page)$/u }).click();
+    expect((await loaded).status()).toBe(200);
+    await expect(rows.first()).not.toContainText(firstTitle);
+    loaded = listResponse(url => !url.searchParams.has("cursor"));
+    await page.getByRole("button", { name: /^(Trang trước|Previous page)$/u }).click();
+    await loaded;
+    await expect(rows.first()).toContainText(firstTitle);
+    loaded = listResponse(url => url.searchParams.get("limit") === "50");
+    await page.locator("[data-list-pagination]").getByRole("combobox").selectOption("50");
+    await loaded;
+    await expect(rows).toHaveCount(50);
+    console.log("PASS next/previous/page-size");
+    const search = page.getByPlaceholder(/Tìm mã hoặc tên báo giá|Search quote number or title/u);
+    loaded = listResponse(url => url.searchParams.get("search") === process.env.UNICORECRM_TEST_QUOTE_NUMBER);
+    await search.fill(process.env.UNICORECRM_TEST_QUOTE_NUMBER || "");
+    const found = await loaded;
+    const foundBody = await found.json() as QuoteListResponse;
+    expect(validateOpenApiResponse("listQuotes", foundBody, found.status())).toEqual({ valid: true, issues: [] });
+    expect(foundBody.items[0]?.id).toBe(process.env.UNICORECRM_TEST_QUOTE_ID);
+    await expect(rows).toHaveCount(1);
+    await page.getByText(process.env.UNICORECRM_TEST_QUOTE_TITLE || "", { exact: true }).click();
+    await expect(page.locator("#quote-detail-header")).toBeVisible();
+    await page.goBack();
+    await expect(rows.first()).toBeVisible();
+    await page.reload();
+    await expect(rows).toHaveCount(25);
+    console.log("PASS Checkpoint A search/detail/refresh");
+    await page.getByRole("button", { name: /^(Bộ lọc|Filters)$/u }).click();
+    loaded = listResponse(url => url.searchParams.get("status") === "SENT");
+    await page.getByLabel(/^(Trạng thái|Status)$/u).selectOption("SENT");
+    await loaded;
+    await page.getByRole("button", { name: /^(Hoàn tất|Done)$/u }).click();
+    await expect(page.locator("[data-list-state=empty]")).toBeVisible();
+    // Real network failure: no route interception or API response mock.
+    console.log("PASS successful empty status filter");
+    const network = await context.newCDPSession(page);
+    await network.send("Network.emulateNetworkConditionsByRule", { matchedNetworkConditions: [{ urlPattern: "http://127.0.0.1:5098/*", offline: true, latency: 0, downloadThroughput: -1, uploadThroughput: -1 }] });
+    await page.getByRole("button", { name: /^(Làm mới|Refresh)$/u }).click();
+    await expect(page.locator("[data-list-state=error]")).toBeVisible();
+    await expect(page.locator("[data-list-state=empty]")).toHaveCount(0);
+    console.log("PASS real offline error classification");
+    await network.send("Network.emulateNetworkConditionsByRule", { matchedNetworkConditions: [] });
+    loaded = listResponse();
+    await page.getByRole("button", { name: /^(Thử lại|Retry)$/u }).click();
+    await loaded;
+    await expect(page.locator("[data-list-state=empty]")).toBeVisible();
+    await page.getByRole("button", { name: /^(Bộ lọc|Filters)$/u }).click();
+    loaded = listResponse(url => url.searchParams.get("status") === "DRAFT");
+    await page.getByLabel(/^(Trạng thái|Status)$/u).selectOption("DRAFT");
+    await loaded;
+    loaded = listResponse(url => url.searchParams.get("sourceDealId") === process.env.UNICORECRM_TEST_DEAL_ID);
+    await page.getByLabel(/^(ID cơ hội liên kết|Linked opportunity ID)$/u).fill(process.env.UNICORECRM_TEST_DEAL_ID || "");
+    const filtered = await (await loaded).json() as QuoteListResponse;
+    expect(filtered.items.length).toBeGreaterThan(0);
+    expect(filtered.items.every(item => item.sourceDealId === process.env.UNICORECRM_TEST_DEAL_ID && item.status === "DRAFT")).toBe(true);
+    await page.getByRole("button", { name: /^(Hoàn tất|Done)$/u }).click();
+    await expect(rows.first()).toBeVisible();
+    console.log("PASS retry and source/status filters");
+    await page.screenshot({ path: path.join(directory, "list-after.png"), fullPage: true });
+    await page.locator("#user-profile-dropdown").click();
+    await page.getByRole("menuitem", { name: /^(Đăng xuất|Sign out)$/u }).click();
+    await page.getByLabel("Email", { exact: true }).fill(process.env.UNICORECRM_TEST_EMAIL || "");
+    await page.getByLabel(/^(Mật khẩu|Password)$/u).fill(process.env.UNICORECRM_TEST_PASSWORD || "");
+    await page.getByRole("button", { name: /^(Đăng nhập|Sign in)$/u }).click();
+    await page.waitForURL(/#\/(?:select-workspace|w\/)/u);
+    await page.goto(`/#/w/${workspace}/crm/quotes`);
+    await expect(rows).toHaveCount(25);
+
+    console.log("PASS logout/login");
+    const registryPromise = page.waitForResponse(response => new URL(response.url()).pathname === "/crm-configuration/pipelines");
+    await page.goto(`/#/w/${workspace}/crm/deals?pipeline=client-cannot-select-this`);
+    const registry = await (await registryPromise).json() as DealPipelineListResponse;
+    const defaultPipeline = registry.items.find(pipeline => pipeline.isDefault && pipeline.isActive);
+    expect(defaultPipeline).toBeTruthy();
+    await expect(page.locator("#deals-kanban-section")).toHaveAttribute("data-deal-default-pipeline", defaultPipeline?.id || "");
+    await expect(page.locator('[data-guidance-id="deals.pipeline.workspace"]')).toBeVisible();
+    await expect(page.locator('select[id*="pipeline"]')).toHaveCount(0);
+    await expect(page).not.toHaveURL(/pipeline=/u);
+    for (const old of registry.items.filter(pipeline => !pipeline.isDefault)) {
+      await expect(page.locator(`[data-deal-assigned-pipeline="${old.id}"]`)).toBeVisible();
+    }
+    const oldPipeline = registry.items.find(pipeline => !pipeline.isDefault);
+    expect(oldPipeline).toBeTruthy();
+    const history = page.locator(`[data-deal-assigned-pipeline="${oldPipeline?.id}"]`);
+    const historyCard = history.locator("[data-assigned-deal]").first();
+    await expect(historyCard).toBeVisible();
+    const historyId = await historyCard.getAttribute("data-assigned-deal");
+    const detailResponse = page.waitForResponse(response => new URL(response.url()).pathname === `/deals/${historyId}`);
+    await historyCard.click();
+    const historyDeal = await (await detailResponse).json() as { pipelineId: string; name: string };
+    expect(historyDeal.pipelineId).toBe(oldPipeline?.id);
+    await expect(page.locator("#deal-detail-header")).toBeVisible();
+    await page.goto(`/#/w/${workspace}/crm/deals?view=table`);
+    await expect(page.getByRole("table").getByText(historyDeal.name, { exact: true })).toBeVisible();
+    await page.goto(`/#/w/${workspace}/studio/settings/pipelines-statuses`);
+    await expect(page.getByRole("button", { name: /^(Thêm pipeline|Add pipeline)$/u }).first()).toBeEnabled();
+    await expect(page.getByText(oldPipeline?.nameVi || "", { exact: true }).first()).toBeVisible();
+    console.log("PASS pipeline default, history detail/table and Studio administration");
+    await page.screenshot({ path: path.join(directory, "pipeline-after.png"), fullPage: true });
+
+    // Use existing two-Workspace member; no provisioning or configuration writes.
+    await page.locator("#user-profile-dropdown").click();
+    await page.getByRole("menuitem", { name: /^(Đăng xuất|Sign out)$/u }).click();
+    await page.getByLabel("Email", { exact: true }).fill(process.env.UNICORECRM_TEST_SWITCH_EMAIL || "");
+    await page.getByLabel(/^(Mật khẩu|Password)$/u).fill(process.env.UNICORECRM_TEST_PASSWORD || "");
+    await page.getByRole("button", { name: /^(Đăng nhập|Sign in)$/u }).click();
+    await page.waitForURL(/#\/(?:select-workspace|w\/)/u);
+    const scopes = JSON.parse(process.env.UNICORECRM_TEST_SWITCH_WORKSPACES || "[]") as Array<{ id: string; key: string }>;
+    expect(scopes.length).toBe(2);
+    for (const scope of [...scopes, scopes[0]].filter((value): value is { id: string; key: string } => Boolean(value))) {
+      loaded = listResponse();
+      await page.goto(`/#/w/${scope.key}/crm/quotes`);
+      const scopedResponse = await loaded;
+      expect(scopedResponse.request().headers()["x-workspace-id"]).toBe(scope.id);
+      expect(scopedResponse.status()).toBe(200);
+      await expect(page.locator("[data-list-state=empty]")).toBeVisible();
+      await expect(page.getByText(process.env.UNICORECRM_TEST_QUOTE_TITLE || "", { exact: true })).toHaveCount(0);
+      const pipelineResponse = page.waitForResponse(response => new URL(response.url()).pathname === "/crm-configuration/pipelines");
+      await page.goto(`/#/w/${scope.key}/crm/deals`);
+      const scopedRegistryResponse = await pipelineResponse;
+      expect(scopedRegistryResponse.request().headers()["x-workspace-id"]).toBe(scope.id);
+      const scopedRegistry = await scopedRegistryResponse.json() as DealPipelineListResponse;
+      expect(scopedRegistry.items.every(pipeline => pipeline.workspaceId === scope.id)).toBe(true);
+      await expect(page.locator("#deals-kanban-section")).toHaveAttribute("data-deal-default-pipeline", scopedRegistry.items.find(pipeline => pipeline.isDefault)?.id || "");
+    }
+    expect(responses.filter(value => (value as { method?: string }).method !== "GET")).toEqual([]);
+  } finally {
+    await Promise.all(pending);
+    await writeFile(path.join(directory, "browser-http.json"), JSON.stringify(responses, null, 2));
+    await writeFile(path.join(directory, "browser-dom.txt"), await page.locator("body").innerText().catch(() => "Page closed after test failure"));
+  }
+});

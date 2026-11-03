@@ -230,3 +230,48 @@ await new Promise((resolve) => setTimeout(resolve, 0)); abortRefresh.abort();
 await assert.rejects(cancelledRefresh, (e: unknown) => e instanceof ApiClientError && e.code === "REQUEST_CANCELLED"); assert(finishRefresh); finishRefresh();
 assert.equal(sendCount, 3);
 console.log("HTTP preflight recovery: concurrent reads, first-send write, retired actor/workspace and cancellation PASS.");
+
+// Binary decoding is admitted by the generated operation contract, with ordinary error/auth paths intact.
+async function pdfRequest(response: Response, operationId = "downloadQuoteDocument") {
+  const transport = new FetchHttpClient({ baseUrl: "https://api.example.test", fetchImplementation: async () => response,
+    workspaceIdProvider: { getWorkspaceId: () => "synthetic-workspace" },
+    accessTokenProvider: { getAccessToken: () => "synthetic-unit-token" } });
+  return transport.request<Blob>({ operationId, method: "GET", path: "/quotes/unit/documents/unit/content", retry: "never" });
+}
+const pdfBlob = await pdfRequest(new Response("%PDF-unit-binary", { headers: { "content-type": "application/pdf" } }));
+assert.equal(pdfBlob.type, "application/pdf"); assert.equal(await pdfBlob.text(), "%PDF-unit-binary");
+for (const response of [
+  new Response("%PDF-unit-binary", { headers: { "content-type": "text/html" } }),
+  new Response("not-a-pdf", { headers: { "content-type": "application/pdf" } }),
+  new Response("%PDF-unit-binary", { headers: { "content-type": "application/pdf", "content-length": "10485761" } }),
+]) await assert.rejects(pdfRequest(response), (e: unknown) => e instanceof ApiClientError);
+await assert.rejects(pdfRequest(jsonResponse(problem("ACCESS_DENIED", 403, false, "unit-pdf-denied"), 403)),
+  (e: unknown) => e instanceof ApiClientError && e.code === "ACCESS_DENIED");
+await assert.rejects(pdfRequest(new Response("%PDF-unit-binary", { headers: { "content-type": "application/pdf" } }), "getQuote"),
+  (e: unknown) => e instanceof ApiClientError);
+console.log("Generated PDF transport: PASS (bounded binary, invalid media/header, JSON errors, no generic bypass)");
+
+// B6.1 raw binary request selection remains contract-bound and preserves transport authority.
+const proofReceipt = { commandId: "command_unit", correlationId: "correlation_unit", aggregateId: "case_unit", aggregateType: "QUOTE_ACCEPTANCE_CASE", version: 2,
+  occurredAt: "2026-10-26T00:00:00.000Z", outcome: "COMMITTED", eventIds: ["event_unit"], auditIds: ["audit_unit"], result: {
+    case: { caseId: "case_unit", quoteId: "quote_unit", rootQuoteId: "quote_unit", quoteRevision: 1, documentId: "document_unit", createdBy: "actor_unit",
+      commercialContentFingerprint: "A".repeat(64), pdfSha256: "B".repeat(64), buyerRef: { type: "CONTACT", id: "buyer_unit" }, caseStatus: "QUARANTINED", createdAt: "2026-10-26T00:00:00.000Z", resourceVersion: 2 },
+  } };
+const proofPayload = new Blob(["%PDF-1.7\nSAFE SYNTHETIC\n%%EOF"], { type: "application/pdf" });
+let binarySends = 0, binaryRefreshes = 0;
+const binaryUpload = new FetchHttpClient({ baseUrl: "https://api.example.test", accessTokenProvider: { getAccessToken: () => "unit-token" },
+  workspaceIdProvider: { getWorkspaceId: () => "unit-workspace" }, onUnauthorized: () => { binaryRefreshes++; return true; },
+  fetchImplementation: async (_url, init) => {
+    binarySends++; assert.equal(init?.body, proofPayload); const headers = new Headers(init?.headers);
+    assert.equal(headers.get("Content-Type"), "application/pdf"); assert.equal(headers.get("X-Workspace-Id"), "unit-workspace");
+    assert.equal(headers.get("Authorization"), "Bearer unit-token"); assert.equal(headers.get("If-Match"), '\"1\"');
+    assert.equal(headers.get("Idempotency-Key"), "proof-intent-unit");
+    return binarySends === 1 ? jsonResponse(problem("AUTHENTICATION_REQUIRED", 401, false, "unit-401"), 401) : jsonResponse(proofReceipt, 201);
+  } });
+const uploadInput: HttpRequest<Blob> = { operationId: "uploadQuoteAcceptanceProof", method: "POST", path: "/quotes/quote_unit/acceptance-cases/case_unit/proofs", body: proofPayload,
+  idempotencyKey: "proof-intent-unit", expectedVersion: 1, headers: { "X-Proof-File-Name": "unit.pdf", "X-Proof-Evidence-Type": "SUPPORTING_DOCUMENT" }, retry: "idempotent" };
+await binaryUpload.request(uploadInput); assert.equal(binarySends, 2); assert.equal(binaryRefreshes, 1);
+await assert.rejects(binaryUpload.request({ ...uploadInput, body: new Blob(["bad"], { type: "text/html" }) }), (e: unknown) => e instanceof ApiClientError);
+await assert.rejects(binaryUpload.request({ ...uploadInput, body: { isClean: true } }), (e: unknown) => e instanceof ApiClientError);
+assert.equal(binarySends, 2, "Invalid proof inputs must fail before network send");
+console.log("B6.1 binary upload: generated schema, raw Blob, auth/workspace, stable refresh replay and invalid-input controls PASS");

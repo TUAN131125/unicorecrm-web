@@ -517,6 +517,7 @@ export function OrderListView({ controller }: { controller: OrderListViewControl
 
         <ListToolbar
           searchValue={searchTerm}
+          searchDebounceMs={orderQuery.connected && view !== "kanban" ? 300 : 0}
           onSearchChange={setSearchTerm}
           searchPlaceholder={locale === "vi" ? "Tìm theo số đơn, buyer, đại diện, sản phẩm..." : "Search order number, buyer, representative, product..."}
           viewMode={view}
@@ -750,7 +751,7 @@ export function OrderListView({ controller }: { controller: OrderListViewControl
             </>
           )}
           {filteredOrders.length > 0 && view !== "kanban" ? (
-            <ListPaginationBar {...pagination} itemLabelVi="đơn hàng" itemLabelEn="orders" />
+            <ListPaginationBar {...pagination} refreshing={orderQuery.connected && orderQuery.loading} itemLabelVi="đơn hàng" itemLabelEn="orders" />
           ) : null}
         </div>
 

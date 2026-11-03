@@ -118,7 +118,6 @@ for (const operation of [
   "Invoice seller-information save",
   "Payment configuration save",
   "Deal stage reset",
-  "Deal pipeline configuration save",
   "Product type configuration save",
   "Product demo catalog reset",
 ]) {
@@ -148,7 +147,10 @@ assert.equal(isReceivableCollectionActivityUnavailable(), true);
 assert.equal(isInvoiceSellerInformationSaveUnavailable(), true);
 assert.equal(isPaymentConfigurationSaveUnavailable(), true);
 assert.equal(isDealStageResetUnavailable(), true);
-assert.equal(isDealPipelineConfigurationSaveUnavailable(), true);
+// PROJECT_EXTENSION_DEAL_PIPELINE_REGISTRY admits the generated Deals-owned save;
+// the retired browser bulk-save surface remains absent from this refusal fixture.
+assert.equal(isDealPipelineConfigurationSaveUnavailable(), false);
+assert.equal(declared.includes("Deal pipeline configuration save"), false);
 assert.equal(isProductConfigurationSaveUnavailable(), true);
 assert.equal(isProductDemoCatalogResetUnavailable(), true);
 

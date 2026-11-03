@@ -148,7 +148,9 @@ function validateBrowserGlobals(file, sourceFile) {
     ? new Set(["window", "document", "localStorage", "sessionStorage"])
     : new Set(["localStorage", "sessionStorage"]);
   function visit(node) {
-    if (ts.isIdentifier(node) && forbidden.has(node.text)) {
+    // An interface/type property name declares a transport field, not a runtime global.
+    const typePropertyName = node.parent && ts.isPropertySignature(node.parent) && node.parent.name === node;
+    if (ts.isIdentifier(node) && forbidden.has(node.text) && !typePropertyName) {
       errors.push(`${file} uses browser global "${node.text}" inside domain/application.`);
     }
     ts.forEachChild(node, visit);

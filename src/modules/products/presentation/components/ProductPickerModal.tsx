@@ -36,6 +36,12 @@ interface ProductPickerModalProps {
   catalogLoading?: boolean;
   catalogError?: string;
   catalogPriceOnly?: boolean;
+  mode?: "interest" | "commercial";
+  currency?: string;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
+  onRetryCatalog?: () => void;
+  catalogNotice?: string;
 }
 
 function defaultConfiguration(product: Product): ProductConfiguration {
@@ -77,10 +83,11 @@ export const ProductPickerModal: React.FC<ProductPickerModalProps> = ({
   initialSelected,
   context = "deal",
   onSearchCatalog, catalogLoading = false, catalogError = "", catalogPriceOnly = false,
+  mode, currency, hasMore = false, onLoadMore, onRetryCatalog, catalogNotice,
 }) => {
   const { locale, t } = useI18n();
   const vi = locale === "vi";
-  const interestOnly = context === "lead_interest";
+  const interestOnly = mode === "interest" || (mode === undefined && context === "lead_interest");
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("all");
   const [filterCategory, setFilterCategory] = useState("all");
@@ -108,7 +115,6 @@ export const ProductPickerModal: React.FC<ProductPickerModalProps> = ({
   const configuredTypes = useMemo(() => getConfiguredProductTypes(), [isOpen]);
 
   const selectableProducts = useMemo(() => products.filter((p) => {
-    if (p.status !== "active") return false;
     const typeConfig = configuredTypes.find((candidate) => candidate.code === p.type);
     if (!typeConfig || typeConfig.status === "inactive") return Boolean(!typeConfig);
     if (context === "deal" && !typeConfig.canBeSold) return false;
@@ -147,7 +153,7 @@ export const ProductPickerModal: React.FC<ProductPickerModalProps> = ({
     const lineTotal = price * Math.max(1, item.quantity) * (1 - discount / 100);
     totals.set(item.product.currency, (totals.get(item.product.currency) ?? 0) + lineTotal);
     return totals;
-  }, new Map()), [selectedItems]);
+  }, new Map()), [selectedItems, catalogPriceOnly]);
 
   const toggleProduct = (product: Product) => {
     setSelections((current) => {
@@ -231,7 +237,8 @@ export const ProductPickerModal: React.FC<ProductPickerModalProps> = ({
         </p>
 
         {catalogLoading && <p role="status" className="text-xs">{vi ? "Đang tải danh mục…" : "Loading catalog…"}</p>}
-        {catalogError && <p role="alert" className="text-xs text-rose-700">{catalogError}</p>}
+        {catalogNotice && <p role="status" className="text-xs text-amber-700">{catalogNotice}</p>}
+        {catalogError && <div role="alert" className="text-xs text-rose-700"><p>{catalogError}</p>{onRetryCatalog && <button type="button" onClick={onRetryCatalog} className="mt-1 underline">{vi ? "Thử lại" : "Retry"}</button>}</div>}
         {catalogPriceOnly && <p className="text-xs">{vi ? "Đơn giá và thuế lấy từ danh mục cùng tiền tệ." : "Unit price and tax use the matching-currency catalog."}</p>}
         <div className="grid shrink-0 grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_190px_210px]">
           <div className="relative sm:col-span-2 lg:col-span-1">
@@ -299,11 +306,12 @@ export const ProductPickerModal: React.FC<ProductPickerModalProps> = ({
               ) : filteredProducts.map((p) => {
                 const isSelected = Boolean(selections[p.id]);
                 return (
-                  <ProductSelectionRow key={p.id} product={p} selected={isSelected} onToggle={() => toggleProduct(p)}
-                    detail={<>{p.sku}{p.category ? ` · ${p.category}` : ""} · {getProductTypeLabel(p.type, t)}</>}
+                  <ProductSelectionRow key={p.id} product={p} selected={isSelected} onToggle={() => toggleProduct(p)} disabled={!isSelected && (p.status !== "active" || (!interestOnly && Boolean(currency && p.currency !== currency)) || (!interestOnly && catalogPriceOnly && !p.unitPrice))}
+                    detail={<>{p.sku}{p.category ? ` · ${p.category}` : ""} · {getProductTypeLabel(p.type, t)}{!interestOnly && currency && p.currency !== currency ? ` · ${p.currency} (${vi ? "Khác tiền tệ báo giá" : "Different Quote currency"})` : ""}</>}
                     trailing={!interestOnly ? <span className="hidden whitespace-nowrap text-xs text-slate-700 sm:inline">{formatProductPrice(p.listPrice, p.currency, locale)}</span> : undefined} />
                 );
               })}
+              {hasMore && <button type="button" disabled={catalogLoading} onClick={onLoadMore} className="m-2 rounded-lg border px-4 py-2 text-sm">{vi ? "Tải thêm sản phẩm" : "Load more products"}</button>}
             </div>
           </section>
 
@@ -335,6 +343,7 @@ export const ProductPickerModal: React.FC<ProductPickerModalProps> = ({
                           <div className="min-w-0">
                             <p className="break-words text-xs font-medium text-slate-900">{item.product.name}</p>
                             <p className="mt-0.5 break-all text-[10px] text-slate-500">{item.product.sku}</p>
+                            {item.product.status !== "active" && <p className="text-xs text-amber-700">{item.product.status === "archived" ? (vi ? "Đã lưu trữ" : "Archived") : (vi ? "Không còn hoạt động" : "Inactive")}</p>}
                           </div>
                           <button
                             type="button"

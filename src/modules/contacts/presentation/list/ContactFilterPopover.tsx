@@ -5,6 +5,7 @@ import { useI18n } from "@/i18n";
 import { getWorkspaceMemberOptions } from "@/platform/member-directory";
 
 interface ContactFilterPopoverProps {
+  sortControl?: React.ReactNode;
   connected?: boolean;
   isOpen: boolean;
   onClose: () => void;
@@ -32,6 +33,7 @@ interface ContactFilterPopoverProps {
 }
 
 export const ContactFilterPopover: React.FC<ContactFilterPopoverProps> = ({
+  sortControl,
   connected = false,
   isOpen,
   onClose,
@@ -71,6 +73,7 @@ export const ContactFilterPopover: React.FC<ContactFilterPopoverProps> = ({
       doneLabel={tx("common.done", isVi ? "Hoàn tất" : "Done")}
     >
       <ListFilterGrid>
+        {sortControl}
         <Select label={tx("contactList.filters.status", isVi ? "Trạng thái" : "Status")} value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
           <option value="all">{allLabel}</option>
           <option value="active">{t("contactStatus.active")}</option>

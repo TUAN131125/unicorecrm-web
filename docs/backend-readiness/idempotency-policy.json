@@ -95,6 +95,11 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "approveQuoteAcceptanceEvidenceSource",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "approveQuoteCommand",
       "policy": "REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -181,6 +186,11 @@
     },
     {
       "operationId": "archiveTask",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "assessQuoteIdentityAuthority",
       "policy": "REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
     },
@@ -335,6 +345,11 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "consentCustomerQuoteAcceptance",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "convertAcceptedQuoteToOrderDraft",
       "policy": "REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -378,7 +393,7 @@
     {
       "operationId": "createCrmPipeline",
       "policy": "REQUIRED",
-      "status": "BLOCKED"
+      "status": "PRODUCTION_CONTRACT_READY"
     },
     {
       "operationId": "createCrmPipelineStage",
@@ -449,6 +464,16 @@
       "operationId": "createProductConfigurationType",
       "policy": "REQUIRED",
       "status": "BLOCKED"
+    },
+    {
+      "operationId": "createQuoteAcceptanceCase",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "createQuoteAcceptanceInvitation",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
     },
     {
       "operationId": "createQuoteCommand",
@@ -555,6 +580,16 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "downloadQuoteAcceptanceProofContent",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "downloadQuoteDocument",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "duplicateOrderDraft",
       "policy": "REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -577,6 +612,11 @@
     },
     {
       "operationId": "evaluateEffectiveRecordAccess",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "evaluateQuoteCustomerAcceptance",
       "policy": "NOT_APPLICABLE",
       "status": "PRODUCTION_CONTRACT_READY"
     },
@@ -642,6 +682,11 @@
     },
     {
       "operationId": "getCrmObjectSchema",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "getCrmPipeline",
       "policy": "NOT_APPLICABLE",
       "status": "PRODUCTION_CONTRACT_READY"
     },
@@ -781,6 +826,51 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "getQuoteAcceptanceCase",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "getQuoteAcceptanceProof",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "getQuoteAcceptanceProofScanHistory",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "getQuoteAcceptanceProofSecurity",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "getQuoteCustomerAcceptanceReadiness",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "getQuoteDocument",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "getQuoteDocumentSeller",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "getQuoteIdentityAuthority",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "getQuoteIndependentReview",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "getReceivablesAging",
       "policy": "NOT_APPLICABLE",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -867,6 +957,11 @@
     },
     {
       "operationId": "issueInvoice",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "issueQuoteDocumentCommand",
       "policy": "REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
     },
@@ -1031,6 +1126,46 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "listQuoteAcceptanceCases",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "listQuoteAcceptanceEvidenceSourceHistory",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "listQuoteAcceptanceEvidenceSources",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "listQuoteAcceptanceInvitations",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "listQuoteAcceptanceProofs",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "listQuoteDocuments",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "listQuoteIdentityAuthorityHistory",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "listQuoteIndependentReviewHistory",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "listQuotes",
       "policy": "NOT_APPLICABLE",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -1136,6 +1271,11 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "previewCustomerQuoteAcceptance",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "previewPaymentPlan",
       "policy": "NOT_APPLICABLE",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -1223,6 +1363,21 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "recordQuoteAcceptanceSourceCheck",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "recordQuoteCustomerDecisionCommand",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "recordQuoteSalesAcceptance",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "recordQuoteSendEvidenceCommand",
       "policy": "REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -1234,6 +1389,11 @@
     },
     {
       "operationId": "registerAccount",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "registerQuoteAcceptanceEvidenceSource",
       "policy": "REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
     },
@@ -1425,12 +1585,22 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "reviseQuoteAcceptanceEvidenceSource",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "reviseQuoteCommand",
       "policy": "REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
       "operationId": "revokeOrderCreditApproval",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "revokeQuoteAcceptanceEvidenceSource",
       "policy": "REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
     },
@@ -1461,6 +1631,11 @@
     },
     {
       "operationId": "savePaymentPlanDraft",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "saveQuoteIdentityAuthorityBinding",
       "policy": "REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
     },
@@ -1501,6 +1676,11 @@
     },
     {
       "operationId": "skipStudioQuickSetupStep",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "submitQuoteIndependentReviewDecision",
       "policy": "REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
     },
@@ -1558,7 +1738,7 @@
     {
       "operationId": "updateCrmPipeline",
       "policy": "REQUIRED",
-      "status": "BLOCKED"
+      "status": "PRODUCTION_CONTRACT_READY"
     },
     {
       "operationId": "updateCrmPipelineStage",
@@ -1632,6 +1812,11 @@
     },
     {
       "operationId": "updateWorkspaceLocaleRegion",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "uploadQuoteAcceptanceProof",
       "policy": "REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
     },

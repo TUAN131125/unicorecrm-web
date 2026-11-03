@@ -10,6 +10,14 @@ import { ROLE_TEMPLATES } from "../../../src/platform/access-control/domain/role
 import { CAPABILITIES } from "../../../src/platform/access-control/domain/capabilityCatalog";
 import { isPrimaryNavigationModule, resolveRoleNavigationProfile } from "../../../src/app/navigation/roleBasedNavigation";
 import type { AccessControlSnapshot } from "../../../src/platform/access-control/domain/accessControl.types";
+import type { EffectiveAccess } from "../../../src/platform/access-control/domain/accessControl.types";
+import React from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { MemoryRouter } from "react-router-dom";
+import { Sidebar } from "../../../src/app/shell/layout/Sidebar";
+import { DEFAULT_CRM_WORKSPACE_CONFIG } from "../../../src/platform/workspace-config";
+import type { WorkspaceMembership } from "../../../src/platform/workspace-context";
+import type { CanonicalProductSpace } from "../../../src/platform/navigation";
 
 const workspaceId = "ws_unicore_vietnam";
 
@@ -87,5 +95,43 @@ assert.ok(sidebar.includes("isPrimaryNavigationModule"), "Sidebar must use the r
 assert.ok(sidebar.includes('["calendar", "notifications"].includes(moduleKey) ? can("dashboard")'), "Utility navigation must inherit Dashboard read access");
 assert.ok(sidebar.includes('data-navigation-profile={navigationProfile.id}'), "Sidebar must expose the active navigation profile");
 assert.ok(sidebar.includes('data-guidance-id="shell.navigation.profile"'), "Role navigation must be guidance-owned");
+
+const workspace: WorkspaceMembership = { workspaceId, workspaceKey: "nav-workspace", name: "Navigation unit workspace", status: "active", logoText: "N" };
+const route = "/w/nav-workspace/crm/dashboard";
+function renderNavigation(access: EffectiveAccess, space: CanonicalProductSpace = "crm", collapsed = false, activeWorkspace = workspace) {
+  return renderToStaticMarkup(React.createElement(MemoryRouter, { initialEntries: [route] }, React.createElement(Sidebar, {
+    crmConfig: DEFAULT_CRM_WORKSPACE_CONFIG, shellAccess: access, activeProductSpace: space,
+    activeWorkspace, workspaceMemberships: [activeWorkspace], onWorkspaceSwitch: () => {},
+    isSidebarCollapsed: collapsed, isMobileMenuOpen: false, setIsMobileMenuOpen: () => {},
+    showToast: () => {}, t: key => key, locale: "vi",
+  })));
+}
+const dashboardLinks = (html: string) => html.match(/href="\/w\/nav-workspace\/crm\/dashboard"/g)?.length ?? 0;
+for (const templateId of templateIds) {
+  const access = accessFor(templateId);
+  const beforeCapabilities = [...access.capabilities];
+  assert.equal(dashboardLinks(renderNavigation(access)), access.productSpaces.has("crm") ? 1 : 0, `${templateId}: navigation must match CRM admission`);
+  assert.deepEqual([...access.capabilities], beforeCapabilities, "Rendering navigation must not grant capabilities");
+}
+// Current Connected authorization admits CRM without the legacy dashboard.read capability.
+const connectedCapabilities = new Set([...sales.capabilities].filter(capability => capability !== CAPABILITIES.DASHBOARD_READ));
+const connectedAccess: EffectiveAccess = {
+  ...sales, capabilities: connectedCapabilities, roleTemplateIds: new Set(),
+  can: capability => connectedCapabilities.has(capability),
+  canAccessModule: moduleKey => moduleKey === "dashboard" ? false : sales.canAccessModule(moduleKey),
+};
+assert.equal(connectedAccess.canAccessModule("dashboard"), false);
+assert.equal(isPrimaryNavigationModule(connectedAccess, "dashboard"), true);
+const connectedHtml = renderNavigation(connectedAccess);
+assert.doesNotMatch(connectedHtml, /Không gian theo quyền|Capability-based workspace/u, "Branding must not render a role subtitle");
+assert.equal(dashboardLinks(connectedHtml), 1, "Connected CRM home must not require an unadmitted legacy capability");
+assert.ok(connectedHtml.indexOf('data-sidebar-group="crm-overview"') < connectedHtml.indexOf('data-sidebar-group="crm-work"'));
+assert.match(connectedHtml, /aria-current="page"/);
+assert.equal(dashboardLinks(renderNavigation(connectedAccess, "crm", true)), 1, "Collapsed navigation retains Dashboard icon/link");
+assert.equal(dashboardLinks(renderNavigation({ ...connectedAccess, productSpaces: new Set() })), 0, "No CRM admission means no Dashboard link");
+assert.equal(dashboardLinks(renderNavigation({ ...connectedAccess, membershipId: "" })), 0, "Unhydrated authority fails closed");
+assert.equal(dashboardLinks(renderNavigation({ ...connectedAccess, workspaceId: "other-workspace" })), 0, "Old workspace authority cannot expose navigation");
+assert.equal(dashboardLinks(renderNavigation(connectedAccess, "crm", false, { ...workspace, status: "suspended" })), 0);
+for (const space of ["studio", "people"] as const) assert.equal(dashboardLinks(renderNavigation(administrator, space)), 0);
 
 console.log("Role-based navigation: PASS — Sales, Finance, Operations, Customer Success, Viewer/Admin, and schema migration verified");

@@ -1013,6 +1013,83 @@
       "scope": "SHARED",
       "owner": "api",
       "lastVerifiedAgainst": "unicorecrm-web@0.24.0-contract.0"
+    },
+    "docs/verification/access-notices-results.md": {
+      "status": "REFERENCE",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "quality",
+      "lastVerifiedAgainst": "unicorecrm-web@0.24.0-contract.0"
+    },
+    "docs/verification/customer-ui-results.md": {
+      "status": "REFERENCE",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "quality",
+      "lastVerifiedAgainst": "unicorecrm-web@0.24.0-contract.0"
+    },
+    "docs/verification/remaining-access-notices-results.md": {
+      "status": "REFERENCE",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "quality",
+      "lastVerifiedAgainst": "unicorecrm-web@0.24.0-contract.0"
+    },
+    "docs/verification/deal-workspace-results.md": {
+      "status": "REFERENCE",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "quality",
+      "lastVerifiedAgainst": "unicorecrm-web@0.24.0-contract.0"
+    },
+    "docs/verification/internal-notices-removal-results.md": {
+      "status": "REFERENCE",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "quality",
+      "lastVerifiedAgainst": "unicorecrm-web@0.24.0-contract.0"
+    },
+    "docs/architecture/deal-pipelines.md": {
+      "status": "CURRENT",
+      "authority": "CANONICAL",
+      "scope": "MODULE",
+      "owner": "deals",
+      "lastVerifiedAgainst": "unicorecrm-web@0.24.0-contract.0"
+    },
+    "docs/architecture/workspace-pipeline-selection.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "deals",
+      "lastVerifiedAgainst": "unicorecrm-web@0.24.0-contract.0"
+    },
+    "docs/design/studio-connections-api/design.md": {
+      "status": "TRACKER",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "quality",
+      "lastVerifiedAgainst": "unicorecrm-web@0.24.0-contract.0"
+    },
+    "docs/design/studio-connections-api/source-and-file-plan.md": {
+      "status": "TRACKER",
+      "authority": "SUPPORTING",
+      "scope": "SHARED",
+      "owner": "quality",
+      "lastVerifiedAgainst": "unicorecrm-web@0.24.0-contract.0"
+    },
+    "docs/development/frontend-structure-cleanup-acceptance.md": {
+      "status": "REFERENCE",
+      "authority": "SUPPORTING",
+      "scope": "FRONTEND",
+      "owner": "quality",
+      "lastVerifiedAgainst": "unicorecrm-web@0.24.0-contract.0"
+    },
+    "tests/config/playwright/README.md": {
+      "status": "CURRENT",
+      "authority": "SUPPORTING",
+      "scope": "FRONTEND",
+      "owner": "quality",
+      "lastVerifiedAgainst": "unicorecrm-web@0.24.0-contract.0"
     }
   }
 }

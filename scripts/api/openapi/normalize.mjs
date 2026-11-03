@@ -1,4 +1,4 @@
-import { collectOperations, operationParameters, requestBodyType, responseType, resolveRef } from "./validate.mjs";
+import { collectOperations, operationParameters, requestBodyType, primarySuccessSchema, resolveRef, primarySuccessStatus } from "./validate.mjs";
 
 function componentRef(value) {
   return value?.$ref?.startsWith("#/components/schemas/") ? value.$ref.slice("#/components/schemas/".length) : null;
@@ -25,10 +25,6 @@ function authPolicy(operationRecord, document) {
 
 function workspacePolicy(operationRecord, document) {
   return headerPolicy(operationRecord, document, "X-Workspace-Id") ? "REQUIRED" : "NOT_REQUIRED";
-}
-
-function successStatus(operation) {
-  return ["200", "201", "202"].find((status) => operation.responses?.[status]) ?? null;
 }
 
 function operationTag(operation) {
@@ -75,8 +71,8 @@ export function normalizeOpenApi(document, ownership) {
       idempotencyPolicy: record.operation["x-idempotency-policy"] ?? (headerPolicy(record, document, "Idempotency-Key") ? "REQUIRED" : "NOT_APPLICABLE"),
       concurrencyPolicy: record.operation["x-concurrency-policy"] ?? (headerPolicy(record, document, "If-Match") ? "IF_MATCH_REQUIRED" : "NOT_APPLICABLE"),
       requestBodySchema: requestBodyType(record.operation) ?? null,
-      responseSchema: record.operation["x-contract-status"] === "BLOCKED" ? null : responseType(record.operation),
-      successStatus: successStatus(record.operation),
+      responseSchema: record.operation["x-contract-status"] === "BLOCKED" ? null : primarySuccessSchema(record.operation),
+      successStatus: primarySuccessStatus(record.operation),
       parameters: parameters.all.map((parameter) => ({
         name: parameter.name,
         in: parameter.in,

@@ -129,6 +129,11 @@ body {
   box-shadow: 0 0 0 1px rgba(225, 29, 72, 0.12);
 }
 
+#quote-builder-page :where(input, select, textarea)[aria-invalid="true"]:focus {
+  border-color: var(--crm-form-error-border, #e11d48);
+  box-shadow: 0 0 0 1px rgba(225, 29, 72, 0.2);
+}
+
 #quote-builder-page [data-field-error="true"],
 #lead-qualification-page [data-field-error="true"] {
   font-size: 0.75rem;

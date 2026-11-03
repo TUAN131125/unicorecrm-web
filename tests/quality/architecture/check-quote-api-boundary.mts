@@ -19,7 +19,7 @@ const requiredOperations = [
   "listQuotes", "getQuote", "createQuoteCommand", "createQuoteForDeal",
   "updateQuoteDraftCommand", "repriceQuoteDraft", "requestQuoteApprovalCommand",
   "requestQuoteApprovalBatch", "approveQuoteCommand", "requestQuoteApprovalChangesCommand",
-  "recordQuoteSendEvidenceCommand", "rejectQuoteCommand", "expireQuoteCommand",
+  "recordQuoteSendEvidenceCommand", "recordQuoteCustomerDecisionCommand", "rejectQuoteCommand", "expireQuoteCommand",
   "expireQuotesBatch", "reviseQuoteCommand", "archiveQuoteCommand", "archiveQuotesBatch",
 ];
 const operations = new Map<string, any>();
@@ -40,7 +40,7 @@ for (const operationId of requiredOperations.filter((id) => !["listQuotes", "get
 }
 for (const operationId of [
   "createQuoteForDeal", "updateQuoteDraftCommand", "repriceQuoteDraft", "requestQuoteApprovalCommand",
-  "approveQuoteCommand", "requestQuoteApprovalChangesCommand", "recordQuoteSendEvidenceCommand",
+  "approveQuoteCommand", "requestQuoteApprovalChangesCommand", "recordQuoteSendEvidenceCommand", "recordQuoteCustomerDecisionCommand",
   "rejectQuoteCommand", "expireQuoteCommand", "reviseQuoteCommand", "archiveQuoteCommand",
 ]) {
   assert.equal(operations.get(operationId)["x-concurrency-policy"], "IF_MATCH_REQUIRED", `${operationId} must require optimistic concurrency`);
@@ -56,9 +56,14 @@ const schemas = openApi.components.schemas;
 for (const schemaName of [
   "QuoteDraftLineInput", "QuoteAdjustmentInput", "QuoteDraftRequest",
   "CreateQuoteForDealRequest", "ApproveQuoteRequest", "RejectQuoteRequest",
-  "ExpireQuoteRequest", "RecordQuoteSendEvidenceRequest", "QuoteMutationResponse", "QuoteBatchMutationResponse",
+  "ExpireQuoteRequest", "RecordQuoteSendEvidenceRequest", "RecordQuoteCustomerDecisionRequest", "QuoteCustomerDecisionReadModel", "QuoteMutationResponse", "QuoteBatchMutationResponse",
 ]) {
   assert.equal(schemas[schemaName]?.additionalProperties, false, `${schemaName} must be closed`);
+}
+assert.equal(schemas.RecordQuoteCustomerDecisionRequest.properties.evidenceType.const, "USER_REPORTED_ACCEPTANCE");
+assert.equal(schemas.QuoteCustomerDecisionReadModel.properties.verificationStatus.const, "UNVERIFIED");
+for (const forbidden of ["verified", "verifiedBy", "workspaceId", "buyerRef", "quoteRevision", "commercialContentFingerprint"]) {
+  assert.equal(schemas.RecordQuoteCustomerDecisionRequest.properties[forbidden], undefined, `Client cannot supply ${forbidden}`);
 }
 assert.equal(schemas.QuoteDraftLineInput.properties.unitPrice.$ref, "#/components/schemas/Money");
 assert.equal(schemas.CreateQuoteDraftRequest.additionalProperties, false);
@@ -91,7 +96,7 @@ const generatedCommands = read("src/platform/api/contracts/generatedProductionCo
 assert.doesNotMatch(generatedCommands, /"quotes\.(?:approve|archive|create|request-approval|request-approval-changes|revise|send|reprice|reject|expire|update-draft)"/u);
 
 const listPage = read("src/modules/quotes/presentation/pages/QuoteListPage.tsx");
-assert.match(listPage, /requestQuoteApprovalBatchCommand/u);
+assert.doesNotMatch(listPage, /requestQuoteApprovalBatchCommand/u, "D1 retires approval bulk actions from the active UI");
 assert.match(listPage, /expireQuotesBatchCommand/u);
 assert.match(listPage, /archiveQuotesCommand/u);
 assert.doesNotMatch(listPage, /Promise\.all/u, "Quote bulk lifecycle must be backend-owned");
@@ -101,3 +106,8 @@ assert.match(contactController, /action=gmail/u, "Quote send must capture delive
 
 console.log(`Quote API boundary: PASS (${requiredOperations.length} authoritative operations).`);
 function read(relative: string): string { return readFileSync(join(root, relative), "utf8"); }
+
+assert.equal(schemas.QuoteValidityReadModel.additionalProperties, false);
+assert.deepEqual(schemas.QuoteValidityReadModel.properties.state.enum, ["VALID", "OVERDUE", "NO_EXPIRY", "TIMEZONE_UNAVAILABLE"]);
+assert.ok(openApi.paths["/quotes"].get.parameters.some((p: { name?: string }) => p.name === "rootQuoteId"));
+assert.ok(openApi.paths["/quotes"].get.parameters.some((p: { name?: string }) => p.name === "archived"));

@@ -101,6 +101,6 @@ If the transformation remains supported, name it by the transformation or schema
 
 ## Retirement ledger
 
-The machine-readable retirement authority is `docs/architecture/compatibility-ledger.json`, documented in [Compatibility retirement ledger](./compatibility-ledger.md). It is synchronized with the repository inventory and currently records 53 candidates. No item may be deleted solely to reduce the inventory count.
+The machine-readable retirement authority is `docs/architecture/compatibility-ledger.json`, documented in [Compatibility retirement ledger](./compatibility-ledger.md). It is synchronized with the repository inventory and currently records 60 candidates. The retirement gate remains at 53, so the seven additional signals require owner review. No item may be deleted solely to reduce the inventory count.
 
 Contact callers use independent archive, restore and anonymize admission predicates. The blanket retention predicate has no production consumers and was removed after migrating its test consumers to those separate decisions; READY archive must not imply that restore or anonymize is available.

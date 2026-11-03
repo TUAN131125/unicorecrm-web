@@ -272,6 +272,8 @@ Object.defineProperties(globalThis, {
   Element: { value: window.Element, configurable: true },
   Node: { value: window.Node, configurable: true },
   Event: { value: window.Event, configurable: true },
+  CustomEvent: { value: window.CustomEvent, configurable: true },
+  EventTarget: { value: window.EventTarget, configurable: true },
   InputEvent: { value: window.InputEvent, configurable: true },
   KeyboardEvent: { value: window.KeyboardEvent, configurable: true },
   MutationObserver: { value: window.MutationObserver, configurable: true },
@@ -339,20 +341,22 @@ for (const next of ["N", "Ng", "Ngu", "Nguy", "Nguyen"]) {
 }
 assert.equal(input.value, "Nguyen");
 
-// Repository-local workspace fixture also works when the pipeline preloads composition before JSDOM.
+// The interaction fixture uses one coherent demo identity and Workspace authority.
+// Connected Workspace plus demo auth intentionally has no connected member directory.
 const workspace = await import("@/platform/workspace-context");
+const auth = await import("@/platform/identity-auth");
 const { listAllDevelopmentMemberships } = await import("@/platform/workspace-membership");
+workspace.resetWorkspaceRuntimeParticipant();
+workspace.resetConnectedWorkspaceBootstrapGateway();
+auth.resetConnectedAuthGateway();
+assert.equal(auth.signIn({ email: "admin@unicorecrm.local", password: "admin123" }).ok, true);
 const member = listAllDevelopmentMemberships().find((item) => item.accountId === "acct_admin");
 assert.ok(member);
-workspace.resetWorkspaceRuntimeParticipant();
-workspace.configureConnectedWorkspaceBootstrapGateway({
-  listMyWorkspaces: async () => [member],
-  ensureInitialWorkspace: async () => "EXISTING_MEMBERSHIP",
-  getWorkspaceBootstrap: async () => ({ workspace: member, contextVersion: 1, capabilities: [],
-    configuration: { configurationVersion: 1, locale: "vi", timeZone: "Asia/Ho_Chi_Minh", baseCurrency: "VND", enabledModuleKeys: ["contacts"], availableProductSpaces: ["crm"] }, resolvedAt: "2026-01-01T00:00:00Z" }),
-});
-await workspace.loadWorkspaceMemberships();
-await workspace.enterWorkspace(member.workspaceId);
+assert.equal((await workspace.switchWorkspaceContext(member.workspaceKey)).workspaceId, member.workspaceId);
+assert.equal(workspace.isConnectedWorkspaceRuntime(), false);
+assert.equal(auth.isConnectedAuthRuntime(), false);
+const { loadAccessGovernance } = await import("@/platform/access-control");
+await loadAccessGovernance(member.workspaceId);
 const { ContactFormModal } = await import("../../../src/modules/contacts/presentation/components/ContactFormModal.tsx");
 const { ContactMeetingModal } = await import("../../../src/modules/contacts/presentation/detail/actions/ContactMeetingModal.tsx");
 let closes = 0;
@@ -423,8 +427,17 @@ await act(async () => root.render(React.createElement(I18nProvider, null, React.
     await new Promise<void>((_resolve, reject) => { rejectMeeting = reject; });
   },
 }))));
-const meetingTitle = window.document.querySelector('form input');
+const meetingTitle = window.document.getElementById("contact-meeting-form-title");
+assert.ok(meetingTitle instanceof window.HTMLInputElement);
 await act(async () => { setNativeValue.call(meetingTitle, "Meeting draft"); meetingTitle.dispatchEvent(new window.Event("input", { bubbles: true })); });
+const meetingStart = window.document.getElementById("contact-meeting-form-startAt");
+assert.ok(meetingStart instanceof window.HTMLButtonElement, "Meeting uses the canonical temporal picker");
+const meetingStartValue = meetingStart.closest('[data-temporal-field]')?.querySelector('input[type="hidden"]')?.value;
+assert.ok(meetingStartValue && Number.isFinite(Date.parse(meetingStartValue)), "Meeting fixture has a valid local datetime");
+const invalidOwnerForm = window.document.getElementById("contact-meeting-form");
+assert.ok(invalidOwnerForm);
+await act(async () => invalidOwnerForm.dispatchEvent(new window.Event("submit", { bubbles: true, cancelable: true })));
+assert.equal(meetingSubmitCalls, 0, "An absent directory owner must refuse before onSave");
 const meetingOwner = window.document.getElementById("contact-meeting-form-owner");
 assert.ok(meetingOwner instanceof window.HTMLButtonElement);
 assert.equal(meetingOwner.getAttribute("aria-haspopup"), "listbox");

@@ -1,6 +1,7 @@
 import React from "react";
 import { Search, X, List, Grid, Layers, BarChart2, Filter, Sliders } from "lucide-react";
 import { useI18n } from "@/i18n";
+import { useListSearchInput } from "./useListSearchInput";
 
 export type ListViewMode = "table" | "card" | "kanban" | "list";
 
@@ -14,6 +15,7 @@ export type ListControlBarProps = {
   searchValue: string;
   onSearchChange: (value: string) => void;
   searchPlaceholder?: string;
+  searchDebounceMs?: number;
 
   viewMode?: ListViewMode;
   onViewModeChange?: (mode: ListViewMode) => void;
@@ -51,6 +53,7 @@ export const ListControlBar: React.FC<ListControlBarProps> = ({
   searchValue,
   onSearchChange,
   searchPlaceholder,
+  searchDebounceMs = 0,
   viewMode,
   onViewModeChange,
   viewOptions,
@@ -77,6 +80,7 @@ export const ListControlBar: React.FC<ListControlBarProps> = ({
   className = "",
 }) => {
   const { tx } = useI18n();
+  const search = useListSearchInput(searchValue, onSearchChange, disabled, searchDebounceMs);
   const isFiltersActive = hasActiveFilters || activeFilterCount > 0;
   const clearSearchLabel = tx("common.clearSearch", "Clear search");
   const viewToggleLabel = tx("common.viewToggle", "Change view");
@@ -116,17 +120,20 @@ export const ListControlBar: React.FC<ListControlBarProps> = ({
           <Search size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
-            value={searchValue}
-            onChange={(e) => onSearchChange(e.target.value)}
+            value={search.text}
+            onChange={(e) => search.change(e.target.value)}
+            onCompositionStart={search.compositionStart}
+            onCompositionEnd={(e) => search.compositionEnd(e.currentTarget.value)}
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.nativeEvent.isComposing) { e.preventDefault(); search.submit(e.currentTarget.value, e.nativeEvent.isComposing); } }}
             disabled={disabled}
             placeholder={resolvedSearchPlaceholder}
             aria-label={resolvedSearchPlaceholder}
             className="w-full text-xs pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:bg-white rounded-xl transition-all font-medium text-slate-800 disabled:opacity-50"
           />
-          {searchValue && (
+          {search.text && (
             <button
               type="button"
-              onClick={() => onSearchChange("")}
+              onClick={() => search.change("")}
               disabled={disabled}
               aria-label={clearSearchLabel}
               className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 cursor-pointer disabled:opacity-50"

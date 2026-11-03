@@ -78,6 +78,7 @@ export {
 } from "../application/vertical-slice/dealAuthoritativeQueries";
 
 export { DealInterestedProductsPicker } from "../presentation/components/DealInterestedProductsPicker";
+export { BuyerDealForm } from "../presentation/components/BuyerDealForm";
 export { getDealSelectionAuthority, useDealSelectionAuthority, useDealSelectionQueries } from "../presentation/hooks/useDealSelectionQueries";
 export { verifyDealProductSelection } from "../presentation/hooks/useDealProductSelection";
 

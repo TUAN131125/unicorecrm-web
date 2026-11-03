@@ -28,9 +28,10 @@ export function useQuoteWorkflow(quote: Quote, workspaceId: string) {
   if (accepted) step = 3;
   else if (quote.status === "REJECTED") step = 2;
   else if (terminal) step = sent ? 2 : hasPdf ? 1 : 0;
-  else if (quote.authoritativeActions?.issueDocument?.allowed === true) step = 0;
+  else if (!hasPdf && !issued && !documents.loading && documents.error === null) step = 0;
   else if (quote.status === "SENT") step = 2;
-  else if (issued) step = 1;
+  else if (quote.authoritativeActions?.sendGmail?.allowed === true || issued) step = 1;
+  else if (quote.authoritativeActions?.issueDocument?.allowed === true) step = 0;
   return { documents, order, orderError, retryOrder: () => setRetry(value => value + 1), step, terminal,
     completed: [hasPdf || issued, sent, accepted || quote.status === "REJECTED", Boolean(order)] };
 

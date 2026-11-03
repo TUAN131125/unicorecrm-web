@@ -49,7 +49,14 @@ for (const operation of catalog.operations) {
   assert.ok(operation.generatedClient.method.length > 0, `${operation.operationId} has no generated method.`);
   assert.ok(operation.moduleId.length > 0, `${operation.operationId} has no module owner.`);
   assert.ok(operation.authorization.capability, `${operation.operationId} has no capability.`);
-  if (["platform/identity-auth", "platform/workspace-context"].includes(operation.moduleId)) assert.equal(operation.authorization.workspace, "NOT_REQUIRED", `${operation.operationId} resolves before business workspace headers exist.`);
+  if (["previewCustomerQuoteAcceptance", "consentCustomerQuoteAcceptance"].includes(operation.operationId)) {
+    assert.equal(operation.moduleId, "quotes");
+    assert.equal(operation.authorization.auth, "NONE");
+    assert.equal(operation.authorization.capability, "PUBLIC_INVITATION_TOKEN");
+    assert.equal(operation.authorization.dataScope, "TOKEN_BOUND_WORKSPACE");
+    assert.equal(operation.authorization.workspace, "NOT_REQUIRED", "Invitation tokens resolve their own bound Workspace.");
+  }
+  else if (["platform/identity-auth", "platform/workspace-context"].includes(operation.moduleId)) assert.equal(operation.authorization.workspace, "NOT_REQUIRED", `${operation.operationId} resolves before business workspace headers exist.`);
   else assert.equal(operation.authorization.workspace, "REQUIRED", `${operation.operationId} must declare workspace authority.`);
 }
 
@@ -111,7 +118,7 @@ interface ApiOperationCatalog {
     operationId: string;
     moduleId: string;
     generatedClient: { file: string; method: string };
-    authorization: { capability: string | null; workspace: string };
+    authorization: { capability: string | null; workspace: string; auth: string; dataScope: string };
   }>;
 }
 interface OpenApiDocument { paths: Record<string, Record<string, { operationId?: string }>> }

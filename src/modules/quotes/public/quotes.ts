@@ -33,6 +33,8 @@ import {
 import { QuoteStatus } from "../domain/model/quote.types";
 import { getQuoteDetailResource } from "../application/vertical-slice/quoteAuthoritativeQueries";
 import { executeFrontendRequest } from "@/platform/request-simulation";
+import { issueQuoteDocumentCommand } from "./documents";
+import type { IssuedQuoteDocument } from "../application/read-models/quoteDocumentModels";
 
 export function getQuotesSnapshot(): Quote[] { return quoteRepository.list().filter((quote) => !quote.archivedAt); }
 /** Bounded authoritative relationship read. Does not replace the global Quote collection. */
@@ -46,6 +48,29 @@ export function saveQuoteSnapshot(quote: Quote): Quote { assertDemoQuoteMutation
 export function saveQuoteSnapshotAsync(quote: Quote): Promise<Quote> { return executeFrontendRequest("quotes.save", () => saveQuoteSnapshot(quote)); }
 
 export type QuoteLifecycleMutationMetadata = Partial<MutationCommandMetadata>;
+
+export interface QuoteIssuanceCheckpoint { quote: Quote; input: string; issueKey: string }
+export type SaveAndIssueQuoteResult =
+  | { stage: "ISSUED"; quote: Quote; document: IssuedQuoteDocument }
+  | { stage: "ISSUANCE_PENDING"; checkpoint: QuoteIssuanceCheckpoint; error: unknown };
+
+/** Two durable owner commands, not one transaction. Resume the same issued-document intent
+ * after partial failure; never create another Quote just because issuance failed. */
+export async function saveAndIssueQuoteCommand(quote: Quote, metadata: QuoteLifecycleMutationMetadata,
+  checkpoint?: QuoteIssuanceCheckpoint): Promise<SaveAndIssueQuoteResult> {
+  if (!metadata.idempotencyKey) throw new MutationCommandError({ code: "IDEMPOTENCY_KEY_REQUIRED", category: "VALIDATION", retryable: false,
+    message: "A stable create-and-issue intent is required." });
+  if (checkpoint && checkpoint.input !== JSON.stringify(toDraftInput(quote)))
+    throw new MutationCommandError({ code: "QUOTE_ISSUANCE_PENDING", category: "CONFLICT", retryable: false,
+      message: "An earlier document issuance is unresolved. Check the saved Quote before changing its contents." });
+  const saved = checkpoint?.quote ?? (await saveQuoteCommand(quote, metadata)).data;
+  const pending = checkpoint ?? { quote: saved, input: JSON.stringify(toDraftInput(saved)), issueKey: `${metadata.idempotencyKey}:issue` };
+  try {
+    if (saved.resourceVersion === undefined) throw new Error("Authoritative Quote version unavailable.");
+    const issued = await issueQuoteDocumentCommand(saved.id, saved.resourceVersion, "", pending.issueKey);
+    return { stage: "ISSUED", quote: issued.data.quote, document: issued.data.document };
+  } catch (error) { return { stage: "ISSUANCE_PENDING", checkpoint: pending, error }; }
+}
 
 export function isQuoteConnectedMode(): boolean { return isQuoteConnectedApiRuntime(); }
 
@@ -91,12 +116,14 @@ export async function createQuoteRevisionCommand(quoteId: string, _now?: string,
 }
 
 export async function recordQuoteDeliveryCommand(quoteId: string, input: Parameters<typeof recordQuoteDelivery>[2], metadata: QuoteLifecycleMutationMetadata = {}): Promise<MutationOutcome<Quote>> {
+  if (input.evidenceType !== undefined && input.evidenceType !== "USER_CONFIRMED_SENT")
+    throw new MutationCommandError({ code: "QUOTE_DELIVERY_EVIDENCE_INVALID", message: "Provider evidence cannot be recorded by an employee.", category: "VALIDATION", retryable: false });
   const current = requireQuote(quoteId);
   const commandMetadata = createMutationMetadata(`quote.send:${quoteId}`, { ...metadata, actor: metadata.actor ?? { id: input.sentBy } });
   const result = await getQuoteApiRuntime().commands.recordSendEvidence(quoteId, {
     deliveryId: input.id,
     channel: input.channel,
-    evidenceType: input.evidenceType ?? "USER_CONFIRMED_SENT",
+    evidenceType: "USER_CONFIRMED_SENT",
     recipientEmail: input.recipientEmail,
     recipient: input.recipient,
     note: input.note,

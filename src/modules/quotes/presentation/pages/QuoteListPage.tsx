@@ -199,7 +199,7 @@ export const QuoteListPage: React.FC<QuoteListPageProps> = ({ customers }) => {
     },
   }), [deferredSearchQuery, filterStatus, filterDeal, archiveView]);
   const resetSelection = React.useCallback(() => setSelectedQuoteIds([]), []);
-  const serverPagination = useQuoteListQuery(activeWorkspace.workspaceId, serverQuery, resetSelection);
+  const serverPagination = useQuoteListQuery(JSON.stringify([activeWorkspace.workspaceId, access.accountId, access.membershipId, access.authorityRevision]), serverQuery, resetSelection);
   const quotes = connected ? serverPagination.items : cachedQuotes;
 
   const uniqueCustomers = useMemo(() => {
@@ -542,6 +542,7 @@ export const QuoteListPage: React.FC<QuoteListPageProps> = ({ customers }) => {
 
       <ListToolbar
           searchValue={searchQuery}
+          searchDebounceMs={connected ? 300 : 0}
           onSearchChange={setSearchQuery}
           searchPlaceholder={connected ? (locale === "vi" ? "Tìm mã hoặc tên báo giá" : "Search quote number or title") : t("quotes.list.searchPlaceholder")}
           viewMode={isCardView ? "card" : "table"}
@@ -985,7 +986,7 @@ export const QuoteListPage: React.FC<QuoteListPageProps> = ({ customers }) => {
             </Table>
           </div>
           )}
-        {processedQuotes.length > 0 ? <ListPaginationBar {...pagination} itemLabelVi="báo giá" itemLabelEn="quotes" /> : null}
+        {processedQuotes.length > 0 ? <ListPaginationBar {...pagination} refreshing={connected && quoteQuery.loading} itemLabelVi="báo giá" itemLabelEn="quotes" /> : null}
       </div>
 
       {/* COLUMN CONFIGURATOR DRAWER */}

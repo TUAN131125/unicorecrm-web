@@ -1,4 +1,3 @@
-import real from "./playwright.crm-real.config";
-import { defineConfig } from "@playwright/test";
+import { createCrmConfig } from "./tests/config/playwright/crm";
 
-export default defineConfig({ ...real, testMatch: "crm-ui-real.spec.ts", outputDir: "test-results/crm-ui-real" });
+export default createCrmConfig("crm-ui");

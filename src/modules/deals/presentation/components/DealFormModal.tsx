@@ -36,6 +36,7 @@ export interface DealFormModalProps {
   stages: OpportunityStageConfig[];
   canAssign?: boolean;
   customerNameLocked?: boolean;
+  allowFollowUpTask?: boolean;
   productsEnabled?: boolean;
   target?: Deal | null;
   sourceKey?: string;
@@ -54,6 +55,8 @@ export function DealFormModal({
   owners,
   stages: initialStages,
   canAssign = true,
+  customerNameLocked = false,
+  allowFollowUpTask = true,
 
   productsEnabled = true,
   onSubmit,
@@ -72,7 +75,7 @@ export function DealFormModal({
   const openingSubmit = React.useRef(onSubmit);
   const authority = useDealSelectionAuthority();
   const openingAuthority = React.useRef(authority);
-  const draftFactory = React.useCallback(() => createDraft({ ...initialValues, ...(target ? { buyerRef: target.buyerRef, interestedProductIds: target.interestedProducts, amountDecimal: target.amountDecimal ?? (target.amount === null ? "" : String(target.amount)), currency: target.currency } : {}), lineItems: [] }, owners, initialStages, runtimeSettings.baseCurrency), [initialValues, target, owners, initialStages, runtimeSettings.baseCurrency]);
+  const draftFactory = React.useCallback(() => createDraft({ ...initialValues, ...(target ? { buyerRef: target.buyerRef, expectedCloseDate: initialValues?.expectedCloseDate ?? target.expectedCloseDate, interestedProductIds: target.interestedProducts, amountDecimal: target.amountDecimal ?? (target.amount === null ? "" : String(target.amount)), currency: target.currency } : {}), lineItems: [] }, owners, initialStages, runtimeSettings.baseCurrency), [initialValues, target, owners, initialStages, runtimeSettings.baseCurrency]);
   const [draft, setDraft] = React.useState<DealFormDraft>(draftFactory);
   const registry = useDealStages(mode === "edit" ? (target?.pipelineId ?? draft.pipeline) || undefined : undefined);
   const stages = registry.pipeline?.stages ?? (registry.pipelineQuery.connected ? [] : initialStages);
@@ -85,6 +88,12 @@ export function DealFormModal({
   const opening = React.useRef<Deal | null>(target ? structuredClone(target) : null);
   const openingSourceKey = React.useRef(sourceKey);
   const initial = React.useRef(draft);
+  const defaultOpenStage = stages.filter(stage => stage.isActive && stage.category === "open").sort((a, b) => a.order - b.order)[0]?.code;
+  React.useEffect(() => {
+    if (!isOpen || mode !== "create" || !defaultOpenStage) return;
+    setDraft(current => current.stage ? current : { ...current, stage: defaultOpenStage });
+    if (!initial.current.stage) initial.current = { ...initial.current, stage: defaultOpenStage };
+  }, [isOpen, mode, defaultOpenStage]);
   const pending = React.useRef(false);
   const mounted = React.useRef(true);
   const cycle = React.useRef(0);
@@ -115,6 +124,7 @@ export function DealFormModal({
       cycle.current += 1;
       intentId.current = createDurableId("deal-form");
       const next = structuredClone(draftFactory());
+      if (requestedMode === "create" && !next.stage && defaultOpenStage) next.stage = defaultOpenStage;
       initial.current = next;
       setDraft(next);
       setShowAdvanced(requestedMode === "edit");
@@ -179,7 +189,7 @@ export function DealFormModal({
       nextErrors.demandSummary = message;
       nextErrors.products = message;
     }
-    if (draft.expectedCloseDate && Number.isNaN(new Date(draft.expectedCloseDate).getTime())) {
+    if (!draft.expectedCloseDate || Number.isNaN(new Date(draft.expectedCloseDate).getTime())) {
       nextErrors.expectedCloseDate = vi ? "Ngày đóng dự kiến không hợp lệ." : "Expected close date is invalid.";
     }
     if (draft.createFollowUpTask) {
@@ -267,78 +277,44 @@ export function DealFormModal({
         isOpen={isOpen}
         onClose={requestClose}
         title={mode === "create" ? (vi ? "Tạo cơ hội" : "Create opportunity") : (vi ? "Chỉnh sửa cơ hội" : "Edit opportunity")}
-        size="md"
+        size="lg"
       >
         <form id={`deal-${mode}-form`} onSubmit={submit} className="crm-form-surface space-y-5 text-left" data-guidance-id="deals.form.canonical">
           {saveError ? <div role="alert" className="text-xs text-rose-600"><p>{saveError}</p><ul>{Object.entries(validationErrors).filter(([, message]) => message).map(([field, message]) => <li key={field}>{message}</li>)}</ul></div> : null}
           <fieldset disabled={submitting || localPending} className="contents" data-deal-target-id={opening.current?.id ?? "new"} data-deal-source-key={openingSourceKey.current}>
           {error ? <p className="text-xs text-slate-600" role="alert">{error}</p> : null}
 
-          {mode === "create" ? (
-            <div className="rounded-2xl border border-violet-100 bg-violet-50/60 p-4" data-guidance-id="deals.form.progressive-profile">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div className="flex min-w-0 items-center gap-3"><span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-white text-violet-700 shadow-sm"><Zap size={17} /></span><p className="text-sm font-semibold text-slate-900">{showAdvanced ? (vi ? "Hồ sơ cơ hội đầy đủ" : "Complete opportunity profile") : (vi ? "Tạo nhanh cơ hội" : "Quick opportunity creation")}</p></div>
-                <Button type="button" variant="secondary" size="sm" onClick={() => setShowAdvanced((current) => !current)} data-guidance-id="deals.form.advanced-toggle">{showAdvanced ? <ChevronUp size={14} /> : <ChevronDown size={14} />}{showAdvanced ? (vi ? "Thu gọn" : "Use quick form") : (vi ? "Thêm thông tin" : "Show advanced")}</Button>
-              </div>
-            </div>
-          ) : null}
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2" data-guidance-id="deals.form.quick-create">
-            <Input id={`deal-${mode}-pipeline`} label={vi ? "Pipeline của Workspace" : "Workspace pipeline"}
-              value={registry.pipeline?.name[locale] || (registry.pipelineQuery.loading ? (vi ? "Đang tải…" : "Loading…") : "—")} readOnly error={validationErrors.pipeline} />
-            <Input id={`deal-${mode}-name`} label={vi ? "Tên cơ hội" : "Opportunity name"} value={draft.name} onChange={(event) => update("name", event.target.value)} required error={validationErrors.name} />
-            <DealBuyerPicker value={draft.buyerRef} label={draft.customerName} error={validationErrors.customerName} onChange={(ref, label) => setDraft(current => ({ ...current, buyerRef: ref, customerName: label }))} />
-            <Input id={`deal-${mode}-customerName`} label={vi ? "Tên hiển thị đã chọn" : "Selected display name"} value={draft.customerName} readOnly />
-            <Input id={`deal-${mode}-amount`} label={vi ? "Giá trị dự kiến" : "Expected amount"} type="text" inputMode="decimal" value={draft.amountDecimal} onChange={(event) => setDraft(current => ({ ...current, amountDecimal: event.target.value, amount: event.target.value === "" ? null : Number(event.target.value) }))} error={validationErrors.amount} />
-            <Input id={`deal-${mode}-expectedCloseDate`} label={vi ? "Ngày đóng dự kiến" : "Expected close date"} type="date" value={draft.expectedCloseDate} onChange={(event) => update("expectedCloseDate", event.target.value)} error={validationErrors.expectedCloseDate} />
-            <div className="md:col-span-2">
-              <Textarea id={`deal-${mode}-demandSummary`} label={vi ? "Nhu cầu / vấn đề cần giải quyết" : "Need / problem to solve"} value={draft.demandSummary} onChange={(event) => { update("demandSummary", event.target.value); setValidationErrors((current) => ({ ...current, products: "" })); }} rows={3} error={validationErrors.demandSummary} />
-              <p className="mt-1 text-[11px] leading-5 text-slate-500">{vi ? "Nhập nhu cầu nếu chưa chọn sản phẩm. Cần ít nhất một trong hai thông tin." : "Describe the need when no product is selected. At least one of these two inputs is required."}</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            <Select id={`deal-${mode}-stage`} label={vi ? "Giai đoạn" : "Stage"} value={draft.stage} error={validationErrors.stage} onChange={(event) => {
-              const stage = event.target.value;
-              setDraft((current) => ({ ...current, stage }));
-            }}>{activeStages.map((stage) => <option key={stage.code} value={stage.code}>{vi ? stage.labelVi : stage.labelEn}</option>)}</Select>
-            <Input id={`deal-${mode}-probability`} label={vi ? "Xác suất (%)" : "Probability (%)"} type="number" min="0" max="100" value={String(draft.probability)} onChange={(event) => update("probability", Number(event.target.value) || 0)} error={validationErrors.probability} />
-            <div data-guidance-id="deals.form.forecast-category"><Select label={vi ? "Dự báo" : "Forecast category"} value={draft.forecastCategory} onChange={(event) => update("forecastCategory", event.target.value as DealForecastCategory)}><option value="PIPELINE">Pipeline</option><option value="BEST_CASE">Best case</option><option value="COMMIT">Commit</option></Select></div>
-          </div>
-
-          <div data-guidance-id="deals.form.owner"><div className="mb-1 flex justify-end"><FieldHelp helpKey="field.deals.owner" /></div><Select id={`deal-${mode}-ownerId`} label={vi ? "Người phụ trách" : "Owner"} value={draft.ownerId} onChange={(event) => update("ownerId", event.target.value)} disabled={!canAssign} required error={validationErrors.ownerId}>{owners.map((owner) => <option key={owner.memberId} value={owner.memberId}>{owner.displayName}</option>)}</Select></div>
-
-          {productsEnabled && <DealInterestedProductsPicker ids={draft.interestedProductIds} onChange={ids => update("interestedProductIds", ids)} />}
-
-
-          <section className="space-y-3 rounded-xl border border-slate-200 p-4" data-guidance-id="deals.form.next-step">
-            <Checkbox disabled={mode === "edit" && Boolean(initial.current.nextActionAt)} id={`deal-${mode}-follow-up-task`} label={vi ? "Tạo công việc theo dõi sau khi lưu" : "Create a follow-up task after saving"} checked={draft.createFollowUpTask} onChange={(event) => {
-              update("createFollowUpTask", event.target.checked);
-              if (!event.target.checked) setValidationErrors((current) => ({ ...current, nextActionSummary: "", nextActionAt: "" }));
-            }} />
-            {draft.createFollowUpTask ? (
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div><div className="mb-1 flex justify-end"><FieldHelp helpKey="field.deals.next-step" /></div><Input id={`deal-${mode}-nextActionSummary`} label={vi ? "Tên công việc" : "Task title"} value={draft.nextActionSummary} onChange={(event) => update("nextActionSummary", event.target.value)} required error={validationErrors.nextActionSummary} /></div>
-                <Input id={`deal-${mode}-nextActionAt`} label={vi ? "Hạn công việc" : "Task due"} type="datetime-local" value={draft.nextActionAt} onChange={(event) => update("nextActionAt", event.target.value)} required error={validationErrors.nextActionAt} />
-              </div>
-            ) : null}
+          <section className="space-y-4" data-guidance-id="deals.form.quick-create">
+            <h3 className="text-sm font-semibold text-slate-900">{vi ? "1. Thông tin cơ hội" : "1. Opportunity"}</h3>
+            <Input id={`deal-${mode}-name`} label={vi ? "Tên cơ hội" : "Opportunity name"} value={draft.name} onChange={event => update("name", event.target.value)} required error={validationErrors.name}/>
+            <DealBuyerPicker locked={customerNameLocked} value={draft.buyerRef} label={draft.customerName} error={validationErrors.customerName} onChange={(ref, label) => { setDraft(current => ({ ...current, buyerRef: ref, customerName: label })); setValidationErrors(current => ({ ...current, customerName: "" })); }}/>
+            <div data-guidance-id="deals.form.owner"><Select id={`deal-${mode}-ownerId`} label={vi ? "Người phụ trách" : "Owner"} value={draft.ownerId} onChange={event => update("ownerId", event.target.value)} disabled={!canAssign} required error={validationErrors.ownerId}>{owners.map(owner => <option key={owner.memberId} value={owner.memberId}>{owner.displayName}</option>)}</Select></div>
           </section>
-
-          {(mode === "edit" || showAdvanced) ? (
-            <div className="space-y-4 border-t border-slate-100 pt-5">
-              
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                <Input disabled label={vi ? "Nguồn" : "Source"} value={draft.source} onChange={(event) => update("source", event.target.value)} />
-                <Select label={vi ? "Tiền tệ" : "Currency"} value={draft.currency} onChange={(event) => update("currency", event.target.value)}>{[...new Set([...currencyChoices, draft.currency])].map((code) => <option key={code} value={code}>{code}</option>)}</Select>
-                <Select disabled label={vi ? "Mức ưu tiên" : "Priority"} value={draft.priority} onChange={(event) => update("priority", event.target.value as DealPriority)}><option value="LOW">{vi ? "Thấp" : "Low"}</option><option value="MEDIUM">{vi ? "Trung bình" : "Medium"}</option><option value="HIGH">{vi ? "Cao" : "High"}</option><option value="URGENT">{vi ? "Khẩn cấp" : "Urgent"}</option></Select>
-                <Select disabled label={vi ? "Loại cơ hội" : "Opportunity type"} value={draft.opportunityType} onChange={(event) => update("opportunityType", event.target.value as DealOpportunityType)}><option value="new_sale">{vi ? "Bán mới" : "New sale"}</option><option value="upsell">Upsell</option><option value="cross_sell">Cross-sell</option><option value="renewal">{vi ? "Gia hạn" : "Renewal"}</option><option value="consulting">{vi ? "Tư vấn" : "Consulting"}</option></Select>
-                <Input disabled label={vi ? "Ngân sách dự kiến" : "Expected budget"} type="number" min="0" value={String(draft.expectedBudget)} onChange={(event) => update("expectedBudget", Number(event.target.value) || 0)} />
-              </div>
-              <Input label={vi ? "Rào cản / pain points" : "Pain points"} value={draft.painPoints} onChange={(event) => update("painPoints", event.target.value)} />
-              <Textarea label={vi ? "Ghi chú nội bộ" : "Internal notes"} value={draft.notes} onChange={(event) => update("notes", event.target.value)} rows={3} />
+          <section className="space-y-4 border-t border-slate-100 pt-5">
+            <h3 className="text-sm font-semibold text-slate-900">{vi ? "2. Nhu cầu" : "2. Customer need"}</h3>
+            {productsEnabled && <DealInterestedProductsPicker ids={draft.interestedProductIds} onChange={ids => update("interestedProductIds", ids)}/>}
+            {validationErrors.products && <p className="text-xs italic text-red-600">{validationErrors.products}</p>}
+            <Textarea id={`deal-${mode}-demandSummary`} label={vi ? "Mô tả nhu cầu" : "Need description"} value={draft.demandSummary} onChange={event => { update("demandSummary", event.target.value); setValidationErrors(current => ({ ...current, products: "" })); }} rows={3} error={validationErrors.demandSummary}/>
+            <Textarea label={vi ? "Ghi chú" : "Notes"} value={draft.notes} onChange={event => update("notes", event.target.value)} rows={2}/>
+          </section>
+          <section className="space-y-4 border-t border-slate-100 pt-5">
+            <h3 className="text-sm font-semibold text-slate-900">{vi ? "3. Dự kiến bán hàng" : "3. Sales forecast"}</h3>
+            <p className="text-xs text-slate-500">{registry.pipeline?.name[locale] || (vi ? "Đang xác minh pipeline mặc định…" : "Verifying the default pipeline…")}</p>
+            {registry.pipelineQuery.error && <div role="alert" className="text-xs text-red-600"><p>{formatApplicationError(registry.pipelineQuery.error, { locale })}</p><Button type="button" variant="secondary" onClick={() => void registry.pipelineQuery.refresh()}>{vi ? "Thử lại pipeline" : "Retry pipeline"}</Button></div>}
+            {validationErrors.pipeline && <p className="text-xs italic text-red-600">{validationErrors.pipeline}</p>}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <Input id={`deal-${mode}-amount`} label={vi ? "Giá trị dự kiến" : "Expected amount"} inputMode="decimal" value={draft.amountDecimal} onChange={event => setDraft(current => ({ ...current, amountDecimal: event.target.value, amount: event.target.value === "" ? null : Number(event.target.value) }))} error={validationErrors.amount}/>
+              <Select label={vi ? "Tiền tệ" : "Currency"} value={draft.currency} onChange={event => update("currency", event.target.value)}>{[...new Set([...currencyChoices, draft.currency])].map(code => <option key={code} value={code}>{code}</option>)}</Select>
+              <Select id={`deal-${mode}-stage`} label={vi ? "Giai đoạn" : "Stage"} value={draft.stage} error={validationErrors.stage} onChange={event => update("stage", event.target.value)}>{activeStages.map(stage => <option key={stage.code} value={stage.code}>{vi ? stage.labelVi : stage.labelEn}</option>)}</Select>
+              <Input id={`deal-${mode}-expectedCloseDate`} label={vi ? "Ngày đóng dự kiến" : "Expected close date"} type="date" value={draft.expectedCloseDate} onChange={event => update("expectedCloseDate", event.target.value)} error={validationErrors.expectedCloseDate}/>
+              <Input id={`deal-${mode}-probability`} label={vi ? "Xác suất (%)" : "Probability (%)"} type="number" min="0" max="100" value={String(draft.probability)} onChange={event => update("probability", Number(event.target.value))} error={validationErrors.probability}/>
+              <div data-guidance-id="deals.form.forecast-category"><Select label={vi ? "Dự báo" : "Forecast"} value={draft.forecastCategory} onChange={event => update("forecastCategory", event.target.value as DealForecastCategory)}><option value="PIPELINE">Pipeline</option><option value="BEST_CASE">Best case</option><option value="COMMIT">Commit</option></Select></div>
             </div>
-          ) : null}
-
+          </section>
+          {allowFollowUpTask && <section data-guidance-id="deals.form.next-step" className="space-y-3 border-t border-slate-100 pt-4">
+            <Checkbox id={`deal-${mode}-follow-up-task`} label={vi ? "Tạo công việc theo dõi sau khi lưu" : "Create a follow-up task after saving"} checked={draft.createFollowUpTask} onChange={event => update("createFollowUpTask", event.target.checked)}/>
+            {draft.createFollowUpTask && <div className="grid gap-3 sm:grid-cols-2"><Input id={`deal-${mode}-nextActionSummary`} label={vi ? "Tên công việc" : "Task title"} value={draft.nextActionSummary} onChange={event => update("nextActionSummary", event.target.value)} error={validationErrors.nextActionSummary}/><Input id={`deal-${mode}-nextActionAt`} label={vi ? "Hạn công việc" : "Task due"} type="datetime-local" value={draft.nextActionAt} onChange={event => update("nextActionAt", event.target.value)} error={validationErrors.nextActionAt}/></div>}
+          </section>}
           </fieldset>
           <div className="crm-form-action-bar flex justify-end gap-2 border-t border-slate-100 pt-4"><Button type="button" variant="secondary" onClick={requestClose}>{vi ? "Hủy" : "Cancel"}</Button><Button type="submit" variant="primary" loading={submitting || localPending}>{mode === "create" ? (vi ? "Tạo cơ hội" : "Create opportunity") : (vi ? "Lưu thay đổi" : "Save changes")}</Button></div>
         </form>

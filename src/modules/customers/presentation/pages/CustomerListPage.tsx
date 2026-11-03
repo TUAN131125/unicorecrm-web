@@ -323,7 +323,7 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
   const openActionCenter = (row: CustomerListRow) => navigate(`/customers/${row.customer.id}`);
 
   return (
-    <><AuthoritativeQueryNotice connected={customerSource.query.connected} loading={customerSource.query.loading} refreshing={customerSource.query.refreshing} stale={customerSource.query.stale} loadedAt={customerSource.query.loadedAt} error={customerSource.query.error} onRefresh={() => void customerSource.query.refresh()} compact /><ListPageFrame id="customer-workspace" className="text-slate-700">
+    <><ListPageFrame id="customer-workspace" className="text-slate-700">
       <ListPageHeader
         title={<>{isVi ? "Khách hàng" : "Customers"}{customerSource.query.connected && <span data-customer-visible-count className="ml-2 text-[11px] font-medium text-slate-500">{rows.length} {isVi ? "đang hiển thị" : "currently shown"}</span>}</>}
         count={customerSource.query.connected ? undefined : filteredRows.length}
@@ -374,8 +374,9 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
 
       <ListToolbar
         searchValue={searchTerm}
+        searchDebounceMs={customerSource.query.connected ? 300 : 0}
         onSearchChange={setSearchTerm}
-        searchPlaceholder={customerSource.query.connected ? (isVi ? "Tìm mã, phân khúc, nhãn khách hàng…" : "Search customer code, segment, tags…") : (isVi ? "Tìm theo tên, mã khách hàng, SĐT, email, mã số thuế..." : "Search name, customer code, phone, email, tax code...")}
+        searchPlaceholder={customerSource.query.connected ? (isVi ? "Tìm tên, mã khách hàng, email, điện thoại, MST…" : "Search name, customer code, email, phone, tax code…") : (isVi ? "Tìm theo tên, mã khách hàng, SĐT, email, mã số thuế..." : "Search name, customer code, phone, email, tax code...")}
         viewMode={viewMode}
         onViewModeChange={(value) => setViewMode(value as "table" | "card")}
         viewOptions={[
@@ -388,6 +389,9 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
         filtersOpen={isFilterOpen}
         filtersPanel={(
           <CustomerFilterPopover
+            sortControl={(<Select disabled aria-label={isVi ? "Sắp xếp khách hàng" : "Sort customers"} title={isVi ? "Sắp xếp theo ngày tạo gần nhất" : "Sorted by most recently created"} value="createdDesc">
+            <option value="createdDesc">{isVi ? "Tạo gần nhất" : "Recently created"}</option>
+          </Select>)}
             isOpen={isFilterOpen}
             onClose={() => setIsFilterOpen(false)}
             typeFilter={typeFilter}
@@ -443,9 +447,7 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
           </div>
         )}
         rightSlot={(
-          <div className="flex items-center gap-2"><Select disabled aria-label={isVi ? "Sắp xếp khách hàng" : "Sort customers"} title={isVi ? "Sắp xếp theo ngày tạo gần nhất" : "Sorted by most recently created"} value="createdDesc">
-            <option value="createdDesc">{isVi ? "Tạo gần nhất" : "Recently created"}</option>
-          </Select><button
+          <div className="flex items-center gap-2"><button
             type="button"
             onClick={() => void customerSource.query.refresh()}
             disabled={customerSource.query.refreshing}
@@ -457,6 +459,7 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
         )}
       />
 
+      <AuthoritativeQueryNotice connected={customerSource.query.connected} loading={customerSource.query.loading} refreshing={customerSource.query.refreshing} stale={customerSource.query.stale} loadedAt={customerSource.query.loadedAt} error={customerSource.query.error} onRefresh={() => void customerSource.query.refresh()} compact />
       <ListBulkActionBar selectedCount={selectedCustomerIds.length} label={isVi ? "Đã chọn" : "Selected"} onClear={() => setSelectedCustomerIds([])}>
         <button type="button" onClick={() => selectedRows[0] && openCustomer(selectedRows[0].customer.id)} className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-[10px] font-medium text-blue-700 shadow-sm hover:bg-slate-100">
           {isVi ? "Mở hồ sơ khách hàng" : "Open Customer 360"}
@@ -539,6 +542,7 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
           </div>
           <ListPaginationBar
             {...pagination}
+            refreshing={customerSource.query.connected && customerSource.query.loading}
             totalKnown={!customerSource.query.connected}
             itemLabelVi="khách hàng"
             itemLabelEn="customers"

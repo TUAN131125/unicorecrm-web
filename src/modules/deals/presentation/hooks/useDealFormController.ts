@@ -23,7 +23,9 @@ export function useDealFormController() {
     complete() { unresolved.current = undefined; unresolvedIntent.current = undefined; },
     failed(error: unknown) {
       const normalized = normalizeApplicationError(error);
-      if (["VALIDATION", "AUTHORIZATION", "NOT_FOUND", "BUSINESS_RULE"].includes(normalized.category)) { unresolved.current = undefined; unresolvedIntent.current = undefined; }
+      const requestRejected = normalized.code === "CONTRACT_VIOLATION" && normalized.details && typeof normalized.details === "object"
+        && "direction" in normalized.details && normalized.details.direction === "request";
+      if (requestRejected || ["VALIDATION", "AUTHORIZATION", "NOT_FOUND", "BUSINESS_RULE"].includes(normalized.category)) { unresolved.current = undefined; unresolvedIntent.current = undefined; }
     },
   };
 }

@@ -3,7 +3,7 @@ import type { PaymentAgreementSnapshot } from "@/shared/order-to-cash";
 import type { QuoteVersionedCommandOptions, QuoteCommandOptions } from "./QuoteCommandMetadata";
 import type { SalesAcceptance } from "../../domain/model/salesAcceptance.types";
 export type { SalesAcceptance } from "../../domain/model/salesAcceptance.types";
-export interface SalesInvitation { invitationId: string; quoteId: string; deliveryStatus: "NOT_SENT" | "SENT" | "FAILED"; deliveryErrorCode?: string | null; expiresAt: string; acceptanceUrl?: string | null }
+export interface SalesInvitation { invitationId: string; quoteId: string; deliveryStatus: "NOT_SENT" | "SENDING" | "SENT" | "FAILED" | "UNKNOWN"; deliveryErrorCode?: string | null; expiresAt: string; acceptanceUrl?: string | null; hasAcceptanceLink?: boolean | null; createdAt?: string | null; createdBy?: string | null; deliveredAt?: string | null }
 export interface StaffAcceptanceInput { documentId: string; channel: "PHONE" | "EMAIL" | "GMAIL" | "ZALO" | "IN_PERSON" | "OTHER"; customerAgreedAt: string; evidence: string; responsibilityConfirmed: boolean; attachmentEvidenceId?: string }
 export interface CustomerAcceptancePreview {
   quoteNumber: string; buyerName: string; quoteRevision: number; documentVersion: number; grandTotal: MoneyDto;

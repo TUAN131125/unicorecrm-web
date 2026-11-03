@@ -1,3 +1,4 @@
+import { ConnectedRelationshipRecords } from "@/components/crm/relationship-detail/ConnectedRelationshipRecords";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useI18n } from "@/i18n";
@@ -65,7 +66,7 @@ export function OrganizationConnectedWorkspace({ account, canEdit, onEdit, onArc
     <div className="flex min-w-0 flex-col items-start gap-3 xl:flex-row">
       <main className="w-full min-w-0 flex-1 rounded-xl border border-slate-200 bg-white">
         <OrganizationDetailTabs activeTab={tab} onChange={setTab} counts={{}} isRightPanelVisible={visible} onToggleRightPanel={() => setVisible(value => !value)}/>
-        <div className="p-4 sm:p-5">{tab === "overview" || tab === "relationship" ? info : tab === "work" ? <div className="space-y-3"><p>{text("Xem Công việc và Lịch sử trong bảng quan hệ.","Use Work and History in the relationship panel.")}</p><Button onClick={() => setVisible(true)}>{text("Hiện bảng quan hệ","Show relationship panel")}</Button></div> : <p role="status">{text("Chưa thể hiển thị thông tin liên quan ở mục này.","Related information is unavailable in this section.")}</p>}</div>
+        <div className="p-4 sm:p-5">{tab === "overview" || tab === "relationship" ? info : tab === "sales" || tab === "transactions" || tab === "service" ? <ConnectedRelationshipRecords subject={{ type: "ORGANIZATION_ACCOUNT", id: current.id }} section={tab}/> : tab === "work" ? <div className="space-y-3"><p>{text("Xem Công việc và Lịch sử trong bảng quan hệ.","Use Work and History in the relationship panel.")}</p><Button onClick={() => setVisible(true)}>{text("Hiện bảng quan hệ","Show relationship panel")}</Button></div> : <p role="status">{text("Chưa thể hiển thị thông tin liên quan ở mục này.","Related information is unavailable in this section.")}</p>}</div>
       </main>
       <OrganizationRelationshipPanel recordId={current.id} status={current.status} visible={visible}/>
     </div>

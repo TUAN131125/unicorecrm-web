@@ -1,0 +1,251 @@
+{
+  "schemaVersion": "4.2.1",
+  "kind": "UnicoreCRMBackendTaskPacket",
+  "identity": {
+    "taskId": "PRIMARY-SOURCE-INTEGRATION-20261015-FE",
+    "operationId": "createTask",
+    "canonicalOwner": "tasks",
+    "area": "Operations",
+    "status": "PRODUCTION_CONTRACT_READY",
+    "primaryWriter": "gov-primary-writer-root",
+    "reviewer": "PENDING_ASSIGNMENT",
+    "baseCommit": "416936d12ab9db00bc0194ab9cf0a7931888f723",
+    "baseline": {
+      "canonicalDesignVersion": "2.0-reconciled",
+      "openApiVersion": "0.23.21-contract.0",
+      "openApiSha256": "4bcde6f6c52bf96545106cff5273aff1681b66c8ee239c91cbef921edfd70880"
+    }
+  },
+  "risk": {
+    "tier": "HIGH",
+    "score": 6,
+    "reasons": [
+      "mutation",
+      "idempotency",
+      "security/tenancy",
+      "event/outbox"
+    ],
+    "specialists": [
+      "CONTRACT_API",
+      "PERSISTENCE_RELIABILITY",
+      "SECURITY_TENANCY"
+    ]
+  },
+  "scope": {
+    "inScope": [
+      "Exact-byte consolidation of six completed deliveries into primary; existing createTask operation is a control anchor, not a new business mutation or admission of new semantics. All adopted bytes fixed by integration scope 68ba73745cedab58c057ae7717b893213426984e7db3ce9c150c5aa43ffb4139"
+    ],
+    "outOfScope": [
+      "All other source paths",
+      "User staged/unstaged/untracked/ignored files",
+      "Lead cursor",
+      "Dependency version changes",
+      "Root authority/contract writes",
+      "Commit/push/merge/rebase/cherry-pick/freeze/release",
+      "Review worktree mutations"
+    ],
+    "allowedWritePaths": [
+      "docs/api/api-operation-catalog.json",
+      "docs/api/generated-client-manifest.json",
+      "docs/api/openapi.json",
+      "docs/api/openapi.sha256",
+      "docs/api/operation-coverage-ledger.json",
+      "docs/backend-readiness/concurrency-policy.json",
+      "docs/backend-readiness/idempotency-policy.json",
+      "docs/backend-readiness/operation-authorization-matrix.json",
+      "docs/backend-readiness/operation-contract-status.json",
+      "docs/backend-readiness/workflow-ownership.json",
+      "src/app/bootstrap/applicationBootstrap.ts",
+      "src/app/providers/PlatformStateProvider.tsx",
+      "src/app/router/guards/RequireAuth.tsx",
+      "src/app/router/guards/RequireWorkspaceContext.tsx",
+      "src/guidance/content/crm/extendedScreens.ts",
+      "src/guidance/content/crm/screens.ts",
+      "src/guidance/content/fields/fields.ts",
+      "src/guidance/content/workflows/workflows.ts",
+      "src/modules/contacts/application/vertical-slice/contactReadAuthorityScope.ts",
+      "src/modules/contacts/presentation/components/ContactFormModal.tsx",
+      "src/modules/contacts/presentation/detail/tabs/ContactActiveTasksTab.tsx",
+      "src/modules/contacts/presentation/hooks/useContactDetailController.tsx",
+      "src/modules/contacts/presentation/hooks/useContactReadAuthorityScope.ts",
+      "src/modules/contacts/presentation/hooks/useContactTasksQuery.ts",
+      "src/modules/contacts/presentation/model/contactDraftRecovery.ts",
+      "src/modules/contacts/presentation/views/ContactDetailResourceView.tsx",
+      "src/modules/contacts/public/contacts.ts",
+      "src/modules/deals/application/read-models/dealReadModel.ts",
+      "src/modules/deals/domain/model/deal.types.ts",
+      "src/modules/deals/presentation/components/DealBuyerPicker.tsx",
+      "src/modules/deals/presentation/components/DealFollowUpTasks.tsx",
+      "src/modules/deals/presentation/components/DealFormModal.tsx",
+      "src/modules/deals/presentation/components/DealInterestedProductsPicker.tsx",
+      "src/modules/deals/presentation/components/dealFormModel.ts",
+      "src/modules/deals/presentation/hooks/useDealDetailController.tsx",
+      "src/modules/deals/presentation/hooks/useDealFollowUpTasks.ts",
+      "src/modules/deals/presentation/hooks/useDealFormController.ts",
+      "src/modules/deals/presentation/hooks/useDealPipelineController.ts",
+      "src/modules/deals/presentation/hooks/useDealProductSelection.ts",
+      "src/modules/deals/presentation/hooks/useDealSelectionQueries.ts",
+      "src/modules/deals/presentation/model/dealSaveCheckpoint.ts",
+      "src/modules/deals/presentation/views/DealDetailView.tsx",
+      "src/modules/deals/public/deals.ts",
+      "src/modules/deals/public/index.ts",
+      "src/modules/organizations/public/api.ts",
+      "src/modules/products/application/ports/ProductApiRuntime.ts",
+      "src/modules/products/infrastructure/http/ProductHttpApiAdapter.ts",
+      "src/modules/products/public/catalog.ts",
+      "src/modules/products/runtime/createProductDemoApiRuntime.ts",
+      "src/modules/tasks/application/vertical-slice/taskAuthoritativeQueries.ts",
+      "src/modules/tasks/presentation/components/TaskCreateModal.tsx",
+      "src/modules/tasks/presentation/hooks/useTaskCreateController.ts",
+      "src/modules/tasks/presentation/hooks/useTasksAuthoritative.ts",
+      "src/modules/tasks/presentation/model/taskCreateIntent.ts",
+      "src/modules/tasks/public/api.ts",
+      "src/modules/tasks/public/index.ts",
+      "src/platform/access-control/runtime/accessGovernanceRuntime.ts",
+      "src/platform/api/catalog/generatedApiOperationCatalog.ts",
+      "src/platform/api/client/FetchHttpClient.ts",
+      "src/platform/api/client/HttpClient.ts",
+      "src/platform/api/contracts/generatedOpenApiRuntimeContract.ts",
+      "src/platform/api/generated/accessGovernanceApi.ts",
+      "src/platform/api/generated/aiApi.ts",
+      "src/platform/api/generated/commercialApi.ts",
+      "src/platform/api/generated/crmConfigurationApi.ts",
+      "src/platform/api/generated/financialApi.ts",
+      "src/platform/api/generated/financialConfigurationApi.ts",
+      "src/platform/api/generated/identityApi.ts",
+      "src/platform/api/generated/integrationConfigurationApi.ts",
+      "src/platform/api/generated/productConfigurationApi.ts",
+      "src/platform/api/generated/receivablesApi.ts",
+      "src/platform/api/generated/studioQuickSetupApi.ts",
+      "src/platform/api/generated/workspaceBootstrapApi.ts",
+      "src/platform/api/generated/workspaceConfigurationApi.ts",
+      "src/platform/identity-auth/infrastructure/IdentityAuthHttpAdapter.ts",
+      "src/platform/identity-auth/runtime/authRuntime.ts",
+      "src/platform/workspace-context/runtime/connectedWorkspaceContextRuntime.ts",
+      "src/workflows/lead-qualification/application/executeLeadOpportunity.ts",
+      "src/workflows/lead-qualification/domain/leadQualification.rules.ts",
+      "src/workflows/lead-qualification/domain/leadQualification.types.ts",
+      "src/workflows/lead-qualification/infrastructure/http/LeadQualificationHttpAdapter.ts",
+      "src/workflows/lead-qualification/presentation/components/QualificationContactPicker.tsx",
+      "src/workflows/lead-qualification/presentation/components/RelationshipResolutionFields.tsx",
+      "src/workflows/lead-qualification/presentation/hooks/useLeadQualificationController.ts",
+      "src/workflows/lead-qualification/presentation/model/leadOpportunityIntent.ts",
+      "src/workflows/lead-qualification/presentation/pages/LeadQualificationPage.tsx",
+      "src/workflows/lead-qualification/presentation/views/LeadQualificationView.tsx",
+      "src/workflows/lead-qualification/public/leadQualification.ts",
+      "tests/fixtures/runtime/check-contact-authority-cache.mts",
+      "tests/fixtures/runtime/check-deal-core-save.mts",
+      "tests/fixtures/runtime/check-deal-core-selection.mts",
+      "tests/fixtures/runtime/check-lead-opportunity-intent.mts",
+      "tests/fixtures/runtime/check-product-selection-authority.mts",
+      "tests/fixtures/runtime/check-shared-authority-recovery.mts",
+      "tests/fixtures/runtime/check-task-authority-cache.mts",
+      "tests/fixtures/runtime/check-task-create-intent.mts",
+      "tests/quality/architecture/check-api-contract.mts",
+      "tests/quality/architecture/check-http-api-foundation.mts",
+      "tests/quality/architecture/check-lead-qualification-api-boundary.mts",
+      "tests/quality/integration/check-auth-session-contracts.mts",
+      "tests/quality/integration/check-commercial-flow-regressions.mts",
+      "tests/quality/integration/check-deal-follow-up-tasks.mts",
+      "tests/quality/integration/check-lead-full-page-target-identity.mts",
+      "tests/quality/integration/check-lead-opportunity-connected.mts",
+      "tests/quality/integration/check-product-catalog-search.mts"
+    ],
+    "forbiddenWritePaths": [
+      "design-authority/**",
+      "roles/backend-execution/**",
+      "backend-design/frozen/**",
+      "architecture/**"
+    ]
+  },
+  "authorityEvidence": [
+    {
+      "claimId": "AUTH-OPERATION",
+      "classification": "CANONICAL_FACT",
+      "claim": "operation admission/wire metadata",
+      "sourceFile": "design-authority/contracts/openapi.json",
+      "locator": "#/paths/~1tasks/post",
+      "sourceSha256": "4bcde6f6c52bf96545106cff5273aff1681b66c8ee239c91cbef921edfd70880",
+      "derivedFrom": [],
+      "value": "PRODUCTION_CONTRACT_READY"
+    }
+  ],
+  "architecture": {
+    "domainFiles": [],
+    "applicationSlice": "Exact-path source consolidation, preserving all existing ownership, persistence, contracts and dependencies",
+    "infrastructureFiles": [],
+    "apiFiles": [],
+    "crossOwnerEdges": [],
+    "persistence": {
+      "owner": "tasks",
+      "dbContext": "UnicoreCRM.Operations.Tasks.Infrastructure.Persistence.TasksDbContext",
+      "schema": "tasks",
+      "migrationRoot": "src/UnicoreCRM.Operations/Tasks/Infrastructure/Persistence/Migrations"
+    }
+  },
+  "policies": {
+    "authorization": "tasks.create",
+    "additionalCapabilities": [],
+    "workspaceRequired": true,
+    "actorRequired": true,
+    "credentialsPolicy": null,
+    "resourceScope": "WORKSPACE",
+    "dataScope": "WORKSPACE",
+    "workspaceDataScope": "WORKSPACE",
+    "idempotency": "REQUIRED",
+    "concurrency": "NOT_APPLICABLE",
+    "transactionBoundary": "SINGLE_TASK_TRANSACTION",
+    "audit": "IMMUTABLE_COMMAND_AUDIT",
+    "eventOutbox": "TASK_CREATED",
+    "workflow": null,
+    "provider": null,
+    "retentionPrivacy": null
+  },
+  "implementationFreedom": {
+    "allowedChoices": [],
+    "approvalRequired": []
+  },
+  "verification": {
+    "unit": [],
+    "integration": [
+      "TEST-IDEM-SAME",
+      "TEST-IDEM-INPROGRESS",
+      "TEST-TX-ROLLBACK",
+      "TEST-AUDIT",
+      "TEST-OUTBOX-ATOMIC"
+    ],
+    "contract": [
+      "TEST-CONTRACT-EXACT"
+    ],
+    "architecture": [],
+    "negative": [
+      "TEST-AUTH-DENY",
+      "TEST-IDEM-REUSE"
+    ],
+    "twoWorkspaceIsolation": [
+      "TEST-TENANT-CROSS"
+    ],
+    "providerConformance": [],
+    "externalConformance": {
+      "required": false
+    }
+  },
+  "stopConditions": [
+    "AUTHORITY_GAP",
+    "BLOCKED_OPERATION",
+    "UNAPPROVED_CROSS_OWNER_DEPENDENCY",
+    "FOREIGN_PERSISTENCE_REQUIRED",
+    "PERSISTENCE_OWNER_UNASSIGNED",
+    "CANONICAL_CONFLICT",
+    "BASELINE_DRIFT",
+    "WRITE_SCOPE_VIOLATION",
+    "AUTHORITY_UNVERIFIED"
+  ],
+  "completion": {
+    "changedFiles": [],
+    "migrations": [],
+    "testsExecuted": [],
+    "deviations": [],
+    "remainingRisks": []
+  }
+}

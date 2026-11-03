@@ -268,6 +268,7 @@ export function useOrderListController({
   const serverPagination = useServerPagedModuleCollection<CustomerOrder>({
     key: "orders",
     scopeKey: activeWorkspace.workspaceId,
+    authorizationScopeKey: JSON.stringify([access.accountId, access.membershipId, access.authorityRevision]),
     enabled: view !== "kanban",
     query: orderServerQuery,
     initialPageSize: 25,

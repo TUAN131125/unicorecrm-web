@@ -195,7 +195,7 @@ assert.match(deploymentGuidance, /Accounting DSO remains unavailable/);
 assert.doesNotMatch(deploymentGuidance, /DSO and receivables aging are intentionally unavailable/);
 const screenGuidance = read("src/guidance/content/crm/screens.ts");
 assert.match(screenGuidance, /Receivables aging/);
-assert.match(screenGuidance, /accounting DSO requires durable backend data/);
+assert.match(screenGuidance, /Accounting DSO is unavailable/);
 assert.doesNotMatch(screenGuidance, /DSO\/aging require Invoice\/Receivables/);
 
 const docsIndex = read("docs/README.md");

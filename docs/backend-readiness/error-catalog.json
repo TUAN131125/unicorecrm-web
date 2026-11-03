@@ -5835,6 +5835,71 @@
         "updateWorkspaceLocaleRegion",
         "voidInvoice"
       ]
+    },
+    {
+      "code": "DEAL_PIPELINE_NOT_FOUND",
+      "httpStatus": 422,
+      "category": "VALIDATION",
+      "retryable": false,
+      "userSafeExposure": "CODE_AND_SAFE_TITLE",
+      "fieldLevelApplicable": false,
+      "moduleOwner": "deals",
+      "operationReferences": [
+        "createDealCommand"
+      ],
+      "sourceEvidence": "backend/src/UnicoreCRM.Crm/Deals/Application/Common/DealPipelineRegistry.cs:65"
+    },
+    {
+      "code": "PIPELINE_DEFAULT_REQUIRED",
+      "httpStatus": 409,
+      "category": "CONFLICT",
+      "retryable": false,
+      "userSafeExposure": "CODE_AND_SAFE_TITLE",
+      "fieldLevelApplicable": false,
+      "moduleOwner": "deals",
+      "operationReferences": [
+        "updateCrmPipeline"
+      ],
+      "sourceEvidence": "backend/src/UnicoreCRM.Crm/Deals/Application/Common/DealPipelineRegistry.cs:108"
+    },
+    {
+      "code": "PIPELINE_IN_USE",
+      "httpStatus": 409,
+      "category": "CONFLICT",
+      "retryable": false,
+      "userSafeExposure": "CODE_AND_SAFE_TITLE",
+      "fieldLevelApplicable": false,
+      "moduleOwner": "deals",
+      "operationReferences": [
+        "updateCrmPipeline"
+      ],
+      "sourceEvidence": "backend/src/UnicoreCRM.Crm/Deals/Application/Common/DealPipelineRegistry.cs:110"
+    },
+    {
+      "code": "PIPELINE_STAGE_IN_USE",
+      "httpStatus": 409,
+      "category": "CONFLICT",
+      "retryable": false,
+      "userSafeExposure": "CODE_AND_SAFE_TITLE",
+      "fieldLevelApplicable": false,
+      "moduleOwner": "deals",
+      "operationReferences": [
+        "updateCrmPipeline"
+      ],
+      "sourceEvidence": "backend/src/UnicoreCRM.Crm/Deals/Application/Common/DealPipelineRegistry.cs:117"
+    },
+    {
+      "code": "PIPELINE_LIMIT_REACHED",
+      "httpStatus": 422,
+      "category": "VALIDATION",
+      "retryable": false,
+      "userSafeExposure": "CODE_AND_SAFE_TITLE",
+      "fieldLevelApplicable": false,
+      "moduleOwner": "deals",
+      "operationReferences": [
+        "createCrmPipeline"
+      ],
+      "sourceEvidence": "backend/src/UnicoreCRM.Crm/Deals/Application/Common/DealPipelineRegistry.cs:132"
     }
   ],
   "contractVersion": "0.24.0-contract.0"

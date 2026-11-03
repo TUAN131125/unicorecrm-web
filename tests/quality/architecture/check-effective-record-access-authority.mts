@@ -57,7 +57,8 @@ assert.match(hook, /"HIDDEN"/);
 const boundary = read("src/platform/access-control/react/EffectiveRecordAccessBoundary.tsx");
 assert.match(boundary, /if \(!access\.data\.canRead \|\| commandDenied\)/);
 assert.match(boundary, /data-access-authority/);
-assert.match(boundary, /Backend chỉ cho phép xem bản ghi này/);
+assert.doesNotMatch(boundary, /Backend chỉ cho phép xem bản ghi này|EffectiveAccessNotice|TransientInfoNotice|protected fields|trường được bảo vệ/);
+assert.match(boundary, /EffectiveRecordAccessContext\.Provider value=\{access\.data\}/, "Omitting notices must preserve the actual access decision for field and command consumers.");
 
 const protectedSurfaces = [
   "src/modules/leads/detail-route.tsx",
@@ -110,7 +111,9 @@ for (const status of [403, 404]) {
 }
 
 const quoteBuilderView = read("src/modules/quotes/presentation/views/QuoteBuilderView.tsx");
-assert.match(quoteBuilderView, /EffectiveFieldAccessScope fieldKey="items"/);
+// Quote Core's generated transport and Backend field policy name this field lineItems.
+// Orders retains its separate items field below.
+assert.match(quoteBuilderView, /EffectiveFieldAccessScope fieldKey="lineItems"/);
 assert.match(quoteBuilderView, /EffectiveFieldAccessScope fieldKey="paymentAgreement"/);
 const orderFormView = read("src/modules/orders/presentation/views/OrderFormView.tsx");
 assert.match(orderFormView, /EffectiveFieldAccessScope fieldKey="buyerRef"/);

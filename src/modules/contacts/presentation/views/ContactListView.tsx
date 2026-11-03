@@ -184,6 +184,7 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
       {/* Modern Toolbar incorporating saved views and advanced filters toggling */}
       <ListToolbar
         searchValue={searchTerm}
+        searchDebounceMs={connected ? 300 : 0}
         onSearchChange={setSearchTerm}
         searchPlaceholder={tx("contactList.filters.searchPlaceholder", "Tìm theo tên, mã KH, ĐT...")}
         viewMode={viewMode}
@@ -198,6 +199,12 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
         filtersOpen={isFilterOpen}
         filtersPanel={(
           <ContactFilterPopover
+            sortControl={(<Select aria-label={locale === "vi" ? "Sắp xếp liên hệ" : "Sort contacts"} value={sortBy} onChange={event => setSortBy(event.target.value)}>
+            <option value="recentlyUpdated">{locale === "vi" ? "Cập nhật gần nhất" : "Recently updated"}</option>
+            <option value="nameAsc">{locale === "vi" ? "Tên A–Z" : "Name A–Z"}</option>
+            <option value="nextFollowUp">{locale === "vi" ? "Ngày chăm sóc tiếp" : "Next follow-up"}</option>
+            <option value="lastContacted" disabled={connected}>{locale === "vi" ? "Liên hệ gần nhất" : "Last contacted"}{connected ? (locale === "vi" ? " — Chưa khả dụng" : " — Unavailable") : ""}</option>
+          </Select>)}
             connected={connected}
             isOpen={isFilterOpen}
             onClose={() => setIsFilterOpen(false)}
@@ -278,12 +285,7 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
         }
         rightSlot={
           <div className="flex items-center gap-2">
-          <Select aria-label={locale === "vi" ? "Sắp xếp liên hệ" : "Sort contacts"} value={sortBy} onChange={event => setSortBy(event.target.value)}>
-            <option value="recentlyUpdated">{locale === "vi" ? "Cập nhật gần nhất" : "Recently updated"}</option>
-            <option value="nameAsc">{locale === "vi" ? "Tên A–Z" : "Name A–Z"}</option>
-            <option value="nextFollowUp">{locale === "vi" ? "Ngày chăm sóc tiếp" : "Next follow-up"}</option>
-            <option value="lastContacted" disabled={connected}>{locale === "vi" ? "Liên hệ gần nhất" : "Last contacted"}{connected ? (locale === "vi" ? " — Chưa khả dụng" : " — Unavailable") : ""}</option>
-          </Select>
+
           <button
             type="button"
             onClick={() => void contactQuery.refresh()}
@@ -340,7 +342,7 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
         <ListStatePanel kind="permission" title={locale === "vi" ? "Bạn không có quyền xem liên hệ." : "You do not have permission to view contacts."} />
       ) : serverQueryUnavailable ? (
         <ListStatePanel kind="empty" title={locale === "vi" ? "Bộ lọc, cách sắp xếp hoặc giao diện này chưa khả dụng. Vui lòng chọn tùy chọn khác." : "This filter, sort or view is unavailable. Please choose another option."} />
-      ) : connected && (serverPagination.loading || serverPagination.error) ? null : sortedContacts.length === 0 ? (
+      ) : connected && (serverPagination.loading || serverPagination.error) && contacts.length === 0 ? null : sortedContacts.length === 0 ? (
         <ListStatePanel
           kind="empty"
           title={locale === "vi" ? "Không có Contact phù hợp" : "No matching contacts"}
@@ -378,7 +380,7 @@ export function ContactListView({ controller }: { controller: ContactListViewCon
           onViewDetails={(contactId) => navigate(`/contacts/${contactId}`)}
         />
       </div>
-      <ListPaginationBar {...pagination} itemLabelVi="người liên hệ" itemLabelEn="contacts" />
+      <ListPaginationBar {...pagination} refreshing={connected && serverPagination.loading} itemLabelVi="người liên hệ" itemLabelEn="contacts" />
         </>
       )}
 

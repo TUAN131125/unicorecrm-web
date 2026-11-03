@@ -68,9 +68,9 @@ const expectedSources = [
   ["src/modules/leads/application/vertical-slice/leadAuthoritativeQueries.ts", /getLeadApiRuntime\(\)\.queries/, /createAuthoritativeResource/, /getLeadDetailResource/],
   ["src/modules/deals/application/vertical-slice/dealAuthoritativeQueries.ts", /getDealApiRuntime\(\)\.queries/, /createAuthoritativeResource/, /getDealDetailResource/, /getDealForecastSummaryResource/],
   ["src/modules/quotes/application/vertical-slice/quoteAuthoritativeQueries.ts", /getQuoteApiRuntime\(\)\.queries/, /createAuthoritativeResource/, /getQuoteDetailResource/],
-  ["src/modules/orders/application/vertical-slice/orderAuthoritativeQueries.ts", /createModuleCollectionResource<OrderReadModel>\("orders"/, /projectOrderReadModel/, /getOrderDetailResource/],
+  ["src/modules/orders/application/vertical-slice/orderAuthoritativeQueries.ts", /createModuleCollectionResource<CustomerOrder>\("orders"/, /project:\s*replaceOrderList/, /getOrderDetailResource/],
   ["src/modules/leads/presentation/hooks/useLeads.ts", /useLeadAuthoritativeResource\(getLeadCollectionResource\(\)/, /scopeKey:\s*workspace\.workspaceId/, /onScopeChange:\s*\(\)\s*=>\s*replaceLeads\(\[\]\)/],
-  ["src/modules/deals/presentation/hooks/useDeals.ts", /useModuleAuthoritativeResource\(getDealCollectionResource\(\)/, /scopeKey:\s*workspace\.workspaceId/, /replaceDeals\(\[\]\)/],
+  ["src/modules/deals/presentation/hooks/useDeals.ts", /useModuleAuthoritativeResource\(getDealCollectionResource\(options\.pipelineId\)/, /scopeKey:\s*workspace\.workspaceId/, /replaceDeals\(\[\]\)/],
   ["src/modules/quotes/presentation/hooks/useQuotes.ts", /useModuleAuthoritativeResource\(getQuoteCollectionResource\(\)/, /scopeKey:\s*workspace\.workspaceId/, /replaceQuotes\(\[\]\)/],
   ["src/modules/orders/presentation/hooks/useOrders.ts", /useModuleAuthoritativeResource\(getOrderCollectionResource\(\)/, /scopeKey:\s*workspace\.workspaceId/, /replaceOrders\(\{\}\)/],
   ["src/modules/contacts/application/vertical-slice/contactAuthoritativeQueries.ts", /getContactApiRuntime\(\)\.queries/, /createAuthoritativeResource/, /getContactDetailResource/, /getContactRelationshipSummaryResource/],
@@ -120,7 +120,7 @@ for (const relativePath of scopeResetHooks) {
 }
 
 const authoritativeDetailRoutes = [
-  ["src/modules/customers/detail-route.tsx", /useModuleAuthoritativeResource\(getCustomer360Resource\(/, /AuthoritativeQueryBoundary/, /scopeKey:\s*workspace\.workspaceId/],
+  ["src/modules/customers/detail-route.tsx", /useModuleAuthoritativeResource\(resource,/, /createAuthoritativeResource\(signal => getCustomerApiRuntime\(\)\.queries\.get360\(customerId, signal\)/, /shouldRetainDataOnError: \(\) => false/, /EffectiveRecordAccessBoundary key=\{`\$\{authorityKey\}:\$\{customerId\}`\}/, /AuthoritativeQueryBoundary/, /scopeKey:\s*workspace\.workspaceId/],
   ["src/modules/organizations/detail-route.tsx", /getOrganizationAccountDetailResource/, /AuthoritativeQueryBoundary/, /replaceOrganizationAccounts\(\[\]\)/],
   ["src/modules/products/detail-route.tsx", /getProductDetailResource/, /AuthoritativeQueryBoundary/, /replaceProductCatalog\(\[\]\)/],
   ["src/modules/returns/detail-route.tsx", /getReturnDetailResource/, /AuthoritativeQueryBoundary/, /replaceReturnsSnapshot/],

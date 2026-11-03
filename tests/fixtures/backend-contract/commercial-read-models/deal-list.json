@@ -55,7 +55,8 @@
       ],
       "resourceVersion": 7,
       "createdAt": "2026-07-01T01:00:00Z",
-      "updatedAt": "2026-07-24T04:00:00Z"
+      "updatedAt": "2026-07-24T04:00:00Z",
+      "pipelineId": "pipeline-001"
     }
   ],
   "pageInfo": {

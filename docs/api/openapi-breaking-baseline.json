@@ -4292,26 +4292,40 @@
           }
         },
         {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/RequestId"
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "$ref": "#/components/schemas/CorrelationId"
+          }
+        },
+        {
           "name": "Idempotency-Key",
           "in": "header",
           "required": true,
           "schema": {
             "$ref": "#/components/schemas/IdempotencyKey"
           }
-        },
-        {
-          "name": "If-Match",
-          "in": "header",
-          "required": true,
-          "schema": {
-            "type": "string"
-          }
         }
       ],
-      "requestBody": null,
-      "success": null,
-      "contractStatus": "BLOCKED",
-      "blockingDecisionId": "DEC-CREATECRMPIPELINE"
+      "requestBody": {
+        "required": true,
+        "schema": "SaveDealPipelineRequest"
+      },
+      "success": {
+        "status": "201",
+        "schema": "DealPipelineMutationResponse"
+      },
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
     },
     {
       "operationId": "createCrmPipelineStage",
@@ -9190,12 +9204,28 @@
           "schema": {
             "$ref": "#/components/schemas/WorkspaceId"
           }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/RequestId"
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "$ref": "#/components/schemas/CorrelationId"
+          }
         }
       ],
       "requestBody": null,
       "success": {
         "status": "200",
-        "schema": "ConfigurationDocumentResponse"
+        "schema": "DealPipelineListResponse"
       },
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null
@@ -9481,6 +9511,14 @@
         },
         {
           "name": "buyerId",
+          "in": "query",
+          "required": false,
+          "schema": {
+            "$ref": "#/components/schemas/EntityId"
+          }
+        },
+        {
+          "name": "pipelineId",
           "in": "query",
           "required": false,
           "schema": {
@@ -16414,12 +16452,27 @@
           }
         },
         {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/RequestId"
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "$ref": "#/components/schemas/CorrelationId"
+          }
+        },
+        {
           "name": "pipelineId",
           "in": "path",
           "required": true,
           "schema": {
-            "minLength": 1,
-            "type": "string"
+            "$ref": "#/components/schemas/EntityId"
           }
         },
         {
@@ -16439,10 +16492,16 @@
           }
         }
       ],
-      "requestBody": null,
-      "success": null,
-      "contractStatus": "BLOCKED",
-      "blockingDecisionId": "DEC-UPDATECRMPIPELINE"
+      "requestBody": {
+        "required": true,
+        "schema": "SaveDealPipelineRequest"
+      },
+      "success": {
+        "status": "200",
+        "schema": "DealPipelineMutationResponse"
+      },
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
     },
     {
       "operationId": "updateCrmPipelineStage",
@@ -17528,6 +17587,52 @@
       "success": {
         "status": "200",
         "schema": "InvoiceMutationResponse"
+      },
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "getCrmPipeline",
+      "method": "GET",
+      "path": "/crm-configuration/pipelines/{pipelineId}",
+      "parameters": [
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/WorkspaceId"
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/RequestId"
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "$ref": "#/components/schemas/CorrelationId"
+          }
+        },
+        {
+          "name": "pipelineId",
+          "in": "path",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/EntityId"
+          }
+        }
+      ],
+      "requestBody": null,
+      "success": {
+        "status": "200",
+        "schema": "DealPipelineDocument"
       },
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null
@@ -22249,21 +22354,37 @@
           "$ref": "#/components/schemas/EntityId"
         },
         "stageCode": {
-          "maxLength": 120,
-          "minLength": 1,
-          "type": "string"
+          "anyOf": [
+            {
+              "maxLength": 120,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "pipelineId": {
+          "anyOf": [
+            {
+              "$ref": "#/components/schemas/EntityId"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       },
       "required": [
-        "name",
-        "buyerRef",
-        "stageCode",
         "amount",
-        "opportunityScore",
-        "ownerId",
+        "buyerRef",
         "expectedCloseDate",
         "interestedProductIds",
-        "lineItems"
+        "lineItems",
+        "name",
+        "opportunityScore",
+        "ownerId"
       ],
       "type": "object"
     },
@@ -25171,22 +25292,26 @@
         },
         "wonAt": {
           "$ref": "#/components/schemas/UtcDateTime"
+        },
+        "pipelineId": {
+          "$ref": "#/components/schemas/EntityId"
         }
       },
       "required": [
-        "id",
-        "name",
-        "buyerRef",
-        "stageCode",
-        "stageCategory",
         "amount",
-        "opportunityScore",
-        "ownerId",
+        "buyerRef",
+        "createdAt",
         "expectedCloseDate",
+        "id",
         "interestedProductIds",
         "lineItems",
+        "name",
+        "opportunityScore",
+        "ownerId",
+        "pipelineId",
         "resourceVersion",
-        "createdAt",
+        "stageCategory",
+        "stageCode",
         "updatedAt"
       ],
       "type": "object"
@@ -25679,7 +25804,12 @@
         "LEAD_CONVERSION_INELIGIBLE",
         "LEAD_ALREADY_CONVERTED",
         "LEAD_CONVERSION_SUBJECT_INVALID",
-        "LEAD_CONVERSION_MANUAL_REVIEW"
+        "LEAD_CONVERSION_MANUAL_REVIEW",
+        "DEAL_PIPELINE_NOT_FOUND",
+        "PIPELINE_DEFAULT_REQUIRED",
+        "PIPELINE_IN_USE",
+        "PIPELINE_STAGE_IN_USE",
+        "PIPELINE_LIMIT_REACHED"
       ],
       "type": "string"
     },
@@ -41619,6 +41749,293 @@
         "salesMotion",
         "pipelineTemplate",
         "handoverAcceptanceSlaHours"
+      ],
+      "type": "object"
+    },
+    "DealPipelineDocument": {
+      "additionalProperties": false,
+      "properties": {
+        "createdAt": {
+          "$ref": "#/components/schemas/UtcDateTime"
+        },
+        "id": {
+          "$ref": "#/components/schemas/EntityId"
+        },
+        "isActive": {
+          "type": "boolean"
+        },
+        "isDefault": {
+          "type": "boolean"
+        },
+        "nameEn": {
+          "maxLength": 200,
+          "minLength": 1,
+          "type": "string"
+        },
+        "nameVi": {
+          "maxLength": 200,
+          "minLength": 1,
+          "type": "string"
+        },
+        "resourceVersion": {
+          "$ref": "#/components/schemas/ResourceVersion"
+        },
+        "stages": {
+          "items": {
+            "$ref": "#/components/schemas/DealPipelineStageDocument"
+          },
+          "type": "array"
+        },
+        "updatedAt": {
+          "$ref": "#/components/schemas/UtcDateTime"
+        },
+        "updatedBy": {
+          "$ref": "#/components/schemas/EntityId"
+        },
+        "workspaceId": {
+          "$ref": "#/components/schemas/EntityId"
+        }
+      },
+      "required": [
+        "id",
+        "workspaceId",
+        "nameVi",
+        "nameEn",
+        "description",
+        "isDefault",
+        "isActive",
+        "resourceVersion",
+        "createdAt",
+        "updatedAt",
+        "updatedBy",
+        "stages"
+      ],
+      "type": "object"
+    },
+    "DealPipelineListResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "items": {
+          "items": {
+            "$ref": "#/components/schemas/DealPipelineDocument"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "items"
+      ],
+      "type": "object"
+    },
+    "DealPipelineMutationResponse": {
+      "additionalProperties": false,
+      "properties": {
+        "auditEvidenceIds": {
+          "items": {
+            "$ref": "#/components/schemas/EntityId"
+          },
+          "type": "array"
+        },
+        "outcome": {
+          "enum": [
+            "COMMITTED",
+            "REPLAYED"
+          ],
+          "type": "string"
+        },
+        "pipeline": {
+          "$ref": "#/components/schemas/DealPipelineDocument"
+        }
+      },
+      "required": [
+        "outcome",
+        "pipeline",
+        "auditEvidenceIds"
+      ],
+      "type": "object"
+    },
+    "DealPipelineStageDocument": {
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "enum": [
+            "OPEN",
+            "WON",
+            "LOST"
+          ],
+          "type": "string"
+        },
+        "code": {
+          "maxLength": 120,
+          "pattern": "^[A-Z][A-Z0-9_]{0,119}$",
+          "type": "string"
+        },
+        "color": {
+          "enum": [
+            "blue",
+            "yellow",
+            "orange",
+            "purple",
+            "green",
+            "red",
+            "slate",
+            "teal"
+          ],
+          "type": "string"
+        },
+        "defaultProbability": {
+          "maximum": 100,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "forecastFloor": {
+          "$ref": "#/components/schemas/DealForecastCategory"
+        },
+        "id": {
+          "$ref": "#/components/schemas/EntityId"
+        },
+        "isActive": {
+          "type": "boolean"
+        },
+        "isSystem": {
+          "type": "boolean"
+        },
+        "labelEn": {
+          "maxLength": 200,
+          "minLength": 1,
+          "type": "string"
+        },
+        "labelVi": {
+          "maxLength": 200,
+          "minLength": 1,
+          "type": "string"
+        },
+        "order": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "requiresPositiveAmount": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "id",
+        "code",
+        "labelVi",
+        "labelEn",
+        "order",
+        "category",
+        "defaultProbability",
+        "color",
+        "isActive",
+        "isSystem",
+        "forecastFloor",
+        "requiresPositiveAmount"
+      ],
+      "type": "object"
+    },
+    "DealPipelineStageInput": {
+      "additionalProperties": false,
+      "properties": {
+        "category": {
+          "enum": [
+            "OPEN",
+            "WON",
+            "LOST"
+          ],
+          "type": "string"
+        },
+        "code": {
+          "maxLength": 120,
+          "pattern": "^[A-Z][A-Z0-9_]{0,119}$",
+          "type": "string"
+        },
+        "color": {
+          "enum": [
+            "blue",
+            "yellow",
+            "orange",
+            "purple",
+            "green",
+            "red",
+            "slate",
+            "teal"
+          ],
+          "type": "string"
+        },
+        "defaultProbability": {
+          "maximum": 100,
+          "minimum": 0,
+          "type": "integer"
+        },
+        "id": {
+          "$ref": "#/components/schemas/EntityId"
+        },
+        "isActive": {
+          "type": "boolean"
+        },
+        "labelEn": {
+          "maxLength": 200,
+          "minLength": 1,
+          "type": "string"
+        },
+        "labelVi": {
+          "maxLength": 200,
+          "minLength": 1,
+          "type": "string"
+        },
+        "order": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "id",
+        "code",
+        "labelVi",
+        "labelEn",
+        "order",
+        "category",
+        "defaultProbability",
+        "color",
+        "isActive"
+      ],
+      "type": "object"
+    },
+    "SaveDealPipelineRequest": {
+      "additionalProperties": false,
+      "properties": {
+        "isActive": {
+          "type": "boolean"
+        },
+        "isDefault": {
+          "type": "boolean"
+        },
+        "nameEn": {
+          "maxLength": 200,
+          "minLength": 1,
+          "type": "string"
+        },
+        "nameVi": {
+          "maxLength": 200,
+          "minLength": 1,
+          "type": "string"
+        },
+        "stages": {
+          "items": {
+            "$ref": "#/components/schemas/DealPipelineStageInput"
+          },
+          "maxItems": 50,
+          "minItems": 3,
+          "type": "array"
+        }
+      },
+      "required": [
+        "nameVi",
+        "nameEn",
+        "isActive",
+        "isDefault",
+        "stages"
       ],
       "type": "object"
     }

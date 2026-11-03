@@ -123,7 +123,10 @@ try {
   assert.equal(formSource.includes("chưa Chốt thắng"), false, "An open Deal no longer needs to be manually closed before creating a direct Order");
 
   const dealDetailSource = readPresentationComposition(path.resolve("src/modules/deals/presentation/pages/DealDetailPage.tsx"), "utf8");
-  assert.ok(dealDetailSource.includes("tự động Chốt thắng"), "Accepted Quote guidance must explain automatic Deal closure");
+  // B6/Gate C remains blocked in Connected mode. A reported response cannot be
+  // described as an automatic Deal win; direct demo status controls stay demo-only.
+  assert.match(dealDetailSource, /\{!c\.connected && quote\.status === QuoteStatus\.SENT/u,
+    "Direct Quote acceptance controls must remain unavailable in Connected mode");
 
   const orderDetailSource = readPresentationComposition(path.resolve("src/modules/orders/presentation/pages/OrderDetailPage.tsx"), "utf8");
   assert.ok(orderDetailSource.includes('label: locale === "vi" ? "Tài liệu" : "Documents"'), "Order customer-delivery tab must be named Documents/Tài liệu");

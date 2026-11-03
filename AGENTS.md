@@ -29,9 +29,9 @@ Protected repository inventory:
 
 ```text
 16 registered modules
-83 route keys
-67 loadable route modules
-137 capabilities
+87 route keys
+70 loadable route modules
+146 capabilities
 13 workspace module flags
 23 cross-module workflows
 ```

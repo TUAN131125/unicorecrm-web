@@ -148,6 +148,7 @@ export const reverseInvoiceAllocationSnapshot = (allocationId: string, input: Pa
 export const getPaymentIntentAuthoritative = (intentId: string, signal?: AbortSignal) => paymentApi.getIntent(intentId, signal);
 export const getPaymentIntentStatusAuthoritative = (intentId: string, signal?: AbortSignal) => paymentApi.getIntentStatus(intentId, signal);
 export const listPaymentPlansAuthoritative = (orderId: string, signal?: AbortSignal) => paymentApi.listPlans(orderId, signal);
+export const readPaymentRecordsAuthoritative = (buyerId: string, signal?: AbortSignal) => paymentApi.listPaymentRecords(buyerId, signal);
 export const createPaymentIntentAuthoritative = (input: Parameters<typeof paymentApi.createIntent>[0], signal?: AbortSignal) => paymentApi.createIntent(input, signal);
 export const cancelPaymentIntentAuthoritative = (intentId: string, expectedVersion: number, signal?: AbortSignal) => paymentApi.cancelIntent(intentId, expectedVersion, signal);
 export const retryPaymentIntentAuthoritative = (intentId: string, input: Parameters<typeof paymentApi.retryIntent>[1], signal?: AbortSignal) => paymentApi.retryIntent(intentId, input, signal);

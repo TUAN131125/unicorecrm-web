@@ -214,16 +214,19 @@
     {
       "id": "crm-configuration",
       "tags": [
-        "CrmConfiguration"
+        "CrmConfiguration",
+        "DealPipelines"
       ],
       "output": "src/platform/api/generated/crmConfigurationApi.ts",
       "className": "CrmConfigurationApiClient",
       "requestOptionsName": "CrmConfigurationRequestOptions",
       "ownerByTag": {
-        "CrmConfiguration": "platform/workspace-config"
+        "CrmConfiguration": "platform/workspace-config",
+        "DealPipelines": "deals"
       },
       "adapterByTag": {
-        "CrmConfiguration": "src/platform/api/runtime/configurationApiClients.ts"
+        "CrmConfiguration": "src/platform/api/runtime/configurationApiClients.ts",
+        "DealPipelines": "src/modules/deals/infrastructure/http/DealPipelineHttpAdapter.ts"
       },
       "testGateIds": [
         "quality.api-contract",

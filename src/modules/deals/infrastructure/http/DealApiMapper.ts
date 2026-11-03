@@ -46,7 +46,7 @@ export function mapCreateDealRequest(input: CreateDealInput): CreateDealRequest 
     stageCode: input.stageCode.trim() || undefined,
     opportunityScore: normalizeDecimal(input.opportunityScore),
     ownerId: input.ownerId.trim(),
-    expectedCloseDate: input.expectedCloseDate,
+    expectedCloseDate: input.expectedCloseDate.trim(),
     forecastCategory: input.forecastCategory,
     nextActionAt: input.nextActionAt,
     nextActionSummary: input.nextActionSummary?.trim(),
@@ -68,7 +68,7 @@ export function mapAssignDealOwnerRequest(input: AssignDealOwnerInput): AssignDe
 
 export function mapUpdateDealForecastRequest(input: UpdateDealForecastInput): UpdateDealForecastRequest {
   return compact({
-    expectedCloseDate: input.expectedCloseDate,
+    expectedCloseDate: input.expectedCloseDate?.trim() || undefined,
     opportunityScore: input.opportunityScore === undefined ? undefined : normalizeDecimal(input.opportunityScore),
     forecastCategory: input.forecastCategory,
   });

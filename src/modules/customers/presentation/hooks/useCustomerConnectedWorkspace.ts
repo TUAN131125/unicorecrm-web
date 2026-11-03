@@ -11,7 +11,7 @@ export function useCustomerConnectedWorkspace(projection: Customer360Projection)
   const record = useEffectiveRecordAccessDecision();
   const tabs: CustomerDetailTab[] = ["overview", "relationship"];
   if (access.can("deals.read") || access.can("quotes.read")) tabs.push("sales");
-  if (access.can("orders.read") || access.can("invoices.read") || access.can("payments.read")) tabs.push("transactions");
+  if (access.can("orders.read") || access.can("invoices.read") || access.can("payments.read") || access.can("receivables.read")) tabs.push("transactions");
   if (access.can("support.read")) tabs.push("service");
   if (access.can("tasks.read")) tabs.push("work");
   const requested = params.get("tab");

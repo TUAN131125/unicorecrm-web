@@ -54,13 +54,14 @@ export function QuoteDocumentPanel({ quote, workspaceId, vi, canIssue, onCommitt
 
 
     {canStartIssuance && query.seller && !query.seller.ready && <ul data-quote-seller="missing" className="my-3 text-sm text-amber-800">{query.seller.blockerCodes.map(code => <li key={code}>{quoteDocumentBlocker(code, vi)}</li>)}</ul>}
-    {canStartIssuance && hint && !hint.allowed && !hint.blockerCodes.includes("DOCUMENT_ALREADY_ISSUED") && <p className="my-2 text-sm text-amber-800">{quoteDocumentBlocker(hint.blockerCodes[0] ?? "", vi)}</p>}
+    {canStartIssuance && query.sellerError !== null && <p className="my-2 text-sm text-amber-800">{vi ? "Chưa kiểm tra được thông tin bên phát hành. Hãy làm mới tài liệu trước khi phát hành PDF mới." : "Seller readiness is unavailable. Refresh documents before issuing a new PDF."}</p>}
+    {(canStartIssuance || query.items.length === 0) && hint && !hint.allowed && !hint.blockerCodes.includes("DOCUMENT_ALREADY_ISSUED") && <p className="my-2 text-sm text-amber-800">{quoteDocumentBlocker(hint.blockerCodes[0] ?? "", vi)}</p>}
     <div className="my-3 flex flex-wrap gap-2">
       <Button variant="secondary" disabled={query.loading || form.pending} onClick={() => void query.refresh()}>{vi ? "Làm mới tài liệu" : "Refresh documents"}</Button></div>
     {query.loading && <p role="status">{vi ? "Đang tải tài liệu…" : "Loading documents…"}</p>}
     {query.error !== null && <p role="alert">{formatApplicationError(query.error, { locale: vi ? "vi" : "en" })}</p>}
     {!query.loading && query.error === null && query.items.length === 0 && <p>{vi ? "Chưa có tài liệu được phát hành." : "No issued documents."}</p>}
-    <ol className="space-y-3">{query.items.map(item => <li key={item.documentId} data-quote-document-id={item.documentId} className="rounded border border-slate-200 p-3 text-sm">
+    <ol className="space-y-3">{query.items.map(item => <li key={item.documentId} data-quote-document-id={item.documentId} className="border-b border-slate-100 py-2 text-sm">
       <span>{item.fileName}</span><p>{vi ? "Đã phát hành" : "Issued"} · {formatDateTime(item.issuedAt, vi ? "vi" : "en", { timeZone })}</p>
       <p>{vi ? "Phiên bản báo giá / tài liệu" : "Quote / document revision"}: {item.quoteRevision} / {item.documentVersion} · {item.pageCount} {vi ? "trang" : "pages"}</p>
       <div className="my-2 flex flex-wrap gap-2"><Button variant="secondary" disabled={busy !== null || form.pending} onClick={() => void download(item, true)}>{vi ? "Xem tài liệu đã phát hành" : "View issued document"}</Button>

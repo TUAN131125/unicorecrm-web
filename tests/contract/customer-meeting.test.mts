@@ -34,7 +34,7 @@ const host = document.getElementById("root"); assert.ok(host); const root = crea
 function Probe({ status }: { status: string }) { current = useCustomerMeeting("customer-fixture", status, async () => { refreshes++; }); return null; }
 async function render(status = "NEW") {
   const children = React.createElement(Probe, { status });
-  const boundary = React.createElement(ac.EffectiveRecordAccessBoundary, { resourceKey: "customers", recordId: "customer-fixture", showNotice: false, children });
+  const boundary = React.createElement(ac.EffectiveRecordAccessBoundary, { resourceKey: "customers", recordId: "customer-fixture", children });
   await act(async () => root.render(React.createElement(I18nProvider, null, boundary)));
 }
 await render(); assert.ok(current?.canCreate);

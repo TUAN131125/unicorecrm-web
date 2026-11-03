@@ -12,9 +12,9 @@ const moduleDirectories = readdirSync(join(root, "src/modules"), { withFileTypes
   .filter((entry) => entry.isDirectory() && existsSync(join(root, "src/modules", entry.name, "manifest.ts")))
   .map((entry) => entry.name)
   .sort();
-assert.equal(moduleDirectories.length, 15, "Order-to-Cash baseline must expose exactly 15 canonical module manifests including Invoices");
+assert.equal(moduleDirectories.length, 16, "Module count must match the adopted 16-module repository inventory including Invoices");
 assert.ok(moduleDirectories.includes("customers"), "Customers must remain an official module owner");
-assert.ok(read("AGENTS.md").includes("15 registered modules"), "AGENTS.md must reflect the current 15-module baseline");
+assert.ok(read("AGENTS.md").includes("16 registered modules"), "AGENTS.md must retain the adopted protected inventory");
 
 const orderList = read("src/modules/orders/presentation/pages/OrderListPage.tsx");
 const orderPolicy = read("src/modules/orders/presentation/model/orderActionPolicy.ts");

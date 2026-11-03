@@ -79,10 +79,10 @@ export interface QuoteDeliveryRecord {
   resourceVersion?: number;
   approvalContentFingerprint?: string;
   approvalPolicyVersion?: string;
-  documentAuthority?: "COMMERCIAL_CONTENT_ONLY";
+  documentAuthority?: string;
   id: string;
   channel: QuoteDeliveryChannel;
-  evidenceType?: "USER_CONFIRMED_SENT" | "PROVIDER_ACCEPTED" | "PROVIDER_DELIVERED";
+  evidenceType?: "USER_CONFIRMED_SENT" | "PROVIDER_CONFIRMED_SENT" | "PROVIDER_ACCEPTED" | "PROVIDER_DELIVERED";
   recipientEmail?: string;
   recipient?: string;
   note?: string;
@@ -113,7 +113,7 @@ export interface Quote {
   /** Backend optimistic-concurrency token, distinct from the business quote revision. */
   resourceVersion?: number;
   /** Backend-projected action hints for presentation only; authorization remains server enforced. */
-  authoritativeActions?: { issueDocument?: { allowed: boolean; blockerCodes: string[] }; revise?: { allowed: boolean; blockerCodes: string[] }; expire?: { allowed: boolean; blockerCodes: string[] }; archive?: { allowed: boolean; blockerCodes: string[] }; accept: { allowed: boolean; blockerCodes: string[] }; reject?: { allowed: boolean; blockerCodes: string[] }; recordCustomerResponse?: { allowed: boolean; blockerCodes: string[] } };
+  authoritativeActions?: { sendGmail?: { allowed: boolean; blockerCodes: string[] }; recordSalesAcceptance?: { allowed: boolean; blockerCodes: string[] }; createAcceptanceLink?: { allowed: boolean; blockerCodes: string[] }; issueDocument?: { allowed: boolean; blockerCodes: string[] }; revise?: { allowed: boolean; blockerCodes: string[] }; expire?: { allowed: boolean; blockerCodes: string[] }; archive?: { allowed: boolean; blockerCodes: string[] }; accept: { allowed: boolean; blockerCodes: string[] }; reject?: { allowed: boolean; blockerCodes: string[] }; recordCustomerResponse?: { allowed: boolean; blockerCodes: string[] } };
   id: string;
   quoteNumber: string;
   version: number;

@@ -67,13 +67,15 @@ export const ContactCreateOpportunityModal: React.FC<ContactCreateOpportunityMod
     return {
       name: tx("contactDetail.forms.oppDefaultName", `Cơ hội - ${contact.fullName || contact.name}`),
       customerName: label,
+      buyerRef: { type: "CONTACT", id: contact.id },
+      interestedProductIds: [...(contact.interestedProducts || [])],
       ownerId,
       source: contact.source || "Direct",
       priority: contact.priority || "MEDIUM",
       demandSummary: contact.needSummary || contact.notes || "",
       painPoints: contact.painPoint || "",
       createFollowUpTask: false,
-      lineItems: initialLineItems(contact),
+      lineItems: [],
     };
   }, [contact, owners, ownership?.memberId, tx]);
 
@@ -93,7 +95,7 @@ export const ContactCreateOpportunityModal: React.FC<ContactCreateOpportunityMod
         return onSave({
         name: draft.name,
         amount: draft.amount,
-        productId: draft.lineItems[0]?.product.id || "",
+        productId: draft.interestedProductIds[0] || "",
         ownerId: draft.ownerId,
         source: draft.source,
         pipeline: draft.pipeline,

@@ -2,6 +2,7 @@ import { getDirtyUnsavedWork, getUnsavedWorkVersion, subscribeUnsavedWork } from
 import { compareQuotePricing, quotePricingReconciliationNotice } from "../model/quotePricingReconciliation";
 import { quoteBuilderFieldFeedback, quoteBuilderSubmissionIssues, type QuoteBuilderIssue } from "../model/quoteBuilderErrors";
 import { useQuoteBuyer } from "./useQuoteBuyer";
+import { useQuoteSourceBuyer } from "./useQuoteSourceBuyer";
 import { toWorkspacePath } from "@/platform/navigation";
 import { normalizeApplicationError } from "@/shared/domain";
 import { useWorkspaceContextSnapshot } from "@/platform/workspace-context";
@@ -22,7 +23,7 @@ import { normalizeQuoteLineItem } from "../../domain/rules/quoteCalculations";
 
 import { calculateQuoteDraftTotals } from "../../domain/rules/quoteDraftPricing";
 
-import { isQuoteConnectedMode, allocateQuoteIdentitySnapshot, saveQuoteCommand } from "../../public/quotes";
+import { isQuoteConnectedMode, allocateQuoteIdentitySnapshot, saveQuoteCommand, saveAndIssueQuoteCommand, type QuoteIssuanceCheckpoint } from "../../public/quotes";
 
 import { useQuotes } from "../hooks/useQuotes";
 import { useDeals } from "../hooks/useDeals";
@@ -87,13 +88,13 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
       "Kiểm tra cơ hội hoặc khách hàng liên kết trước khi nhập nội dung.",
       "Thêm hàng hóa/dịch vụ, số lượng, đơn giá, chiết khấu và thuế.",
       "Thiết lập và kiểm tra điều khoản thanh toán.",
-      "Lưu nháp, rồi phát hành PDF tại trang chi tiết báo giá.",
+      "Nhấn Tạo & phát hành báo giá để lưu và phát hành PDF chính thức.",
       "Dùng Xem trước để kiểm tra bố cục trước khi xuất PDF.",
     ] : [
       "Review the linked deal or customer before entering the quotation.",
       "Add products/services, quantities, prices, discounts, and tax.",
       "Configure and review payment terms.",
-      "Save a draft, then issue its PDF on the Quote detail page.",
+      "Create and issue the Quote to save it and publish its official PDF.",
       "Use Preview to verify the document before PDF export.",
     ],
     tips: locale === "vi" ? [
@@ -111,14 +112,16 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
   const products = getProductCatalogSnapshot();
   const setDeals: React.Dispatch<React.SetStateAction<Deal[]>> = (updater) => { updateDeals(updater); };
   const { quoteId: routeTargetId } = useParams();
-  const [routeSearchParams] = useSearchParams();
-  const lifecycle = useQuoteFormLifecycle(`${routeTargetId ?? ""}|${routeSearchParams.toString()}`);
+  const [routeSearchParams, setRouteSearchParams] = useSearchParams();
+  const sourceSearchParams = new URLSearchParams(routeSearchParams); sourceSearchParams.delete("quoteIntent");
+  const lifecycle = useQuoteFormLifecycle(`${routeTargetId ?? ""}|${sourceSearchParams.toString()}`);
   const separator = lifecycle.targetId?.indexOf("|") ?? 0;
   const quoteId = lifecycle.targetId?.slice(0, separator) || undefined;
   const searchParams = useMemo(() => new URLSearchParams(lifecycle.targetId?.slice(separator + 1) ?? ""), [lifecycle.targetId, separator]);
   const dealIdParam = searchParams.get("dealId");
   const quoteIdParam = quoteId || searchParams.get("quoteId");
   const customerIdParam = searchParams.get("customerId");
+  const contactIdParam = searchParams.get("contactId");
   const organizationIdParam = searchParams.get("organizationId");
   const publishAction = searchParams.get("action");
 
@@ -126,12 +129,21 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
   const [savedNavigation, setSavedNavigation] = useState<{ path: string; notice: string | undefined } | null>(null);
   const unsavedVersion = useSyncExternalStore(subscribeUnsavedWork, getUnsavedWorkVersion, () => "");
   const [directBuyer, setDirectBuyer] = useState<{ ref: BuyerRef; label: string } | null>(null);
+  const sourceBuyer = useQuoteSourceBuyer(connected && !dealIdParam && !quoteIdParam, contactIdParam, customerIdParam, organizationIdParam);
   const sourceDealVersion = useRef<number | undefined>(undefined);
+  const issuanceCheckpoint = useRef<QuoteIssuanceCheckpoint | undefined>(undefined);
+  const creationIntent = useRef(routeSearchParams.get("quoteIntent") || createDurableId("quote-create-issue"));
+  useEffect(() => {
+    if (connected && !routeTargetId && !routeSearchParams.has("quoteId") && !routeSearchParams.has("quoteIntent"))
+      setRouteSearchParams(previous => { const next = new URLSearchParams(previous); next.set("quoteIntent", creationIntent.current); return next; }, { replace: true });
+  }, [connected, routeTargetId, routeSearchParams, setRouteSearchParams]);
   const saveIntent = useRef<{ fingerprint: string; key: string; unresolved: boolean } | null>(null);
   const detailQuery = useModuleAuthoritativeResource(getQuoteDetailResource(quoteIdParam || "__new__"), { enabled: Boolean(quoteIdParam), scopeKey: workspace.workspaceId });
   const liveEditingQuote = persistedDraft || (connected && quoteIdParam ? detailQuery.data : quotes.find(q => q.id === quoteIdParam));
   const openingQuote = useRef(liveEditingQuote);
-  if (persistedDraft || openingQuote.current?.id !== quoteIdParam) openingQuote.current = liveEditingQuote ? structuredClone(liveEditingQuote) : undefined;
+  if (openingQuote.current?.id !== liveEditingQuote?.id
+      || persistedDraft && openingQuote.current?.resourceVersion !== persistedDraft.resourceVersion)
+    openingQuote.current = liveEditingQuote ? structuredClone(liveEditingQuote) : undefined;
   const editingQuote = openingQuote.current;
   const referencedOrganization = organizationIdParam ? getOrganizationAccountSnapshot(organizationIdParam) : undefined;
   const organizationCustomer = referencedOrganization
@@ -153,27 +165,27 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
   // Find referenced deal
   const sourceDealQuery = useModuleAuthoritativeResource(getDealDetailResource(selectedDealId || "__none__"), { enabled: Boolean(selectedDealId), scopeKey: workspace.workspaceId });
   const referencedDeal = selectedDealId ? (connected ? sourceDealQuery.data?.id === selectedDealId ? sourceDealQuery.data : null : deals.find(d => d.id === selectedDealId) || null) : null;
-  const currentBuyerRef = referencedDeal?.buyerRef ?? editingQuote?.buyerRef ?? directBuyer?.ref
-    ?? (referencedOrganization ? { type: "ORGANIZATION_ACCOUNT" as const, id: referencedOrganization.id } : customerIdParam ? resolveBuyerRefFromCustomer(customerIdParam) ?? undefined : undefined);
+  const currentBuyerRef = referencedDeal?.buyerRef ?? editingQuote?.buyerRef ?? sourceBuyer.buyer ?? directBuyer?.ref
+    ?? (!connected ? (referencedOrganization ? { type: "ORGANIZATION_ACCOUNT" as const, id: referencedOrganization.id } : customerIdParam ? resolveBuyerRefFromCustomer(customerIdParam) ?? undefined : undefined) : undefined);
   const buyerInfo = useQuoteBuyer(currentBuyerRef, connected);
   const buyerSourcePath = currentBuyerRef ? toWorkspacePath(activeWorkspace.workspaceKey, "crm", `${currentBuyerRef.type === "CONTACT" ? "contacts" : "organizations"}/${encodeURIComponent(currentBuyerRef.id)}`) : undefined;
   const quoteSourceInitializationKey = editingQuote
     ? `edit:${editingQuote.id}`
     : selectedDealId
       ? `deal:${selectedDealId}`
-      : `direct:${organizationIdParam ? `organization:${organizationIdParam}` : customerIdParam || referencedCustomer?.id || "none"}`;
+      : `direct:${contactIdParam || organizationIdParam || customerIdParam || referencedCustomer?.id || "none"}`;
   const initializedQuoteSourceRef = useRef<string | null>(null);
   const autoPublishActionRef = useRef<string | null>(null);
   const saveHandlerRef = useRef<() => Promise<boolean>>(async () => false);
 
   // Locked Deal flag - if dealIdParam exists or we are currently editing an existing quote, lock it
-  const isDealLocked = !!dealIdParam || !!editingQuote || !!customerIdParam || !!organizationIdParam;
+  const isDealLocked = !!dealIdParam || !!editingQuote || !!customerIdParam || !!organizationIdParam || !!contactIdParam;
 
   // Identity allocation belongs to the Quote application boundary, not collection length or component time.
   const allocateOpeningIdentity = () => connected ? { id: createDurableId("quote-intent"), quoteNumber: "" } : allocateQuoteIdentitySnapshot();
   const [newQuoteIdentity, setNewQuoteIdentity] = useState(allocateOpeningIdentity);
   const identityCycle = useRef(lifecycle.cycle);
-  useEffect(() => { if (identityCycle.current !== lifecycle.cycle) { identityCycle.current = lifecycle.cycle; setSelectedDealId(dealIdParam || ""); setNewQuoteIdentity(allocateOpeningIdentity()); setPersistedDraft(undefined); setSavedNavigation(null); setDirectBuyer(null); saveIntent.current = null; sourceDealVersion.current = undefined; openingQuote.current = undefined; setSavedDraftFingerprint(null); setDraftHydrated(false); initializedQuoteSourceRef.current = null; } }, [lifecycle.cycle, dealIdParam]);
+  useEffect(() => { if (identityCycle.current !== lifecycle.cycle) { identityCycle.current = lifecycle.cycle; setSelectedDealId(dealIdParam || ""); setNewQuoteIdentity(allocateOpeningIdentity()); setPersistedDraft(undefined); setSavedNavigation(null); setDirectBuyer(null); saveIntent.current = null; issuanceCheckpoint.current = undefined; creationIntent.current = routeSearchParams.get("quoteIntent") || createDurableId("quote-create-issue"); sourceDealVersion.current = undefined; openingQuote.current = undefined; setSavedDraftFingerprint(null); setDraftHydrated(false); initializedQuoteSourceRef.current = null; } }, [lifecycle.cycle, dealIdParam]);
   const quoteNumber = editingQuote?.quoteNumber ?? newQuoteIdentity.quoteNumber;
 
   // Dynamic Quote fields
@@ -203,6 +215,7 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
 
   // State-based mock notifications
   const [isProductPickerOpen, setIsProductPickerOpen] = useState(false);
+  const [suggestedProductId, setSuggestedProductId] = useState<string>();
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [toastType, setToastType] = useState<"success" | "info" | "error">("info");
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -251,8 +264,9 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
     if (quoteIdParam && !editingQuote) return;
     if (dealIdParam && selectedDealId !== dealIdParam) return;
     if (selectedDealId && !referencedDeal) return;
-    if (customerIdParam && !referencedCustomer) return;
-    if (organizationIdParam && !referencedOrganization) return;
+    if (sourceBuyer.required && !sourceBuyer.buyer) return;
+    if (!connected && customerIdParam && !referencedCustomer) return;
+    if (!connected && organizationIdParam && !referencedOrganization) return;
 
     if (referencedDeal) sourceDealVersion.current = referencedDeal.resourceVersion;
     if (editingQuote) {
@@ -289,7 +303,7 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
     } else if (referencedDeal) {
       setQuoteTitle(t("quoteBuilder.defaultTitle", { deal: referencedDeal.name }));
       setCurrency(workspaceConfiguration?.localeRegion.currencies.baseCurrency || runtimeSettings.baseCurrency);
-      const initialLines: QuoteLineItem[] = (referencedDeal.currency === (workspaceConfiguration?.localeRegion.currencies.baseCurrency || runtimeSettings.baseCurrency) ? referencedDeal.lineItems || [] : []).map(item => normalizeQuoteLineItem({
+      const initialLines: QuoteLineItem[] = (!connected && referencedDeal.currency === (workspaceConfiguration?.localeRegion.currencies.baseCurrency || runtimeSettings.baseCurrency) ? referencedDeal.lineItems || [] : []).map(item => normalizeQuoteLineItem({
         id: item.id,
         productId: item.productId,
         productName: item.productName,
@@ -341,7 +355,7 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
 
     initializedQuoteSourceRef.current = quoteSourceInitializationKey;
     setDraftHydrated(true);
-  }, [workspaceConfiguration, runtimeSettings.baseCurrency, connected, dealIdParam, draftHydrated,quoteSourceInitializationKey, quoteIdParam, customerIdParam, organizationIdParam, selectedDealId, referencedDeal, editingQuote, t, locale, referencedCustomer, referencedOrganization, organizationPrimaryContact]);
+  }, [workspaceConfiguration, runtimeSettings.baseCurrency, connected, dealIdParam, draftHydrated,quoteSourceInitializationKey, quoteIdParam, customerIdParam, organizationIdParam, selectedDealId, referencedDeal, editingQuote, t, locale, referencedCustomer, referencedOrganization, organizationPrimaryContact, sourceBuyer.required, sourceBuyer.buyer]);
 
   // Handle value modifications inside table
   const handleUpdateLineField = (id: string, field: keyof QuoteLineItem, value: any) => {
@@ -542,7 +556,7 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
       finalCustContact = referencedCustomer?.phone || "";
     }
 
-    const buyerRef = referencedDeal?.buyerRef
+    const buyerRef = currentBuyerRef || referencedDeal?.buyerRef
       || directBuyer?.ref
       || (referencedOrganization ? { type: "ORGANIZATION_ACCOUNT" as const, id: referencedOrganization.id } : resolveBuyerRefFromCustomer(finalCustId));
     if (!buyerRef) {
@@ -639,7 +653,7 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
     else navigate("/quotes");
   };
 
-  const persistCurrentQuote = async (shouldNavigate = false): Promise<Quote | null> => {
+  const persistCurrentQuote = async (shouldNavigate = false, issueDocument = false): Promise<Quote | null> => {
     if (editingQuote?.archivedAt) {
       setValidationKind("STATUS");
       setValidationError(locale === "vi" ? "Không thể sửa Báo giá đã lưu trữ." : "Archived Quotes cannot be edited.");
@@ -655,14 +669,25 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
       setValidationError(locale === "vi" ? "Chưa xác định được kết quả lần lưu trước. Giữ nguyên nội dung yêu cầu trước để thử lại hoặc kiểm tra danh sách báo giá trước khi tạo yêu cầu mới." : "The previous save outcome is unknown. Retry its original contents or check the quote list before starting another request.");
       lifecycle.finish();return null;
     }
-    if (saveIntent.current?.fingerprint !== intentFingerprint) saveIntent.current = { fingerprint: intentFingerprint, key: createDurableId("quote-save"), unresolved: false };
+    if (saveIntent.current?.fingerprint !== intentFingerprint) saveIntent.current = { fingerprint: intentFingerprint, key: connected && !editingQuote ? creationIntent.current : createDurableId("quote-save"), unresolved: false };
     setSaveBusy(true);
     try {
       const wasNew = !editingQuote;
-      const saved = (await saveQuoteCommand(candidate, {
-        idempotencyKey: saveIntent.current.key,
-        expectedVersion: editingQuote?.resourceVersion ?? sourceDealVersion.current,
-      })).data;
+      const metadata = { idempotencyKey: saveIntent.current.key, expectedVersion: editingQuote?.resourceVersion ?? sourceDealVersion.current };
+      let saved: Quote;
+      if (connected && issueDocument) {
+        const result = await saveAndIssueQuoteCommand(candidate, metadata, issuanceCheckpoint.current);
+        if (!lifecycle.isCurrent()) return null;
+        if (result.stage === "ISSUANCE_PENDING") {
+          issuanceCheckpoint.current = result.checkpoint;
+          setPersistedDraft(result.checkpoint.quote); openingQuote.current = structuredClone(result.checkpoint.quote);
+          setValidationKind("STATUS");
+          setValidationError((locale === "vi" ? `Đã lưu ${result.checkpoint.quote.quoteNumber}; PDF chưa phát hành xong. Thử lại cùng báo giá. ` : "The Quote is saved; PDF issuance is incomplete. Retry the same Quote. ") + formatApplicationError(result.error, { locale }));
+          return null;
+        }
+        issuanceCheckpoint.current = undefined;
+        saved = result.quote;
+      } else saved = (await saveQuoteCommand(candidate, metadata)).data;
       if (!lifecycle.isCurrent()) return null;
       setPersistedDraft(saved);
       openingQuote.current = structuredClone(saved);
@@ -691,16 +716,17 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
       }
       return null;
     } finally {
-      if (lifecycle.isCurrent()) setSaveBusy(false);
+      setSaveBusy(false);
       lifecycle.finish();
     }
   };
 
-  saveHandlerRef.current = async () => Boolean(await persistCurrentQuote(false));
+  saveHandlerRef.current = async () => Boolean(await persistCurrentQuote(false, connected));
 
   const handleSaveQuote = async () => {
-    await persistCurrentQuote(true);
+    await persistCurrentQuote(true, connected);
   };
+  const handleSaveDraft = async () => { await persistCurrentQuote(true, false); };
 
   const getPdfSourceElement = (): HTMLElement | null => document.querySelector<HTMLElement>('[data-quote-pdf-source="true"]');
 
@@ -804,7 +830,7 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
     return () => window.cancelAnimationFrame(frame);
   }, [publishAction, editingQuote?.id, quoteSourceInitializationKey, quoteTitle, quoteLines.length]);
   return {
-    connected, workspaceConfigurationResource, detailQuery, sourceDealQuery, directBuyer, setDirectBuyer,
+    connected, workspaceConfigurationResource, detailQuery, sourceDealQuery, directBuyer, setDirectBuyer, sourceBuyer,
     formPending: lifecycle.pending,
     crmConfig,
     customers,
@@ -881,6 +907,7 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
     validUntil,
     setValidUntil,
     isProductPickerOpen,
+    suggestedProductId, setSuggestedProductId,
     setIsProductPickerOpen,
     toastMessage,
     setToastMessage,
@@ -928,6 +955,7 @@ export function useQuoteBuilderController(props: QuoteBuilderPageProps) {
     navigateAfterSave,
     persistCurrentQuote,
     handleSaveQuote,
+    handleSaveDraft,
     getPdfSourceElement,
     createCurrentQuotePdf,
     handleExportPdf,

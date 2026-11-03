@@ -16,7 +16,7 @@ import {
 } from "../../domain/model/quote.types";
 
 export interface QuoteActionAvailabilityReadModel { allowed: boolean; blockerCodes: string[] }
-export interface QuoteReadActions { issueDocument?: { allowed: boolean; blockerCodes: string[] }; revise?: QuoteActionAvailabilityReadModel; expire?: QuoteActionAvailabilityReadModel; archive?: QuoteActionAvailabilityReadModel; accept: QuoteActionAvailabilityReadModel; reject?: QuoteActionAvailabilityReadModel; recordCustomerResponse?: QuoteActionAvailabilityReadModel }
+export interface QuoteReadActions { sendGmail?: QuoteActionAvailabilityReadModel; recordSalesAcceptance?: QuoteActionAvailabilityReadModel; createAcceptanceLink?: QuoteActionAvailabilityReadModel; issueDocument?: { allowed: boolean; blockerCodes: string[] }; revise?: QuoteActionAvailabilityReadModel; expire?: QuoteActionAvailabilityReadModel; archive?: QuoteActionAvailabilityReadModel; accept: QuoteActionAvailabilityReadModel; reject?: QuoteActionAvailabilityReadModel; recordCustomerResponse?: QuoteActionAvailabilityReadModel }
 export interface QuoteLineReadModel {
   id: string;
   productId?: string;

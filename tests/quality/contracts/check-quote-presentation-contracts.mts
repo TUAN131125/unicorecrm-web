@@ -9,7 +9,7 @@ import {
 import { readPresentationComposition } from "../../../scripts/lib/presentationCompositionSource.mts";
 
 const root = repositoryRoot;
-const source = (relativePath: string) => readPresentationComposition(path.join(root, relativePath), "utf8");
+const source = (relativePath: string) => readPresentationComposition(path.join(root, relativePath), "utf8").replace(/\r\n/g, "\n");
 const count = (text: string, needle: string) => text.split(needle).length - 1;
 const between = (text: string, start: string, end: string) => {
   const startIndex = text.indexOf(start);
@@ -77,8 +77,8 @@ const approvalRequiredDraft = createQuote(QuoteStatus.DRAFT, {
 });
 assert.deepEqual(
   resolveQuoteActionIds(approvalRequiredDraft, allPermissions),
-  ["view", "export-pdf", "edit", "request-approval", "duplicate", "optimize-price", "delete"],
-  "Approval-required draft must request approval instead of sending",
+  expectedActions[QuoteStatus.DRAFT],
+  "Historical approval requirements cannot add a retired workflow step",
 );
 assert.deepEqual(
   resolveQuoteActionIds(createQuote(QuoteStatus.DRAFT, {
@@ -86,8 +86,8 @@ assert.deepEqual(
     approvalStatus: QuoteApprovalStatus.PENDING,
     approvalRequestedAt: "2026-07-10T10:00:00.000Z",
   }), allPermissions),
-  ["view", "export-pdf", "edit", "approve", "request-changes", "duplicate", "optimize-price", "delete"],
-  "Pending approval must expose approver decisions instead of customer send",
+  expectedActions[QuoteStatus.DRAFT],
+  "Historical pending approval remains data and does not block delivery",
 );
 assert.deepEqual(
   resolveQuoteActionIds(createQuote(QuoteStatus.DRAFT, {
@@ -123,7 +123,7 @@ assert.ok(listPage.includes("resolveQuoteActionIds(activeQuote, getQuoteActionPe
 assert.equal(listPage.includes("getQuoteCardDropdownItems"), false);
 assert.equal(listPage.includes("getRowMoreDropdownItems"), false);
 assert.equal(listPage.includes("getQuoteDropdownSections"), false);
-assert.ok(actionPolicy.includes("QuoteApprovalStatus"));
+assert.equal(actionPolicy.includes("QuoteApprovalStatus"), false);
 assert.ok(actionPolicy.includes("approvalRequired"));
 assert.ok(actionPolicy.includes("isQuoteVersionImmutable"));
 assert.ok(actionPolicy.includes("QuoteActionPermissions"));
@@ -213,7 +213,6 @@ for (const builderContract of [
   "handleSaveQuote",
   "<QuoteBuilderPreview",
   'data-quote-builder-actions="v1"',
-  'data-quote-approval-assessment="v1"',
   "recipientEmail",
   "paymentTiming",
   "handleSendGmail",
@@ -254,7 +253,7 @@ assert.ok(detailHeaderContract.includes('recordDetailHeaderActionButtonClassName
 assert.ok(detailHeaderContract.includes('recordDetailHeaderActionIconButtonClassName = "h-9 w-9 rounded-xl"'));
 
 // Detail keeps quote-specific actions but derives their availability from the shared policy.
-for (const actionId of ["edit", "request-approval", "approve", "request-changes", "send", "confirm-sent", "accept", "reject", "expire", "create-order", "revise", "duplicate", "export-pdf", "delete"]) {
+for (const actionId of ["edit", "send", "confirm-sent", "accept", "reject", "expire", "create-order", "revise", "duplicate", "export-pdf", "delete"]) {
   assert.ok(detailPage.includes(`case "${actionId}"`), `Quote Detail must retain ${actionId}`);
 }
 assert.ok(detailPage.includes("<RecordHeaderActionMenu"), "Quote Detail must consolidate secondary actions into the shared three-dot menu");
@@ -263,7 +262,7 @@ const quoteAcceptanceWorkflow = source("src/workflows/quote-acceptance/index.ts"
 assert.ok(detailPage.includes("acceptQuoteAndCloseDealCommand"), "Accepted Quote must use the canonical Quote acceptance workflow command");
 assert.ok(quoteAcceptanceWorkflow.includes("closeDealWon"), "Quote acceptance workflow must retain Deal closing evidence behavior");
 assert.ok(quoteAcceptanceWorkflow.includes("replaceQuotes") && quoteAcceptanceWorkflow.includes("replaceDeals"), "Demo Quote acceptance must retain transactional rollback evidence");
-assert.ok(dealDetail.includes("QuoteApprovalStatus"), "Opportunity Quote actions must distinguish internal approval from customer status");
+assert.equal(dealDetail.includes("QuoteApprovalStatus"), false, "Opportunity actions have no retired internal approval dependency");
 assert.ok(dealDetail.includes("action=gmail"), "Opportunity Quote actions must expose Gmail delivery");
 assert.ok(dealDetail.includes("action=pdf"), "Opportunity Quote actions must expose PDF export");
 assert.ok(dealDetail.includes("action=confirm"), "Opportunity Quote actions must expose channel-neutral delivery confirmation");
@@ -273,21 +272,31 @@ assert.ok(statusBadge.includes("getQuoteStatusBadgeVariant(status)"));
 assert.ok(statusBadge.includes('className={`whitespace-nowrap'));
 assert.ok(listPage.includes("<QuoteStatusBadge status={quote.status}"));
 assert.ok(detailPage.includes("<QuoteStatusBadge status={quote.status}"));
-assert.ok(detailPage.includes("<QuoteApprovalBadge quote={quote}"));
+assert.equal(detailPage.includes("<QuoteApprovalBadge"), false);
+assert.equal(listPage.includes("<QuoteApprovalBadge"), false);
+assert.equal(builderPage.includes("data-quote-approval-assessment"), false);
 assert.ok(vi.includes('quote: {\n    status: {\n      draft: "Nháp"'));
 assert.equal(vi.includes('quote: {\n    status: {\n      draft: "Bản nháp"'), false);
 
 // Detail body keeps the requested main + activity layout and readable data surfaces.
 for (const detailContract of [
-  'xl:grid-cols-[minmax(0,2fr)_minmax(280px,1fr)]',
-  "Thông tin chung",
-  "Liên kết kinh doanh",
+  'xl:grid-cols-[minmax(0,7fr)_minmax(260px,3fr)]',
+  "Tóm tắt báo giá",
+  "Người mua",
   'data-quote-detail-line-items-scroll="scoped"',
-  "timelineEvents.map",
-  "break-words",
+  "<QuoteWorkflow",
+  "typography=\"commercial\"",
 ]) {
   assert.ok(detailPage.includes(detailContract), `Quote Detail must include ${detailContract}`);
 }
+
+const connectedPermissions = { ...allPermissions, draftCoreOnly: true, approvalCommandsReady: true, deliveryCommandsReady: true };
+const ordinaryActions = resolveQuoteActionIds({ ...createQuote(QuoteStatus.DRAFT), ordinarySales: true }, connectedPermissions);
+assert.equal(ordinaryActions.some(action => String(action) === "request-approval"), false, "Configured ordinary quotes have no internal approval action");
+assert.equal(ordinaryActions.includes("create-order"), false, "Connected automatic conversion cannot expose manual draft creation");
+assert.equal(ordinaryActions.includes("accept"), false, "Acceptance still belongs to its evidence command");
+assert.equal(resolveQuoteActionIds(createQuote(QuoteStatus.DRAFT), connectedPermissions).some(action => String(action) === "request-approval"), false, "D1 retires B1 actions for every Workspace");
+assert.equal(resolveQuoteActionIds({ ...createQuote(QuoteStatus.DRAFT), ordinarySales: true, archivedAt: "2026-11-02" }, connectedPermissions).includes("send"), false);
 
 console.log("Quote presentation contracts: OK");
 
