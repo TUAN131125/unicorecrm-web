@@ -42,10 +42,11 @@ export function mapDealReadModel(value: ApiDealReadModel): Deal {
 export function mapCreateDealRequest(input: CreateDealInput): CreateDealRequest {
   return compact({
     ...mapEditableProfileRequest(input),
-    stageCode: input.stageCode.trim(),
+    pipelineId: input.pipelineId,
+    stageCode: input.stageCode.trim() || undefined,
     opportunityScore: normalizeDecimal(input.opportunityScore),
     ownerId: input.ownerId.trim(),
-    expectedCloseDate: input.expectedCloseDate,
+    expectedCloseDate: input.expectedCloseDate.trim(),
     forecastCategory: input.forecastCategory,
     nextActionAt: input.nextActionAt,
     nextActionSummary: input.nextActionSummary?.trim(),
@@ -67,7 +68,7 @@ export function mapAssignDealOwnerRequest(input: AssignDealOwnerInput): AssignDe
 
 export function mapUpdateDealForecastRequest(input: UpdateDealForecastInput): UpdateDealForecastRequest {
   return compact({
-    expectedCloseDate: input.expectedCloseDate,
+    expectedCloseDate: input.expectedCloseDate?.trim() || undefined,
     opportunityScore: input.opportunityScore === undefined ? undefined : normalizeDecimal(input.opportunityScore),
     forecastCategory: input.forecastCategory,
   });
@@ -135,7 +136,7 @@ function mapEditableProfileRequest(input: ReplaceDealProfileInput | CreateDealIn
   return compact({
     name: input.name.trim(),
     buyerRef: input.buyerRef,
-    amount: { amount: normalizeDecimal(input.amount.amount), currency: input.amount.currency.trim().toUpperCase() },
+    amount: input.amount === null ? null : { amount: normalizeDecimal(input.amount.amount), currency: input.amount.currency.trim().toUpperCase() },
     contactId: input.contactId?.trim(),
     sourceLeadId: input.sourceLeadId?.trim(),
     interestedProductIds: input.interestedProductIds ? [...input.interestedProductIds] : undefined,

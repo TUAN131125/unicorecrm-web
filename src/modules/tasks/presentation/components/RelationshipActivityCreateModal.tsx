@@ -2,7 +2,7 @@ import React from "react";
 import { isTaskConnectedApiRuntime } from "../../application/composition/taskApplicationServices";
 import { resolveActivityRecordingDate } from "../model/activityRecordingTime";
 import { useI18n } from "@/i18n";
-import type { ActivityType } from "../../domain/model/task.types";
+import type { ManualActivityType } from "../../domain/model/task.types";
 import {
   CallActivityCreateModal,
   EmailActivityCreateModal,
@@ -19,7 +19,7 @@ import {
 export type RelationshipActivityAction = "call" | "meeting" | "email" | "sms" | "note";
 
 export interface RelationshipActivityDraft {
-  type: ActivityType;
+  type: ManualActivityType;
   subject: string;
   body: string;
   occurredAt?: string;

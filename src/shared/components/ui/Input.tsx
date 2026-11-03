@@ -88,7 +88,7 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
           )}
         />
         {error && (
-          <p id={errorId} role="alert" className="text-xs text-rose-600 font-medium flex items-center gap-1 mt-1">
+          <p id={errorId} role="alert" data-field-error="true" className="text-xs text-rose-600 font-medium flex items-center gap-1 mt-1">
             <AlertCircle size={10} aria-hidden="true" />
             <span>{error}</span>
           </p>
@@ -129,7 +129,7 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           )}
         />
         {error && (
-          <p id={errorId} role="alert" className="text-xs text-rose-600 font-medium flex items-center gap-1 mt-1">
+          <p id={errorId} role="alert" data-field-error="true" className="text-xs text-rose-600 font-medium flex items-center gap-1 mt-1">
             <AlertCircle size={10} aria-hidden="true" />
             <span>{error}</span>
           </p>
@@ -252,7 +252,7 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
           {children}
         </select>
         {error && (
-          <p id={errorId} role="alert" className="text-xs text-rose-600 font-medium flex items-center gap-1 mt-1">
+          <p id={errorId} role="alert" data-field-error="true" className="text-xs text-rose-600 font-medium flex items-center gap-1 mt-1">
             <AlertCircle size={10} aria-hidden="true" />
             <span>{error}</span>
           </p>
@@ -293,7 +293,7 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
           {label && <span className="font-semibold leading-normal">{label}</span>}
         </label>
         {error && (
-          <p id={errorId} role="alert" className="text-xs text-rose-600 font-medium flex items-center gap-1 pl-6 mt-1">
+          <p id={errorId} role="alert" data-field-error="true" className="text-xs text-rose-600 font-medium flex items-center gap-1 pl-6 mt-1">
             <AlertCircle size={10} aria-hidden="true" />
             <span>{error}</span>
           </p>
@@ -303,3 +303,4 @@ export const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
   }
 );
 Checkbox.displayName = "Checkbox";
+

@@ -44,14 +44,14 @@ await client.request({
   operationId: "confirmOrderWithPaymentPlan",
   method: "POST",
   path: "/workflows/order-confirmation/order-1/confirm-with-payment-plan",
-  body: {},
+  body: { paymentPlanId: "plan-1", expectedPaymentPlanVersion: 1 },
   expectedVersion: 'W/"order-v4"',
 });
 await client.request({
   operationId: "confirmOrderWithPaymentPlan",
   method: "POST",
   path: "/workflows/order-confirmation/order-1/confirm-with-payment-plan",
-  body: {},
+  body: { paymentPlanId: "plan-1", expectedPaymentPlanVersion: 1 },
   expectedVersion: "order-v5",
 });
 assert.equal(capturedHeaders[0]?.get("If-Match"), 'W/"order-v4"');
@@ -66,8 +66,8 @@ assert.match(hookSource, /conflicted: snapshot\.state === "CONFLICTED"/u);
 
 const dialogSource = fs.readFileSync(path.join(root, "src/shared/operations/MutationConflictDialog.tsx"), "utf8");
 assert.match(dialogSource, /Tải phiên bản mới nhất/u);
-assert.match(dialogSource, /Changed fields/u);
-assert.match(dialogSource, /correlationId/u);
+assert.match(dialogSource, /Reload the record/u);
+assert.doesNotMatch(dialogSource, /failure\.(?:correlationId|requestId)|VersionCard|changedFields\.map/u, "Diagnostics remain on MutationFailure, not in the dialog");
 
 for (const relative of [
   "src/modules/payments/presentation/pages/PaymentDetailPage.tsx",

@@ -131,7 +131,7 @@ function mapDraft(input: QuoteDraftInput): CreateQuoteDraftRequest {
     title: input.title.trim(),
     currency: input.currency.trim().toUpperCase(),
     ownerId: input.ownerId?.trim(),
-    recipientEmail: input.recipientEmail?.trim(),
+    recipientEmail: input.recipientEmail?.trim() || undefined,
     lineItems: input.lineItems.map((line) => compact({
       productId: line.productId?.trim(),
       skuSnapshot: line.skuSnapshot?.trim(),
@@ -154,7 +154,17 @@ function mapDraft(input: QuoteDraftInput): CreateQuoteDraftRequest {
     })),
     validUntil: input.validUntil,
     notes: input.notes?.trim(),
-    paymentAgreement: input.paymentAgreement,
+    paymentAgreement: input.paymentAgreement === undefined ? undefined : compact({
+      kind: input.paymentAgreement.kind,
+      currency: input.paymentAgreement.currency,
+      policyVersion: input.paymentAgreement.policyVersion,
+      lines: input.paymentAgreement.lines.map(line => compact({
+        sequence: line.sequence, label: line.label, purpose: line.purpose,
+        amountRule: line.amountRule, dueRule: line.dueRule,
+        allowedMethodCodes: [...line.allowedMethodCodes], preferredMethodCode: line.preferredMethodCode,
+        channel: line.channel, fulfillmentGate: line.fulfillmentGate, invoicePolicyCode: line.invoicePolicyCode,
+      })),
+    }),
   });
 }
 

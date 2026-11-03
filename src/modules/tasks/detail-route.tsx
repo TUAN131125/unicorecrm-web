@@ -37,16 +37,16 @@ const TaskDetailContent: React.FC = () => {
     <AuthoritativeQueryBoundary
       query={detailQuery}
       hasData={snapshot.tasks.some((item) => item.id === taskId)}
-      loadingTitleVi="Đang tải công việc từ backend"
-      loadingTitleEn="Loading task from backend"
+      loadingTitleVi="Đang tải công việc"
+      loadingTitleEn="Loading task"
       errorTitleVi="Không thể tải công việc"
       errorTitleEn="Task could not be loaded"
     >
       <AuthoritativeQueryBoundary
         query={activityQuery}
         hasData={hasRelatedActivityData}
-        loadingTitleVi="Đang tải hoạt động liên quan từ backend"
-        loadingTitleEn="Loading related activity from backend"
+        loadingTitleVi="Đang tải hoạt động liên quan"
+        loadingTitleEn="Loading related activity"
         errorTitleVi="Không thể tải hoạt động liên quan"
         errorTitleEn="Related activity could not be loaded"
       >

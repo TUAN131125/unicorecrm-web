@@ -75,12 +75,13 @@ const AWAITED_COMMAND = /\bawait\s+[A-Za-z0-9_.]*(?:Command|CommandBoundary|Cano
  * Deal edit success path passed the gate.
  */
 const SEQUENCED_COMMANDS = /\b(?:executeSequentialCommits|summarizeBulkCommits)\s*\(/u;
-const COMMAND_CALL = /\b[A-Za-z0-9_.]*(?:Command|CommandBoundary|Canonical|ViaApi)\s*\(/u;
 
 /** True when this body commits at least one authoritative mutation. */
 function commitsAuthoritatively(body: string): boolean {
   if (AWAITED_COMMAND.test(body)) return true;
-  return SEQUENCED_COMMANDS.test(body) && COMMAND_CALL.test(body);
+  // The command closures may live in an extracted checkpoint. Executing or
+  // reporting those commits still forbids a subsequent local projection write.
+  return SEQUENCED_COMMANDS.test(body);
 }
 
 /**

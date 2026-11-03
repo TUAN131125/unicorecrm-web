@@ -1,0 +1,138 @@
+{
+  "scope": "DESIGN_ARTIFACT_ONLY",
+  "capturedAt": "2026-10-21T20:00:02.898229+00:00",
+  "sourceIntegrity": {
+    "backend": {
+      "trackedFilesCompared": 1826,
+      "changedTrackedFilesSinceSnapshot": [],
+      "headUnchanged": true,
+      "trackedDiffUnchanged": true,
+      "newStatusEntries": [],
+      "removedStatusEntries": []
+    },
+    "frontend": {
+      "trackedFilesCompared": 2287,
+      "changedTrackedFilesSinceSnapshot": [],
+      "headUnchanged": true,
+      "trackedDiffUnchanged": true,
+      "newStatusEntries": [
+        "?? docs/design/"
+      ],
+      "removedStatusEntries": []
+    }
+  },
+  "prototype": {
+    "scope": "LOCAL_DESIGN_ARTIFACT_ONLY; NOT production browser E2E",
+    "capturedAt": "2026-10-21T19:59:09.591Z",
+    "checks": [
+      {
+        "name": "render overview",
+        "status": "PASS"
+      },
+      {
+        "name": "render apps",
+        "status": "PASS"
+      },
+      {
+        "name": "render inbound",
+        "status": "PASS"
+      },
+      {
+        "name": "render outbound",
+        "status": "PASS"
+      },
+      {
+        "name": "render api",
+        "status": "PASS"
+      },
+      {
+        "name": "create layout has no executable submit",
+        "status": "PASS"
+      },
+      {
+        "name": "one-time-secret layout contains no secret",
+        "status": "PASS"
+      },
+      {
+        "name": "reader has no create command",
+        "status": "PASS"
+      },
+      {
+        "name": "denied clears detail",
+        "status": "PASS"
+      },
+      {
+        "name": "outbound state loading",
+        "status": "PASS"
+      },
+      {
+        "name": "outbound state empty",
+        "status": "PASS"
+      },
+      {
+        "name": "outbound state error",
+        "status": "PASS"
+      },
+      {
+        "name": "outbound state expired",
+        "status": "PASS"
+      },
+      {
+        "name": "outbound state switch",
+        "status": "PASS"
+      },
+      {
+        "name": "detail lifecycle and tabs render",
+        "status": "PASS"
+      },
+      {
+        "name": "mobile pages do not overflow horizontally",
+        "status": "PASS"
+      },
+      {
+        "name": "no external requests / no browser storage / no page errors",
+        "status": "PASS"
+      }
+    ],
+    "errors": [],
+    "externalRequestCount": 0,
+    "storage": {
+      "localStorage": 0,
+      "sessionStorage": 0
+    }
+  },
+  "runtimeVerification": {
+    "deterministicTests": "NOT_RUN",
+    "apiHostSqlConnected": "NOT_RUN",
+    "liveProviderExternalReceiver": "NOT_RUN",
+    "productionBrowserE2E": "NOT_RUN",
+    "integrationInboundApiKeyAuthority": "BLOCKED"
+  },
+  "noStageCommitPushPerformed": true,
+  "productionFilesChangedByThisDesignTurn": [],
+  "sourceLinkCheck": {
+    "checked": 54,
+    "missing": []
+  },
+  "matrixCheck": {
+    "rows": 15,
+    "classifications": [
+      "Backend ready nhưng UI thiếu",
+      "Backend ready và UI ready",
+      "Backend/contract blocked",
+      "Demo only",
+      "Không tồn tại"
+    ],
+    "allFiveRequestedClassesPresent": true
+  },
+  "visualInspection": {
+    "status": "PASS",
+    "imagesReviewed": [
+      "wireframe-overview.png",
+      "wireframe-outbound-detail.png",
+      "wireframe-mobile.png"
+    ],
+    "notes": "Desktop/mobile readable, no clipping observed; design annotations and placeholders only."
+  },
+  "overallArtifactStatus": "PASS"
+}

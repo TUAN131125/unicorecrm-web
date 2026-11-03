@@ -15,6 +15,7 @@ import type {
   TaskMutationResult,
 } from "../../application/ports/TaskApiRuntime";
 import type { Activity, Task } from "../../domain/model/task.types";
+import { isManualActivityType } from "../../domain/rules/manualActivityType";
 
 export function mapTaskReadModel(dto: TaskReadModel): Task {
   return compact({
@@ -74,6 +75,7 @@ export function mapCreateTaskRequest(input: CreateTaskInput): CreateTaskRequest 
 }
 
 export function mapLogActivityRequest(input: LogActivityInput): LogActivityRequest {
+  if (!isManualActivityType(input.type)) throw requestViolation("logActivity", "type", "Manual Activity type must be CALL, EMAIL, MEETING, NOTE, or MESSAGE.");
   if (input.occurredAt !== undefined) throw requestViolation("logActivity", "occurredAt", "The connected Activity contract does not accept a recording date.");
   const subject = input.subject.trim();
   if (!subject) throw requestViolation("logActivity", "subject", "Activity subject is required.");

@@ -151,7 +151,7 @@ export const ReceivableDetailPage: React.FC = () => {
   React.useEffect(resetDraft, [invoiceId]);
   const closeDraft = () => { if (!workflow.pending) guard.requestClose(); };
   if (receivableQuery.loading && !receivableQuery.data) {
-    return <RecordDetailFrame id="receivable-detail-loading"><Card className="p-8 text-center text-sm text-slate-600"><p>{text("Đang tải công nợ authoritative...", "Loading the authoritative receivable...")}</p><Button className="mt-4" variant="secondary" onClick={receivableQuery.cancel}>{text("Hủy tải", "Cancel loading")}</Button></Card></RecordDetailFrame>;
+    return <RecordDetailFrame id="receivable-detail-loading"><Card className="p-8 text-center text-sm text-slate-600"><p>{text("Đang tải công nợ...", "Loading receivable...")}</p><Button className="mt-4" variant="secondary" onClick={receivableQuery.cancel}>{text("Hủy tải", "Cancel loading")}</Button></Card></RecordDetailFrame>;
   }
 
   if (receivableQuery.state === "ERROR" && !receivableQuery.data) {

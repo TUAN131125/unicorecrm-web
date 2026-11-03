@@ -34,9 +34,10 @@ export interface DealReadModel {
   id: string;
   name: string;
   buyerRef: BuyerRef;
+  pipelineId?: string;
   stageCode: string;
   stageCategory: "OPEN" | "WON" | "LOST";
-  amount: MoneyDto;
+  amount: MoneyDto | null;
   opportunityScore: string;
   ownerId: string;
   expectedCloseDate: string;
@@ -89,9 +90,11 @@ export function projectDealReadModel(record: DealReadModel): Deal {
     name: record.name,
     buyerRef: record.buyerRef,
     stage: record.stageCode,
-    amount: displayNumber(record.amount.amount, "amount"),
-    amountDecimal: record.amount.amount,
-    currency: record.amount.currency,
+    pipelineId: record.pipelineId,
+    stageCategory: record.stageCategory,
+    amount: record.amount === null ? null : displayNumber(record.amount.amount, "amount"),
+    amountDecimal: record.amount?.amount,
+    currency: record.amount?.currency,
     opportunityScore: displayNumber(record.opportunityScore, "opportunityScore"),
     ownerId: record.ownerId,
     expectedCloseDate: record.expectedCloseDate,

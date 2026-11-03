@@ -2,14 +2,14 @@
 
 > Generated from active route and guidance registries by scripts/generate-guidance-inventory.mts.
 
-The repository defines **83 total route definitions**, **12 access/system routes**, **71 canonical route entries**, and **69 guided screens**. The inventory contains **53 CRM screens**, **13 Studio screens**, and **3 People & Access screens**, with **2 compatibility route aliases**. Access/system routes use inline guidance outside the authenticated shell.
+The repository defines **87 total route definitions**, **13 access/system routes**, **74 canonical route entries**, and **72 guided screens**. The inventory contains **53 CRM screens**, **16 Studio screens**, and **3 People & Access screens**, with **2 compatibility route aliases**. Access/system routes use inline guidance outside the authenticated shell.
 
 | Area | Route entries | Unique guided screens | Detailed VI/EN walkthroughs |
 |---|---:|---:|---:|
 | CRM | 55 | 53 | 53 |
-| Studio | 13 | 13 | 13 |
+| Studio | 16 | 16 | 16 |
 | People & Access | 3 | 3 | 3 |
-| **Total** | **71** | **69** | **69** |
+| **Total** | **74** | **72** | **72** |
 
 ## CRM — 53 screens
 
@@ -19,9 +19,9 @@ The repository defines **83 total route definitions**, **12 access/system routes
 | `/communications/:conversationId` | `crm.communications.detail` | Chi tiết hội thoại | Conversation detail | 5 | 11 |
 | `/dashboard` | `crm.dashboard.overview` | Tổng quan CRM | CRM overview | 3 | 13 |
 | `/leads` | `crm.leads.list` | Khách hàng tiềm năng | Leads | 3 | 14 |
-| `/deals` | `crm.deals.pipeline` | Cơ hội bán hàng | Sales opportunities | 3 | 15 |
-| `/quotes` | `crm.quotes.list` | Báo giá | Quotes | 4 | 10 |
-| `/orders` | `crm.orders.list` | Đơn hàng | Orders | 3 | 12 |
+| `/deals` | `crm.deals.pipeline` | Cơ hội bán hàng | Sales opportunities | 4 | 17 |
+| `/quotes` | `crm.quotes.list` | Báo giá | Quotes | 5 | 11 |
+| `/orders` | `crm.orders.list` | Đơn hàng | Orders | 4 | 11 |
 | `/orders/new` | `crm.orders.create` | Tạo đơn hàng | Create order | 4 | 14 |
 | `/payments` | `crm.payments.list` | Thanh toán | Payments | 5 | 14 |
 | `/shipping` | `crm.shipping.list` | Vận đơn | Shipping bookings | 3 | 9 |
@@ -29,20 +29,20 @@ The repository defines **83 total route definitions**, **12 access/system routes
 | `/support/cases` | `crm.support.list` | Phiếu hỗ trợ | Support tickets | 3 | 9 |
 | `/reports` | `crm.reports.overview` | Báo cáo | Reports | 6 | 18 |
 | `/my-work` | `crm.my-work.overview` | Công việc của tôi | My work | 3 | 9 |
-| `/calendar` | `crm.calendar.overview` | Lịch công việc | Work calendar | 3 | 9 |
+| `/calendar` | `crm.calendar.overview` | Lịch công việc | Work calendar | 4 | 10 |
 | `/notifications` | `crm.notifications.center` | Thông báo | Notifications | 3 | 9 |
-| `/tasks` | `crm.tasks.list` | Công việc | Tasks | 3 | 9 |
+| `/tasks` | `crm.tasks.list` | Công việc | Tasks | 4 | 10 |
 | `/tasks/:taskId` | `crm.tasks.detail` | Chi tiết công việc | Task detail | 4 | 10 |
 | `/leads/queue` | `crm.leads.queue` | Hàng đợi khách hàng tiềm năng | Lead queue | 3 | 9 |
-| `/leads/:leadId` | `crm.leads.detail` | Chi tiết khách hàng tiềm năng | Lead detail | 5 | 12 |
-| `/leads/:leadId/qualify` | `crm.leads.qualify` | Xác minh khách hàng tiềm năng | Qualify lead | 3 | 9 |
+| `/leads/:leadId` | `crm.leads.detail` | Chi tiết khách hàng tiềm năng | Lead detail | 7 | 14 |
+| `/leads/:leadId/qualify` | `crm.leads.qualify` | Xác minh khách hàng tiềm năng | Qualify lead | 4 | 10 |
 | `/leads/:leadId/sell-now` | `crm.leads.sell-now` | Bán trực tiếp từ khách hàng tiềm năng | Sell now from lead | 3 | 9 |
 | `/products` | `crm.products.list` | Sản phẩm | Products | 3 | 9 |
 | `/products/:productId` | `crm.products.detail` | Chi tiết sản phẩm | Product detail | 3 | 9 |
-| `/deals/:dealId` | `crm.deals.detail` | Chi tiết cơ hội | Opportunity detail | 4 | 11 |
-| `/quotes/new` | `crm.quotes.create` | Tạo báo giá | Create quote | 4 | 11 |
-| `/quotes/:quoteId` | `crm.quotes.detail` | Chi tiết báo giá | Quote detail | 4 | 10 |
-| `/quotes/:quoteId/edit` | `crm.quotes.edit` | Chỉnh sửa báo giá | Edit quote | 4 | 10 |
+| `/deals/:dealId` | `crm.deals.detail` | Chi tiết cơ hội | Opportunity detail | 7 | 15 |
+| `/quotes/new` | `crm.quotes.create` | Tạo báo giá | Create quote | 7 | 14 |
+| `/quotes/:quoteId` | `crm.quotes.detail` | Chi tiết báo giá | Quote detail | 12 | 18 |
+| `/quotes/:quoteId/edit` | `crm.quotes.edit` | Chỉnh sửa báo giá | Edit quote | 5 | 11 |
 | `/orders/:orderId` | `crm.orders.detail` | Chi tiết đơn hàng | Order detail | 3 | 9 |
 | `/orders/:orderId/edit` | `crm.orders.edit` | Chỉnh sửa đơn hàng | Edit order | 3 | 9 |
 | `/payments/:paymentId` | `crm.payments.detail` | Chi tiết thanh toán | Payment detail | 3 | 9 |
@@ -58,22 +58,25 @@ The repository defines **83 total route definitions**, **12 access/system routes
 | `/returns/new` | `crm.returns.create` | Tạo yêu cầu đổi / trả | Create return request | 4 | 10 |
 | `/returns/:returnId` | `crm.returns.detail` | Chi tiết đổi / trả | Return detail | 3 | 9 |
 | `/contacts` | `crm.contacts.list` | Liên hệ | Contacts | 3 | 10 |
-| `/contacts/:contactId` | `crm.contacts.detail` | Chi tiết liên hệ | Contact detail | 3 | 9 |
+| `/contacts/:contactId` | `crm.contacts.detail` | Chi tiết liên hệ | Contact detail | 7 | 13 |
 | `/organizations` | `crm.organizations.list` | Tổ chức | Organizations | 3 | 9 |
-| `/organizations/:organizationId` | `crm.organizations.detail` | Chi tiết tổ chức | Organization detail | 5 | 11 |
+| `/organizations/:organizationId` | `crm.organizations.detail` | Chi tiết tổ chức | Organization detail | 5 | 12 |
 | `/customers` | `crm.customers.list` | Khách hàng | Customers | 3 | 9 |
-| `/customers/:customerId` | `crm.customers.detail` | Hồ sơ khách hàng | Customer profile | 4 | 11 |
+| `/customers/:customerId` | `crm.customers.detail` | Hồ sơ khách hàng | Customer profile | 5 | 15 |
 | `/customers/segments` | `crm.customers.segments` | Phân khúc khách hàng | Customer segments | 3 | 9 |
 | `/customers/health` | `crm.customers.health` | Sức khỏe khách hàng | Customer health | 3 | 9 |
 | `/support/cases/new` | `crm.support.create` | Tạo phiếu hỗ trợ | Create support ticket | 3 | 9 |
 | `/support/cases/:caseId` | `crm.support.detail` | Chi tiết phiếu hỗ trợ | Support ticket detail | 3 | 9 |
 | `/support/cases/:caseId/edit` | `crm.support.edit` | Chỉnh sửa phiếu hỗ trợ | Edit support ticket | 3 | 9 |
 
-## Studio — 13 screens
+## Studio — 16 screens
 
 | Route | Guidance ID | Tiếng Việt | English | Primary tasks | Walkthrough steps |
 |---|---|---|---|---:|---:|
-| `/settings/communications/channels` | `studio.communication-channels` | Communications · Kênh kết nối | Communications · Channel connections | 2 | 8 |
+| `/settings/connections` | `studio.connections-overview` | Tổng quan kết nối | Overview | 2 | 8 |
+| `/settings/connections/inbound` | `studio.connections-inbound` | Nhận dữ liệu | Inbound Sources | 2 | 8 |
+| `/settings/connections/api-access` | `studio.api-access` | Truy cập API | Developer API | 2 | 8 |
+| `/settings/communications/channels` | `studio.communication-channels` | Communications · Kênh kết nối | Communications · Channel connections | 2 | 9 |
 | `/settings/quick-setup` | `studio.quick-setup` | Thiết lập nhanh | Quick Setup | 2 | 8 |
 | `/settings/business-information` | `studio.business-information` | Thông tin doanh nghiệp | Business information | 2 | 8 |
 | `/settings/locale-region` | `studio.locale-region` | Ngôn ngữ & khu vực | Language & region | 2 | 8 |
@@ -83,8 +86,8 @@ The repository defines **83 total route definitions**, **12 access/system routes
 | `/settings/information-fields` | `studio.information-fields` | Trường thông tin | Information fields | 2 | 8 |
 | `/settings/payment-information` | `studio.payment-information` | Thông tin thanh toán | Payment information | 2 | 8 |
 | `/settings/invoice-information` | `studio.invoice-information` | Thông tin hóa đơn | Invoice information | 2 | 8 |
-| `/settings/integrations` | `studio.integrations` | Tích hợp | Integrations | 2 | 8 |
-| `/settings/webhooks-api` | `studio.webhooks-api` | Webhook & API | Webhooks & API | 2 | 8 |
+| `/settings/integrations` | `studio.integrations` | Ứng dụng & dịch vụ | Apps & Services | 2 | 8 |
+| `/settings/webhooks-api` | `studio.webhooks-api` | Webhook gửi đi | Outbound Webhooks | 2 | 8 |
 | `/settings/ai` | `studio.ai` | Trợ lý AI | AI Assistant | 2 | 8 |
 
 ## People & Access — 3 screens

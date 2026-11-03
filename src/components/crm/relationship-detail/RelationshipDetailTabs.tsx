@@ -31,6 +31,7 @@ interface RelationshipDetailTabsProps {
   onToggleRightPanel(): void;
   motionId: string;
   panelLabel?: { visible: string; hidden: string };
+  visibleTabs?: readonly RelationshipDetailTab[];
 }
 
 export const RelationshipDetailTabs: React.FC<RelationshipDetailTabsProps> = ({
@@ -41,6 +42,7 @@ export const RelationshipDetailTabs: React.FC<RelationshipDetailTabsProps> = ({
   onToggleRightPanel,
   motionId,
   panelLabel,
+  visibleTabs,
 }) => {
   const { locale } = useI18n();
   const isVi = locale === "vi";
@@ -62,7 +64,7 @@ export const RelationshipDetailTabs: React.FC<RelationshipDetailTabsProps> = ({
     <div className="flex min-w-0 items-center gap-2 border-b border-slate-100 bg-slate-50/50 pr-2">
       <div className="min-w-0 flex-1">
         <ResponsiveTabs
-          items={items}
+          items={items.filter(item => !visibleTabs || visibleTabs.includes(item.id as RelationshipDetailTab))}
           activeId={activeTab}
           onChange={(id) => onChange(id as RelationshipDetailTab)}
           className="border-b-0 bg-transparent"

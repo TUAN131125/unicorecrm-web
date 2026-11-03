@@ -57,13 +57,6 @@ export class LeadQualificationHttpAdapter implements LeadQualificationCommandPor
     if (!dealName) throw contractViolation("qualifyLeadForOpportunity", "deal.name", "Opportunity qualification requires a Deal name.");
     if (!ownerId) throw contractViolation("qualifyLeadForOpportunity", "deal.ownerId", "Opportunity qualification requires a Deal owner.");
     const interestedProductIds = [...new Set(command.deal.interestedProductIds.map((value) => value.trim()).filter(Boolean))];
-    if (!command.deal.needSummary?.trim() && interestedProductIds.length === 0) {
-      throw contractViolation(
-        "qualifyLeadForOpportunity",
-        "deal.needSummary/interestedProductIds",
-        "Opportunity qualification requires either a need summary or at least one interested product.",
-      );
-    }
     const body: QualifyLeadOpportunityRequest = compact({
       relationship: mapRelationship(command.relationship, "qualifyLeadForOpportunity"),
       deal: compact({
@@ -72,7 +65,7 @@ export class LeadQualificationHttpAdapter implements LeadQualificationCommandPor
         ownerId,
         expectedCloseDate: dateOnly(command.deal.expectedCloseDate, "qualifyLeadForOpportunity", "deal.expectedCloseDate"),
         interestedProductIds,
-        estimatedValue: command.deal.estimatedValue === undefined ? undefined : {
+        estimatedValue: command.deal.estimatedValue === undefined ? undefined : command.deal.estimatedValue === null ? null : {
           amount: normalizeOpportunityDecimal("qualifyLeadForOpportunity", "deal.estimatedValue", command.deal.estimatedValue),
           currency: normalizedCurrency,
         },
@@ -310,7 +303,7 @@ function normalizeNonNegativeDecimal(operationId: string, field: string, value: 
   return normalizeDecimal(String(value));
 }
 
-function text(value: string | undefined): string | undefined {
+function text(value: string | null | undefined): string | undefined {
   const normalized = value?.trim();
   return normalized ? normalized : undefined;
 }

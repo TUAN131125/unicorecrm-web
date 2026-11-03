@@ -1,22 +1,19 @@
-import React from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { ShoppingBag, Plus, Trash2, FileText, ChevronRight, AlertCircle, Phone, Mail, User, Check, X, MessageCircle, MessageSquare, Calendar, Trophy, TrendingUp, Users, Activity, Sparkles, RefreshCw, CheckCircle, XCircle, Settings, Download, ShieldCheck } from "lucide-react";
-import { Badge, Button, Input, Modal, SectionHeader, Select, Textarea, Table, TableHeader, TableBody, TableRow, TableCell, getQuoteStatusBadgeVariant } from "@/shared/components/ui";
+
+
+import { AlertCircle } from "lucide-react";
+import { Button, Input, Modal, Select, Textarea } from "@/shared/components/ui";
 import { formatCurrency } from "@/shared/lib/format/currency";
 import type { DealLineItem } from "../../domain/model/deal.types";
-import { DealStage } from "../../domain/model/deal.types";
-import { isWonStage } from "../../domain/rules/dealStages";
-import { QuoteApprovalStatus, QuoteStatus } from "@/modules/quotes";
-import { getPaymentSummaryForOrder } from "@/modules/payments";
+
+
+
+
 import { ProductPickerModal, type Product } from "@/modules/products";
-import { resolveWorkspaceMemberLabel } from "@/platform/member-directory";
-import { XCircleSelector } from "../components/XCircleSelector";
-import { DealForecastHistoryPanel, DealPipelineHealthBadges } from "../components/DealPipelineHealth";
-import {
-  RecordDetailHeader,
-  recordDetailHeaderActionButtonClassName,
-} from "@/components/crm/detail-archetype";
-import { formatDateTime } from "@/shared/lib/format/date";
+
+
+
+
+
 import { createDurableId } from "@/shared/ids";
 import type { DealDetailController, DealDetailProductCatalog } from "./dealDetailView.types";
 
@@ -122,7 +119,7 @@ export function DealDetailDialogs({
                 <div>
                   <span className="text-slate-500 text-[10px] font-bold block uppercase">{t("deals.columns.customer")}:</span>
                   <span className="text-slate-800 font-semibold">
-                    {deal.customerName || deal.organizationAccountName || deal.contactName || deal.buyerRef.id}
+                    {"name" in controller.buyerLabel ? controller.buyerLabel.name : t("common.notAvailable")}
                   </span>
                 </div>
                 <div>
@@ -147,8 +144,8 @@ export function DealDetailDialogs({
               {/* Canonical commitment evidence explainer */}
               <div className="bg-emerald-50/50 border border-emerald-100 p-2.5 rounded text-emerald-800 font-bold leading-snug">
                 {locale === "vi"
-                  ? "WON chỉ được ghi khi có Quote Accepted hoặc Order Confirmed. Không tạo Customer object và không ghi purchase completion ở bước này."
-                  : "WON requires Quote Accepted or Order Confirmed evidence. This action creates no Customer object and records no purchase completion."}
+                  ? controller.canConfirmWon ? "Xác nhận đóng thắng với chứng từ thương mại đã được chấp nhận." : "Chưa thể xác minh chứng từ thương mại để đóng thắng. Hãy kiểm tra báo giá hoặc đơn hàng liên quan; cơ hội chưa được thay đổi."
+                  : controller.canConfirmWon ? "Confirm this win with accepted commercial evidence." : "Commercial evidence cannot be verified for closing this win yet. Review the related quote or order; this opportunity has not been changed."}
               </div>
 
               <div className="flex justify-end gap-2 pt-1 border-t border-slate-100 mt-4">
@@ -162,9 +159,11 @@ export function DealDetailDialogs({
                 <Button
                   type="button"
                   onClick={handleConfirmWon}
+                  disabled={!controller.canConfirmWon || interactionPending}
+                  loading={interactionPending}
                   variant="primary"
                 >
-                  {locale === "vi" ? "Xác nhận WON có evidence" : "Confirm WON with evidence"}
+                  {locale === "vi" ? "Xác nhận thắng" : "Confirm win"}
                 </Button>
               </div>
         </div>
@@ -210,18 +209,18 @@ export function DealDetailDialogs({
 
                 <Select
                   disabled={interactionPending}
-                  label={locale === "vi" ? "Quyết định recycle" : "Recycle decision"}
+                  label={locale === "vi" ? "Kế hoạch chăm sóc lại" : "Follow-up plan"}
                   value={lostRecycleDecision}
                   onChange={(e) => setLostRecycleDecision(e.target.value as "RECYCLE" | "CONDITIONAL" | "DO_NOT_RECYCLE")}
                 >
-                  <option value="DO_NOT_RECYCLE">{locale === "vi" ? "Không recycle" : "Do not recycle"}</option>
-                  <option value="RECYCLE">{locale === "vi" ? "Recycle" : "Recycle"}</option>
-                  <option value="CONDITIONAL">{locale === "vi" ? "Recycle có điều kiện" : "Conditional recycle"}</option>
+                  <option value="DO_NOT_RECYCLE">{locale === "vi" ? "Không lên lịch lại" : "No revisit planned"}</option>
+                  <option value="RECYCLE">{locale === "vi" ? "Chăm sóc lại" : "Plan a revisit"}</option>
+                  <option value="CONDITIONAL">{locale === "vi" ? "Chăm sóc lại có điều kiện" : "Conditional revisit"}</option>
                 </Select>
 
                 {lostRecycleDecision !== "DO_NOT_RECYCLE" && (
                   <div className="space-y-1">
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase">{locale === "vi" ? "Ngày revisit bắt buộc" : "Required revisit date"}</label>
+                    <label htmlFor="deal-lost-revisit" className="block text-[10px] font-bold text-slate-500 uppercase">{locale === "vi" ? "Ngày liên hệ lại (bắt buộc)" : "Revisit date (required)"}</label>
                     <Input
                       id="deal-lost-revisit"
                       disabled={interactionPending}

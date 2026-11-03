@@ -53,6 +53,23 @@ Preview bundle đã sinh bằng:
 
 npm run preview
 
+Cấu hình kiểm thử trình duyệt
+
+`playwright.config.ts` là cấu hình mặc định; `playwright.connected.config.ts` giữ
+lifecycle của HTTP fixture và chế độ external backend. Các root config đang được
+backend gọi trực tiếp được giữ làm entrypoint tương thích; phần cấu hình dùng chung
+nằm trong [tests/config/playwright](tests/config/playwright/README.md).
+
+Connections, Deal presentation và Support dùng đường dẫn config mới trong thư mục
+đó. Ví dụ liệt kê test mà không chạy browser/server:
+
+```sh
+npm run e2e -- --config tests/config/playwright/deal-presentation.config.ts --list
+```
+
+Giữ nguyên các biến môi trường của từng suite. Các suite connected/SQL chỉ được
+chạy sau khi harness tương ứng đã chuẩn bị dữ liệu cô lập.
+
 Các lệnh kiểm tra chất lượng chính
 
 Các lệnh sau tồn tại trong package.json hiện tại và là các entry point được hỗ trợ cho việc xác minh thường xuyên:

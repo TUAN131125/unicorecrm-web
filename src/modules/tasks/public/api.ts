@@ -15,9 +15,12 @@ import { getActivitiesForCustomer, getActivitiesForRecord, getOverdueTasks, getT
 import { getTaskApiRuntime, taskActivityRepository } from "../application/composition/taskApplicationServices";
 import type { LeadHandoverTaskSnapshotCommand, LeadHandoverTaskSnapshotProof } from "../application/ports/TaskActivityRepository";
 import type { Activity, Task } from "../domain/model/task.types";
-import type { ActivityMutationResult, TaskMutationEvidence, TaskMutationResult } from "../application/ports/TaskApiRuntime";
+import { isManualActivityType } from "../domain/rules/manualActivityType";
+import { ApplicationError } from "@/shared/domain";
+import type { ActivityMutationResult, LogActivityInput, TaskMutationEvidence, TaskMutationResult } from "../application/ports/TaskApiRuntime";
 
-export type { Activity, ActivityType, RecordRef, Task, TaskActivitySnapshot, TaskPriority, TaskSourceRef, TaskStatus } from "../domain/model/task.types";
+export type { Activity, ActivityType, ManualActivityType, RecordRef, Task, TaskActivitySnapshot, TaskPriority, TaskSourceRef, TaskStatus } from "../domain/model/task.types";
+export { isManualActivityType } from "../domain/rules/manualActivityType";
 export type {
   ActivityListQuery,
   ActivityMutationResult,
@@ -137,10 +140,11 @@ export const archiveTaskCommand = async (taskId: string, input: Parameters<typeo
 };
 
 export const logActivityCommand = async (
-  command: Omit<Parameters<typeof logActivity>[1], "workspaceId">,
+  command: Omit<Parameters<typeof logActivity>[1], "workspaceId" | "type"> & { type: LogActivityInput["type"] },
   metadata: Partial<MutationCommandMetadata> = {},
 ): Promise<MutationOutcome<Activity>> => {
   const api = getTaskApiRuntime();
+  if (!isManualActivityType(command.type)) throw new ApplicationError({ code: "VALIDATION_FAILED", category: "VALIDATION", message: "Unsupported manual Activity type.", retryable: false });
   if (command.occurredAt !== undefined) {
     if (Number.isNaN(new Date(command.occurredAt).getTime())) throw new Error("ACTIVITY_DATE_INVALID");
     // LogActivityRequest has no date field. Refuse a dated draft before transport rather
@@ -164,7 +168,7 @@ export const logActivityCommand = async (
 export interface LoggedActivityResult { activity: Activity; }
 
 export const logActivityViaApi = async (
-  command: Omit<Parameters<typeof logActivity>[1], "workspaceId">,
+  command: Parameters<typeof logActivityCommand>[0],
   metadata: Partial<MutationCommandMetadata> = {},
 ): Promise<MutationOutcome<LoggedActivityResult>> => {
   const outcome = await logActivityCommand(command, metadata);

@@ -51,7 +51,6 @@ export function PaymentInformationView() {
   const content = (
     <>
       {unavailableNotice ? <p className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">{unavailableNotice}</p> : null}
-            {!canConfigure ? <p className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{text("Bạn chỉ có quyền xem cấu hình.", "You have read-only access to configuration.")}</p> : null}
       <div className="space-y-5">
         <StudioSection title={text("Tài khoản nhận tiền", "Receiving accounts")} actions={<StudioButton tone="accent" size="sm" icon={<Plus size={14} />} disabled={!canConfigure} onClick={() => setAccount(emptyAccount(workspace.localeRegion.currencies.baseCurrency))}>{text("Thêm tài khoản", "Add account")}</StudioButton>}>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">

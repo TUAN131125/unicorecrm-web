@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { AuthoritativeQueryBoundary, formatApplicationError } from "@/shared/operations";
 import { useTasksAuthoritative } from "../hooks/useTasksAuthoritative";
+import { useTaskClock } from "../hooks/useTaskClock";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { CalendarDays, CheckCircle2, Clock3, ListTodo, Plus, Archive, UserRound, XCircle } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -13,6 +14,8 @@ import { OperationFilterPopover, OperationSavedViews } from "@/components/crm/op
 import { useEffectiveAccess } from "@/platform/access-control";
 import { useSubscribableSnapshot } from "@/platform/react";
 import { getAuthSessionSnapshot } from "@/platform/identity-auth";
+import { useWorkspaceRuntimeSettings } from "@/platform/workspace-config";
+import { classifyTaskDate, formatTaskDueAt } from "../../application/queries/taskDateClassification";
 import { resolveWorkspaceMemberName } from "@/platform/member-directory";
 import { TaskCreateModal } from "../components/TaskCreateModal";
 import { resolveTaskContextLabel } from "../model/taskContextPresentation";
@@ -34,11 +37,10 @@ const badgeClass: Record<string, string> = {
 const statusLabel = (status: TaskStatus, vi: boolean) => status === "OPEN" ? (vi ? "Đang mở" : "Open") : status === "COMPLETED" ? (vi ? "Đã hoàn thành" : "Completed") : (vi ? "Đã hủy" : "Cancelled");
 const priorityLabel = (priority: TaskPriority, vi: boolean) => priority === "LOW" ? (vi ? "Thấp" : "Low") : priority === "NORMAL" ? (vi ? "Bình thường" : "Normal") : priority === "HIGH" ? (vi ? "Cao" : "High") : (vi ? "Khẩn cấp" : "Urgent");
 
-function isToday(value: string) {
-  return new Date(value).toDateString() === new Date().toDateString();
-}
-function isOverdue(task: Task) {
-  return task.status === "OPEN" && new Date(task.dueAt).getTime() < Date.now() && !isToday(task.dueAt);
+const savedViewKeys: readonly TaskSavedView[] = ["all", "my_open", "today", "overdue", "high", "unassigned", "completed"];
+function resolveSavedView(value: string | null): TaskSavedView {
+  if (value === "mine") return "my_open";
+  return savedViewKeys.find(key => key === value) ?? "all";
 }
 
 export const TaskListPage: React.FC = () => {
@@ -49,37 +51,43 @@ export const TaskListPage: React.FC = () => {
   const vi = locale === "vi";
   const reduceMotion = useReducedMotion();
   const access = useEffectiveAccess();
+  const { timeZone } = useWorkspaceRuntimeSettings();
+  const now = useTaskClock();
+  const nowEpoch = now.getTime();
   const snapshot = useSubscribableSnapshot(getTaskActivitySnapshot, subscribeToTaskActivity);
   const contacts = useSubscribableSnapshot(getContactsSnapshot, subscribeToContacts);
   const organizations = useSubscribableSnapshot(getOrganizationAccountsSnapshot, subscribeToOrganizationAccounts);
   const [search, setSearch] = useState("");
-  const [view, setView] = useState<TaskSavedView>(() => searchParams.get("view") === "mine" ? "my_open" : "all");
+  const view = resolveSavedView(searchParams.get("view"));
   const [displayMode, setDisplayMode] = useState<DisplayMode>("table");
   const [filterOpen, setFilterOpen] = useState(false);
   const [priorityFilter, setPriorityFilter] = useState<TaskPriority | "ALL">("ALL");
-  const [assigneeFilter, setAssigneeFilter] = useState("ALL");
+  const assigneeFilter = searchParams.get("assignee") || "ALL";
   const [showCreate, setShowCreate] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [messageTone, setMessageTone] = useState<"success" | "error">("success");
   const [deleteTarget, setDeleteTarget] = useState<Task | null>(null);
 
   const session = getAuthSessionSnapshot();
-  const currentMemberId = session?.principal.memberId || access.memberId || undefined;
+  const currentMemberId = access.memberId || session?.principal.memberId || undefined;
+  const timing = (task: Task) => classifyTaskDate(task, now, timeZone, currentMemberId);
+  const matchesAssignee = (task: Task) => assigneeFilter === "ALL" || (assigneeFilter === "mine" ? Boolean(currentMemberId) && task.assigneeId === currentMemberId : task.assigneeId === assigneeFilter);
   const allTasks = useMemo(() => queryTaskSnapshot({ search }), [snapshot, search]);
   const owners = useMemo(() => Array.from(new Set(snapshot.tasks.map((task) => task.assigneeId).filter(Boolean))).sort(), [snapshot.tasks]);
+  const dueFilterEpoch = view === "today" || view === "overdue" ? nowEpoch : 0;
   const filteredTasks = useMemo(() => allTasks
     .filter((task) => priorityFilter === "ALL" || task.priority === priorityFilter)
-    .filter((task) => assigneeFilter === "ALL" || task.assigneeId === assigneeFilter)
+    .filter(matchesAssignee)
     .filter((task) => {
       if (view === "all") return true;
-      if (view === "my_open") return Boolean(currentMemberId) && task.status === "OPEN" && task.assigneeId === currentMemberId;
-      if (view === "today") return task.status === "OPEN" && isToday(task.dueAt);
-      if (view === "overdue") return isOverdue(task);
+      if (view === "my_open") return timing(task).myOpen;
+      if (view === "today") return timing(task).dueToday;
+      if (view === "overdue") return timing(task).overdue;
       if (view === "high") return task.status === "OPEN" && ["HIGH", "URGENT"].includes(task.priority);
       if (view === "unassigned") return task.status === "OPEN" && (!task.assigneeId || task.assigneeId === "unassigned");
-      if (view === "completed") return task.status === "COMPLETED";
+      if (view === "completed") return timing(task).completed;
       return true;
-    }), [allTasks, priorityFilter, assigneeFilter, view, currentMemberId]);
+    }), [allTasks, priorityFilter, assigneeFilter, view, currentMemberId, timeZone, dueFilterEpoch]);
 
   const pagination = useListPagination(filteredTasks, 25);
 
@@ -88,23 +96,31 @@ export const TaskListPage: React.FC = () => {
   const canUpdate = Boolean(currentMemberId) && access.canPerform("tasks", "update");
 
   const savedViews = useMemo(() => {
-    const open = snapshot.tasks.filter((task) => task.status === "OPEN");
+    const scopeTasks = snapshot.tasks.filter(matchesAssignee);
+    const open = scopeTasks.filter((task) => task.status === "OPEN");
     return [
-      { key: "all", label: vi ? "Tất cả" : "All", count: snapshot.tasks.length, tone: "slate" as const },
+      { key: "all", label: vi ? "Tất cả" : "All", count: scopeTasks.length, tone: "slate" as const },
       { key: "my_open", label: vi ? "Của tôi" : "Mine", count: currentMemberId ? open.filter((task) => task.assigneeId === currentMemberId).length : 0, tone: "sky" as const },
-      { key: "today", label: vi ? "Hôm nay" : "Today", count: open.filter((task) => isToday(task.dueAt)).length, tone: "emerald" as const },
-      { key: "overdue", label: vi ? "Quá hạn" : "Overdue", count: open.filter(isOverdue).length, tone: "rose" as const },
+      { key: "today", label: vi ? "Hôm nay" : "Today", count: open.filter((task) => timing(task).dueToday).length, tone: "emerald" as const },
+      { key: "overdue", label: vi ? "Quá hạn" : "Overdue", count: open.filter((task) => timing(task).overdue).length, tone: "rose" as const },
       { key: "high", label: vi ? "Ưu tiên cao" : "High priority", count: open.filter((task) => ["HIGH", "URGENT"].includes(task.priority)).length, tone: "amber" as const },
       { key: "unassigned", label: vi ? "Chưa giao" : "Unassigned", count: open.filter((task) => !task.assigneeId || task.assigneeId === "unassigned").length, tone: "slate" as const },
-      { key: "completed", label: vi ? "Đã hoàn thành" : "Completed", count: snapshot.tasks.filter((task) => task.status === "COMPLETED").length, tone: "emerald" as const },
+      { key: "completed", label: vi ? "Đã hoàn thành" : "Completed", count: scopeTasks.filter((task) => timing(task).completed).length, tone: "emerald" as const },
     ];
-  }, [snapshot.tasks, currentMemberId, vi]);
+  }, [snapshot.tasks, currentMemberId, assigneeFilter, vi, timeZone, nowEpoch]);
 
   const changeView = (nextView: TaskSavedView) => {
-    setView(nextView);
     const next = new URLSearchParams(searchParams);
     if (nextView === "my_open") next.set("view", "mine");
-    else next.delete("view");
+    else if (nextView === "all") next.delete("view");
+    else next.set("view", nextView);
+    setSearchParams(next, { replace: true });
+  };
+
+  const changeAssignee = (value: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (value === "ALL") next.delete("assignee");
+    else next.set("assignee", value);
     setSearchParams(next, { replace: true });
   };
 
@@ -156,7 +172,7 @@ export const TaskListPage: React.FC = () => {
   };
 
   const renderCard = (task: Task) => {
-    const overdue = isOverdue(task);
+    const overdue = timing(task).overdue;
     const context = resolveTaskContextLabel(task, contacts, organizations) || (vi ? "Không gắn bản ghi" : "No related record");
     return (
       <motion.article
@@ -176,7 +192,7 @@ export const TaskListPage: React.FC = () => {
         </div>
         {task.description && <p className="mt-3 crm-text-wrap break-words text-xs text-slate-500 [overflow-wrap:anywhere]">{task.description}</p>}
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 border-t border-slate-100 pt-3">
-          <div className={`inline-flex items-center gap-1.5 text-xs font-medium ${overdue ? "text-rose-600" : "text-slate-600"}`}><Clock3 size={13} /><span>{new Date(task.dueAt).toLocaleString(vi ? "vi-VN" : "en-US")}</span></div>
+          <div className={`inline-flex items-center gap-1.5 text-xs font-medium ${overdue ? "text-rose-600" : "text-slate-600"}`}><Clock3 size={13} /><span>{formatTaskDueAt(task.dueAt, locale, timeZone)}</span></div>
           <div className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-600"><UserRound size={13} /><span className="crm-text-wrap">{resolveWorkspaceMemberName(task.assigneeId)}</span></div>
           <span className={`rounded-full border px-2 py-1 text-[10px] font-semibold ${badgeClass[task.status]}`}>{statusLabel(task.status, vi)}</span>
         </div>
@@ -198,7 +214,7 @@ export const TaskListPage: React.FC = () => {
       <ListPageHeader
         title={vi ? "Công việc" : "Tasks"}
         count={filteredTasks.length}
-        context={vi ? "Theo dõi công việc, thời hạn và người phụ trách tại một nơi." : "Track work, due dates, and owners in one place."}
+        context={vi ? `Theo dõi công việc, thời hạn và người phụ trách. Múi giờ: ${timeZone}.` : `Track work, due dates, and owners. Timezone: ${timeZone}.`}
         icon={<ListTodo size={20} />}
         actions={<div className="flex flex-wrap gap-2"><Button type="button" actionIntent="navigate" size="sm" icon={<CalendarDays size={15} />} className="h-9 rounded-xl" onClick={() => navigate("../calendar")}>{vi ? "Xem lịch" : "Calendar"}</Button>{canCreate && <Button type="button" actionIntent="create" size="sm" icon={<Plus size={15} />} className="h-9 rounded-xl" onClick={() => setShowCreate(true)}>{vi ? "Tạo công việc" : "Create Task"}</Button>}</div>}
       />
@@ -227,7 +243,7 @@ export const TaskListPage: React.FC = () => {
           <OperationFilterPopover
             isOpen={filterOpen}
             onClose={() => setFilterOpen(false)}
-            onReset={() => { setPriorityFilter("ALL"); setAssigneeFilter("ALL"); }}
+            onReset={() => { setPriorityFilter("ALL"); changeAssignee("ALL"); }}
             title={vi ? "Bộ lọc Công việc" : "Task filters"}
             resetLabel={vi ? "Đặt lại" : "Reset"}
             doneLabel={vi ? "Hoàn tất" : "Done"}
@@ -242,7 +258,7 @@ export const TaskListPage: React.FC = () => {
                 <option value="URGENT">{vi ? "Khẩn cấp" : "Urgent"}</option>
               </select>
             </label>
-            <SearchableSelect label={vi ? "Người phụ trách" : "Assignee"} value={assigneeFilter} onChange={setAssigneeFilter} clearable={false} placeholder={vi ? "Tất cả" : "All"} searchPlaceholder={vi ? "Tìm nhân viên..." : "Search members..."} options={[{ value: "ALL", label: vi ? "Tất cả" : "All" }, ...owners.map((owner) => ({ value: owner, label: resolveWorkspaceMemberName(owner) || owner }))]} />
+            <SearchableSelect label={vi ? "Người phụ trách" : "Assignee"} value={assigneeFilter} onChange={changeAssignee} clearable={false} placeholder={vi ? "Tất cả" : "All"} searchPlaceholder={vi ? "Tìm nhân viên..." : "Search members..."} options={[{ value: "ALL", label: vi ? "Tất cả" : "All" }, ...(currentMemberId ? [{ value: "mine", label: vi ? "Của tôi" : "Mine" }] : []), ...owners.map((owner) => ({ value: owner, label: resolveWorkspaceMemberName(owner) || owner }))]} />
           </OperationFilterPopover>
         )}
       />
@@ -254,7 +270,7 @@ export const TaskListPage: React.FC = () => {
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 text-[10px] uppercase tracking-wider text-slate-500"><tr><th className="px-4 py-3">{vi ? "Công việc" : "Task"}</th><th className="px-4 py-3">{vi ? "Hạn" : "Due"}</th><th className="px-4 py-3">{vi ? "Phụ trách" : "Assignee"}</th><th className="px-4 py-3">{vi ? "Ưu tiên" : "Priority"}</th><th className="px-4 py-3">{vi ? "Trạng thái" : "Status"}</th><th className="px-4 py-3 text-right">{vi ? "Thao tác" : "Actions"}</th></tr></thead>
-              <tbody className="divide-y divide-slate-100">{pagination.pageItems.map((task) => <tr key={task.id} className="hover:bg-slate-50/70"><td className="px-4 py-3"><button type="button" onClick={() => navigate(task.id)} className="block max-w-[360px] break-words text-left font-medium text-slate-900 hover:text-indigo-700 [overflow-wrap:anywhere]">{task.title}</button><div className="mt-1 max-w-[360px] break-words text-[11px] text-slate-500 [overflow-wrap:anywhere]">{resolveTaskContextLabel(task, contacts, organizations) || (vi ? "Không gắn bản ghi" : "No related record")}</div></td><td className={`px-4 py-3 font-semibold ${isOverdue(task) ? "text-rose-600" : "text-slate-600"}`}>{new Date(task.dueAt).toLocaleString(vi ? "vi-VN" : "en-US")}</td><td className="px-4 py-3 text-slate-600">{resolveWorkspaceMemberName(task.assigneeId)}</td><td className="px-4 py-3"><span className={`rounded-full border px-2 py-1 font-medium ${badgeClass[task.priority]}`}>{priorityLabel(task.priority, vi)}</span></td><td className="px-4 py-3"><span className={`rounded-full border px-2 py-1 font-medium ${badgeClass[task.status]}`}>{statusLabel(task.status, vi)}</span></td><td className="px-4 py-3"><div className="flex justify-end gap-2">{task.status === "OPEN" && <>{canComplete && <IconButton type="button" variant="success" size="xs" className="text-white [&_svg]:stroke-white" onClick={() => void complete(task)} title={vi ? "Hoàn thành" : "Complete"}><CheckCircle2 size={15} /></IconButton>}{canUpdate && <IconButton type="button" variant="danger" size="xs" className="text-white [&_svg]:stroke-white" onClick={() => void cancel(task)} title={vi ? "Hủy" : "Cancel"}><XCircle size={15} /></IconButton>}</>}{canUpdate && <IconButton type="button" variant="danger" size="xs" className="text-white [&_svg]:stroke-white" onClick={() => setDeleteTarget(task)} title={vi ? "Lưu trữ công việc" : "Archive task"}><Archive size={15} /></IconButton>}</div></td></tr>)}</tbody>
+              <tbody className="divide-y divide-slate-100">{pagination.pageItems.map((task) => <tr key={task.id} className="hover:bg-slate-50/70"><td className="px-4 py-3"><button type="button" onClick={() => navigate(task.id)} className="block max-w-[360px] break-words text-left font-medium text-slate-900 hover:text-indigo-700 [overflow-wrap:anywhere]">{task.title}</button><div className="mt-1 max-w-[360px] break-words text-[11px] text-slate-500 [overflow-wrap:anywhere]">{resolveTaskContextLabel(task, contacts, organizations) || (vi ? "Không gắn bản ghi" : "No related record")}</div></td><td className={`px-4 py-3 font-semibold ${timing(task).overdue ? "text-rose-600" : "text-slate-600"}`}>{formatTaskDueAt(task.dueAt, locale, timeZone)}</td><td className="px-4 py-3 text-slate-600">{resolveWorkspaceMemberName(task.assigneeId)}</td><td className="px-4 py-3"><span className={`rounded-full border px-2 py-1 font-medium ${badgeClass[task.priority]}`}>{priorityLabel(task.priority, vi)}</span></td><td className="px-4 py-3"><span className={`rounded-full border px-2 py-1 font-medium ${badgeClass[task.status]}`}>{statusLabel(task.status, vi)}</span></td><td className="px-4 py-3"><div className="flex justify-end gap-2">{task.status === "OPEN" && <>{canComplete && <IconButton type="button" variant="success" size="xs" className="text-white [&_svg]:stroke-white" onClick={() => void complete(task)} title={vi ? "Hoàn thành" : "Complete"}><CheckCircle2 size={15} /></IconButton>}{canUpdate && <IconButton type="button" variant="danger" size="xs" className="text-white [&_svg]:stroke-white" onClick={() => void cancel(task)} title={vi ? "Hủy" : "Cancel"}><XCircle size={15} /></IconButton>}</>}{canUpdate && <IconButton type="button" variant="danger" size="xs" className="text-white [&_svg]:stroke-white" onClick={() => setDeleteTarget(task)} title={vi ? "Lưu trữ công việc" : "Archive task"}><Archive size={15} /></IconButton>}</div></td></tr>)}</tbody>
             </table>
           </div>
         </div>

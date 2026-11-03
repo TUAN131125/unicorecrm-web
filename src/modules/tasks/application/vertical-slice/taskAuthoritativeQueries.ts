@@ -40,7 +40,9 @@ function taskAuthority(): string | undefined {
 function retireTasks(): void {
   authorityGeneration += 1;
   for (const resource of [taskCollection, ...scopedTaskCollections.values(), ...taskDetails.values(), ...activityCollections.values()]) resource.reset();
-  runWorkspaceScopeReset(() => taskActivityRepository.replace({ tasks: [], activities: [] }));
+  // Clear stale Connected projections without deleting Demo's authoritative state.
+  if (getTaskApiRuntime().mode === "connected")
+    runWorkspaceScopeReset(() => taskActivityRepository.replace({ tasks: [], activities: [] }));
 }
 function syncTaskAuthority(): void {
   const next = taskAuthority();

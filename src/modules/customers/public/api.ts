@@ -33,6 +33,12 @@ function ensureBackfill(): void {
 }
 
 export function getStoredCustomersSnapshot(): Customer[] { return customerRepository.list(); }
+export function readCustomerPage(query: import("@/shared/application").ModuleListQuery = {}, signal?: AbortSignal) {
+  return getCustomerApiRuntime().queries.list(query, signal);
+}
+export function readCustomerById(customerId: string, signal?: AbortSignal) {
+  return getCustomerApiRuntime().queries.get(customerId, signal);
+}
 export function replaceCustomerSnapshot(snapshot: import("../domain/model/customer.types").CustomerRepositorySnapshot): void { customerRepository.replace(snapshot); }
 export function saveCustomerSnapshot(customer: Customer): Customer { return customerRepository.save(customer); }
 export function getCustomersSnapshot(): Customer[] { ensureBackfill(); return customerRepository.list(); }

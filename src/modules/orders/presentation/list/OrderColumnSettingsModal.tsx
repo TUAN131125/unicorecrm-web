@@ -14,7 +14,7 @@ export interface OrderColumnSettingsModalProps {
 const CONFIGURABLE_COLUMNS = [
   { key: "customer", labelVi: "Khách hàng mua", labelEn: "Customer detail link" },
   { key: "contact", labelVi: "Người đại diện", labelEn: "Contact representative" },
-  { key: "source", labelVi: "Nguồn gốc hợp đồng", labelEn: "Order source snapshot" },
+  { key: "source", labelVi: "Nguồn gốc hợp đồng", labelEn: "Order source" },
   { key: "sourceQuote", labelVi: "Mã báo giá", labelEn: "Associated quote ID" },
   { key: "sourceDeal", labelVi: "Cơ hội liên kết", labelEn: "CRM opportunity / Deal" },
   { key: "owner", labelVi: "Phụ trách đơn", labelEn: "Assigned account owner" },

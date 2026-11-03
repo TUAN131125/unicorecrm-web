@@ -17,7 +17,6 @@ export const GuidanceChecklist: React.FC = () => {
     <section className="space-y-3" aria-labelledby="guidance-checklist-title">
       <div>
         <h3 id="guidance-checklist-title" className="text-[11px] font-semibold uppercase tracking-[0.14em] text-slate-400">{guidance.locale === "vi" ? "Bắt đầu nhanh" : "Getting started"}</h3>
-        <p className="mt-1 text-xs font-medium text-slate-500">{guidance.locale === "vi" ? "Checklist chỉ hiển thị các bước bạn có quyền thực hiện." : "The checklist only shows steps you are allowed to perform."}</p>
       </div>
       {visible.map((checklist) => {
         const completed = new Set(guidance.progress.completedChecklistItems[checklist.id] || []);

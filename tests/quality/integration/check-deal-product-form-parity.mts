@@ -22,7 +22,7 @@ assert.equal(signIn({ email: "admin@unicorecrm.local", password: "admin123" }).o
 const { initializeApplicationComposition } = await import("@/app/composition");
 await initializeApplicationComposition({ mode: "demo" });
 const workspace = await import("@/platform/workspace-context");
-const { loadAccessGovernance } = await import("@/platform/access-control");
+const { loadAccessGovernance, EffectiveRecordAccessBoundary } = await import("@/platform/access-control");
 await loadAccessGovernance(workspace.getWorkspaceContextSnapshot().workspaceId);
 const React = await import("react");
 const { act } = React;
@@ -52,7 +52,7 @@ let product=A; let deal=dealA; let kind:'product'|'deal'='product'; let open=tru
 const productCalls: Array<{ data:Partial<Product>; opening:Product|null }> = [];
 const dealCalls: Array<{ draft:Draft; opening:Deal|null;sourceKey?:string }> = [];
 async function respond() { if(hold) await new Promise<void>(resolve=>{release=resolve;}); if(fail) throw new ApplicationError({code:'FIELDS',message:'private diagnostics',category:'VALIDATION',fieldErrors:{name:['Correct name']}}); return true; }
-function Probe() { return kind==='product' ? React.createElement(ProductFormModal,{id:'proof-product',isOpen:open,product,existingProducts:[A,B],onClose:()=>{open=false;renderNow();},onSubmit:async(data,opening,intentId)=>{productCalls.push({data,opening});if(productBoundary){const {saveProductCommand}=await import('@/modules/products/public/catalog');await saveProductCommand(data,{idempotencyKey:intentId});return true;}return respond();}}) : React.createElement(DealFormModal,{isOpen:open,mode:dealMode,sourceKey,target:dealMode==='edit'?deal:null,initialValues:{name:deal.name,customerName:sourceKey==='source-B'?'Customer B':'Customer A',ownerId:'u1',demandSummary:'Customer need'},owners:[{memberId:'u1',displayName:'Admin'}],stages:[{id:'stage-discovery',color:'purple',createdAt:'2026-07-01',updatedAt:'2026-07-01',code:'DISCOVERY',labelVi:'Khám phá',labelEn:'Discovery',category:'open',order:1,isActive:true,probabilityDefault:10}],productsEnabled:false,onClose:()=>{open=false;renderNow();},onSubmit:async(draft,opening,_intentId,openingSourceKey)=>{dealCalls.push({draft,opening,sourceKey:openingSourceKey});return respond();}}); }
+function Probe() { return kind==='product' ? React.createElement(ProductFormModal,{id:'proof-product',isOpen:open,product,existingProducts:[A,B],onClose:()=>{open=false;renderNow();},onSubmit:async(data,opening,intentId)=>{productCalls.push({data,opening});if(productBoundary){const {saveProductCommand}=await import('@/modules/products/public/catalog');await saveProductCommand(data,{idempotencyKey:intentId});return true;}return respond();}}) : React.createElement(DealFormModal,{isOpen:open,mode:dealMode,sourceKey,target:dealMode==='edit'?deal:null,customerNameLocked:true,initialValues:{buyerRef:deal.buyerRef,expectedCloseDate:deal.expectedCloseDate,name:deal.name,customerName:sourceKey==='source-B'?'Customer B':'Customer A',ownerId:'u1',demandSummary:'Customer need'},owners:[{memberId:'u1',displayName:'Admin'}],stages:[{id:'stage-discovery',color:'purple',createdAt:'2026-07-01',updatedAt:'2026-07-01',code:'DISCOVERY',labelVi:'Khám phá',labelEn:'Discovery',category:'open',order:1,isActive:true,probabilityDefault:10}],productsEnabled:false,onClose:()=>{open=false;renderNow();},onSubmit:async(draft,opening,_intentId,openingSourceKey)=>{dealCalls.push({draft,opening,sourceKey:openingSourceKey});return respond();}}); }
 const element=document.getElementById('root');assert.ok(element);const root=createRoot(element);
 function renderNow() { root.render(React.createElement(MemoryRouter,null,React.createElement(I18nProvider,null,React.createElement(PlatformStateProvider,null,React.createElement(GuidanceProvider,null,React.createElement(Probe)))))); }
 const settle=async()=>act(async()=>{await new Promise(resolve=>setTimeout(resolve,70));});
@@ -90,9 +90,9 @@ try{
  kind='deal';dealMode='create';sourceKey='source-A';deal=dealA;open=true;await render();
  await change('deal-create-name','Source A draft');sourceKey='source-B';await render();
  assert.equal(document.querySelector('[data-deal-source-key]')?.getAttribute('data-deal-source-key'),'source-A');
- assert.equal(document.querySelector<HTMLInputElement>('#deal-create-customerName')?.value,'Customer A');
+ assert.ok(document.querySelector('[data-buyer-picker]')?.textContent?.includes('Customer A'));
  await act(async()=>{assert.equal(discardDirtyUnsavedWork(),true);});await settle();open=true;await render();
- assert.equal(document.querySelector<HTMLInputElement>('#deal-create-customerName')?.value,'Customer B');
+ assert.ok(document.querySelector('[data-buyer-picker]')?.textContent?.includes('Customer B'));
  assert.equal(getDirtyUnsavedWork().length,0);open=false;await render();dealMode='edit';sourceKey=undefined;
  // Real application port: the Product version is resolved for bound A, never the screen B.
  const productServices = await import('@/modules/products/application/composition/productApplicationServices');
@@ -125,7 +125,10 @@ try{
  }}});
  const detailState: {current:ReturnType<typeof useDealDetailController>} = {current:null};
  function DetailProbe(){detailState.current=useDealDetailController({customers:[],setCustomers:()=>{},contacts:[]});return detailState.current?React.createElement(DealDetailDialogs,{controller:detailState.current,productCatalog:[]}):null;}
- const detailRouter=createMemoryRouter([{path:'/deals/:dealId',element:React.createElement(I18nProvider,null,React.createElement(PlatformStateProvider,null,React.createElement(GuidanceProvider,null,React.createElement(DetailProbe))))}],{initialEntries:['/deals/deal-A']});
+ // Both synthetic records are authorized. Keep this controller-only authority stable
+ // while the draft-retention assertions navigate between their routes.
+ const detailAuthority=React.createElement(EffectiveRecordAccessBoundary,{resourceKey:'deals',requestedCommands:['deal.close-lost','deal.update'],requestedFields:['stageCode','stageCategory','lostReason','lostReasonNote','recycleDecision','revisitAt','lostAt','actualCloseDate'],children:React.createElement(DetailProbe)});
+ const detailRouter=createMemoryRouter([{path:'/deals/:dealId',element:React.createElement(I18nProvider,null,React.createElement(PlatformStateProvider,null,React.createElement(GuidanceProvider,null,detailAuthority)))}],{initialEntries:['/deals/deal-A']});
  const detailElement=document.createElement('div');document.body.append(detailElement);const detailRoot=createRoot(detailElement);
  await act(async()=>detailRoot.render(React.createElement(RouterProvider,{router:detailRouter})));await settle();assert.ok(detailState.current);
  await act(async()=>detailState.current?.setIsLostModalOpen(true));await settle();await act(async()=>{detailState.current?.setLostReason('NO_BUDGET');detailState.current?.setLostNotes('A draft');});await settle();entry();

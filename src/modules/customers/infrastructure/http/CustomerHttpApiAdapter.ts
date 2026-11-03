@@ -14,6 +14,7 @@ import type {
   CustomerCommandOptions,
   CustomerCommandPort,
   CustomerQueryPort,
+  CustomerListItem,
 } from "../../application/ports/CustomerApiRuntime";
 import type { Customer } from "../../domain/model/customer.types";
 import { mapCustomer360ReadModel, mapCustomerDocument } from "./CustomerApiMapper";
@@ -21,7 +22,7 @@ import { mapCustomer360ReadModel, mapCustomerDocument } from "./CustomerApiMappe
 export class CustomerHttpApiAdapter implements CustomerQueryPort, CustomerCommandPort {
   constructor(private readonly client: CommercialApiClient) {}
 
-  async list(query: ModuleListQuery = {}, signal?: AbortSignal): Promise<AuthoritativePage<Customer>> {
+  async list(query: ModuleListQuery = {}, signal?: AbortSignal): Promise<AuthoritativePage<CustomerListItem>> {
     const filters = query.filters ?? {};
     const request: ListCustomersQuery = {
       q: query.search,
@@ -34,7 +35,9 @@ export class CustomerHttpApiAdapter implements CustomerQueryPort, CustomerComman
       limit: query.limit,
     };
     const response = await this.client.listCustomers<CustomerList>(request, signal);
-    const items = response.items.map(mapCustomerDocument);
+    const items = response.items.map(value => ({ ...mapCustomerDocument(value),
+      ...(response.identities?.[value.id] ? { listIdentity: response.identities[value.id] } : {}),
+    }));
     return {
       items,
       pageInfo: {

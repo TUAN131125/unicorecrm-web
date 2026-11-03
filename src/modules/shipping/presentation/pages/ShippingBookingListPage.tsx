@@ -231,7 +231,7 @@ export const ShippingBookingListPage: React.FC = () => {
         onClose={() => setShowStats(false)}
         size="lg"
         title={text("Thống kê vận đơn", "Shipping statistics")}
-        description={text("Tổng hợp hàng đợi vận hành theo dữ liệu vận đơn hiện tại.", "Operational queue summary from current shipment data.")}
+        
         bodyClassName="bg-slate-50/70"
       >
         <OperationMetricGrid items={[

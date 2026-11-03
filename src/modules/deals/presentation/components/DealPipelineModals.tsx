@@ -65,6 +65,7 @@ export function DealPipelineModals({ controller }: DealPipelineModalsProps) {
         onClose={() => setIsAddModalOpen(false)}
         mode="create"
         initialValues={{
+          pipeline: controller.pipelineId,
           name: newDealName,
           customerName: newCustomerName,
           amount: Number(newAmount) || 0,
@@ -92,6 +93,7 @@ export function DealPipelineModals({ controller }: DealPipelineModalsProps) {
         mode="edit"
         target={editingDeal}
         initialValues={editingDeal ? {
+          pipeline: editingDeal.pipelineId ?? controller.pipelineId,
           name: editingDeal.name,
           customerName: editingDeal.customerName || editingDeal.organizationAccountName || editingDeal.contactName || "",
           amount: editingDeal.amount,

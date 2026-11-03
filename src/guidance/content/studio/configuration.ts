@@ -13,6 +13,31 @@ type StudioGuidanceSeed = {
 
 const seeds: readonly StudioGuidanceSeed[] = [
   {
+    id: "studio.connections-overview", routeKey: "SETTINGS_CONNECTIONS",
+    title: { vi: "Tổng quan kết nối", en: "Overview" },
+    purpose: { vi: "Làm mới dữ liệu đọc. Xem subscriptions và tối đa 200 giao nhận mới nhất; trạng thái cấu hình không xác nhận sức khỏe. Mở Communications theo quyền để xem trạng thái tài khoản.", en: "Refresh read data. Review subscriptions and up to 200 latest deliveries; configuration state does not determine health. Open authorized Communications settings to review account state." },
+    task: { vi: "Làm mới dữ liệu đọc. Xem subscriptions và tối đa 200 giao nhận mới nhất; trạng thái cấu hình không xác nhận sức khỏe. Mở Communications theo quyền để xem trạng thái tài khoản.", en: "Refresh read data. Review subscriptions and up to 200 latest deliveries; configuration state does not determine health. Open authorized Communications settings to review account state." },
+    mistake: { vi: "Không coi dữ liệu demo hoặc khả năng chưa khả dụng là kết nối thật. Không dùng phiên đăng nhập làm khóa tích hợp.", en: "Do not treat demo data or unavailable capabilities as live connections. Do not use session credentials as integration keys." },
+    keywords: { vi: "kết nối api nguồn webhook tổng quan kết nối", en: "connections api sources webhooks overview" },
+  },
+  {
+    id: "studio.connections-inbound", routeKey: "SETTINGS_CONNECTIONS_INBOUND",
+    title: { vi: "Nhận dữ liệu", en: "Inbound Sources" },
+    purpose: { vi: "Đọc phạm vi nhận Lead có chữ ký qua nguồn được cấp ở máy chủ. Liên hệ quản trị viên về nguồn đã được cấp; quản lý nguồn trong Studio chưa khả dụng.", en: "Review signed Lead intake through server-provisioned sources. Contact your administrator about provisioned sources; Studio source management is unavailable." },
+    task: { vi: "Đọc phạm vi nhận Lead có chữ ký qua nguồn được cấp ở máy chủ. Liên hệ quản trị viên về nguồn đã được cấp; quản lý nguồn trong Studio chưa khả dụng.", en: "Review signed Lead intake through server-provisioned sources. Contact your administrator about provisioned sources; Studio source management is unavailable." },
+    mistake: { vi: "Không coi dữ liệu demo hoặc khả năng chưa khả dụng là kết nối thật. Không dùng phiên đăng nhập làm khóa tích hợp.", en: "Do not treat demo data or unavailable capabilities as live connections. Do not use session credentials as integration keys." },
+    keywords: { vi: "kết nối api nguồn webhook nhận dữ liệu", en: "connections api sources webhooks inbound sources" },
+  },
+  {
+    id: "studio.api-access", routeKey: "SETTINGS_API_ACCESS",
+    title: { vi: "Truy cập API", en: "Developer API" },
+    purpose: { vi: "Kiểm tra giới hạn truy cập API cho ứng dụng. Cấp, xoay vòng, thu hồi và giới hạn quyền của khóa API chưa khả dụng.", en: "Review application API access limits. Issuing, rotating, revoking and scoping API keys is unavailable." },
+    task: { vi: "Kiểm tra giới hạn truy cập API cho ứng dụng. Cấp, xoay vòng, thu hồi và giới hạn quyền của khóa API chưa khả dụng.", en: "Review application API access limits. Issuing, rotating, revoking and scoping API keys is unavailable." },
+    mistake: { vi: "Không coi dữ liệu demo hoặc khả năng chưa khả dụng là kết nối thật. Không dùng phiên đăng nhập làm khóa tích hợp.", en: "Do not treat demo data or unavailable capabilities as live connections. Do not use session credentials as integration keys." },
+    keywords: { vi: "kết nối api nguồn webhook truy cập api", en: "connections api sources webhooks developer api" },
+  },
+
+  {
     id: "studio.communication-channels", routeKey: "SETTINGS_COMMUNICATION_CHANNELS",
     title: { vi: "Communications · Kênh kết nối", en: "Communications · Channel connections" },
     purpose: { vi: "Quản lý nhiều tài khoản trong Workspace theo ChannelAccountId.", en: "Manage multiple Workspace accounts by ChannelAccountId." },
@@ -24,7 +49,7 @@ const seeds: readonly StudioGuidanceSeed[] = [
     id: "studio.quick-setup",
     routeKey: "SETTINGS_QUICK_SETUP",
     title: { vi: "Thiết lập nhanh", en: "Quick Setup" },
-    purpose: { vi: "Hoàn tất các cấu hình thiết yếu theo luồng tùy chọn và có thể mở lại.", en: "Complete essential configuration through an optional, reopenable flow." },
+    purpose: { vi: "Hoàn tất các cấu hình thiết yếu theo luồng tùy chọn. Tự mở ở lần đầu vào Studio của workspace khi có quyền cấu hình; sau khi đóng hoặc hoàn tất, mở lại thủ công từ Studio.", en: "Complete essential configuration through an optional flow. Opens on the first Studio visit for workspace configurators; after closing or completing it, reopen manually from Studio." },
     task: { vi: "Lưu dữ liệu trong biểu mẫu của module rồi đánh dấu bước hoàn tất hoặc bỏ qua. Mô hình workspace có hạn tiếp nhận bàn giao Lead từ 1–168 giờ, mặc định 24.", en: "Save data in the owning module form, then finish or skip the step. The workspace blueprint includes Lead handover acceptance SLA: 1–168 elapsed hours, default 24." },
     mistake: { vi: "Quick Setup chỉ lưu tiến độ; không coi việc đánh dấu hoàn tất là đã lưu biểu mẫu.", en: "Quick Setup stores progress only; finishing a step does not save an unsaved form." },
     keywords: { vi: "thiết lập nhanh tùy chọn tiến độ", en: "quick setup optional progress" },
@@ -34,7 +59,7 @@ const seeds: readonly StudioGuidanceSeed[] = [
     routeKey: "SETTINGS_BUSINESS_INFORMATION",
     title: { vi: "Thông tin doanh nghiệp", en: "Business information" },
     purpose: { vi: "Quản lý thông tin nhận diện và pháp lý dùng chung trong workspace.", en: "Manage the shared business identity and legal information for the workspace." },
-    task: { vi: "Cập nhật thông tin doanh nghiệp rồi lưu thay đổi.", en: "Update the business information and save the changes." },
+    task: { vi: "Nhập tên pháp lý/tên hiển thị, một địa chỉ đăng ký và email hoặc điện thoại hợp lệ rồi lưu. Backend kiểm tra lại bên bán khi phát hành Báo giá; thay đổi không sửa PDF cũ.", en: "Save legal/display names, one registered address and a valid email or phone. Backend rechecks seller data on Quote issue; changes do not alter old PDFs." },
     mistake: { vi: "Không nhập thông tin tài khoản nhận tiền tại đây; dùng trang Thông tin thanh toán.", en: "Do not enter receiving account details here; use Payment information." },
     keywords: { vi: "doanh nghiệp pháp lý mã số thuế địa chỉ logo", en: "business legal tax address logo" },
   },
@@ -61,8 +86,8 @@ const seeds: readonly StudioGuidanceSeed[] = [
     routeKey: "SETTINGS_PIPELINES_STATUSES",
     title: { vi: "Pipeline & trạng thái", en: "Pipelines & statuses" },
     purpose: { vi: "Tạo nhiều pipeline và chỉnh sửa trực tiếp các giai đoạn của Deal.", en: "Create multiple pipelines and directly edit Deal stages." },
-    task: { vi: "Tạo pipeline, thêm giai đoạn, sắp xếp và chọn pipeline mặc định.", en: "Create a pipeline, add stages, reorder them, and choose the default pipeline." },
-    mistake: { vi: "Không xóa giai đoạn đang có Deal; chọn giai đoạn thay thế trước.", en: "Do not delete a stage containing Deals; choose a replacement stage first." },
+    task: { vi: "Chọn một pipeline, thêm giai đoạn OPEN, đổi tên hoặc sắp xếp, rồi lưu và chờ máy chủ xác nhận. Pipeline mặc định chỉ áp dụng cho cơ hội mới.", en: "Select a pipeline, add OPEN stages, rename or reorder, then save and await server confirmation. The default applies only to new opportunities." },
+    mistake: { vi: "Không xóa hoặc vô hiệu hóa giai đoạn đang có Deal. Giữ Thắng/Thua hoạt động; nếu xung đột phiên bản, tải lại để đối chiếu rồi lưu lại.", en: "Do not remove or deactivate stages containing Deals. Keep Won/Lost active; reload and review version conflicts before saving again." },
     keywords: { vi: "pipeline deal giai đoạn thắng thất bại", en: "pipeline deal stage won lost" },
   },
   {
@@ -104,8 +129,8 @@ const seeds: readonly StudioGuidanceSeed[] = [
   {
     id: "studio.integrations",
     routeKey: "SETTINGS_INTEGRATIONS",
-    title: { vi: "Tích hợp", en: "Integrations" },
-    purpose: { vi: "Quản lý cấu hình kết nối email, nhắn tin, vận chuyển, thanh toán và nhà cung cấp ngoài.", en: "Manage connection configuration for email, messaging, shipping, payments, and external providers." },
+    title: { vi: "Ứng dụng & dịch vụ", en: "Apps & Services" },
+    purpose: { vi: "Mở Communications theo quyền; quản lý các dịch vụ khác chưa khả dụng.", en: "Open authorized Communications settings; other service management is unavailable." },
     task: { vi: "Mở Communications · Kênh kết nối để quản lý nhiều tài khoản khi có quyền quản lý kênh. Thẻ Communications vẫn hiển thị khi phần cấu hình Studio khác chưa tải được. Mở đúng nhà cung cấp và xem trạng thái backend trả về.", en: "Open Communications · Channel connections to manage multiple accounts when you have channel management permission. The Communications entry remains available if other Studio configuration fails to load. Open the provider and review the status returned by the backend." },
     mistake: { vi: "Không coi cấu hình đã lưu là đã kết nối nếu backend chưa xác nhận.", en: "Do not treat saved configuration as connected until the backend confirms it." },
     keywords: { vi: "gmail zalo vận chuyển thanh toán tích hợp", en: "gmail zalo shipping payment integration" },
@@ -113,9 +138,9 @@ const seeds: readonly StudioGuidanceSeed[] = [
   {
     id: "studio.webhooks-api",
     routeKey: "SETTINGS_WEBHOOKS_API",
-    title: { vi: "Webhook & API", en: "Webhooks & API" },
-    purpose: { vi: "Quản lý endpoint nhận dữ liệu và webhook phát sự kiện của workspace.", en: "Manage inbound endpoints and outbound event webhooks for the workspace." },
-    task: { vi: "Tạo endpoint hoặc webhook, chọn sự kiện và lưu cấu hình.", en: "Create an endpoint or webhook, choose events, and save the configuration." },
+    title: { vi: "Webhook gửi đi", en: "Outbound Webhooks" },
+    purpose: { vi: "Xem đăng ký và giao nhận webhook từ máy chủ trong Workspace hiện tại.", en: "Review server webhook subscriptions and deliveries in the current Workspace." },
+    task: { vi: "Xem trạng thái đăng ký và giao nhận. Các thao tác ghi cần quyền cấu hình; replay dựa trên khả năng máy chủ trả về.", en: "Review subscriptions and deliveries. Writes require configuration permission; replay depends on server-reported availability." },
     mistake: { vi: "Không hiển thị secret đầy đủ sau khi tạo và không gửi dữ liệu nhạy cảm ngoài phạm vi cần thiết.", en: "Do not reveal full secrets after creation or send sensitive data beyond the required scope." },
     keywords: { vi: "webhook api endpoint sự kiện secret", en: "webhook api endpoint event secret" },
   },
@@ -123,18 +148,20 @@ const seeds: readonly StudioGuidanceSeed[] = [
     id: "studio.ai",
     routeKey: "SETTINGS_AI",
     title: { vi: "Trợ lý AI", en: "AI Assistant" },
-    purpose: { vi: "Xem và cấu hình nhà cung cấp AI cho workspace.", en: "Review and configure AI providers for the workspace." },
-    task: { vi: "Kiểm tra nhà cung cấp, cấu hình được phép và trạng thái kết nối.", en: "Review the provider, permitted configuration and connection status." },
-    mistake: { vi: "Chỉ coi kết nối thành công khi máy chủ xác nhận; không chia sẻ khóa bí mật.", en: "Treat a connection as successful only when the server confirms it; do not share secret keys." },
+    purpose: { vi: "Xem và cấu hình nhà cung cấp AI cho workspace. OpenAI cung cấp GPT-5.6/GPT-6 từ danh sách máy chủ; cấu hình đã lưu không tự đổi model.", en: "Review and configure AI providers for the workspace. OpenAI offers GPT-5.6/GPT-6 from the server catalog; saved configurations never change models automatically." },
+    task: { vi: "Chọn OpenAI hoặc Gemini và model (dự án Google mới dùng Gemini 3.8 Flash), lưu bản nháp rồi nhập khóa Workspace và bấm Đặt khóa. Xác nhận máy chủ đã ghi nhận khóa. Kiểm tra kết nối bằng máy chủ, sau đó kích hoạt. Khi đổi nhà cung cấp hoặc khóa, kiểm tra rồi kích hoạt lại. Tắt AI sẽ chặn thực thi trong Workspace.", en: "Choose OpenAI or Gemini and a model (use Gemini 3.8 Flash for a new Google project), save the draft, then enter the Workspace key and select Set key. Confirm that the server has recorded it. Test the connection on the server, then activate. After provider or key changes, test and activate again. Disable blocks AI execution in the Workspace." },
+    mistake: { vi: "Khóa đã lưu chưa có nghĩa đã kết nối. Nếu kiểm tra lại thất bại, cần xác minh lại trước khi kích hoạt. Lưu lựa chọn trước khi đặt khóa; không chia sẻ khóa bí mật. Bản active vẫn chạy trong lúc sửa bản nháp; mở hồ sơ Lead, Liên hệ, Tổ chức, Khách hàng, Cơ hội hoặc Công việc rồi mở UniCore AI. Chat chỉ phân tích hồ sơ có quyền đọc và không sửa CRM. Trạng thái chưa kiểm tra không xác nhận provider hoạt động. Lịch sử Connected chỉ nằm trong phiên, không lưu bền vững; Dừng hủy yêu cầu và Thử lại không thêm trùng câu hỏi.", en: "A saved key does not prove connectivity. A failed re-test requires validation again before activation. Save selections before setting a key; do not share secrets. The active configuration keeps serving while a draft is edited; open a Lead, Contact, Organization, Customer, Deal or Task, then open UniCore AI. Chat only analyzes authorized records and cannot change CRM. An unchecked status does not confirm provider availability. Connected history lasts for the session and is not durably saved; Stop cancels the request and Retry does not duplicate the question." },
     keywords: { vi: "AI trợ lý nhà cung cấp cấu hình", en: "AI assistant provider configuration" },
   },
 ] as const;
+
+const accessGuidanceScreens = new Set(["studio.business-information", "studio.locale-region", "studio.feature-usage", "studio.pipelines-statuses", "studio.product-types", "studio.information-fields", "studio.payment-information", "studio.invoice-information", "studio.integrations"]);
 
 export const STUDIO_SCREEN_GUIDANCE: readonly ScreenGuidance[] = seeds.map((seed) => ({
   id: seed.id,
   routeKey: seed.routeKey,
   productSpace: "studio",
-  version: seed.id === "studio.communication-channels" || seed.id === "studio.integrations" ? 3 : seed.id === "studio.quick-setup" ? 3 : 2,
+  version: (seed.id === "studio.business-information" ? 3 : seed.id === "studio.pipelines-statuses" ? 4 : seed.id === "studio.ai" ? 7 : ["studio.connections-overview", "studio.connections-inbound", "studio.api-access", "studio.integrations", "studio.webhooks-api"].includes(seed.id) ? 4 : seed.id === "studio.communication-channels" || seed.id === "studio.integrations" || seed.id === "studio.ai" ? 3 : seed.id === "studio.quick-setup" ? 4 : 2) + (accessGuidanceScreens.has(seed.id) ? 2 : 0) + (["studio.business-information", "studio.information-fields", "studio.communication-channels"].includes(seed.id) ? 1 : 0),
   title: seed.title,
   purpose: seed.purpose,
   audience: {
@@ -171,5 +198,5 @@ export const STUDIO_SCREEN_GUIDANCE: readonly ScreenGuidance[] = seeds.map((seed
   requiredCapabilities: [seed.id === "studio.communication-channels" ? CAPABILITIES.COMMUNICATIONS_CHANNELS_MANAGE : seed.id === "studio.ai" ? CAPABILITIES.AI_CONFIGURATION_READ : CAPABILITIES.STUDIO_READ],
   keywords: seed.keywords,
   owner: "product-architecture",
-  reviewedAt: seed.id === "studio.communication-channels" ? "2026-10-17" : "2026-07-24",
+  reviewedAt: seed.id === "studio.ai" ? "2026-10-22" : seed.id === "studio.communication-channels" ? "2026-10-17" : "2026-07-24",
 }));

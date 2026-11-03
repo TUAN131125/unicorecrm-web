@@ -39,7 +39,7 @@ import { useCustomerSnapshots } from "../hooks/useCustomerSnapshots";
 import { useOrders } from "../hooks/useOrders";
 import { getQuoteConversionIssues } from "@/modules/quotes";
 import { getDealStagesSnapshot, isLostStage } from "@/modules/deals";
-import { useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
+import { useWorkspaceRuntimeSettings } from "@/platform/workspace-config";
 import {
   buildOrderPaymentAgreement,
   contactName,
@@ -81,8 +81,8 @@ export function useOrderFormController(props: OrderFormPageProps) {
   const navigate = useNavigate();
   const { t, locale } = useI18n();
   const access = useEffectiveAccess();
-  const workspaceConfiguration = useWorkspaceOperationalConfiguration();
-  const baseCurrency = workspaceConfiguration.localeRegion.currencies.baseCurrency;
+  const workspaceConfiguration = useWorkspaceRuntimeSettings();
+  const baseCurrency = workspaceConfiguration.baseCurrency;
   const paymentConfiguration = useSubscribableSnapshot(getPaymentConfigurationSnapshot, subscribeToPaymentConfiguration);
   const activeReceivingAccounts = useMemo(
     () => paymentConfiguration.receivingAccounts.filter((account) => account.active),

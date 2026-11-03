@@ -15,6 +15,7 @@ export interface UseServerPagedCollectionOptions<T> {
   connected: boolean;
   scopeKey: string;
   query?: Omit<ModuleListQuery, "cursor" | "limit">;
+  authorizationScopeKey?: string;
   enabled?: boolean;
   initialPageSize?: number;
   project(records: readonly T[]): void;
@@ -23,6 +24,7 @@ export interface UseServerPagedCollectionOptions<T> {
   errorCodePrefix: string;
   onReset?: () => void;
   retainPreviousPage?: boolean;
+  refreshIntervalMs?: number;
 }
 
 export interface ServerPagedCollectionState<T> {
@@ -54,17 +56,18 @@ const PAGE_SIZE_OPTIONS = new Set([25, 50, 100]);
 export function useServerPagedCollection<T>(
   options: UseServerPagedCollectionOptions<T>,
 ): ServerPagedCollectionState<T> {
+  const scopeKey = JSON.stringify([options.scopeKey, options.authorizationScopeKey]);
   const enabled = options.connected && (options.enabled ?? true);
   const [page, setPageState] = React.useState(1);
   const [pageSize, setPageSizeState] = React.useState(() => normalizePageSize(options.initialPageSize ?? 25));
-  const [snapshot, setSnapshot] = React.useState<ServerPageSnapshot<T>>({ state: "IDLE", scopeKey: options.scopeKey });
+  const [snapshot, setSnapshot] = React.useState<ServerPageSnapshot<T>>({ state: "IDLE", scopeKey: scopeKey });
   const controllerRef = React.useRef<AbortController | undefined>(undefined);
   const requestVersionRef = React.useRef(0);
   const cursorByPageRef = React.useRef(new Map<number, string | undefined>([[1, undefined]]));
   const queryKey = React.useMemo(() => stableQueryKey(options.query), [options.query]);
-  const resetKey = `${options.scopeKey}\u0000${queryKey}\u0000${pageSize}`;
+  const resetKey = `${scopeKey}\u0000${queryKey}\u0000${pageSize}`;
   const previousResetKeyRef = React.useRef(resetKey);
-  const previousScopeKeyRef = React.useRef(options.scopeKey);
+  const previousScopeKeyRef = React.useRef(scopeKey);
   const previousEnabledRef = React.useRef(enabled);
 
   const reset = React.useCallback((evictProjection: boolean) => {
@@ -74,9 +77,9 @@ export function useServerPagedCollection<T>(
     cursorByPageRef.current = new Map([[1, undefined]]);
     setPageState(1);
     setSnapshot((current) => evictProjection
-      ? { state: "IDLE", scopeKey: options.scopeKey }
+      ? { state: "IDLE", scopeKey: scopeKey }
       : current.page === undefined || options.retainPreviousPage === false
-        ? { state: "IDLE", scopeKey: options.scopeKey }
+        ? { state: "IDLE", scopeKey: scopeKey }
         : {
             state: "IDLE",
             scopeKey: current.scopeKey,
@@ -88,20 +91,21 @@ export function useServerPagedCollection<T>(
       else options.project([]);
     }
     options.onReset?.();
-  }, [options.evictProjection, options.project, options.onReset, options.scopeKey, options.retainPreviousPage]);
+  }, [options.evictProjection, options.project, options.onReset, scopeKey, options.retainPreviousPage]);
 
   React.useLayoutEffect(() => {
     if (previousResetKeyRef.current === resetKey) return;
-    const scopeChanged = previousScopeKeyRef.current !== options.scopeKey;
+    const scopeChanged = previousScopeKeyRef.current !== scopeKey;
     previousResetKeyRef.current = resetKey;
-    previousScopeKeyRef.current = options.scopeKey;
+    previousScopeKeyRef.current = scopeKey;
     reset(scopeChanged);
-  }, [options.scopeKey, reset, resetKey]);
+  }, [scopeKey, reset, resetKey]);
 
   React.useLayoutEffect(() => {
     const wasEnabled = previousEnabledRef.current;
     previousEnabledRef.current = enabled;
-    if (!wasEnabled && enabled) reset(false);
+    if (wasEnabled && !enabled) reset(true);
+    else if (!wasEnabled && enabled) reset(false);
   }, [enabled, reset]);
 
   React.useEffect(() => () => {
@@ -110,8 +114,8 @@ export function useServerPagedCollection<T>(
   }, []);
 
   const load = React.useCallback(async (force: boolean) => {
-    if (!enabled || previousScopeKeyRef.current !== options.scopeKey) return;
-    if (!force && snapshot.scopeKey === options.scopeKey && snapshot.state === "READY") return;
+    if (!enabled || previousScopeKeyRef.current !== scopeKey) return;
+    if (!force && snapshot.scopeKey === scopeKey && snapshot.state === "READY") return;
 
     const cursor = cursorByPageRef.current.get(page);
     if (page > 1 && cursor === undefined) {
@@ -125,10 +129,10 @@ export function useServerPagedCollection<T>(
     const controller = new AbortController();
     controllerRef.current = controller;
     const requestedAt = new Date().toISOString();
-    const previousPage = options.retainPreviousPage !== false && snapshot.scopeKey === options.scopeKey ? snapshot.page : undefined;
+    const previousPage = options.retainPreviousPage !== false && snapshot.scopeKey === scopeKey ? snapshot.page : undefined;
     setSnapshot({
       state: "LOADING",
-      scopeKey: options.scopeKey,
+      scopeKey: scopeKey,
       requestedAt,
       ...(previousPage === undefined ? {} : { page: previousPage }),
     });
@@ -139,13 +143,14 @@ export function useServerPagedCollection<T>(
         limit: pageSize,
         ...(cursor === undefined ? {} : { cursor }),
       }, controller.signal);
-      if (controller.signal.aborted || requestVersion !== requestVersionRef.current || previousScopeKeyRef.current !== options.scopeKey) return;
+      if (controller.signal.aborted || requestVersion !== requestVersionRef.current || previousScopeKeyRef.current !== scopeKey) return;
 
-      const authoritativePageCount = Math.max(1, Math.ceil((result.pageInfo.totalCount ?? result.items.length) / pageSize));
-      if (page > authoritativePageCount) {
+      // Cursor pages do not imply a total. Only a server-provided count may clamp the page.
+      const authoritativePageCount = result.pageInfo.totalCount === undefined ? undefined : Math.max(1, Math.ceil(result.pageInfo.totalCount / pageSize));
+      if (authoritativePageCount !== undefined && page > authoritativePageCount) {
         setPageState(authoritativePageCount);
         setSnapshot((current) => current.page === undefined
-          ? { state: "IDLE", scopeKey: options.scopeKey }
+          ? { state: "IDLE", scopeKey: scopeKey }
           : { state: "IDLE", scopeKey: current.scopeKey, page: current.page, ...(current.loadedAt === undefined ? {} : { loadedAt: current.loadedAt }) });
         return;
       }
@@ -164,30 +169,35 @@ export function useServerPagedCollection<T>(
       options.project(result.items);
       setSnapshot({
         state: "READY",
-        scopeKey: options.scopeKey,
+        scopeKey: scopeKey,
         page: result,
         requestedAt,
         loadedAt: result.loadedAt || new Date().toISOString(),
       });
     } catch (error: unknown) {
-      if (controller.signal.aborted || requestVersion !== requestVersionRef.current || previousScopeKeyRef.current !== options.scopeKey) return;
+      if (controller.signal.aborted || requestVersion !== requestVersionRef.current || previousScopeKeyRef.current !== scopeKey) return;
+      const normalized = normalizeApplicationError(error);
+      const denied = ["AUTHENTICATION", "AUTHORIZATION"].includes(normalized.category);
+      if (denied) {
+        if (options.evictProjection) options.evictProjection(); else options.project([]);
+      }
       setSnapshot({
         state: "ERROR",
-        scopeKey: options.scopeKey,
-        error: normalizeApplicationError(error),
+        scopeKey: scopeKey,
+        error: normalized,
         requestedAt,
-        ...(previousPage === undefined ? {} : { page: previousPage }),
+        ...(denied || previousPage === undefined ? {} : { page: previousPage }),
       });
     } finally {
       if (requestVersion === requestVersionRef.current) controllerRef.current = undefined;
     }
-  }, [enabled, options.errorCodePrefix, options.loadPage, options.project, options.query, options.scopeKey, options.retainPreviousPage, page, pageSize, snapshot.page, snapshot.state, snapshot.scopeKey]);
+  }, [enabled, options.errorCodePrefix, options.loadPage, options.project, options.query, scopeKey, options.retainPreviousPage, page, pageSize, snapshot.page, snapshot.state, snapshot.scopeKey]);
 
   React.useEffect(() => {
     if (enabled && snapshot.state === "IDLE") void load(false);
   }, [enabled, load, snapshot.state]);
 
-  const visibleSnapshot = snapshot.scopeKey === options.scopeKey ? snapshot : { state: "IDLE" as const, scopeKey: options.scopeKey };
+  const visibleSnapshot = enabled && snapshot.scopeKey === scopeKey ? snapshot : { state: "IDLE" as const, scopeKey: scopeKey };
   const totalCount = visibleSnapshot.page?.pageInfo.totalCount;
   const hasNextPage = visibleSnapshot.page?.pageInfo.hasNextPage ?? false;
   const pageCount = totalCount === undefined
@@ -233,6 +243,27 @@ export function useServerPagedCollection<T>(
       : { state: "IDLE", scopeKey: current.scopeKey });
   }, []);
 
+  const revalidation = React.useRef({ refresh, loading: snapshot.state === "LOADING", error: snapshot.error });
+  revalidation.current = { refresh, loading: snapshot.state === "LOADING", error: snapshot.error };
+  React.useEffect(() => {
+    if (!enabled) return;
+    let disposed = false; let running = false;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const interval = options.refreshIntervalMs;
+    const schedule = () => { clearTimeout(timer); if (!disposed && interval && !revalidation.current.error && document.visibilityState === "visible" && navigator.onLine) timer = setTimeout(() => void wake(), Math.max(5000, interval)); };
+    const wake = async () => {
+      clearTimeout(timer);
+      if (disposed || running || document.visibilityState !== "visible" || !navigator.onLine) return;
+      const current = revalidation.current;
+      if (current.loading || ["AUTHENTICATION", "AUTHORIZATION"].includes(current.error?.category ?? "")) { schedule(); return; }
+      running = true;
+      try { await current.refresh(); } finally { running = false; schedule(); }
+    };
+    window.addEventListener("focus", wake); window.addEventListener("online", wake);
+    document.addEventListener("visibilitychange", wake); schedule();
+    return () => { disposed = true; clearTimeout(timer); window.removeEventListener("focus", wake); window.removeEventListener("online", wake); document.removeEventListener("visibilitychange", wake); };
+  }, [enabled, scopeKey, options.refreshIntervalMs]);
+
   return {
     connected: options.connected,
     enabled,
@@ -246,10 +277,10 @@ export function useServerPagedCollection<T>(
     rangeStart,
     rangeEnd,
     hasNextPage,
-    canGoPrevious: page > 1,
-    canGoNext: hasNextPage || page < pageCount,
+    canGoPrevious: snapshot.state === "READY" && page > 1,
+    canGoNext: snapshot.state === "READY" && (hasNextPage || page < pageCount),
     loading: enabled && (visibleSnapshot.state === "IDLE" || visibleSnapshot.state === "LOADING"),
-    refreshing: enabled && visibleSnapshot.state === "LOADING" && visibleSnapshot.page !== undefined,
+    refreshing: enabled && ["IDLE", "LOADING"].includes(visibleSnapshot.state) && visibleSnapshot.page !== undefined,
     stale: enabled && visibleSnapshot.state === "ERROR" && visibleSnapshot.page !== undefined,
     ...(visibleSnapshot.error === undefined ? {} : { error: visibleSnapshot.error }),
     ...(visibleSnapshot.loadedAt === undefined ? {} : { loadedAt: visibleSnapshot.loadedAt }),

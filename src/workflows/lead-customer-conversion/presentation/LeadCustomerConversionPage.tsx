@@ -31,20 +31,23 @@ export const LeadCustomerConversionPage: React.FC = () => {
     if (initialized.current !== lifecycle.cycle) { initialized.current = lifecycle.cycle; reset(); }
   });
   const saveRef = useRef<() => Promise<boolean>>(async () => false);
-  lifecycle.register(Boolean(!result && (subjectType !== "CONTACT" || subjectId !== "" || intent.current)), reset, () => saveRef.current());
+  lifecycle.register(Boolean(!result && !authoritativeCustomerRef && (subjectType !== "CONTACT" || subjectId !== "" || intent.current)), reset, () => saveRef.current());
 
   const convert = async (): Promise<boolean> => {
     if (!lifecycle.begin()) return false;
     const normalizedSubjectId = subjectId.trim(); const expectedVersion = query.data?.resourceVersion;
-    if (!normalizedSubjectId || query.data?.id !== targetId || expectedVersion === undefined) { setError(text("Chưa tải được phiên bản Lead. Hãy tải lại và thử lại.", "The authoritative Lead version is unavailable. Refresh the Lead and try again.")); lifecycle.finish(); return false; }
+    if (!normalizedSubjectId || query.data?.id !== targetId || expectedVersion === undefined) { setError(text("Chưa tải được phiên bản Lead. Hãy tải lại và thử lại.", "Reload the lead and try again.")); lifecycle.finish(); return false; }
     const current = retainOrCreateConversionIntent(intent.current, { subjectType, subjectId: normalizedSubjectId, expectedVersion }, () => crypto.randomUUID());
     intent.current = current; setBusy(true); setError(undefined);
     try {
       const response = await convertLeadToCustomer(targetId, current.expectedVersion, current.idempotencyKey, {
         accountSubject: { type: current.subjectType, mode: "EXISTING", id: current.subjectId },
       });
-      await invalidateModuleQueries({ moduleKeys: ["leads", "customers"], commandType: "lead.convert-to-customer", aggregateId: targetId, occurredAt: response.occurredAt });
+      // The mutation has committed. Background read-model refresh must not keep a
+      // hidden conversion draft/pending guard on the persisted Customer link.
       if (lifecycle.isCurrent()) setResult(response);
+      lifecycle.finish();
+      await invalidateModuleQueries({ moduleKeys: ["leads", "customers"], commandType: "lead.convert-to-customer", aggregateId: targetId, occurredAt: response.occurredAt });
       return true;
     } catch (caught) {
       if (!lifecycle.isCurrent()) return false;
@@ -60,7 +63,7 @@ export const LeadCustomerConversionPage: React.FC = () => {
   return <AuthoritativeQueryBoundary query={query} hasData={Boolean(query.data)} loadingTitleVi="Đang tải Lead" loadingTitleEn="Loading Lead" errorTitleVi="Không thể tải Lead" errorTitleEn="Lead could not be loaded">
     <main className="mx-auto max-w-2xl space-y-6 p-6">
       <header><h1 className="text-2xl font-semibold">{text("Chuyển Lead thành khách hàng", "Convert Lead to Customer")}</h1>
-        <p className="mt-2 text-sm text-muted-foreground">{text("Liên kết Lead với cá nhân hoặc tổ chức đã có trong CRM để tạo hoặc sử dụng hồ sơ khách hàng tương ứng. Không cần tạo cơ hội, báo giá hay đơn hàng.", "Associate this Lead with an authoritative existing CRM subject and create or reuse its exact-subject Customer. No Deal, Quote, Order, or Direct Sale is required or created.")}</p></header>
+        <p className="mt-2 text-sm text-muted-foreground">{text("Liên kết Lead với cá nhân hoặc tổ chức đã có trong CRM để tạo hoặc sử dụng hồ sơ khách hàng tương ứng. Không cần tạo cơ hội, báo giá hay đơn hàng.", "Choose an existing contact or organization to link this lead to a customer profile.")}</p></header>
       {isLeadCustomerConversionSuppressed(authoritativeCustomerRef) ? <section className="rounded-lg border p-5"><h2 className="font-semibold">{text("Lead đã được chuyển đổi", "Lead already converted")}</h2><p className="mt-2 text-sm">{text("Khách hàng:", "Customer:")} <Link className="underline" to={`/customers/${authoritativeCustomerRef}`}>{authoritativeCustomerRef}</Link></p></section>
       : result ? <section className="rounded-lg border p-5" aria-live="polite"><h2 className="font-semibold">{result.result.customerResolution === "CREATED" ? text("Đã tạo khách hàng", "Conversion created a Customer") : text("Đã sử dụng hồ sơ khách hàng hiện có", "Conversion reused a Customer")}</h2><p className="mt-2 text-sm">{text("Khách hàng:", "Customer:")} <Link className="underline" to={`/customers/${result.result.customerId}`}>{result.result.customerId}</Link></p><p className="text-sm">{text("Cách xử lý:", "Resolution:")} {result.result.customerResolution}</p><p className="text-sm">{text("Kết quả:", "Outcome:")} {result.outcome}</p></section>
       : <form className="crm-form-surface space-y-4 rounded-lg border p-5" onSubmit={submit}>

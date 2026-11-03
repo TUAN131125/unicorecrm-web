@@ -12,6 +12,17 @@ const PRESENTATION_COMPOSITIONS: Record<string, readonly string[]> = {
     "src/ai/aiInsights.ts",
     "src/ai/aiMockEngine.shared.ts",
   ],
+  "src/modules/tasks/presentation/components/TaskCreateModal.tsx": [
+    "src/modules/tasks/presentation/hooks/useTaskCreateController.ts",
+    "src/modules/tasks/presentation/model/taskCreateModalTypes.ts",
+  ],
+  "src/modules/deals/presentation/components/DealFormModal.tsx": [
+    "src/modules/deals/presentation/components/DealInterestedProductsPicker.tsx",
+    "src/modules/deals/presentation/hooks/useDealProductSelection.ts",
+  ],
+  "src/workspaces/studio/presentation/views/PipelinesStatusesView.tsx": [
+    "src/workspaces/studio/presentation/hooks/usePipelinesStatusesController.ts",
+  ],
   "src/modules/quotes/presentation/pages/QuoteBuilderPage.tsx": [
     "src/modules/quotes/presentation/hooks/useQuoteBuilderController.tsx",
     "src/modules/quotes/presentation/views/QuoteBuilderView.tsx",
@@ -35,15 +46,21 @@ const PRESENTATION_COMPOSITIONS: Record<string, readonly string[]> = {
     "src/modules/contacts/presentation/hooks/useContactListController.tsx",
     "src/modules/contacts/presentation/views/ContactListView.tsx",
   ],
+  "src/modules/deals/presentation/pages/DealPipelinePage.tsx": [
+    "src/modules/deals/presentation/components/DealKanbanCard.tsx",
+  ],
   "src/modules/deals/presentation/pages/DealDetailPage.tsx": [
     "src/modules/deals/presentation/hooks/useDealDetailController.tsx",
     "src/modules/deals/presentation/views/DealDetailView.tsx",
     "src/modules/deals/presentation/views/DealDetailHeaderSection.tsx",
     "src/modules/deals/presentation/views/DealDetailCommercialWorkspace.tsx",
+    "src/modules/deals/presentation/views/DealDetailOverview.tsx",
+    "src/modules/deals/presentation/views/DealDetailProducts.tsx",
     "src/modules/deals/presentation/views/DealDetailPipelineWorkspace.tsx",
     "src/modules/deals/presentation/views/DealDetailQuoteWorkspace.tsx",
     "src/modules/deals/presentation/views/DealDetailActivityTimeline.tsx",
     "src/modules/deals/presentation/views/DealDetailSidebar.tsx",
+    "src/modules/deals/presentation/views/DealDetailNextActionPanel.tsx",
     "src/modules/deals/presentation/views/DealDetailSidebarActions.tsx",
     "src/modules/deals/presentation/views/DealDetailRelatedRecords.tsx",
     "src/modules/deals/presentation/views/DealDetailDialogs.tsx",

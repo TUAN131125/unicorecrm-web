@@ -1,6 +1,8 @@
 import { useMemo } from "react";
 import { usePlatformState } from "@/platform/application-state";
 import { parseCanonicalRoute } from "@/platform/navigation";
+import { isConnectedWorkspaceRuntime } from "@/platform/workspace-context";
+import { buildConnectedAiRouteContext } from "../application/connectedAiRouteContext";
 import { getContactsSnapshot, subscribeToContacts } from "@/modules/contacts";
 import {
   getCustomersSnapshot,
@@ -68,6 +70,7 @@ export function useGlobalAiContext(pathname?: string) {
   );
 
   return useMemo(() => {
+    if (isConnectedWorkspaceRuntime()) return buildConnectedAiRouteContext(pathname);
     const state = {
       leads,
       customers,

@@ -5,6 +5,8 @@ import {
   type RelationshipDetailTab,
 } from "@/components/crm/relationship-detail";
 import { useI18n } from "@/i18n";
+import { useEffectiveAccess } from "@/platform/access-control";
+import { isContactConnectedMode } from "../../public/contacts";
 
 export type ContactTab = RelationshipDetailTab;
 
@@ -24,9 +26,16 @@ export const ContactDetailTabs: React.FC<ContactDetailTabsProps> = ({
   onToggleRightPanel,
 }) => {
   const { locale } = useI18n();
+  const access = useEffectiveAccess();
+  const visibleTabs: ContactTab[] = ["overview", "relationship"];
+  if (access.can("deals.read") || access.can("quotes.read")) visibleTabs.push("sales");
+  if (access.can("orders.read") || access.can("invoices.read") || access.can("payments.read") || access.can("receivables.read")) visibleTabs.push("transactions");
+  if (access.can("support.read")) visibleTabs.push("service");
+  if (access.can("tasks.read")) visibleTabs.push("work");
   return (
     <RelationshipDetailTabs
       activeTab={activeTab}
+      visibleTabs={isContactConnectedMode() ? visibleTabs : undefined}
       onChange={setActiveTab}
       counts={counts}
       isRightPanelVisible={isRightPanelVisible}

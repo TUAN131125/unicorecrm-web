@@ -1,7 +1,7 @@
 import { resolveEffectiveAccess } from "@/platform/access-control";
 import { runBackendProjection } from "@/shared/application";
-import type { CRMActivity } from "@/shared/domain";
-import { logActivityViaApi } from "@/modules/tasks";
+import { ApplicationError, type CRMActivity } from "@/shared/domain";
+import { isManualActivityType, logActivityViaApi, type ManualActivityType } from "@/modules/tasks";
 import { leadRepository } from "../composition/leadApplicationServices";
 import { saveLead } from "./leadRepositoryCommands";
 
@@ -37,8 +37,8 @@ export async function logLeadActivityViaApi(leadId: string, input: CRMActivity):
   return projected;
 }
 
-function normalizeActivityType(value: string): "CALL" | "EMAIL" | "MEETING" | "NOTE" | "MESSAGE" | "SYSTEM" {
-  const normalized = value.trim().toLocaleUpperCase();
-  if (normalized === "CALL" || normalized === "EMAIL" || normalized === "MEETING" || normalized === "NOTE" || normalized === "MESSAGE" || normalized === "SYSTEM") return normalized;
-  return "SYSTEM";
+function normalizeActivityType(value: string): ManualActivityType {
+  const normalized = value.trim().toUpperCase();
+  if (isManualActivityType(normalized)) return normalized;
+  throw new ApplicationError({ code: "VALIDATION_FAILED", category: "VALIDATION", message: "Unsupported manual Lead Activity type.", retryable: false });
 }

@@ -93,7 +93,6 @@ export function LocaleRegionView() {
 
   const content = (
     <>
-      {!canConfigure ? <p className="mb-4 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{t("studio.readOnly")}</p> : null}
       <div className="space-y-5">
         <StudioSection title={t("studio.locale.languageRegion")}>
           <div className="grid gap-4 md:grid-cols-2">

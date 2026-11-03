@@ -154,7 +154,6 @@ export const supplementalUiCopyTemplates: SupplementalUiCopyTemplate[] = [
   { viPattern: /^(\d+) công việc đang mở$/, enPattern: /^(\d+) open tasks$/, vi: "{{1}} công việc đang mở", en: "{{1}} open tasks" },
   { viPattern: /^Đã xuất (\d+) tổ chức B2B\.$/, enPattern: /^Exported (\d+) B2B organizations\.$/, vi: "Đã xuất {{1}} tổ chức B2B.", en: "Exported {{1}} B2B organizations." },
   { viPattern: /^Đã tạo tổ chức (.+) cùng cá nhân đại diện chính\.$/, enPattern: /^Created organization (.+) with its primary representative\.$/, vi: "Đã tạo tổ chức {{1}} cùng cá nhân đại diện chính.", en: "Created organization {{1}} with its primary representative." },
-  { viPattern: /^Tạo Refund Intent authoritative cho (.+)\. Khoản đã phân bổ phải được đảo trước khi hoàn\.$/, enPattern: /^Create an authoritative Refund Intent for (.+)\. Allocations must be reversed before the refund\.$/, vi: "Tạo yêu cầu hoàn tiền có thẩm quyền cho {{1}}. Khoản đã phân bổ phải được đảo trước khi hoàn.", en: "Create an authoritative Refund Intent for {{1}}. Allocations must be reversed before the refund." },
   { viPattern: /^Đợt (\d+)$/, enPattern: /^Installment (\d+)$/, vi: "Đợt {{1}}", en: "Installment {{1}}" },
   { viPattern: /^(\d+)\/(\d+) đơn vị$/, enPattern: /^(\d+)\/(\d+) units$/, vi: "{{1}}/{{2}} đơn vị", en: "{{1}}/{{2}} units" },
   { viPattern: /^(\d+)\/(\d+) intent thành công$/, enPattern: /^(\d+)\/(\d+) intents succeeded$/, vi: "{{1}}/{{2}} yêu cầu thành công", en: "{{1}}/{{2}} intents succeeded" },

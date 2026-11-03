@@ -1,0 +1,104 @@
+import { validateOpenApiResponse } from "../../src/platform/api/contracts/openApiRuntimeValidation";
+import { expect, test, type Page } from "@playwright/test";
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
+import os from "node:os";
+
+const api = process.env.UNICORECRM_TEST_API_BASE_URL || "";
+const workspace = process.env.UNICORECRM_TEST_WORKSPACE_KEY || "";
+const dealId = process.env.UNICORECRM_TEST_DEAL_ID || "";
+const directory = process.env.UNICORECRM_TEST_EVIDENCE_DIR || path.join(os.tmpdir(), "unicorecrm-quote-core-connected");
+const route = (suffix: string) => `/#/w/${workspace}/crm/${suffix}`;
+async function login(page: Page) {
+  await page.goto("/#/login");
+  await page.getByLabel("Email", { exact: true }).fill(process.env.UNICORECRM_TEST_EMAIL || "");
+  await page.getByLabel(/^(Mật khẩu|Password)$/u).fill(process.env.UNICORECRM_TEST_PASSWORD || "");
+  await page.getByRole("button", { name: /^(Đăng nhập|Sign in)$/u }).click();
+  await page.waitForURL(/#\/(?:select-workspace|w\/)/u);
+}
+test("Quote Core persists a Deal draft through catalog, refresh, login and edit", async ({ page }) => {
+  await mkdir(directory, { recursive: true });
+  const requests: Array<{ method: string; path: string; status: number; request?: unknown; response?: unknown }> = [];
+  const pending: Promise<void>[] = [];
+  const browserErrors: string[] = [];
+  const safeDiagnostic = (message: string) => process.env.UNICORECRM_TEST_PASSWORD ? message.replaceAll(process.env.UNICORECRM_TEST_PASSWORD, "[redacted]") : message;
+  page.on("pageerror", error => browserErrors.push(safeDiagnostic(error.stack || error.message)));
+  page.on("console", message => { if (message.type() === "error") browserErrors.push(safeDiagnostic(message.text())); });
+  page.on("response", response => {
+    if (!response.url().startsWith(api) || !/\/(quotes|deals)(?:\/|$)/u.test(new URL(response.url()).pathname)) return;
+    pending.push((async () => { requests.push({ method: response.request().method(), path: new URL(response.url()).pathname, status: response.status(),
+      request: response.request().postDataJSON(), response: await response.json().catch(() => null) }); })());
+  });
+  let quoteId = "";
+  let status = "FAIL";
+  try {
+    await login(page);
+    await page.goto(route("deals"));
+    await expect(page.locator("main[data-workspace-key]")).toBeVisible();
+    await page.goto(route(`deals/${dealId}`));
+    await expect(page.locator("#deal-detail-header")).toBeVisible();
+    const quoteTab = page.getByRole("tab", { name: /Báo giá|Quotes/u });
+    if (await quoteTab.count()) await quoteTab.click();
+    await page.locator("[data-deal-quote-workspace]").getByRole("button", { name: /^(Tạo báo giá|Create quote)$/u }).click();
+    await expect(page).toHaveURL(/quotes\/new\?dealId=/u);
+    await expect(page.locator("#quote-builder-page")).toBeVisible();
+    await expect(page.locator("#referenced-deal-selector")).toBeVisible();
+    const title = page.getByLabel(/Tên báo giá|Tiêu đề báo giá|Quote title|Quotation title/u).first();
+    const marker = `Quote browser ${Date.now()}`;
+    await title.fill(marker);
+    await page.getByRole("button", { name: /^(Chọn từ danh mục|Select from catalog)$/u }).click();
+    const picker = page.getByRole("dialog").filter({ has: page.locator("#quote_builder_picker-search") });
+    await expect(picker).toBeVisible();
+    await expect(picker.locator('[id^="picker-product-"]').first()).toBeVisible();
+    await picker.locator('[id^="picker-product-"]').first().click();
+    await picker.getByRole("button", { name: /^(Áp dụng|Apply)/u }).click();
+    await expect(picker).toBeHidden();
+    await page.screenshot({ path: path.join(directory, "builder.png"), fullPage: true });
+    const createdResponse = page.waitForResponse(response => response.request().method() === "POST" && response.url() === `${api}/deals/${dealId}/quotes`);
+    await page.getByRole("button", { name: /^(Lưu nháp|Lưu bản nháp|Save draft)$/iu }).click();
+    const created = await createdResponse;
+    expect(created.status(), await created.text()).toBe(201);
+    const body = await created.json() as { aggregateId: string; result: { quote: { id: string; sourceDealId: string; quoteNumber: string; resourceVersion: number } } };
+    expect(validateOpenApiResponse("createQuoteForDeal", body, created.status())).toEqual({ valid: true, issues: [] });
+    quoteId = body.result.quote.id;
+    expect(body.result.quote.sourceDealId).toBe(dealId);
+    expect(body.result.quote.resourceVersion).toBe(1);
+    await expect(page).toHaveURL(new RegExp(`/quotes/${quoteId}$`));
+    await expect(page.locator("#quote-detail-header")).toContainText(body.result.quote.quoteNumber);
+    await page.screenshot({ path: path.join(directory, "detail.png"), fullPage: true });
+    await page.goto(route(`deals/${dealId}`));
+    const linkedTab = page.getByRole("tab", { name: /Báo giá|Quotes/u });
+    if (await linkedTab.count()) await linkedTab.click();
+    await expect(page.locator(`[data-related-quote="${quoteId}"]`)).toBeVisible();
+    await page.reload();
+    const refreshedTab = page.getByRole("tab", { name: /Báo giá|Quotes/u });
+    if (await refreshedTab.count()) await refreshedTab.click();
+    await expect(page.locator(`[data-related-quote="${quoteId}"]`)).toBeVisible();
+    await page.locator("#user-profile-dropdown").click();
+    await page.getByRole("menuitem", { name: /^(Đăng xuất|Sign out)$/u }).click();
+    await expect(page).toHaveURL(/#\/login/u);
+    await login(page);
+    await page.goto(route(`quotes/${quoteId}`));
+    await expect(page.locator("#quote-detail-header")).toContainText(body.result.quote.quoteNumber);
+    await page.goto(route(`quotes/${quoteId}/edit`));
+    await expect(page.locator("#quote-builder-page")).toBeVisible();
+    const editTitle = page.getByLabel(/Tên báo giá|Tiêu đề báo giá|Quote title|Quotation title/u).first();
+    await expect(editTitle).toHaveValue(marker);
+    await editTitle.fill(`${marker} edited`);
+    const updatedResponse = page.waitForResponse(response => response.request().method() === "POST" && response.url() === `${api}/quotes/${quoteId}/update-draft`);
+    await page.getByRole("button", { name: /^(Lưu nháp|Lưu bản nháp|Save draft)$/iu }).click();
+    const updated = await updatedResponse;
+    expect(updated.status(), await updated.text()).toBe(200);
+    const updateBody = await updated.json() as { result: { quote: { resourceVersion: number; title: string } } };
+    expect(validateOpenApiResponse("updateQuoteDraftCommand", updateBody, updated.status())).toEqual({ valid: true, issues: [] });
+    expect(updateBody.result.quote.resourceVersion).toBe(2);
+    expect(updateBody.result.quote.title).toBe(`${marker} edited`);
+    await page.reload();
+    await expect(page.locator("#quote-detail-header")).toContainText(`${marker} edited`);
+    await page.screenshot({ path: path.join(directory, "edited-detail.png"), fullPage: true });
+    status = "PASS";
+  } finally {
+    await Promise.all(pending);
+    await writeFile(path.join(directory, "browser-result.json"), JSON.stringify({ status, quoteId, dealId, browserErrors, requests }, null, 2));
+  }
+});

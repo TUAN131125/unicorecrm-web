@@ -15,6 +15,7 @@ export type LeadQualificationFieldErrors = Partial<Record<
   | "deal.ownerId"
   | "deal.expectedCloseDate"
   | "deal.estimatedValue"
+  | "deal.currency"
   | "deal.interestedProducts"
   | "deal.followUpTaskTitle"
   | "deal.followUpTaskDueAt"
@@ -64,18 +65,11 @@ export function getOpportunityFieldErrors(command: ExecuteLeadOpportunityCommand
   if (!command.deal.name.trim()) errors["deal.name"] = "Opportunity name is required.";
   if (!command.deal.ownerId.trim()) errors["deal.ownerId"] = "Opportunity requires an owner.";
 
-  const hasNeedSummary = Boolean(command.deal.needSummary?.trim());
-  const hasInterestedProducts = command.deal.interestedProductIds.length > 0;
-  if (!hasNeedSummary && !hasInterestedProducts) {
-    const message = "Describe the customer need or select at least one interested product or service.";
-    errors["deal.needSummary"] = message;
-    errors["deal.interestedProducts"] = message;
-  }
-
+  if ((command.deal.needSummary?.length ?? 0) > 4000) errors["deal.needSummary"] = "Needs cannot exceed 4000 characters.";
   if (command.deal.expectedCloseDate && !isValidDateValue(command.deal.expectedCloseDate)) {
     errors["deal.expectedCloseDate"] = "Enter a valid target close date.";
   }
-  if (command.deal.estimatedValue !== undefined && (!/^(0|[1-9][0-9]*)(\.[0-9]{1,6})?$/.test(String(command.deal.estimatedValue)))) {
+  if (command.deal.estimatedValue != null && (!/^(0|[1-9][0-9]*)(\.[0-9]{1,6})?$/.test(String(command.deal.estimatedValue)))) {
     errors["deal.estimatedValue"] = "Estimated value must be a finite, non-negative number.";
   }
   if (command.deal.followUpTask) {

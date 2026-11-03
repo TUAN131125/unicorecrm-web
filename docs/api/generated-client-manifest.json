@@ -1,10 +1,10 @@
 {
   "schemaVersion": 2,
-  "generatorVersion": 17,
+  "generatorVersion": 19,
   "openapiVersion": "3.1.0",
   "contractVersion": "0.24.0-contract.0",
   "specPath": "docs/api/openapi.json",
-  "specSha256": "c0768ffb08cce4d3eceb8692981c8765c5ca0a6256c239d24e30870b99c3ba25",
+  "specSha256": "51e022d901c059cf6bcb8139b350f133b65bdb03e28157d7fdc0f6da9c180574",
   "ownershipPath": "scripts/api/openapi/client-ownership.json",
   "coverageLedgerPath": "docs/api/operation-coverage-ledger.json",
   "breakingBaselinePath": "docs/api/openapi-breaking-baseline.json",
@@ -107,7 +107,7 @@
       "output": "src/platform/api/generated/commercialApi.ts",
       "className": "CommercialApiClient",
       "requestOptionsName": "CommercialRequestOptions",
-      "operationCount": 165
+      "operationCount": 201
     },
     {
       "id": "workspace-configuration",
@@ -132,12 +132,13 @@
     {
       "id": "crm-configuration",
       "tags": [
-        "CrmConfiguration"
+        "CrmConfiguration",
+        "DealPipelines"
       ],
       "output": "src/platform/api/generated/crmConfigurationApi.ts",
       "className": "CrmConfigurationApiClient",
       "requestOptionsName": "CrmConfigurationRequestOptions",
-      "operationCount": 12
+      "operationCount": 13
     },
     {
       "id": "product-configuration",
@@ -431,6 +432,20 @@
       "requiredCapability": "orders.credit_approval.decide"
     },
     {
+      "operationId": "approveQuoteAcceptanceEvidenceSource",
+      "method": "POST",
+      "path": "/quotes/{quoteId}/acceptance-evidence-sources/{sourceId}/approve",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "approveQuoteAcceptanceEvidenceSource",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "quotes.manageAcceptanceEvidenceSources"
+    },
+    {
       "operationId": "approveQuoteCommand",
       "method": "POST",
       "path": "/quotes/{quoteId}/approve",
@@ -681,6 +696,20 @@
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "tasks.update"
+    },
+    {
+      "operationId": "assessQuoteIdentityAuthority",
+      "method": "POST",
+      "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/identity-authority/assessments",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "assessQuoteIdentityAuthority",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "quotes.assessAcceptanceIdentityAuthority"
     },
     {
       "operationId": "assignDealOwner",
@@ -1103,6 +1132,20 @@
       "requiredCapability": "orders.confirm"
     },
     {
+      "operationId": "consentCustomerQuoteAcceptance",
+      "method": "POST",
+      "path": "/public/quote-acceptance/consent",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "consentCustomerQuoteAcceptance",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "BACKEND_SERIALIZED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "PUBLIC_INVITATION_TOKEN"
+    },
+    {
       "operationId": "convertAcceptedQuoteToOrderDraft",
       "method": "POST",
       "path": "/order-drafts/from-accepted-quote",
@@ -1218,14 +1261,14 @@
       "operationId": "createCrmPipeline",
       "method": "POST",
       "path": "/crm-configuration/pipelines",
-      "boundedContext": "CrmConfiguration",
-      "ownerModule": "platform/workspace-config",
+      "boundedContext": "DealPipelines",
+      "ownerModule": "deals",
       "generatedClientId": "crm-configuration",
       "generatedMethod": "createCrmPipeline",
       "idempotencyPolicy": "REQUIRED",
-      "concurrencyPolicy": "UNRESOLVED_BLOCKED",
-      "contractStatus": "BLOCKED",
-      "blockingDecisionId": "DEC-CREATECRMPIPELINE",
+      "concurrencyPolicy": "BACKEND_SERIALIZED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
       "requiredCapability": "studio.configure"
     },
     {
@@ -1423,6 +1466,34 @@
       "contractStatus": "BLOCKED",
       "blockingDecisionId": "DEC-CREATEPRODUCTCONFIGURATIONTYPE",
       "requiredCapability": "products.configure"
+    },
+    {
+      "operationId": "createQuoteAcceptanceCase",
+      "method": "POST",
+      "path": "/quotes/{quoteId}/acceptance-cases",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "createQuoteAcceptanceCase",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "quotes.submitAcceptanceEvidence"
+    },
+    {
+      "operationId": "createQuoteAcceptanceInvitation",
+      "method": "POST",
+      "path": "/quotes/{quoteId}/acceptance-invitations",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "createQuoteAcceptanceInvitation",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "quotes.update"
     },
     {
       "operationId": "createQuoteCommand",
@@ -1705,6 +1776,34 @@
       "requiredCapability": "leads.bulk"
     },
     {
+      "operationId": "downloadQuoteAcceptanceProofContent",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/proofs/{proofId}/content",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "downloadQuoteAcceptanceProofContent",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "quotes.readAcceptanceProofContent"
+    },
+    {
+      "operationId": "downloadQuoteDocument",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/documents/{documentId}/content",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "downloadQuoteDocument",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "quotes.read"
+    },
+    {
       "operationId": "duplicateOrderDraft",
       "method": "POST",
       "path": "/orders/{orderId}/duplicate-draft",
@@ -1773,6 +1872,20 @@
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "workspace.context.resolve"
+    },
+    {
+      "operationId": "evaluateQuoteCustomerAcceptance",
+      "method": "POST",
+      "path": "/quotes/{quoteId}/customer-acceptance/evaluate",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "evaluateQuoteCustomerAcceptance",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "quotes.readAcceptanceEvidence"
     },
     {
       "operationId": "expireQuoteCommand",
@@ -1950,6 +2063,20 @@
       "ownerModule": "platform/workspace-config",
       "generatedClientId": "crm-configuration",
       "generatedMethod": "getCrmObjectSchema",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "studio.read"
+    },
+    {
+      "operationId": "getCrmPipeline",
+      "method": "GET",
+      "path": "/crm-configuration/pipelines/{pipelineId}",
+      "boundedContext": "DealPipelines",
+      "ownerModule": "deals",
+      "generatedClientId": "crm-configuration",
+      "generatedMethod": "getCrmPipeline",
       "idempotencyPolicy": "NOT_APPLICABLE",
       "concurrencyPolicy": "NOT_APPLICABLE",
       "contractStatus": "PRODUCTION_CONTRACT_READY",
@@ -2335,6 +2462,132 @@
       "requiredCapability": "quotes.read"
     },
     {
+      "operationId": "getQuoteAcceptanceCase",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/acceptance-cases/{caseId}",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "getQuoteAcceptanceCase",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "quotes.readAcceptanceEvidence"
+    },
+    {
+      "operationId": "getQuoteAcceptanceProof",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/proofs/{proofId}",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "getQuoteAcceptanceProof",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "quotes.readAcceptanceEvidence"
+    },
+    {
+      "operationId": "getQuoteAcceptanceProofScanHistory",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/proofs/{proofId}/scans",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "getQuoteAcceptanceProofScanHistory",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "quotes.readAcceptanceEvidence"
+    },
+    {
+      "operationId": "getQuoteAcceptanceProofSecurity",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/proofs/{proofId}/security",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "getQuoteAcceptanceProofSecurity",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "quotes.readAcceptanceEvidence"
+    },
+    {
+      "operationId": "getQuoteCustomerAcceptanceReadiness",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/customer-acceptance",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "getQuoteCustomerAcceptanceReadiness",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "quotes.readAcceptanceEvidence"
+    },
+    {
+      "operationId": "getQuoteDocument",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/documents/{documentId}",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "getQuoteDocument",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "quotes.read"
+    },
+    {
+      "operationId": "getQuoteDocumentSeller",
+      "method": "GET",
+      "path": "/quotes/document-seller",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "getQuoteDocumentSeller",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "quotes.read"
+    },
+    {
+      "operationId": "getQuoteIdentityAuthority",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/identity-authority",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "getQuoteIdentityAuthority",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "quotes.readAcceptanceEvidence"
+    },
+    {
+      "operationId": "getQuoteIndependentReview",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/independent-review",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "getQuoteIndependentReview",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "quotes.readAcceptanceEvidence"
+    },
+    {
       "operationId": "getReceivablesAging",
       "method": "GET",
       "path": "/receivables/aging",
@@ -2587,6 +2840,20 @@
       "requiredCapability": "invoices.issue"
     },
     {
+      "operationId": "issueQuoteDocumentCommand",
+      "method": "POST",
+      "path": "/quotes/{quoteId}/documents/issue",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "issueQuoteDocumentCommand",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "quotes.issueDocument"
+    },
+    {
       "operationId": "linkConversationCrmRecord",
       "method": "POST",
       "path": "/communications/conversations/{id}/crm-link",
@@ -2716,8 +2983,8 @@
       "operationId": "listCrmPipelines",
       "method": "GET",
       "path": "/crm-configuration/pipelines",
-      "boundedContext": "CrmConfiguration",
-      "ownerModule": "platform/workspace-config",
+      "boundedContext": "DealPipelines",
+      "ownerModule": "deals",
       "generatedClientId": "crm-configuration",
       "generatedMethod": "listCrmPipelines",
       "idempotencyPolicy": "NOT_APPLICABLE",
@@ -3035,6 +3302,118 @@
       "requiredCapability": "products.read"
     },
     {
+      "operationId": "listQuoteAcceptanceCases",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/acceptance-cases",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "listQuoteAcceptanceCases",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "quotes.readAcceptanceEvidence"
+    },
+    {
+      "operationId": "listQuoteAcceptanceEvidenceSourceHistory",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/acceptance-evidence-sources/{sourceId}/history",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "listQuoteAcceptanceEvidenceSourceHistory",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "quotes.readAcceptanceEvidence"
+    },
+    {
+      "operationId": "listQuoteAcceptanceEvidenceSources",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/acceptance-evidence-sources",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "listQuoteAcceptanceEvidenceSources",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "quotes.readAcceptanceEvidence"
+    },
+    {
+      "operationId": "listQuoteAcceptanceInvitations",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/acceptance-invitations",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "listQuoteAcceptanceInvitations",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "quotes.read"
+    },
+    {
+      "operationId": "listQuoteAcceptanceProofs",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/proofs",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "listQuoteAcceptanceProofs",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "quotes.readAcceptanceEvidence"
+    },
+    {
+      "operationId": "listQuoteDocuments",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/documents",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "listQuoteDocuments",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "quotes.read"
+    },
+    {
+      "operationId": "listQuoteIdentityAuthorityHistory",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/identity-authority/history",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "listQuoteIdentityAuthorityHistory",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "quotes.readAcceptanceEvidence"
+    },
+    {
+      "operationId": "listQuoteIndependentReviewHistory",
+      "method": "GET",
+      "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/independent-review/history",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "listQuoteIndependentReviewHistory",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "quotes.readAcceptanceEvidence"
+    },
+    {
       "operationId": "listQuotes",
       "method": "GET",
       "path": "/quotes",
@@ -3329,6 +3708,20 @@
       "requiredCapability": "studio.configure"
     },
     {
+      "operationId": "previewCustomerQuoteAcceptance",
+      "method": "POST",
+      "path": "/public/quote-acceptance/preview",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "previewCustomerQuoteAcceptance",
+      "idempotencyPolicy": "NOT_APPLICABLE",
+      "concurrencyPolicy": "BACKEND_SERIALIZED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "PUBLIC_INVITATION_TOKEN"
+    },
+    {
       "operationId": "previewPaymentPlan",
       "method": "POST",
       "path": "/payment-plans/{planId}/preview",
@@ -3567,6 +3960,48 @@
       "requiredCapability": "payments.intent.create"
     },
     {
+      "operationId": "recordQuoteAcceptanceSourceCheck",
+      "method": "POST",
+      "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/identity-authority/source-checks",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "recordQuoteAcceptanceSourceCheck",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "quotes.recordAcceptanceSourceCheck"
+    },
+    {
+      "operationId": "recordQuoteCustomerDecisionCommand",
+      "method": "POST",
+      "path": "/quotes/{quoteId}/customer-decisions",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "recordQuoteCustomerDecisionCommand",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "quotes.update"
+    },
+    {
+      "operationId": "recordQuoteSalesAcceptance",
+      "method": "POST",
+      "path": "/quotes/{quoteId}/sales-acceptances",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "recordQuoteSalesAcceptance",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "quotes.update"
+    },
+    {
       "operationId": "recordQuoteSendEvidenceCommand",
       "method": "POST",
       "path": "/quotes/{quoteId}/send",
@@ -3607,6 +4042,20 @@
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "identity.account.register"
+    },
+    {
+      "operationId": "registerQuoteAcceptanceEvidenceSource",
+      "method": "POST",
+      "path": "/quotes/{quoteId}/acceptance-evidence-sources",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "registerQuoteAcceptanceEvidenceSource",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "quotes.manageAcceptanceEvidenceSources"
     },
     {
       "operationId": "rejectOrderCreditApproval",
@@ -4127,6 +4576,20 @@
       "requiredCapability": "payments.reverse_allocation"
     },
     {
+      "operationId": "reviseQuoteAcceptanceEvidenceSource",
+      "method": "PUT",
+      "path": "/quotes/{quoteId}/acceptance-evidence-sources/{sourceId}",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "reviseQuoteAcceptanceEvidenceSource",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "quotes.manageAcceptanceEvidenceSources"
+    },
+    {
       "operationId": "reviseQuoteCommand",
       "method": "POST",
       "path": "/quotes/{quoteId}/revise",
@@ -4153,6 +4616,20 @@
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "orders.credit_approval.decide"
+    },
+    {
+      "operationId": "revokeQuoteAcceptanceEvidenceSource",
+      "method": "POST",
+      "path": "/quotes/{quoteId}/acceptance-evidence-sources/{sourceId}/revoke",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "revokeQuoteAcceptanceEvidenceSource",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "quotes.manageAcceptanceEvidenceSources"
     },
     {
       "operationId": "revokeWorkspaceInvitation",
@@ -4237,6 +4714,20 @@
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "payments.plan.update_draft"
+    },
+    {
+      "operationId": "saveQuoteIdentityAuthorityBinding",
+      "method": "PUT",
+      "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/identity-authority/binding",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "saveQuoteIdentityAuthorityBinding",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "quotes.submitAcceptanceEvidence"
     },
     {
       "operationId": "scheduleLeadFollowUpBatch",
@@ -4349,6 +4840,20 @@
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "studio.configure"
+    },
+    {
+      "operationId": "submitQuoteIndependentReviewDecision",
+      "method": "POST",
+      "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/independent-review/decisions",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "submitQuoteIndependentReviewDecision",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "quotes.verifyAcceptanceEvidence"
     },
     {
       "operationId": "syncShippingBookingCommand",
@@ -4494,14 +4999,14 @@
       "operationId": "updateCrmPipeline",
       "method": "PATCH",
       "path": "/crm-configuration/pipelines/{pipelineId}",
-      "boundedContext": "CrmConfiguration",
-      "ownerModule": "platform/workspace-config",
+      "boundedContext": "DealPipelines",
+      "ownerModule": "deals",
       "generatedClientId": "crm-configuration",
       "generatedMethod": "updateCrmPipeline",
       "idempotencyPolicy": "REQUIRED",
-      "concurrencyPolicy": "UNRESOLVED_BLOCKED",
-      "contractStatus": "BLOCKED",
-      "blockingDecisionId": "DEC-UPDATECRMPIPELINE",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
       "requiredCapability": "studio.configure"
     },
     {
@@ -4713,6 +5218,20 @@
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "studio.configure"
+    },
+    {
+      "operationId": "uploadQuoteAcceptanceProof",
+      "method": "POST",
+      "path": "/quotes/{quoteId}/acceptance-cases/{caseId}/proofs",
+      "boundedContext": "Quotes",
+      "ownerModule": "quotes",
+      "generatedClientId": "commercial",
+      "generatedMethod": "uploadQuoteAcceptanceProof",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "IF_MATCH_REQUIRED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "quotes.submitAcceptanceEvidence"
     },
     {
       "operationId": "verifyEmail",

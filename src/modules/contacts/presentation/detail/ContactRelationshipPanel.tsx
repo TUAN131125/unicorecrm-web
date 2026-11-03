@@ -4,7 +4,7 @@ import { getContactStatusLabel } from "../list/contactList.helpers";
 import { useState, useSyncExternalStore } from "react";
 import { Calendar, ChevronDown, CheckSquare, FileText, Mail, MessageCircle, Phone, Sparkles } from "lucide-react";
 import { CAPABILITIES, useEffectiveAccess, useEffectiveRecordAccessDecision } from "@/platform/access-control";
-import { useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
+import { useWorkspaceRuntimeSettings } from "@/platform/workspace-config";
 import type { Contact } from "../../domain/model/contact.types";
 import type { Task } from "@/modules/tasks";
 import { RelationshipWorkPanelShell, type RelationshipPanelMode } from "@/components/crm/relationship-panel/RelationshipWorkPanelShell";
@@ -32,7 +32,7 @@ function ContactRelationshipPanelBody({ isVisible, contact, locale, ownerName, t
   const access = useEffectiveAccess();
   const { t } = useI18n();
   const recordAccess = useEffectiveRecordAccessDecision();
-  const config = useWorkspaceOperationalConfiguration();
+  const config = useWorkspaceRuntimeSettings();
   const vi = locale === "vi"; const text = (a: string, b: string) => vi ? a : b;
   const denied = !access.can(CAPABILITIES.TASKS_READ) || taskQuery.error?.category === "AUTHORIZATION" || taskQuery.error?.category === "AUTHENTICATION";
   const ready = !denied && (!taskQuery.connected || (taskQuery.enabled && taskQuery.state === "READY" && !taskQuery.error && !taskQuery.loading && !taskQuery.stale));
@@ -51,7 +51,7 @@ function ContactRelationshipPanelBody({ isVisible, contact, locale, ownerName, t
     { id: "meeting" as const, label: text("Đặt lịch hẹn", "Schedule meeting"), icon: <Calendar size={13}/>, disabled: !canCreate || archived },
     { id: "sms" as const, label: text("Ghi nhận SMS ngoài CRM", "Log external SMS"), icon: <MessageCircle size={13}/>, disabled: !canLog || archived || restricted || !(contact.phone || contact.mobilePhone) },
   ].map(action => ({ ...action, disabledReason: text("Không khả dụng với quyền hoặc trạng thái liên hệ hiện tại.", "Unavailable with current access or contact status.") }));
-  const time = (value: string) => Number.isFinite(Date.parse(value)) ? new Intl.DateTimeFormat(vi ? "vi-VN" : "en-US", { dateStyle:"short", timeStyle:"short", timeZone:config.localeRegion.timezone }).format(new Date(value)) : text("Chưa có thời hạn", "Due time unavailable");
+  const time = (value: string) => Number.isFinite(Date.parse(value)) ? new Intl.DateTimeFormat(vi ? "vi-VN" : "en-US", { dateStyle:"short", timeStyle:"short", timeZone:config.timeZone }).format(new Date(value)) : text("Chưa có thời hạn", "Due time unavailable");
   const ownerHidden = recordAccess?.fieldAccess.ownerId === "HIDDEN" || access.getFieldAccess("contacts", "ownerId") === "HIDDEN";
   const ownerKnown = !ownerHidden && Boolean(contact.ownerId && ownerName && ownerName !== "—");
   const ownerLabel = ownerHidden ? text("Không có quyền xem người phụ trách", "Owner is restricted") : !contact.ownerId ? text("Chưa phân công", "Unassigned") : ownerKnown ? ownerName : text("Chưa xác định người phụ trách", "Owner identity unavailable");
@@ -72,11 +72,11 @@ function ContactRelationshipPanelBody({ isVisible, contact, locale, ownerName, t
         {(taskQuery.error || taskQuery.stale) && !denied && <Button size="xs" onClick={() => void taskQuery.refresh()}>{text("Thử lại","Retry")}</Button>}
         {ready && <>
           {taskQuery.hasNextPage && <p role="status" className="text-slate-500">{text("Công việc trong các trang đã tải; chưa phải toàn bộ kết quả.","Tasks within loaded pages; not the complete result.")}</p>}
-          {overdue.length > 0 ? <><p className="text-[11px] font-semibold text-amber-700">{overdue.length} {text("công việc quá hạn", "overdue tasks")}{taskQuery.hasNextPage ? "+" : ""}</p><ul>{overdue.slice(0,3).map(task => <li key={task.id}><WorkTaskItem title={task.title} metadata={<><time dateTime={task.dueAt}>{time(task.dueAt)}</time>{task.id === open[0]?.id && <> · {text("Cũng là việc tiếp theo", "Also next work")}</>}</>} onOpen={() => onOpenTask(task.id)}/></li>)}</ul></> : <p className={workEmptyClass}>{text("Không có công việc quá hạn trong phạm vi đã tải.","No overdue tasks in the loaded scope.")}</p>}
+          {overdue.length > 0 ? <><p className="text-[11px] font-semibold text-amber-700">{overdue.length} {text("công việc quá hạn", "overdue tasks")}{taskQuery.hasNextPage ? "+" : ""}</p><ul>{overdue.slice(0,3).map(task => <li key={task.id}><WorkTaskItem title={task.title} metadata={<><time dateTime={task.dueAt}>{time(task.dueAt)}</time>{task.id === open[0]?.id && <> · {text("Cũng là việc tiếp theo", "Also next work")}</>}</>} onOpen={() => onOpenTask(task.id)}/></li>)}</ul></> : <p className={workEmptyClass}>{text("Không có công việc quá hạn để hiển thị.","No overdue tasks to display.")}</p>}
         </>}
       </WorkSection>
       <WorkSection title={text("Việc tiếp theo","Next work")}>
-          {ready && (open[0] ? <WorkTaskItem variant="next" title={open[0].title} metadata={<time dateTime={open[0].dueAt}>{time(open[0].dueAt)}</time>} onOpen={() => onOpenTask(open[0].id)}/> : <p className={workEmptyClass}>{text("Chưa có công việc tiếp theo trong phạm vi đã tải.","No next task in the loaded scope.")}</p>)}
+          {ready && (open[0] ? <WorkTaskItem variant="next" title={open[0].title} metadata={<time dateTime={open[0].dueAt}>{time(open[0].dueAt)}</time>} onOpen={() => onOpenTask(open[0].id)}/> : <p className={workEmptyClass}>{text("Chưa có công việc tiếp theo để hiển thị.","No next task to display.")}</p>)}
         </WorkSection>
         {ready && taskQuery.hasNextPage && <Button size="xs" disabled={taskQuery.loading || taskQuery.atLimit} onClick={() => void taskQuery.loadMore()}>{text("Tải thêm công việc","Load more tasks")}</Button>}
       <WorkSection title={text("Phụ trách","Owner")}><WorkOwnerDisplay label={ownerLabel} name={ownerKnown ? ownerName : undefined}/></WorkSection>

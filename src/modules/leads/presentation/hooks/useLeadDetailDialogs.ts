@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { registerUnsavedWork } from "@/platform/unsaved-work";
 import { getWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import type { Lead } from "../../domain/model/lead.types";
-import { useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
+import { useWorkspaceRuntimeSettings } from "@/platform/workspace-config";
 import { toDateKeyInTimeZone } from "@/shared/lib/datetime/workspaceDateTime";
 import { useI18n } from "@/i18n";
 import { formatApplicationError } from "@/shared/operations";
@@ -16,8 +16,8 @@ export function useLeadDetailDialogs(lead: Lead | undefined, routeLeadId: string
   useAuthSessionSnapshot();
   const tagAuthorityKey = getLeadTagAuthorityKey();
   const [saveError, setSaveError] = useState("");
-  const configuration = useWorkspaceOperationalConfiguration();
-  const today = toDateKeyInTimeZone(new Date(), configuration.localeRegion.timezone);
+  const configuration = useWorkspaceRuntimeSettings();
+  const today = toDateKeyInTimeZone(new Date(), configuration.timeZone);
   const [interactionPending, setInteractionPending] = useState(false);
 
   type FormKind = "edit" | "handover" | "call" | "task" | "meeting" | "email" | "sms" | "disqualify" | "archive" | "tags" | "verification";

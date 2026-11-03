@@ -74,7 +74,7 @@ export const LeadSavedViewSelector: React.FC<LeadSavedViewSelectorProps> = ({
         onClick={() => setIsViewDropdownOpen(!isViewDropdownOpen)}
         className="inline-flex h-10 max-w-[220px] items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-3.5 text-xs font-bold text-slate-800 shadow-sm transition-all hover:bg-slate-100 sm:max-w-[260px]"
       >
-        <span className="min-w-0 crm-text-wrap text-indigo-600">
+        <span data-i18n-skip="true" className="min-w-0 crm-text-wrap text-indigo-600">
           {getMisaViewLabel(activeViewObj)}
         </span>
         <ChevronDown size={14} className="text-slate-400" />

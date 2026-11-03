@@ -1,4 +1,6 @@
 import React from "react";
+import { CustomerCode } from "../components/CustomerCode";
+import { customerBusinessTags } from "../model/customerPresentationLabels";
 import { Clock, Mail, MoreHorizontal, Phone } from "lucide-react";
 import { Avatar, Badge, Checkbox, IconButton, RowActionPortal } from "@/shared/components/ui";
 import { useI18n } from "@/i18n";
@@ -82,7 +84,7 @@ export const CustomerCardList: React.FC<CustomerCardListProps> = ({
                     >
                       {row.model.identity.displayName}
                     </h4>
-                    <span className="text-[10px] text-slate-400 font-medium">{row.customer.customerCode}</span>
+                    <CustomerCode key={row.customer.customerCode} code={row.customer.customerCode} />
                   </div>
                 </div>
 
@@ -134,7 +136,7 @@ export const CustomerCardList: React.FC<CustomerCardListProps> = ({
                 )}
                 <div className="col-span-2 flex flex-wrap gap-1">
                   {row.customer.segment && <Badge variant="neutral" className="text-[9px]">{localizeBusinessDescriptor(row.customer.segment, isVi ? "vi" : "en")}</Badge>}
-                  {row.customer.tags.slice(0, 2).map((tag) => <Badge key={tag} variant="neutral" className="text-[9px]">{localizeBusinessDescriptor(tag, isVi ? "vi" : "en")}</Badge>)}
+                  {customerBusinessTags(row.customer.tags).slice(0, 2).map((tag) => <Badge key={tag} variant="neutral" className="text-[9px]">{localizeBusinessDescriptor(tag, isVi ? "vi" : "en")}</Badge>)}
                 </div>
               </div>
 

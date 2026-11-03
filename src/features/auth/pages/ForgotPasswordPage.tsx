@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { CheckCircle2, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
 import { ROUTE_KEYS } from "@/platform/navigation";
 import { useI18n } from "@/i18n";
 import { isDevelopmentAuthAdapter, requestAccountPasswordReset } from "@/platform/identity-auth";
-import { AuthField, AuthPrimaryButton, AuthShell } from "../components";
+import { AuthField, AuthNotice, AuthPrimaryButton, AuthShell } from "../components";
+import { passwordRecoveryFeedback } from "../routing/passwordRecoveryFeedback";
 
 export const ForgotPasswordPage: React.FC = () => {
   const { locale } = useI18n();
@@ -13,15 +14,27 @@ export const ForgotPasswordPage: React.FC = () => {
   const [requestId, setRequestId] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const pending = useRef(false);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (pending.current) return;
+    pending.current = true;
+    setError(null);
     setIsSubmitting(true);
     try {
       const response = await requestAccountPasswordReset(email.trim());
+      if (!response.ok) {
+        setError(passwordRecoveryFeedback(response.code, locale, false));
+        return;
+      }
       setSubmitted(true);
-      if (response.ok) setRequestId(response.value.requestId);
+      if (isDevelopmentAuthAdapter()) setRequestId(response.value.requestId);
+    } catch {
+      setError(passwordRecoveryFeedback("SERVICE_UNAVAILABLE", locale, false));
     } finally {
+      pending.current = false;
       setIsSubmitting(false);
     }
   };
@@ -39,6 +52,7 @@ export const ForgotPasswordPage: React.FC = () => {
             <CheckCircle2 size={30} />
           </div>
           <div className="text-sm font-medium text-slate-600">{email.trim()}</div>
+          <p className="text-sm text-slate-600">{vi ? "Nếu tài khoản đủ điều kiện, bạn sẽ nhận được email hướng dẫn đặt lại mật khẩu." : "If the account is eligible, you will receive an email with instructions to reset your password."}</p>
           {isDevelopmentAuthAdapter() && requestId && (
             <Link
               to={`${ROUTE_KEYS.RESET_PASSWORD}?token=${encodeURIComponent(requestId)}`}
@@ -50,6 +64,7 @@ export const ForgotPasswordPage: React.FC = () => {
         </div>
       ) : (
         <form data-auth-form="true" className="space-y-4" onSubmit={handleSubmit}>
+          {error && <AuthNotice tone="danger">{error}</AuthNotice>}
           <AuthField
             label="Email"
             type="email"
@@ -59,6 +74,8 @@ export const ForgotPasswordPage: React.FC = () => {
             placeholder="name@company.com"
             icon={<Mail size={16} />}
             required
+            maxLength={254}
+            disabled={isSubmitting}
           />
           <AuthPrimaryButton type="submit" loading={isSubmitting} loadingLabel={vi ? "Đang gửi…" : "Sending…"}>{vi ? "Tiếp tục" : "Continue"}</AuthPrimaryButton>
         </form>

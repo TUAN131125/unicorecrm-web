@@ -1,5 +1,17 @@
 import { AiApiClient, type AiConfigurationView } from "@/platform/api/generated/aiApi";
+import type { HttpClient, HttpRequest } from "@/platform/api/client";
 import type { AiConfiguration, AiConfigurationCommandOptions, AiConfigurationDraft, AiConfigurationGateway, AiProviderEntry, AiUsageSummary } from "../application/AiConfigurationGateway";
+
+/** Two admitted targets at the server's 60-second cap, plus persistence/transport overhead. */
+export function withAiConfigurationTestTimeout(client: HttpClient): HttpClient {
+  return {
+    request<TResponse, TBody = unknown>(input: HttpRequest<TBody>): Promise<TResponse> {
+      return client.request<TResponse, TBody>(input.operationId === "testAiConfiguration"
+        ? { ...input, timeoutMs: 130_000 }
+        : input);
+    },
+  };
+}
 
 export class AiConfigurationHttpAdapter implements AiConfigurationGateway {
   constructor(private readonly api: AiApiClient) {}

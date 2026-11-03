@@ -22,8 +22,8 @@ import { Sidebar } from "./Sidebar";
 import { TopBar } from "./TopBar";
 import { MobileDrawer } from "./MobileDrawer";
 import { ProductDialogHost, requestDecision } from "@/components/feedback/ProductDialogService";
-import { discardDirtyUnsavedWork, getDirtyUnsavedWork, getUnsavedWorkVersion, saveDirtyUnsavedWork, subscribeUnsavedWork } from "@/platform/unsaved-work";
-import { GlobalMutationConflictHost } from "@/shared/operations";
+import { discardDirtyUnsavedWork, getDirtyUnsavedWork, getUnsavedWorkVersion, subscribeUnsavedWork } from "@/platform/unsaved-work";
+import { GlobalMutationConflictHost, formatApplicationError } from "@/shared/operations";
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -48,8 +48,6 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const reduceMotion = useReducedMotion();
   const previousPathnameRef = useRef(location.pathname);
   const unsavedWorkVersion = useSyncExternalStore(subscribeUnsavedWork, getUnsavedWorkVersion, () => "");
-  const dirtyUnsavedWork = getDirtyUnsavedWork();
-  const hasDirtyUnsavedWork = dirtyUnsavedWork.length > 0;
   const bypassUnsavedBlockerRef = useRef(false);
 
   useLayoutEffect(() => {
@@ -154,21 +152,8 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
     const dirtyEntries = getDirtyUnsavedWork();
     if (dirtyEntries.length > 0) {
-      const decision = await requestDecision({
-        title: locale === "vi" ? "Bạn có thay đổi chưa lưu" : "You have unsaved changes",
-        message: locale === "vi"
-          ? `Có ${dirtyEntries.length} khu vực cấu hình chưa được lưu. Bạn muốn làm gì trước khi chuyển không gian làm việc?`
-          : `${dirtyEntries.length} configuration area(s) have unsaved changes. What would you like to do before switching workspace?`,
-        tone: "warning",
-        actions: [
-          { id: "stay", label: locale === "vi" ? "Tiếp tục chỉnh sửa" : "Keep editing", variant: "secondary" },
-          { id: "discard", label: locale === "vi" ? "Bỏ thay đổi" : "Discard changes", variant: "warning" },
-          { id: "save", label: locale === "vi" ? "Lưu và tiếp tục" : "Save and continue", variant: "primary" },
-        ],
-      });
-      if (decision === "stay" || decision === null) return;
-      if (decision === "save" && !(await saveDirtyUnsavedWork())) return;
-      if (decision === "discard" && !discardDirtyUnsavedWork()) return;
+      const decision = await requestDecision(unsavedNavigationDecision(locale));
+      if (decision !== "discard" || !discardDirtyUnsavedWork()) return;
     }
 
     const currentContext = parseCanonicalRoute(location.pathname);
@@ -181,7 +166,24 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
       return;
     }
 
-    await switchWorkspace(workspaceKey);
+    try {
+      await switchWorkspace(workspaceKey);
+    } catch (caught) {
+      // Workspace entry retires the previous scope before resolving the next one. Re-enter
+      // through the authoritative boundary so a refused switch never reuses stale projections.
+      let restored = false;
+      try { await switchWorkspace(activeWorkspace.workspaceKey); restored = true; } catch { /* Selection must resolve access again. */ }
+      await requestDecision({
+        title: locale === "vi" ? "Không thể chuyển không gian làm việc" : "Could not switch workspace",
+        message: formatApplicationError(caught, { locale }),
+        actions: [{ id: "close", label: locale === "vi" ? "Tiếp tục" : "Continue", variant: "primary" }],
+        tone: "warning",
+      });
+      bypassUnsavedBlockerRef.current = true;
+      navigate(restored ? productSpaceHome(activeWorkspace.workspaceKey, targetSpace) : ROUTE_KEYS.WORKSPACE_SELECTION, { replace: true });
+      window.setTimeout(() => { bypassUnsavedBlockerRef.current = false; }, 0);
+      return;
+    }
     bypassUnsavedBlockerRef.current = true;
     const canKeepEquivalentRoute = !!currentContext?.relativePath
       && currentContext.productSpace === targetSpace
@@ -195,13 +197,11 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
   return (
     <div id="unicore-root" className="flex h-screen bg-slate-50 font-sans text-slate-800 overflow-hidden">
-      {hasDirtyUnsavedWork && (
         <UnsavedNavigationGuard
           locale={locale}
           bypassRef={bypassUnsavedBlockerRef}
           version={unsavedWorkVersion}
         />
-      )}
       <MobileDrawer isOpen={isMobileMenuOpen} onClose={() => setIsMobileMenuOpen(false)} />
 
       <Sidebar
@@ -285,37 +285,38 @@ const UnsavedNavigationGuard: React.FC<{
   bypassRef: { current: boolean };
   version: string;
 }> = ({ locale, bypassRef, version }) => {
-  const blocker = useBlocker(() => !bypassRef.current);
+  const blocker = useBlocker(() => !bypassRef.current && getDirtyUnsavedWork().length > 0);
   const decisionOpenRef = useRef(false);
 
   useEffect(() => {
     if (blocker.state !== "blocked" || decisionOpenRef.current) return;
     decisionOpenRef.current = true;
-    const entries = getDirtyUnsavedWork();
-    void requestDecision({
-      title: locale === "vi" ? "Bạn có thay đổi chưa lưu" : "You have unsaved changes",
-      message: locale === "vi"
-        ? `Có ${entries.length} khu vực cấu hình chưa được lưu. Bạn muốn làm gì trước khi rời trang?`
-        : `${entries.length} configuration area(s) have unsaved changes. What would you like to do before leaving?`,
-      tone: "warning",
-      actions: [
-        { id: "stay", label: locale === "vi" ? "Tiếp tục chỉnh sửa" : "Keep editing", variant: "secondary" },
-        { id: "discard", label: locale === "vi" ? "Bỏ thay đổi" : "Discard changes", variant: "warning" },
-        { id: "save", label: locale === "vi" ? "Lưu và tiếp tục" : "Save and continue", variant: "primary" },
-      ],
-    }).then(async (decision) => {
+    // Read the registry after this commit's effect cleanups and registrations settle.
+    // A target-bound form can replace its entry during the same passive-effect flush.
+    void Promise.resolve().then(() => requestDecision(unsavedNavigationDecision(locale))).then((decision) => {
       if (blocker.state !== "blocked") return;
-      if (decision === "save") {
-        if (await saveDirtyUnsavedWork()) blocker.proceed();
-        else blocker.reset();
-      } else if (decision === "discard") {
-        if (discardDirtyUnsavedWork()) blocker.proceed();
-        else blocker.reset();
-      } else {
-        blocker.reset();
-      }
+      if (decision === "discard" && discardDirtyUnsavedWork()) blocker.proceed();
+      else blocker.reset();
     }).finally(() => { decisionOpenRef.current = false; });
   }, [blocker, locale, version]);
 
   return null;
 };
+
+function unsavedNavigationDecision(locale: "vi" | "en") {
+  const vi = locale === "vi";
+  const canDiscard = getDirtyUnsavedWork().every(entry => entry.canDiscard?.() !== false);
+  return {
+    title: canDiscard
+      ? (vi ? "Bỏ các thay đổi chưa lưu?" : "Discard unsaved changes?")
+      : (vi ? "Thao tác chưa hoàn tất" : "Operation not completed"),
+    message: canDiscard
+      ? (vi ? "Nội dung bạn vừa nhập sẽ không được lưu." : "Your changes will not be saved.")
+      : (vi ? "Hãy chờ hoặc tiếp tục kiểm tra kết quả trước khi rời trang. Đóng trang lúc này có thể làm mất khả năng tiếp tục thao tác." : "Wait or check the result before leaving. Leaving now may prevent you from resuming this operation."),
+    tone: "warning" as const,
+    actions: [
+      { id: "stay", label: vi ? "Tiếp tục chỉnh sửa" : "Keep editing", variant: "secondary" as const },
+      ...(canDiscard ? [{ id: "discard", label: vi ? "Bỏ thay đổi" : "Discard changes", variant: "warning" as const }] : []),
+    ],
+  };
+}

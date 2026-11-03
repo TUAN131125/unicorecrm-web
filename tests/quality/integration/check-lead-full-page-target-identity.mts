@@ -55,6 +55,7 @@ let navigate: ReturnType<typeof useNavigate>;
 let pathname = '';
 let page: React.ComponentType = LeadQualificationPage;
 function Probe() { navigate = useNavigate(); pathname = useLocation().pathname; return React.createElement(page); }
+function DealResultProbe() { pathname = useLocation().pathname; return React.createElement('p', null, 'Persisted Deal'); }
 const rootElement = document.getElementById('root'); assert.ok(rootElement);
 const root = createRoot(rootElement);
 const settle = async () => act(async () => { await new Promise(resolve => setTimeout(resolve, 80)); });
@@ -122,7 +123,7 @@ try {
     await act(async () => root.render(React.createElement(I18nProvider, null,
       React.createElement(MemoryRouter, { key: ++renderCycle, initialEntries: [`/leads/${target}/${suffix}`] },
         React.createElement(PlatformStateProvider, null, React.createElement(GuidanceProvider, null,
-          React.createElement(Routes, null, React.createElement(Route, { path: `/leads/:leadId/${suffix}`, element: React.createElement(Probe) }))))))));
+          React.createElement(Routes, null, React.createElement(Route, { path: `/leads/:leadId/${suffix}`, element: React.createElement(Probe) }), React.createElement(Route, { path: '/deals/:dealId', element: React.createElement(DealResultProbe) }))))))));
     await settle();
   }
   async function click(text: string) {
@@ -168,7 +169,7 @@ try {
   await mount(LeadQualificationPage, 'qualify'); await click('Tạo cơ hội');
   await change('[data-guidance-id="leads.qualification.products"] input', product.sku);
   await act(async () => { await new Promise(resolve => setTimeout(resolve, 450)); });
-  await click(`${product.name} · ${product.sku}`);
+  await click(product.name);
   assert.equal(document.querySelectorAll(`[data-product-id="${product.id}"]`).length, 1);
   await act(async () => replaceProductCatalog([...getProductCatalogSnapshot()])); await settle();
   assert.equal(document.querySelectorAll(`[data-product-id="${product.id}"]`).length, 1, 'Catalog refresh preserves selected identity');
@@ -280,18 +281,22 @@ try {
   assert.equal(document.querySelector<HTMLTextAreaElement>('#qualification-need-summary')?.value, 'B fresh need');
   assert.doesNotMatch(document.body.textContent ?? '', /deal-A/);
   await mount(LeadQualificationPage, 'qualify'); await click('Tạo cơ hội');
-  await act(async () => assert.equal(await getDirtyUnsavedWork()[0]?.save(), false, 'client validation is not successful save'));
+  const requiredDealName = document.querySelector<HTMLInputElement>('#qualification-deal-name')?.value ?? '';
+  await change('#qualification-deal-name', '');
+  await act(async () => assert.equal(await getDirtyUnsavedWork()[0]?.save(), false, 'missing required name is not successful save'));
   await settle(); assert.ok(document.querySelector('[role="alert"]'));
+  await change('#qualification-deal-name', requiredDealName);
   await change('#qualification-need-summary', 'A save and continue');
-  await submit();
-  assert.ok([...document.querySelectorAll('button')].some(button => button.textContent?.includes('Xác nhận tạo cơ hội')), 'Opportunity requires explicit review before save');
+  assert.equal([...document.querySelectorAll('button')].some(button => button.textContent?.includes('Xem lại cơ hội')), false, 'No intermediate review action remains');
+  completeQualification = undefined;
   await act(async () => {
     const saving = getDirtyUnsavedWork()[0]?.save(); assert.ok(saving);
     for (let attempt = 0; attempt < 30 && !completeQualification; attempt++) await new Promise(resolve => setTimeout(resolve, 10));
-    assert.ok(completeQualification, 'Reviewed intent must reach the authoritative command'); completeQualification();
+    assert.ok(completeQualification, 'Direct intent must reach the authoritative command'); completeQualification();
     assert.equal(await saving, true, 'only committed persistence reports successful global save');
   }); await settle();
-  assert.equal(getDirtyUnsavedWork().length, 0); assert.equal(pathname, `/leads/${A.id}/qualify`);
+  assert.equal(getDirtyUnsavedWork().length, 0); assert.equal(pathname, `/deals/deal-A`);
   assert.deepEqual(browserErrors, [], 'real workflow must not emit uncaught browser errors');
   console.log(JSON.stringify({ qualificationCalls: qualificationCalls.map(({ kind, id, version }) => ({ kind, id, version })), conversionCalls, result: 'Lead full-page real integration PASS' }, null, 2));
 } finally { await act(async () => root.unmount()); window.close(); }
+

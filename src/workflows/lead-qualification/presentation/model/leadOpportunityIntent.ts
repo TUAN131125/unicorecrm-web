@@ -8,6 +8,17 @@ export interface LeadOpportunityIntent {
   readonly generation: number;
 }
 
+/** A read refresh may retain an unresolved intent only inside the original authority and target. */
+export function canRetainOpportunityIntent(
+  intent: LeadOpportunityIntent | undefined,
+  authority: string,
+  generation: number,
+  leadId: string | undefined,
+): boolean {
+  return intent !== undefined && intent.authority === authority && intent.generation === generation
+    && intent.command.leadId === leadId;
+}
+
 /** One form intent; recovery always resends the captured body, key and original Lead version. */
 export function createLeadOpportunityIntent(command: ExecuteLeadOpportunityCommand, expectedVersion: number, authority: string, generation: number): LeadOpportunityIntent {
   const copy = structuredClone(command);

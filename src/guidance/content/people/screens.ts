@@ -9,7 +9,7 @@ export const PEOPLE_SCREEN_GUIDANCE: ScreenGuidance[] = [
     id: "people.members.access",
     routeKey: "SETTINGS_USERS_PERMISSIONS",
     productSpace: "people",
-    version: 4,
+    version: 6,
     title: { vi: "Người dùng & quyền truy cập", en: "People & Access" },
     purpose: { vi: "Quản lý tài khoản, lời mời, vai trò, phạm vi dữ liệu và quyền trường cho từng workspace.", en: "Manage accounts, invitations, roles, data scope, and field access for each workspace." },
     audience: { vi: "Workspace Owner và người được cấp quyền cấu hình truy cập.", en: "Workspace Owners and users granted access configuration permission." },

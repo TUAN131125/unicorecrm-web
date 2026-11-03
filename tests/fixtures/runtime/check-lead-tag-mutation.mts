@@ -302,6 +302,7 @@ await act(async () => release?.(receipt(["Keep"], routeId)));
 assert.equal(projections, authProjection);
 await act(async () => { assert.equal(signIn({ email: "admin@unicorecrm.local", password: "admin123" }).ok, true); });
 // A known empty authoritative array remains writable; omission does not.
+await act(async () => { await loadAccessGovernance(getWorkspaceContextSnapshot().workspaceId); });
 await act(async () => dialogs?.setShowTagsModal(false));
 lead = { ...lead, tags: [] };
 await render(); await act(async () => dialogs?.setShowTagsModal(true)); await setDraft("First");

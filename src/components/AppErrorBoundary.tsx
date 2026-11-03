@@ -26,8 +26,8 @@ export class AppErrorBoundary extends Component<Props, State> {
     return { hasError: true, error };
   }
 
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("Top-level App Crash:", error, errorInfo);
+  public componentDidCatch(_error: Error, _errorInfo: ErrorInfo) {
+    console.error("UnicoreCRM could not display the application.");
   }
 
   private handleRefresh = () => {
@@ -45,7 +45,7 @@ export class AppErrorBoundary extends Component<Props, State> {
         "unicore_active_workspace_key_v1",
       ].forEach((key) => localStorage.removeItem(key));
     } catch (e) {
-      console.error(e);
+      console.error("Browser preferences could not be cleared.");
     }
 
     const basePath = `${window.location.origin}${window.location.pathname}`;

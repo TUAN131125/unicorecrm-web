@@ -925,6 +925,7 @@ export const LeadListPage: React.FC<LeadListPageProps> = ({
       {/* 2. DYNAMIC LEAD TOOLBAR WITH SAVED VIEWS DROPDOWN AND SEARCH */}
       <ListToolbar
         searchValue={filters.searchTerm}
+        searchDebounceMs={serverPagination.connected && viewMode === "table" ? 300 : 0}
         onSearchChange={filters.setSearchTerm}
         searchPlaceholder={t("leads.quickSearchPlaceholder", locale === "vi" ? "Tìm kiếm thông minh..." : "Smart search...")}
         viewMode={viewMode}

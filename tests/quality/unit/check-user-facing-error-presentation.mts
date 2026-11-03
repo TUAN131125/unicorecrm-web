@@ -16,6 +16,8 @@ import {
 } from "../../../src/shared/operations/backendAvailability";
 import { MutationCommandError } from "../../../src/shared/application/mutation/mutationAuthority";
 import { describePartialCommit } from "../../../src/shared/operations/partialCommit";
+import { ApplicationError } from "../../../src/shared/domain";
+import { classifyMutationFailure } from "../../../src/shared/operations/mutationState";
 
 /** Fragments that must never appear in user copy. */
 const INTERNAL_FRAGMENTS = [
@@ -124,6 +126,23 @@ for (const code of UNSAFE_FOR_DISPLAY_CODES) {
 // ---------------------------------------------------------------------------
 
 const unknown = new Error("sensitive internal detail: /srv/app/src/platform/api/runtime/RoutedHttpMutationAuthority.ts:258");
+for (const [status, category] of [[500, "INFRASTRUCTURE"], [403, "AUTHORIZATION"], [401, "AUTHENTICATION"], [409, "CONFLICT"], [422, "VALIDATION"]] as const) {
+  const remote = new ApplicationError({ code: "REMOTE_ERROR", status, category,
+    message: "SqlException customers.Customers handler ExecuteCommand at /srv/internal", userMessage: "Bearer secret-token; SQL table users; InternalHandler; contract BLOCKED", details: { stack: "secret-stack" }, correlationId: "safe-correlation" });
+  for (const locale of ["vi", "en"]) {
+    const view = presentApplicationError(remote, { locale });
+    assert.doesNotMatch(view.message, /SqlException|Bearer|secret|InternalHandler|SQL table|BLOCKED/);
+    assert.equal(view.error, remote, "Diagnostics remain available to the error system without rendering them.");
+    assert.equal(view.correlationId, "safe-correlation");
+    assert.ok(view.message.length > 0);
+  }
+}
+assert.notEqual(formatApplicationError(new ApplicationError({ code: "REMOTE_FORBIDDEN", status: 403, message: "internal" })), formatApplicationError(new ApplicationError({ code: "REMOTE_FAILURE", status: 500, message: "internal" })), "Authorization and service failure must retain distinct guidance.");
+const remoteFailure = classifyMutationFailure(new ApplicationError({ code: "REMOTE_FAILURE", status: 500, message: "internal", fieldErrors: { secret: ["SQL handler diagnostic"] }, blockers: ["internal policy detail"] }));
+assert.equal(remoteFailure.fieldErrors, undefined);
+assert.equal(remoteFailure.businessBlockers, undefined);
+assert.notEqual(remoteFailure.state, "SUCCEEDED");
+assert.equal(classifyMutationFailure(new ApplicationError({ code: "VALIDATION_FAILED", status: 422, message: "invalid", fieldErrors: { email: ["Enter a valid email address."] } })).fieldErrors?.email, "Enter a valid email address.", "Structured validation feedback remains actionable.");
 const unknownCopy = formatApplicationError(unknown);
 assert.ok(
   !unknownCopy.includes("sensitive internal detail"),

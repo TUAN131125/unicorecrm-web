@@ -1,3 +1,5 @@
+import { ConnectedRelationshipRecords } from "@/components/crm/relationship-detail/ConnectedRelationshipRecords";
+import { isContactConnectedMode } from "../../public/contacts";
 import React from "react";
 import { RelationshipWorkspace, relationshipWorkspaceLabel } from "@/components/crm/relationship-detail";
 import { useI18n } from "@/i18n";
@@ -69,6 +71,9 @@ export function ContactDetailTabContent(props: ContactDetailTabContentProps) {
     if (props.activeTab === "service" && requested === "support") setServiceView("support");
     if (props.activeTab === "work" && ["tasks", "activities", "history"].includes(requested)) setWorkView(requested === "history" ? "activities" : requested as WorkView);
   }, [props.activeTab, props.requestedSubTab]);
+
+  if (isContactConnectedMode() && (props.activeTab === "sales" || props.activeTab === "transactions" || props.activeTab === "service"))
+    return <ConnectedRelationshipRecords subject={{ type: "CONTACT", id: props.relationships.contact.id }} section={props.activeTab} source={{ type: "CONTACT", id: props.relationships.contact.id, label: props.relationships.contact.fullName || props.relationships.contact.name, archived: props.relationships.contact.status === "archived" }}/>;
 
   let content: React.ReactNode;
   switch (props.activeTab) {

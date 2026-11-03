@@ -14,7 +14,7 @@ import { getContactSnapshot } from "@/modules/contacts";
 import { resolveCustomerRelationshipContextSnapshot } from "@/modules/customers";
 import { getOrganizationAccountSnapshot } from "@/modules/organizations";
 import { relationshipRefKey } from "@/platform/identity";
-import { useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
+import { useWorkspaceOperationalConfiguration, useWorkspaceRuntimeSettings } from "@/platform/workspace-config";
 import { useSubscribableSnapshot } from "@/platform/react";
 import { createDurableId } from "@/shared/ids";
 import { addMoney, formatMoneyDto, money, multiplyMoney, percentageOfMoney, subtractMoney, sumMoney, type MoneyDto } from "@/shared/money";
@@ -137,6 +137,7 @@ export const InvoiceFormPage: React.FC = () => {
   const { locale } = useI18n();
   const { activeWorkspace } = usePlatformState();
   const configuration = useWorkspaceOperationalConfiguration();
+  const runtimeSettings = useWorkspaceRuntimeSettings();
   const invoiceSettings = useSubscribableSnapshot(getInvoiceSellerInformation, subscribeToInvoiceConfiguration);
   const invoiceAddress = configuration.addresses.find((address) => address.id === invoiceSettings.invoiceAddressId);
   const text = (vi: string, en: string) => locale === "vi" ? vi : en;
@@ -173,7 +174,7 @@ export const InvoiceFormPage: React.FC = () => {
   const [sourceOrderId, setSourceOrderId] = useState(searchParams.get("orderId") ?? "");
   const sourceOrder = getOrderSnapshot(sourceOrderId);
   const sourceBuyer = useMemo(() => buyerLegalSnapshot(sourceOrder), [sourceOrder]);
-  const currency = existing?.currency ?? sourceOrder?.currency ?? invoiceSettings.defaultCurrency ?? configuration.localeRegion.currencies.baseCurrency;
+  const currency = existing?.currency ?? sourceOrder?.currency ?? invoiceSettings.defaultCurrency ?? runtimeSettings.baseCurrency;
   const [seller, setSeller] = useState<LegalPartySnapshot>(() => ({
     displayName: invoiceSettings.sellerName || configuration.businessInformation.displayName,
     legalName: invoiceSettings.sellerName || configuration.businessInformation.legalName,
@@ -363,7 +364,7 @@ export const InvoiceFormPage: React.FC = () => {
 
 
   if (invoiceId && invoiceQuery.loading && !invoiceQuery.data) {
-    return <ModulePageShell><Card className="p-8 text-center text-sm text-slate-600"><p>{text("Đang tải hóa đơn authoritative...", "Loading the authoritative invoice...")}</p><Button className="mt-4" variant="secondary" onClick={invoiceQuery.cancel}>{text("Hủy tải", "Cancel loading")}</Button></Card></ModulePageShell>;
+    return <ModulePageShell><Card className="p-8 text-center text-sm text-slate-600"><p>{text("Đang tải hóa đơn...", "Loading invoice...")}</p><Button className="mt-4" variant="secondary" onClick={invoiceQuery.cancel}>{text("Hủy tải", "Cancel loading")}</Button></Card></ModulePageShell>;
   }
 
   if (invoiceId && invoiceQuery.state === "ERROR" && !invoiceQuery.data) {

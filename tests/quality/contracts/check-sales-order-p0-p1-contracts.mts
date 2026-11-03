@@ -78,7 +78,7 @@ await authority.execute(
   { idempotencyKey: "quote-accept-1", expectedVersion: 3, correlationId: "client-correlation-hint" },
 );
 await authority.execute(
-  { commandType: "order.confirm-with-payment-plan", aggregateType: "order", aggregateId: "order-1", payload: { orderId: "order-1", paymentAccountId: "account-1", actorId: "frontend-actor-must-not-leak" } },
+  { commandType: "order.confirm-with-payment-plan", aggregateType: "order", aggregateId: "order-1", payload: { orderId: "order-1", paymentPlanId: "plan-1", expectedPaymentPlanVersion: 1, paymentAccountId: "account-1", actorId: "frontend-actor-must-not-leak" } },
   { idempotencyKey: "order-confirm-1", expectedVersion: 3 },
 );
 await authority.execute(
@@ -92,7 +92,7 @@ assert.deepEqual(calls.map((call) => call.path), [
 ]);
 assert.deepEqual(calls.map((call) => call.body), [
   {},
-  { paymentAccountId: "account-1" },
+  { paymentAccountId: "account-1", paymentPlanId: "plan-1", expectedPaymentPlanVersion: 1 },
   { reasonCode: "CUSTOMER_REQUEST", reason: "Customer request" },
 ], "Connected request projection must omit frontend timestamps, actors and audit-like fields.");
 const callsBeforeBlockedCommand = calls.length;

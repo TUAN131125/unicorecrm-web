@@ -55,7 +55,8 @@ for (const [file, resource] of [
 ] as const) {
   const source = read(file);
   assert.match(source, new RegExp(`resourceKey: "${resource}"`));
-  assert.match(source, /label: locale === "vi" \? "Xem lịch sử kiểm toán"/);
+  assert.match(source, /label: (?:locale === "vi"|vi) \? "Xem lịch sử kiểm toán"/);
+  if (/label: vi \?/.test(source)) assert.match(source, /const vi = locale === "vi"/);
 }
 const appShell = read("src/app/shell/layout/AppShell.tsx");
 assert.doesNotMatch(appShell, /<GlobalAuditTrailHost/);

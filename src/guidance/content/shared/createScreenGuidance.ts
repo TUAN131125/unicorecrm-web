@@ -19,13 +19,13 @@ export type ScreenGuidanceConfig = {
   reviewedAt?: string;
 };
 
-const reviewedAt = "2026-07-24";
+const reviewedAt = "2026-11-01";
 const owner = "Product Enablement";
 
 const audienceBySpace: Record<CanonicalProductSpace, GuidanceLocaleText> = {
   crm: {
-    vi: "Người dùng CRM có quyền truy cập màn hình và dữ liệu liên quan.",
-    en: "CRM users with access to the screen and related records.",
+    vi: "Nhân viên kinh doanh và chăm sóc khách hàng.",
+    en: "Sales and customer service teams.",
   },
   studio: {
     vi: "Quản trị viên hoặc người phụ trách cấu hình workspace.",
@@ -60,8 +60,8 @@ const navigationBodyBySpace: Record<CanonicalProductSpace, GuidanceLocaleText> =
 
 const defaultPrerequisites: GuidanceLocaleText[] = [
   {
-    vi: "Bạn cần quyền truy cập màn hình và phạm vi dữ liệu phù hợp.",
-    en: "You need access to the screen and an appropriate data scope.",
+    vi: "Chọn đúng không gian làm việc trước khi bắt đầu.",
+    en: "Select the appropriate workspace before starting.",
   },
 ];
 
@@ -163,7 +163,7 @@ function createDetailedWalkthrough(screen: ScreenGuidance, customSteps: readonly
 export function createScreenGuidance(config: ScreenGuidanceConfig): ScreenGuidance {
   const screen: ScreenGuidance = {
     ...config,
-    version: config.version ?? 1,
+    version: config.version ?? 2,
     audience: config.audience ?? audienceBySpace[config.productSpace],
     prerequisites: config.prerequisites ?? defaultPrerequisites,
     commonMistakes: config.commonMistakes ?? defaultMistakes,

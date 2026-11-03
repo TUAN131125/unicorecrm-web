@@ -1,3 +1,4 @@
+import { withAccessGovernanceFixture } from "../../fixtures/accessGovernanceFixture.mts";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { JSDOM } from "jsdom";
@@ -578,7 +579,7 @@ const { configureAccessGovernanceRuntime, getAccessGovernanceRuntimeBinding } = 
 const governance = getAccessGovernanceRuntimeBinding();
 let ownScope = true;
 let leadOwnerWritable = true;
-configureAccessGovernanceRuntime({ ...governance, getEffectiveAccess(id) {
+configureAccessGovernanceRuntime(withAccessGovernanceFixture(governance, { getEffectiveAccess(id) {
   const access = governance.getEffectiveAccess(id);
   return access ? { ...access, getFieldAccess(resource, field) {
     return resource === "leads" && field === "ownerId" && !leadOwnerWritable ? "READ_ONLY" : access.getFieldAccess(resource, field);
@@ -586,7 +587,7 @@ configureAccessGovernanceRuntime({ ...governance, getEffectiveAccess(id) {
     const owned = record as { id?: string; ownerId?: string; assigneeId?: string };
     return (!ownScope || !owned.id || (resource === "leads" ? owned.ownerId : owned.assigneeId) === ownerContext.memberId) && access.canAccessRecord(resource, record);
   } } : undefined;
-} });
+} }));
 const { createWorkspaceScopedRepository } = await import("@/platform/workspace-scope/createWorkspaceScopedRepository");
 const scopedLeadRepository = createWorkspaceScopedRepository({ resourceKey: "leads", createRepository: () => repository });
 const demo = createLeadDemoApiRuntime(scopedLeadRepository);
@@ -674,14 +675,14 @@ assert.equal(getRoleTemplate("sales-representative")?.capabilities.includes(CAPA
 let deniedCapability = "";
 let deniedLeadScope = false;
 let deniedTaskId = "";
-configureAccessGovernanceRuntime({ ...governance, getEffectiveAccess(workspaceId) {
+configureAccessGovernanceRuntime(withAccessGovernanceFixture(governance, { getEffectiveAccess(workspaceId) {
   const access = governance.getEffectiveAccess(workspaceId);
   return access ? { ...access,
     can: capability => capability !== deniedCapability && access.can(capability),
     canAccessRecord: (resource, record) => !(deniedLeadScope && resource === "leads")
       && !(resource === "tasks" && deniedTaskId === (record as { id?: string }).id) && access.canAccessRecord(resource, record),
   } : undefined;
-} });
+} }));
 config.updateWorkspaceConfig(value => ({ ...value, workflow: { ...value.workflow, handoverAcceptanceSlaHours: 12 } }));
 deniedCapability = CAPABILITIES.TASKS_CREATE;
 await assert.rejects(() => demo.commands.handoverLeadWithTasks(document.id, demoInput, options));
@@ -745,15 +746,22 @@ tasks.replaceTaskActivitySnapshot({ tasks: [], activities: [] });
 const actorDemo = createLeadDemoApiRuntime(repository);
 const actorFirst = await actorDemo.commands.handoverLeadWithTasks(document.id,
   { nextOwnerId: "u2", reason: "First actor" }, { expectedVersion: 20, idempotencyKey: "same-cross-actor-key" });
+assert.ok(tasks.getTaskSnapshot(actorFirst.handoverTaskId), "First actor's committed takeover must exist before account switch");
 assert.equal(signIn({ email: "sales.manager@unicorecrm.local", password: "welcome123" }).ok, true);
-configureAccessGovernanceRuntime({ ...governance, getEffectiveAccess: () => admittedActorAccess });
+assert.equal(getWorkspaceContextSnapshot().workspaceId, workspaceId, "Actor-scoped replay fixture must stay in the same Workspace");
+configureAccessGovernanceRuntime(withAccessGovernanceFixture(governance, { getEffectiveAccess: () => admittedActorAccess }));
 assert.equal(getRecordOwnershipContext("leads", CAPABILITIES.LEADS_ASSIGN)?.memberId, "u2");
 const actorSecond = await actorDemo.commands.handoverLeadWithTasks(document.id,
   { nextOwnerId: ownerContext.memberId, reason: "Second actor" }, { expectedVersion: 21, idempotencyKey: "same-cross-actor-key" });
 assert.notEqual(actorSecond.handoverTaskId, actorFirst.handoverTaskId);
-assert.equal(tasks.getRetainedTaskActivitySnapshot().tasks.filter(task => task.sourceRef?.type === "LEAD_HANDOVER").length, 2);
 assert.equal(signIn({ email: "admin@unicorecrm.local", password: "admin123" }).ok, true);
 configureAccessGovernanceRuntime(governance);
+// The public snapshot is authorization-projected. Count durable outcomes under
+// the original Workspace-wide reader, not the second actor's restricted view.
+await loadAccessGovernance(workspaceId);
+assert.ok(tasks.getTaskSnapshot(actorFirst.handoverTaskId));
+assert.ok(tasks.getTaskSnapshot(actorSecond.handoverTaskId));
+assert.equal(tasks.getRetainedTaskActivitySnapshot().tasks.filter(task => task.sourceRef?.type === "LEAD_HANDOVER").length, 2);
 records = actorLeadsBefore;
 tasks.replaceTaskActivitySnapshot(actorTasksBefore);
 

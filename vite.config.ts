@@ -38,6 +38,7 @@ export default defineConfig(() => {
             if (id.includes('/src/platform/api/generated/')) return 'api-generated';
             if (id.includes('/src/i18n/translations/') || id.includes('/src/i18n/legacyUiCopy')) return 'product-language';
             if (id.includes('/src/guidance/content/studio/')) return 'studio-guidance';
+            if (id.includes('/src/guidance/content/fields/')) return 'field-guidance';
             if (id.includes('/src/guidance/')) return 'product-guidance';
           },
         },

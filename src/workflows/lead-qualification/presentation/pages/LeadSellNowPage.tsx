@@ -14,7 +14,7 @@ import {
   type SelectedPickerItem,
 } from "@/modules/products";
 import { useEffectiveAccess } from "@/platform/access-control";
-import { useWorkspaceConfigSnapshot, useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
+import { useWorkspaceConfigSnapshot, useWorkspaceRuntimeSettings } from "@/platform/workspace-config";
 import { useI18n } from "@/i18n";
 import { formatVnd } from "@/shared/lib/format/currency";
 import { formatApplicationError } from "@/shared/operations";
@@ -58,7 +58,7 @@ export const LeadSellNowPage: React.FC = () => {
   const { locale } = useI18n();
   const vi = locale === "vi";
   const crmConfig = useWorkspaceConfigSnapshot();
-  const operationalConfiguration = useWorkspaceOperationalConfiguration();
+  const operationalConfiguration = useWorkspaceRuntimeSettings();
   const access = useEffectiveAccess();
   const lifecycle = useTargetBoundWorkflow(leadId, "Lead direct sale");
   const [lead, setLead] = useState<Lead | undefined>(() => lifecycle.targetId ? getLeadSnapshot(lifecycle.targetId) : undefined);
@@ -127,7 +127,7 @@ export const LeadSellNowPage: React.FC = () => {
         quoteEnabled,
         orderEnabled,
         actorCanSellNow,
-        currency: operationalConfiguration.localeRegion.currencies.baseCurrency,
+        currency: operationalConfiguration.baseCurrency,
         title,
         ownerId: lead.ownerId,
         lineItems: selectedItems.map((item) => ({

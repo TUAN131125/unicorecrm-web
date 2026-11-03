@@ -45,11 +45,11 @@ export function backendUnavailableMessage(options: OperationUnavailableOptions =
   const action = options.action?.trim();
   if (vietnamese) {
     return action
-      ? `${action} chưa khả dụng: hệ thống máy chủ chưa hỗ trợ thao tác này. Dữ liệu của bạn chưa được thay đổi.`
+      ? `${action} chưa khả dụng. Dữ liệu của bạn chưa được thay đổi.`
       : unavailableMessages.vi;
   }
   return action
-    ? `${action} is not available yet: server support for this action has not been released. Nothing was changed.`
+    ? `${action} is not available yet. Nothing was changed.`
     : unavailableMessages.en;
 }
 

@@ -21,18 +21,20 @@ export function useCustomerPanelData(customerId: string, historyOpen: boolean, v
   // Authorization context emits canonical lowercase keys, unlike record evaluation,
   // which returns the caller's requested casing. Match the actual context vocabulary.
   const fieldAccess = (field: string) => access.getFieldAccess("tasks", field.toLowerCase());
-  const tasksEnabled = readable && visible && taskFields.every(field => {
+  const tasksSupported = taskFields.every(field => {
     const permission = fieldAccess(field);
     return permission === "READ_WRITE" || permission === "READ_ONLY";
   });
+  const tasksEnabled = readable && visible && tasksSupported;
   const historySupported = access.getDataScope("tasks") === "WORKSPACE"
     && activityFields.every(field => fieldAccess(field) === "READ_WRITE");
   const historyEnabled = readable && visible && historyOpen && historySupported;
   const tasks = useAuthoritativeResource(taskEntry.resource, { enabled: tasksEnabled });
   const history = useAuthoritativeResource(historyEntry.resource, { enabled: historyEnabled });
   useEffect(() => () => { taskEntry.reset(); historyEntry.reset(); }, [taskEntry, historyEntry]);
-  useEffect(() => { if (!tasksEnabled) taskEntry.reset(); }, [tasksEnabled, taskEntry]);
-  useEffect(() => { if (!historyEnabled) historyEntry.reset(); }, [historyEnabled, historyEntry]);
+  // Mode/surface switches share cached pages; revoked authority must discard them.
+  useEffect(() => { if (!readable || !tasksSupported) taskEntry.reset(); }, [readable, tasksSupported, taskEntry]);
+  useEffect(() => { if (!readable || !historySupported) historyEntry.reset(); }, [readable, historySupported, historyEntry]);
   return { readable, tasksEnabled, historySupported, tasks, history, taskEntry, historyEntry,
     taskItems: tasksEnabled && !tasks.loading && !tasks.error ? tasks.data?.items ?? [] : [],
     historyItems: historyEnabled && !history.loading && !history.error ? history.data?.items ?? [] : [] };

@@ -18,6 +18,7 @@ export type ModalVariant = "auto" | "standard" | "form";
 export interface ModalProps {
   id?: string;
   containPopovers?: boolean;
+  portalToRoot?: boolean;
   isOpen: boolean;
   onClose: () => void;
   title?: React.ReactNode;
@@ -47,6 +48,7 @@ function containsNativeForm(node: React.ReactNode): boolean {
 export const Modal: React.FC<ModalProps> = ({
   id,
   containPopovers = false,
+  portalToRoot = false,
   isOpen,
   onClose,
   title,
@@ -63,7 +65,8 @@ export const Modal: React.FC<ModalProps> = ({
   footerClassName,
   zIndexClass = "z-[9000]",
 }) => {
-  const portalHost = React.useContext(OverlayPortalHostContext);
+  const inheritedPortalHost = React.useContext(OverlayPortalHostContext);
+  const portalHost = portalToRoot ? null : inheritedPortalHost;
   const parentLayer = useOverlayLayer();
   const { locale, t } = useI18n();
   const titleId = React.useId();

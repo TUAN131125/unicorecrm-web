@@ -24,8 +24,8 @@ const SupportCaseDetailContent: React.FC = () => {
     <AuthoritativeQueryBoundary
       query={detailQuery}
       hasData={cases.some((item) => item.id === recordId)}
-      loadingTitleVi="Đang tải phiếu hỗ trợ từ backend"
-      loadingTitleEn="Loading support ticket from backend"
+      loadingTitleVi="Đang tải phiếu hỗ trợ"
+      loadingTitleEn="Loading support ticket"
       errorTitleVi="Không thể tải phiếu hỗ trợ"
       errorTitleEn="Support ticket could not be loaded"
     >

@@ -1,4 +1,5 @@
 export * from "./deals";
+export * from "./dealPipelines";
 
 export { saveDeal, updateDeal, updateManyDeals, archiveDeal, archiveDeals } from "../application/commands/dealRepositoryCommands";
 
@@ -77,5 +78,8 @@ export {
 } from "../application/vertical-slice/dealAuthoritativeQueries";
 
 export { DealInterestedProductsPicker } from "../presentation/components/DealInterestedProductsPicker";
+export { BuyerDealForm } from "../presentation/components/BuyerDealForm";
 export { getDealSelectionAuthority, useDealSelectionAuthority, useDealSelectionQueries } from "../presentation/hooks/useDealSelectionQueries";
 export { verifyDealProductSelection } from "../presentation/hooks/useDealProductSelection";
+
+export { useDealStages } from "../presentation/hooks/useDealStages";

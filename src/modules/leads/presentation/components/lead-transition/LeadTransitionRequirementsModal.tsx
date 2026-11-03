@@ -5,7 +5,7 @@ import { Button, Modal } from "@/shared/components/ui";
 import type { Lead } from "../../../domain/model/lead.types";
 import type { LeadProfileField } from "../../../domain/rules/leadProgressiveProfile";
 import { useI18n } from "@/i18n";
-import { useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
+import { useWorkspaceRuntimeSettings } from "@/platform/workspace-config";
 import {
   dateTimeLocalValueToIso,
   normalizeDateTimeInputValue,
@@ -39,8 +39,8 @@ export const LeadTransitionRequirementsModal: React.FC<LeadTransitionRequirement
   onPendingChange,
 }) => {
   const { locale } = useI18n();
-  const configuration = useWorkspaceOperationalConfiguration();
-  const workspaceTimeZone = configuration.localeRegion.timezone;
+  const configuration = useWorkspaceRuntimeSettings();
+  const workspaceTimeZone = configuration.timeZone;
   const formId = "lead-transition-requirements-form";
   const [values, setValues] = React.useState<LeadTransitionProfileInput>({});
   const [errors, setErrors] = React.useState<Partial<Record<LeadProfileField, string>>>({});

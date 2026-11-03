@@ -1,5 +1,5 @@
 import type { AuthoritativePage, ModuleListQuery } from "@/shared/application";
-import type { Activity, ActivityType, RecordRef, Task, TaskPriority, TaskSourceRef } from "../../domain/model/task.types";
+import type { Activity, ActivityType, ManualActivityType, RecordRef, Task, TaskPriority, TaskSourceRef } from "../../domain/model/task.types";
 import type { RelationshipRef } from "@/platform/identity";
 
 export type TaskApiRuntimeMode = "demo" | "connected" | "test";
@@ -50,7 +50,7 @@ export interface ArchiveTaskInput { reason: string; }
 export interface LogActivityInput {
   /** Demo recording date; the connected contract currently owns its server timestamp. */
   occurredAt?: string;
-  type: ActivityType;
+  type: ManualActivityType;
   subject: string;
   body?: string;
   relationshipRef?: RelationshipRef;

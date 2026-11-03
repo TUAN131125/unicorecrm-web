@@ -1,5 +1,5 @@
 import React from "react";
-import { Download, RefreshCw, ShieldAlert, ShieldCheck, Workflow } from "lucide-react";
+import { Download, RefreshCw, ShieldCheck, Workflow } from "lucide-react";
 import { Badge, Button, Card, Input, Select } from "@/shared/components/ui";
 import { ListStatePanel } from "@/components/crm/list-archetype";
 import { useI18n } from "@/i18n";
@@ -64,7 +64,7 @@ export const AuditTrailViewer: React.FC<AuditTrailViewerProps> = ({ resourceKey,
       {!audit.loading && !audit.error && items.length === 0 ? <ListStatePanel kind="empty" title={vi ? "Chưa có sự kiện kiểm toán phù hợp" : "No matching audit events"} /> : null}
 
       <div className="space-y-3">
-        {items.map((entry) => <AuditEntryCard key={entry.id} entry={entry} locale={locale} />)}
+        {items.map((entry) => <AuditEntryCard key={entry.id} entry={entry} locale={locale} diagnostics={!embedded && access.can(CAPABILITIES.ACCESS_READ)} />)}
       </div>
 
       {audit.data?.nextCursor ? <div className="flex justify-center"><Button variant="secondary" loading={audit.loadingMore} onClick={() => void audit.loadMore()}>{vi ? "Tải thêm" : "Load more"}</Button></div> : null}
@@ -75,42 +75,40 @@ export const AuditTrailViewer: React.FC<AuditTrailViewerProps> = ({ resourceKey,
   return <Card className="space-y-4"><div className="flex items-center gap-2"><ShieldCheck size={17} className="text-violet-700" /><h2 className="text-sm font-semibold text-slate-950">{title ?? (vi ? "Nhật ký kiểm toán" : "Audit trail")}</h2></div>{body}</Card>;
 };
 
-const AuditEntryCard: React.FC<{ entry: AuditTrailEntry; locale: "vi" | "en" }> = ({ entry, locale }) => {
+const AuditEntryCard: React.FC<{ entry: AuditTrailEntry; locale: "vi" | "en"; diagnostics: boolean }> = ({ entry, locale, diagnostics }) => {
   const vi = locale === "vi";
   const evidence = entry.evidence ? Object.entries(entry.evidence).filter(([, value]) => Boolean(value)) : [];
   return <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm" data-audit-event-id={entry.id}>
     <div className="flex flex-wrap items-start justify-between gap-3">
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant={outcomeVariant(entry.outcome)}>{entry.outcome}</Badge>
-          <Badge variant="neutral">{entry.category}</Badge>
-          <span className="break-words text-sm font-semibold text-slate-950">{entry.action}</span>
+          <Badge variant={outcomeVariant(entry.outcome)}>{({ SUCCEEDED: vi ? "Thành công" : "Succeeded", FAILED: vi ? "Thất bại" : "Failed", DENIED: vi ? "Đã từ chối" : "Denied", PENDING: vi ? "Đang xử lý" : "Pending" })[entry.outcome]}</Badge>
+          {diagnostics && <Badge variant="neutral">{entry.category}</Badge>}
+          <span className="break-words text-sm font-semibold text-slate-950">{diagnostics ? entry.action : (entry.summary || (vi ? "Hoạt động" : "Activity"))}</span>
         </div>
-        {entry.summary ? <p className="mt-2 break-words text-sm leading-6 text-slate-600">{entry.summary}</p> : null}
+        {diagnostics && entry.summary ? <p className="mt-2 break-words text-sm leading-6 text-slate-600">{entry.summary}</p> : null}
       </div>
       <div className="text-right text-[11px] leading-5 text-slate-500">
         <div>{new Date(entry.occurredAt).toLocaleString(locale === "vi" ? "vi-VN" : "en-US")}</div>
-        <div>{entry.actor.displayName ?? entry.actor.id} · {entry.actor.type}</div>
+        <div>{entry.actor.displayName ?? (vi ? "Thành viên" : "Member")}</div>
       </div>
     </div>
 
-    <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
+    {diagnostics && <div className="mt-3 flex flex-wrap gap-2 text-[11px]">
       {entry.changedFields.map((field) => <span key={field} className="rounded-full bg-violet-50 px-2.5 py-1 font-medium text-violet-700">{field}</span>)}
-      {entry.reasonCode ? <span className="rounded-full bg-amber-50 px-2.5 py-1 font-medium text-amber-800">{entry.reasonCode}</span> : null}
-    </div>
+      {diagnostics && entry.reasonCode ? <span className="rounded-full bg-amber-50 px-2.5 py-1 font-medium text-amber-800">{entry.reasonCode}</span> : null}
+    </div>}
 
-    <div className="mt-3 grid gap-2 text-[11px] text-slate-500 md:grid-cols-2">
+    {diagnostics && <div className="mt-3 grid gap-2 text-[11px] text-slate-500 md:grid-cols-2">
       {entry.requestId ? <AuditMeta label="Request" value={entry.requestId} /> : null}
       {entry.correlationId ? <AuditMeta label="Correlation" value={entry.correlationId} /> : null}
       {entry.causationId ? <AuditMeta label="Causation" value={entry.causationId} /> : null}
       <AuditMeta label={vi ? "Nguồn" : "Source"} value={entry.source} />
-    </div>
+    </div>}
 
-    {evidence.length ? <div className="mt-3 rounded-xl border border-sky-100 bg-sky-50/70 p-3"><div className="mb-2 flex items-center gap-2 text-xs font-semibold text-sky-900"><Workflow size={14} />{vi ? "Bằng chứng liên quan" : "Related evidence"}</div>{evidence.map(([key, value]) => <AuditMeta key={key} label={evidenceLabel(key as keyof AuditEvidence, vi)} value={String(value)} />)}</div> : null}
+    {diagnostics && evidence.length ? <div className="mt-3 rounded-xl border border-sky-100 bg-sky-50/70 p-3"><div className="mb-2 flex items-center gap-2 text-xs font-semibold text-sky-900"><Workflow size={14} />{vi ? "Bằng chứng liên quan" : "Related evidence"}</div>{evidence.map(([key, value]) => <AuditMeta key={key} label={evidenceLabel(key as keyof AuditEvidence, vi)} value={String(value)} />)}</div> : null}
 
-    {entry.before !== undefined || entry.after !== undefined ? <details className="mt-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3"><summary className="cursor-pointer text-xs font-semibold text-slate-700">{vi ? "Xem thay đổi trước/sau" : "View before/after diff"}</summary><div className="mt-3 grid gap-3 lg:grid-cols-2"><JsonPanel title={vi ? "Trước" : "Before"} value={entry.before} /><JsonPanel title={vi ? "Sau" : "After"} value={entry.after} /></div></details> : null}
-
-    {entry.authority === "demo" ? <div className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-[11px] leading-5 text-amber-900"><ShieldAlert size={14} className="mt-0.5 shrink-0" />{vi ? "Đây là bằng chứng Demo Mode trong trình duyệt, không thay thế kho audit bất biến của backend." : "This is browser-level Demo Mode evidence and does not replace an immutable backend audit sink."}</div> : null}
+    {diagnostics && (entry.before !== undefined || entry.after !== undefined) ? <details className="mt-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3"><summary className="cursor-pointer text-xs font-semibold text-slate-700">{vi ? "Xem thay đổi trước/sau" : "View before/after diff"}</summary><div className="mt-3 grid gap-3 lg:grid-cols-2"><JsonPanel title={vi ? "Trước" : "Before"} value={entry.before} /><JsonPanel title={vi ? "Sau" : "After"} value={entry.after} /></div></details> : null}
   </div>;
 };
 

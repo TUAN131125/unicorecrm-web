@@ -14,7 +14,7 @@ assert.ok(vi.includes('dateLabel: "Ngày"') && en.includes('dateLabel: "Date"'))
 assert.equal(preview.includes("Thành tiền (Gross Total)"), false);
 assert.ok(preview.includes('t("quotes.grossTotal")') && preview.includes("formatDate(validUntil, locale)"));
 assert.equal(deal.includes('t("dashboard.probability")'), false);
-assert.ok(deal.includes("formatDateTime(deal.nextActionAt, locale)"));
+assert.ok(deal.includes("formatDateTime(c.deal.nextActionAt, c.locale, { timeZone: c.timeZone })"), "Deal next-action dates must retain locale and Workspace time zone formatting");
 assert.equal(pipeline.includes(">{deal.nextActionAt}<"), false);
 
 console.log("Display formatting contracts: PASS");

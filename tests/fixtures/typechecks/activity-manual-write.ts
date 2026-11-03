@@ -1,0 +1,10 @@
+import type { LogActivityRequest, ActivityReadModel } from "../../../src/platform/api/generated/commercialApi";
+import type { LogActivityInput } from "../../../src/modules/tasks/application/ports/TaskApiRuntime";
+import type { Activity } from "../../../src/modules/tasks/domain/model/task.types";
+type Assert<T extends true> = T;
+export type ManualWriteRejectsSystem = Assert<"SYSTEM" extends LogActivityRequest["type"] ? false : true>;
+export type ManualWriteRejectsUnknown = Assert<"UNKNOWN" extends LogActivityRequest["type"] ? false : true>;
+export type ManualWriteAcceptsCall = Assert<"CALL" extends LogActivityRequest["type"] ? true : false>;
+export type ReadRetainsSystem = Assert<"SYSTEM" extends ActivityReadModel["type"] ? true : false>;
+export type RuntimePortRejectsSystem = Assert<"SYSTEM" extends LogActivityInput["type"] ? false : true>;
+export type DomainReadRetainsSystem = Assert<"SYSTEM" extends Activity["type"] ? true : false>;

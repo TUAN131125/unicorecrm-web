@@ -2,9 +2,17 @@ import { assertMutationCommandSupported, isBusinessOperationUnavailable, createM
 import { buildReceivables, getInvoiceById, queryInvoices } from "../application/queries/invoiceQueries";
 import { getInvoiceableOrderLines } from "../application/queries/invoiceableOrderLines";
 import { getOrderSnapshot } from "@/modules/orders";
-import { invoiceApi, invoiceConfiguration, invoiceRepository, invoiceVerticalSlice } from "../application/composition/invoiceApplicationServices";
+import { invoiceApi, invoiceConfiguration, invoiceRepository, invoiceVerticalSlice, receivablesApi } from "../application/composition/invoiceApplicationServices";
 import { allocatePaymentToInvoicesSnapshot, getPaymentsSnapshot } from "@/modules/payments";
 import type { MoneyDto } from "@/shared/money";
+import { ApplicationError } from "@/shared/domain";
+/** Existing authorized owner list, without projecting it into shared browser snapshots. */
+export function readInvoiceListAuthoritative(signal?: AbortSignal) { return invoiceApi.list(signal); }
+export function readBuyerReceivablesAuthoritative(buyerRef: import("@/platform/identity").BuyerRef, signal?: AbortSignal) {
+  const api = receivablesApi();
+  if (!api) throw new ApplicationError({ code: "RECEIVABLES_OWNER_READ_UNAVAILABLE", category: "INFRASTRUCTURE", message: "Receivables owner read adapter is unavailable" });
+  return api.accountStatement(buyerRef, signal);
+}
 
 export type {
   CreditNote,

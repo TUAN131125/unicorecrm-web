@@ -1,0 +1,13 @@
+# Workspace pipeline selection
+
+Studio's Workspace default controls the pipeline of a new Deal. The Deal page displays that default as read-only context. A `pipeline` URL parameter does not select a pipeline and is removed on entry. Connected creation and duplication omit `pipelineId`; the existing Backend create command resolves the current Workspace default. Explicit pipeline IDs remain supported by the existing Backend contract for compatible callers.
+
+An existing Deal retains its assigned `pipelineId`. Deal Detail already resolves stages through that assignment. The Deal table requests the full authorized collection across pipeline assignments and displays the assigned pipeline and stage label for each row. No Deal or configuration migration is performed.
+
+Kanban retains bounded, independently paged stage windows for the default pipeline. Other assigned pipelines appear in separate read-only boards, including inactive pipeline definitions and inactive stages. Opening a historical card navigates to Deal Detail. Each historical board requests its exact pipeline ID and stage codes and holds its own response and cursors without replacing the shared Deal projection. Search and owner selection apply to these boards; the default board's stage, date and amount filters do not reinterpret historical stages. Record scope remains enforced by Backend; the current presentation ownership selection is applied to returned cards.
+
+The Backend `ListDeals` query accepts `pipelineId` and `stageCode` independently of the current default or pipeline active state. Its owner persistence filters by the trusted Workspace, record scope and exact pipeline/stage. It does not exclude archived Deals. Registry rules preserve stage definitions that have assigned Deals. Unknown or unavailable pipeline definitions remain discoverable in the unfiltered table; they are not mapped to default stages.
+
+Focused verification: `npx tsx tests/contract/deal-workspace-pipeline-selection.test.mts` exercises two historical pipeline windows sharing a stage code and proves their rows and load-more cursors remain isolated without accessing a shared Deal repository. `quality.deal-stage-window-query` protects bounded default Kanban loading and all-pipeline table reads. Task-entry snapshots and hashes are under Backend verification evidence `workspace-pipeline-selection/task-entry`.
+
+The existing table collection reader has an explicit 5,000-row safety cap and fails visibly if exceeded. Historical board fan-out is bounded per stage but grows with the number of configured pipelines. These are existing/operational limits, not a claim of large-workspace load acceptance.

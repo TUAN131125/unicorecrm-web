@@ -4,13 +4,17 @@ import type { CustomerOrder } from "../domain/model/order.types";
 import { OrderState } from "../domain/model/order.types";
 import type { OrderStateDefinition } from "../domain/rules/orderLifecycle";
 import type { OrderCollection } from "../application/ports/OrderRepository";
-import type { DirectOrderDraftAuthorityResult, OrderMutationEvidence } from "../application/ports/OrderApiRuntime";
+import type { DirectOrderDraftAuthorityResult, OrderMutationEvidence, OrderListQuery } from "../application/ports/OrderApiRuntime";
 import { archiveOrder, archiveOrders, updateOrderCollection, type OrderCollectionUpdater, saveOrder } from "../application/commands/orderRepositoryCommands";
 import { cancelOrderCommand, completeOrderCommand, confirmOrderCommand, recordOrderDelivery, transitionOrderState } from "../application/commands/orderCommands";
 import { getOrderApiRuntime, isOrderConnectedApiRuntime, orderPreferences, orderRepository } from "../application/composition/orderApplicationServices";
 
 export function getOrdersSnapshot(): OrderCollection { return orderRepository.snapshot(); }
 export function getOrderListSnapshot(): CustomerOrder[] { return orderRepository.list(); }
+/** Fresh, Workspace-scoped owner read. No cached fallback on denied or failed requests. */
+export function readOrderById(orderId: string, signal?: AbortSignal): Promise<CustomerOrder> { return getOrderApiRuntime().queries.get(orderId, signal); }
+/** Scoped owner query for connected relationship views; never falls back to snapshots. */
+export function readOrderPage(query: OrderListQuery, signal?: AbortSignal) { return getOrderApiRuntime().queries.list(query, signal); }
 export function getOrderSnapshot(orderId: string): CustomerOrder | undefined { return orderRepository.getById(orderId); }
 export function replaceOrders(orders: OrderCollection): void { orderRepository.replace(orders); }
 export function replaceOrderList(orders: readonly CustomerOrder[]): void { const next: OrderCollection = {}; for (const order of orders) { const key = relationshipRefKey(order.buyerRef); next[key] = [...(next[key] ?? []), structuredClone(order)]; } orderRepository.replace(next); }

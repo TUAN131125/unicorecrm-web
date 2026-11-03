@@ -44,8 +44,9 @@ assert.equal(decision.fieldAccess.workEmail, "HIDDEN");
 assert.equal(decision.fieldAccess.personalEmail, "READ_ONLY");
 assert.equal(Object.values(decision.fieldAccess).filter((value) => value !== "READ_WRITE").length, 2);
 
-// Guard the existing generic notice semantics; do not implement backend policy here.
+// Permission feedback is silent for readable records; actual decisions and denied states remain.
 const boundary = fs.readFileSync(path.join(repositoryRoot, "src/platform/access-control/react/EffectiveRecordAccessBoundary.tsx"), "utf8");
-assert.match(boundary, /Object\.values\(access\.data\.fieldAccess\)\.filter\(\(value\) => value !== "READ_WRITE"\)\.length/u);
-assert.match(boundary, /showNotice && \(readOnly \|\| restrictedFields > 0\)/u);
-console.log("Contact effective-field profile: PASS (profile, HTTP transport, response preservation and generic notice guards).");
+assert.match(boundary, /if \(!access\.data\.canRead \|\| commandDenied\)/u);
+assert.doesNotMatch(boundary, /showNotice|restrictedFields|Some fields are restricted|read-only access to this record/u);
+assert.match(boundary, /EffectiveRecordAccessContext\.Provider value=\{access\.data\}/u);
+console.log("Contact effective-field profile: PASS (profile, HTTP transport, response preservation and silent permission presentation with preserved decisions).");

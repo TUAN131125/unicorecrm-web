@@ -50,10 +50,11 @@ for (const status of [
 ]) {
   assert.ok(panel.includes(status), `Provider health UI must cover ${status}.`);
 }
-assert.match(panel, /data-external-authority-access="BLOCKED"/);
-assert.match(panel, /Open Integration Center/);
-assert.match(panel, /outstandingReconciliationCount/);
-assert.match(panel, /tokenExpiresAt/);
+assert.match(panel, /data-external-authority-access=\{health\.data\?\.accessMode \?\? "BLOCKED"\}/);
+assert.match(panel, /health\.refresh\(\)/);
+assert.match(panel, /role=\{health\.error \? "alert" : "status"\}/);
+assert.doesNotMatch(panel, /tokenExpiresAt|reasonCodes\.join|read.only|native writes|contract|backend/iu,
+  "CRM service feedback must retain failure/retry states without technical or read-only notices");
 
 const unavailableState = read("src/components/CapabilityUnavailableState.tsx");
 assert.match(unavailableState, /entry\.mode === "EXTERNAL" && <ExternalAuthorityHealthPanel/);

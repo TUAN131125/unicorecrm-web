@@ -17,6 +17,10 @@ import { migrateStoredAccessControlSnapshot } from "@/platform/access-control/ru
 import { ModuleRegistry } from "@/platform/module-registry/ModuleRegistry";
 import { mapCustomerDocument } from "@/modules/customers/infrastructure/http/CustomerApiMapper";
 import type { CustomerDocument } from "@/platform/api/generated/commercialApi";
+import { CommercialApiClient, type CustomerList } from "@/platform/api/generated/commercialApi";
+import type { HttpRequest } from "@/platform/api/client";
+import { CustomerHttpApiAdapter } from "@/modules/customers/infrastructure/http/CustomerHttpApiAdapter";
+import { buildConnectedCustomerListModel } from "@/modules/customers/presentation/model/customerConnectedListModel";
 
 const root = repositoryRoot;
 const workspaceId = "ws_customer_contract";
@@ -178,6 +182,35 @@ const authoritativeHealthDocument: CustomerDocument = {
   },
 };
 const authoritativeHealthCustomer = mapCustomerDocument(authoritativeHealthDocument);
+const listReads: HttpRequest[] = [];
+const identityPage: CustomerList = {
+  items: [authoritativeHealthDocument, { ...authoritativeHealthDocument, id: "customer_org", type: "B2B", relationshipRef: organizationRef }],
+  identities: { [authoritativeHealthDocument.id]: { displayName: "Tên Contact được phép", contactId: contactRef.id }, customer_org: { displayName: "Tên Organization được phép", organizationId: organizationRef.id } },
+  pageInfo: { hasNextPage: true, nextCursor: "opaque-cursor" },
+};
+const adapter = new CustomerHttpApiAdapter(new CommercialApiClient({
+  async request<TResponse>(input: HttpRequest): Promise<TResponse> { listReads.push(input); return identityPage as TResponse; },
+}));
+const identityResult = await adapter.list({ cursor: "previous-cursor", limit: 25 });
+assert.equal(listReads.length, 1, "Identity hydration uses one list HTTP request, never per-row 360 calls.");
+assert.equal(listReads[0]?.operationId, "listCustomers");
+assert.equal(listReads[0]?.query?.cursor, "previous-cursor");
+assert.equal(identityResult.authority, "backend");
+assert.equal(identityResult.pageInfo.totalCount, undefined, "Cursor pages must not fabricate a total count.");
+assert.equal(identityResult.pageInfo.nextCursor, "opaque-cursor");
+for (const item of identityResult.items) {
+  const model = buildConnectedCustomerListModel(item, item.listIdentity, true);
+  assert.equal(model.identity.displayName, identityPage.identities?.[item.id]?.displayName);
+  assert.equal(model.identity.primaryContact, undefined, "A Customer subject is not an inferred primary stakeholder.");
+}
+identityPage.identities = {};
+const deniedIdentity = (await adapter.list()).items[0];
+assert.ok(deniedIdentity);
+assert.equal(deniedIdentity.listIdentity, undefined);
+assert.equal(buildConnectedCustomerListModel(deniedIdentity, deniedIdentity.listIdentity, true).identity.displayName, "Chưa có tên được phép xem");
+assert.equal(buildConnectedCustomerListModel(deniedIdentity, undefined, false).identity.displayName, "Permitted name unavailable");
+delete identityPage.identities;
+assert.equal((await adapter.list()).items[0]?.listIdentity, undefined, "Older payloads fail neutral, never use code/cache as a name.");
 assert.equal(authoritativeHealthCustomer.healthAssessment?.healthBand, "UNKNOWN", "Connected Customer mapping must preserve backend UNKNOWN instead of legacy RISK.");
 assert.equal(authoritativeHealthCustomer.healthAssessment?.score, null);
 assert.equal(authoritativeHealthCustomer.healthAssessment?.confidence, "NONE");

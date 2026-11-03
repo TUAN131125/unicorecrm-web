@@ -1,5 +1,6 @@
+import { useQuoteListQuery } from "../hooks/useQuoteListQuery";
 import { saveQuoteDeliveryEvidence } from "../services/saveQuoteDeliveryEvidence";
-import { AuthoritativeQueryNotice, formatApplicationError, useServerPagedModuleCollection } from "@/shared/operations";
+import { AuthoritativeQueryNotice, formatApplicationError } from "@/shared/operations";
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { acceptQuoteAndCloseDealCommand } from "@/workflows/quote-acceptance";
@@ -7,9 +8,9 @@ import { motion, AnimatePresence } from "motion/react";
 import { AlertCircle, BarChart3, Calendar, CheckCircle2, FolderSync, Plus, RefreshCw, Tag, User } from "lucide-react";
 import type { CustomerDisplay as Customer } from "@/modules/customers";
 
-import { QuoteApprovalStatus, QuoteStatus, type Quote } from "../../domain/model/quote.types";
-import { replaceQuotes, approveQuoteCommand, duplicateQuoteCommand, createQuoteRevisionCommand, archiveQuoteCommand, archiveQuotesCommand, expireQuotesBatchCommand, requestQuoteApprovalBatchCommand, requestQuoteApprovalChangesCommand, requestQuoteApprovalCommand, transitionQuoteStatusCommand } from "../../public/quotes";
-import { CAPABILITIES, useEffectiveAccess } from "@/platform/access-control";
+import { QuoteStatus, type Quote } from "../../domain/model/quote.types";
+import { isQuoteConnectedMode, duplicateQuoteCommand, createQuoteRevisionCommand, archiveQuoteCommand, archiveQuotesCommand, expireQuotesBatchCommand, transitionQuoteStatusCommand } from "../../public/quotes";
+import { CAPABILITIES, useEffectiveAccess, useEffectiveRecordAccess } from "@/platform/access-control";
 import { usePlatformState } from "@/platform/application-state";
 import { useI18n } from "@/i18n";
 import { Badge, ConfirmDialog, Table, TableHeader, TableBody, TableRow, TableCell } from "@/shared/components/ui";
@@ -28,12 +29,10 @@ import { QuoteDeleteConfirmDialog } from "../components/QuoteDeleteConfirmDialog
 import { QuoteListPanels } from "../components/QuoteListPanels";
 import { QuoteFilterPopover } from "../components/QuoteFilterPopover";
 import { QuoteStatusBadge } from "../components/QuoteStatusBadge";
-import { QuoteApprovalBadge } from "../components/QuoteApprovalBadge";
 import { QuoteDeliveryConfirmationModal, type QuoteDeliveryConfirmationValue } from "../components/QuoteDeliveryConfirmationModal";
 import { resolveQuoteActionIds, type QuoteActionPermissions } from "../model/quoteActionPolicy";
-import { requestTextInput } from "@/components/feedback/ProductDialogService";
 import { createDurableId } from "@/shared/ids";
-import { useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
+import { useWorkspaceConfigSnapshot, useWorkspaceRuntimeSettings } from "@/platform/workspace-config";
 
 interface QuoteListPageProps {
   customers: Customer[];
@@ -54,16 +53,19 @@ const DEFAULT_COLUMNS = [
 export const QuoteListPage: React.FC<QuoteListPageProps> = ({ customers }) => {
   const navigate = useNavigate();
   const { t, locale } = useI18n();
-  const workspaceConfiguration = useWorkspaceOperationalConfiguration();
-  const baseCurrency = workspaceConfiguration.localeRegion.currencies.baseCurrency;
-  const { quotes } = useQuotes({ loadAuthoritative: false });
+  const workspaceConfiguration = useWorkspaceRuntimeSettings();
+  const baseCurrency = workspaceConfiguration.baseCurrency;
+  const { quotes: cachedQuotes } = useQuotes({ loadAuthoritative: false });
   const { deals, query: dealQuery } = useDeals();
   const access = useEffectiveAccess();
   const { session, activeWorkspace } = usePlatformState();
   const actorId = session.principal.accountId;
-  const canCreateQuote = access.can(CAPABILITIES.QUOTES_CREATE);
+  const connected = isQuoteConnectedMode();
+  const quoteConfig = useWorkspaceConfigSnapshot();
+  const createAccess = useEffectiveRecordAccess({ resourceKey: "quotes", requestedCommands: ["quote.create"] });
+  const canCreateQuote = access.can(CAPABILITIES.QUOTES_CREATE) && quoteConfig.modules.quotes && quoteConfig.workflow.quoteUsageMode !== "DISABLED" && (!connected || Boolean(createAccess.data?.allowedCommands.includes("quote.create")));
   const canUpdateQuote = access.can(CAPABILITIES.QUOTES_UPDATE);
-  const canDeleteQuote = access.can(CAPABILITIES.QUOTES_DELETE);
+  const canDeleteQuote = !connected && access.can(CAPABILITIES.QUOTES_DELETE);
   const canSelectQuotes = canUpdateQuote || canDeleteQuote;
 
   const [toast, setToast] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -74,6 +76,7 @@ export const QuoteListPage: React.FC<QuoteListPageProps> = ({ customers }) => {
 
   // Search, View tabs, and Layout Toggle
   const [searchQuery, setSearchQuery] = useState("");
+  const [archiveView, setArchiveView] = useState<"ACTIVE" | "ARCHIVED" | "ALL">("ACTIVE");
   const [isCardView, setIsCardView] = useState(false);
 
   useEffect(() => {
@@ -118,6 +121,7 @@ export const QuoteListPage: React.FC<QuoteListPageProps> = ({ customers }) => {
   const [filterDate, setFilterDate] = useState<string>("");
 
   const clearFilters = () => {
+    setArchiveView("ACTIVE");
     setFilterStatus("");
     setFilterCustomer("");
     setFilterDeal("");
@@ -129,9 +133,21 @@ export const QuoteListPage: React.FC<QuoteListPageProps> = ({ customers }) => {
     setFilterDate("");
   };
 
+  const previousWorkspace = React.useRef(activeWorkspace.workspaceId);
+  React.useLayoutEffect(() => {
+    if (previousWorkspace.current === activeWorkspace.workspaceId) return;
+    previousWorkspace.current = activeWorkspace.workspaceId;
+    clearFilters();
+    setSearchQuery("");
+    setArchiveView("ACTIVE");
+    setSelectedQuoteIds([]);
+    setActiveQuote(null);
+    setRowActionAnchorEl(null);
+  }, [activeWorkspace.workspaceId]);
+
   const hasActiveFilters = useMemo(() => {
-    return !!(filterStatus || filterCustomer || filterDeal || filterOwner || filterMinAmount || filterMaxAmount || filterCurrency || filterType || filterDate);
-  }, [filterStatus, filterCustomer, filterDeal, filterOwner, filterMinAmount, filterMaxAmount, filterCurrency, filterType, filterDate]);
+    return !!(filterStatus || filterCustomer || filterDeal || filterOwner || filterMinAmount || filterMaxAmount || filterCurrency || filterType || filterDate || (connected && archiveView !== "ACTIVE"));
+  }, [filterStatus, filterCustomer, filterDeal, filterOwner, filterMinAmount, filterMaxAmount, filterCurrency, filterType, filterDate, connected, archiveView]);
 
   const activeFiltersCount = useMemo(() => {
     return [
@@ -143,9 +159,10 @@ export const QuoteListPage: React.FC<QuoteListPageProps> = ({ customers }) => {
       filterMinAmount,
       filterMaxAmount,
       filterCurrency,
-      filterDate
+      filterDate,
+      connected && archiveView !== "ACTIVE" ? archiveView : ""
     ].filter(Boolean).length;
-  }, [filterStatus, filterCustomer, filterDeal, filterOwner, filterType, filterMinAmount, filterMaxAmount, filterCurrency, filterDate]);
+  }, [filterStatus, filterCustomer, filterDeal, filterOwner, filterType, filterMinAmount, filterMaxAmount, filterCurrency, filterDate, connected, archiveView]);
 
   // Create Mode selection
   const [creationSource, setCreationSource] = useState<"deal" | "direct">("direct");
@@ -169,6 +186,22 @@ export const QuoteListPage: React.FC<QuoteListPageProps> = ({ customers }) => {
   };
 
   // Fetch unique customers list for dropdown filter
+  // Search & Advanced Filters filtering
+  const deferredSearchQuery = React.useDeferredValue(searchQuery);
+  const serverQuery = useMemo(() => ({
+    search: deferredSearchQuery.trim() || undefined,
+    sortBy: "updatedAt",
+    sortDirection: "desc" as const,
+    filters: {
+      status: filterStatus ? filterStatus as QuoteStatus : undefined,
+      sourceDealId: filterDeal || undefined,
+      archived: archiveView,
+    },
+  }), [deferredSearchQuery, filterStatus, filterDeal, archiveView]);
+  const resetSelection = React.useCallback(() => setSelectedQuoteIds([]), []);
+  const serverPagination = useQuoteListQuery(JSON.stringify([activeWorkspace.workspaceId, access.accountId, access.membershipId, access.authorityRevision]), serverQuery, resetSelection);
+  const quotes = connected ? serverPagination.items : cachedQuotes;
+
   const uniqueCustomers = useMemo(() => {
     const list = new Map<string, string>();
     quotes.forEach(q => {
@@ -181,14 +214,14 @@ export const QuoteListPage: React.FC<QuoteListPageProps> = ({ customers }) => {
 
   // Fetch unique linked deals list for dropdown filter
   const uniqueDeals = useMemo(() => {
-    const list = new Map<string, string>();
+    const list = new Map<string, string>(deals.map(deal => [deal.id, deal.name]));
     quotes.forEach(q => {
-      if (q.dealId && q.dealName) {
-        list.set(q.dealId, q.dealName);
+      if (q.dealId) {
+        list.set(q.dealId, deals.find(deal => deal.id === q.dealId)?.name || q.dealName || q.dealId);
       }
     });
     return Array.from(list.entries()).map(([id, name]) => ({ id, name }));
-  }, [quotes]);
+  }, [deals, quotes]);
 
   // Fetch unique owners for dropdown filter
   const uniqueOwners = useMemo(() => {
@@ -205,26 +238,8 @@ export const QuoteListPage: React.FC<QuoteListPageProps> = ({ customers }) => {
 
   const uniqueCurrencies = useMemo(() => Array.from(new Set(quotes.map((quote) => quote.currency || baseCurrency))).sort(), [baseCurrency, quotes]);
 
-  // Search & Advanced Filters filtering
-  const deferredSearchQuery = React.useDeferredValue(searchQuery);
-  const serverQuery = useMemo(() => ({
-    search: deferredSearchQuery.trim() || undefined,
-    sortBy: "updatedAt",
-    sortDirection: "desc" as const,
-    filters: {
-      status: filterStatus || undefined,
-      sourceDealId: filterDeal || undefined,
-    },
-  }), [deferredSearchQuery, filterStatus, filterDeal]);
-  const serverPagination = useServerPagedModuleCollection<Quote>({
-    key: "quotes",
-    scopeKey: activeWorkspace.workspaceId,
-    query: serverQuery,
-    initialPageSize: 25,
-    project: replaceQuotes,
-  });
-
   const processedQuotes = useMemo(() => {
+    if (connected) return quotes;
     return quotes.filter(quote => {
       // 1. Search Query
       if (searchQuery.trim()) {
@@ -257,7 +272,7 @@ export const QuoteListPage: React.FC<QuoteListPageProps> = ({ customers }) => {
 
       return true;
     });
-  }, [quotes, searchQuery, filterStatus, filterCustomer, filterDeal, filterOwner, filterType, filterMinAmount, filterMaxAmount, filterCurrency, filterDate]);
+  }, [connected, quotes, searchQuery, filterStatus, filterCustomer, filterDeal, filterOwner, filterType, filterMinAmount, filterMaxAmount, filterCurrency, filterDate]);
 
   const localPagination = useListPagination(processedQuotes, 25);
   const pagination = serverPagination.connected
@@ -281,7 +296,7 @@ export const QuoteListPage: React.FC<QuoteListPageProps> = ({ customers }) => {
   const kpis = useMemo(() => {
     const totalCount = quotes.length;
     const draftCount = quotes.filter(q => q.status === QuoteStatus.DRAFT).length;
-    const reviewCount = quotes.filter(q => q.status === QuoteStatus.REVIEW || (q.approvalRequired && q.approvalStatus === QuoteApprovalStatus.PENDING && q.approvalRequestedAt)).length;
+    const reviewCount = quotes.filter(q => q.status === QuoteStatus.REVIEW).length;
     const sentCount = quotes.filter(q => q.status === QuoteStatus.SENT).length;
     const acceptedCount = quotes.filter(q => q.status === QuoteStatus.ACCEPTED).length;
     const rejectedCount = quotes.filter(q => q.status === QuoteStatus.REJECTED).length;
@@ -406,6 +421,8 @@ export const QuoteListPage: React.FC<QuoteListPageProps> = ({ customers }) => {
   const getQuoteActionPermissions = (quote: Quote): QuoteActionPermissions => {
     const canAccessRecord = access.canAccessRecord("quotes", quote);
     return {
+      draftCoreOnly: connected,
+      approvalCommandsReady: connected,
       canView: access.can(CAPABILITIES.QUOTES_READ) && canAccessRecord,
       canUpdate: access.can(CAPABILITIES.QUOTES_UPDATE) && canAccessRecord,
       canApprove: access.can(CAPABILITIES.QUOTES_APPROVE) && canAccessRecord,
@@ -418,41 +435,7 @@ export const QuoteListPage: React.FC<QuoteListPageProps> = ({ customers }) => {
   const quoteActionHandlers: QuoteActionMenuHandlers = {
     onView: (quote) => navigate(`/quotes/${quote.id}`),
     onEdit: (quote) => navigate(`/quotes/${quote.id}/edit`),
-    onRequestApproval: async (quote) => {
-      try {
-        await requestQuoteApprovalCommand(quote.id, { actorId });
-        triggerToast("success", locale === "vi" ? "Đã gửi yêu cầu phê duyệt." : "Approval requested.");
-      } catch (error) {
-        triggerToast("error", formatApplicationError(error, { locale }));
-      }
-    },
-    onApprove: async (quote) => {
-      try {
-        await approveQuoteCommand(quote.id, { actorId });
-        triggerToast("success", locale === "vi" ? "Đã phê duyệt Báo giá." : "Quote approved.");
-      } catch (error) {
-        triggerToast("error", formatApplicationError(error, { locale }));
-      }
-    },
-    onRequestChanges: async (quote) => {
-      const note = await requestTextInput({
-        title: locale === "vi" ? "Yêu cầu chỉnh sửa báo giá" : "Request quote changes",
-        description: locale === "vi" ? "Mô tả rõ nội dung cần điều chỉnh để người phụ trách có thể cập nhật báo giá." : "Describe the changes needed so the owner can update the quote.",
-        label: locale === "vi" ? "Nội dung cần chỉnh sửa" : "Requested changes",
-        placeholder: locale === "vi" ? "Ví dụ: Điều chỉnh số lượng và thời hạn thanh toán" : "For example: Update quantity and payment terms",
-        submitLabel: locale === "vi" ? "Gửi yêu cầu" : "Send request",
-        cancelLabel: locale === "vi" ? "Hủy" : "Cancel",
-        requiredMessage: locale === "vi" ? "Hãy nhập nội dung cần chỉnh sửa." : "Enter the requested changes.",
-      });
-      if (!note) return;
-      try {
-        await requestQuoteApprovalChangesCommand(quote.id, { actorId, note: note.trim() });
-        triggerToast("success", locale === "vi" ? "Đã yêu cầu chỉnh sửa Báo giá." : "Changes requested.");
-      } catch (error) {
-        triggerToast("error", formatApplicationError(error, { locale }));
-      }
-    },
-    onSend: (quote) => navigate(`/quotes/${quote.id}/edit?action=gmail`),
+    onSend: (quote) => navigate(`/quotes/${quote.id}`),
     onConfirmSent: (quote) => setDeliveryTargetQuote(quote),
     onExportPdf: (quote) => navigate(`/quotes/${quote.id}?action=pdf`),
     onTransition: (quote, status) => { void handleStatusTransition(quote.id, status); },
@@ -474,15 +457,6 @@ export const QuoteListPage: React.FC<QuoteListPageProps> = ({ customers }) => {
     if (!deferClose) setDeliveryTargetQuote(null);
     triggerToast("success", locale === "vi" ? "Đã xác nhận Báo giá được gửi và lưu kênh liên hệ." : "Quote delivery was confirmed with its contact channel.");    return true;
   };
-  // Bulk action only requests internal approval. Customer delivery stays explicit per Quote.
-  const handleBulkAdvanceLifecycle = async () => {
-    const targetIds = quotes
-      .filter((quote) => selectedQuoteIds.includes(quote.id) && quote.status === QuoteStatus.DRAFT && quote.approvalRequired && quote.approvalStatus !== QuoteApprovalStatus.APPROVED)
-      .map((quote) => quote.id);
-    if (targetIds.length > 0) await requestQuoteApprovalBatchCommand(targetIds, actorId);
-    setSelectedQuoteIds([]);
-  };
-
   const handleBulkMarkExpired = async () => {
     const targetIds = quotes.filter((quote) => selectedQuoteIds.includes(quote.id) && quote.status === QuoteStatus.SENT).map((quote) => quote.id);
     if (targetIds.length > 0) await expireQuotesBatchCommand(targetIds);
@@ -529,14 +503,16 @@ export const QuoteListPage: React.FC<QuoteListPageProps> = ({ customers }) => {
       {/* 1. Header Portion */}
       <ListPageHeader
         title={t("quotes.list.title")}
-        count={processedQuotes.length}
+        count={connected ? (quoteQuery.loading || quoteQuery.error ? undefined : serverPagination.totalItems) : processedQuotes.length}
         context={locale === "vi" ? "Versioned commercial proposals" : "Versioned commercial proposals"}
         icon={<FolderSync size={18} />}
         actions={
           <PageHeaderActions
             actions={[
+              { id: "refresh-quotes", label: locale === "vi" ? "Làm mới" : "Refresh", icon: <RefreshCw size={13} />, onClick: () => void quoteQuery.refresh(), variant: "secondary", hidden: !connected, disabled: quoteQuery.loading || quoteQuery.refreshing },
               {
                 id: "quote-statistics",
+                disabled: connected && (quoteQuery.loading || Boolean(quoteQuery.error)),
                 label: locale === "vi" ? "Thống kê" : "Statistics",
                 icon: <BarChart3 size={13} />,
                 onClick: () => setIsStatsOpen(true),
@@ -559,15 +535,16 @@ export const QuoteListPage: React.FC<QuoteListPageProps> = ({ customers }) => {
       <div className="bg-white border border-slate-200 rounded-xl shadow-xs overflow-visible flex flex-col">
 
         {/* Action Toolbar */}
-        <AuthoritativeQueryNotice connected={quoteQuery.connected} loading={quoteQuery.loading} refreshing={quoteQuery.refreshing} stale={quoteQuery.stale} loadedAt={quoteQuery.loadedAt} error={quoteQuery.error} onRefresh={() => void quoteQuery.refresh()} compact />
+        {quotes.length > 0 && <AuthoritativeQueryNotice connected={quoteQuery.connected} loading={quoteQuery.loading} refreshing={quoteQuery.refreshing} stale={quoteQuery.stale} loadedAt={quoteQuery.loadedAt} error={quoteQuery.error} onRefresh={() => void quoteQuery.refresh()} compact />}
       {dealQuery.connected && (dealQuery.refreshing || dealQuery.stale) ? (
         <AuthoritativeQueryNotice connected={dealQuery.connected} loading={dealQuery.loading} refreshing={dealQuery.refreshing} stale={dealQuery.stale} loadedAt={dealQuery.loadedAt} error={dealQuery.error} onRefresh={() => void dealQuery.refresh()} compact />
       ) : null}
 
       <ListToolbar
           searchValue={searchQuery}
+          searchDebounceMs={connected ? 300 : 0}
           onSearchChange={setSearchQuery}
-          searchPlaceholder={t("quotes.list.searchPlaceholder")}
+          searchPlaceholder={connected ? (locale === "vi" ? "Tìm mã hoặc tên báo giá" : "Search quote number or title") : t("quotes.list.searchPlaceholder")}
           viewMode={isCardView ? "card" : "table"}
           onViewModeChange={(val) => setIsCardView(val === "card")}
           viewOptions={[
@@ -580,6 +557,9 @@ export const QuoteListPage: React.FC<QuoteListPageProps> = ({ customers }) => {
           filtersOpen={isFilterOpen}
           filtersPanel={
             <QuoteFilterPopover
+              connected={connected}
+              archiveView={archiveView}
+              setArchiveView={setArchiveView}
               isOpen={isFilterOpen}
               onClose={() => setIsFilterOpen(false)}
               locale={locale}
@@ -648,14 +628,7 @@ export const QuoteListPage: React.FC<QuoteListPageProps> = ({ customers }) => {
             label={locale === "vi" ? "Đã chọn báo giá" : "Quotes selected"}
             onClear={() => setSelectedQuoteIds([])}
           >
-            {canUpdateQuote && <button
-              type="button"
-              onClick={handleBulkAdvanceLifecycle}
-              className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-[10px] font-medium text-indigo-700 shadow-sm hover:bg-slate-50"
-            >
-              {locale === "vi" ? "Gửi duyệt các Báo giá cần duyệt" : "Request approval where required"}
-            </button>}
-            {canUpdateQuote && <button
+            {!connected && canUpdateQuote && <button
               type="button"
               onClick={handleBulkMarkExpired}
               className="rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-[10px] font-medium text-slate-700 shadow-sm hover:bg-slate-50"
@@ -674,11 +647,12 @@ export const QuoteListPage: React.FC<QuoteListPageProps> = ({ customers }) => {
 
         {/* 6. List Elements Representation */}
         {quoteQuery.connected && quoteQuery.loading && quotes.length === 0 ? (
-          <ListStatePanel kind="loading" title={locale === "vi" ? "Đang tải danh sách báo giá" : "Loading quotes from backend"} action={<button type="button" onClick={quoteQuery.cancel} className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-semibold">{locale === "vi" ? "Hủy" : "Cancel"}</button>} />
+          <ListStatePanel key="quote-list-loading" kind="loading" title={locale === "vi" ? "Đang tải danh sách báo giá" : "Loading quotes"} action={<button type="button" onClick={quoteQuery.cancel} className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-semibold">{locale === "vi" ? "Hủy" : "Cancel"}</button>} />
         ) : quoteQuery.connected && quoteQuery.error && quotes.length === 0 ? (
-          <ListStatePanel kind="error" title={locale === "vi" ? "Không thể tải danh sách Báo giá" : "Quote list could not be loaded"} action={<button type="button" onClick={() => void quoteQuery.refresh()} className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-semibold">{locale === "vi" ? "Thử lại" : "Retry"}</button>} />
+          <ListStatePanel key="quote-list-error" kind="error" title={locale === "vi" ? "Không thể tải danh sách Báo giá" : "Quote list could not be loaded"} action={<button type="button" onClick={() => void quoteQuery.refresh()} className="rounded-xl border border-slate-300 px-4 py-2 text-xs font-semibold">{locale === "vi" ? "Thử lại" : "Retry"}</button>} />
         ) : processedQuotes.length === 0 ? (
           <ListStatePanel
+            key="quote-list-empty"
             kind="empty"
             title={locale === "vi" ? "Không có báo giá phù hợp" : "No matching quotes"}
             action={canCreateQuote ? <button type="button" onClick={() => setIsCreateModalOpen(true)} className="rounded-xl bg-indigo-600 px-4 py-2.5 text-xs font-semibold text-white hover:bg-indigo-700">{t("quotes.list.create")}</button> : undefined}
@@ -700,7 +674,7 @@ export const QuoteListPage: React.FC<QuoteListPageProps> = ({ customers }) => {
                     <div className="font-mono text-[10px] font-semibold tracking-wide text-violet-700">
                       {quote.quoteNumber} · v{quote.version}
                     </div>
-                    <div className="flex flex-wrap items-center gap-1.5"><QuoteStatusBadge status={quote.status} /><QuoteApprovalBadge quote={quote} /></div>
+                    <div className="flex flex-wrap items-center gap-1.5"><QuoteStatusBadge status={quote.status} /></div>
                   </div>
                   <ActionDropdownTrigger
                     isOpen={activeQuote?.id === quote.id}
@@ -900,23 +874,23 @@ export const QuoteListPage: React.FC<QuoteListPageProps> = ({ customers }) => {
                       {visibleColumns.includes("status") && (
                         <TableCell className="w-[120px] min-w-[120px] text-center align-middle px-4 py-3">
                           <div className="inline-flex whitespace-nowrap">
-                            <div className="flex flex-wrap items-center gap-1.5"><QuoteStatusBadge status={quote.status} /><QuoteApprovalBadge quote={quote} /></div>
+                            <div className="flex flex-wrap items-center gap-1.5"><QuoteStatusBadge status={quote.status} /></div>
                           </div>
                         </TableCell>
                       )}
 
                       {visibleColumns.includes("linkedOpportunity") && (
                         <TableCell className="min-w-[200px] max-w-[240px] text-left align-middle px-4 py-3">
-                          <div className="max-w-[200px] crm-text-wrap text-indigo-600 font-semibold" title={quote.dealName || (locale === "vi" ? "Báo giá trực tiếp" : "Direct Client Quote")}>
+                          <div className="max-w-[200px] crm-text-wrap text-indigo-600 font-semibold" title={quote.dealName || quote.dealId || (quote.sourcePath === "DEAL" ? (locale === "vi" ? "Cơ hội liên quan chưa khả dụng" : "Related opportunity unavailable") : (locale === "vi" ? "Báo giá trực tiếp" : "Direct Client Quote"))}>
                             {quote.dealId ? (
                               <span
                                 onClick={() => navigate(`/deals/${quote.dealId}`)}
                                 className="hover:underline cursor-pointer"
                               >
-                                {quote.dealName}
+                                {quote.dealName || quote.dealId}
                               </span>
                             ) : (
-                              <span className="text-slate-400 italic">{locale === "vi" ? "Báo giá trực tiếp" : "Direct Client Quote"}</span>
+                              <span className="text-slate-400 italic">{quote.sourcePath === "DEAL" ? (locale === "vi" ? "Cơ hội liên quan chưa khả dụng" : "Related opportunity unavailable") : (locale === "vi" ? "Báo giá trực tiếp" : "Direct Client Quote")}</span>
                             )}
                           </div>
                         </TableCell>
@@ -1012,7 +986,7 @@ export const QuoteListPage: React.FC<QuoteListPageProps> = ({ customers }) => {
             </Table>
           </div>
           )}
-        {processedQuotes.length > 0 ? <ListPaginationBar {...pagination} itemLabelVi="báo giá" itemLabelEn="quotes" /> : null}
+        {processedQuotes.length > 0 ? <ListPaginationBar {...pagination} refreshing={connected && quoteQuery.loading} itemLabelVi="báo giá" itemLabelEn="quotes" /> : null}
       </div>
 
       {/* COLUMN CONFIGURATOR DRAWER */}

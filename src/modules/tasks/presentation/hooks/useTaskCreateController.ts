@@ -12,7 +12,7 @@ import { createTaskCommand, getTaskApiRuntime } from "../../public/api";
 import { getTaskReadAuthorityScope } from "../../application/vertical-slice/taskAuthoritativeQueries";
 import { freezeTaskCreateIntent, taskCreateDefinitelyRejected, type TaskCreateIntent } from "../model/taskCreateIntent";
 import type { TaskPriority } from "../../domain/model/task.types";
-import type { TaskCreateModalProps, TaskCreateDefaults } from "../components/TaskCreateModal";
+import type { TaskCreateModalProps, TaskCreateDefaults } from "../model/taskCreateModalTypes";
 
 export function useTaskCreateAuthority() {
   useWorkspaceContextSnapshot(); useAuthSessionSnapshot(); useEffectiveAccess();

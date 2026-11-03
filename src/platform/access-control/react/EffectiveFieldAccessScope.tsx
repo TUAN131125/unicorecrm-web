@@ -18,8 +18,8 @@ export const EffectiveFieldAccessScope: React.FC<EffectiveFieldAccessScopeProps>
   const access = useEffectiveRecordAccessDecision();
   const mode: FieldAccess = access?.fieldAccess[fieldKey] ?? "READ_WRITE";
   if (mode === "HIDDEN") return null;
-  if (mode === "MASKED" && maskedFallback) {
-    return <div data-field-key={fieldKey} data-field-access={mode}>{maskedFallback}</div>;
+  if (mode === "MASKED") {
+    return <div data-field-key={fieldKey} data-field-access={mode}>{maskedFallback ?? "—"}</div>;
   }
   return (
     <fieldset

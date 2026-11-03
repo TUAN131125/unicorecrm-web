@@ -52,9 +52,14 @@ export interface Customer360Projection {
 }
 
 export interface CustomerQueryPort {
-  list(query?: ModuleListQuery, signal?: AbortSignal): Promise<AuthoritativePage<Customer>>;
+  list(query?: ModuleListQuery, signal?: AbortSignal): Promise<AuthoritativePage<CustomerListItem>>;
   get(customerId: string, signal?: AbortSignal): Promise<Customer>;
   get360(customerId: string, signal?: AbortSignal): Promise<Customer360Projection>;
+}
+
+/** Read projection only; this identity never becomes Customer domain or mutation state. */
+export interface CustomerListItem extends Customer {
+  listIdentity?: Pick<Customer360Projection["identity"], "displayName" | "contactId" | "organizationId">;
 }
 
 export interface CustomerCommandOptions {

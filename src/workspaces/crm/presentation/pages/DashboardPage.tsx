@@ -22,14 +22,16 @@ import { toWorkspacePath } from "@/platform/navigation";
 import { ModulePageShell } from "@/components/crm/ModulePageShell";
 import { PageHeader } from "@/shared/components/ui";
 import { useI18n } from "@/i18n";
-import { DealStage } from "@/modules/deals";
+import { DealStage, isDealConnectedMode } from "@/modules/deals";
 import { LeadWorkState } from "@/modules/leads";
 import { flattenOrders } from "@/modules/orders";
 import { getAuthSessionSnapshot } from "@/platform/identity-auth";
 import { resolveWorkspaceMemberName } from "@/platform/member-directory";
 import { useWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import { buildCrmMetric, CRM_METRIC_IDS } from "@/workspaces/crm/metrics";
-import { useDashboardReadModel } from "@/workspaces/crm/read-models/dashboard/useDashboardReadModel";
+import { useDashboardDemoReadModel } from "@/workspaces/crm/read-models/dashboard/useDashboardReadModel";
+import { useConnectedDashboardReadModel } from "@/workspaces/crm/read-models/dashboard/useConnectedDashboardReadModel";
+import { ConnectedDashboardView } from "../dashboard/ConnectedDashboardView";
 
 type DashboardPeriod = "today" | "week" | "month";
 type DashboardTone = "violet" | "sky" | "emerald" | "amber" | "rose";
@@ -138,7 +140,17 @@ function validDate(value?: string): Date | undefined {
 }
 
 export const DashboardPage: React.FC = () => {
-  const { leads, deals, cases, tasks, activities, quotes, orders, customers, timezone, baseCurrency } = useDashboardReadModel();
+  return isDealConnectedMode() ? <ConnectedDashboard /> : <DemoDashboardPage />;
+};
+
+function ConnectedDashboard() {
+  const model = useConnectedDashboardReadModel();
+  const { locale } = useI18n();
+  return <ConnectedDashboardView model={model} locale={locale} />;
+}
+
+const DemoDashboardPage: React.FC = () => {
+  const { leads, deals, cases, tasks, activities, quotes, orders, customers, timezone, baseCurrency } = useDashboardDemoReadModel();
   const { locale } = useI18n();
   const navigate = useNavigate();
   const workspace = useWorkspaceContextSnapshot();
@@ -150,7 +162,7 @@ export const DashboardPage: React.FC = () => {
   const flatOrders = React.useMemo(() => flattenOrders(orders), [orders]);
   const currentMemberId = getAuthSessionSnapshot()?.principal.memberId;
   const crmPath = React.useCallback((path: string) => toWorkspacePath(workspace.workspaceKey, "crm", path), [workspace.workspaceKey]);
-  const formatMoney = React.useCallback((value: number) => new Intl.NumberFormat(isVi ? "vi-VN" : "en-US", {
+  const formatMoney = React.useCallback((value: number | null) => value === null ? "—" : new Intl.NumberFormat(isVi ? "vi-VN" : "en-US", {
     style: "currency",
     currency: baseCurrency,
     maximumFractionDigits: 0,

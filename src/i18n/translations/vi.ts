@@ -8,6 +8,7 @@ export const viTranslations: Translations = {
     renewals: "Gia hạn hợp đồng/Dịch vụ",
   },
   ai: {
+    workspaceTitle: "UniCore AI",
     title: "Trợ lý AI",
     chatTitle: "Chat AI",
     subtitle: "Hỏi nhanh về khách hàng, bán hàng, đơn hàng và chăm sóc khách hàng.",
@@ -2713,7 +2714,6 @@ export const viTranslations: Translations = {
     },
     invoices: {
       placeholderNotice: "Chưa có dữ liệu từ module Hóa đơn chính thức.",
-      authoritativeBoundary: "Tab này chỉ hiển thị chứng từ do module Hóa đơn chính thức phát hành. Kế hoạch và nghĩa vụ thanh toán không được trình bày như hóa đơn hoặc công nợ."
     },
     notExistError: "Mã người liên hệ không tồn tại hoặc đã bị lưu trữ.",
     contractRenewal: "Hợp đồng gia hạn",
@@ -2762,7 +2762,6 @@ export const viTranslations: Translations = {
       emailSubject: "Tiêu đề Email",
       emailBody: "Nội dung soạn thảo",
       emailComposeSend: "Soạn và Gửi Email",
-      smsSimulationGateway: "Gửi tin nhắn SMS"
     },
 
     sales: {
@@ -3677,7 +3676,7 @@ export const viTranslations: Translations = {
   quote: {
     status: {
       draft: "Nháp",
-      review: "Chờ duyệt",
+      review: "Đang soạn",
       sent: "Đã gửi",
       accepted: "Đã chấp nhận",
       rejected: "Đã từ chối",
@@ -3811,10 +3810,12 @@ export const viTranslations: Translations = {
     informationFields: "Trường thông tin",
     paymentInformation: "Thông tin thanh toán",
     invoiceInformation: "Thông tin hóa đơn",
-    integrations: "Tích hợp",
+    integrations: "Ứng dụng & dịch vụ",
+    connectionsOverview: "Tổng quan kết nối",
+    connectionsInbound: "Nhận dữ liệu",
+    apiAccess: "Truy cập API",
     communicationChannels: "Communications · Kênh kết nối",
-    webhooksApi: "Webhook & API",
-    readOnly: "Bạn chỉ có quyền xem cấu hình Studio.",
+    webhooksApi: "Webhook gửi đi",
     saved: "Cấu hình đã được lưu.",
     unsaved: "Có thay đổi chưa lưu.",
     validation: {
@@ -4796,7 +4797,6 @@ export const viTranslations: Translations = {
     fieldsLayouts: {
       title: "Trường & bố cục dữ liệu",
       subtitle: "Quản lý trường hiển thị, trường tùy chỉnh và bố cục theo từng tính năng.",
-      scopeNotice: "Trường tùy chỉnh hiện chưa khả dụng. Bạn vẫn có thể xem phạm vi cấu hình của từng tính năng."
     },
     templatesNumbering: {
       title: "Tài liệu & đánh số",
@@ -4821,7 +4821,7 @@ export const viTranslations: Translations = {
   },
   permissions: {
     denied: {
-      title: "Không có quyền truy cập",
+      title: "Không thể mở nội dung này",
       description: "Bạn không có quyền truy cập trang này."
     }
   },

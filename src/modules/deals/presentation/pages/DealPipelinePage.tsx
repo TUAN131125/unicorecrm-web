@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence, LayoutGroup } from "motion/react";
-import { TrendingUp, AlertTriangle, User, RefreshCw, Download, Upload, RotateCcw, MoreHorizontal, ArrowRight, LoaderCircle, Plus } from "lucide-react";
+import { TrendingUp, RefreshCw, Download, Upload, RotateCcw, MoreHorizontal, ArrowRight, Plus } from "lucide-react";
 import { DealStage } from "../../domain/model/deal.types";
 import { PageHeader, Button, Input, Select, Table, TableHeader, TableBody, TableRow, TableCell, Badge, IconButton, RowActionPortal } from "@/shared/components/ui";
 import { ModulePageShell } from "@/components/crm/ModulePageShell";
@@ -10,6 +10,8 @@ import { formatCurrency, formatCurrencyTotals } from "@/shared/lib/format/curren
 import { formatDate, formatDateTime } from "@/shared/lib/format/date";
 import { useDealPipelineController } from "../hooks/useDealPipelineController";
 import { DealPipelineModals } from "../components/DealPipelineModals";
+import { DealKanbanCard } from "../components/DealKanbanCard";
+import { DealAssignedPipelineBoard } from "../components/DealAssignedPipelineBoards";
 import { DealActionMenu } from "../components/DealActionMenu";
 import { notifyProduct } from "@/components/feedback/ProductDialogService";
 import { AuthoritativeQueryBoundary } from "@/shared/operations";
@@ -17,9 +19,17 @@ import { OwnershipScopeSelector } from "@/components/crm/OwnershipScopeSelector"
 import { ListFilterGrid, ListFilterPopover, ListToolbar } from "@/components/crm/list-archetype";
 import { DealPipelineHealthBadges } from "../components/DealPipelineHealth";
 import { resolveWorkspaceMemberLabel } from "@/platform/member-directory";
+import { useLocation } from "react-router-dom";
+import { useWorkspaceContextSnapshot } from "@/platform/workspace-context";
+import { toWorkspacePath } from "@/platform/navigation/canonicalRoutes";
 
 export const DealPipelinePage = () => {
   const controller = useDealPipelineController();
+  const listLocation = useLocation();
+  const workspace = useWorkspaceContextSnapshot();
+  const openDealDetail = (id: string) => controller.navigate(toWorkspacePath(workspace.workspaceKey, "crm", `deals/${encodeURIComponent(id)}`), {
+    state: { returnTo: `${listLocation.pathname}${listLocation.search}` },
+  });
   const {
     deals,
     query: dealQuery,
@@ -284,6 +294,7 @@ export const DealPipelinePage = () => {
             doneLabel={locale === "vi" ? "Hoàn tất" : "Done"}
           >
             <ListFilterGrid>
+              <p className="col-span-full text-xs text-slate-500">{locale === "vi" ? "Giai đoạn, ngày đóng và giá trị áp dụng cho bảng chính. Tìm kiếm và người phụ trách áp dụng cho mọi bảng." : "Stage, close date and value apply to the main board. Search and owner filters apply to every board."}</p>
               <Select
                 label={t("deals.filters.owner")}
                 value={ownerFilter}
@@ -298,7 +309,7 @@ export const DealPipelinePage = () => {
               </Select>
 
               <Select
-                label={t("deals.filters.stage")}
+                label={locale === "vi" ? "Giai đoạn pipeline mặc định" : "Default pipeline stage"}
                 value={stageFilter}
                 onChange={(event) => setStageFilter(event.target.value)}
               >
@@ -358,6 +369,7 @@ export const DealPipelinePage = () => {
         /* KANBAN GRID BOARD VIEW (With isolated horizontal scrollbar) */
         <div
           id="deals-kanban-section"
+          data-deal-default-pipeline={controller.pipelineId}
           className="flex-1 min-h-0 overflow-hidden"
         >
           <div className="h-full min-h-0 overflow-x-auto overflow-y-hidden pb-3 crm-scroll-x">
@@ -375,6 +387,7 @@ export const DealPipelinePage = () => {
                   return (
                     <div
                       key={stage}
+                      data-stage-active={stageConfigs.find(item => item.code === stage)?.isActive}
                       data-deal-kanban-column={stage}
                       onDragOver={(e) => {
                         e.preventDefault();
@@ -422,7 +435,8 @@ export const DealPipelinePage = () => {
                             className="font-extrabold text-slate-800 text-[11px] uppercase tracking-wide crm-text-wrap max-w-[190px]"
                             title={getDealStageLabel(stage)}
                           >
-                            {getDealStageLabel(stage)}
+                            <span className="mr-1.5 inline-block h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: ({ blue: "#3b82f6", yellow: "#eab308", orange: "#f97316", purple: "#a855f7", green: "#22c55e", red: "#ef4444", slate: "#64748b", teal: "#14b8a6" })[stageConfigs.find(item => item.code === stage)?.color ?? "slate"] }} />{getDealStageLabel(stage)}
+                            {stageConfigs.find(item => item.code === stage)?.isActive === false && <small className="block normal-case">{locale === "vi" ? "Ngừng sử dụng" : "Inactive"}</small>}
                           </span>
                           <span className="bg-slate-200/85 text-slate-800 px-2 py-0.5 rounded-full font-extrabold text-[10px] shrink-0">
                             {viewMode === "kanban" && stageWindowQuery.connected
@@ -438,7 +452,7 @@ export const DealPipelinePage = () => {
                       {/* The whole column body is a drop target; card hover only refines insertion order. */}
                       <div
                         data-deal-kanban-dropzone="full-column"
-                        className={`relative flex min-h-0 flex-1 flex-col overflow-y-auto p-4 transition-colors duration-200 crm-scroll-y ${
+                        className={`relative flex min-h-0 flex-1 flex-col overflow-y-auto p-2 transition-colors duration-200 crm-scroll-y ${
                           draggingId && draggedOverStage === stage
                             ? "bg-indigo-50/35"
                             : ""
@@ -484,7 +498,7 @@ export const DealPipelinePage = () => {
                           )}
                         </AnimatePresence>
 
-                        <div className="relative z-10 flex min-h-full flex-col gap-2.5">
+                        <div className="relative z-10 flex min-h-full flex-col gap-2">
                           <AnimatePresence initial={false}>
                             {stageDeals.map((deal, dealIndex) => {
                               const ownerLabel = resolveWorkspaceMemberLabel(
@@ -594,7 +608,7 @@ export const DealPipelinePage = () => {
                                       );
                                     }}
                                     data-deal-kanban-card="balanced"
-                                    className={`relative flex min-h-[350px] w-full min-w-0 cursor-grab flex-col gap-3 overflow-hidden rounded-xl border p-4 text-xs shadow-sm transition-[border-color,background-color,box-shadow] hover:border-indigo-200 hover:shadow-md active:cursor-grabbing ${
+                                    className={`relative flex min-h-[130px] w-full min-w-0 shrink-0 cursor-grab flex-col gap-1 overflow-hidden rounded-xl border p-2.5 text-xs shadow-sm transition-[border-color,background-color,box-shadow] hover:border-indigo-200 hover:shadow-md active:cursor-grabbing ${
                                       isBeingDragged || isDropSettling
                                         ? "border-indigo-400 border-dashed bg-slate-50 shadow-inner"
                                         : dealOverdue
@@ -602,185 +616,28 @@ export const DealPipelinePage = () => {
                                           : "border-slate-200 bg-white"
                                     }`}
                                     onClick={() =>
-                                      navigate(`/deals/${deal.id}`, {
-                                        state: {
-                                          returnTo: `/deals?view=kanban`,
-                                          sourceView: "kanban",
-                                        },
-                                      })
+                                      openDealDetail(deal.id)
                                     }
                                   >
-                                    {/* Heading with 3-dot dropdown trigger */}
-                                    <div className="flex justify-between items-start gap-1 pb-1">
-                                      <div className="space-y-1 min-w-0 flex-1 text-left">
-                                        <span
-                                          className="block crm-text-wrap text-[12px] font-semibold leading-snug text-indigo-700 hover:underline"
-                                          title={deal.name}
-                                        >
-                                          {deal.name}
-                                        </span>
-                                        <p className="crm-text-wrap text-[10px] font-normal leading-snug text-slate-500">
-                                          {t("deals.card.customer")}:{" "}
-                                          <span className="crm-text-wrap font-medium text-slate-700">
-                                            {deal.customerName}
-                                          </span>
-                                        </p>
-                                      </div>
-
-                                      {/* Shared Contact-style row action trigger; menu is portaled outside the Kanban scroll container. */}
-                                      <div className="shrink-0">
-                                        <IconButton
-                                          type="button"
-                                          variant="secondary"
-                                          size="xs"
-                                          onClick={(event) => {
-                                            event.stopPropagation();
-                                            if (
-                                              activeActionsDealId === deal.id
-                                            ) {
-                                              closeRowActions();
-                                            } else {
-                                              setActiveActionsDealId(deal.id);
-                                              setRowActionAnchorEl(
-                                                event.currentTarget,
-                                              );
-                                            }
-                                          }}
-                                          title={t(
-                                            "opportunities.actions.rowMenu",
-                                            "Thao tác cơ hội",
-                                          )}
-                                          aria-label={t(
-                                            "opportunities.actions.rowMenu",
-                                            "Thao tác cơ hội",
-                                          )}
-                                          aria-haspopup="menu"
-                                          aria-expanded={
-                                            activeActionsDealId === deal.id
-                                          }
-                                        >
-                                          <MoreHorizontal
-                                            size={14}
-                                            className="text-slate-500"
-                                          />
-                                        </IconButton>
-                                      </div>
-                                    </div>
-
-                                    {/* Display deal amount & probability */}
-                                    <div className="flex md:items-center justify-between gap-2 text-xs">
-                                      <span className="block crm-text-wrap text-[11px] font-semibold tabular-nums text-slate-800">
-                                        {formatCurrency(deal.amount, deal.currency || "VND", locale)}
-                                      </span>
-                                      <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[9px] font-medium text-slate-700">
-                                        {deal.opportunityScore}%
-                                      </span>
-                                    </div>
-
-                                    <DealPipelineHealthBadges
+                                    <DealKanbanCard
                                       deal={deal}
-                                      compact
+                                      ownerLabel={ownerLabel}
+                                      overdue={dealOverdue}
+                                      canAdvance={Boolean(getNextDealStage(deal.stage, deal.pipelineId))}
+                                      advancing={isDealAdvancing(deal.id)}
+                                      actionsOpen={activeActionsDealId === deal.id}
+                                      onOpen={() => openDealDetail(deal.id)}
+                                      onOpenActions={(event) => {
+                                        event.stopPropagation();
+                                        if (activeActionsDealId === deal.id) {
+                                          closeRowActions();
+                                        } else {
+                                          setActiveActionsDealId(deal.id);
+                                          setRowActionAnchorEl(event.currentTarget);
+                                        }
+                                      }}
+                                      onAdvance={() => { void advanceDealStage(deal.id); }}
                                     />
-
-                                    {/* Overdue Badge */}
-                                    {dealOverdue && (
-                                      <div className="flex min-w-0 items-center gap-1 rounded border border-red-100 bg-red-50 px-2 py-1 text-[9px] font-medium text-red-600">
-                                        <AlertTriangle
-                                          size={10}
-                                          className="shrink-0"
-                                        />
-                                        <span className="crm-text-wrap">
-                                          {t("deals.badges.overdue")}
-                                        </span>
-                                      </div>
-                                    )}
-
-                                    {/* Notes Preview if available */}
-                                    {deal.notes && (
-                                      <p className="w-full border-l-2 border-indigo-200 pl-1.5 text-left text-[10px] font-normal italic text-slate-500 crm-text-wrap">
-                                        {deal.notes}
-                                      </p>
-                                    )}
-
-                                    {/* Next Activity section */}
-                                    {(deal.nextActionAt ||
-                                      deal.nextActionSummary) && (
-                                      <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 space-y-0.5 min-w-0 text-left">
-                                        <p className="block text-[8px] font-medium uppercase leading-3 tracking-wide text-slate-500">
-                                          {t("deals.card.nextActivity")}:
-                                        </p>
-                                        <p
-                                          className="crm-text-wrap text-[11px] font-semibold leading-snug text-slate-800"
-                                          title={deal.nextActionSummary}
-                                        >
-                                          {deal.nextActionSummary}
-                                        </p>
-                                        <p className="text-[8px] font-medium text-amber-700">
-                                          {formatDateTime(
-                                            deal.nextActionAt,
-                                            locale,
-                                          )}
-                                        </p>
-                                      </div>
-                                    )}
-
-                                    {/* Risk Indicator fallback if any */}
-                                    {deal.riskBadge && !dealOverdue && (
-                                      <div className="bg-slate-50 text-slate-500 px-2 py-0.5 rounded border border-slate-200 flex items-center gap-1 text-[9px] font-medium leading-tight min-w-0 justify-start">
-                                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
-                                        <span
-                                          className="crm-text-wrap"
-                                          title={deal.riskBadge}
-                                        >
-                                          {deal.riskBadge}
-                                        </span>
-                                      </div>
-                                    )}
-
-                                    {/* Owner & Expected Close Date */}
-                                    <div className="mt-auto flex min-w-0 items-center justify-between gap-2 border-t border-slate-100 pt-2 text-[10px] font-medium text-slate-500">
-                                      <span className="flex items-center gap-1 min-w-0 flex-1">
-                                        <User size={10} className="shrink-0" />
-                                        <span
-                                          className="crm-text-wrap text-left"
-                                          title={ownerLabel}
-                                        >
-                                          {ownerLabel}
-                                        </span>
-                                      </span>
-                                      <span className="shrink-0 font-sans">
-                                        {formatDate(
-                                          deal.expectedCloseDate,
-                                          locale,
-                                        )}
-                                      </span>
-                                    </div>
-
-                                    {/* Moving stage control stays inside the card at every column width. */}
-                                    <div
-                                      data-deal-next-stage-action="contained"
-                                      className="-mx-4 -mb-4 flex min-w-0 shrink-0 items-center justify-end border-t border-slate-100 bg-slate-50/80 px-4 py-3"
-                                    >
-                                      {getNextDealStage(deal.stage) && (
-                                        <button
-                                          type="button"
-                                          draggable={false}
-                                          data-deal-next-stage-button="contained"
-                                          onMouseDown={(e) => e.stopPropagation()}
-                                          onClick={(event) => {
-                                            event.stopPropagation();
-                                            void advanceDealStage(deal.id);
-                                          }}
-                                          disabled={isDealAdvancing(deal.id)}
-                                          aria-busy={isDealAdvancing(deal.id)}
-                                          className="inline-flex h-8 min-w-[76px] max-w-full shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-lg border border-indigo-100 bg-white px-3 text-[9px] font-semibold leading-none text-indigo-700 shadow-3xs transition-[background-color,border-color,color,box-shadow,opacity] hover:border-indigo-200 hover:bg-indigo-50 hover:shadow-sm disabled:cursor-wait disabled:opacity-65"
-                                          title={t("deals.actions.nextStage")}
-                                        >
-                                          <span className="whitespace-nowrap">{t("deals.actions.next")}</span>
-                                          {isDealAdvancing(deal.id) ? <LoaderCircle size={11} className="shrink-0 animate-spin" /> : <ArrowRight size={10} className="shrink-0" />}
-                                        </button>
-                                      )}
-                                    </div>
                                   </motion.div>
                                 </React.Fragment>
                               );
@@ -862,12 +719,13 @@ export const DealPipelinePage = () => {
                   const dealOverdue = isOverdue(
                     deal.expectedCloseDate,
                     deal.stage,
+                    deal.pipelineId,
                   );
 
                   let dealStageVariant:
                     "success" | "warning" | "danger" | "info" | "neutral" =
                     "neutral";
-                  const config = stageConfigs.find(
+                  const config = (controller.pipelines.find(item => item.id === deal.pipelineId)?.stages ?? stageConfigs).find(
                     (s) => s.code === deal.stage,
                   );
                   if (config) {
@@ -887,17 +745,13 @@ export const DealPipelinePage = () => {
                       <TableCell>
                         <span
                           onClick={() =>
-                            navigate(`/deals/${deal.id}`, {
-                              state: {
-                                returnTo: `/deals?view=table`,
-                                sourceView: "table",
-                              },
-                            })
+                            openDealDetail(deal.id)
                           }
                           className="font-bold text-indigo-700 hover:underline cursor-pointer block text-xs"
                         >
                           {deal.name}
                         </span>
+                        <span className="mt-1 block text-[10px] text-slate-500">{controller.pipelines.find(item => item.id === deal.pipelineId)?.name[locale] || deal.pipelineId || "—"}</span>
                       </TableCell>
                       <TableCell className="max-w-[150px] crm-text-wrap">
                         <div className="font-extrabold text-slate-800 text-[11px]">
@@ -912,7 +766,7 @@ export const DealPipelinePage = () => {
                       <TableCell>
                         <div className="space-y-1.5">
                           <Badge variant={dealStageVariant}>
-                            {getDealStageLabel(deal.stage)}
+                            {getDealStageLabel(deal.stage, deal.pipelineId)}
                           </Badge>
                           <DealPipelineHealthBadges deal={deal} compact />
                         </div>
@@ -1020,28 +874,21 @@ export const DealPipelinePage = () => {
                 deal.ownerId,
                 locale,
               );
-              const dealOverdue = isOverdue(deal.expectedCloseDate, deal.stage);
+              const dealOverdue = isOverdue(deal.expectedCloseDate, deal.stage, deal.pipelineId);
 
               let dealStageVariant:
                 "success" | "warning" | "danger" | "info" | "neutral" =
                 "neutral";
-              if (deal.stage === DealStage.WON) dealStageVariant = "success";
-              else if (deal.stage === DealStage.LOST)
-                dealStageVariant = "danger";
-              else if (deal.stage === DealStage.DISCOVERY)
-                dealStageVariant = "info";
+              const assignedStage = controller.pipelines.find(item => item.id === deal.pipelineId)?.stages.find(item => item.code === deal.stage);
+              if (assignedStage?.category === "won") dealStageVariant = "success";
+              else if (assignedStage?.category === "lost") dealStageVariant = "danger";
               else dealStageVariant = "warning";
 
               return (
                 <div
                   key={deal.id}
                   onClick={() =>
-                    navigate(`/deals/${deal.id}`, {
-                      state: {
-                        returnTo: `/deals?view=table`,
-                        sourceView: "table",
-                      },
-                    })
+                    openDealDetail(deal.id)
                   }
                   className={`bg-white p-4 rounded-xl border border-slate-200 hover:shadow-xs transition-all text-xs space-y-3 cursor-pointer relative ${
                     dealOverdue ? "border-red-300 bg-red-50/10" : ""
@@ -1052,6 +899,7 @@ export const DealPipelinePage = () => {
                       <span className="font-extrabold text-indigo-700 hover:underline block text-[13px] leading-tight crm-text-wrap">
                         {deal.name}
                       </span>
+                      <span className="block text-[10px] text-slate-500">{controller.pipelines.find(item => item.id === deal.pipelineId)?.name[locale] || deal.pipelineId || "—"}</span>
                       <p className="text-[11px] text-slate-500 font-semibold crm-text-wrap leading-none">
                         {deal.customerName}
                       </p>
@@ -1060,7 +908,7 @@ export const DealPipelinePage = () => {
                       variant={dealStageVariant}
                       className="shrink-0 text-[10px] font-bold py-0.5 px-2"
                     >
-                      {getDealStageLabel(deal.stage)}
+                      {getDealStageLabel(deal.stage, deal.pipelineId)}
                     </Badge>
                   </div>
 
@@ -1123,12 +971,7 @@ export const DealPipelinePage = () => {
                     <Button
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigate(`/deals/${deal.id}`, {
-                          state: {
-                            returnTo: `/deals?view=table`,
-                            sourceView: "table",
-                          },
-                        });
+                        openDealDetail(deal.id);
                       }}
                       variant="secondary"
                       size="sm"
@@ -1137,7 +980,7 @@ export const DealPipelinePage = () => {
                       {t("deals.actions.viewDetail")}
                     </Button>
 
-                    {getNextDealStage(deal.stage) && (
+                    {getNextDealStage(deal.stage, deal.pipelineId) && (
                       <Button
                         onClick={(event) => {
                           event.stopPropagation();
@@ -1183,12 +1026,7 @@ export const DealPipelinePage = () => {
             deal={activeActionsDeal}
             onViewDetails={(deal) => {
               closeRowActions();
-              navigate(`/deals/${deal.id}`, {
-                state: {
-                  returnTo: `/deals?view=${viewMode}`,
-                  sourceView: viewMode,
-                },
-              });
+              openDealDetail(deal.id);
             }}
             onEdit={(deal) => {
               closeRowActions();
@@ -1227,6 +1065,11 @@ export const DealPipelinePage = () => {
 
       <DealPipelineModals controller={controller} />
     </ModulePageShell>
+    {viewMode === "kanban" && <div data-guidance-id="deals.pipeline.assigned-boards">
+      {controller.pipelines.filter(item => item.id !== controller.pipelineId).map(assigned => <DealAssignedPipelineBoard
+        key={`${workspace.workspaceId}:${assigned.id}`} pipeline={assigned} demoDeals={deals} search={searchTerm}
+        ownerId={ownerFilter} ownershipScope={ownershipScope} onOpen={openDealDetail} />)}
+    </div>}
     </AuthoritativeQueryBoundary>
   );
 };

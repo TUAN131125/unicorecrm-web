@@ -60,7 +60,7 @@ export const PaymentRequestComposer: React.FC<PaymentRequestComposerProps> = ({ 
     account ? `${account.bankName} · ${account.accountNumber} · ${account.accountHolder}` : "",
     `${text("Nội dung chuyển khoản", "Transfer content")}: ${transferContent}`,
     `${text("Liên kết", "Link")}: ${link}`,
-    text("Sau khi thanh toán, doanh nghiệp chỉ ghi nhận tiền khi có Payment Record authoritative.", "After payment, funds are recognized only after an authoritative Payment Record exists."),
+    text("Sau khi thanh toán, doanh nghiệp chỉ ghi nhận tiền khi có giao dịch thanh toán được xác nhận.", "After payment, funds are recognized only after an confirmed payment record exists."),
   ].filter(Boolean).join("\n");
   const qrPayload = account ? buildLocalVietQrPayload({ bankBin: account.bankBin, accountNumber: account.accountNumber, amount: Number(intent.amount.amount), transferContent }) : link;
 
@@ -209,7 +209,7 @@ body{font-family:Arial,sans-serif;background:#f1f5f9;padding:24px;color:#0f172a}
               </div>
 
               <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900">
-                {text("Yêu cầu thanh toán này không phải là hóa đơn VAT. Doanh nghiệp chỉ ghi nhận tiền sau khi có Payment Record authoritative.", "This payment request is not a VAT invoice. Funds are recognized only after an authoritative Payment Record exists.")}
+                {text("Yêu cầu thanh toán này không phải là hóa đơn VAT. Doanh nghiệp chỉ ghi nhận tiền sau khi có giao dịch thanh toán được xác nhận.", "This payment request is not a VAT invoice. Funds are recognized only after an confirmed payment record exists.")}
               </div>
             </div>
 

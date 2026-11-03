@@ -22,7 +22,16 @@ export function useContactOverview(contact: Contact) {
   const ready = access.can(CAPABILITIES.CONTACTS_READ) && query.state === "READY" && !query.error;
   const summary = ready ? query.data : undefined;
   const organizations = summary?.organizationRelationships.filter(item => !item.effectiveTo) ?? [];
-  const customers = summary?.customerRelationships.filter(item => !item.effectiveTo) ?? [];
+  const memberships = summary?.customerRelationships.filter(item => !item.effectiveTo) ?? [];
+  // Linked records also include the canonical Customer account whose subject is this
+  // Contact. It is an account link, not a fabricated stakeholder membership/role.
+  const customers = [
+    ...memberships,
+    ...(summary?.linkedRecords.filter(item => item.moduleKey === "customers"
+      && summary.customerIds.includes(item.recordId)
+      && !memberships.some(membership => membership.customerId === item.recordId)) ?? [])
+      .map(item => ({ id: item.recordId, customerId: item.recordId, customerLabel: item.label, role: "" })),
+  ];
   const tasks = useContactTasksQuery(contact.id);
   // This is a total only after the scoped collection is exhausted, never first-page length.
   const taskCount = tasks.enabled && tasks.state === "READY" && !tasks.error && !tasks.loading && !tasks.stale && !tasks.hasNextPage

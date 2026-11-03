@@ -171,6 +171,16 @@ check(repository.findById("org-A")?.workspaceId === otherWorkspace.workspaceId, 
 const beforeLogout = queries.getOrganizationAccountDetailResource("org-A");
 auth.signOut();
 check(beforeLogout.getSnapshot().data === undefined && repository.list().length === 0, "logout retires cached restricted data synchronously");
+workspace.configureConnectedWorkspaceBootstrapGateway({
+  listMyWorkspaces: async () => [],
+  getWorkspaceBootstrap: async () => { throw new Error("Bootstrap must not be read by an auth subscriber"); },
+  ensureInitialWorkspace: async () => "EXISTING_MEMBERSHIP",
+});
+assert.doesNotThrow(() => auth.signIn({ email: "admin@unicorecrm.local", password: "admin123" }));
+assert.doesNotThrow(() => authority(["organizations.read"]));
+check(beforeLogout.getSnapshot().data === undefined && repository.list().length === 0, "new session before Workspace bootstrap remains empty without throwing");
+auth.signOut();
+workspace.resetConnectedWorkspaceBootstrapGateway();
 check(writes === 0, "all read scenarios issue zero business mutations");
 console.log(`Organization read hydration: ${checks} checks PASS (frontend fixture authority only; not Backend HTTP authorization).`);
 dom.window.close();

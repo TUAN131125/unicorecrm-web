@@ -1,0 +1,15 @@
+/* Kanban summaries are intentionally bounded; full text remains in titles and Deal Detail.
+   Use component styles because the global text-resilience layer makes truncate utilities wrap. */
+.deal-kanban-name {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.deal-kanban-summary {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

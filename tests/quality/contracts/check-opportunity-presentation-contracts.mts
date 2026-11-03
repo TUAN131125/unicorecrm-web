@@ -17,6 +17,8 @@ const pipelinePage = source("src/modules/deals/presentation/pages/DealPipelinePa
 const pipelineController = source("src/modules/deals/presentation/hooks/useDealPipelineController.ts");
 const pipelineModals = source("src/modules/deals/presentation/components/DealPipelineModals.tsx");
 const pipelineHealth = source("src/modules/deals/presentation/components/DealPipelineHealth.tsx");
+const kanbanCard = source("src/modules/deals/presentation/components/DealKanbanCard.tsx");
+const kanbanCardStyles = source("src/modules/deals/presentation/components/DealKanbanCard.css");
 const dealActionMenu = source("src/modules/deals/presentation/components/DealActionMenu.tsx");
 const contactTable = source("src/modules/contacts/presentation/list/ContactTable.tsx");
 const rowActionPortal = source("src/shared/components/ui/Dialog.tsx");
@@ -83,7 +85,8 @@ assert.equal(pipelinePage.includes('className="absolute right-0 mt-1 w-44'), fal
 assert.equal(pipelinePage.includes('className="fixed inset-0 z-30"'), false, "Legacy row action backdrop must stay removed");
 assert.ok(rowActionPortal.includes("createPortal") && rowActionPortal.includes("document.body"), "RowActionPortal must remain body-owned");
 assert.ok(rowActionPortal.includes("openAbove"), "RowActionPortal must retain collision flipping");
-assert.ok(pipelinePage.includes("navigate(`/deals/${deal.id}`"), "Opportunity title/menu must retain detail navigation");
+assert.ok(pipelinePage.includes("controller.navigate(toWorkspacePath(workspace.workspaceKey, \"crm\", `deals/${encodeURIComponent(id)}`)"), "Opportunity details must use the current Workspace and an encoded record ID");
+assert.ok(pipelinePage.includes("openDealDetail(deal.id)"), "Opportunity title/menu must retain its record-specific detail callback");
 
 // Page More keeps all actions, proper i18n and keyboard-capable floating menu behavior.
 for (const actionId of ["import-deals", "export-deals", "refresh-deals", "reset-pipeline"]) {
@@ -113,10 +116,11 @@ assert.ok(recordDetailHeader.includes("recordDetailHeaderActionsClassName"));
 assert.ok(dealDetail.includes("<RecordDetailHeader"), "Opportunity detail must use the shared record-detail header component");
 assert.ok(dealDetail.includes('id="deal-detail-header"'));
 assert.ok(dealDetail.includes("recordDetailHeaderActionButtonClassName"));
-assert.ok(dealDetail.includes("navigate(returnTo)"), "Opportunity detail must preserve back navigation");
+assert.match(dealDetail, /onBack=\{\(\) => c\.navigate\(c\.returnTo\)\}/u, "Opportunity detail must preserve the controller-owned return path");
 assert.doesNotMatch(dealDetail + pipelinePage + dealDetailController, /MOCK_USERS/, "Opportunity owner and activity presentation must not fall back to arbitrary demo users");
 assert.match(dealDetail + pipelinePage, /resolveWorkspaceMemberLabel/, "Opportunity owner labels must resolve from the workspace member directory");
-assert.match(dealDetail, /data-deal-buyer-state="pre-customer"/, "Opportunity detail must distinguish a pursued buyer from Customer 360");
+assert.match(dealDetail, /data-deal-buyer-name data-state=\{buyerLabel\.status\}/u,
+  "The header must expose the canonical buyer-label availability rather than imply Customer identity");
 assert.match(dealDetailController, /findCustomerByRelationshipRefSnapshot\(deal\.buyerRef\)/, "Opportunity detail must resolve a post-purchase Customer by canonical buyer relationship");
 assert.match(dealDetailController, /const session = getAuthSessionSnapshot\(\)/, "New opportunity notes must resolve the current signed-in session");
 assert.match(dealDetailController, /actorName: session\.principal\.displayName/, "New opportunity activity must display the current signed-in actor");
@@ -130,39 +134,41 @@ assert.equal(vi.includes('title: "Sản phẩm & Cách tính Giá trị"'), fals
 assert.ok(vi.includes('hybrid: "Kết hợp (B2B + B2C)"'), "Vietnamese business model must use Kết hợp");
 assert.equal(vi.includes("Hỗn hợp"), false, "Vietnamese UI must not use Hỗn hợp for the hybrid business model");
 assert.equal(vi.includes('sectionTitle: "Báo giá liên quan"'), false);
-for (const labelKey of ['t("deals.lineItems.title")', 't("deals.quotes.sectionTitle")', 't("deals.detail.addLineItem")', 't("deals.quotes.addQuote")']) {
-  assert.ok(dealDetail.includes(labelKey), `Opportunity detail must use ${labelKey}`);
-}
-const productSectionHeader = between(dealDetail, "          {/* Line Items Inventory Table */}", "            <div className=\"overflow-x-auto\">");
-const quoteSectionHeader = between(dealDetail, "          {/* Quotes & Proposals Section */}", "              {relatedQuotes.length === 0 ? (");
-assert.ok(productSectionHeader.includes('variant="secondary"'));
-assert.ok(productSectionHeader.includes('size="sm"'));
-assert.ok(productSectionHeader.includes('icon={<Plus size={12} />}'));
-assert.ok(productSectionHeader.includes('className="h-9 whitespace-nowrap rounded-xl"'));
-assert.ok(quoteSectionHeader.includes('actionIntent="create"'));
-assert.ok(quoteSectionHeader.includes('size="sm"'));
-assert.ok(quoteSectionHeader.includes('icon={<Plus size={12} />}'));
-assert.ok(quoteSectionHeader.includes('className="h-9 whitespace-nowrap rounded-xl"'));
+// Detail V5 uses composed responsive product/Quote workspaces (deal-pipelines.md).
+const productWorkspace = source("src/modules/deals/presentation/views/DealDetailProducts.tsx");
+const quoteWorkspace = source("src/modules/deals/presentation/views/DealDetailQuoteWorkspace.tsx");
+assert.match(productWorkspace, /!c\.connected && !c\.isTerminal && c\.canCommand\("deal.update"\) && c\.canWrite\("lineItems"\)/u,
+  "Product editing must retain mode, lifecycle, command and field authority");
+assert.match(productWorkspace, /actionIntent="create"/u);
+assert.match(productWorkspace, /size="sm"/u);
+assert.match(productWorkspace, /c\.setIsProductPickerOpen\(true\)/u);
+assert.match(quoteWorkspace, /c\.canCreateQuote && <Button/u);
+assert.match(quoteWorkspace, /actionIntent="create"/u);
+assert.match(quoteWorkspace, /c\.navigate\(\x60\/quotes\/new\?dealId=\$\{c\.deal\.id\}/u,
+  "Quote creation must carry the current Deal identity");
 
-
-// Opportunity Kanban cards keep the same information while using a calmer, balanced hierarchy.
-assert.ok(pipelinePage.includes('data-deal-kanban-card="balanced"'), "Opportunity cards must expose the balanced card contract");
+// The existing card marker remains the drag/drop boundary; compact content owns presentation only.
+assert.ok(pipelinePage.includes('data-deal-kanban-card="balanced"'), "Opportunity cards must preserve the drag/drop selector contract");
 const balancedCardStart = pipelinePage.search(/data-deal-kanban-card="balanced"\s*\r?\n/u);
 assert.ok(balancedCardStart >= 0, "Opportunity card JSX marker must remain discoverable");
 const balancedCardSurface = pipelinePage.slice(
   balancedCardStart,
   pipelinePage.indexOf('/* LIST / TABLE VIEW MODE */'),
 );
-assert.ok(balancedCardSurface.includes("min-h-[350px]") && balancedCardSurface.includes("mt-auto"), "Opportunity cards must keep a stable body and aligned footer");
+assert.ok(balancedCardSurface.includes("shrink-0") && balancedCardSurface.includes("<DealKanbanCard"), "Opportunity cards must retain their size in long columns and delegate compact content");
+assert.equal(balancedCardSurface.includes("min-h-[350px]"), false, "Compact cards must not reserve the retired tall body");
 assert.equal(balancedCardSurface.includes("font-black"), false, "Opportunity cards must not use black typography");
 assert.equal(balancedCardSurface.includes("font-extrabold"), false, "Opportunity cards must not overuse extra-bold typography");
-assert.ok(balancedCardSurface.includes('data-deal-next-stage-action="contained"'), "The next-stage action must remain contained by the opportunity card");
-assert.ok(balancedCardSurface.includes('data-deal-next-stage-button="contained"'), "The next-stage button must expose its contained control contract");
-assert.ok(balancedCardSurface.includes("-mx-4 -mb-4") && balancedCardSurface.includes("bg-slate-50/80 px-4 py-3"), "The next-stage action must render in a full-width footer clipped by the card surface");
+assert.ok(kanbanCard.includes('data-deal-next-stage-action="contained"'), "The next-stage action must remain contained by the opportunity card");
+assert.ok(kanbanCard.includes('data-deal-next-stage-button="contained"'), "The next-stage button must expose its contained control contract");
+assert.ok(kanbanCard.includes("mt-auto") && kanbanCard.includes('aria-label={t("deals.actions.nextStage")}'), "The shared footer must retain an always-available accessible next-stage control");
+assert.ok(kanbanCardStyles.includes("-webkit-line-clamp: 2") && kanbanCardStyles.includes("text-overflow: ellipsis"), "Long identity, buyer and action text must stay bounded despite global wrap utilities");
+assert.doesNotMatch(kanbanCard, /deal\.(notes|lineItems|forecastHistory|nextActionRef)/, "Kanban must leave detail-only content and raw task references out of the card");
+assert.doesNotMatch(kanbanCard, /transitionDealStageCommand|fetch\(/, "The card must use callbacks rather than own mutations or HTTP");
 assert.ok(balancedCardSurface.includes("overflow-hidden rounded-xl"), "Opportunity cards must contain footer actions at narrow column widths");
 assert.ok(pipelineController.includes("advancingDealIdsRef") && pipelineController.includes("advanceDealStage"), "Opportunity next-stage action must use one duplicate-safe controller path");
 assert.equal(pipelineController.includes("handleAdvanceStage"), false, "Retired next-stage logic must stay removed");
-assert.ok(pipelinePage.includes("isDealAdvancing(deal.id)") && pipelinePage.includes("aria-busy={isDealAdvancing(deal.id)}"), "Opportunity cards must expose smooth pending feedback while advancing");
+assert.ok(balancedCardSurface.includes("advancing={isDealAdvancing(deal.id)}") && kanbanCard.includes("aria-busy={advancing}") && kanbanCard.includes("disabled={advancing}"), "Opportunity cards must expose pending feedback while advancing");
 assert.ok(pipelinePage.includes('data-deal-kanban-dropzone="full-column"'), "The complete Kanban column body must accept drops");
 assert.ok(pipelinePage.includes('data-deal-kanban-drop-indicator="full-column"'), "Kanban must expose a full-column drop affordance");
 assert.ok(pipelinePage.includes('layoutId={`deal-kanban-card-${deal.id}`}'), "Opportunity cards must animate into their settled column position");
@@ -177,13 +183,11 @@ const viQuoteStatus = between(between(vi, "  quote: {", "  quoteBuilder: {"), " 
 assert.ok(viQuoteStatus.includes('draft: "Nháp"'), "Quote DRAFT must display NHÁP");
 assert.equal(viQuoteStatus.includes("Bản nháp"), false, "Quote DRAFT must not display BẢN NHÁP");
 assert.ok(dealDetail.includes("getQuoteStatusBadgeVariant(quote.status)"), "Quote status must use the shared status badge owner");
-assert.ok(dealDetail.includes('className="whitespace-nowrap text-[9px] font-semibold uppercase tracking-wide"'));
+assert.match(quoteWorkspace, /<dt className="text-\[10px\] text-slate-500">\{label\}<\/dt>/u,
+  "Quote metadata must retain readable labels paired with values");
 assert.ok(vi.includes('continueDraft: "Tiếp tục soạn"'));
 assert.ok(dealDetail.includes('data-deal-quote-workspace="responsive-cards"'), "Opportunity quote list must use the responsive card workspace");
-const responsiveQuoteWorkspace = dealDetail.slice(
-  dealDetail.indexOf('data-deal-quote-workspace="responsive-cards"'),
-  dealDetail.indexOf('/* Activities Workspace & Timeline */'),
-);
+const responsiveQuoteWorkspace = quoteWorkspace;
 assert.equal(responsiveQuoteWorkspace.includes("overflow-x-auto"), false, "Opportunity quote workspace must not use horizontal scrolling");
 for (const marker of ['actionIntent="navigate"', 'actionIntent="create"', 'actionIntent="retry"', 'actionIntent="confirm"', 'actionIntent="destructive"']) {
   assert.ok(dealDetail.includes(marker), `Opportunity quote actions must retain ${marker}`);
@@ -192,16 +196,16 @@ assert.ok(dealDetail.includes("QuoteApprovalStatus"), "Opportunity Quote actions
 assert.ok(dealDetail.includes("approvalRequired") && dealDetail.includes("approvalStatus"), "Opportunity Quote actions must respect approval policy state");
 assert.ok(dealDetail.includes("action=gmail"), "Approved or approval-free Quotes must expose Gmail delivery");
 assert.ok(dealDetail.includes("action=pdf"), "Opportunity Quotes must expose PDF export");
-assert.ok(dealDetail.includes("Gửi duyệt") && dealDetail.includes("navigate(`/quotes/${quote.id}`)"), "Approval-required Quotes must route to the canonical approval owner instead of mutating status locally");
+assert.match(quoteWorkspace, /quote\.approvalRequired && quote\.approvalStatus !== QuoteApprovalStatus\.APPROVED/u);
+assert.match(quoteWorkspace, /c\.navigate\(`\/quotes\/\$\{quote\.id\}`\)/u,
+  "Approval review must route to the canonical Quote owner");
 
 // Opportunity detail keeps a readable hierarchy, responsive composition and valid Tailwind color tokens.
 for (const marker of [
   'data-deal-detail-layout="responsive"',
   'data-deal-detail-summary="balanced"',
-  'data-deal-detail-ai-assessment="balanced"',
   'data-deal-detail-stage-map="responsive"',
   'data-deal-detail-actions="balanced"',
-  'data-deal-detail-related-records="balanced"',
   'data-deal-detail-activity="balanced"',
 ]) {
   assert.ok(dealDetail.includes(marker), `Opportunity detail must retain ${marker}`);
@@ -213,7 +217,14 @@ assert.doesNotMatch(
   /(?:text|bg|border)-(?:slate|indigo|sky|rose|amber|emerald|red|blue|violet|purple|teal|orange|yellow)-(?:150|250|350|450|550|650|750|850|805)\b/,
   "Opportunity detail must use valid Tailwind color steps",
 );
-assert.ok(dealDetail.includes('xl:grid-cols-12') && dealDetail.includes('xl:col-span-8') && dealDetail.includes('xl:col-span-4'), "Opportunity detail must avoid a cramped two-column layout below the XL breakpoint");
-assert.ok(dealDetail.includes('min-w-[560px]') && dealDetail.includes('overflow-x-auto pb-1 crm-scroll-x'), "Opportunity stage map must preserve readable labels on narrow surfaces");
+// Detail V5's approved layout uses a bounded sidebar and dedicated buyer record
+// navigation; it does not contain the former synthetic AI-assessment card.
+assert.match(dealDetail, /xl:grid-cols-\[minmax\(0,1fr\)_300px\]/u,
+  "The detail workspace must retain its bounded sidebar only at the XL breakpoint");
+assert.match(dealDetail, /<DealDetailRelatedRecords controller=\{controller\}/u);
+assert.match(dealDetail, /c\.buyerLabel\.status === "READY" && <Button/u,
+  "Buyer record navigation must wait for the authorized buyer-label result");
+assert.match(dealDetail, /overflow-x-auto pb-2 crm-scroll-x/u,
+  "The stage map must preserve a horizontal region for variable pipeline labels");
 
 console.log("Opportunity presentation contracts: OK");

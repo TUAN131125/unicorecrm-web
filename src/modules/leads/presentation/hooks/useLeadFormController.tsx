@@ -34,7 +34,7 @@ import { businessStatusLabel } from "@/i18n/productGlossary";
 import { resolveWorkspaceMemberLabel } from "@/platform/member-directory";
 import { validateLeadContactData } from "../../domain/rules/leadContactData";
 import { useConfigurationRuntime, type RuntimeFormFieldPlacement } from "@/platform/configuration-runtime";
-import { useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
+import { useWorkspaceRuntimeSettings } from "@/platform/workspace-config";
 import { dateTimeLocalValueToIso, normalizeDateTimeInputValue } from "@/shared/lib/datetime/workspaceDateTime";
 
 
@@ -101,8 +101,8 @@ export function useLeadFormController(props: LeadFormProps) {
   const defaultMode = props.defaultMode ?? (isEdit ? "complete" : "quick");
   const { t, locale } = useI18n();
   const configurationRuntime = useConfigurationRuntime();
-  const workspaceConfiguration = useWorkspaceOperationalConfiguration();
-  const workspaceTimeZone = workspaceConfiguration.localeRegion.timezone;
+  const workspaceConfiguration = useWorkspaceRuntimeSettings();
+  const workspaceTimeZone = workspaceConfiguration.timeZone;
   const formContext = isEdit ? "EDIT" : "CREATE";
   const isNewLead = !isEdit;
   const runtimeForm = React.useMemo(() => configurationRuntime.businessForms
@@ -316,7 +316,9 @@ export function useLeadFormController(props: LeadFormProps) {
   };
 
   const save = async (globalSave = false): Promise<boolean> => {
-    globalSave = globalSave || Boolean(props.onSave);
+    // A normal create submit closes its own modal via onSubmit. The explicit
+    // unsaved-work binding and existing edit-target protocol retain onSave semantics.
+    globalSave = globalSave || Boolean(isEdit && props.onSave);
     if (submitInFlightRef.current || !mounted.current || openingWorkspace.current !== getWorkspaceContextSnapshot().workspaceId
       || openingTarget.current !== initialLead?.id || (globalSave && !props.onSave)) return false;
     const newErrors: Record<string, string> = {};
@@ -470,13 +472,13 @@ export function useLeadFormController(props: LeadFormProps) {
           interestLevel: "medium" as const,
           estimatedQuantity: 1,
           expectedBudget: product?.listPrice || 0,
-          expectedBudgetMoney: money(String(product?.listPrice || 0), product?.currency || workspaceConfiguration.localeRegion.currencies.baseCurrency),
+          expectedBudgetMoney: money(String(product?.listPrice || 0), product?.currency || workspaceConfiguration.baseCurrency),
           createdAt: new Date().toISOString(),
         };
       }),
       ...(expectedValue ? {
         expectedValue: Number(expectedValue),
-        estimatedValue: money(expectedValue, workspaceConfiguration.localeRegion.currencies.baseCurrency),
+        estimatedValue: money(expectedValue, workspaceConfiguration.baseCurrency),
       } : {}),
       budgetRange: budgetRange.trim() || undefined,
       purchaseTimeline: purchaseTimeline.trim() || undefined,

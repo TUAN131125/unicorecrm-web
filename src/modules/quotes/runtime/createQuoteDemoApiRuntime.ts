@@ -40,7 +40,6 @@ import {
   type QuoteLineItem,
   type SalesDocumentAdjustment,
 } from "../domain/model/quote.types";
-import { applyQuoteApprovalAssessment } from "../domain/rules/quoteApprovalPolicy";
 
 export function createQuoteDemoApiRuntime(repository: QuoteRepository): QuoteApiRuntime {
   return {
@@ -63,7 +62,7 @@ export function createQuoteDemoApiRuntime(repository: QuoteRepository): QuoteApi
         const current = requireVersion(repository, quoteId, options.expectedVersion);
         if (![QuoteStatus.DRAFT, QuoteStatus.REVIEW].includes(current.status)) throw new Error("QUOTE_DRAFT_IMMUTABLE");
         const now = new Date().toISOString();
-        const updated = saveQuote(repository, applyQuoteApprovalAssessment({
+        const updated = saveQuote(repository, {
           ...current,
           ...draftFields(input),
           id: current.id,
@@ -73,7 +72,7 @@ export function createQuoteDemoApiRuntime(repository: QuoteRepository): QuoteApi
           status: QuoteStatus.DRAFT,
           updatedAt: now,
           resourceVersion: currentVersion(current) + 1,
-        }));
+        });
         return result(updated, options, now);
       },
       async repriceDraft(quoteId: string, options: QuoteVersionedCommandOptions): Promise<QuoteMutationResult> {
@@ -122,6 +121,9 @@ export function createQuoteDemoApiRuntime(repository: QuoteRepository): QuoteApi
         }), quoteId);
         return commit(repository, updated, options);
       },
+      async recordCustomerDecision() {
+        throw new Error("Customer decision recording requires the connected authoritative Backend.");
+      },
       async reject(quoteId: string, input: RejectQuoteInput, options: QuoteVersionedCommandOptions): Promise<QuoteMutationResult> {
         requireVersion(repository, quoteId, options.expectedVersion);
         const updated = requireUpdated(changeQuoteStatus(repository, quoteId, QuoteStatus.REJECTED), quoteId);
@@ -167,7 +169,7 @@ export function createQuoteDemoApiRuntime(repository: QuoteRepository): QuoteApi
 function createDraft(repository: QuoteRepository, input: QuoteDraftInput, options: QuoteCommandOptions): QuoteMutationResult {
   const now = new Date().toISOString();
   const identity = allocateQuoteIdentity(repository, now);
-  const quote = saveQuote(repository, applyQuoteApprovalAssessment({
+  const quote = saveQuote(repository, {
     ...draftFields(input),
     id: identity.id,
     quoteNumber: identity.quoteNumber,
@@ -182,7 +184,7 @@ function createDraft(repository: QuoteRepository, input: QuoteDraftInput, option
     updatedAt: now,
     resourceVersion: 1,
     deliveryHistory: [],
-  }));
+  });
   return result(quote, options, now);
 }
 

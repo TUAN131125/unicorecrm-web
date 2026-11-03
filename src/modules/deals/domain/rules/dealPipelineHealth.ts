@@ -13,7 +13,7 @@ export interface DealPipelineHealth {
   daysSinceLastActivity: number;
   nextStepStatus: DealNextStepStatus;
   stale: boolean;
-  forecastCategory: DealForecastCategory;
+  forecastCategory?: DealForecastCategory;
 }
 
 function asTimestamp(value?: string): number | null {
@@ -50,7 +50,7 @@ export function resolveDealLastActivityAt(
   return candidates[0] || deal.createdAt;
 }
 
-export function getDealPipelineHealth(deal: Deal, now = new Date()): DealPipelineHealth {
+export function getDealPipelineHealth(deal: Deal, now = new Date(), options: { deriveMissingForecast?: boolean } = {}): DealPipelineHealth {
   const nowMs = now.getTime();
   const stageEnteredAt = resolveDealStageEnteredAt(deal);
   const lastActivityAt = resolveDealLastActivityAt(deal);
@@ -75,7 +75,7 @@ export function getDealPipelineHealth(deal: Deal, now = new Date()): DealPipelin
     daysSinceLastActivity,
     nextStepStatus,
     stale,
-    forecastCategory: deal.forecastCategory || deriveDealForecastCategory(deal),
+    forecastCategory: deal.forecastCategory ?? (options.deriveMissingForecast === false ? undefined : deriveDealForecastCategory(deal)),
   };
 }
 

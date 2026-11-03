@@ -1,9 +1,12 @@
+import { orderCompletionBlockerMessage as operationalBlockerLabel, orderCompletionBlockersMessage } from "../model/orderActionPolicy";
 import { useRef as useWorkspaceBindingRef } from "react";
+import { OrderConfirmationPanel } from "../components/OrderConfirmationPanel";
+import { OrderAcceptanceSummary, OrderConfirmationOrigin } from "../components/OrderAcceptanceSummary";
 import { useWorkspaceContextSnapshot as useWorkflowWorkspace } from "@/platform/workspace-context";
 import { useTargetBoundWorkflow } from "@/shared/presentation/useTargetBoundWorkflow";
 import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
 import React, { useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   AlertCircle,
   CheckCircle2,
@@ -76,7 +79,7 @@ import {
   executeOrderClosingCommand,
   isOrderClosingUnavailable,
 } from "@/workflows/order-closing";
-import { executeOrderConfirmationCommand } from "@/workflows/order-confirmation";
+
 import { recordOrderDeliveryCommandBoundary } from "../../public/orders";
 import { executeOrderCancellationCommand } from "@/workflows/order-cancellation";
 import { getOrderById } from "../../application/queries/orderQueries";
@@ -134,13 +137,6 @@ function paymentMethodLabel(method: string, locale: string): string {
   return (locale === "vi" ? vi : en)[method] ?? method;
 }
 
-function operationalBlockerLabel(blocker: string, locale: "vi" | "en"): string {
-  if (locale !== "vi") return blocker;
-  if (blocker.includes("Required outbound ShippingBooking does not exist")) return "Đơn hàng có hàng vật lý nhưng chưa có vận đơn outbound.";
-  if (blocker.includes("is not DELIVERED")) return "Vận đơn bắt buộc chưa có bằng chứng giao hàng thành công.";
-  if (blocker.toLowerCase().includes("payment")) return `Thanh toán chưa đủ điều kiện: ${blocker}`;
-  return blocker;
-}
 
 export const OrderDetailPage: React.FC<OrderDetailPageProps> = ({ contacts = [], payments, shippingBookings }) => {
   const { orderId: routeOrderId = "" } = useParams<{ orderId: string }>();
@@ -191,8 +187,13 @@ export const OrderDetailPage: React.FC<OrderDetailPageProps> = ({ contacts = [],
   const { session } = usePlatformState();
   const { orders } = useOrders({ loadAuthoritative: false });
   const customers = useCustomerSnapshots();
+  const [confirmationOpen, setConfirmationOpen] = useState(false);
+  const [confirmationQuery] = useSearchParams();
+  React.useEffect(() => { setConfirmationOpen(confirmationQuery.get("confirm") === "1"); }, [orderId, confirmationQuery]);
   const [cancelOpen, setCancelOpen] = useState(false);
-  const cancellationReasons = getReasonCatalog("ORDER_CANCELLATION")?.entries.filter((entry) => entry.enabled) ?? [];
+  const canUpdateOrder = access.canPerform("orders", "update") && (effectiveRecordAccess?.canUpdate ?? true)
+    && (!effectiveRecordAccess || effectiveRecordAccess.allowedCommands.includes("order.update"));
+  const cancellationReasons = canUpdateOrder ? getReasonCatalog("ORDER_CANCELLATION")?.entries.filter((entry) => entry.enabled) ?? [] : [];
   const [cancelReasonCode, setCancelReasonCode] = useState(cancellationReasons[0]?.code ?? "");
   const [cancelReason, setCancelReason] = useState("");
   const [message, setMessage] = useState<{ tone: "success" | "error"; text: string } | null>(null);
@@ -205,6 +206,8 @@ export const OrderDetailPage: React.FC<OrderDetailPageProps> = ({ contacts = [],
   const [exportBusy, setExportBusy] = useState(false);
   const [sendBusy, setSendBusy] = useState(false);
   const documentRef = useRef<HTMLDivElement | null>(null);
+  const deliveryIdentity = React.useRef({ orderId, open: deliveryOpen, cycle: 0 });
+  useSubscribableSnapshot(getInvoicesSnapshot, subscribeToInvoices);
 
   const liveOrder = useMemo(() => orderId ? getOrderById(orders, orderId) : undefined, [orderId, orders]);
   const openingOrder = useRef(liveOrder);
@@ -225,11 +228,10 @@ export const OrderDetailPage: React.FC<OrderDetailPageProps> = ({ contacts = [],
       <AuthoritativeQueryBoundary
         query={detailQuery}
         hasData={false}
-        loadingTitleVi="Đang tải đơn hàng từ backend"
-        loadingTitleEn="Loading order from backend"
+        loadingTitleVi="Đang tải đơn hàng"
+        loadingTitleEn="Loading order"
         errorTitleVi="Không thể tải đơn hàng"
         errorTitleEn="Order could not be loaded"
-        showNotice={false}
       >
         <div className="mx-auto max-w-2xl p-8 text-center">
           <AlertCircle className="mx-auto text-rose-500" size={32} />
@@ -249,7 +251,6 @@ export const OrderDetailPage: React.FC<OrderDetailPageProps> = ({ contacts = [],
   const bookingPaymentReadiness = evaluatePaymentFulfillmentGateSnapshot(payments, order.id, "BEFORE_BOOKING");
   const paymentReadiness = evaluatePaymentFulfillmentGateSnapshot(payments, order.id, "BEFORE_COMPLETION");
   const completionEvaluation = evaluateOrderClosingPolicy(order, paymentReadiness, orderShipping);
-  useSubscribableSnapshot(getInvoicesSnapshot, subscribeToInvoices);
   const relatedInvoices = queryInvoiceSnapshot({ orderId: order.id });
   const relatedReceivables = getReceivablesSnapshot().filter((item) => relatedInvoices.some((invoice) => invoice.id === item.invoiceId));
   const relatedReturns = getReturnsSnapshot().requests.filter((request) => request.orderId === order.id);
@@ -287,7 +288,7 @@ export const OrderDetailPage: React.FC<OrderDetailPageProps> = ({ contacts = [],
   const serverAllows = (command: string) => !effectiveRecordAccess || effectiveRecordAccess.allowedCommands.includes(command);
   const permissions: OrderActionPermissions = {
     canView: access.canPerform("orders", "read") && (effectiveRecordAccess?.canRead ?? true),
-    canUpdate: access.canPerform("orders", "update") && (effectiveRecordAccess?.canUpdate ?? true) && serverAllows("order.update"),
+    canUpdate: canUpdateOrder,
     canCreate: access.canPerform("orders", "create") && serverAllows("order.create"),
     canDelete: access.canPerform("orders", "delete") && (effectiveRecordAccess?.canDelete ?? true) && serverAllows("order.delete"),
     canConfirm: access.canPerform("orders", "confirm") && access.canAccessRecord("orders", order) && serverAllows("order.confirm"),
@@ -381,7 +382,6 @@ export const OrderDetailPage: React.FC<OrderDetailPageProps> = ({ contacts = [],
     setDeliveryOpen(true);
   };
 
-  const deliveryIdentity = React.useRef({ orderId, open: deliveryOpen, cycle: 0 });
   if (deliveryIdentity.current.orderId !== orderId || deliveryIdentity.current.open !== deliveryOpen) deliveryIdentity.current = { orderId, open: deliveryOpen, cycle: deliveryIdentity.current.cycle + 1 };
   const renderedDeliveryCycle = deliveryIdentity.current.cycle;
 
@@ -415,23 +415,10 @@ export const OrderDetailPage: React.FC<OrderDetailPageProps> = ({ contacts = [],
         ? (locale === "vi" ? "Đơn hàng đã hoàn tất sau khi đủ điều kiện thanh toán và bằng chứng giao hàng." : "The Order was completed after payment readiness and shipping evidence were satisfied.")
         : (locale === "vi" ? "Đơn hàng đã hoàn tất sau khi đủ điều kiện thanh toán và thực hiện; không phát sinh vận đơn." : "The Order was completed after payment and fulfillment conditions were satisfied; no shipment was required."),
     });
-    else setMessage({ tone: "error", text: blocked?.blockers.join(" ") || "Order completion blocked." });
+    else setMessage({ tone: "error", text: orderCompletionBlockersMessage(blocked?.blockers, locale) });
   };
 
-  const confirmOrder = async () => {
-    try {
-      await executeOrderConfirmationCommand(
-        { orderId: order.id },
-        order.resourceVersion === undefined ? {} : { expectedVersion: order.resourceVersion },
-      );
-      setMessage({
-        tone: "success",
-        text: locale === "vi" ? "Đã xác nhận vận hành đơn hàng và kích hoạt kế hoạch thanh toán." : "Order operationally confirmed and Payment Plan activated.",
-      });
-    } catch (error) {
-      setMessage({ tone: "error", text: formatApplicationError(error, { locale }) });
-    }
-  };
+  const confirmOrder = async () => { setConfirmationOpen(true); };
 
   const confirmCancellation = async () => {
     if (!cancelReasonCode || !cancelReason.trim() || !workflow.begin()) return;
@@ -542,10 +529,13 @@ export const OrderDetailPage: React.FC<OrderDetailPageProps> = ({ contacts = [],
         />
 
         {message && <div role="status" className={`rounded-xl border px-4 py-3 text-xs font-semibold ${message.tone === "success" ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-rose-200 bg-rose-50 text-rose-800"}`}>{message.text}</div>}
+        <OrderConfirmationOrigin order={order} vi={locale === "vi"} />
+        <OrderConfirmationPanel key={order.id} order={order} open={confirmationOpen} vi={locale === "vi"} onClose={() => setConfirmationOpen(false)} onCommitted={() => detailQuery.refresh()} />
+      <OrderAcceptanceSummary order={order} vi={locale === "vi"} />
 
-        <div aria-hidden="true" className="pointer-events-none fixed left-[-12000px] top-0 z-[-1] w-[1000px]">
+        {(access.can(CAPABILITIES.STUDIO_READ) || documentPreviewOpen || exportBusy || sendBusy) && <div aria-hidden="true" className="pointer-events-none fixed left-[-12000px] top-0 z-[-1] w-[1000px]">
           <OrderCustomerDocument ref={documentRef} order={order} customer={customer} contact={contact} customerLabel={customerLabel} contactLabel={contactLabel} locale={locale} />
-        </div>
+        </div>}
 
         <OperationDetailTabs items={detailTabs} activeKey={activeTab} onChange={setActiveTab} ariaLabel={locale === "vi" ? "Khu vực chi tiết đơn hàng" : "Order detail areas"} />
 
@@ -598,9 +588,8 @@ export const OrderDetailPage: React.FC<OrderDetailPageProps> = ({ contacts = [],
                   <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-2">
-                        <div className="text-sm font-semibold text-slate-900">{locale === "vi" ? "Hướng dẫn thanh toán đã chụp" : "Captured payment instruction"}</div>
+                        <div className="text-sm font-semibold text-slate-900">{locale === "vi" ? "Hướng dẫn thanh toán" : "Payment instructions"}</div>
                         <Badge variant="info" size="xs">{paymentMethodLabel(order.paymentInstruction.method, locale)}</Badge>
-                        <span className="text-xs font-bold text-slate-400">REV {order.paymentInstruction.configurationVersion ?? "—"}</span>
                       </div>
                       {order.paymentInstruction.bankAccount ? (
                         <div className="mt-3 grid gap-3 sm:grid-cols-2">
@@ -618,7 +607,7 @@ export const OrderDetailPage: React.FC<OrderDetailPageProps> = ({ contacts = [],
                           </div>
                         </div>
                       ) : (
-                        <p className="mt-2 text-xs font-medium text-amber-700">{locale === "vi" ? "Bản ghi tại thời điểm xác nhận chưa có tài khoản nhận tiền. Cấu hình workspace mới chỉ áp dụng cho đơn hàng được tạo hoặc cập nhật sau." : "This snapshot has no receiving account. New workspace settings apply only to Orders created or explicitly updated later."}</p>
+                        <p className="mt-2 text-xs font-medium text-amber-700">{locale === "vi" ? "Chưa có tài khoản nhận tiền cho đơn hàng này." : "No receiving account is available for this order."}</p>
                       )}
                     </div>
                     {order.paymentInstruction.qrPayload && (
@@ -709,7 +698,7 @@ export const OrderDetailPage: React.FC<OrderDetailPageProps> = ({ contacts = [],
             nextAction={order.state === "DRAFT" ? {
               title: locale === "vi" ? "Bước tiếp theo" : "Next step",
               label: locale === "vi" ? "Xác nhận vận hành" : "Confirm operationally",
-              description: permissions.canConfirm ? (locale === "vi" ? "Nhân viên xác nhận nội bộ để kích hoạt kế hoạch thanh toán. Đây không phải xác nhận của khách hàng." : "An authorized employee confirms internally to activate the Payment Plan. This is not customer acceptance.") : (locale === "vi" ? "Bạn chưa có quyền hoặc đơn hàng nằm ngoài phạm vi dữ liệu được giao." : "You lack permission or the Order is outside your assigned data scope."),
+              description: locale === "vi" ? "Kiểm tra điều kiện vận hành trước khi xác nhận đơn hàng và kích hoạt kế hoạch thanh toán." : "Review operational readiness before confirming the order and activating its payment plan.",
               actionLabel: locale === "vi" ? "Xác nhận vận hành" : "Confirm",
               variant: "primary",
               onClick: permissions.canConfirm ? () => { void confirmOrder(); } : undefined,

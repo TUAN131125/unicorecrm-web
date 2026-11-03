@@ -15,7 +15,7 @@ import {
 } from "../../public/api";
 
 import { getAuthSessionSnapshot, subscribeToAuthSession } from "@/platform/identity-auth";
-import { getWorkspaceContextSnapshot, subscribeToWorkspaceContext } from "@/platform/workspace-context";
+import { getWorkspaceBootstrapSnapshot, getWorkspaceContextSnapshot, isConnectedWorkspaceRuntime, subscribeToWorkspaceContext } from "@/platform/workspace-context";
 import { getAccessControlSnapshot, getAccessGovernanceRuntimeBinding, isAccessGovernanceRuntimeConfigured, resolveEffectiveAccess, subscribeToAccessControl } from "@/platform/access-control";
 import { registerWorkspaceScopeDisposer } from "@/platform/workspace-scope";
 import { normalizeApplicationError, ApplicationError } from "@/shared/domain";
@@ -32,7 +32,12 @@ const overviews = new Map<string, AuthoritativeResource<OrganizationOverviewProj
 function readAuthority(): string {
   const session = getAuthSessionSnapshot();
   if (!session) return "unauthenticated";
-  const workspace = getWorkspaceContextSnapshot();
+  const workspace = isConnectedWorkspaceRuntime()
+    ? getWorkspaceBootstrapSnapshot()?.workspace
+    : getWorkspaceContextSnapshot();
+  // Auth listeners run before the next Workspace has finished bootstrapping.
+  // Retire the previous projection without reading an unresolved context.
+  if (!workspace) return JSON.stringify(["workspace-unresolved", session.sessionId, session.principal.accountId]);
   const binding = isAccessGovernanceRuntimeConfigured() ? getAccessGovernanceRuntimeBinding() : undefined;
   const state = binding?.getState();
   const access = resolveEffectiveAccess(workspace.workspaceId);
@@ -46,7 +51,10 @@ function retire(): void {
   const resources = [collection, ...details.values(), ...overviews.values()];
   // Keep handles stable: consumers may memoize a resource across authority changes.
   for (const resource of resources) resource?.reset();
-  runWorkspaceScopeReset(() => replaceOrganizationAccounts([]));
+  // Only the Connected repository is a disposable server projection. Demo owns
+  // its local records; a session/Workspace transition must not erase them.
+  if (getOrganizationApiRuntime().mode === "connected")
+    runWorkspaceScopeReset(() => replaceOrganizationAccounts([]));
 }
 function syncAuthority(): void {
   if (getOrganizationApiRuntime().mode !== "connected") return;

@@ -4,12 +4,16 @@ import { lazyRouteComponent } from "@/app/router/runtime";
 import { PermissionRouteGuard } from "@/components/PermissionRouteGuard";
 import { useI18n } from "@/i18n";
 import { isApiClientError } from "@/platform/api/errors/ApiClientError";
-import { CommunicationsChannelsEntry } from "@/workspaces/studio/presentation/components/CommunicationsChannelsEntry";
+import { useWorkspaceContextSnapshot } from "@/platform/workspace-context";
+import { useAuthSessionSnapshot } from "@/platform/identity-auth";
 import {
   STUDIO_SECTIONS,
   type StudioSectionId,
 } from "@/workspaces/studio/navigation/studioSectionRegistry";
 
+const ConnectionsOverviewView = lazyRouteComponent("StudioConnectionsOverviewView", () => import("@/workspaces/studio/presentation/views/ConnectionsOverviewView"), (module) => module.ConnectionsOverviewView);
+const InboundDataView = lazyRouteComponent("StudioInboundDataView", () => import("@/workspaces/studio/presentation/views/InboundDataView"), (module) => module.InboundDataView);
+const ApiAccessView = lazyRouteComponent("StudioApiAccessView", () => import("@/workspaces/studio/presentation/views/ApiAccessView"), (module) => module.ApiAccessView);
 const QuickSetupView = lazyRouteComponent("StudioQuickSetupView", () => import("@/workspaces/studio/presentation/views/QuickSetupView"), (module) => module.QuickSetupView);
 const BusinessInformationView = lazyRouteComponent("StudioBusinessInformationView", () => import("@/workspaces/studio/presentation/views/BusinessInformationView"), (module) => module.BusinessInformationView);
 const LocaleRegionView = lazyRouteComponent("StudioLocaleRegionView", () => import("@/workspaces/studio/presentation/views/LocaleRegionView"), (module) => module.LocaleRegionView);
@@ -27,6 +31,9 @@ const StudioIndexRoute = lazyRouteComponent("StudioIndexRoute", () => import("@/
 
 function resolveStudioRouteScreen(sectionId: StudioSectionId): React.ElementType {
   switch (sectionId) {
+    case "connections-overview": return ConnectionsOverviewView;
+    case "connections-inbound": return InboundDataView;
+    case "api-access": return ApiAccessView;
     case "communication-channels": return CommunicationChannels;
     case "quick-setup": return QuickSetupView;
     case "business-information": return BusinessInformationView;
@@ -64,6 +71,11 @@ function classifyStudioRuntimeFailure(error: unknown): StudioRuntimeFailure {
 }
 
 export const StudioCoreRuntimeBoundary: React.FC<React.PropsWithChildren<{ includeQuickSetup?: boolean }>> = ({ children, includeQuickSetup = false }) => {
+  const { workspaceId } = useWorkspaceContextSnapshot();
+  return <StudioCoreRuntimeLoader key={`${workspaceId}:${includeQuickSetup}`} includeQuickSetup={includeQuickSetup}>{children}</StudioCoreRuntimeLoader>;
+};
+
+const StudioCoreRuntimeLoader: React.FC<React.PropsWithChildren<{ includeQuickSetup: boolean }>> = ({ children, includeQuickSetup }) => {
   const { locale } = useI18n();
   const vi = locale === "vi";
   const [state, setState] = React.useState<"loading" | "ready" | StudioRuntimeFailure>("loading");
@@ -125,7 +137,10 @@ export const StudioCoreRuntimeBoundary: React.FC<React.PropsWithChildren<{ inclu
 };
 
 function StudioRouteScreen({ sectionId, screen: Screen }: { sectionId: StudioSectionId; screen: React.ElementType }) {
-  return <div data-studio-route-section={sectionId}><Screen /></div>;
+  const { workspaceId } = useWorkspaceContextSnapshot();
+  const session = useAuthSessionSnapshot();
+  // Owner-loaded screens retain the scope lifetime formerly supplied by StudioCoreRuntimeBoundary.
+  return <div key={`${workspaceId}:${session?.sessionId}`} data-studio-route-section={sectionId}><Screen /></div>;
 }
 
 export function createStudioWorkspaceRoutes(): RouteObject[] {
@@ -133,7 +148,7 @@ export function createStudioWorkspaceRoutes(): RouteObject[] {
     index: true,
     element: (
       <PermissionRouteGuard capability="studio.read">
-        <StudioIndexRoute />
+        <StudioCoreRuntimeBoundary includeQuickSetup><StudioIndexRoute /></StudioCoreRuntimeBoundary>
       </PermissionRouteGuard>
     ),
   }, ...STUDIO_SECTIONS.map((section): RouteObject => {
@@ -142,8 +157,7 @@ export function createStudioWorkspaceRoutes(): RouteObject[] {
       path: section.routePath,
       element: (
         <PermissionRouteGuard capability={section.requiredCapability}>
-          {section.id === "integrations" ? <CommunicationsChannelsEntry /> : null}
-          {section.id === "ai" || section.id === "communication-channels" ? <StudioRouteScreen sectionId={section.id} screen={Screen} /> : (
+          {section.id === "ai" || section.id === "communication-channels" || section.groupId === "connections" ? <StudioRouteScreen sectionId={section.id} screen={Screen} /> : (
             <StudioCoreRuntimeBoundary includeQuickSetup={section.id === "quick-setup"}>
               <StudioRouteScreen sectionId={section.id} screen={Screen} />
             </StudioCoreRuntimeBoundary>

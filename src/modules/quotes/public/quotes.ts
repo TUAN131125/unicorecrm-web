@@ -5,7 +5,7 @@ import {
   type MutationCommandMetadata,
   type MutationOutcome,
 } from "@/shared/application";
-import type { QuoteDraftInput, QuoteMutationEvidence } from "../application/ports/QuoteApiRuntime";
+import type { QuoteDraftInput, QuoteMutationEvidence, QuoteListQuery, RejectQuoteInput, RecordQuoteCustomerDecisionInput, ExpireQuoteInput } from "../application/ports/QuoteApiRuntime";
 import type { Quote } from "../domain/model/quote.types";
 import {
   allocateQuoteIdentity,
@@ -31,9 +31,14 @@ import {
   quoteRepository,
 } from "../application/composition/quoteApplicationServices";
 import { QuoteStatus } from "../domain/model/quote.types";
+import { getQuoteDetailResource } from "../application/vertical-slice/quoteAuthoritativeQueries";
 import { executeFrontendRequest } from "@/platform/request-simulation";
+import { issueQuoteDocumentCommand } from "./documents";
+import type { IssuedQuoteDocument } from "../application/read-models/quoteDocumentModels";
 
 export function getQuotesSnapshot(): Quote[] { return quoteRepository.list().filter((quote) => !quote.archivedAt); }
+/** Bounded authoritative relationship read. Does not replace the global Quote collection. */
+export function readQuotePage(query: QuoteListQuery, signal?: AbortSignal) { return getQuoteApiRuntime().queries.list(query, signal); }
 export function getRetainedQuotesSnapshot(): Quote[] { return quoteRepository.list(); }
 export function getQuoteSnapshot(quoteId: string): Quote | undefined { return quoteRepository.getById(quoteId); }
 export function replaceQuotes(quotes: Quote[]): void { quoteRepository.replace(quotes); }
@@ -44,13 +49,42 @@ export function saveQuoteSnapshotAsync(quote: Quote): Promise<Quote> { return ex
 
 export type QuoteLifecycleMutationMetadata = Partial<MutationCommandMetadata>;
 
+export interface QuoteIssuanceCheckpoint { quote: Quote; input: string; issueKey: string }
+export type SaveAndIssueQuoteResult =
+  | { stage: "ISSUED"; quote: Quote; document: IssuedQuoteDocument }
+  | { stage: "ISSUANCE_PENDING"; checkpoint: QuoteIssuanceCheckpoint; error: unknown };
+
+/** Two durable owner commands, not one transaction. Resume the same issued-document intent
+ * after partial failure; never create another Quote just because issuance failed. */
+export async function saveAndIssueQuoteCommand(quote: Quote, metadata: QuoteLifecycleMutationMetadata,
+  checkpoint?: QuoteIssuanceCheckpoint): Promise<SaveAndIssueQuoteResult> {
+  if (!metadata.idempotencyKey) throw new MutationCommandError({ code: "IDEMPOTENCY_KEY_REQUIRED", category: "VALIDATION", retryable: false,
+    message: "A stable create-and-issue intent is required." });
+  if (checkpoint && checkpoint.input !== JSON.stringify(toDraftInput(quote)))
+    throw new MutationCommandError({ code: "QUOTE_ISSUANCE_PENDING", category: "CONFLICT", retryable: false,
+      message: "An earlier document issuance is unresolved. Check the saved Quote before changing its contents." });
+  const saved = checkpoint?.quote ?? (await saveQuoteCommand(quote, metadata)).data;
+  const pending = checkpoint ?? { quote: saved, input: JSON.stringify(toDraftInput(saved)), issueKey: `${metadata.idempotencyKey}:issue` };
+  try {
+    if (saved.resourceVersion === undefined) throw new Error("Authoritative Quote version unavailable.");
+    const issued = await issueQuoteDocumentCommand(saved.id, saved.resourceVersion, "", pending.issueKey);
+    return { stage: "ISSUED", quote: issued.data.quote, document: issued.data.document };
+  } catch (error) { return { stage: "ISSUANCE_PENDING", checkpoint: pending, error }; }
+}
+
+export function isQuoteConnectedMode(): boolean { return isQuoteConnectedApiRuntime(); }
+
 export async function saveQuoteCommand(quote: Quote, metadata: QuoteLifecycleMutationMetadata = {}): Promise<MutationOutcome<Quote>> {
   const current = getQuoteSnapshot(quote.id);
   const commandType = current ? "quote.update-draft" : "quote.create";
   const commandMetadata = createMutationMetadata(`${commandType}:${quote.id}`, metadata);
   const result = current
-    ? await getQuoteApiRuntime().commands.replaceDraft(current.id, toDraftInput(quote), versionedOptions(current, commandMetadata, "replace-draft"))
-    : await getQuoteApiRuntime().commands.createDraft(toDraftInput(quote), commandOptions(commandMetadata));
+    ? await getQuoteApiRuntime().commands.replaceDraft(current.id, toDraftInput(quote), versionedOptions(quote, commandMetadata, "replace-draft"))
+    : quote.sourcePath === "DEAL"
+      ? await getQuoteApiRuntime().commands.createDraftForDeal(quote.sourceDealId || quote.dealId || "", toDraftInput(quote), {
+          ...commandOptions(commandMetadata), expectedVersion: requireDealVersion(commandMetadata),
+        })
+      : await getQuoteApiRuntime().commands.createDraft(toDraftInput(quote), commandOptions(commandMetadata));
   projectQuote(result.quote);
   return quoteOutcome(commandType, commandMetadata, result.quote, result.evidence);
 }
@@ -76,16 +110,20 @@ export async function createQuoteRevisionCommand(quoteId: string, _now?: string,
   const commandMetadata = createMutationMetadata(`quote.revise:${quoteId}`, metadata);
   const result = await getQuoteApiRuntime().commands.revise(quoteId, {}, versionedOptions(current, commandMetadata, "revise"));
   projectQuote(result.quote);
+  // The source stays immutable, but its root-level revision availability changed.
+  void getQuoteDetailResource(quoteId).refresh();
   return quoteOutcome("quote.revise", commandMetadata, result.quote, result.evidence);
 }
 
 export async function recordQuoteDeliveryCommand(quoteId: string, input: Parameters<typeof recordQuoteDelivery>[2], metadata: QuoteLifecycleMutationMetadata = {}): Promise<MutationOutcome<Quote>> {
+  if (input.evidenceType !== undefined && input.evidenceType !== "USER_CONFIRMED_SENT")
+    throw new MutationCommandError({ code: "QUOTE_DELIVERY_EVIDENCE_INVALID", message: "Provider evidence cannot be recorded by an employee.", category: "VALIDATION", retryable: false });
   const current = requireQuote(quoteId);
   const commandMetadata = createMutationMetadata(`quote.send:${quoteId}`, { ...metadata, actor: metadata.actor ?? { id: input.sentBy } });
   const result = await getQuoteApiRuntime().commands.recordSendEvidence(quoteId, {
     deliveryId: input.id,
     channel: input.channel,
-    evidenceType: input.evidenceType ?? "USER_CONFIRMED_SENT",
+    evidenceType: "USER_CONFIRMED_SENT",
     recipientEmail: input.recipientEmail,
     recipient: input.recipient,
     note: input.note,
@@ -96,11 +134,39 @@ export async function recordQuoteDeliveryCommand(quoteId: string, input: Paramet
   return quoteOutcome("quote.send", commandMetadata, result.quote, result.evidence);
 }
 
+export async function recordQuoteCustomerDecisionCommand(quoteId: string, input: RecordQuoteCustomerDecisionInput, metadata: QuoteLifecycleMutationMetadata = {}): Promise<MutationOutcome<Quote>> {
+  const current = requireQuote(quoteId);
+  const commandMetadata = createMutationMetadata(`quote.customer-response:${quoteId}`, metadata);
+  const result = await getQuoteApiRuntime().commands.recordCustomerDecision(quoteId, input, versionedOptions(current, commandMetadata, "customer-response"));
+  projectQuote(result.quote);
+  return quoteOutcome("quote.customer-response", commandMetadata, result.quote, result.evidence);
+}
+
+export async function expireQuoteCommand(quoteId: string, input: ExpireQuoteInput = {}, metadata: QuoteLifecycleMutationMetadata = {}): Promise<MutationOutcome<Quote>> {
+  const current = requireQuote(quoteId);
+  const commandMetadata = createMutationMetadata(`quote.expire:${quoteId}`, metadata);
+  const result = await getQuoteApiRuntime().commands.expire(quoteId, input, versionedOptions(current, commandMetadata, "expire"));
+  projectQuote(result.quote);
+  return quoteOutcome("quote.expire", commandMetadata, result.quote, result.evidence);
+}
+
+export async function rejectQuoteCommand(quoteId: string, input: RejectQuoteInput, metadata: QuoteLifecycleMutationMetadata = {}): Promise<MutationOutcome<Quote>> {
+  const current = requireQuote(quoteId);
+  const commandMetadata = createMutationMetadata(`quote.reject:${quoteId}`, metadata);
+  const result = await getQuoteApiRuntime().commands.reject(quoteId, input, versionedOptions(current, commandMetadata, "reject"));
+  projectQuote(result.quote);
+  return quoteOutcome("quote.reject", commandMetadata, result.quote, result.evidence);
+}
+
 /** Typed lifecycle entry point retained for existing presentation callers. */
 export async function transitionQuoteStatusCommand(quoteId: string, status: QuoteStatus, _now?: string, metadata: QuoteLifecycleMutationMetadata = {}): Promise<MutationOutcome<Quote>> {
   const current = requireQuote(quoteId);
   const commandMetadata = createMutationMetadata(`quote.lifecycle:${quoteId}:${status}`, metadata);
   if (status === QuoteStatus.REJECTED) {
+    if (isQuoteConnectedApiRuntime()) throw new MutationCommandError({
+      code: "QUOTE_REJECTION_BLOCKED", message: "Use the dedicated rejection command with an explicit customer rejection reason.",
+      category: "VALIDATION", retryable: false,
+    });
     const result = await getQuoteApiRuntime().commands.reject(quoteId, { reason: "CUSTOMER_REJECTED" }, versionedOptions(current, commandMetadata, "reject"));
     projectQuote(result.quote);
     return quoteOutcome("quote.reject", commandMetadata, result.quote, result.evidence);
@@ -208,38 +274,51 @@ function toDraftInput(quote: Quote): QuoteDraftInput {
     buyerRef: quote.buyerRef,
     sourcePath: quote.sourcePath,
     sourceDealId: quote.sourceDealId ?? quote.dealId,
-    contactId: quote.contactId,
-    sourceLeadId: quote.sourceLeadId ?? quote.leadId,
+    contactId: quote.contactId || undefined,
+    sourceLeadId: quote.sourceLeadId || quote.leadId || undefined,
     title: quote.title,
     currency,
     ownerId: quote.ownerId,
     recipientEmail: quote.recipientEmail,
     lineItems: quote.lineItems.map((line) => ({
-      productId: line.productId,
+      productId: line.productId || undefined,
       skuSnapshot: line.skuSnapshot,
       productNameSnapshot: line.productNameSnapshot ?? line.productName ?? "",
       productTypeSnapshot: line.productTypeSnapshot,
       descriptionSnapshot: line.descriptionSnapshot ?? line.description,
-      quantity: String(line.quantity),
-      unitPrice: { amount: String(line.unitPriceSnapshot ?? line.unitPrice ?? 0), currency },
-      discountRate: String(line.discountPercent ?? 0),
-      taxRate: line.taxRateSnapshot === undefined ? undefined : String(line.taxRateSnapshot),
+      quantity: quoteInputDecimal(line.quantity, line.inputDecimals?.quantity),
+      unitPrice: { amount: quoteInputDecimal(line.unitPriceSnapshot ?? line.unitPrice ?? 0, line.inputDecimals?.unitPrice), currency },
+      discountRate: quoteInputDecimal(line.discountPercent ?? 0, line.inputDecimals?.discountRate),
+      taxRate: line.taxRateSnapshot === undefined ? undefined : quoteInputDecimal(line.taxRateSnapshot, line.inputDecimals?.taxRate),
       taxMode: (line.taxModeSnapshot ?? "none").toUpperCase() as "EXCLUSIVE" | "INCLUSIVE" | "NONE",
       billingCycleSnapshot: line.billingCycleSnapshot,
     })),
-    adjustments: quote.adjustments?.map((item) => ({ id: item.id, label: item.label, type: item.type, calculation: item.calculation, value: String(item.value) })),
+    adjustments: quote.adjustments?.map((item) => ({ id: item.id, label: item.label, type: item.type, calculation: item.calculation, value: quoteInputDecimal(item.value, item.valueDecimal) })),
     validUntil: quote.validUntil ?? quote.expiryDate,
     notes: quote.notes ?? quote.termsAndNotes,
     paymentAgreement: quote.paymentAgreement,
   };
 }
 
+function quoteInputDecimal(display: number, original?: string): string {
+  const retained = original !== undefined && Number(original) === display;
+  const value = retained ? original : String(display);
+  if (!/^-?(0|[1-9][0-9]*)(\.[0-9]{1,6})?$/.test(value) || (!retained && Math.abs(display) > Number.MAX_SAFE_INTEGER)) {
+    throw new MutationCommandError({ code: "VALIDATION_FAILED", message: "Enter an exact decimal with at most six fractional digits.", category: "VALIDATION", retryable: false });
+  }
+  return value;
+}
 function requireQuote(quoteId: string): Quote { const quote = getQuoteSnapshot(quoteId); if (!quote) throw new MutationCommandError({ code: "RESOURCE_NOT_FOUND", message: `Quote ${quoteId} was not found.`, category: "NOT_FOUND", retryable: false }); return quote; }
 function requireQuoteVersion(quoteId: string, operation: string): number { return readQuoteVersion(requireQuote(quoteId), operation); }
 function readQuoteVersion(quote: Quote, operation: string): number {
-  if (typeof quote.resourceVersion === "number" && Number.isInteger(quote.resourceVersion) && quote.resourceVersion > 0) return quote.resourceVersion;
+  if (typeof quote.resourceVersion === "number" && Number.isInteger(quote.resourceVersion) && quote.resourceVersion >= 0) return quote.resourceVersion;
   if (getQuoteApiRuntime().mode === "demo") return 1;
   throw new MutationCommandError({ code: "QUOTE_RESOURCE_VERSION_REQUIRED", message: `Quote ${quote.id} is missing backend resourceVersion for ${operation}.`, category: "CONFLICT", retryable: true, details: { quoteId: quote.id, operation } });
+}
+function requireDealVersion(metadata: MutationCommandMetadata): number {
+  if (typeof metadata.expectedVersion === "number" && Number.isSafeInteger(metadata.expectedVersion) && metadata.expectedVersion >= 0) return metadata.expectedVersion;
+  if (!isQuoteConnectedApiRuntime()) return 1;
+  throw new MutationCommandError({ code: "DEAL_RESOURCE_VERSION_REQUIRED", message: "Reload the source Deal before creating a Quote.", category: "CONFLICT", retryable: true });
 }
 function commandOptions(metadata: MutationCommandMetadata) { return { idempotencyKey: metadata.idempotencyKey, correlationId: metadata.correlationId, signal: metadata.signal }; }
 function versionedOptions(quote: Quote, metadata: MutationCommandMetadata, operation: string) { return { ...commandOptions(metadata), expectedVersion: typeof metadata.expectedVersion === "number" ? metadata.expectedVersion : readQuoteVersion(quote, operation) }; }

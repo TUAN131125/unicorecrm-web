@@ -103,3 +103,5 @@ try {
 }
 
 console.log("Dashboard runtime contracts: PASS");
+
+await import("../../fixtures/runtime/check-task-date-consistency.mts");

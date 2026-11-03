@@ -5,10 +5,10 @@ import { getDealsSnapshot, replaceDeals, subscribeToDeals, updateDeals } from ".
 import { useModuleAuthoritativeResource } from "@/shared/operations";
 import { useWorkspaceContextSnapshot } from "@/platform/workspace-context";
 
-export function useDeals(options: { loadAuthoritative?: boolean } = {}) {
+export function useDeals(options: { loadAuthoritative?: boolean; pipelineId?: string } = {}) {
   const workspace = useWorkspaceContextSnapshot();
   const [deals, setDealsState] = useState(getDealsSnapshot);
-  const query = useModuleAuthoritativeResource(getDealCollectionResource(), {
+  const query = useModuleAuthoritativeResource(getDealCollectionResource(options.pipelineId), {
     enabled: options.loadAuthoritative ?? true,
     scopeKey: workspace.workspaceId,
     onScopeChange: () => replaceDeals([]),

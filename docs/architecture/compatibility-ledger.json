@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "baselineReleaseId": "unicorecrm-web@0.24.0-contract.0",
   "sourceInventory": "docs/quality/repository-inventory.json",
-  "candidateSetSha256": "b15abf87c9b50e756833a2469b8f3c33aa26b3c6d443b3ab57b989fe45f9fb2c",
-  "candidateCount": 53,
+  "candidateSetSha256": "ba2a613542a9b4cf2de874c0b73d900f471f882414e6e09622690ad00a073862",
+  "candidateCount": 60,
   "allowedStatus": [
     "OPEN",
     "IN_PROGRESS",
@@ -1094,6 +1094,146 @@
         "consumer analysis",
         "Studio route and configuration evidence",
         "focused Studio contract test",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-054",
+      "path": "src/modules/communications/list-route.tsx",
+      "owner": "communications",
+      "signals": [
+        "export-alias"
+      ],
+      "category": "ROUTE_ALIAS",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "LOW",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Owner review must establish whether this inventory signal represents a supported consumer contract or descriptive evidence before any removal; retain current behavior until that review completes.",
+      "evidenceRequired": [
+        "owner classification of source signal",
+        "consumer and historical-data evidence",
+        "focused contract and regression tests",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-055",
+      "path": "src/modules/communications/presentation/components/ChannelSettingsView.tsx",
+      "owner": "communications",
+      "signals": [
+        "legacy-content"
+      ],
+      "category": "HISTORICAL_ACCOUNT_DISPLAY",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "LOW",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Owner review must establish whether this inventory signal represents a supported consumer contract or descriptive evidence before any removal; retain current behavior until that review completes.",
+      "evidenceRequired": [
+        "owner classification of source signal",
+        "consumer and historical-data evidence",
+        "focused contract and regression tests",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-056",
+      "path": "src/modules/deals/public/deals.ts",
+      "owner": "deals",
+      "signals": [
+        "compatibility-content"
+      ],
+      "category": "PUBLIC_COMPATIBILITY_QUERY",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "LOW",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Owner review must establish whether this inventory signal represents a supported consumer contract or descriptive evidence before any removal; retain current behavior until that review completes.",
+      "evidenceRequired": [
+        "owner classification of source signal",
+        "consumer and historical-data evidence",
+        "focused contract and regression tests",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-057",
+      "path": "src/modules/tasks/presentation/pages/TaskDetailPage.tsx",
+      "owner": "tasks",
+      "signals": [
+        "legacy-content"
+      ],
+      "category": "I18N_BRIDGE_GUARD",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "LOW",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Owner review must establish whether this inventory signal represents a supported consumer contract or descriptive evidence before any removal; retain current behavior until that review completes.",
+      "evidenceRequired": [
+        "owner classification of source signal",
+        "consumer and historical-data evidence",
+        "focused contract and regression tests",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-058",
+      "path": "tests/e2e/internal-notices.acceptance.ts",
+      "owner": "test",
+      "signals": [
+        "legacy-content"
+      ],
+      "category": "HISTORICAL_UI_EVIDENCE",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "LOW",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Owner review must establish whether this inventory signal represents a supported consumer contract or descriptive evidence before any removal; retain current behavior until that review completes.",
+      "evidenceRequired": [
+        "owner classification of source signal",
+        "consumer and historical-data evidence",
+        "focused contract and regression tests",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-059",
+      "path": "tests/e2e/studio-connections.spec.ts",
+      "owner": "test",
+      "signals": [
+        "legacy-content"
+      ],
+      "category": "ROUTE_REDIRECT_TEST",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "LOW",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Owner review must establish whether this inventory signal represents a supported consumer contract or descriptive evidence before any removal; retain current behavior until that review completes.",
+      "evidenceRequired": [
+        "owner classification of source signal",
+        "consumer and historical-data evidence",
+        "focused contract and regression tests",
+        "repository inventory regeneration"
+      ]
+    },
+    {
+      "id": "COMP-060",
+      "path": "tests/quality/unit/quoteListPagingChecks.ts",
+      "owner": "test",
+      "signals": [
+        "legacy-content"
+      ],
+      "category": "I18N_BRIDGE_TEST",
+      "decision": "REVIEW_FOR_RETIREMENT",
+      "priority": "LOW",
+      "status": "OPEN",
+      "targetMilestone": "BACKEND_PHASE_6_COMPATIBILITY_RETIREMENT",
+      "removalGate": "Owner review must establish whether this inventory signal represents a supported consumer contract or descriptive evidence before any removal; retain current behavior until that review completes.",
+      "evidenceRequired": [
+        "owner classification of source signal",
+        "consumer and historical-data evidence",
+        "focused contract and regression tests",
         "repository inventory regeneration"
       ]
     }

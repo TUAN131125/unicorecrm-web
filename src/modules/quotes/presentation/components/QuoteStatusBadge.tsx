@@ -15,18 +15,19 @@ const STATUS_LABEL_KEYS: Record<QuoteStatus, string> = {
 interface QuoteStatusBadgeProps {
   status: QuoteStatus;
   className?: string;
+  size?: "xs" | "sm" | "md";
 }
 
-export const QuoteStatusBadge: React.FC<QuoteStatusBadgeProps> = ({ status, className = "" }) => {
+export const QuoteStatusBadge: React.FC<QuoteStatusBadgeProps> = ({ status, className = "", size = "xs" }) => {
   const { t } = useI18n();
 
   return (
     <Badge
       variant={getQuoteStatusBadgeVariant(status)}
-      size="xs"
-      className={`whitespace-nowrap font-black tracking-wide ${className}`}
+      size={size}
+      className={`whitespace-nowrap font-medium tracking-wide ${className}`}
     >
-      {t(STATUS_LABEL_KEYS[status])}
+      <span data-i18n-skip="true">{t(STATUS_LABEL_KEYS[status])}</span>
     </Badge>
   );
 };

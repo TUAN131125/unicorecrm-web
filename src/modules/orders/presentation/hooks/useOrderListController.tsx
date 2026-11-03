@@ -1,4 +1,6 @@
+import { orderCompletionBlockersMessage } from "../model/orderActionPolicy";
 import { useOrderFormLifecycle } from "./useOrderFormLifecycle";
+import { runBackendProjection } from "@/shared/application";
 import { useUnsavedChangesGuard } from "@/shared/hooks/useUnsavedChangesGuard";
 import { formatApplicationError, formatOperationUnavailableError, summarizeBulkCommits, unavailableFeatureMessage, useServerPagedModuleCollection } from "@/shared/operations";
 import React, { useState, useMemo, useEffect, useRef } from "react";
@@ -11,15 +13,18 @@ import { useOrders } from "../hooks/useOrders";
 import { archiveOrderCommandBoundary, archiveOrdersCommandBoundary, duplicateOrderDraftCommand, getOrderPreference, removeOrderPreference, replaceOrderList, setOrderPreference } from "../../public/orders";
 import { useI18n } from "@/i18n";
 import { evaluateOrderClosingPolicy, executeOrderClosingCommand, isOrderClosingUnavailable } from "@/workflows/order-closing";
-import { executeOrderConfirmationCommand } from "@/workflows/order-confirmation";
 import { executeOrderCancellationCommand } from "@/workflows/order-cancellation";
 import { CAPABILITIES, useEffectiveAccess } from "@/platform/access-control";
 import { usePlatformState } from "@/platform/application-state";
 import { toWorkspacePath } from "@/platform/navigation";
 import { useCustomerSnapshots } from "../hooks/useCustomerSnapshots";
 import { useOrderListFilters } from "../hooks/useOrderListFilters";
-import { useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
+import { useWorkspaceRuntimeSettings } from "@/platform/workspace-config";
 import type { OrderStatusConfig, ColumnConfig, OrderColumnDef } from "../list/orderList.types";
+
+const projectOrderServerPage = (records: readonly CustomerOrder[]): void => {
+  runBackendProjection("orders", () => replaceOrderList(records));
+};
 
 export interface OrderListPageProps {
   quotes?: any[];
@@ -67,8 +72,8 @@ export function useOrderListController({
 }: OrderListPageProps) {
   const navigate = useNavigate();
   const { t, locale, tx } = useI18n();
-  const workspaceConfiguration = useWorkspaceOperationalConfiguration();
-  const baseCurrency = workspaceConfiguration.localeRegion.currencies.baseCurrency;
+  const workspaceConfiguration = useWorkspaceRuntimeSettings();
+  const baseCurrency = workspaceConfiguration.baseCurrency;
   const [view, setView] = useState<"table" | "card" | "kanban">(() => {
     const saved = getOrderPreference<string | null>("centrix_order_list_view", null);
     if (saved === "table" || saved === "card" || saved === "kanban") return saved;
@@ -82,7 +87,7 @@ export function useOrderListController({
   const path = (value: string) => toWorkspacePath(activeWorkspace.workspaceKey, "crm", value);
   const actorId = session?.principal?.memberId ?? access.memberId ?? "current-user";
   const actorName = session?.principal?.displayName ?? actorId;
-  const canCreateOrder = access.canPerform("orders", "create");
+  const canCreateOrder = !fullCollectionQuery.connected && access.canPerform("orders", "create");
   const canConfirmOrder = access.canPerform("orders", "confirm");
   const canCompleteOrder = access.canPerform("orders", "complete");
   const orderActionPermissions = {
@@ -263,10 +268,11 @@ export function useOrderListController({
   const serverPagination = useServerPagedModuleCollection<CustomerOrder>({
     key: "orders",
     scopeKey: activeWorkspace.workspaceId,
+    authorizationScopeKey: JSON.stringify([access.accountId, access.membershipId, access.authorityRevision]),
     enabled: view !== "kanban",
     query: orderServerQuery,
     initialPageSize: 25,
-    project: replaceOrderList,
+    project: projectOrderServerPage,
   });
   const query = view === "kanban" ? fullCollectionQuery : serverPagination;
 
@@ -297,16 +303,7 @@ export function useOrderListController({
     if (nextState === "CANCELLED") { if (cancelTarget || cancellation.pending) return; setCancelTarget(structuredClone(orderObj)); setCancelReason(""); return; }
     if (nextState === "CONFIRMED") {
       if (!canConfirmOrder || !access.canAccessRecord("orders", orderObj)) { setAlertMessage({ type: "error", text: locale === "vi" ? "Bạn chưa có quyền xác nhận hoặc Đơn hàng nằm ngoài phạm vi dữ liệu được giao." : "You lack confirmation permission or the Order is outside your assigned data scope." }); return; }
-      try {
-        await executeOrderConfirmationCommand(
-          { orderId: id },
-          orderObj.resourceVersion === undefined ? {} : { expectedVersion: orderObj.resourceVersion },
-        );
-      } catch (error) {
-        setAlertMessage({ type: "error", text: formatApplicationError(error, { locale }) });
-        return;
-      }
-      setAlertMessage({ type: "success", text: locale === "vi" ? `Đã xác nhận vận hành ${orderObj.orderNumber} và kích hoạt kế hoạch thanh toán.` : `${orderObj.orderNumber} was operationally confirmed and its Payment Plan activated.` });
+      navigate(path(`/orders/${id}?confirm=1`));
       return;
     }
     if (nextState === "COMPLETED") {
@@ -317,7 +314,7 @@ export function useOrderListController({
       const result = (await executeOrderClosingCommand({ orderIds: [id] })).data;
       const blockedItem = result.blocked.find((item) => item.orderId === id);
       if (result.completedIds.includes(id) || result.alreadyCompletedIds.includes(id)) setAlertMessage({ type: "success", text: locale === "vi" ? `Order ${orderObj.orderNumber} đã hoàn tất theo fulfillment evidence.` : `Order ${orderObj.orderNumber} completed from fulfillment evidence.` });
-      else setAlertMessage({ type: "error", text: blockedItem?.blockers.join(" ") || "Order completion blocked." });
+      else setAlertMessage({ type: "error", text: orderCompletionBlockersMessage(blockedItem?.blockers, locale) });
       return;
     }
     setAlertMessage({ type: "error", text: locale === "vi" ? "Chuyển trạng thái Order không hợp lệ." : "Invalid Order lifecycle transition." });
@@ -392,7 +389,7 @@ export function useOrderListController({
       if (result.blocked.length > 0) {
         setAlertMessage({
           type: "error",
-          text: result.blocked.map((item) => `${item.orderId}: ${item.blockers.join(" ")}`).join(" | "),
+          text: (locale === "vi" ? `${result.blocked.length} đơn hàng chưa thể hoàn tất. ` : `${result.blocked.length} orders could not be completed. `) + orderCompletionBlockersMessage(result.blocked.flatMap(item => item.blockers), locale),
         });
         return;
       }

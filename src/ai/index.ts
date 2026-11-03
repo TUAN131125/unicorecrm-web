@@ -28,6 +28,7 @@ export type {
   AiInsightType,
   AiSuggestedAction,
 } from "./aiTypes";
+export { presentAiProviderFailure } from "./application/aiProviderFailure";
 
 export type {
   AiActionIntent,

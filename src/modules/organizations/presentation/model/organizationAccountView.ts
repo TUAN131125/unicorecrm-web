@@ -54,7 +54,7 @@ export function getOrganizationAccountMetrics(
   return {
     representativeCount: getOrganizationContacts(account, contacts).length,
     openDealsCount: openDeals.length,
-    pipelineValue: openDeals.reduce((total, deal) => total + deal.amount, 0),
+    pipelineValue: openDeals.reduce((total, deal) => deal.amount === null ? total : total + deal.amount, 0),
     orderValue: relatedOrders.reduce(
       (total, order) => total + (order.grandTotal ?? order.totalAmount ?? 0),
       0,
@@ -95,7 +95,8 @@ export function getOrganizationStatusBadgeClass(status: OrganizationAccountStatu
   }
 }
 
-export function formatOrganizationCurrency(value: number, locale = "vi-VN"): string {
+export function formatOrganizationCurrency(value: number | null, locale = "vi-VN"): string {
+  if (value === null) return "—";
   return new Intl.NumberFormat(locale, {
     style: "currency",
     currency: "VND",

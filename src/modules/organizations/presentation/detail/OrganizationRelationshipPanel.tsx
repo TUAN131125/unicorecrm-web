@@ -24,17 +24,17 @@ export function OrganizationRelationshipPanel({ recordId, status, visible }: { r
   function stateMessage(kind: "tasks" | "history") {
     const query = kind === "tasks" ? data.tasks : data.history;
     if (!data.readable) return text("Bạn không có quyền đọc công việc và hoạt động.", "You cannot read tasks and activities.");
-    if (kind === "history" && !data.historySupported) return text("Lịch sử chưa khả dụng với phạm vi hoặc quyền trường hiện tại.", "History is unavailable for the current scope or field policy.");
-    if (kind === "tasks" && !data.tasksEnabled) return text("Công việc chưa khả dụng với quyền trường hiện tại.", "Tasks are unavailable for the current field policy.");
+    if (kind === "history" && !data.historySupported) return text("Chưa thể mở lịch sử này.", "This history cannot be opened.");
+    if (kind === "tasks" && !data.tasksEnabled) return text("Chưa thể mở công việc này.", "These tasks cannot be opened.");
     if (query.loading) return text("Đang tải…", "Loading…");
-    if (query.error) return text("Không thể tải dữ liệu trong phạm vi hiện tại.", "Data could not be loaded in the current scope.");
+    if (query.error) return text("Không thể tải dữ liệu. Vui lòng thử lại.", "Data could not be loaded. Please retry.");
     return "";
   }
   const historyMessage = stateMessage("history"), taskMessage = stateMessage("tasks");
   const history = <section aria-label={text("Hoạt động tổ chức", "Organization activities")} className="space-y-3">
     {historyMessage && <p role="status">{historyMessage}</p>}
     {data.history.error && data.historySupported && <Button onClick={() => void data.historyEntry.refresh()}>{text("Thử lại", "Retry")}</Button>}
-    {!historyMessage && !historyItems.length && <p role="status">{text("Không có hoạt động gắn trực tiếp tổ chức trong phạm vi này.", "No directly linked activities in this scope.")}</p>}
+    {!historyMessage && !historyItems.length && <p role="status">{text("Không có hoạt động gắn trực tiếp tổ chức trong phạm vi này.", "No activities to display.")}</p>}
     <ol className="space-y-2">{historyItems.map(item => <li key={item.id} data-history-id={item.id}><button type="button" aria-haspopup="dialog" onClick={() => setSelectedId(item.id)} className="w-full space-y-1 rounded-lg border border-slate-200 p-3 text-left text-xs focus-visible:outline focus-visible:outline-indigo-600 [overflow-wrap:anywhere]">
       <span className="block text-indigo-600">{item.type}</span><span className="block font-semibold">{item.subject}</span><time dateTime={item.occurredAt}>{date(item.occurredAt)}</time>
     </button></li>)}</ol>
@@ -50,7 +50,7 @@ export function OrganizationRelationshipPanel({ recordId, status, visible }: { r
     <WorkSection first title={text("Công việc liên quan trực tiếp", "Directly linked work")}>
       {taskMessage && <p role="status">{taskMessage}</p>}
       {data.tasks.error && <Button onClick={() => void data.taskEntry.refresh()}>{text("Thử lại", "Retry")}</Button>}
-      {!taskMessage && !data.taskItems.length && <p role="status">{text("Không có công việc gắn trực tiếp tổ chức trong phạm vi này.", "No directly linked tasks in this scope.")}</p>}
+      {!taskMessage && !data.taskItems.length && <p role="status">{text("Không có công việc gắn trực tiếp tổ chức trong phạm vi này.", "No tasks to display.")}</p>}
       <ul className="space-y-2">{data.taskItems.map(task => <li key={task.id} data-organization-task-id={task.id}><WorkTaskItem title={task.title} onOpen={() => navigate(`/tasks/${task.id}`)} metadata={<>{task.status} · {task.priority} · <time dateTime={task.dueAt}>{date(task.dueAt)}</time> · {resolveWorkspaceMemberLabel(task.assigneeId,vi ? "vi" : "en")}</>}/></li>)}</ul>
       {!taskMessage && data.tasks.data?.pageInfo.hasNextPage && <Button disabled={data.taskItems.length >= 500} onClick={() => void data.taskEntry.more()}>{text("Tải thêm công việc", "Load more tasks")}</Button>}
       {data.taskItems.length >= 500 && <p role="status">{text("Đã tải tối đa 500 công việc.", "500-task display limit reached.")}</p>}

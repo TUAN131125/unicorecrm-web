@@ -13,15 +13,13 @@ import type { Contact } from "@/modules/contacts";
 import type { CustomerDisplay as Customer } from "@/modules/customers";
 import { getCustomerDisplayName, getCustomerSecondaryInfo } from "@/modules/customers";
 import type { CrmWorkspaceConfig } from "@/platform/workspace-config";
-import { getQuoteDocumentLabel } from "@/platform/workspace-config";
-
-
-import { QuoteApprovalStatus, QuoteStatus, getQuoteDealId, getQuotesSnapshot, isQuoteAccepted, subscribeToQuotes, updateQuotes, transitionQuoteStatusCommand, type Quote } from "@/modules/quotes";
+import { getQuoteDocumentLabel, useWorkspaceRuntimeSettings } from "@/platform/workspace-config";
+import { QuoteStatus, getQuoteDealId, getQuotesSnapshot, isQuoteAccepted, subscribeToQuotes, updateQuotes, transitionQuoteStatusCommand, type Quote } from "@/modules/quotes";
 import { DEFAULT_CRM_WORKSPACE_CONFIG } from "@/platform/workspace-config/workspaceConfigDefaults";
 import { useI18n } from "@/i18n";
 import { getOrdersForDeal } from "@/modules/orders";
 import type { CustomerOrder } from "@/modules/orders";
-import { logActivityViaApi, type ActivityType, type NoteActivityDraft, resolveActivityRecordingDate } from "@/modules/tasks";
+import { isManualActivityType, logActivityViaApi, type ActivityType, type NoteActivityDraft, resolveActivityRecordingDate } from "@/modules/tasks";
 import { closeDealLostCommand, closeDealWonCommand, isDealConnectedMode, transitionDealStageCommand, updateDealCommand } from "../../public/deals";
 import { invalidateModuleQueries } from "@/shared/application";
 import type { DealLineItem } from "../../domain/model/deal.types";
@@ -29,6 +27,11 @@ import { acceptQuoteAndCloseDealCommand } from "@/workflows/quote-acceptance";
 import { findCustomerByRelationshipRefSnapshot } from "@/modules/customers";
 import { getAuthSessionSnapshot } from "@/platform/identity-auth";
 import { createDurableId } from "@/shared/ids";
+import { useDealBuyerLabel } from "./useDealBuyerLabel";
+import { useDealRelatedQuotes } from "./useDealRelatedQuotes";
+import { useEffectiveAccess, useEffectiveRecordAccess, useEffectiveRecordAccessDecision } from "@/platform/access-control";
+import { useWorkspaceContextSnapshot } from "@/platform/workspace-context";
+import { dealReturnTarget, dealStageChoices } from "../views/dealDetailPresentation";
 
 export interface DealDetailPageProps {
   customers: Customer[];
@@ -52,13 +55,24 @@ export function useDealDetailController({
   const [quotes, setQuoteState] = useState<Quote[]>(() => getQuotesSnapshot());
   React.useEffect(() => subscribeToQuotes(setQuoteState), []);
   const setQuotes: React.Dispatch<React.SetStateAction<Quote[]>> = (updater) => { updateQuotes(updater); };
-  const { stageConfigs } = useDealStages();
   const { dealId } = useParams();
   const navigate = useNavigate();
   const location = useLocation();
   const { t, locale } = useI18n();
+  const workspace = useWorkspaceContextSnapshot();
+  const { timeZone } = useWorkspaceRuntimeSettings();
+  const recordAccess = useEffectiveRecordAccessDecision();
+  const effectiveAccess = useEffectiveAccess();
+  const connected = isDealConnectedMode();
+  const quoteCreateAccess = useEffectiveRecordAccess({ resourceKey: "quotes", requestedCommands: ["quote.create"], enabled: crmConfig.modules.quotes });
+  const quoteQuery = useDealRelatedQuotes(dealId, crmConfig.modules.quotes && crmConfig.workflow.quoteUsageMode !== "DISABLED", locale);
+  const [selectedStage, setSelectedStage] = useState("");
+  const [stageError, setStageError] = useState("");
+  const stageIntent = React.useRef(createDurableId("deal-stage"));
+  React.useEffect(() => { setSelectedStage(""); setStageError(""); stageIntent.current = createDurableId("deal-stage"); }, [dealId, workspace.workspaceId]);
 
   const screenDeal = deals.find(d => d.id === dealId);
+  const { stageConfigs, pipeline, pipelineQuery } = useDealStages(screenDeal?.pipelineId);
   const [lostReason, setLostReason] = useState("");
   const [lostNotes, setLostNotes] = useState("");
   const [lostRecycleDecision, setLostRecycleDecision] = useState<"RECYCLE" | "CONDITIONAL" | "DO_NOT_RECYCLE">("DO_NOT_RECYCLE");
@@ -77,6 +91,7 @@ export function useDealDetailController({
     },
   );
   const deal = openingDeal ?? screenDeal;
+  const buyerLabel = useDealBuyerLabel(deal);
 
 
   const [toast, setToast] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -97,6 +112,8 @@ export function useDealDetailController({
     idempotencyKey?: string;
   }): Promise<boolean> => {
     if (!deal) return false;
+    // Automated Quote events cannot be submitted as manual HTTP audit evidence.
+    if (!isManualActivityType(input.taskType)) return false;
     const session = getAuthSessionSnapshot();
     if (!session) throw new Error(locale === "vi" ? "Phiên đăng nhập không còn hợp lệ." : "The authenticated session is no longer available.");
     const outcome = await logActivityViaApi({
@@ -149,12 +166,12 @@ export function useDealDetailController({
   const [newNoteText, setNewNoteText] = useState("");
   const [noteError, setNoteError] = useState("");
   const [activeFilter, setActiveFilter] = useState<"all" | "note" | "stage" | "quote" | "outcome">("all");
-  const [activeTab, setActiveTab] = useState<"overview" | "products" | "quotes" | "activity" | "notes">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "quotes" | "tasks" | "activity" | "forecast">("overview");
 
   // Quotes helper states and handlers
-  const relatedQuotes = quotes.filter(q => getQuoteDealId(q) === deal?.id);
-  const hasAcceptedQuote = quotes.some(q => getQuoteDealId(q) === deal?.id && isQuoteAccepted(q.status));
-  const acceptedQuote = quotes.find(q => getQuoteDealId(q) === deal?.id && isQuoteAccepted(q.status));
+  const relatedQuotes = connected ? quoteQuery.items : quotes.filter(q => getQuoteDealId(q) === deal?.id);
+  const hasAcceptedQuote = relatedQuotes.some(q => isQuoteAccepted(q.status));
+  const acceptedQuote = relatedQuotes.find(q => isQuoteAccepted(q.status));
 
   const linkedOrders = React.useMemo(() => {
     if (!deal || !isWonStage(deal.stage, stageConfigs)) return [];
@@ -174,7 +191,7 @@ export function useDealDetailController({
     if (related.some(q => q.status === QuoteStatus.SENT)) {
       return "sent";
     }
-    if (related.some(q => q.status === QuoteStatus.REVIEW || (q.approvalRequired && q.approvalStatus === QuoteApprovalStatus.PENDING && q.approvalRequestedAt))) {
+    if (related.some(q => q.status === QuoteStatus.REVIEW)) {
       return "review";
     }
     if (related.some(q => q.status === QuoteStatus.DRAFT)) {
@@ -190,12 +207,18 @@ export function useDealDetailController({
   };
 
   const quoteState = deal ? getOpportunityQuoteState(deal, quotes) : "none";
+  const quoteTransitionPending = React.useRef(false);
 
   const handleUpdateQuoteStatus = async (quoteId: string, newStatus: QuoteStatus) => {
     const targetQuote = quotes.find((quote) => quote.id === quoteId);
-    if (!targetQuote) return;
+    if (!targetQuote || quoteTransitionPending.current) return;
+    if (targetQuote.status === newStatus) {
+      triggerToast("success", locale === "vi" ? "Trạng thái báo giá đã được cập nhật." : "Quote status is already updated.");
+      return;
+    }
 
     const now = new Date().toISOString();
+    quoteTransitionPending.current = true;
     try {
       const updatedQuote = newStatus === QuoteStatus.ACCEPTED
         ? (await acceptQuoteAndCloseDealCommand(
@@ -205,60 +228,25 @@ export function useDealDetailController({
         : (await transitionQuoteStatusCommand(quoteId, newStatus, now)).data;
       if (!updatedQuote) return;
 
-      let activityTitle = "";
-      let activityDescription = "";
-      if (newStatus === QuoteStatus.REVIEW) {
-        activityTitle = locale === "vi" ? "Báo giá chuyển sang duyệt" : "Quote submitted for review";
-        activityDescription = `#${targetQuote.quoteNumber} v${targetQuote.version}`;
-      } else if (newStatus === QuoteStatus.SENT) {
-        activityTitle = t("deals.activities.quoteSentTitle");
-        activityDescription = t("deals.activities.quoteSentDescription", { quoteNumber: targetQuote.quoteNumber });
-      } else if (newStatus === QuoteStatus.ACCEPTED) {
-        activityTitle = t("deals.activities.quoteAcceptedTitle");
-        activityDescription = t("deals.activities.quoteAcceptedDescription", { quoteNumber: targetQuote.quoteNumber });
-      } else if (newStatus === QuoteStatus.REJECTED) {
-        activityTitle = t("deals.activities.quoteRejectedTitle");
-        activityDescription = t("deals.activities.quoteRejectedDescription", { quoteNumber: targetQuote.quoteNumber });
-      }
-
-      if (deal && activityTitle) {
-        await logDealTimelineActivity({
-          activityType: "quote",
-          taskType: "SYSTEM",
-          title: activityTitle,
-          description: activityDescription,
-          occurredAt: now,
-          sourceType: "QUOTE_STATUS",
-          sourceId: targetQuote.id,
-          metadata: {
-            quoteId: targetQuote.id,
-            quoteNumber: targetQuote.quoteNumber,
-            quoteStatus: newStatus,
-          },
-        });
-      }
-
+      // The Quote command owns transition evidence. Manual Activity cannot record SYSTEM audit.
       if (newStatus === QuoteStatus.ACCEPTED && deal) {
         triggerToast("success", locale === "vi"
-          ? "Quote Accepted đã cung cấp commercial commitment evidence; Deal được đóng WON."
-          : "Quote Accepted supplied commercial commitment evidence; the Deal is now WON.");
+          ? "Báo giá đã được chấp nhận; cơ hội đã đóng thắng."
+          : "The quote was accepted and the opportunity was closed as won.");
+      } else {
+        triggerToast("success", locale === "vi" ? "Đã cập nhật trạng thái báo giá." : "Quote status updated.");
       }
     } catch (error) {
       triggerToast("error", formatApplicationError(error, { locale }));
+    } finally {
+      quoteTransitionPending.current = false;
     }
   };
 
   // Stage configuration is subscribed through the Deal module hook.
 
   const getDealStageLabel = (stage: string | DealStage) => {
-    let label = getStageLabel(stage, stageConfigs, locale);
-    if (stage === "PROPOSAL" && locale === "vi") {
-      const hasSentOrAccepted = relatedQuotes.some(q => q.status === QuoteStatus.SENT || isQuoteAccepted(q.status));
-      if (hasSentOrAccepted) {
-        label = "Đã báo giá";
-      }
-    }
-    return label;
+    return getStageLabel(stage, stageConfigs, locale);
   };
 
   if (!deal) return null;
@@ -281,25 +269,34 @@ export function useDealDetailController({
   };
 
   // Check terminal locking status
-  const isTerminal = isWonStage(deal.stage, stageConfigs) || isLostStage(deal.stage, stageConfigs);
+  const isTerminal = deal.stageCategory === "WON" || deal.stageCategory === "LOST" || isWonStage(deal.stage, stageConfigs) || isLostStage(deal.stage, stageConfigs);
+  const canCommand = (command: string) => Boolean(recordAccess?.canRead && recordAccess.allowedCommands.includes(command));
+  const canWrite = (field: string) => recordAccess?.fieldAccess[field] === "READ_WRITE";
+  const stageChoices = dealStageChoices(deal, stageConfigs, connected);
+  const canChangeStage = !isTerminal && !deal.archivedAt && canCommand("deal.move-stage") && ["stageCode", "stageCategory", "stageEnteredAt"].every(canWrite);
+  const canCloseWon = !isTerminal && !deal.archivedAt && canCommand("deal.close-won") && ["stageCode", "stageCategory", "wonAt", "winEvidence", "actualCloseDate"].every(canWrite);
+  const canCloseLost = !isTerminal && !deal.archivedAt && canCommand("deal.close-lost") && ["stageCode", "stageCategory", "lostReason", "lostReasonNote", "recycleDecision", "revisitAt", "lostAt", "actualCloseDate"].every(canWrite);
+  const canCreateQuote = !isTerminal && !deal.archivedAt && (!connected || Boolean(recordAccess?.canRead && quoteCreateAccess.data?.allowedCommands.includes("quote.create"))) && isQuoteEnabled && effectiveAccess.canPerform("quotes", "create");
+  const canUpdateQuote = effectiveAccess.canPerform("quotes", "update");
+  // Connected MarkWon validates evidence shape only in the current Backend. Do not
+  // promote a displayed Accepted status into verified cross-owner commitment.
+  const canConfirmWon = !connected && canCloseWon && Boolean(acceptedQuote);
+  const handleChangeStage = async (target = selectedStage) => {
+    if (!canChangeStage || !stageChoices.some(stage => stage.code === target) || pendingMutation.current) return;
+    setStageError("");
+    try {
+      const saved = await runBoundMutation(() => transitionDealStageCommand(deal.id, target, undefined, {
+        idempotencyKey: `${stageIntent.current}:${deal.id}:${deal.resourceVersion ?? "demo"}:${target}`,
+        ...(deal.resourceVersion === undefined ? {} : { expectedVersion: deal.resourceVersion }),
+      }), true);
+      if (saved) { setSelectedStage(""); triggerToast("success", locale === "vi" ? "Đã cập nhật giai đoạn." : "Stage updated."); }
+    } catch (error) { setStageError(formatApplicationError(error, { locale })); }
+  };
 
   // Handles moving through open canonical stages only.
   const handleNextStage = async () => {
     const nextStage = getNextDealStage(deal.stage);
-    if (!nextStage) return;
-    const now = new Date().toISOString();
-    await transitionDealStageCommand(deal.id, nextStage, {
-      id: createDurableId("deal_activity"),
-      type: "stage",
-      title: t("deals.activities.stageChangedTitle"),
-      description: t("deals.activities.stageChangedDescription", {
-        from: getDealStageLabel(deal.stage),
-        to: getDealStageLabel(nextStage),
-      }),
-      createdAt: now,
-      author: t("common.system"),
-      metadata: { fromStage: deal.stage, toStage: nextStage },
-    });
+    if (nextStage) await handleChangeStage(nextStage);
   };
 
   // Handles updating line items
@@ -386,6 +383,7 @@ export function useDealDetailController({
 
   // Action: Mark Won. The terminal transition requires commitment evidence.
   const handleConfirmWon = async () => {
+    if (!canConfirmWon || interactionPending || pendingMutation.current) return;
     const now = new Date().toISOString();
     const quoteEvidence = relatedQuotes
       .filter((quote) => quote.status === QuoteStatus.ACCEPTED)
@@ -405,7 +403,7 @@ export function useDealDetailController({
       return;
     }
 
-    await closeDealWonCommand(deal.id, evidence, {
+    const saved = await runBoundMutation(() => closeDealWonCommand(deal.id, evidence, {
       id: createDurableId("deal_activity_won"),
       type: "won",
       title: t("deals.activities.markedWonTitle"),
@@ -413,14 +411,16 @@ export function useDealDetailController({
       createdAt: now,
       author: t("common.system"),
       metadata: { toStage: DealStage.WON },
-    });
+    }, { idempotencyKey: `${intentId}:won`, ...(deal.resourceVersion === undefined ? {} : { expectedVersion: deal.resourceVersion }) }));
 
+    if (!saved) return;
     triggerToast("success", t("orders.toast.dealWon"));
     setIsWonModalOpen(false);
   };
 
   // Action: Mark Lost with explicit recycle semantics.
   const handleConfirmLost = async (): Promise<boolean> => {
+    if (!canCloseLost) return false;
     if (pendingMutation.current) return false;
     if (!lostReason.trim()) {
       setLostError(t("deals.lostModal.reasonRequired"));
@@ -484,7 +484,7 @@ export function useDealDetailController({
 
   // Back state router compatibility
   const state = location.state as { returnTo?: string } | null;
-  const returnTo = state?.returnTo || "/deals";
+  const returnTo = dealReturnTarget(state?.returnTo, workspace.workspaceKey);
 
   // Timeline list setup with filtering and newest-first sorting by parsed Date
   const rawActivities = deal.activities || [];
@@ -508,6 +508,9 @@ export function useDealDetailController({
   });
 
   return {
+    connected, recordAccess, quoteQuery, canCreateQuote, canUpdateQuote, canCommand, canWrite, timeZone,
+    canChangeStage, canCloseWon, canCloseLost, canConfirmWon, stageChoices,
+    selectedStage, setSelectedStage, stageError, handleChangeStage,
     customers,
     setCustomers,
     contacts,
@@ -519,6 +522,7 @@ export function useDealDetailController({
     deals,
     setDeals,
     stageConfigs,
+    pipeline, pipelineQuery,
     dealId,
     navigate,
     location,
@@ -570,6 +574,7 @@ export function useDealDetailController({
     isQuoteEnabled,
     quoteDocumentLabel,
     customerDisplayName,
+    buyerLabel,
     customerSecondaryInfo,
     customerTypeLabel,
     getNextDealStage,

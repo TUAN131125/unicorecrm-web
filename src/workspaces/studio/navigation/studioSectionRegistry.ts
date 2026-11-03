@@ -3,7 +3,7 @@ import { relativeRoutePath } from "@/platform/navigation";
 import { CAPABILITIES } from "@/platform/access-control/domain/capabilityCatalog";
 import type { Capability } from "@/platform/access-control/domain/accessControl.types";
 
-export type StudioSectionGroupId = "quick-setup" | "workspace" | "crm-data" | "finance" | "connections";
+export type StudioSectionGroupId = "quick-setup" | "workspace" | "crm-data" | "finance" | "ai" | "communications" | "connections";
 export type StudioSectionIconKey =
   | "quick-setup"
   | "building"
@@ -19,6 +19,9 @@ export type StudioSectionIconKey =
   | "webhooks";
 
 export type StudioSectionId =
+  | "connections-overview"
+  | "connections-inbound"
+  | "api-access"
   | "communication-channels"
   | "quick-setup"
   | "business-information"
@@ -59,12 +62,33 @@ export const STUDIO_SECTION_GROUPS: readonly StudioSectionGroupDefinition[] = [
   { id: "workspace", labelVi: "WORKSPACE", labelEn: "WORKSPACE", order: 10 },
   { id: "crm-data", labelVi: "DỮ LIỆU CRM", labelEn: "CRM DATA", order: 20 },
   { id: "finance", labelVi: "TÀI CHÍNH", labelEn: "FINANCE", order: 30 },
-  { id: "connections", labelVi: "KẾT NỐI", labelEn: "CONNECTIONS", order: 40 },
+  { id: "connections", labelVi: "KẾT NỐI & API", labelEn: "CONNECTIONS & API", order: 40 },
+  { id: "ai", labelVi: "STUDIO AI", labelEn: "STUDIO AI", order: 45 },
+  { id: "communications", labelVi: "COMMUNICATIONS", labelEn: "COMMUNICATIONS", order: 50 },
 ] as const;
 
 export const STUDIO_SECTIONS: readonly StudioSectionDefinition[] = [
   {
-    id: "communication-channels", groupId: "connections",
+    id: "connections-overview", groupId: "connections", routePath: relativeRoutePath(ROUTE_KEYS.SETTINGS_CONNECTIONS),
+    labelVi: "Tổng quan kết nối", labelEn: "Overview",
+    descriptionVi: "Trạng thái theo từng nguồn của Workspace hiện tại.", descriptionEn: "Source-specific state for the current Workspace.",
+    icon: "webhooks", requiredCapability: CAPABILITIES.STUDIO_READ, order: 95,
+  },
+  {
+    id: "connections-inbound", groupId: "connections", routePath: relativeRoutePath(ROUTE_KEYS.SETTINGS_CONNECTIONS_INBOUND),
+    labelVi: "Nhận dữ liệu", labelEn: "Inbound Sources",
+    descriptionVi: "Quản lý nguồn nhận chưa khả dụng.", descriptionEn: "Inbound source management is unavailable.",
+    icon: "webhooks", requiredCapability: CAPABILITIES.STUDIO_READ, order: 105,
+  },
+  {
+    id: "api-access", groupId: "connections", routePath: relativeRoutePath(ROUTE_KEYS.SETTINGS_API_ACCESS),
+    labelVi: "Truy cập API", labelEn: "Developer API",
+    descriptionVi: "Quản lý khóa API chưa khả dụng.", descriptionEn: "API key management is unavailable.",
+    icon: "webhooks", requiredCapability: CAPABILITIES.STUDIO_READ, order: 120,
+  },
+
+  {
+    id: "communication-channels", groupId: "communications",
     routePath: relativeRoutePath(ROUTE_KEYS.SETTINGS_COMMUNICATION_CHANNELS),
     labelVi: "Communications · Kênh kết nối", labelEn: "Communications · Channel connections",
     descriptionVi: "Quản lý nhiều tài khoản theo ID độc lập; cấu hình nháp không phải kết nối thật.",
@@ -181,7 +205,7 @@ export const STUDIO_SECTIONS: readonly StudioSectionDefinition[] = [
   },
   {
     id: "ai",
-    groupId: "connections",
+    groupId: "ai",
     routePath: relativeRoutePath(ROUTE_KEYS.SETTINGS_AI),
     labelVi: "Trợ lý AI",
     labelEn: "AI Assistant",
@@ -195,10 +219,10 @@ export const STUDIO_SECTIONS: readonly StudioSectionDefinition[] = [
     id: "integrations",
     groupId: "connections",
     routePath: relativeRoutePath(ROUTE_KEYS.SETTINGS_INTEGRATIONS),
-    labelVi: "Tích hợp",
-    labelEn: "Integrations",
-    descriptionVi: "Kết nối email, Zalo, vận chuyển, thanh toán và nhà cung cấp bên ngoài.",
-    descriptionEn: "Connect email, messaging, shipping, payments, and external providers.",
+    labelVi: "Ứng dụng & dịch vụ",
+    labelEn: "Apps & Services",
+    descriptionVi: "Mở kênh liên lạc theo quyền; các kết nối khác chưa khả dụng.",
+    descriptionEn: "Open authorized channel management; other connections are unavailable.",
     icon: "integrations",
     requiredCapability: CAPABILITIES.STUDIO_READ,
     order: 100,
@@ -207,10 +231,10 @@ export const STUDIO_SECTIONS: readonly StudioSectionDefinition[] = [
     id: "webhooks-api",
     groupId: "connections",
     routePath: relativeRoutePath(ROUTE_KEYS.SETTINGS_WEBHOOKS_API),
-    labelVi: "Webhook & API",
-    labelEn: "Webhooks & API",
-    descriptionVi: "Nhận dữ liệu vào CRM và phát sự kiện ra hệ thống khác.",
-    descriptionEn: "Receive CRM data and publish events to external systems.",
+    labelVi: "Webhook gửi đi",
+    labelEn: "Outbound Webhooks",
+    descriptionVi: "Xem đăng ký webhook và giao nhận từ máy chủ.",
+    descriptionEn: "Review server subscriptions and deliveries.",
     icon: "webhooks",
     requiredCapability: CAPABILITIES.STUDIO_READ,
     order: 110,

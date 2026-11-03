@@ -132,7 +132,7 @@ export const OrganizationAccountListPage: React.FC = () => {
 
   const exportOrganizations = () => {
     if (connected) {
-      setMessage(vi ? "Xuất dữ liệu tổ chức chưa được backend hỗ trợ." : "Organization export is not supported by the backend yet.");
+      setMessage(vi ? "Xuất dữ liệu tổ chức chưa khả dụng." : "Organization export is not available yet.");
       return;
     }
     const selected = selectedIds.length > 0
@@ -157,16 +157,7 @@ export const OrganizationAccountListPage: React.FC = () => {
 
   return (
     <>
-      <AuthoritativeQueryNotice
-        connected={organizationQuery.connected}
-        loading={organizationQuery.loading}
-        refreshing={organizationQuery.refreshing}
-        stale={organizationQuery.stale}
-        loadedAt={organizationQuery.loadedAt}
-        error={organizationQuery.error}
-        onRefresh={() => void organizationQuery.refresh()}
-        compact
-      />
+
       <ListPageFrame id="organization-account-list-page" className="text-slate-700">
       <ListPageHeader
         title="Tổ chức"
@@ -230,6 +221,16 @@ export const OrganizationAccountListPage: React.FC = () => {
         rightSlot={<button type="button" onClick={() => void organizationQuery.refresh()} disabled={organizationQuery.refreshing} className="flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-slate-600 shadow-xs transition hover:border-violet-200 hover:text-violet-700 disabled:opacity-50" title="Làm mới"><RefreshCw size={14} /></button>}
       />
 
+      <AuthoritativeQueryNotice
+        connected={organizationQuery.connected}
+        loading={organizationQuery.loading}
+        refreshing={organizationQuery.refreshing}
+        stale={organizationQuery.stale}
+        loadedAt={organizationQuery.loadedAt}
+        error={organizationQuery.error}
+        onRefresh={() => void organizationQuery.refresh()}
+        compact
+      />
       <ListBulkActionBar selectedCount={selectedIds.length} label="Đã chọn" onClear={() => setSelectedIds([])}>
         {!connected && <button type="button" onClick={exportOrganizations} className="inline-flex items-center gap-1.5 rounded-xl bg-violet-600 px-3 py-1.5 text-[10px] font-semibold text-white hover:bg-violet-700"><Download size={11} /> Xuất dữ liệu</button>}
       </ListBulkActionBar>

@@ -12,10 +12,16 @@ import type { Deal } from "../../domain/model/deal.types";
 const PAGE_SIZE = 250;
 const MAX_PAGES = 20;
 const collection = createCollectionResource();
+const pipelineCollections = new Map<string, AuthoritativeResource<AuthoritativePage<Deal>>>();
 const details = new Map<string, AuthoritativeResource<Deal>>();
 const forecastSummary = createForecastSummaryResource();
 
-export function getDealCollectionResource(): AuthoritativeResource<AuthoritativePage<Deal>> { return collection; }
+export function getDealCollectionResource(pipelineId?: string): AuthoritativeResource<AuthoritativePage<Deal>> {
+  if (!pipelineId) return collection;
+  let resource = pipelineCollections.get(pipelineId);
+  if (!resource) { resource = createCollectionResource(pipelineId); pipelineCollections.set(pipelineId, resource); }
+  return resource;
+}
 
 export function getDealDetailResource(dealId: string): AuthoritativeResource<Deal> {
   let resource = details.get(dealId);
@@ -28,9 +34,10 @@ export function getDealDetailResource(dealId: string): AuthoritativeResource<Dea
 
 export function getDealForecastSummaryResource(): AuthoritativeResource<DealForecastSummary> { return forecastSummary; }
 
-function createCollectionResource(): AuthoritativeResource<AuthoritativePage<Deal>> {
+function createCollectionResource(pipelineId?: string): AuthoritativeResource<AuthoritativePage<Deal>> {
   const resource = createAuthoritativeResource(async (signal) => {
-    const page = await loadAllPages((cursor) => getDealApiRuntime().queries.list({ limit: PAGE_SIZE, ...(cursor ? { cursor } : {}) }, signal));
+    const page = await loadAllPages((cursor) => getDealApiRuntime().queries.list({ limit: PAGE_SIZE, filters: { pipelineId }, ...(cursor ? { cursor } : {}) }, signal));
+    if (signal.aborted) throw new DOMException("Cancelled", "AbortError");
     runBackendProjection("deals", () => dealRepository.replace(page.items));
     return page;
   });
@@ -41,6 +48,7 @@ function createCollectionResource(): AuthoritativeResource<AuthoritativePage<Dea
 function createDetailResource(dealId: string): AuthoritativeResource<Deal> {
   const resource = createAuthoritativeResource(async (signal) => {
     const deal = await getDealApiRuntime().queries.get(dealId, signal);
+    if (signal.aborted) throw new DOMException("Cancelled", "AbortError");
     runBackendProjection("deals", () => upsertDeal(deal));
     return deal;
   });

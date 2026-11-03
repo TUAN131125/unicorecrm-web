@@ -1,6 +1,7 @@
 import { getAuthSessionSnapshot, isConnectedAuthRuntime, subscribeToAuthSession } from "@/platform/identity-auth";
 import { BrowserStorageAdapter } from "@/platform/persistence";
 import { transitionWorkspaceScope } from "@/platform/workspace-scope/workspaceScopeRuntime";
+import { retireWorkspaceRuntimeSettings } from "@/platform/workspace-config/workspaceRuntimeSettings";
 import type { WorkspaceMembership } from "@/platform/workspace-membership";
 import type { WorkspaceBootstrapGateway } from "../application/WorkspaceBootstrapGateway";
 import type { WorkspaceBootstrapContext } from "../domain/workspaceBootstrap.types";
@@ -129,6 +130,7 @@ export class ConnectedWorkspaceContextRuntime {
   }
 
   clear(): void {
+    retireWorkspaceRuntimeSettings();
     this.generation += 1;
     this.activeContext = null;
     this.memberships = [];

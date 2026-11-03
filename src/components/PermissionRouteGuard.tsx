@@ -6,7 +6,6 @@ import { usePlatformState } from "@/platform/application-state";
 import { productSpaceHome } from "@/platform/navigation";
 import { useI18n } from "@/i18n";
 import { ListStatePanel } from "@/components/crm/list-archetype";
-import { ReadOnlyAccessBanner } from "@/components/access/ReadOnlyAccessBanner";
 import { canWriteModule, moduleAccessPolicy } from "@/platform/access-control/domain/moduleAccessPolicy";
 
 interface PermissionRouteGuardProps {
@@ -48,7 +47,6 @@ export const PermissionRouteGuard: React.FC<PermissionRouteGuardProps> = ({ modu
   if (readOnly && moduleKey) {
     return (
       <div data-module-key={moduleKey} data-access-mode="read-only">
-        <ReadOnlyAccessBanner moduleKey={moduleKey} />
         {children}
       </div>
     );

@@ -16,6 +16,7 @@ import {
   parseAiActionIntent,
   resolveAiFocusedEntityRef,
   resolveAiInteractionState,
+  presentAiProviderFailure,
   toAiActionIntent,
   toStoredActionType,
   type AiActionIntent,
@@ -41,7 +42,13 @@ import { getTaskActivitySnapshot, getTaskSnapshot } from "@/modules/tasks";
 import type { StoragePort } from "@/platform/persistence";
 import type { HttpClient, HttpRequest } from "@/platform/api/client";
 import { AiApiClient } from "@/platform/api/generated/aiApi";
-import { AiConfigurationHttpAdapter } from "@/workspaces/studio/infrastructure/AiConfigurationHttpAdapter";
+import { AiConfigurationHttpAdapter, withAiConfigurationTestTimeout } from "@/workspaces/studio/infrastructure/AiConfigurationHttpAdapter";
+import { buildConnectedAiRouteContext } from "@/workspaces/crm/ai-context/application/connectedAiRouteContext";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { JSDOM } from "jsdom";
+import { AiModelSelect } from "@/workspaces/studio/presentation/components/AiModelSelect";
+import type { AiProviderModel } from "@/workspaces/studio/application/AiConfigurationGateway";
 
 const root = repositoryRoot;
 const read = (relativePath: string): string => fs.readFileSync(path.join(root, relativePath), "utf8");
@@ -234,6 +241,12 @@ for (const component of ["src/components/ai/AiChatPanel.tsx", "src/components/ai
 // keeps every mutation tool fail-closed.
 // ---------------------------------------------------------------------------
 const connectedSource = read("src/ai/runtime/ConnectedAiRuntime.ts");
+for (const [module, entityType] of [["leads", "lead"], ["contacts", "contact"], ["customers", "customer"], ["organizations", "organization"], ["deals", "deal"], ["tasks", "task"]]) {
+  const coldContext = buildConnectedAiRouteContext(`/w/workspace-a/crm/${module}/record-1`);
+  assert.deepEqual(resolveAiFocusedEntityRef(coldContext), { entityType, entityId: "record-1" }, "Connected detail routes must work without browser record snapshots after refresh.");
+  assert.equal(coldContext.leads.length + coldContext.contacts.length + coldContext.customers.length + coldContext.tasks.length, 0, "Connected context carries references only.");
+}
+assert.equal(buildConnectedAiRouteContext("/w/workspace-a/crm/dashboard").focusedItem, undefined, "Global analytics remain unavailable.");
 for (const forbidden of ["DemoAiRuntime", "askCrmAi", "localStorage", "BrowserStorageAdapter", "openai", "anthropic", "gemini"]) {
   assert.equal(connectedSource.toLowerCase().includes(forbidden.toLowerCase()), false, `Connected AI runtime must not reference ${forbidden}.`);
 }
@@ -305,6 +318,24 @@ for (const operation of [
 }
 
 // Demo composition never presents itself as the connected runtime.
+for (let index = 0; index < 15; index++) {
+  await connected.appendMessage(scopeA, connectedThread.id, { id: `long-${index}`, role: "user", content: `${index}:`.padEnd(2000, "x"), createdAt: new Date().toISOString() });
+}
+await connected.ask({ scope: scopeA, conversationId: connectedThread.id, question: "Continue", locale: "en", requestedContextScope: ["FOCUSED_RECORD"], focusedEntity: { entityType: "customer", entityId: "customer-1" } });
+const boundedHistory = (connectedRequests.at(-1)?.body as { conversation: Array<{ content: string }> }).conversation;
+assert.equal(boundedHistory.reduce((total, item) => total + item.content.length, 0), 8000, "Long conversations must respect the backend's total history limit.");
+assert.ok(boundedHistory.at(-1)?.content.startsWith("14:"), "Keep the newest conversation turns.");
+assert.match(presentAiProviderFailure({ code: "AI_PROVIDER_UNAVAILABLE", fieldErrors: { provider: ["CREDENTIAL_REJECTED"] } }, "en", "ADMIN") ?? "", /rejected the API key/u);
+assert.match(presentAiProviderFailure({ code: "AI_PROVIDER_UNAVAILABLE", fieldErrors: { provider: ["WORKSPACE_AI_INACTIVE"] } }, "vi", "ADMIN") ?? "", /đang tắt/u);
+assert.equal(presentAiProviderFailure({ code: "AI_PROVIDER_UNAVAILABLE", fieldErrors: { provider: ["arbitrary-secret-diagnostic"] } }, "en", "ADMIN"), undefined, "Unknown provider text must never be rendered.");
+for (const reason of ["CREDENTIAL_MISSING", "CREDENTIAL_UNREADABLE", "PROVIDER_PERMISSION_DENIED", "MODEL_UNAVAILABLE", "PROVIDER_ACCOUNT_NOT_READY", "PROVIDER_REQUEST_REJECTED", "PROVIDER_NETWORK_FAILURE", "PROVIDER_REQUEST_CANCELLED"]) {
+  for (const locale of ["vi", "en"] as const) {
+    const message = presentAiProviderFailure({ code: "AI_PROVIDER_UNAVAILABLE", message: "sensitive-provider-body", fieldErrors: { provider: [reason] } }, locale, "ADMIN");
+    assert.ok(message, `Safe provider reason ${reason} must have ${locale} guidance.`);
+    assert.equal(message.includes("sensitive-provider-body"), false, "Provider body must never reach presentation.");
+  }
+}
+assert.notEqual(presentAiProviderFailure({ code: "AI_PROVIDER_UNAVAILABLE", fieldErrors: { provider: ["CREDENTIAL_MISSING"] } }, "vi", "ADMIN"), presentAiProviderFailure({ code: "AI_PROVIDER_UNAVAILABLE", fieldErrors: { provider: ["CREDENTIAL_UNREADABLE"] } }, "vi", "ADMIN"), "Missing and unreadable credentials need different recovery guidance.");
 assert.equal(getAiRuntimeMode(), "demo");
 assert.equal(isConnectedAiRuntime(), false);
 const compositionSource = read("src/app/composition/applicationComposition.ts");
@@ -465,7 +496,7 @@ class RecordingAiSettingsHttp implements HttpClient {
   }
 }
 const settingsHttp = new RecordingAiSettingsHttp();
-const settings = new AiConfigurationHttpAdapter(new AiApiClient(settingsHttp));
+const settings = new AiConfigurationHttpAdapter(new AiApiClient(withAiConfigurationTestTimeout(settingsHttp)));
 assert.equal((await settings.getCatalog())[0]?.id, "GEMINI");
 assert.equal((await settings.getUsage()).providerAttempts, 5);
 const safeConfiguration = await settings.getConfiguration();
@@ -479,10 +510,55 @@ assert.equal(JSON.stringify(settingsHttp.requests.filter((item) => item.operatio
 await settings.test({ expectedVersion: 2, idempotencyKey: "ai-settings-test-connection" });
 assert.equal(settingsHttp.requests.at(-1)?.operationId, "testAiConfiguration");
 assert.equal(settingsHttp.requests.at(-1)?.retry, "never");
+assert.equal(settingsHttp.requests.at(-1)?.timeoutMs, 130_000, "Only Test must outlive the bounded primary/fallback provider deadlines.");
+assert.equal(settingsHttp.requests.filter((item) => item.operationId !== "testAiConfiguration").every((item) => item.timeoutMs === undefined), true, "Other Studio calls retain their transport timeout.");
+const testAbort = new AbortController();
+await settings.test({ expectedVersion: 2, idempotencyKey: "ai-settings-cancel", signal: testAbort.signal });
+assert.equal(settingsHttp.requests.at(-1)?.signal, testAbort.signal, "The larger Test budget never suppresses caller cancellation.");
 
 const settingsViewSource = read("src/workspaces/studio/presentation/views/AiConfigurationView.tsx");
+const backendModels: AiProviderModel[] = [
+  { id: "gpt-6-luna", displayName: "GPT-6 Luna", structuredOutput: true },
+  { id: "gpt-6.1-sol", displayName: "GPT-6.1 Sol", structuredOutput: true },
+];
+function renderedModelSelector(value: string, locale: string, disabled = false) {
+  return new JSDOM(renderToStaticMarkup(createElement(AiModelSelect, { models: backendModels, value, locale, disabled, onChange: () => undefined }))).window.document;
+}
+const currentSelector = renderedModelSelector("gpt-6-luna", "vi");
+assert.deepEqual(Array.from(currentSelector.querySelectorAll("option"), (option) => option.value), backendModels.map((model) => model.id), "UI must display only Backend catalog IDs, in Backend order.");
+assert.equal(currentSelector.querySelector("select")?.value, "gpt-6-luna");
+assert.match(currentSelector.querySelector("[data-ai-model-purpose]")?.textContent ?? "", /CRM thông thường/u);
+assert.match(renderedModelSelector("gpt-6.1-sol", "en").querySelector("[data-ai-model-purpose]")?.textContent ?? "", /Advanced customer analysis/u);
+for (const savedId of ["gpt-5-mini", "gpt-5", "no-longer-admitted-model"]) {
+  const legacySelector = renderedModelSelector(savedId, "en");
+  assert.equal(legacySelector.querySelector("select")?.value, savedId, "A saved model must survive refresh, without silently choosing a new catalog model.");
+  assert.match(legacySelector.querySelector("[data-ai-model-update-required]")?.textContent ?? "", /current configuration is preserved/u);
+  assert.equal(legacySelector.querySelectorAll("option").length, backendModels.length + 1, "Only the selected saved ID gets a compatibility option.");
+}
+assert.equal(renderedModelSelector("gpt-6-luna", "vi", true).querySelector("select")?.disabled, true, "Read-only/busy state still locks the model selector.");
+assert.ok(settingsViewSource.includes('hasUnsavedChanges || hasPendingCredential || !draftValidated'), "Changing a model must not bypass saved-draft and validation gates.");
 assert.ok(settingsViewSource.includes('type="password"'), "Workspace credentials must use a secret input.");
 assert.ok(settingsViewSource.includes('setCredentialValue("")'), "The transient primary secret must be cleared after submission.");
 assert.equal(/localStorage|sessionStorage/u.test(settingsViewSource), false, "AI Settings must not persist credentials in browser storage.");
 
 console.log("AI application contracts: PASS — typed intents, scoped conversations, governed actions, fail-closed connected runtime and provider isolation verified");
+
+// Presentation links preserve the workspace and permission boundary of Backend evidence.
+const { aiNavigationTarget, aiSelectedRecord, aiRecordPrompts } = await import("@/components/ai/aiPresentation");
+const readDeals = (moduleKey: string) => moduleKey === "deals";
+assert.equal(aiNavigationTarget("/deals/d1", "alpha", readDeals), "/w/alpha/crm/deals/d1");
+assert.equal(aiNavigationTarget("/w/alpha/crm/deals/d1", "alpha", readDeals), "/w/alpha/crm/deals/d1");
+for (const route of ["/w/beta/crm/deals/d1", "/w/alpha/studio/settings/ai", "https://example.com", "//example.com", "/contacts/c1", "/deals/../../people/members", "/deals/%2e%2e/%2e%2e/people", "/w/%zz/crm/deals/d1"]) {
+  assert.equal(aiNavigationTarget(route, "alpha", readDeals), undefined, `Unsafe or denied evidence navigation: ${route}`);
+}
+for (const entity of ["lead", "contact", "organization", "customer", "deal", "task"] as const) {
+  const context = buildConnectedAiRouteContext(`/w/alpha/crm/${entity === "organization" ? "organizations" : `${entity}s`}/record-1`);
+  assert.equal(aiSelectedRecord(context, true)?.entityType, entity);
+  for (const locale of ["vi", "en"] as const) {
+    assert.equal(aiRecordPrompts(entity, locale).length, 4);
+    assert.equal(aiRecordPrompts(entity, locale).some(prompt => /create a task|tạo công việc/iu.test(prompt)), false);
+  }
+}
+assert.equal(aiSelectedRecord(buildConnectedAiRouteContext("/w/alpha/crm/dashboard"), true), undefined);
+assert.equal(aiSelectedRecord(buildConnectedAiRouteContext("/w/alpha/crm/quotes/q1"), true), undefined);
+console.log("AI presentation: scoped navigation, denied sources, six focused types and advisory prompts PASS");

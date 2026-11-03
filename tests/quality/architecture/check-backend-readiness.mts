@@ -201,10 +201,15 @@ const httpAdapters = walk(path.join(root, "src", "modules"))
   .filter((file) => /HttpAdapter\.ts$/.test(file))
   .map((file) => path.relative(root, file).replaceAll(path.sep, "/"));
 assert.deepEqual(httpAdapters.sort(), [
+  "src/modules/deals/infrastructure/http/DealPipelineHttpAdapter.ts",
   "src/modules/invoices/infrastructure/http/InvoiceHttpAdapter.ts",
   "src/modules/invoices/infrastructure/http/ReceivablesHttpAdapter.ts",
   "src/modules/orders/infrastructure/http/OrderCreditApprovalHttpAdapter.ts",
   "src/modules/payments/infrastructure/http/PaymentHttpAdapter.ts",
+  "src/modules/quotes/infrastructure/http/QuoteIdentityHttpAdapter.ts",
+  "src/modules/quotes/infrastructure/http/QuoteIndependentReviewHttpAdapter.ts",
+  "src/modules/quotes/infrastructure/http/QuoteProofHttpAdapter.ts",
+  "src/modules/quotes/infrastructure/http/QuoteSalesAcceptanceHttpAdapter.ts",
 ]);
 
 console.log(`Frontend/backend readiness: PASS (${markdownFiles.length} classified documents, ${inventory.summary.circularDependencyGroups} dependency cycles, ${httpAdapters.length} specialized contract adapters plus self-composed module authority).`);

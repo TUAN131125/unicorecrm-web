@@ -1,6 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
+import { normalizeOpenApi } from "../../../scripts/api/openapi/normalize.mjs";
 import { repositoryRoot } from "../../../scripts/quality/core/repo-context.mjs";
 import { walkAllFiles } from "../../../scripts/quality/core/filesystem.mjs";
 
@@ -41,6 +42,9 @@ const typedProducerResponses = new Map([
   ...["saveAiConfiguration", "setAiCredential", "activateAiConfiguration", "disableAiConfiguration"].map((id) => [id, "AiConfigurationMutationResponse"]),
   ["testAiConfiguration", "AiConfigurationTestResponse"],
   ["requestAiAdvisory", "AiAdvisoryResponse"],
+  // PROJECT_EXTENSION_DEAL_PIPELINE_REGISTRY owns these exact typed producers.
+  ["createCrmPipeline", "DealPipelineMutationResponse"],
+  ["updateCrmPipeline", "DealPipelineMutationResponse"],
 ]);
 const historicalContractVersion = "0.23.20-contract.0";
 // Each entry pins the checked-in historical pack, independently of the live spec.
@@ -51,7 +55,29 @@ const historicalProviderScenarioCounts = new Map([
   ["accepted-quote-order-conversion", 8], ["access-governance", 46], ["commercial-credit-approval", 10], ["commercial-read-models", 6], ["deal-core", 20], ["direct-order-draft", 8], ["financial-operations-core", 32], ["identity-auth", 32], ["invoice-draft", 8], ["lead-completion", 68], ["lead-lifecycle", 12], ["lead-qualification", 18], ["payment-ledger", 14], ["payment-plan-intent", 10], ["product-order-core", 33], ["query-authority", 8], ["quote-core", 22], ["refund-recovery", 14], ["relationship-domain-query", 9], ["return-refund-saga", 10], ["shipping-returns-core", 36], ["studio-core", 38], ["support-core", 13], ["task-core", 17], ["transaction-semantics", 12], ["workspace-bootstrap", 12],
 ]);
 
+function assertPipelineProducerResponse(op, schemaOverride) {
+  const create = op.operationId === "createCrmPipeline";
+  assert(create || op.operationId === "updateCrmPipeline", "Unknown Pipeline producer");
+  assert(op.method === (create ? "POST" : "PATCH") && op.route === (create ? "/crm-configuration/pipelines" : "/crm-configuration/pipelines/{pipelineId}"), `${op.operationId}: Pipeline producer route drift`);
+  assert(responseSchemaName(op) === "DealPipelineMutationResponse" && requestSchemaName(op) === "SaveDealPipelineRequest", `${op.operationId}: typed Pipeline request/response drift`);
+  const schema = schemaOverride ?? schemas.DealPipelineMutationResponse;
+  assert(schema?.additionalProperties === false && !schema.properties?.aggregateId && !schema.properties?.result && !schema.properties?.data, `${op.operationId}: Pipeline response must retain its closed owner document`);
+  for (const field of ["outcome", "pipeline", "auditEvidenceIds"]) assert(schema.properties?.[field] && schema.required?.includes(field), `${op.operationId}: missing Pipeline outcome field ${field}`);
+  assert(JSON.stringify(schema.properties.outcome.enum) === JSON.stringify(["COMMITTED", "REPLAYED"]) && schema.properties.pipeline.$ref === "#/components/schemas/DealPipelineDocument" && schema.properties.auditEvidenceIds.type === "array" && schema.properties.auditEvidenceIds.items.$ref === "#/components/schemas/EntityId", `${op.operationId}: Pipeline evidence schema drift`);
+  const pipeline = schemas.DealPipelineDocument;
+  assert(pipeline?.additionalProperties === false && ["id", "workspaceId", "resourceVersion", "stages"].every(field => pipeline.required?.includes(field)), `${op.operationId}: Pipeline identity/version binding missing`);
+  assert(schemas.SaveDealPipelineRequest?.additionalProperties === false && !schemas.SaveDealPipelineRequest.properties?.workspaceId && !schemas.SaveDealPipelineRequest.properties?.actorId, `${op.operationId}: caller authority field admitted`);
+  assert(op["x-contract-status"] === "PRODUCTION_CONTRACT_READY" && op["x-module-owner"] === "deals" && op["x-workspace-required"] === true && op["x-actor-required"] === true && op["x-required-capability"] === "studio.configure" && op["x-data-scope"] === "WORKSPACE" && op["x-resource-scope"] === (create ? "SYSTEM_CONFIGURATION" : "RESOURCE"), `${op.operationId}: Pipeline authority metadata drift`);
+  assert(parameters(op).some(p => p.name === "X-Workspace-Id" && p.in === "header" && p.required) && (op.security ?? spec.security ?? []).some(item => Object.hasOwn(item, "bearerAuth")), `${op.operationId}: Pipeline trusted workspace/auth missing`);
+  assert(op["x-idempotency-policy"] === "REQUIRED" && parameters(op).some(p => p.name === "Idempotency-Key" && p.in === "header" && p.required), `${op.operationId}: Pipeline replay boundary missing`);
+  assert(op["x-concurrency-policy"] === (create ? "BACKEND_SERIALIZED" : "IF_MATCH_REQUIRED") && (create || parameters(op).some(p => p.name === "If-Match" && p.in === "header" && p.required)), `${op.operationId}: Pipeline concurrency boundary missing`);
+  assert(op["x-transaction-boundary"] === "SINGLE_WORKSPACE_PIPELINE_REGISTRY_TRANSACTION" && op["x-audit-requirement"] === "IMMUTABLE_COMMAND_AUDIT" && op["x-event-outbox-expectation"] === "DEAL_PIPELINE_CONFIGURED", `${op.operationId}: Pipeline transaction/evidence boundary missing`);
+  const adapter = read("src/modules/deals/infrastructure/http/DealPipelineHttpAdapter.ts");
+  assert(adapter.includes("this.api.createCrmPipeline(request, options)") && adapter.includes("this.api.updateCrmPipeline(pipeline.id, request, options)") && adapter.includes("pipeline: mapPipeline(response.pipeline), outcome: response.outcome, auditEvidenceIds: response.auditEvidenceIds"), "Pipeline adapter must consume its exact typed owner document");
+}
+
 function assertTypedProducerResponse(op, schemaOverride) {
+  if (["createCrmPipeline", "updateCrmPipeline"].includes(op.operationId)) return assertPipelineProducerResponse(op, schemaOverride);
   const expected = typedProducerResponses.get(op.operationId);
   assert(responseSchemaName(op) === expected, `${op.operationId}: typed producer response drift`);
   const schema = schemaOverride ?? schemas[expected];
@@ -160,6 +186,15 @@ function assertProducerScopeNegativeControls() {
     rejects(() => assertAggregatePolicy({ ...op, "x-actor-required": false }), `${id}: missing authoritative actor`);
     rejects(() => assertAggregatePolicy({ ...op, "x-data-scope": undefined }), `${id}: missing data scope`);
   }
+  for (const id of ["createCrmPipeline", "updateCrmPipeline"]) {
+    const op = opById.get(id);
+    for (const [field, value] of [["x-module-owner", "platform/workspace-config"], ["x-transaction-boundary", "NONE"], ["x-audit-requirement", "NONE"], ["x-event-outbox-expectation", "NONE"], ["x-idempotency-policy", "NOT_APPLICABLE"], ["x-concurrency-policy", "NONE"]]) rejects(() => assertAggregatePolicy({ ...op, [field]: value }), id + ": " + field);
+    const noHeader = { ...op, parameters: parameters(op).filter(p => p.name !== "Idempotency-Key") };
+    rejects(() => assertAggregatePolicy(noHeader), id + ": missing replay header");
+    if (id === "updateCrmPipeline") rejects(() => assertAggregatePolicy({ ...op, parameters: parameters(op).filter(p => p.name !== "If-Match") }), id + ": missing If-Match header");
+    const schema = structuredClone(schemas.DealPipelineMutationResponse); schema.properties.pipeline = { $ref: "#/components/schemas/ProblemDetails" };
+    rejects(() => assertAggregatePolicy(op, schema), id + ": unbound nested Pipeline document");
+  }
   const advisory = opById.get("requestAiAdvisory");
   rejects(() => assertAggregatePolicy({ ...advisory, "x-idempotency-policy": "REQUIRED" }), "read-only advisory rewritten as mutation policy");
   rejects(() => assertAggregatePolicy({ ...advisory, "x-concurrency-policy": "IF_MATCH_REQUIRED" }), "read-only advisory rewritten as mutation concurrency");
@@ -255,11 +290,39 @@ function filesUnder(dir, extensions = /\.(?:ts|tsx|mts|mjs)$/u) {
     .map((file) => path.relative(root, file).replaceAll(path.sep, "/"));
 }
 
+function assertOperationInventory(actualOperations, catalog, manifest) {
+  const currentSha = crypto.createHash("sha256").update(read("docs/api/openapi.json")).digest("hex");
+  const ownership = json("scripts/api/openapi/client-ownership.json");
+  const ownerOf = op => normalizeOpenApi({ ...spec, paths: { [op.route]: { [op.method.toLowerCase()]: op } } }, ownership).operations[0].ownerModule;
+  for (const [label, document] of [["catalog", catalog], ["generated manifest", manifest]]) {
+    assert(document.contractVersion === spec.info.version && document.specSha256 === currentSha, label + ": source version/hash drift");
+    const items = document.operations;
+    assert(Array.isArray(items) && new Set(items.map(item => item.operationId)).size === items.length, label + ": duplicate operation identity");
+    const actual = actualOperations.map(op => JSON.stringify([op.operationId, op.method, op.route, op["x-contract-status"], ownerOf(op)])).sort();
+    const declared = items.map(item => JSON.stringify([item.operationId, item.method, item.path, item.contractStatus, item.moduleId ?? item.ownerModule])).sort();
+    assert(new Set(actualOperations.map(item => item.operationId)).size === actualOperations.length && JSON.stringify(actual) === JSON.stringify(declared), label + ": exact operation identity/route/status/owner set drift");
+  }
+}
+
+function assertOperationInventoryNegativeControls(catalog, manifest) {
+  const reject = (action, label) => { let rejected = false; try { action(); } catch { rejected = true; } assert(rejected, "Operation inventory control accepted " + label); };
+  reject(() => assertOperationInventory(operations.slice(1), catalog, manifest), "missing operation");
+  reject(() => assertOperationInventory([...operations, operations[0]], catalog, manifest), "duplicate operation");
+  reject(() => assertOperationInventory([{ ...operations[0], operationId: "unknownOperation" }, ...operations.slice(1)], catalog, manifest), "unknown operation");
+  for (const field of ["method", "route", "x-contract-status"]) reject(() => assertOperationInventory([{ ...operations[0], [field]: "DRIFT" }, ...operations.slice(1)], catalog, manifest), field + " drift");
+  reject(() => assertOperationInventory(operations, { ...catalog, operations: [{ ...catalog.operations[0], moduleId: "unknown-owner" }, ...catalog.operations.slice(1)] }, manifest), "catalog owner drift");
+  reject(() => assertOperationInventory(operations, { ...catalog, specSha256: "stale" }, manifest), "stale source hash");
+  reject(() => assertOperationInventory(operations, catalog, { ...manifest, operations: [...manifest.operations, manifest.operations[0]] }), "duplicate generated operation");
+}
+
 const checks = {
   "openapi-syntax": () => {
     assert(spec.openapi === "3.1.0", "OpenAPI must be 3.1.0");
     assert(spec["x-contract-authority"] === "OPENAPI", "OpenAPI authority marker missing");
-    assert(operations.length === 303, `Expected 303 operations, found ${operations.length}`);
+    const catalog = json("docs/api/api-operation-catalog.json");
+    const manifest = json("docs/api/generated-client-manifest.json");
+    assertOperationInventory(operations, catalog, manifest);
+    assertOperationInventoryNegativeControls(catalog, manifest);
   },
   "openapi-lint": () => {
     for (const op of operations) {
@@ -1096,6 +1159,11 @@ const checks = {
     for (const [file, schemaName] of Object.entries(fixtures)) {
       const issues = validate(schemas[schemaName], json(`tests/fixtures/backend-contract/commercial-read-models/${file}`));
       assert(issues.length === 0, `${file}: ${issues.join("; ")}`);
+    }
+    for (const [file, schemaName] of [["deal-list.json", "DealListResponse"], ["deal-detail.json", "DealReadModel"]]) {
+      const missingPipeline = structuredClone(json(`tests/fixtures/backend-contract/commercial-read-models/${file}`));
+      delete (file === "deal-list.json" ? missingPipeline.items[0] : missingPipeline).pipelineId;
+      assert(validate(schemas[schemaName], missingPipeline).some(issue => issue.includes("pipelineId: required")), file + ": missing Pipeline identity was accepted");
     }
     const invalid = validate(schemas.QuoteReadModel, json("tests/fixtures/backend-contract/commercial-read-models/invalid-quote-unknown-status.json"));
     assert(invalid.some((item) => item.includes("unknown enum")), "Unknown Quote status fixture was accepted");

@@ -8,7 +8,7 @@ export const COMMUNICATIONS_SCREEN_GUIDANCE = [
   routeKey: screen.routeKey,
   productSpace: "crm",
   title: { vi: screen.vi, en: screen.en },
-  version: 5,
+  version: 6,
   reviewedAt: "2026-10-16",
   purpose: { vi: "Đọc hội thoại được giao cho bạn trong Workspace hiện tại; hàng chờ chưa phân công chỉ hiển thị thông tin tối thiểu khi có quyền triage.", en: "Read conversations assigned to you in the current Workspace; unassigned triage shows only minimal metadata when permitted." },
   prerequisites: [{ vi: "Cần quyền Giao tiếp được cấp riêng; nội dung còn phụ thuộc người được giao và quyền từng trường.", en: "Explicit Communications access is required; content also depends on the current assignee and field permissions." }],

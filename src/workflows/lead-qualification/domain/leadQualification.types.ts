@@ -55,11 +55,11 @@ export interface ExecuteLeadOpportunityCommand {
   relationship: LeadRelationshipInput;
   deal: {
     name: string;
-    needSummary?: string;
+    needSummary?: string | null;
     ownerId: string;
     expectedCloseDate?: string;
     interestedProductIds: string[];
-    estimatedValue?: string | number;
+    estimatedValue?: string | number | null;
     decisionProcess?: string;
     buyingWindow?: string;
     followUpTask?: {

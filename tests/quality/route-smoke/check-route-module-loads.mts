@@ -2,6 +2,8 @@ import { repositoryRoot } from "../../../scripts/quality/core/repo-context.mjs";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { build, stop } from "esbuild";
+import { JSDOM } from "jsdom";
 import { STUDIO_SECTIONS } from "../../../src/workspaces/studio/navigation/studioSectionRegistry";
 
 const root = repositoryRoot;
@@ -41,25 +43,63 @@ const studioDefinitions = definitions.filter((definition) => definition.routeFil
 assert.equal(studioDefinitions.length, STUDIO_SECTIONS.length + 1, "Studio load audit must include every registered section screen plus the Studio index route");
 assert.ok(studioDefinitions.some(definition => definition.routeId === "StudioIndexRoute"));
 
-for (const definition of definitions) {
-  let timeoutHandle: ReturnType<typeof setTimeout> | undefined;
-  const timeout = new Promise<never>((_, reject) => {
-    timeoutHandle = setTimeout(() => reject(new Error(`Timed out loading ${definition.routeId}`)), 10_000);
-  });
-
-  try {
-    const loadedModule = await Promise.race([
-      import(definition.moduleSpecifier),
-      timeout,
-    ]);
-
-    assert.ok(
-      loadedModule[definition.exportName as keyof typeof loadedModule],
-      `${definition.routeId} must export ${definition.exportName}`,
-    );
-  } finally {
-    if (timeoutHandle) clearTimeout(timeoutHandle);
-  }
+function assertRouteExport(loadedModule: Record<string, unknown> | undefined, definition: RouteModuleDefinition) {
+  assert.ok(loadedModule?.[definition.exportName], `${definition.routeId} must export ${definition.exportName}`);
 }
 
-console.log(`Route module load audit passed for ${definitions.length} route modules (${studioDefinitions.length} Studio modules).`);
+const entry = definitions.map((definition, index) =>
+  `import * as route${index} from ${JSON.stringify(definition.moduleSpecifier)};`,
+).join("\n") + `\nexport const modules = [${definitions.map((_, index) => `route${index}`).join(",")}];`;
+
+// Match the canonical bundled Studio/startup smoke harness: compile actual route modules,
+// transform CSS side effects for JSDOM, and keep every module/export in the audit.
+// Vite's production build separately validates and emits the real CSS assets.
+const options = {
+  absWorkingDir: root,
+  outfile: "route-module-loads.js",
+  bundle: true,
+  write: false,
+  metafile: true,
+  format: "iife" as const,
+  globalName: "routeModuleFixture",
+  platform: "browser" as const,
+  target: ["es2022"],
+  define: {
+    // No API host is involved in this module-load test; Connected acceptance is separate.
+    "import.meta.env": JSON.stringify({ DEV: true, PROD: false, MODE: "test", BASE_URL: "/", VITE_RUNTIME_MODE: "demo" }),
+  },
+  loader: { ".css": "empty" as const },
+  alias: { "@": "./src" },
+  logLevel: "silent" as const,
+};
+const dom = new JSDOM("<!doctype html><html><body></body></html>", {
+  url: "http://localhost/",
+  runScripts: "outside-only",
+  pretendToBeVisual: true,
+});
+
+try {
+  const result = await build({ ...options, stdin: { contents: entry, resolveDir: root, sourcefile: "route-module-fixture.ts", loader: "ts" } });
+  assert.ok(result.outputFiles, "The route fixture must emit an in-memory bundle");
+  assert.ok(result.metafile, "The route fixture must expose its actual dependency inventory");
+  const bundle = result.outputFiles.find(file => file.path.endsWith(".js"));
+  assert.ok(bundle, "All real route modules must compile into the in-memory load fixture");
+  assert.ok(Object.keys(result.metafile.inputs).some(file => file.endsWith(".css")), "The CSS-bearing route import must be exercised");
+  dom.window.eval(bundle.text);
+  const modules = dom.window.eval("routeModuleFixture.modules") as Array<Record<string, unknown>>;
+  assert.equal(modules.length, definitions.length, "Every discovered route must remain in the executable fixture");
+  definitions.forEach((definition, index) => assertRouteExport(modules[index], definition));
+
+  // Negative controls must still reject absent/wrong exports and unresolved imports.
+  assert.throws(() => assertRouteExport({}, definitions[0]), /must export/u);
+  assert.throws(() => assertRouteExport({ wrongExport: () => undefined }, definitions[0]), /must export/u);
+  await assert.rejects(() => build({ ...options, stdin: {
+    contents: 'export * from "@/app/router/__missing_route_negative_control__";', resolveDir: root,
+    sourcefile: "route-missing-fixture.ts", loader: "ts",
+  } }), /Could not resolve/u);
+} finally {
+  dom.window.close();
+  stop();
+}
+
+console.log(`Route module load audit passed for ${definitions.length} route modules (${studioDefinitions.length} Studio modules), including CSS and missing-import/export negative controls.`);

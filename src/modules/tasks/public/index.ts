@@ -1,4 +1,6 @@
 export * from "./api";
+export { classifyTaskDate, formatTaskDueAt, taskDateKey, taskDayBounds } from "../application/queries/taskDateClassification";
+export { useTaskClock } from "../presentation/hooks/useTaskClock";
 export { resolveActivityRecordingDate } from "../presentation/model/activityRecordingTime";
 
 export { TaskCreateModal } from "../presentation/components/TaskCreateModal";

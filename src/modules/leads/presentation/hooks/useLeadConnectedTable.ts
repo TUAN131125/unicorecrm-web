@@ -19,16 +19,13 @@ export function useLeadConnectedTable(options: {
   const workspace = useWorkspaceContextSnapshot();
   const access = useEffectiveAccess();
   const scopeKey = JSON.stringify([workspace.workspaceId, access.accountId, access.membershipId,
-    access.memberId, access.authorityRevision, options.intent, options.resolution]);
+    access.memberId, access.authorityRevision]);
   const query = React.useMemo(() => options.resolution.kind === "supported" ? options.resolution.query : {}, [JSON.stringify(options.resolution)]);
   const page = useLeadServerPagedCollection({
     scopeKey, enabled: options.enabled && options.resolution.kind === "supported", query,
-    initialPageSize: 50, project: projectPage, evictProjection, retainPreviousPage: false,
+    initialPageSize: 50, project: projectPage, evictProjection,
   });
   // A retained response may be used by the shared hook for refresh bookkeeping,
   // but cannot be labeled as the current page or survive an authorization error.
-  const ready = page.enabled && !page.loading && !page.error;
-  return { ...page, scopeKey, items: ready ? page.items : [],
-    totalItems: ready ? page.totalItems : 0, rangeStart: ready ? page.rangeStart : 0,
-    rangeEnd: ready ? page.rangeEnd : 0 };
+  return { ...page, scopeKey };
 }

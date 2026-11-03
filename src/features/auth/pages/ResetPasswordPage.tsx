@@ -1,10 +1,11 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { CheckCircle2, Eye, EyeOff, Lock } from "lucide-react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ROUTE_KEYS } from "@/platform/navigation";
 import { useI18n } from "@/i18n";
 import { completeAccountPasswordReset } from "@/platform/identity-auth";
 import { AuthField, AuthNotice, AuthPrimaryButton, AuthShell } from "../components";
+import { passwordRecoveryFeedback } from "../routing/passwordRecoveryFeedback";
 
 function passwordScore(password: string): number {
   let score = 0;
@@ -19,7 +20,10 @@ export const ResetPasswordPage: React.FC = () => {
   const { locale, t } = useI18n();
   const vi = locale === "vi";
   const [searchParams] = useSearchParams();
-  const token = searchParams.get("token") || "";
+  const navigate = useNavigate();
+  const [token, setToken] = useState(() => searchParams.get("token") || "");
+  const pending = useRef(false);
+  const tokenGeneration = useRef(0);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -28,15 +32,32 @@ export const ResetPasswordPage: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const strength = useMemo(() => passwordScore(password), [password]);
 
+  useEffect(() => {
+    const incomingToken = searchParams.get("token");
+    if (incomingToken !== null) {
+      tokenGeneration.current++;
+      pending.current = false;
+      setToken(incomingToken);
+      setPassword("");
+      setConfirmPassword("");
+      setShowPassword(false);
+      setError(null);
+      setCompleted(false);
+      setIsSubmitting(false);
+      navigate(ROUTE_KEYS.RESET_PASSWORD, { replace: true, state: null });
+    }
+  }, [navigate, searchParams]);
+
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    if (pending.current) return;
     setError(null);
     if (!token) {
       setError(vi ? "Liên kết không hợp lệ." : "This link is invalid.");
       return;
     }
-    if (password.length < 8) {
-      setError(vi ? "Mật khẩu cần ít nhất 8 ký tự." : "Password must contain at least 8 characters.");
+    if (password.length < 8 || password.length > 1024) {
+      setError(vi ? "Mật khẩu cần từ 8 đến 1024 ký tự." : "Password must contain between 8 and 1024 characters.");
       return;
     }
     if (password !== confirmPassword) {
@@ -44,15 +65,28 @@ export const ResetPasswordPage: React.FC = () => {
       return;
     }
     setIsSubmitting(true);
+    pending.current = true;
+    const generation = tokenGeneration.current;
     try {
       const response = await completeAccountPasswordReset(token, password);
+      if (generation !== tokenGeneration.current) return;
       if (response.ok === false) {
-        setError(response.code === "TOKEN_EXPIRED" ? (vi ? "Liên kết đã hết hạn." : "This link has expired.") : (vi ? "Liên kết không hợp lệ." : "This link is invalid."));
+        setError(passwordRecoveryFeedback(response.code, locale, true));
         return;
       }
+      setToken("");
+      setPassword("");
+      setConfirmPassword("");
       setCompleted(true);
+    } catch {
+      if (generation === tokenGeneration.current) {
+        setError(passwordRecoveryFeedback("SERVICE_UNAVAILABLE", locale, true));
+      }
     } finally {
-      setIsSubmitting(false);
+      if (generation === tokenGeneration.current) {
+        pending.current = false;
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -74,7 +108,7 @@ export const ResetPasswordPage: React.FC = () => {
         </div>
       ) : (
         <form data-auth-form="true" className="space-y-4" onSubmit={handleSubmit}>
-          {error && <AuthNotice tone="danger">{error}</AuthNotice>}
+          {(error || !token) && <AuthNotice tone="danger">{error || (vi ? "Liên kết không hợp lệ. Hãy yêu cầu liên kết mới." : "This link is invalid. Request a new link.")}</AuthNotice>}
           <div className="space-y-2">
             <AuthField
               label={vi ? "Mật khẩu mới" : "New password"}
@@ -83,6 +117,9 @@ export const ResetPasswordPage: React.FC = () => {
               onChange={(event) => setPassword(event.target.value)}
               icon={<Lock size={16} />}
               autoComplete="new-password"
+              minLength={8}
+              maxLength={1024}
+              disabled={isSubmitting}
               trailing={
                 <button
                   type="button"
@@ -108,9 +145,12 @@ export const ResetPasswordPage: React.FC = () => {
             onChange={(event) => setConfirmPassword(event.target.value)}
             icon={<Lock size={16} />}
             autoComplete="new-password"
+            minLength={8}
+            maxLength={1024}
+            disabled={isSubmitting}
             required
           />
-          <AuthPrimaryButton type="submit" loading={isSubmitting} loadingLabel={vi ? "Đang cập nhật…" : "Updating…"}>{vi ? "Cập nhật mật khẩu" : "Update password"}</AuthPrimaryButton>
+          <AuthPrimaryButton type="submit" disabled={!token} loading={isSubmitting} loadingLabel={vi ? "Đang cập nhật…" : "Updating…"}>{vi ? "Cập nhật mật khẩu" : "Update password"}</AuthPrimaryButton>
         </form>
       )}
     </AuthShell>

@@ -43,18 +43,18 @@ export function buildAdvancedForecastSnapshot(input: { workspaceId: string; deal
   });
   const categories = categoryOrder.map((category) => {
     const rows = active.filter((deal) => (deal.forecastCategory ?? "PIPELINE") === category);
-    return { category, dealCount: rows.length, amount: rows.reduce((sum, deal) => sum + deal.amount, 0), weightedAmount: rows.reduce((sum, deal) => sum + deal.amount * Math.max(0, Math.min(100, deal.opportunityScore || 0)) / 100, 0) };
+    return { category, dealCount: rows.length, amount: rows.reduce((sum, deal) => deal.amount === null ? sum : sum + deal.amount, 0), weightedAmount: rows.reduce((sum, deal) => deal.amount === null ? sum : sum + deal.amount * Math.max(0, Math.min(100, deal.opportunityScore || 0)) / 100, 0) };
   });
   const ownerMap = new Map<string, Deal[]>();
   active.forEach((deal) => ownerMap.set(deal.ownerId, [...(ownerMap.get(deal.ownerId) ?? []), deal]));
-  const owners = [...ownerMap.entries()].map(([ownerId, rows]) => ({ ownerId, dealCount: rows.length, amount: rows.reduce((sum, deal) => sum + deal.amount, 0), weightedAmount: rows.reduce((sum, deal) => sum + deal.amount * Math.max(0, Math.min(100, deal.opportunityScore || 0)) / 100, 0) })).sort((a, b) => b.weightedAmount - a.weightedAmount);
+  const owners = [...ownerMap.entries()].map(([ownerId, rows]) => ({ ownerId, dealCount: rows.length, amount: rows.reduce((sum, deal) => deal.amount === null ? sum : sum + deal.amount, 0), weightedAmount: rows.reduce((sum, deal) => deal.amount === null ? sum : sum + deal.amount * Math.max(0, Math.min(100, deal.opportunityScore || 0)) / 100, 0) })).sort((a, b) => b.weightedAmount - a.weightedAmount);
   return { snapshotId: `forecast_${Date.now()}`, workspaceId: input.workspaceId, capturedAt: input.capturedAt ?? new Date().toISOString(), periodStart: input.periodStart, periodEnd: input.periodEnd, categories, owners, totalAmount: categories.reduce((sum, item) => sum + item.amount, 0), weightedAmount: categories.reduce((sum, item) => sum + item.weightedAmount, 0), commitAmount: categories.find((item) => item.category === "COMMIT")?.amount ?? 0 };
 }
 
 export function reconcileForecastAccuracy(snapshot: AdvancedForecastSnapshot, deals: Deal[]): AdvancedForecastSnapshot {
   const start = new Date(snapshot.periodStart).getTime();
   const end = new Date(snapshot.periodEnd).getTime();
-  const actualWonAmount = deals.filter((deal) => String(deal.stage).toUpperCase() === "WON" && Number.isFinite(asTime(deal.actualCloseDate ?? deal.wonAt)) && asTime(deal.actualCloseDate ?? deal.wonAt) >= start && asTime(deal.actualCloseDate ?? deal.wonAt) <= end).reduce((sum, deal) => sum + deal.amount, 0);
+  const actualWonAmount = deals.filter((deal) => String(deal.stage).toUpperCase() === "WON" && Number.isFinite(asTime(deal.actualCloseDate ?? deal.wonAt)) && asTime(deal.actualCloseDate ?? deal.wonAt) >= start && asTime(deal.actualCloseDate ?? deal.wonAt) <= end).reduce((sum, deal) => deal.amount === null ? sum : sum + deal.amount, 0);
   const predicted = snapshot.commitAmount;
   const denominator = Math.max(predicted, actualWonAmount, 1);
   const accuracyPercent = Math.max(0, Math.round((1 - Math.abs(predicted - actualWonAmount) / denominator) * 1000) / 10);

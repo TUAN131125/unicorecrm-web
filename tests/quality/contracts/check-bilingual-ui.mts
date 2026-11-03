@@ -144,6 +144,18 @@ function isUserFacingSource(file: string): boolean {
   return ["/presentation/", "/components/", "/app/shell/", "/features/auth/", "/workspaces/"].some((segment) => normalized.includes(segment));
 }
 
+// error-handling.md separates diagnostic message from operator-facing userMessage.
+// Only the real imported typed error constructors get that distinction; arbitrary
+// message objects, local lookalike classes and userMessage remain bilingual sinks.
+function isDiagnosticMessage(node: ts.PropertyAssignment, constructors: ReadonlySet<string>): boolean {
+  const object = node.parent;
+  const call = object.parent;
+  return node.name.getText().replace(/["']/g, "") === "message"
+    && ts.isObjectLiteralExpression(object) && ts.isNewExpression(call)
+    && ts.isIdentifier(call.expression) && constructors.has(call.expression.text)
+    && call.arguments?.[0] === object;
+}
+
 const uncovered: string[] = [];
 const uncoveredMetadata: string[] = [];
 const unsafeTranslationFallbacks: string[] = [];
@@ -154,6 +166,16 @@ for (const file of collectSourceFiles(sourceRoot, {
 })) {
   const source = fs.readFileSync(file, "utf8");
   const sourceFile = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, file.endsWith(".tsx") ? ts.ScriptKind.TSX : ts.ScriptKind.TS);
+  const diagnosticConstructors = new Set<string>();
+  for (const statement of sourceFile.statements) {
+    if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier)
+      || !/^@\/shared\/(domain|application)(?:\/index)?$/u.test(statement.moduleSpecifier.text)) continue;
+    const bindings = statement.importClause?.namedBindings;
+    if (bindings && ts.isNamedImports(bindings)) for (const item of bindings.elements) {
+      if (["ApplicationError", "MutationCommandError"].includes((item.propertyName ?? item.name).text))
+        diagnosticConstructors.add(item.name.text);
+    }
+  }
 
   const inspect = (node: ts.Node) => {
     if (
@@ -210,7 +232,7 @@ for (const file of collectSourceFiles(sourceRoot, {
       let metadataContext: string | undefined;
       if (ts.isPropertyAssignment(node)) {
         const propertyName = node.name.getText(sourceFile).replace(/["']/g, "");
-        if (userFacingPropertyNames.has(propertyName)) {
+        if (userFacingPropertyNames.has(propertyName) && !isDiagnosticMessage(node, diagnosticConstructors)) {
           metadataLiteral = literalText(node.initializer);
           metadataContext = propertyName;
         }

@@ -4,22 +4,26 @@ import {
   type AuthoritativePage,
   type AuthoritativeResource,
 } from "@/shared/application";
-import { projectOrderReadModel, type OrderReadModel } from "../read-models/orderReadModel";
-import { replaceOrderList, saveOrderSnapshot } from "../../public/orders";
+import type { CustomerOrder } from "../../domain/model/order.types";
+import { getOrderListSnapshot, replaceOrderList } from "../../public/orders";
 
-const collection = createModuleCollectionResource<OrderReadModel>("orders", {
-  project: (records) => replaceOrderList(records.map(projectOrderReadModel)),
+// The Order data-authority bridge returns the adapter's already-mapped CustomerOrder.
+// Projection must preserve those server values without repricing or demo mutation rules.
+const collection = createModuleCollectionResource<CustomerOrder>("orders", {
+  project: replaceOrderList,
 });
-const details = new Map<string, AuthoritativeResource<OrderReadModel>>();
+const details = new Map<string, AuthoritativeResource<CustomerOrder>>();
 
-export function getOrderCollectionResource(): AuthoritativeResource<AuthoritativePage<OrderReadModel>> {
+export function getOrderCollectionResource(): AuthoritativeResource<AuthoritativePage<CustomerOrder>> {
   return collection;
 }
 
-export function getOrderDetailResource(orderId: string): AuthoritativeResource<OrderReadModel> {
+export function getOrderDetailResource(orderId: string): AuthoritativeResource<CustomerOrder> {
   let resource = details.get(orderId);
   if (!resource) {
-    resource = createModuleDetailResource("orders", orderId, (record: OrderReadModel) => { saveOrderSnapshot(projectOrderReadModel(record)); });
+    resource = createModuleDetailResource("orders", orderId, (record: CustomerOrder) => {
+      replaceOrderList([...getOrderListSnapshot().filter((order) => order.id !== record.id), record]);
+    });
     details.set(orderId, resource);
   }
   return resource;

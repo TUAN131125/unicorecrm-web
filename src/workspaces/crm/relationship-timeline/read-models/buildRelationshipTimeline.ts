@@ -113,7 +113,7 @@ export function buildRelationshipTimeline(
       occurredAt: deal.createdAt,
       sourceRef: { type: "DEAL", id: deal.id },
       status: String(deal.stage),
-      metadata: { amount: deal.amount },
+      metadata: { amount: deal.amount ?? undefined },
     });
     for (const activity of deal.activities || []) {
       events.push({

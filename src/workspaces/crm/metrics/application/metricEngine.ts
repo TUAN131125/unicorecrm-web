@@ -86,7 +86,7 @@ export function buildCrmMetric(input: BuildMetricInput): MetricResult {
     }
     case CRM_METRIC_IDS.OPEN_PIPELINE_VALUE: {
       const relevant = input.deals.filter((deal) => ![DealStage.WON, DealStage.LOST].includes(deal.stage as DealStage));
-      const records = relevant.map((deal) => ({ id: deal.id, module: "deals" as const, primaryText: deal.name, secondaryText: deal.customerName, status: String(deal.stage), occurredAt: deal.updatedAt ?? deal.createdAt, amount: deal.amount, route: `deals/${deal.id}` }));
+      const records = relevant.map((deal) => ({ id: deal.id, module: "deals" as const, primaryText: deal.name, secondaryText: deal.customerName, status: String(deal.stage), occurredAt: deal.updatedAt ?? deal.createdAt, amount: deal.amount ?? undefined, route: `deals/${deal.id}` }));
       return result(input, period, records.reduce((sum, item) => sum + (item.amount ?? 0), 0), records, { lastUpdatedAt: maxIso(relevant.map((deal) => deal.updatedAt ?? deal.createdAt)) });
     }
     case CRM_METRIC_IDS.OPEN_SUPPORT_CASES: {

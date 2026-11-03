@@ -4,6 +4,10 @@ import type { Product } from "../domain/model/product.types";
 import { getProductApiRuntime, isProductConnectedApiRuntime, productCatalogExporter, productPreferences, productRepository, resetProductRepositoryToDemo } from "../application/composition/productApplicationServices";
 
 export function getProductCatalogSnapshot(): Product[] { return productRepository.list(); }
+/** Full authorized catalog DTOs in one owner read, without detail fan-out. */
+export function readProductCatalogPage(query: import("@/shared/application").ModuleListQuery = {}, signal?: AbortSignal) {
+  return getProductApiRuntime().queries.list(query, signal);
+}
 export function replaceProductCatalog(products: Product[]): void { productRepository.replace(products); }
 export type ProductRetentionMutationMetadata = Partial<MutationCommandMetadata>;
 
@@ -105,8 +109,15 @@ export async function queryProductPage(query: import("@/shared/application").Mod
 }
 
 export async function resolveProductSelectionIds(ids: readonly string[], signal?: AbortSignal): Promise<import("../application/ports/ProductApiRuntime").ProductSelection[]> {
-  if (ids.length === 0) return [];
-  return (await readProductSelections({ ids: [...new Set(ids)] }, signal)).items;
+  const unique = [...new Set(ids)];
+  const items: import("../application/ports/ProductApiRuntime").ProductSelection[] = [];
+  // The selection query accepts 100 IDs per request; interested-product commands accept 250.
+  // Resolve the full selection without truncating it or changing the query contract.
+  for (let offset = 0; offset < unique.length; offset += 100) {
+    signal?.throwIfAborted();
+    items.push(...(await readProductSelections({ ids: unique.slice(offset, offset + 100) }, signal)).items);
+  }
+  return items;
 }
 
 function readProductSelections(query: import("../application/ports/ProductApiRuntime").ProductSelectionQuery, signal?: AbortSignal) {

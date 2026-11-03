@@ -14,5 +14,7 @@ export type * from "../domain/model/product.types";
 export { getProductLifecycle } from "../domain/rules/product.config";
 
 export { ProductPickerModal } from "../presentation/components/ProductPickerModal";
+export { useProductPickerCatalog } from "../presentation/hooks/useProductPickerCatalog";
+export { ProductInterestSelector } from "../presentation/components/ProductInterestSelector";
 
 export type { SelectedPickerItem } from "../presentation/components/ProductPickerModal";

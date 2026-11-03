@@ -5,6 +5,7 @@ import type { WorkspaceBootstrapGateway } from "./application/WorkspaceBootstrap
 import type { WorkspaceBootstrapContext } from "./domain/workspaceBootstrap.types";
 import { ConnectedWorkspaceContextRuntime } from "./runtime/connectedWorkspaceContextRuntime";
 import { WorkspaceContextStore, type WorkspaceMembership } from "./WorkspaceContextStore";
+import { assertWorkspaceRuntimeSettingsEntry, configureWorkspaceRuntimeSettings, isWorkspaceRuntimeSettingsReady, prepareWorkspaceRuntimeSettings, retireWorkspaceRuntimeSettings } from "@/platform/workspace-config/workspaceRuntimeSettings";
 
 const demoStore = new WorkspaceContextStore(new BrowserStorageAdapter(), listCurrentWorkspaceMemberships);
 let connectedRuntime: ConnectedWorkspaceContextRuntime | undefined;
@@ -30,13 +31,14 @@ export function resetWorkspaceRuntimeParticipant(): void { workspaceRuntimeParti
 
 export function configureConnectedWorkspaceBootstrapGateway(gateway: WorkspaceBootstrapGateway): void {
   connectedRuntime?.clear();
+  configureWorkspaceRuntimeSettings(true);
   connectedRuntime = new ConnectedWorkspaceContextRuntime(gateway);
 }
-export function resetConnectedWorkspaceBootstrapGateway(): void { connectedRuntime?.clear(); connectedRuntime = undefined; }
+export function resetConnectedWorkspaceBootstrapGateway(): void { connectedRuntime?.clear(); connectedRuntime = undefined; configureWorkspaceRuntimeSettings(false); }
 export const isConnectedWorkspaceRuntime = () => connectedRuntime !== undefined;
 
 export const getWorkspaceContextSnapshot = () => connectedRuntime ? connectedRuntime.getSnapshot() : demoStore.getSnapshot();
-export const getWorkspaceBootstrapSnapshot = (): WorkspaceBootstrapContext | null => connectedRuntime?.getActiveContext() ?? null;
+export const getWorkspaceBootstrapSnapshot = (): WorkspaceBootstrapContext | null => isWorkspaceRuntimeSettingsReady() ? connectedRuntime?.getActiveContext() ?? null : null;
 export const getActiveWorkspaceId = (): string | undefined => connectedRuntime?.getActiveWorkspaceId() ?? safeDemoWorkspaceId();
 export const listWorkspaceMemberships = () => connectedRuntime ? connectedRuntime.listMemberships() : demoStore.listMemberships();
 export const loadWorkspaceMemberships = (signal?: AbortSignal) => connectedRuntime ? connectedRuntime.loadMemberships(signal) : Promise.resolve(demoStore.listMemberships());
@@ -50,8 +52,9 @@ export const findWorkspaceMembership = (workspaceKey: string) => listWorkspaceMe
  */
 export async function resolveCanonicalWorkspaceContext(signal?: AbortSignal): Promise<WorkspaceBootstrapContext> {
   if (!connectedRuntime) throw new Error("WORKSPACE_RUNTIME_NOT_CONNECTED");
-  const active = connectedRuntime.getActiveContext();
+  const active = getWorkspaceBootstrapSnapshot();
   if (active) return active;
+  retireWorkspaceRuntimeSettings();
 
   let authoritativeMemberships = await connectedRuntime.loadMemberships(signal);
   let memberships = authoritativeMemberships.filter((membership) => membership.status === "active");
@@ -87,15 +90,20 @@ export async function resolveCanonicalWorkspaceContext(signal?: AbortSignal): Pr
  */
 export async function enterWorkspace(workspaceId: string, signal?: AbortSignal): Promise<WorkspaceBootstrapContext> {
   if (!connectedRuntime) throw new Error("WORKSPACE_RUNTIME_NOT_CONNECTED");
+  const settingsOwner = retireWorkspaceRuntimeSettings();
   const context = await connectedRuntime.prepareEntry(workspaceId, signal);
   let activate: WorkspaceRuntimeActivation | void;
+  let activateSettings: () => void;
   try {
+    activateSettings = prepareWorkspaceRuntimeSettings(context, settingsOwner);
     activate = await workspaceRuntimeParticipant?.(context, signal);
   } catch (error) {
     connectedRuntime.abortEntry();
     throw error;
   }
+  assertWorkspaceRuntimeSettingsEntry(settingsOwner);
   const committed = connectedRuntime.commitEntry(context);
+  activateSettings();
   activate?.();
   return committed;
 }
@@ -103,6 +111,7 @@ export async function enterWorkspace(workspaceId: string, signal?: AbortSignal):
 /** Canonical entry addressed by the workspace key used in canonical routes. */
 export async function enterWorkspaceByKey(workspaceKey: string, signal?: AbortSignal): Promise<WorkspaceBootstrapContext> {
   if (!connectedRuntime) throw new Error("WORKSPACE_RUNTIME_NOT_CONNECTED");
+  retireWorkspaceRuntimeSettings();
   if (!connectedRuntime.findMembershipByKey(workspaceKey)) await connectedRuntime.loadMemberships(signal);
   const membership = connectedRuntime.findMembershipByKey(workspaceKey);
   if (!membership) throw new Error(`WORKSPACE_MEMBERSHIP_NOT_FOUND:${workspaceKey}`);

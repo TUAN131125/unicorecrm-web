@@ -32,5 +32,9 @@ export {
   isConnectedWorkspaceOperationalConfigurationProjection,
 } from "./workspaceOperationalConfigurationRuntime";
 export { useWorkspaceOperationalConfiguration } from "./useWorkspaceOperationalConfiguration";
+export { useWorkspaceOperationalConfigurationResource } from "./useWorkspaceOperationalConfigurationResource";
+export { getWorkspaceRuntimeSettings, useWorkspaceRuntimeSettings } from "./workspaceRuntimeSettings";
+export type { WorkspaceRuntimeSettings } from "./workspaceRuntimeSettings";
+export { useWorkspaceCurrencyChoices } from "./useWorkspaceCurrencyChoices";
 
 export * from "./businessPolicy";

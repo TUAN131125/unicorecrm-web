@@ -3,8 +3,10 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 
+import { readPresentationComposition } from "../../../scripts/lib/presentationCompositionSource.mts";
+
 const root = repositoryRoot;
-const read = (relativePath: string) => fs.readFileSync(path.join(root, relativePath), "utf8");
+const read = (relativePath: string) => readPresentationComposition(path.join(root, relativePath), "utf8");
 
 const canonicalPath = "src/modules/tasks/presentation/components/TaskCreateModal.tsx";
 const canonical = read(canonicalPath);

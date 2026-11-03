@@ -1,4 +1,4 @@
-import { getAuthSessionSnapshot, listDevelopmentAccounts } from "@/platform/identity-auth";
+import { getAuthSessionSnapshot, isDevelopmentAuthAdapter, listDevelopmentAccounts } from "@/platform/identity-auth";
 import { BrowserStorageAdapter } from "@/platform/persistence";
 import type {
   CreateActiveWorkspaceMembershipCommand,
@@ -45,6 +45,7 @@ function emptyPeopleSnapshot(workspaceId: string): WorkspacePeopleSnapshot {
 }
 
 export function getWorkspacePeopleSnapshot(workspaceId: string): WorkspacePeopleSnapshot {
+  if (!isDevelopmentAuthAdapter()) return emptyPeopleSnapshot(workspaceId);
   const stored = storage.get<WorkspacePeopleSnapshot>(storageKey(workspaceId));
   if (!stored || stored.workspaceId !== workspaceId) return emptyPeopleSnapshot(workspaceId);
   return clonePeopleSnapshot({
@@ -62,6 +63,7 @@ export function getWorkspacePeopleSnapshot(workspaceId: string): WorkspacePeople
 }
 
 function replaceWorkspacePeopleSnapshot(snapshot: WorkspacePeopleSnapshot): WorkspacePeopleSnapshot {
+  if (!isDevelopmentAuthAdapter()) throw new Error("WORKSPACE_MEMBERSHIP_RUNTIME_NOT_DEVELOPMENT");
   const next = clonePeopleSnapshot({ ...snapshot, revision: snapshot.revision + 1 });
   storage.set(storageKey(snapshot.workspaceId), next);
   listeners.forEach((listener) => listener(clonePeopleSnapshot(next)));
@@ -217,6 +219,7 @@ export function getCurrentMembershipForWorkspaceId(workspaceId: string): Workspa
 }
 
 export function listWorkspaceMembershipDirectory(workspaceId: string): WorkspaceMembership[] {
+  if (!isDevelopmentAuthAdapter()) return [];
   const people = getWorkspacePeopleSnapshot(workspaceId);
   return [...baseMemberships.filter((membership) => membership.workspaceId === workspaceId), ...people.additionalMemberships]
     .map((membership) => ({
@@ -228,6 +231,7 @@ export function listWorkspaceMembershipDirectory(workspaceId: string): Workspace
 }
 
 export function listAllDevelopmentMemberships(): WorkspaceMembership[] {
+  if (!isDevelopmentAuthAdapter()) return [];
   return DEVELOPMENT_WORKSPACES.flatMap((workspace) => listWorkspaceMembershipDirectory(workspace.workspaceId));
 }
 

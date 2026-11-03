@@ -9,6 +9,8 @@ interface ListPaginationBarProps extends Omit<ListPaginationState<unknown>, "pag
   itemLabelEn: string;
   ariaLabelVi?: string;
   ariaLabelEn?: string;
+  totalKnown?: boolean;
+  refreshing?: boolean;
 }
 
 export const ListPaginationBar: React.FC<ListPaginationBarProps> = ({
@@ -24,6 +26,8 @@ export const ListPaginationBar: React.FC<ListPaginationBarProps> = ({
   itemLabelEn,
   ariaLabelVi,
   ariaLabelEn,
+  totalKnown = true,
+  refreshing = false,
 }) => {
   const { locale } = useI18n();
   const isVi = locale === "vi";
@@ -37,7 +41,7 @@ export const ListPaginationBar: React.FC<ListPaginationBarProps> = ({
       className="flex min-w-0 flex-col gap-2 border-t border-slate-100 bg-white px-3 py-2.5 text-[11px] font-normal text-slate-500 sm:flex-row sm:items-center sm:justify-between"
     >
       <span aria-live="polite" className="crm-text-wrap">
-        {text("Hiển thị", "Showing")} <strong className="font-medium text-slate-700">{rangeStart}–{rangeEnd}</strong> {text("trên", "of")} <strong className="font-medium text-slate-700">{totalItems}</strong> {itemLabel}
+        {refreshing ? text("Đang cập nhật danh sách…", "Updating list…") : <>{text("Hiển thị", "Showing")} <strong className="font-medium text-slate-700">{rangeStart}–{rangeEnd}</strong> {totalKnown && <>{text("trên", "of")} <strong className="font-medium text-slate-700">{totalItems}</strong> </>}{itemLabel}</>}
       </span>
       <div className="flex min-w-0 flex-wrap items-center justify-start gap-2 sm:justify-end">
         <Select
@@ -56,13 +60,13 @@ export const ListPaginationBar: React.FC<ListPaginationBarProps> = ({
           size="sm"
           className="h-10 w-10 shrink-0 px-0"
           aria-label={text("Trang trước", "Previous page")}
-          disabled={page <= 1}
+          disabled={refreshing || page <= 1}
           onClick={() => setPage(Math.max(1, page - 1))}
         >
           <ChevronLeft size={13} />
         </Button>
         <span className="min-w-[74px] text-center font-medium text-slate-700">
-          {text("Trang", "Page")} {page}/{pageCount}
+          {text("Trang", "Page")} {page}{totalKnown ? `/${pageCount}` : ""}
         </span>
         <Button
           type="button"
@@ -70,7 +74,7 @@ export const ListPaginationBar: React.FC<ListPaginationBarProps> = ({
           size="sm"
           className="h-10 w-10 shrink-0 px-0"
           aria-label={text("Trang sau", "Next page")}
-          disabled={page >= pageCount}
+          disabled={refreshing || page >= pageCount}
           onClick={() => setPage(Math.min(pageCount, page + 1))}
         >
           <ChevronRight size={13} />

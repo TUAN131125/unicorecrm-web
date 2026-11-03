@@ -1,4 +1,5 @@
 import React, { forwardRef, useMemo } from "react";
+import { formatApplicationError } from "@/shared/operations";
 import {
   CommercialDocumentFieldGrid,
   CommercialDocumentHeader,
@@ -11,7 +12,7 @@ import { PaymentQrCode } from "@/components/crm/commercial-documents";
 import { getPaymentConfigurationSnapshot, subscribeToPaymentConfiguration } from "@/modules/payments";
 import { getInvoiceSellerInformation, subscribeToInvoiceConfiguration } from "@/modules/invoices";
 import { useSubscribableSnapshot } from "@/platform/react";
-import { useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
+import { useWorkspaceOperationalConfiguration, useWorkspaceRuntimeSettings } from "@/platform/workspace-config";
 import type { CustomerOrder, OrderItem } from "../../domain/model/order.types";
 
 interface OrderCustomerDocumentPartySnapshot {
@@ -93,12 +94,13 @@ function lineUnit(item: OrderItem, locale: "vi" | "en") {
   return locale === "vi" ? "Đơn vị" : "Unit";
 }
 
-export const OrderCustomerDocument = forwardRef<HTMLDivElement, OrderCustomerDocumentProps>(function OrderCustomerDocument(
+const OrderCustomerDocumentContent = forwardRef<HTMLDivElement, OrderCustomerDocumentProps>(function OrderCustomerDocumentContent(
   { order, customer, contact, customerLabel, contactLabel, locale },
   ref,
 ) {
   const text = (vi: string, en: string) => locale === "vi" ? vi : en;
   const configuration = useWorkspaceOperationalConfiguration();
+  const runtimeSettings = useWorkspaceRuntimeSettings();
   const invoiceConfiguration = useSubscribableSnapshot(getInvoiceSellerInformation, subscribeToInvoiceConfiguration);
   const paymentConfiguration = useSubscribableSnapshot(getPaymentConfigurationSnapshot, subscribeToPaymentConfiguration);
   const invoiceAddress = configuration.addresses.find((address) => address.id === invoiceConfiguration.invoiceAddressId);
@@ -109,7 +111,7 @@ export const OrderCustomerDocument = forwardRef<HTMLDivElement, OrderCustomerDoc
     email: invoiceConfiguration.email || configuration.businessInformation.billingEmail,
     phone: invoiceConfiguration.phone || configuration.businessInformation.phone,
   };
-  const currency = order.currency || configuration.localeRegion.currencies.baseCurrency;
+  const currency = order.currency || runtimeSettings.baseCurrency;
   const items = order.items ?? [];
   const subtotal = order.subtotal ?? items.reduce((sum, item) => sum + item.lineSubtotal, 0);
   const discountTotal = order.discountTotal ?? items.reduce((sum, item) => sum + item.lineDiscountAmount, 0);
@@ -237,4 +239,23 @@ export const OrderCustomerDocument = forwardRef<HTMLDivElement, OrderCustomerDoc
       </CommercialDocumentNotice>
     </CommercialDocumentSheet>
   );
+});
+
+class OrderDocumentBoundary extends React.Component<{ locale: "vi" | "en"; children: React.ReactNode }, { error: unknown }> {
+  state: { error: unknown } = { error: null };
+  static getDerivedStateFromError(error: unknown) { return { error }; }
+  render() {
+    if (this.state.error !== null) return <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-800">
+      <p>{this.props.locale === "vi" ? "Không thể tải tài liệu đơn hàng." : "The order document could not be loaded."}</p>
+      <p>{formatApplicationError(this.state.error, { locale: this.props.locale })}</p>
+      <button type="button" className="mt-3 underline" onClick={() => window.location.reload()}>{this.props.locale === "vi" ? "Tải lại" : "Reload"}</button>
+    </div>;
+    return this.props.children;
+  }
+}
+
+export const OrderCustomerDocument = forwardRef<HTMLDivElement, OrderCustomerDocumentProps>(function OrderCustomerDocument(props, ref) {
+  return <OrderDocumentBoundary key={props.order.id} locale={props.locale}>
+    <OrderCustomerDocumentContent {...props} ref={ref} />
+  </OrderDocumentBoundary>;
 });

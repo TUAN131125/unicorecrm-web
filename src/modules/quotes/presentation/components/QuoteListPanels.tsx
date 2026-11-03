@@ -150,7 +150,7 @@ export function QuoteListPanels(props: QuoteListPanelsProps) {
               <span className="text-xl font-semibold text-slate-700 mt-1">{kpis.draftCount}</span>
             </Card>
             <Card className="p-3 flex flex-col justify-between bg-indigo-50/35 border border-indigo-200 shadow-xs rounded-xl">
-              <span className="text-[10px] font-medium text-indigo-600 uppercase tracking-wider">{locale === "vi" ? "Chờ duyệt (Review)" : "In Review"}</span>
+              <span className="text-[10px] font-medium text-indigo-600 uppercase tracking-wider">{locale === "vi" ? "Đang soạn" : "In preparation"}</span>
               <span className="text-xl font-semibold text-indigo-700 mt-1">{kpis.reviewCount}</span>
             </Card>
             <Card className="p-3 flex flex-col justify-between bg-amber-50/40 border border-amber-200 shadow-xs rounded-xl">

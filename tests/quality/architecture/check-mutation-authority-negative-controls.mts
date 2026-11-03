@@ -62,6 +62,24 @@ interface NegativeControl {
  */
 const controls: readonly NegativeControl[] = [
   {
+    id: "MA-07-exclusive-return",
+    invariant: "MA-07 — mutually exclusive Quote responses cannot become a two-command sequence",
+    gate: "quality.partial-commit-outcomes",
+    file: "src/modules/quotes/presentation/services/saveQuoteCustomerResponse.ts",
+    find: 'return input.kind === "rejection"',
+    replace: 'await rejectQuoteCommand(quoteId, { reason: "negative control" }, metadata);\n  return input.kind === "rejection"',
+    defect: "a response service commits an extra command before choosing its return branch",
+  },
+  {
+    id: "MA-06-extracted-checkpoint",
+    invariant: "MA-06 — extraction must not hide forbidden work activation",
+    gate: "quality.workflow-coordinator-ownership",
+    file: "src/modules/deals/presentation/model/dealSaveCheckpoint.ts",
+    find: "const authority = getDealSelectionAuthority();",
+    replace: "await updateDealNextActionCommand(opening.id, {});\n    const authority = getDealSelectionAuthority();",
+    defect: "the extracted save helper starts performing the retired next-action workflow",
+  },
+  {
     id: "MA-01/MA-02-dedicated-dispatch",
     invariant: "MA-02 — dedicated commands must not be routed through the generic authority",
     gate: "quality.dedicated-module-command-dispatch",
@@ -75,8 +93,8 @@ const controls: readonly NegativeControl[] = [
     invariant: "MA-03 — a client-generated Task identity must not become a Deal Task reference",
     gate: "quality.server-assigned-task-identity",
     file: "src/modules/deals/presentation/hooks/useDealPipelineController.ts",
-    find: "run: () => updateDealNextActionCommand(opening.id, {",
-    replace: "run: () => updateDealNextActionCommand(opening.id, { taskId: `task_deal_${opening.id}`,",
+    find: "const report = await saveCheckpoint.current.save(",
+    replace: "await updateDealNextActionCommand(opening.id, { taskId: `task_deal_${opening.id}` });\n    const report = await saveCheckpoint.current.save(",
     defect: "the M3 defect verbatim: a deterministic client Task key is sent as UpdateDealNextActionRequest.taskId",
   },
   {

@@ -13,15 +13,12 @@ export function useFloatingUtilityLayout(pathname: string): void {
     const measure = () => {
       browserWindow.cancelAnimationFrame(frame);
       frame = browserWindow.requestAnimationFrame(() => {
-        // Sticky action bars displace the assistant only on compact/mobile layouts.
-        const compactViewport = browserWindow.matchMedia("(max-width: 639px)").matches;
-        const occupiedHeight = compactViewport
-          ? [...ownerDocument.querySelectorAll<HTMLElement>(ACTION_BAR_SELECTOR)].reduce((max, element) => {
+        // Sticky form actions need the same clearance on desktop and mobile.
+        const occupiedHeight = [...ownerDocument.querySelectorAll<HTMLElement>(ACTION_BAR_SELECTOR)].reduce((max, element) => {
               const rect = element.getBoundingClientRect();
               const visible = rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.top < browserWindow.innerHeight;
               return visible ? Math.max(max, Math.max(0, browserWindow.innerHeight - rect.top)) : max;
-            }, 0)
-          : 0;
+            }, 0);
         root.style.setProperty("--crm-mobile-action-height", `${Math.ceil(occupiedHeight)}px`);
       });
     };
@@ -36,6 +33,7 @@ export function useFloatingUtilityLayout(pathname: string): void {
     const mutationObserver = new MutationObserver(observeActionBars);
     mutationObserver.observe(ownerDocument.body, { childList: true, subtree: true, attributes: true, attributeFilter: ["class", "style", "data-mobile-action-bar"] });
     browserWindow.addEventListener("resize", measure);
+    ownerDocument.addEventListener("scroll", measure, { capture: true, passive: true });
     observeActionBars();
 
     return () => {
@@ -43,6 +41,7 @@ export function useFloatingUtilityLayout(pathname: string): void {
       resizeObserver?.disconnect();
       mutationObserver.disconnect();
       browserWindow.removeEventListener("resize", measure);
+      ownerDocument.removeEventListener("scroll", measure, true);
       root.style.setProperty("--crm-mobile-action-height", "0px");
     };
   }, [pathname]);

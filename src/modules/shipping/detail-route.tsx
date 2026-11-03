@@ -22,8 +22,8 @@ const ShippingBookingDetailContent: React.FC = () => {
     <AuthoritativeQueryBoundary
       query={detailQuery}
       hasData={records.some((item) => item.id === recordId)}
-      loadingTitleVi="Đang tải vận đơn từ backend"
-      loadingTitleEn="Loading shipping booking from backend"
+      loadingTitleVi="Đang tải vận đơn"
+      loadingTitleEn="Loading shipping booking"
       errorTitleVi="Không thể tải vận đơn"
       errorTitleEn="Shipping booking could not be loaded"
     >

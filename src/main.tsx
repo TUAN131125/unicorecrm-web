@@ -41,11 +41,10 @@ async function renderApplication(): Promise<void> {
 
 void renderApplication().catch(renderApplicationBootstrapFailure);
 
-function renderApplicationBootstrapFailure(error: unknown): void {
-  const message = error instanceof Error ? error.message : "Unknown startup failure";
+function renderApplicationBootstrapFailure(_error: unknown): void {
   const rootElement = document.getElementById("root");
   if (!rootElement) {
-    console.error("Unicore CRM startup failed before the root element was available.", error);
+    console.error("Unicore CRM startup failed before the root element was available.");
     return;
   }
 
@@ -54,14 +53,14 @@ function renderApplicationBootstrapFailure(error: unknown): void {
     .startsWith("vi");
   const copy = isVietnamese
     ? {
-        eyebrow: "Khởi động connected đã bị chặn",
+        eyebrow: "Không thể mở ứng dụng",
         title: "Không thể khởi động Unicore CRM",
-        description: "Cấu hình API, danh tính hoặc workspace bắt buộc đang thiếu hoặc không hợp lệ. Ứng dụng đã dừng trước khi tải dữ liệu.",
+        description: "Vui lòng tải lại trang. Nếu vẫn gặp lỗi, hãy liên hệ người quản trị.",
       }
     : {
-        eyebrow: "Connected startup blocked",
+        eyebrow: "Application unavailable",
         title: "Unicore CRM could not start safely",
-        description: "Required API, identity or workspace configuration is missing or invalid. No application data was loaded.",
+        description: "Reload the page. If the problem continues, contact your administrator.",
       };
 
   createRoot(rootElement).render(
@@ -71,7 +70,6 @@ function renderApplicationBootstrapFailure(error: unknown): void {
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-rose-600">{copy.eyebrow}</p>
           <h1 className="mt-3 text-2xl font-semibold [overflow-wrap:anywhere]">{copy.title}</h1>
           <p className="mt-2 text-sm text-slate-600">{copy.description}</p>
-          <pre className="mt-5 overflow-auto rounded-xl bg-slate-950 p-4 text-xs text-slate-100">{message}</pre>
         </section>
       </main>
     </StrictMode>,

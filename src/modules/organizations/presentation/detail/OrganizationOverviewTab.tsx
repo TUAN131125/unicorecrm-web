@@ -170,7 +170,7 @@ export const OrganizationOverviewTab: React.FC<OrganizationOverviewTabProps> = (
         <div className="min-w-0 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
           <div className="flex items-center gap-2">
             <Building2 size={15} className="text-violet-600" />
-            <h3 className="text-sm font-semibold text-slate-900">{text("Thông tin tổ chức", "Organization snapshot")}</h3>
+            <h3 className="text-sm font-semibold text-slate-900">{text("Thông tin tổ chức", "Organization information")}</h3>
           </div>
           <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             <Info label={text("Tên pháp lý", "Legal name")} value={account.legalName || account.displayName} />

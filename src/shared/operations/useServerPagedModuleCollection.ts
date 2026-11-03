@@ -13,6 +13,7 @@ import {
 export interface UseServerPagedModuleCollectionOptions<T> {
   key: ModuleDataAuthorityKey;
   scopeKey: string;
+  authorizationScopeKey?: string;
   query?: Omit<ModuleListQuery, "cursor" | "limit">;
   enabled?: boolean;
   initialPageSize?: number;
@@ -34,6 +35,7 @@ export function useServerPagedModuleCollection<T>(
   return useServerPagedCollection({
     connected,
     scopeKey: options.scopeKey,
+    ...(options.authorizationScopeKey === undefined ? {} : { authorizationScopeKey: options.authorizationScopeKey }),
     ...(options.query === undefined ? {} : { query: options.query }),
     ...(options.enabled === undefined ? {} : { enabled: options.enabled }),
     ...(options.initialPageSize === undefined ? {} : { initialPageSize: options.initialPageSize }),

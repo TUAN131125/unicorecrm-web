@@ -12,9 +12,10 @@ import {
 } from "@/components/crm/commercial-documents/CommercialDocumentSheet";
 import { useI18n } from "@/i18n";
 import type { CustomerDisplay as Customer } from "@/modules/customers";
-import { useWorkspaceOperationalConfiguration } from "@/platform/workspace-config";
+import { useWorkspaceOperationalConfigurationResource, type WorkspaceOperationalConfiguration } from "@/platform/workspace-config";
 import { getInvoiceSellerInformation, subscribeToInvoiceConfiguration } from "@/modules/invoices";
 import { useSubscribableSnapshot } from "@/platform/react";
+import { isQuoteConnectedMode } from "../../public/quotes";
 
 import type { QuoteLineItem, SalesDocumentAdjustment } from "../../domain/model/quote.types";
 
@@ -73,7 +74,24 @@ function lineUnit(line: QuoteLineItem, locale: "vi" | "en") {
   return locale === "vi" ? "Đơn vị" : "Unit";
 }
 
-export const QuoteBuilderPreview: React.FC<QuoteBuilderPreviewProps> = ({
+export const QuoteBuilderPreview: React.FC<QuoteBuilderPreviewProps> = (props) => {
+  const { locale } = useI18n();
+  if (isQuoteConnectedMode()) return ;
+  return <QuoteBuilderPreviewWithConfiguration {...props} />;
+};
+
+const QuoteBuilderPreviewWithConfiguration: React.FC<QuoteBuilderPreviewProps> = (props) => {
+  const resource = useWorkspaceOperationalConfigurationResource();
+  const { locale } = useI18n();
+  if (!resource.data) return <p role={resource.error ? "alert" : "status"} data-quote-document-unavailable="true" className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+    {resource.loading
+      ? (locale === "vi" ? "Đang tải cấu hình tài liệu…" : "Loading document configuration…")
+      : (locale === "vi" ? "Không thể tải cấu hình tài liệu. Vui lòng thử lại để xem trước PDF." : "Document settings could not be loaded. Please retry to preview the PDF.")}
+  </p>;
+  return <QuoteBuilderPreviewContent {...props} workspaceConfiguration={resource.data} />;
+};
+
+const QuoteBuilderPreviewContent: React.FC<QuoteBuilderPreviewProps & { workspaceConfiguration: WorkspaceOperationalConfiguration }> = ({
   quoteNumber,
   currency,
   validUntil,
@@ -96,9 +114,9 @@ export const QuoteBuilderPreview: React.FC<QuoteBuilderPreviewProps> = ({
   showPreviewLauncher = true,
   previewOpen: controlledPreviewOpen,
   onPreviewOpenChange,
+  workspaceConfiguration,
 }) => {
   const { locale: i18nLocale, t } = useI18n();
-  const workspaceConfiguration = useWorkspaceOperationalConfiguration();
   const invoiceConfiguration = useSubscribableSnapshot(getInvoiceSellerInformation, subscribeToInvoiceConfiguration);
   const locale: "vi" | "en" = i18nLocale === "vi" ? "vi" : "en";
   const text = (vi: string, en: string) => locale === "vi" ? vi : en;

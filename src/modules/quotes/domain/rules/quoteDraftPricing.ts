@@ -14,8 +14,9 @@ export interface QuoteDraftTotals {
 export function calculateQuoteDraftTotals(
   lineItems: readonly QuoteLineItem[],
   adjustments: readonly SalesDocumentAdjustment[],
+  precision = 2,
 ): QuoteDraftTotals {
-  const pricing = calculateQuotePricing(lineItems, adjustments);
+  const pricing = calculateQuotePricing(lineItems, adjustments, 0, precision);
   return {
     lineItems: pricing.lineItems,
     subtotal: pricing.subtotal,

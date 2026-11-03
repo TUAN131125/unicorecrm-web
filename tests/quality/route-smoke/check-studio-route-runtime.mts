@@ -34,8 +34,9 @@ for (const view of [
   const source = read(`src/workspaces/studio/presentation/views/${view}`);
   assert.equal(/useSubscribableSnapshot\([\s\S]{0,180}?\(listener\)\s*=>/u.test(source), false, `${view} must use a stable module-level subscription function`);
 }
-const pipelineSource = read("src/workspaces/studio/presentation/views/PipelinesStatusesView.tsx");
-assert.ok(pipelineSource.includes("function subscribeToDealPipelineSnapshot"), "Pipeline Studio screen must use a stable pipeline snapshot adapter");
+const pipelineSource = read("src/workspaces/studio/presentation/hooks/usePipelinesStatusesController.ts");
+assert.match(pipelineSource, /const \{ pipelines: source, pipelineQuery \} = useDealStages\(\)/u,
+  "Pipeline Studio must consume the shared Deals-owned pipeline resource rather than a render-local subscription");
 
 const result = await build({
   absWorkingDir: root,

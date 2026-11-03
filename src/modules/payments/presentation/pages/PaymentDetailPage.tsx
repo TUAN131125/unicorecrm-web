@@ -88,7 +88,7 @@ export const PaymentDetailPage: React.FC = () => {
   if (!detail) {
     return <RecordDetailFrame>
       <RecordDetailHeader backLabel={text("Thanh toán", "Payments")} onBack={() => navigate(path("payments"))} identityIcon={<ReceiptText size={20} />} identityToneClassName="border-rose-200 bg-rose-50 text-rose-700" title={text("Không tìm thấy Payment Record", "Payment Record not found")} metadata={text("Legacy transaction không còn được dùng làm màn hình chi tiết vận hành.", "Legacy transactions are no longer used for the operational detail screen.")} />
-      <RecordDetailSection><div className="p-6 text-sm text-slate-600">{detailQuery.loading ? text("Đang tải dữ liệu authoritative…", "Loading authoritative data…") : detailQuery.state === "ERROR" ? text("Không thể tải bản ghi. Hãy thử lại.", "The record could not be loaded. Try again.") : text("Bản ghi có thể đã bị di chuyển hoặc không thuộc workspace hiện tại.", "The record may have moved or may not belong to the current workspace.")}{detailQuery.state === "ERROR" && <div className="mt-4"><Button variant="secondary" onClick={() => void detailQuery.refresh()}>{text("Thử lại", "Retry")}</Button></div>}</div></RecordDetailSection>
+      <RecordDetailSection><div className="p-6 text-sm text-slate-600">{detailQuery.loading ? text("Đang tải dữ liệu…", "Loading data…") : detailQuery.state === "ERROR" ? text("Không thể tải bản ghi. Hãy thử lại.", "The record could not be loaded. Try again.") : text("Bản ghi có thể đã bị di chuyển hoặc không thuộc workspace hiện tại.", "The record may have moved or may not belong to the current workspace.")}{detailQuery.state === "ERROR" && <div className="mt-4"><Button variant="secondary" onClick={() => void detailQuery.refresh()}>{text("Thử lại", "Retry")}</Button></div>}</div></RecordDetailSection>
     </RecordDetailFrame>;
   }
 
@@ -185,7 +185,7 @@ export const PaymentDetailPage: React.FC = () => {
       </>}
     />
 
-    {mutation.snapshot.failure && !mutation.conflicted && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"><strong>{mutation.snapshot.state}</strong>: {mutation.snapshot.failure.message}{mutation.snapshot.failure.retryable && <span> · {text("Có thể thử lại an toàn với cùng command contract.", "This can be retried safely with the same command contract.")}</span>}</div>}
+    {mutation.snapshot.failure && !mutation.conflicted && <div role="alert" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"><strong>{mutation.snapshot.state}</strong>: {mutation.snapshot.failure.message}{mutation.snapshot.failure.retryable && <span> · {text("Bạn có thể thử lại thao tác này.", "You can retry this action.")}</span>}</div>}
     {method?.availability === "HISTORICAL_ONLY" && <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">{text("Payment Record này dùng phương thức chỉ dành cho dữ liệu lịch sử. Có thể xem lại nhưng không được tạo hoặc lưu record mới với phương thức này.", "This Payment Record uses a historical-only method. History remains visible, but new records cannot use this method.")}</div>}
 
     <CommercialLineagePanel anchorType="PAYMENT" anchorId={detail.id} locale={locale} />
@@ -251,7 +251,7 @@ export const PaymentDetailPage: React.FC = () => {
     <ConfirmDialog isOpen={guard.isConfirmOpen} onClose={() => guard.setIsConfirmOpen(false)} onConfirm={() => { if (!workflow.pending) guard.confirmDiscard(); }}
       title={text("Bỏ thay đổi chưa lưu?", "Discard unsaved changes?")} message={text("Các thay đổi chưa được lưu. Bạn có muốn đóng biểu mẫu?", "Your changes have not been saved. Close the form?")}
       confirmText={text("Bỏ thay đổi", "Discard changes")} cancelText={text("Tiếp tục chỉnh sửa", "Keep editing")} type="warning" />
-    <ConfirmDialog isOpen={refundOpen} onClose={closeDraft} editable onConfirm={refund} title={text("Xác nhận hoàn tiền", "Confirm refund")} message={`Tạo Refund Intent authoritative cho ${formatMoneyDto(detail.refundableAmount)}. Khoản đã phân bổ phải được đảo trước khi hoàn.`} confirmText={text("Tạo và hoàn tiền", "Create and refund")} cancelText={text("Hủy", "Cancel")} variant="danger" />
+    <ConfirmDialog isOpen={refundOpen} onClose={closeDraft} editable onConfirm={refund} title={text("Xác nhận hoàn tiền", "Confirm refund")} message={`Yêu cầu hoàn tiền ${formatMoneyDto(detail.refundableAmount)}. Khoản đã phân bổ phải được đảo trước khi hoàn.`} confirmText={text("Tạo và hoàn tiền", "Create and refund")} cancelText={text("Hủy", "Cancel")} variant="danger" />
   </RecordDetailFrame>;
 };
 

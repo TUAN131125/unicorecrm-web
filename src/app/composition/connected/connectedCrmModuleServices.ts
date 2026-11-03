@@ -3,7 +3,7 @@ import type { Contact } from "@/modules/contacts/domain/model/contact.types";
 import type { CustomerApplicationServices } from "@/modules/customers/application/composition/customerApplicationServices";
 import type { Customer, CustomerCareCard, CustomerRepositorySnapshot } from "@/modules/customers/domain/model/customer.types";
 import type { DealApplicationServices } from "@/modules/deals/application/composition/dealApplicationServices";
-import type { Deal, DealPipelineDefinition, OpportunityStageConfig } from "@/modules/deals/domain/model/deal.types";
+import type { Deal, DealPipelineDefinition } from "@/modules/deals/domain/model/deal.types";
 import type { LeadApplicationServices } from "@/modules/leads/application/composition/leadApplicationServices";
 import type { Lead } from "@/modules/leads/domain/model/lead.types";
 import type { OrganizationApplicationServices } from "@/modules/organizations/application/composition/organizationApplicationServices";
@@ -16,7 +16,8 @@ import { createLeadConnectedApiRuntime } from "@/modules/leads/infrastructure/ht
 import { createContactConnectedApiRuntime } from "@/modules/contacts/infrastructure/http/createContactConnectedApiRuntime";
 import { createCustomerConnectedApiRuntime } from "@/modules/customers/infrastructure/http/createCustomerConnectedApiRuntime";
 import { createDealConnectedApiRuntime } from "@/modules/deals/infrastructure/http/createDealConnectedApiRuntime";
-import { DEFAULT_DEAL_STAGES } from "@/modules/deals/domain/rules/dealStages";
+import { DealPipelineHttpAdapter } from "@/modules/deals/infrastructure/http/DealPipelineHttpAdapter";
+import { CrmConfigurationApiClient } from "@/platform/api/generated/crmConfigurationApi";
 import { createOrganizationConnectedApiRuntime } from "@/modules/organizations/infrastructure/http/createOrganizationConnectedApiRuntime";
 import { createProductConnectedApiRuntime } from "@/modules/products/infrastructure/http/createProductConnectedApiRuntime";
 import { relationshipRefKey } from "@/platform/identity";
@@ -104,14 +105,10 @@ function createCustomers(httpClient: HttpClient): CustomerApplicationServices {
 
 function createDeals(httpClient: HttpClient): DealApplicationServices {
   const deals = new ConnectedCollectionProjection<Deal>("deals", (record) => record.id);
-  // The Deal stage catalogue is fixed by the Deals backend (DealStages), not configurable
-  // and not exposed by any read operation. Seeding the projection with the canonical
-  // catalogue mirrors that authority; leaving it empty would silently disable the Deal
-  // pipeline because a deferred workspace-configuration API does not exist yet.
-  const stages = new ConnectedSnapshotProjection<OpportunityStageConfig[]>("deals", DEFAULT_DEAL_STAGES);
   const pipelines = new ConnectedSnapshotProjection<DealPipelineDefinition[]>("deals", []);
   return {
     api: createDealConnectedApiRuntime(httpClient),
+    pipelines: new DealPipelineHttpAdapter(new CrmConfigurationApiClient(httpClient)),
     repository: {
       list: () => deals.list(),
       getById: (id) => deals.getById(id),
@@ -119,17 +116,12 @@ function createDeals(httpClient: HttpClient): DealApplicationServices {
       subscribe: (listener) => deals.subscribe(listener),
     },
     stages: {
-      list: () => stages.snapshot(),
-      replace: (records) => stages.replace(records),
+      list: () => pipelines.snapshot().find(pipeline => pipeline.isDefault)?.stages ?? [],
+      replace: unavailableConnectedOperation("Deal stage local save"),
       reset: unavailableConnectedOperation("Deal stage reset"),
-      subscribe: (listener) => stages.subscribe(listener),
+      subscribe: (listener) => pipelines.subscribe(records => listener(records.find(pipeline => pipeline.isDefault)?.stages ?? [])),
       listPipelines: () => pipelines.snapshot(),
-      // Pipeline configuration is workspace configuration owned by the backend: every
-      // `/crm-configuration/pipelines` write operation is BLOCKED in OpenAPI, and nothing
-      // projects pipelines from the backend, so a presentation-originated write here would
-      // only ever be a local one. Declared unavailable rather than left to fail inside the
-      // projection guard, so the boundary and the UI can refuse first.
-      replacePipelines: unavailableConnectedOperation("Deal pipeline configuration save"),
+      replacePipelines: (records) => { pipelines.replace(records); return pipelines.snapshot(); },
     },
     exporter: {
       exportCsv(filename, records, columns) {

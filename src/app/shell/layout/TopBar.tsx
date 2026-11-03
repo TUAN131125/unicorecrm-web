@@ -250,7 +250,7 @@ export const TopBar: React.FC<TopBarProps> = ({
             <div data-search-empty-state="permission-aware" className="px-4 py-8 text-center">
               <p className="text-xs font-semibold text-slate-500">
                 {activeProductSpace === "crm"
-                  ? (vi ? "Không có kết quả trong phạm vi bạn được phép xem." : "No results were found within your permitted scope.")
+                  ? (vi ? "Không tìm thấy kết quả." : "No results found.")
                   : (vi ? "Không tìm thấy trang phù hợp." : "No matching page was found.")}
               </p>
               {crmSearchScopeLabels.length > 0 && (

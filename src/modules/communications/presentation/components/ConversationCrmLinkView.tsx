@@ -20,7 +20,7 @@ export function ConversationCrmLinkView({ crm, vi, onOpen }: { crm: ReturnType<t
       {crm.context.target && <p>{crm.context.target.targetType}: {crm.context.target.label ?? (vi ? "Tên được giữ kín" : "Name withheld")} ({crm.context.target.targetId})</p>}
       {crm.context.target && onOpen && <button type="button" onClick={() => { if (crm.context?.target) onOpen(crm.context.target); }}>{vi ? "Mở bản ghi CRM" : "Open CRM record"}</button>}
       {permitted && <>
-        <form className="flex gap-2" onSubmit={event => { event.preventDefault(); void crm.search(type, query); }}>
+        <form className="crm-form-surface flex gap-2" onSubmit={event => { event.preventDefault(); void crm.search(type, query); }}>
           <select aria-label={vi ? "Loại bản ghi CRM" : "CRM record type"} value={type} disabled={pending} onChange={event => { setType(event.target.value === "CONTACT" ? "CONTACT" : "LEAD"); setQuery(""); }}>
             <option value="LEAD">Lead</option><option value="CONTACT">Contact</option>
           </select>
@@ -28,7 +28,7 @@ export function ConversationCrmLinkView({ crm, vi, onOpen }: { crm: ReturnType<t
           <button type="submit" disabled={pending || crm.searching || !query.trim()}>{vi ? "Tìm CRM" : "Search CRM"}</button>
         </form>
         {crm.searching && <p role="status">{vi ? "Đang tìm…" : "Searching…"}</p>}
-        {crm.searched && !crm.searching && crm.candidates.length === 0 && <p>{vi ? "Không có bản ghi phù hợp trong phạm vi được phép. Thử tên hoặc mã cụ thể hơn." : "No eligible records within your access. Refine the name or identifier."}</p>}
+        {crm.searched && !crm.searching && crm.candidates.length === 0 && <p>{vi ? "Không tìm thấy bản ghi phù hợp. Thử tên hoặc mã cụ thể hơn." : "No matching records. Refine the name or reference."}</p>}
         <ul>{crm.candidates.map(target => <li key={`${target.targetType}:${target.targetId}`}><button type="button" disabled={pending} onClick={() => crm.select(target)}>
           {vi ? "Chọn" : "Select"} {target.label ?? target.targetId}
         </button></li>)}</ul>

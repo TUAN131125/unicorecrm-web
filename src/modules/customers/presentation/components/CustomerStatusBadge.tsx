@@ -28,4 +28,4 @@ export const CustomerHealthBadge: React.FC<{ health: CustomerHealth | CustomerHe
   </Badge>
 );
 
-export const CustomerTypeBadge: React.FC<{ type: CustomerType }> = ({ type }) => <Badge variant="info">{type}</Badge>;
+export const CustomerTypeBadge: React.FC<{ type: CustomerType; locale?: "vi" | "en" }> = ({ type, locale = "vi" }) => <Badge variant="info">{type === "B2B" ? (locale === "vi" ? "Doanh nghiệp" : "Business") : (locale === "vi" ? "Cá nhân" : "Individual")}</Badge>;

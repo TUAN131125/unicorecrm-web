@@ -13,8 +13,8 @@ import {
   statusIsRetryable,
   type ApiErrorPayload,
 } from "../errors/ApiClientError";
-import { readJsonResponse, serializeApiPayload } from "./httpSerialization";
-import { validateOpenApiRequest, validateOpenApiResponse } from "../contracts/openApiRuntimeValidation";
+import { readJsonResponse, readPdfResponse, serializeApiPayload } from "./httpSerialization";
+import { isOpenApiBinaryRequest, isOpenApiBinaryResponse, validateOpenApiRequest, validateOpenApiResponse } from "../contracts/openApiRuntimeValidation";
 
 const DEFAULT_RETRY_POLICY: HttpRetryPolicy = {
   maxAttempts: 3,
@@ -92,7 +92,7 @@ export class FetchHttpClient implements HttpClient {
       authorizationReplayed = true;
     }
     assertAuthority();
-    const body = input.body === undefined ? undefined : serializeApiPayload(input.body);
+    const body = input.body === undefined ? undefined : isOpenApiBinaryRequest(input.operationId) ? input.body as Blob : serializeApiPayload(input.body);
     const maxAttempts = this.resolveMaxAttempts(input);
 
     for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
@@ -106,7 +106,8 @@ export class FetchHttpClient implements HttpClient {
           ...(body === undefined ? {} : { body }),
           ...(input.credentials === undefined ? {} : { credentials: input.credentials }),
         });
-        const payload = await readJsonResponse(response);
+        const payload = response.ok && isOpenApiBinaryResponse(input.operationId, response.status)
+          ? await readPdfResponse(response) : await readJsonResponse(response);
         assertAuthority();
         if (response.ok) {
           if (input.contractAuthority !== "semantic-extension") {
@@ -169,7 +170,7 @@ export class FetchHttpClient implements HttpClient {
     headers.set("Accept", "application/json");
     headers.set("X-Request-Id", requestId);
     headers.set("X-Correlation-Id", correlationId);
-    if (input.body !== undefined) headers.set("Content-Type", "application/json");
+    if (input.body !== undefined) headers.set("Content-Type", isOpenApiBinaryRequest(input.operationId) ? "application/pdf" : "application/json");
 
     const authMode = input.auth ?? "required";
     if (authMode !== "none") {

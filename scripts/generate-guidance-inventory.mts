@@ -26,11 +26,13 @@ for (const group of counts) {
 }
 fs.writeFileSync(path.join(repositoryRoot, "docs/product/guidance-screen-inventory.md"), inventory);
 const docPath = path.join(repositoryRoot, "docs/product/guidance-system.md");
-const doc = fs.readFileSync(docPath, "utf8");
+const doc = fs.readFileSync(docPath, "utf8").replaceAll("\r\n", "\n");
 const heading = "## Current screen inventory";
 const headingIndex = doc.indexOf(heading);
-const start = headingIndex < 0 ? -1 : doc.indexOf("\n\n", headingIndex) + 2;
-const end = doc.indexOf("The 12 access/system routes", start);
-if (start < 0 || end < 0) throw new Error("Guidance coverage section is missing");
-fs.writeFileSync(docPath, (doc.slice(0, start) + summary + "\n\n" + doc.slice(end)).replace(/Quick Setup is one of the \d+ Studio screens/u, `Quick Setup is one of the ${SCREEN_GUIDANCE.filter(screen => screen.productSpace === "studio").length} Studio screens`));
+const separator = headingIndex < 0 ? -1 : doc.indexOf("\n\n", headingIndex);
+const start = separator < 0 ? -1 : separator + 2;
+const remainder = doc.slice(start).match(/The \d+ access\/system routes/u);
+const paragraphStart = remainder?.index === undefined ? -1 : start + remainder.index;
+if (start < 0 || paragraphStart < start) throw new Error("Guidance coverage section is missing");
+fs.writeFileSync(docPath, (doc.slice(0, start) + summary + "\n\n" + doc.slice(paragraphStart)).replace(/The \d+ access\/system routes/u, `The ${total - contextual} access/system routes`).replace(/Quick Setup is one of the \d+ Studio screens/u, `Quick Setup is one of the ${SCREEN_GUIDANCE.filter(screen => screen.productSpace === "studio").length} Studio screens`));
 console.log(summary);

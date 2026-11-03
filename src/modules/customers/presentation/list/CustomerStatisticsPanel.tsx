@@ -23,9 +23,10 @@ interface CustomerStatisticsPanelProps {
   show: boolean;
   onClose(): void;
   statsSummary: CustomerStatisticsSummary;
+  pageScoped?: boolean;
 }
 
-export const CustomerStatisticsPanel: React.FC<CustomerStatisticsPanelProps> = ({ show, onClose, statsSummary }) => {
+export const CustomerStatisticsPanel: React.FC<CustomerStatisticsPanelProps> = ({ show, onClose, statsSummary, pageScoped = false }) => {
   const { locale } = useI18n();
   const isVi = locale === "vi";
   const rate = (value: number) => statsSummary.total > 0 ? (value / statsSummary.total) * 100 : 0;
@@ -40,6 +41,7 @@ export const CustomerStatisticsPanel: React.FC<CustomerStatisticsPanelProps> = (
       bodyClassName="bg-slate-50/70"
     >
       <div className="space-y-6">
+        {pageScoped && <p role="status" className="rounded-xl border border-slate-200 bg-white p-3 text-xs text-slate-600">{isVi ? "Số liệu chỉ mô tả trang đang hiển thị, không phải tổng khách hàng của Workspace." : "These figures describe the displayed page, not the workspace customer total."}</p>}
         <div className="space-y-3">
           <h3 className="text-xs font-medium uppercase tracking-wider text-slate-400">{isVi ? "Tổng quan" : "Summary"}</h3>
           <div className="grid grid-cols-2 gap-3 text-left md:grid-cols-3">

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { Eye, EyeOff, Lock, Mail, UserRound } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { ROUTE_KEYS } from "@/platform/navigation";
 import { useI18n } from "@/i18n";
 import { registerAccount } from "@/platform/identity-auth";
@@ -16,6 +16,7 @@ import {
 } from "../components";
 import { startExternalAuth } from "../routing/externalAuthRedirect";
 import { emailVerificationNavigationState } from "../routing/emailVerificationContext";
+import { resolveSafePostLoginRedirect, withRedirectQuery } from "../routing/postLoginRedirect";
 
 function passwordScore(password: string): number {
   let score = 0;
@@ -30,6 +31,9 @@ export const RegisterPage: React.FC = () => {
   const { locale, t } = useI18n();
   const vi = locale === "vi";
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirect = resolveSafePostLoginRedirect(searchParams.get("redirect"));
+  const loginPath = redirect ? withRedirectQuery(ROUTE_KEYS.LOGIN, redirect) : ROUTE_KEYS.LOGIN;
   const reduceMotion = useReducedMotion();
   const [displayName, setDisplayName] = useState("");
   const [email, setEmail] = useState("");
@@ -86,14 +90,14 @@ export const RegisterPage: React.FC = () => {
         // Awaiting a code. The address travels in the history entry rather than in browser
         // storage, so the next screen knows who it is verifying without treating a stored
         // value as authority.
-        navigate(ROUTE_KEYS.VERIFY_EMAIL, { state: emailVerificationNavigationState(account.email) });
+        navigate(redirect ? withRedirectQuery(ROUTE_KEYS.VERIFY_EMAIL, redirect) : ROUTE_KEYS.VERIFY_EMAIL, { state: emailVerificationNavigationState(account.email) });
         return;
       }
       // Any other status has nothing to verify here, and this screen must not decide what an
       // account in that state may do. Sign-in already owns that judgement - it routes a
       // suspended account and an unverified one to their own screens - so the visitor is sent
       // there with the address carried, and the server keeps the last word.
-      navigate(ROUTE_KEYS.LOGIN, { state: emailVerificationNavigationState(account.email) });
+      navigate(loginPath, { state: emailVerificationNavigationState(account.email) });
     } finally {
       setIsSubmitting(false);
     }
@@ -106,7 +110,7 @@ export const RegisterPage: React.FC = () => {
       footer={
         <span>
           {vi ? "Đã có tài khoản?" : "Already have an account?"}{" "}
-          <Link className="font-semibold text-indigo-600 transition hover:text-indigo-800 hover:underline" to={ROUTE_KEYS.LOGIN}>
+          <Link className="font-semibold text-indigo-600 transition hover:text-indigo-800 hover:underline" to={loginPath}>
             {vi ? "Đăng nhập" : "Sign in"}
           </Link>
         </span>

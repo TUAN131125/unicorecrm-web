@@ -1,0 +1,148 @@
+{
+  "schemaVersion": "4.2.1",
+  "kind": "UnicoreCRMBackendTaskPacket",
+  "identity": {
+    "taskId": "CONTACT-FLS-UX-REMEDIATION-20261015-FE",
+    "operationId": "updateContact",
+    "canonicalOwner": "contacts",
+    "area": "CRM",
+    "status": "PRODUCTION_CONTRACT_READY",
+    "primaryWriter": "contact-fls-primary-writer",
+    "reviewer": "PENDING_INDEPENDENT_ASSIGNMENT",
+    "baseCommit": "416936d12ab9db00bc0194ab9cf0a7931888f723",
+    "baseline": {
+      "canonicalDesignVersion": "2.0-reconciled",
+      "openApiVersion": "0.23.21-contract.0",
+      "openApiSha256": "4bcde6f6c52bf96545106cff5273aff1681b66c8ee239c91cbef921edfd70880"
+    }
+  },
+  "risk": {
+    "tier": "CRITICAL",
+    "score": 8,
+    "reasons": [
+      "mutation",
+      "idempotency",
+      "concurrency",
+      "security/tenancy",
+      "event/outbox"
+    ],
+    "specialists": [
+      "CONTRACT_API",
+      "PERSISTENCE_RELIABILITY",
+      "SECURITY_TENANCY"
+    ]
+  },
+  "scope": {
+    "inScope": [
+      "Reflect current backend Contact field decisions in edit inputs and update/save guards, preserving current recovery and partial PATCH. New focused regression fixture only."
+    ],
+    "outOfScope": [
+      "Backend/API/contracts/registries/generated/dependencies",
+      "Historical file overlay",
+      "Changes to canonical policy or recovery semantics",
+      "Other CRM features",
+      "Commit/push/release"
+    ],
+    "allowedWritePaths": [
+      "src/modules/contacts/presentation/components/ContactFormModal.tsx",
+      "tests/quality/integration/check-contact-fls-form.mts"
+    ],
+    "forbiddenWritePaths": [
+      "design-authority/**",
+      "roles/backend-execution/**",
+      "backend-design/frozen/**",
+      "architecture/**"
+    ]
+  },
+  "authorityEvidence": [
+    {
+      "claimId": "AUTH-OPERATION",
+      "classification": "CANONICAL_FACT",
+      "claim": "operation admission/wire metadata",
+      "sourceFile": "design-authority/contracts/openapi.json",
+      "locator": "#/paths/~1contacts~1{contactId}/patch",
+      "sourceSha256": "4bcde6f6c52bf96545106cff5273aff1681b66c8ee239c91cbef921edfd70880",
+      "derivedFrom": [],
+      "value": "PRODUCTION_CONTRACT_READY"
+    }
+  ],
+  "architecture": {
+    "domainFiles": [],
+    "applicationSlice": "Contact Edit field rendering/update/save guards atop existing effective-field query and recovery",
+    "infrastructureFiles": [],
+    "apiFiles": [],
+    "crossOwnerEdges": [],
+    "persistence": {
+      "owner": "contacts",
+      "dbContext": "UnicoreCRM.Crm.Contacts.Infrastructure.Persistence.ContactsDbContext",
+      "schema": "contacts",
+      "migrationRoot": "src/UnicoreCRM.Crm/Contacts/Infrastructure/Persistence/Migrations"
+    }
+  },
+  "policies": {
+    "authorization": "contacts.update",
+    "additionalCapabilities": [],
+    "workspaceRequired": true,
+    "actorRequired": true,
+    "credentialsPolicy": null,
+    "resourceScope": "RESOURCE",
+    "dataScope": "WORKSPACE",
+    "workspaceDataScope": "WORKSPACE",
+    "idempotency": "REQUIRED",
+    "concurrency": "IF_MATCH_REQUIRED",
+    "transactionBoundary": "SINGLE_CONTACT_AGGREGATE_TRANSACTION",
+    "audit": "IMMUTABLE_COMMAND_AUDIT",
+    "eventOutbox": "CONTACT_UPDATED",
+    "workflow": null,
+    "provider": null,
+    "retentionPrivacy": null
+  },
+  "implementationFreedom": {
+    "allowedChoices": [],
+    "approvalRequired": []
+  },
+  "verification": {
+    "unit": [],
+    "integration": [
+      "TEST-IDEM-SAME",
+      "TEST-IDEM-INPROGRESS",
+      "TEST-CONC-STALE",
+      "TEST-TX-ROLLBACK",
+      "TEST-AUDIT",
+      "TEST-OUTBOX-ATOMIC"
+    ],
+    "contract": [
+      "TEST-CONTRACT-EXACT"
+    ],
+    "architecture": [],
+    "negative": [
+      "TEST-AUTH-DENY",
+      "TEST-IDEM-REUSE"
+    ],
+    "twoWorkspaceIsolation": [
+      "TEST-TENANT-CROSS"
+    ],
+    "providerConformance": [],
+    "externalConformance": {
+      "required": false
+    }
+  },
+  "stopConditions": [
+    "AUTHORITY_GAP",
+    "BLOCKED_OPERATION",
+    "UNAPPROVED_CROSS_OWNER_DEPENDENCY",
+    "FOREIGN_PERSISTENCE_REQUIRED",
+    "PERSISTENCE_OWNER_UNASSIGNED",
+    "CANONICAL_CONFLICT",
+    "BASELINE_DRIFT",
+    "WRITE_SCOPE_VIOLATION",
+    "AUTHORITY_UNVERIFIED"
+  ],
+  "completion": {
+    "changedFiles": [],
+    "migrations": [],
+    "testsExecuted": [],
+    "deviations": [],
+    "remainingRisks": []
+  }
+}

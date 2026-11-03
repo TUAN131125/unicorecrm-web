@@ -129,7 +129,7 @@ for (const file of sourceFiles) {
  */
 const pinnedSequences: Record<string, "PARTIAL_OUTCOME_AWARE" | "STEPWISE_REPORTED" | "CONTAINED" | "SINGLE_COMMAND_PER_RUN"> = {
   // Several authoritative Deal commands; no backend operation covers them together.
-  "src/modules/deals/presentation/hooks/useDealPipelineController.ts -> handleEditDealSubmit": "PARTIAL_OUTCOME_AWARE",
+  "src/modules/deals/presentation/hooks/useDealPipelineController.ts -> useDealPipelineController": "PARTIAL_OUTCOME_AWARE",
 
   // Save-then-act: `persistCurrentQuote` commits and reports on its own, then approval or
   // send runs and reports on its own. A failed second step cannot erase the saved quote,
@@ -151,6 +151,9 @@ const pinnedSequences: Record<string, "PARTIAL_OUTCOME_AWARE" | "STEPWISE_REPORT
   "src/modules/support/presentation/pages/SupportCaseFormPage.tsx -> save": "SINGLE_COMMAND_PER_RUN",
   // Separate handlers on one controller; each issues a single authoritative command.
   "src/modules/deals/presentation/hooks/useDealDetailController.tsx -> useDealDetailController": "SINGLE_COMMAND_PER_RUN",
+  // Each service returns exactly one of mutually exclusive lifecycle/response commands.
+  "src/modules/quotes/presentation/services/saveQuoteCustomerResponse.ts -> saveQuoteCustomerResponse": "SINGLE_COMMAND_PER_RUN",
+  "src/modules/quotes/presentation/services/saveQuoteLifecycleAction.ts -> saveQuoteLifecycleAction": "SINGLE_COMMAND_PER_RUN",
 };
 
 const observed = sequences.map((entry) => `${entry.file} -> ${entry.handler}`).sort();
@@ -164,6 +167,52 @@ assert.deepEqual(
 for (const entry of sequences) {
   const key = `${entry.file} -> ${entry.handler}`;
   const classification = pinnedSequences[key];
+  if (entry.handler === "saveQuoteCustomerResponse" || entry.handler === "saveQuoteLifecycleAction") {
+    const source = ts.createSourceFile(entry.file, sourceOf(entry.file), ts.ScriptTarget.Latest, true);
+    // Every authoritative call must occur in a return expression. A return may choose
+    // between commands, but must never evaluate two before it returns.
+    function commandCount(node: ts.Node): number {
+      if (ts.isArrowFunction(node) || ts.isFunctionExpression(node) || ts.isFunctionDeclaration(node)) return 0;
+      if (ts.isConditionalExpression(node)) return commandCount(node.condition)
+        + Math.max(commandCount(node.whenTrue), commandCount(node.whenFalse));
+      let total = ts.isCallExpression(node) && ts.isIdentifier(node.expression)
+        && authoritativeCommands.has(node.expression.text) ? 1 : 0;
+      ts.forEachChild(node, child => { total += commandCount(child); });
+      return total;
+    }
+    let calls = 0;
+    function inspectReturn(node: ts.Node) {
+      if (ts.isCallExpression(node) && ts.isIdentifier(node.expression) && authoritativeCommands.has(node.expression.text)) {
+        calls++;
+        let parent: ts.Node | undefined = node.parent;
+        while (parent && !ts.isReturnStatement(parent) && !ts.isFunctionLike(parent)) parent = parent.parent;
+        assert.ok(parent && ts.isReturnStatement(parent), `${key}: commands must only occur in an exclusive return.`);
+        assert.ok(commandCount(parent) <= 1, `${key}: a return expression must issue at most one command.`);
+      }
+      ts.forEachChild(node, inspectReturn);
+    }
+    inspectReturn(source);
+    assert.ok(calls >= 2, `${key}: the reviewed command alternatives must remain observable.`);
+  }
+  if (entry.handler === "useDealPipelineController") {
+    const source = ts.createSourceFile(entry.file, sourceOf(entry.file), ts.ScriptTarget.Latest, true);
+    let edit: ts.ArrowFunction | undefined;
+    function findEdit(node: ts.Node) {
+      if (ts.isVariableDeclaration(node) && ts.isIdentifier(node.name) && node.name.text === "handleEditDealSubmit"
+        && node.initializer && ts.isArrowFunction(node.initializer)) edit = node.initializer;
+      ts.forEachChild(node, findEdit);
+    }
+    findEdit(source);
+    assert.ok(edit, "The Deal edit caller must remain observable after checkpoint extraction.");
+    entry.body = edit.body.getText(source);
+    assert.match(entry.body, /saveCheckpoint\.current\.save\([\s\S]*steps\s*=>\s*executeSequentialCommits\(steps\)/u,
+      "Deal edit must execute the extracted checkpoint through the partial-commit reporter.");
+    const checkpoint = sourceOf("src/modules/deals/presentation/model/dealSaveCheckpoint.ts");
+    assert.match(checkpoint, /execute:\s*typeof executeSequentialCommits\s*=\s*executeSequentialCommits/u);
+    assert.match(checkpoint, /await execute\(intent\.steps\.filter\(step => !intent\.completed\.has\(step\.step\)\)\)/u);
+    assert.match(checkpoint, /intent\.evidence\.push\(\.\.\.report\.committed\)/u);
+    assert.match(checkpoint, /committed:\s*\[\.\.\.intent\.evidence\]/u);
+  }
   if (classification === "SINGLE_COMMAND_PER_RUN" && entry.handler === "useContactDetailController") {
     // Activity wrappers and Contact archive/update now live in separate callbacks.
     // Use the AST to prove the hook container does not disguise an actual sequence.

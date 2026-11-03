@@ -94,10 +94,10 @@ assert.equal(OPENAPI_CONTRACT_VERSION, packageJson.version);
 assert.equal(OPENAPI_SPEC_SHA256, artifacts.sha256);
 assert.equal(manifest.specSha256, artifacts.sha256);
 assert.equal(manifest.contractVersion, packageJson.version);
-// The existing304 operations are preserved; Communications admits24 additional runtime contracts.
-assert.equal(coverage.summary.operations, 328);
-assert.equal(coverage.summary.productionReadyOperations, 300);
-assert.equal(coverage.summary.blockedOperations, 28);
+// Ordinary sales acceptance adds five explicit operations; the 26 blocked lifecycle operations remain blocked.
+assert.equal(coverage.summary.operations, 365);
+assert.equal(coverage.summary.productionReadyOperations, 339);
+assert.equal(coverage.summary.blockedOperations, 26);
 
 for (const [relativePath, expected] of [
   ["docs/api/openapi.sha256", artifacts.checksum],
@@ -110,8 +110,8 @@ for (const [relativePath, expected] of [
 ] as const) assert.equal(read(relativePath), expected, `${relativePath} drifted from OpenAPI generation.`);
 
 const operations = collectOperations(spec);
-assert.equal(operations.length, 328);
-assert.equal(new Set(operations.map((operation) => operation.operationId)).size, 328);
+assert.equal(operations.length, 365);
+assert.equal(new Set(operations.map((operation) => operation.operationId)).size, 365);
 assert.equal(operations.filter(operation => operation.route.startsWith("/communications/")).length, 24);
 assert.deepEqual(manifest.operations.map((operation) => operation.operationId).sort(), operations.map((operation) => operation.operationId).sort());
 assert.deepEqual(coverage.operations.map((operation) => operation.operationId).sort(), operations.map((operation) => operation.operationId).sort());
@@ -193,7 +193,13 @@ for (const operation of readyMutations) {
     assert.equal(operation.operationId, "claimConversation", "Only the admitted conditional Claim forbids a body.");
     assert.equal(operation.operation.requestBody, undefined, "Claim cannot accept caller-owned actor/assignee fields.");
   } else {
-    assert.ok(operation.operation.requestBody?.content?.["application/json"]?.schema?.$ref, `${operation.operationId} requires a typed request.`);
+    const pdf = operation.operation.requestBody?.content?.["application/pdf"]?.schema;
+    if (pdf) {
+      assert.equal(operation.operationId, "uploadQuoteAcceptanceProof", "Only admitted quarantine upload accepts PDF bytes.");
+      assert.equal(pdf.$ref, "#/components/schemas/QuoteAcceptanceProofPdf");
+      assert.equal(spec.components.schemas.QuoteAcceptanceProofPdf.format, "binary");
+      assert.equal(spec.components.schemas.QuoteAcceptanceProofPdf.maxLength, 10485760);
+    } else assert.ok(operation.operation.requestBody?.content?.["application/json"]?.schema?.$ref, `${operation.operationId} requires a typed request.`);
   }
   const success = Object.entries(operation.operation.responses ?? {}).find(([status]) => /^2\d\d$/u.test(status))?.[1];
   assert.ok(success?.content?.["application/json"]?.schema?.$ref, `${operation.operationId} requires a typed response.`);
@@ -230,7 +236,7 @@ function collectOperations(document: OpenApiDocument): OperationRecord[] {
   return result;
 }
 
-interface OpenApiSchema { type?: string; pattern?: string; additionalProperties?: boolean; required?: string[]; properties: Record<string, { $ref?: string; type?: string }> }
+interface OpenApiSchema { format?: string; maxLength?: number; type?: string; pattern?: string; additionalProperties?: boolean; required?: string[]; properties: Record<string, { $ref?: string; type?: string }> }
 interface OperationShape {
   "x-request-body-policy"?: string;
   operationId?: string;
@@ -258,6 +264,23 @@ interface CoverageLedger { summary: { operations: number; productionReadyOperati
 interface BreakingBaseline { operations: Array<{ operationId: string }>; schemas: Record<string, unknown> }
 
 const productSelection = operations.find(record => record.operation.operationId === "searchProductSelections");
+assert.deepEqual(schemas.ConfirmOrderWithPaymentPlanRequest.required, ["paymentPlanId", "expectedPaymentPlanVersion"], "Confirmation must bind the selected Plan version.");
+assert.equal(schemas.ConfirmOrderWithPaymentPlanRequest.additionalProperties, false);
+for (const field of ["actorId", "confirmedBy", "grandTotal", "buyerRef", "paymentEvidence"]) assert.equal(schemas.ConfirmOrderWithPaymentPlanRequest.properties[field], undefined);
+for (const operationId of ["previewCustomerQuoteAcceptance", "consentCustomerQuoteAcceptance"]) {
+  const entry = operations.find(record => record.operationId === operationId);
+  assert.ok(entry, `${operationId} must have a declared contract.`);
+  assert.equal(entry.method, "POST", "Opening a link must never perform acceptance.");
+  assert.deepEqual(entry.operation.security, [], "Public consent uses its bound invitation token.");
+  assert.equal(entry.operation["x-workspace-required"], false);
+  assert.equal(entry.operation["x-required-capability"], "PUBLIC_INVITATION_TOKEN");
+}
+for (const name of ["StaffQuoteAcceptanceRequest", "CustomerQuoteConsentRequest", "QuoteInvitationRequest"]) {
+  assert.equal(schemas[name].additionalProperties, false, `${name} must reject authority overrides.`);
+  for (const field of ["acceptedBy", "actorId", "workspaceId", "buyerRef", "grandTotal", "unitPrice"]) {
+    assert.equal(schemas[name].properties[field], undefined, `${name} must not accept ${field}.`);
+  }
+}
 assert.ok(productSelection, "Products selection operation must be declared exactly once.");
 assert.equal(productSelection.operation["x-required-capability"], "products.read");
 assert.equal(productSelection.operation["x-data-scope"], "WORKSPACE");

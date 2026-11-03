@@ -1,3 +1,8 @@
+import type { IndependentReviewPort } from "../read-models/quoteIndependentReview";
+import type { QuoteIdentityAuthorityPort } from "../read-models/quoteIdentityAuthority";
+import type { AcceptanceProofPort } from "../read-models/quoteAcceptanceProof";
+import type { QuoteAcceptanceReadPort } from "../read-models/quoteAcceptanceReadiness";
+import type { QuoteDocumentPort } from "../read-models/quoteDocumentModels";
 import type { BuyerRef } from "@/platform/identity";
 import type { AuthoritativePage, ModuleListQuery } from "@/shared/application";
 import type { MoneyDto } from "@/shared/money";
@@ -16,6 +21,8 @@ export type QuoteApiRuntimeMode = "demo" | "connected" | "test";
 
 export interface QuoteListQuery extends ModuleListQuery {
   filters?: {
+    rootQuoteId?: string;
+    archived?: "ACTIVE" | "ARCHIVED" | "ALL";
     status?: Quote["status"];
     sourceDealId?: string;
     buyerType?: BuyerRef["type"];
@@ -68,12 +75,20 @@ export interface RequestQuoteApprovalChangesInput { note: string; }
 export interface RecordQuoteSendEvidenceInput {
   deliveryId: string;
   channel: QuoteDeliveryChannel;
-  evidenceType: NonNullable<QuoteDeliveryRecord["evidenceType"]>;
+  evidenceType: "USER_CONFIRMED_SENT";
   recipientEmail?: string;
   recipient?: string;
   note?: string;
   sentAt?: string;
   fileName?: string;
+}
+export interface RecordQuoteCustomerDecisionInput {
+  decisionId: string;
+  evidenceType: "USER_REPORTED_ACCEPTANCE";
+  sourceChannel: "EMAIL" | "GMAIL" | "ZALO" | "CHAT_APP" | "SMS" | "OTHER";
+  sourceDescription: string;
+  reportedCustomerDecisionAt?: string;
+  note?: string;
 }
 export interface RejectQuoteInput { reason: string; note?: string; }
 export interface ExpireQuoteInput { reason?: string; }
@@ -84,26 +99,8 @@ export interface RequestQuoteApprovalBatchInput extends QuoteBatchVersionInput {
 export interface ExpireQuotesBatchInput extends QuoteBatchVersionInput { reason?: string; }
 export interface ArchiveQuotesBatchInput extends QuoteBatchVersionInput { reason: string; }
 
-export interface QuoteCommandOptions {
-  idempotencyKey: string;
-  correlationId?: string;
-  signal?: AbortSignal;
-}
-export interface QuoteVersionedCommandOptions extends QuoteCommandOptions { expectedVersion: number; }
-
-export interface QuoteMutationEvidence {
-  authority: "backend" | "demo" | "test";
-  commandId: string;
-  correlationId: string;
-  aggregateId: string;
-  aggregateType: string;
-  version: number;
-  occurredAt: string;
-  outcome: "COMMITTED" | "REPLAYED" | "DEMO_COMMITTED";
-  warnings: readonly string[];
-  emittedEventIds: readonly string[];
-  auditEvidenceIds: readonly string[];
-}
+import type { QuoteCommandOptions, QuoteVersionedCommandOptions, QuoteMutationEvidence } from "./QuoteCommandMetadata";
+export type { QuoteCommandOptions, QuoteVersionedCommandOptions, QuoteMutationEvidence } from "./QuoteCommandMetadata";
 
 export interface QuoteMutationResult { quote: Quote; evidence: QuoteMutationEvidence; }
 export interface QuoteBatchMutationResult { quotes: readonly Quote[]; evidence: QuoteMutationEvidence; }
@@ -123,6 +120,7 @@ export interface QuoteCommandPort {
   approve(quoteId: string, input: ApproveQuoteInput, options: QuoteVersionedCommandOptions): Promise<QuoteMutationResult>;
   requestApprovalChanges(quoteId: string, input: RequestQuoteApprovalChangesInput, options: QuoteVersionedCommandOptions): Promise<QuoteMutationResult>;
   recordSendEvidence(quoteId: string, input: RecordQuoteSendEvidenceInput, options: QuoteVersionedCommandOptions): Promise<QuoteMutationResult>;
+  recordCustomerDecision(quoteId: string, input: RecordQuoteCustomerDecisionInput, options: QuoteVersionedCommandOptions): Promise<QuoteMutationResult>;
   reject(quoteId: string, input: RejectQuoteInput, options: QuoteVersionedCommandOptions): Promise<QuoteMutationResult>;
   expire(quoteId: string, input: ExpireQuoteInput, options: QuoteVersionedCommandOptions): Promise<QuoteMutationResult>;
   expireBatch(input: ExpireQuotesBatchInput, options: QuoteCommandOptions): Promise<QuoteBatchMutationResult>;
@@ -132,7 +130,13 @@ export interface QuoteCommandPort {
 }
 
 export interface QuoteApiRuntime {
+  salesAcceptance?: import("./QuoteSalesAcceptancePort").QuoteSalesAcceptancePort;
   mode: QuoteApiRuntimeMode;
+  documents?: QuoteDocumentPort;
+  acceptance?: QuoteAcceptanceReadPort;
+  proofs?: AcceptanceProofPort;
+  identity?: QuoteIdentityAuthorityPort;
+  review?: IndependentReviewPort;
   queries: QuoteQueryPort;
   commands: QuoteCommandPort;
 }

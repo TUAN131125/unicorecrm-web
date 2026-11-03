@@ -34,8 +34,7 @@ export const ContactInvoicesTab: React.FC<ContactInvoicesTabProps> = ({
       {invoices.length === 0 ? (
         <div className="flex min-h-[180px] w-full flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-slate-50 px-4 py-8 text-center text-xs text-slate-400">
           <FileSpreadsheet size={24} className="text-slate-300" />
-          <span className="mt-3 block font-medium text-slate-700">{text("Chưa có hóa đơn chính thức cho quan hệ này.", "No authoritative invoice exists for this relationship.")}</span>
-          <p className="mt-1 max-w-lg text-[10px] leading-relaxed text-slate-500">{text("Hóa đơn được lấy trực tiếp từ module Hóa đơn theo Customer 360, tổ chức hoặc đơn hàng liên quan.", "Invoices are resolved directly from the Invoice module through Customer 360, organization, or related orders.")}</p>
+          <span className="mt-3 block font-medium text-slate-700">{text("Chưa có hóa đơn chính thức cho quan hệ này.", "No invoices to display.")}</span>
         </div>
       ) : (
         <div className="space-y-2">

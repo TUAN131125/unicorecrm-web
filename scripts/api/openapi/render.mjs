@@ -2,10 +2,10 @@ import fs from "node:fs";
 import path from "node:path";
 import { repositoryRoot } from "../../quality/core/repo-context.mjs";
 import { buildApiOperationCatalog, buildOperationCoverageLedger } from "./normalize.mjs";
-import { getServerPath, refName, resolveRef } from "./validate.mjs";
+import { getServerPath, refName, resolveRef, responseType, primarySuccessSchema, successResponseSchemas } from "./validate.mjs";
 import { renderOperationPolicySources } from "./render-operation-policies.mjs";
 
-const generatorVersion = 17;
+const generatorVersion = 19;
 const productVersionBoundReadOperationIds = new Set([
   "getProductAvailability",
   "getProductPriceProjection",
@@ -17,6 +17,7 @@ function schemaType(schema) {
   if (schema.anyOf) return schema.anyOf.map(schemaType).join(" | ");
   if (schema.enum) return schema.enum.map((value) => JSON.stringify(value)).join(" | ");
   if (schema.type === "null") return "null";
+  if (schema.type === "string" && schema.format === "binary") return "Blob";
   if (schema.type === "string") return "string";
   if (schema.type === "integer" || schema.type === "number") return "number";
   if (schema.type === "boolean") return "boolean";
@@ -90,15 +91,8 @@ function renderTransportPolicyLines(document, operationRecord) {
   return lines;
 }
 
-function responseType(operation) {
-  const success = operation.responses?.["200"] ?? operation.responses?.["201"] ?? operation.responses?.["202"];
-  const schema = success?.content?.["application/json"]?.schema;
-  if (!schema?.$ref) throw new Error(`Operation ${operation.operationId} must use a named success response schema.`);
-  return refName(schema.$ref);
-}
-
 function requestBodyType(operation) {
-  const schema = operation.requestBody?.content?.["application/json"]?.schema;
+  const schema = operation.requestBody?.content?.["application/json"]?.schema ?? operation.requestBody?.content?.["application/pdf"]?.schema;
   return schema?.$ref ? refName(schema.$ref) : undefined;
 }
 
@@ -171,7 +165,10 @@ function renderFinancialMethod(document, operationRecord) {
   });
   const queryEntries = parameters.query.map((parameter) => `        ${propertyName(parameter.name)}: query.${parameter.name},`);
   if (bodyType) {
-    const args = [...pathArguments, "body: TBody", "options: FinancialRequestOptions = {}"].join(", ");
+    const binary = Boolean(operation.requestBody?.content?.["application/pdf"]);
+    const proofHeaders = operationHeaderParameters(document, operationRecord).filter(p => p.name.startsWith("X-Proof-"));
+    const headerArgument = binary ? [`headers: { ${proofHeaders.map(p => `${JSON.stringify(p.name)}: ${schemaType(resolveRef(document, p.schema))}`).join("; ")} }`] : [];
+    const args = [...pathArguments, "body: TBody", ...headerArgument, "options: FinancialRequestOptions = {}"].join(", ");
     return [
       `  ${operationId}<TResponse = ${defaultResponse}, TBody extends object = ${bodyType}>(${args}): Promise<TResponse> {`,
       `    return this.http.request<TResponse, TBody>({`,
@@ -180,6 +177,7 @@ function renderFinancialMethod(document, operationRecord) {
       `      path: ${renderPathExpression(route, parameters.path)},`,
       ...renderTransportPolicyLines(document, operationRecord),
       "      body,",
+      ...(binary ? ["      headers,"] : []),
       "      ...(options.signal === undefined ? {} : { signal: options.signal }),",
       "      ...(options.idempotencyKey === undefined ? {} : { idempotencyKey: options.idempotencyKey }),",
       "      ...(options.expectedVersion === undefined ? {} : { expectedVersion: options.expectedVersion }),",
@@ -318,16 +316,11 @@ function renderOperationContractStatus(document, operations) {
 function renderRuntimeContract(document, operations) {
   const operationContracts = Object.fromEntries(operations.map((record) => {
     const ready = record.contractStatus === "PRODUCTION_CONTRACT_READY";
-    const responseSchemas = ready
-      ? Object.fromEntries(Object.entries(record.operation.responses ?? {})
-          .filter(([status]) => /^2\d\d$/u.test(status))
-          .map(([status, response]) => [status, response?.content?.["application/json"]?.schema?.$ref ? refName(response.content["application/json"].schema.$ref) : null])
-          .filter(([, schema]) => schema))
-      : {};
+    const responseSchemas = ready ? successResponseSchemas(record.operation) : {};
     return [record.operationId, {
       contractStatus: record.contractStatus,
       requestSchema: ready ? requestBodyType(record.operation) ?? null : null,
-      responseSchema: ready ? responseType(record.operation) : null,
+      responseSchema: ready ? primarySuccessSchema(record.operation) : null,
       responseSchemas,
     }];
   }));

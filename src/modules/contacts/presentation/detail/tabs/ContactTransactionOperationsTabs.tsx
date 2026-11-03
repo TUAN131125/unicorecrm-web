@@ -65,7 +65,7 @@ export const ContactPaymentsTab: React.FC<{
             <span className="min-w-0"><span className="block crm-text-wrap text-xs font-medium text-slate-900">{entry.invoiceNumber}</span><span className="mt-1 block text-[10px] text-slate-500">{entry.settlementState} · {entry.agingBucket}</span></span>
             <span className="shrink-0 text-xs font-semibold text-slate-800">{formatMoneyDto(entry.outstandingAmount, isVi ? "vi-VN" : "en-US")}</span>
           </button>
-        )) : <EmptyOperations title={text("Chưa có công nợ phải thu", "No receivables")} detail={text("Công nợ được lấy từ hóa đơn chính thức của Customer 360 hoặc đơn hàng liên quan.", "Receivables are resolved from authoritative invoices for Customer 360 or related orders.")} />}
+        )) : <EmptyOperations title={text("Chưa có công nợ phải thu", "No receivables")} detail={text("Công nợ được lấy từ hóa đơn chính thức của Customer 360 hoặc đơn hàng liên quan.", "Receivables for this customer and related orders.")} />}
       </section>
       <section className="space-y-2">
         <h4 className="text-xs font-medium text-slate-700">{text("Lịch sử thanh toán", "Payment history")}</h4>

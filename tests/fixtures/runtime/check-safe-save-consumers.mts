@@ -16,6 +16,7 @@ import { getDefaultContactPresentationSnapshot } from "@/modules/contacts/presen
 import { configureTaskApplication, getTaskApplicationServices } from "@/modules/tasks/application/composition/taskApplicationServices";
 import { mapLogActivityRequest } from "@/modules/tasks/infrastructure/http/TaskApiMapper";
 import { resolveActivityRecordingDate } from "@/modules/tasks/presentation/model/activityRecordingTime";
+import { listWorkspaceMemberDirectory } from "@/platform/member-directory";
 
 export async function checkSafeSaveConsumers(root: Root, value: (id: string, text: string) => Promise<void>) {
   let open = true, proof: boolean | undefined = false, calls = 0, captured: unknown;
@@ -36,15 +37,37 @@ export async function checkSafeSaveConsumers(root: Root, value: (id: string, tex
     await value(`${test.form}-${test.field}`, "Validated consumer draft");
     if (test.field === "subject" && test.form.includes("email")) await value(`${test.form}-body`, "Email body");
     if (test.form.includes("note")) await value(`${test.form}-body`, "Note body");
-    const expectedDate = test.date ? (document.getElementById(`${test.form}-${test.date}`) as HTMLInputElement).value : undefined;
+    if (test.form === "contact-meeting-form") {
+      const before = calls;
+      await act(async () => assert.equal(await saveDirtyUnsavedWork(), false));
+      assert.equal(calls, before, "A missing Meeting assignee must refuse before the consumer callback");
+      const member = listWorkspaceMemberDirectory()[0];
+      assert.ok(member, "Task-backed Meeting fixture requires a member from the active Workspace directory");
+      const owner = document.getElementById(`${test.form}-owner`);
+      assert.ok(owner?.tagName === "BUTTON", "Canonical assignee selection uses the shared relationship picker");
+      assert.equal(owner.getAttribute("aria-haspopup"), "listbox");
+      await act(async () => owner.click());
+      const option = [...document.querySelectorAll<HTMLButtonElement>('[role="option"]')]
+        .find(item => item.textContent?.trim() === member.displayName);
+      assert.ok(option, "The assignee option must correspond to the actual directory member");
+      await act(async () => option.click());
+    }
+    const dateControl = test.date ? document.getElementById(`${test.form}-${test.date}`) : null;
+    const expectedDate = dateControl?.closest('[data-temporal-field]')?.querySelector<HTMLInputElement>('input[type="hidden"]')?.value
+      ?? (dateControl instanceof window.HTMLInputElement ? dateControl.value : undefined);
+    if (test.date) assert.ok(expectedDate && Number.isFinite(Date.parse(expectedDate)), "The dated wrapper fixture supplies a valid local datetime");
+    const beforeSubmit = calls;
     await act(async () => assert.equal(await saveDirtyUnsavedWork(), false, test.form)); assert(open);
+    assert.equal(calls, beforeSubmit + 1, "The valid fixture must reach the false-proof consumer callback");
     if (expectedDate && test.date === "occurredAt") assert.equal((captured as { occurredAt: string }).occurredAt, new Date(expectedDate).toISOString());
     if (expectedDate && test.date === "startAt") {
       const draft = captured as { startDate: string; startTime: string };
       assert.equal(`${draft.startDate}T${draft.startTime}`, expectedDate, "Meeting preserves validated local date for the Task UTC conversion");
     }
     proof = undefined; await act(async () => assert.equal(await saveDirtyUnsavedWork(), false)); assert(open, "Void cannot prove persistence");
+    assert.equal(calls, beforeSubmit + 2, "The void-proof callback also executes while retaining the dirty draft");
     proof = true; await act(async () => assert.equal(await saveDirtyUnsavedWork(), true, test.form + document.body.textContent)); assert(!open);
+    assert.equal(calls, beforeSubmit + 3, "Only the third, true-proof callback permits closing");
     await act(async () => root.render(null));
   }
   for (const owner of [CustomerQuickActivityModal, OrganizationQuickActivityModal]) {
