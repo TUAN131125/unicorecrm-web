@@ -251,11 +251,13 @@ export function useServerPagedCollection<T>(
     let timer: ReturnType<typeof setTimeout> | undefined;
     const interval = options.refreshIntervalMs;
     const schedule = () => { clearTimeout(timer); if (!disposed && interval && !revalidation.current.error && document.visibilityState === "visible" && navigator.onLine) timer = setTimeout(() => void wake(), Math.max(5000, interval)); };
-    const wake = async () => {
+    const wake = async (event?: Event) => {
       clearTimeout(timer);
       if (disposed || running || document.visibilityState !== "visible" || !navigator.onLine) return;
       const current = revalidation.current;
-      if (current.loading || ["AUTHENTICATION", "AUTHORIZATION"].includes(current.error?.category ?? "")) { schedule(); return; }
+      // refresh() may settle before React publishes its error to this ref. A timer already
+      // scheduled in that gap must not turn a failed query into an automatic retry loop.
+      if (current.loading || (!event && current.error) || ["AUTHENTICATION", "AUTHORIZATION"].includes(current.error?.category ?? "")) { schedule(); return; }
       running = true;
       try { await current.refresh(); } finally { running = false; schedule(); }
     };

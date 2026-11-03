@@ -5,12 +5,14 @@ import { DealPipelineHealthBadges } from "../components/DealPipelineHealth";
 import { DealDetailField } from "./DealDetailField";
 import { DealDetailQuoteWorkspace } from "./DealDetailQuoteWorkspace";
 import { DealDetailProducts } from "./DealDetailProducts";
+import { DealDetailOrderWorkspace } from "./DealDetailOrderWorkspace";
 import type { DealDetailController } from "./dealDetailView.types";
 
 export function DealDetailOverview({ controller: c }: { controller: DealDetailController }) {
   const { deal, locale } = c; const vi = locale === "vi";
   return <div className="space-y-6" data-deal-overview>
     {(c.relatedQuotes.length > 0 || c.quoteQuery.loading) && <DealDetailQuoteWorkspace controller={c} compact />}
+    <DealDetailOrderWorkspace controller={c} />
     <div><h2 className="text-base font-semibold text-slate-900">{vi ? "Thông tin cơ hội" : "Opportunity information"}</h2><p className="mt-1 text-xs text-slate-500">{vi ? "Thông tin phục vụ kế hoạch và quyết định bán hàng" : "Context for your sales plan and decisions"}</p></div>
     <dl className="grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2">
       <Detail field="buyerRef" label={vi ? "Người mua" : "Buyer"}>{"name" in c.buyerLabel ? c.buyerLabel.name : "—"}</Detail>

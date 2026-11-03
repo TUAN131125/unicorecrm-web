@@ -58754,6 +58754,16 @@
           }
         },
         "responses": {
+          "201": {
+            "description": "Authoritative quarantine metadata; no content release",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteAcceptanceStorageMutation"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Problem Details",
             "content": {
@@ -58794,6 +58804,16 @@
               }
             }
           },
+          "408": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "409": {
             "description": "Problem Details",
             "content": {
@@ -58805,6 +58825,26 @@
             }
           },
           "412": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "415": {
             "description": "Problem Details",
             "content": {
               "application/problem+json": {
@@ -58845,46 +58885,6 @@
             }
           },
           "503": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "Authoritative quarantine metadata; no content release",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/QuoteAcceptanceStorageMutation"
-                }
-              }
-            }
-          },
-          "408": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "413": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "415": {
             "description": "Problem Details",
             "content": {
               "application/problem+json": {
@@ -58983,6 +58983,16 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "Authoritative quarantine metadata; no content release",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteAcceptanceCaseList"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Problem Details",
             "content": {
@@ -59079,16 +59089,6 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "Authoritative quarantine metadata; no content release",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/QuoteAcceptanceCaseList"
                 }
               }
             }
@@ -59166,6 +59166,16 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "Authoritative quarantine metadata; no content release",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteAcceptanceCase"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Problem Details",
             "content": {
@@ -59262,16 +59272,6 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "Authoritative quarantine metadata; no content release",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/QuoteAcceptanceCase"
                 }
               }
             }
@@ -59390,6 +59390,16 @@
           }
         },
         "responses": {
+          "201": {
+            "description": "Authoritative quarantine metadata; no content release",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteAcceptanceStorageMutation"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Problem Details",
             "content": {
@@ -59430,6 +59440,16 @@
               }
             }
           },
+          "408": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "409": {
             "description": "Problem Details",
             "content": {
@@ -59441,6 +59461,26 @@
             }
           },
           "412": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "415": {
             "description": "Problem Details",
             "content": {
               "application/problem+json": {
@@ -59481,46 +59521,6 @@
             }
           },
           "503": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "Authoritative quarantine metadata; no content release",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/QuoteAcceptanceStorageMutation"
-                }
-              }
-            }
-          },
-          "408": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "413": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "415": {
             "description": "Problem Details",
             "content": {
               "application/problem+json": {
@@ -59627,6 +59627,16 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "Authoritative quarantine metadata; no content release",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteAcceptanceProofList"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Problem Details",
             "content": {
@@ -59723,16 +59733,6 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "Authoritative quarantine metadata; no content release",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/QuoteAcceptanceProofList"
                 }
               }
             }
@@ -59818,6 +59818,16 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "Authoritative quarantine metadata; no content release",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteAcceptanceProof"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Problem Details",
             "content": {
@@ -59914,16 +59924,6 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "Authoritative quarantine metadata; no content release",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/QuoteAcceptanceProof"
                 }
               }
             }
@@ -60009,6 +60009,16 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "Authoritative quarantine metadata; no content release",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteAcceptanceProofSecurity"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Problem Details",
             "content": {
@@ -60105,16 +60115,6 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "Authoritative quarantine metadata; no content release",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/QuoteAcceptanceProofSecurity"
                 }
               }
             }
@@ -60218,6 +60218,16 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "History readable for every scan outcome",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteProofScanHistory"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Problem Details",
             "content": {
@@ -60314,16 +60324,6 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "History readable for every scan outcome",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/QuoteProofScanHistory"
                 }
               }
             }
@@ -60411,6 +60411,36 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "Protected attachment",
+            "content": {
+              "application/pdf": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteAcceptanceProofPdf"
+                }
+              }
+            },
+            "headers": {
+              "X-Content-SHA256": {
+                "description": "SHA-256 of immutable stored proof bytes",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Content-Disposition": {
+                "description": "attachment; no inline preview",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "Cache-Control": {
+                "description": "private, no-store",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Problem Details",
             "content": {
@@ -60507,36 +60537,6 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "Protected attachment",
-            "content": {
-              "application/pdf": {
-                "schema": {
-                  "$ref": "#/components/schemas/QuoteAcceptanceProofPdf"
-                }
-              }
-            },
-            "headers": {
-              "X-Content-SHA256": {
-                "description": "SHA-256 of immutable stored proof bytes",
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "Content-Disposition": {
-                "description": "attachment; no inline preview",
-                "schema": {
-                  "type": "string"
-                }
-              },
-              "Cache-Control": {
-                "description": "private, no-store",
-                "schema": {
-                  "type": "string"
                 }
               }
             }
@@ -60617,6 +60617,16 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "Immutable documentary metadata; source approval remains fail-closed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteIdentityCaseView"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Problem Details",
             "content": {
@@ -60713,16 +60723,6 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "Immutable documentary metadata; source approval remains fail-closed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/QuoteIdentityCaseView"
                 }
               }
             }
@@ -60818,6 +60818,16 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "Immutable documentary metadata; source approval remains fail-closed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteIdentityCaseMutation"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Problem Details",
             "content": {
@@ -60858,6 +60868,16 @@
               }
             }
           },
+          "408": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "409": {
             "description": "Problem Details",
             "content": {
@@ -60869,6 +60889,26 @@
             }
           },
           "412": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "415": {
             "description": "Problem Details",
             "content": {
               "application/problem+json": {
@@ -60914,46 +60954,6 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "408": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "413": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "415": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "Immutable documentary metadata; source approval remains fail-closed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/QuoteIdentityCaseMutation"
                 }
               }
             }
@@ -61057,6 +61057,16 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "Immutable documentary metadata; source approval remains fail-closed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteIdentityCaseMutation"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Problem Details",
             "content": {
@@ -61097,6 +61107,16 @@
               }
             }
           },
+          "408": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "409": {
             "description": "Problem Details",
             "content": {
@@ -61108,6 +61128,26 @@
             }
           },
           "412": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "415": {
             "description": "Problem Details",
             "content": {
               "application/problem+json": {
@@ -61153,46 +61193,6 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "408": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "413": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "415": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "Immutable documentary metadata; source approval remains fail-closed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/QuoteIdentityCaseMutation"
                 }
               }
             }
@@ -61297,6 +61297,16 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "Immutable documentary metadata; source approval remains fail-closed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteIdentityCaseMutation"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Problem Details",
             "content": {
@@ -61337,6 +61347,16 @@
               }
             }
           },
+          "408": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "409": {
             "description": "Problem Details",
             "content": {
@@ -61348,6 +61368,26 @@
             }
           },
           "412": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "415": {
             "description": "Problem Details",
             "content": {
               "application/problem+json": {
@@ -61393,46 +61433,6 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "408": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "413": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "415": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "Immutable documentary metadata; source approval remains fail-closed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/QuoteIdentityCaseMutation"
                 }
               }
             }
@@ -61538,6 +61538,16 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "Immutable documentary metadata; source approval remains fail-closed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteIdentityHistory"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Problem Details",
             "content": {
@@ -61634,16 +61644,6 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "Immutable documentary metadata; source approval remains fail-closed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/QuoteIdentityHistory"
                 }
               }
             }
@@ -61733,6 +61733,16 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "Immutable documentary metadata; source approval remains fail-closed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteEvidenceSources"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Problem Details",
             "content": {
@@ -61829,16 +61839,6 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "Immutable documentary metadata; source approval remains fail-closed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/QuoteEvidenceSources"
                 }
               }
             }
@@ -61924,6 +61924,16 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "Immutable documentary metadata; source approval remains fail-closed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteEvidenceSourceMutation"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Problem Details",
             "content": {
@@ -61964,6 +61974,16 @@
               }
             }
           },
+          "408": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "409": {
             "description": "Problem Details",
             "content": {
@@ -61975,6 +61995,26 @@
             }
           },
           "412": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "415": {
             "description": "Problem Details",
             "content": {
               "application/problem+json": {
@@ -62020,46 +62060,6 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "408": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "413": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "415": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "Immutable documentary metadata; source approval remains fail-closed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/QuoteEvidenceSourceMutation"
                 }
               }
             }
@@ -62165,6 +62165,16 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "Immutable documentary metadata; source approval remains fail-closed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteEvidenceSources"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Problem Details",
             "content": {
@@ -62261,16 +62271,6 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "Immutable documentary metadata; source approval remains fail-closed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/QuoteEvidenceSources"
                 }
               }
             }
@@ -62366,6 +62366,16 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "Immutable documentary metadata; source approval remains fail-closed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteEvidenceSourceMutation"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Problem Details",
             "content": {
@@ -62406,6 +62416,16 @@
               }
             }
           },
+          "408": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "409": {
             "description": "Problem Details",
             "content": {
@@ -62417,6 +62437,26 @@
             }
           },
           "412": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "415": {
             "description": "Problem Details",
             "content": {
               "application/problem+json": {
@@ -62462,46 +62502,6 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "408": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "413": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "415": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "Immutable documentary metadata; source approval remains fail-closed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/QuoteEvidenceSourceMutation"
                 }
               }
             }
@@ -62605,6 +62605,16 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "Immutable documentary metadata; source approval remains fail-closed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteEvidenceSourceMutation"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Problem Details",
             "content": {
@@ -62645,6 +62655,16 @@
               }
             }
           },
+          "408": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "409": {
             "description": "Problem Details",
             "content": {
@@ -62656,6 +62676,26 @@
             }
           },
           "412": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "415": {
             "description": "Problem Details",
             "content": {
               "application/problem+json": {
@@ -62701,46 +62741,6 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "408": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "413": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "415": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "Immutable documentary metadata; source approval remains fail-closed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/QuoteEvidenceSourceMutation"
                 }
               }
             }
@@ -62844,6 +62844,16 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "Immutable documentary metadata; source approval remains fail-closed",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteEvidenceSourceMutation"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Problem Details",
             "content": {
@@ -62884,6 +62894,16 @@
               }
             }
           },
+          "408": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "409": {
             "description": "Problem Details",
             "content": {
@@ -62895,6 +62915,26 @@
             }
           },
           "412": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "415": {
             "description": "Problem Details",
             "content": {
               "application/problem+json": {
@@ -62940,46 +62980,6 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "408": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "413": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "415": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "Immutable documentary metadata; source approval remains fail-closed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/QuoteEvidenceSourceMutation"
                 }
               }
             }
@@ -63068,6 +63068,16 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "Authoritative independent documentary review metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteIndependentReviewView"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Problem Details",
             "content": {
@@ -63164,16 +63174,6 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "Authoritative independent documentary review metadata",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/QuoteIndependentReviewView"
                 }
               }
             }
@@ -63273,6 +63273,16 @@
           }
         ],
         "responses": {
+          "200": {
+            "description": "Authoritative independent documentary review metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteIndependentReviewHistory"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Problem Details",
             "content": {
@@ -63369,16 +63379,6 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "Authoritative independent documentary review metadata",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/QuoteIndependentReviewHistory"
                 }
               }
             }
@@ -63476,6 +63476,16 @@
           }
         },
         "responses": {
+          "200": {
+            "description": "Authoritative independent documentary review metadata",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/QuoteIndependentReviewMutation"
+                }
+              }
+            }
+          },
           "400": {
             "description": "Problem Details",
             "content": {
@@ -63516,6 +63526,16 @@
               }
             }
           },
+          "408": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "409": {
             "description": "Problem Details",
             "content": {
@@ -63527,6 +63547,26 @@
             }
           },
           "412": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "413": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "415": {
             "description": "Problem Details",
             "content": {
               "application/problem+json": {
@@ -63572,46 +63612,6 @@
               "application/problem+json": {
                 "schema": {
                   "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "408": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "413": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "415": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "Authoritative independent documentary review metadata",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/QuoteIndependentReviewMutation"
                 }
               }
             }
@@ -63770,6 +63770,16 @@
               }
             }
           },
+          "410": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "412": {
             "description": "Problem Details",
             "content": {
@@ -63811,16 +63821,6 @@
             }
           },
           "503": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "410": {
             "description": "Problem Details",
             "content": {
               "application/problem+json": {
@@ -63972,6 +63972,16 @@
               }
             }
           },
+          "410": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "412": {
             "description": "Problem Details",
             "content": {
@@ -64013,16 +64023,6 @@
             }
           },
           "503": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "410": {
             "description": "Problem Details",
             "content": {
               "application/problem+json": {
@@ -64156,6 +64156,16 @@
               }
             }
           },
+          "410": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "412": {
             "description": "Problem Details",
             "content": {
@@ -64197,16 +64207,6 @@
             }
           },
           "503": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "410": {
             "description": "Problem Details",
             "content": {
               "application/problem+json": {
@@ -64338,6 +64338,16 @@
               }
             }
           },
+          "410": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "412": {
             "description": "Problem Details",
             "content": {
@@ -64379,16 +64389,6 @@
             }
           },
           "503": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "410": {
             "description": "Problem Details",
             "content": {
               "application/problem+json": {
@@ -64524,6 +64524,16 @@
               }
             }
           },
+          "410": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
           "412": {
             "description": "Problem Details",
             "content": {
@@ -64573,16 +64583,6 @@
                 }
               }
             }
-          },
-          "410": {
-            "description": "Problem Details",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
           }
         },
         "x-contract-status": "PRODUCTION_CONTRACT_READY",
@@ -64619,6 +64619,351 @@
         "description": "Owner-approved ordinary sales acceptance. ACCEPTED differs from VERIFIED. One durable DRAFT Order request; no Deal WON or operational confirmation.",
         "x-additional-capabilities": [],
         "security": []
+      }
+    },
+    "/customers/direct": {
+      "post": {
+        "operationId": "createDirectCustomer",
+        "tags": [
+          "Customers"
+        ],
+        "summary": "Create a Customer and its real source profile in one local SQL transaction",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/IdempotencyKeyHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateDirectCustomerRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Customer and source committed together, or previously committed request replayed.",
+            "headers": {
+              "ETag": {
+                "description": "Quoted authoritative Customer resource version.",
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerMutationResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "customers",
+        "x-required-capability": "customers.create_direct",
+        "x-resource-scope": "WORKSPACE",
+        "x-data-scope": "WORKSPACE",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-idempotency-policy": "REQUIRED",
+        "x-concurrency-policy": "BACKEND_SERIALIZED",
+        "x-aggregate-id-policy": "SERVER_ASSIGNED",
+        "x-audit-requirement": "IMMUTABLE_COMMAND_AUDIT",
+        "x-event-outbox-expectation": "CUSTOMER_CREATED",
+        "x-transaction-boundary": "CUSTOMER_AND_SOURCE_LOCAL_SQL_TRANSACTION",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "RESOURCE_VERSION_CONFLICT",
+          "DUPLICATE_BUSINESS_KEY",
+          "RELATIONSHIP_CONFLICT",
+          "LIFECYCLE_CONFLICT",
+          "RATE_LIMITED",
+          "INTERNAL_ERROR",
+          "CUSTOMER_PHONE_REVIEW_REQUIRED",
+          "CUSTOMER_PHONE_MATCH_LIMIT",
+          "CUSTOMER_CREATE_RETRY_REQUIRED"
+        ],
+        "x-decision-id": "Owner request attachment 9c69a160-d496-4417-93a3-465ff911b2a0 and confirmed phone-review decision",
+        "x-conditional-capabilities": {
+          "B2C": [
+            "contacts.create"
+          ],
+          "B2B": [
+            "organizations.create"
+          ]
+        }
+      }
+    },
+    "/customers/phone-check": {
+      "post": {
+        "operationId": "checkCustomerPhone",
+        "tags": [
+          "Customers"
+        ],
+        "summary": "Review accessible source records with the same full normalized phone",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/WorkspaceIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/RequestIdHeader"
+          },
+          {
+            "$ref": "#/components/parameters/CorrelationIdHeader"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CheckCustomerPhoneRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Only readable, in-scope phone matches; no identity merging.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CustomerPhoneCheckResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Problem Details",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "x-contract-status": "PRODUCTION_CONTRACT_READY",
+        "x-module-owner": "customers",
+        "x-required-capability": "customers.create_direct",
+        "x-resource-scope": "WORKSPACE",
+        "x-data-scope": "WORKSPACE",
+        "x-workspace-required": true,
+        "x-actor-required": true,
+        "x-idempotency-policy": "NOT_REQUIRED",
+        "x-concurrency-policy": "NOT_APPLICABLE",
+        "x-aggregate-id-policy": "SERVER_ASSIGNED",
+        "x-audit-requirement": "OWNER_AUTHORIZED_READ",
+        "x-event-outbox-expectation": "NONE",
+        "x-transaction-boundary": "READ_ONLY_LOCAL_SQL_TRANSACTION",
+        "x-error-codes": [
+          "AUTHENTICATION_REQUIRED",
+          "ACCESS_DENIED",
+          "WORKSPACE_MISMATCH",
+          "RESOURCE_NOT_FOUND",
+          "VALIDATION_FAILED",
+          "IDEMPOTENCY_KEY_REUSED",
+          "RESOURCE_VERSION_CONFLICT",
+          "DUPLICATE_BUSINESS_KEY",
+          "RELATIONSHIP_CONFLICT",
+          "LIFECYCLE_CONFLICT",
+          "RATE_LIMITED",
+          "INTERNAL_ERROR",
+          "CUSTOMER_PHONE_REVIEW_REQUIRED",
+          "CUSTOMER_PHONE_MATCH_LIMIT",
+          "CUSTOMER_CREATE_RETRY_REQUIRED"
+        ],
+        "x-decision-id": "Owner request attachment 9c69a160-d496-4417-93a3-465ff911b2a0 and confirmed phone-review decision"
       }
     }
   },
@@ -93729,6 +94074,137 @@
                 "GMAIL_NOT_CONFIGURED",
                 "GMAIL_DELIVERY_UNRESOLVED"
               ]
+            }
+          }
+        }
+      },
+      "CreateDirectCustomerRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "type",
+          "name"
+        ],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "B2C",
+              "B2B"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 240
+          },
+          "phone": {
+            "type": "string",
+            "maxLength": 50
+          },
+          "email": {
+            "type": "string",
+            "maxLength": 320
+          },
+          "legalName": {
+            "type": "string",
+            "maxLength": 240
+          },
+          "taxCode": {
+            "type": "string",
+            "maxLength": 80
+          },
+          "address": {
+            "type": "string",
+            "maxLength": 2000
+          },
+          "notes": {
+            "type": "string",
+            "maxLength": 4000
+          },
+          "segment": {
+            "type": "string",
+            "maxLength": 160
+          },
+          "tags": {
+            "type": "array",
+            "maxItems": 100,
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100
+            }
+          },
+          "tier": {
+            "$ref": "#/components/schemas/CustomerTier"
+          },
+          "serviceLevel": {
+            "$ref": "#/components/schemas/CustomerServiceLevel"
+          },
+          "differentCustomerConfirmed": {
+            "type": "boolean",
+            "default": false
+          },
+          "reviewedSources": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "$ref": "#/components/schemas/RelationshipRef"
+            }
+          }
+        }
+      },
+      "CheckCustomerPhoneRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "phone"
+        ],
+        "properties": {
+          "phone": {
+            "type": "string",
+            "maxLength": 50
+          }
+        }
+      },
+      "CustomerPhoneCandidate": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "relationshipRef",
+          "displayName",
+          "archived"
+        ],
+        "properties": {
+          "relationshipRef": {
+            "$ref": "#/components/schemas/RelationshipRef"
+          },
+          "displayName": {
+            "type": "string"
+          },
+          "archived": {
+            "type": "boolean"
+          },
+          "customerId": {
+            "type": "string"
+          },
+          "customerStatus": {
+            "type": "string"
+          }
+        }
+      },
+      "CustomerPhoneCheckResponse": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "candidates"
+        ],
+        "properties": {
+          "candidates": {
+            "type": "array",
+            "maxItems": 200,
+            "items": {
+              "$ref": "#/components/schemas/CustomerPhoneCandidate"
             }
           }
         }

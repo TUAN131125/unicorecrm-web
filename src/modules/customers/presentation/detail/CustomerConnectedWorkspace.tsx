@@ -1,4 +1,5 @@
 import { ConnectedRelationshipRecords } from "@/components/crm/relationship-detail/ConnectedRelationshipRecords";
+import { OrganizationActivationNotice } from "@/modules/organizations";
 import { useState } from "react";
 import { useI18n } from "@/i18n";
 import { Button, RecordTabTransition } from "@/shared/components/ui";
@@ -21,6 +22,7 @@ export function CustomerConnectedWorkspace({ projection }: { projection: Custome
   const work = useCustomerWorkController(projection.customer.id, projection.customer.status, visible || tab === "work");
   return <div data-customer-connected-workspace data-guidance-id="customers.detail.workspace"><RecordDetailFrame id="customer-connected-detail" className="min-w-0 space-y-4 rounded-2xl bg-slate-50 p-1 text-[11px] text-slate-700">
     <CustomerConnectedRecordHeader projection={projection} ownerName={ownerName} sourcePath={sourcePath} />
+    {projection.customer.relationshipRef?.type === "ORGANIZATION_ACCOUNT" && <OrganizationActivationNotice organizationId={projection.customer.relationshipRef.id} vi={locale === "vi"}/>}
     <div className="flex min-w-0 flex-col items-start gap-3 xl:min-h-[calc(100vh-170px)] xl:flex-row">
       <main className="w-full min-w-0 flex-1 rounded-xl border border-slate-200 bg-white shadow-sm xl:min-h-[calc(100vh-170px)]">
         <CustomerDetailTabs activeTab={tab} setActiveTab={setTab} counts={{}} visibleTabs={tabs} isRightPanelVisible={visible} onToggleRightPanel={() => setVisible(value => !value)}/>

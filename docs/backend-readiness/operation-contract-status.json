@@ -381,6 +381,13 @@
       "blockingDecisionId": null
     },
     {
+      "operationId": "checkCustomerPhone",
+      "method": "POST",
+      "path": "/customers/phone-check",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
       "operationId": "claimConversation",
       "method": "POST",
       "path": "/communications/conversations/{id}/claim",
@@ -559,6 +566,13 @@
       "operationId": "createDealCommand",
       "method": "POST",
       "path": "/deals",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null
+    },
+    {
+      "operationId": "createDirectCustomer",
+      "method": "POST",
+      "path": "/customers/direct",
       "status": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null
     },

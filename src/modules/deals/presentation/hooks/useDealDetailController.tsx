@@ -4,7 +4,7 @@ import { useDealDetailInteraction } from "./useDealDetailInteraction";
 import React, { useState } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { formatCurrency } from "@/shared/lib/format/currency";
-import type { Deal, DealActivity } from "../../domain/model/deal.types";
+import type { Deal, DealActivity, DealWinEvidence } from "../../domain/model/deal.types";
 import { DealStage } from "../../domain/model/deal.types";
 import { getStageLabel, getNextStage, isWonStage, isLostStage } from "../../domain/rules/dealStages";
 import { useDeals } from "../hooks/useDeals";
@@ -29,6 +29,8 @@ import { getAuthSessionSnapshot } from "@/platform/identity-auth";
 import { createDurableId } from "@/shared/ids";
 import { useDealBuyerLabel } from "./useDealBuyerLabel";
 import { useDealRelatedQuotes } from "./useDealRelatedQuotes";
+import { useDealRelatedOrders } from "./useDealRelatedOrders";
+import { dealWinCandidate } from "../model/dealWinCandidate";
 import { useEffectiveAccess, useEffectiveRecordAccess, useEffectiveRecordAccessDecision } from "@/platform/access-control";
 import { useWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import { dealReturnTarget, dealStageChoices } from "../views/dealDetailPresentation";
@@ -66,9 +68,11 @@ export function useDealDetailController({
   const connected = isDealConnectedMode();
   const quoteCreateAccess = useEffectiveRecordAccess({ resourceKey: "quotes", requestedCommands: ["quote.create"], enabled: crmConfig.modules.quotes });
   const quoteQuery = useDealRelatedQuotes(dealId, crmConfig.modules.quotes && crmConfig.workflow.quoteUsageMode !== "DISABLED", locale);
+  const orderQuery = useDealRelatedOrders(dealId, connected, locale);
   const [selectedStage, setSelectedStage] = useState("");
   const [stageError, setStageError] = useState("");
   const stageIntent = React.useRef(createDurableId("deal-stage"));
+  const wonEvidenceIntent = React.useRef<{ intent: string; evidence: DealWinEvidence } | undefined>(undefined);
   React.useEffect(() => { setSelectedStage(""); setStageError(""); stageIntent.current = createDurableId("deal-stage"); }, [dealId, workspace.workspaceId]);
 
   const screenDeal = deals.find(d => d.id === dealId);
@@ -174,9 +178,10 @@ export function useDealDetailController({
   const acceptedQuote = relatedQuotes.find(q => isQuoteAccepted(q.status));
 
   const linkedOrders = React.useMemo(() => {
-    if (!deal || !isWonStage(deal.stage, stageConfigs)) return [];
+    if (connected) return orderQuery.items;
+    if (!deal) return [];
     return getOrdersForDeal(orders || {}, deal.id, quotes);
-  }, [deal, orders, quotes]);
+  }, [connected, deal, orders, quotes, orderQuery.items]);
 
   const hasLinkedOrder = linkedOrders.length > 0;
   const latestLinkedOrder = linkedOrders[0];
@@ -278,9 +283,8 @@ export function useDealDetailController({
   const canCloseLost = !isTerminal && !deal.archivedAt && canCommand("deal.close-lost") && ["stageCode", "stageCategory", "lostReason", "lostReasonNote", "recycleDecision", "revisitAt", "lostAt", "actualCloseDate"].every(canWrite);
   const canCreateQuote = !isTerminal && !deal.archivedAt && (!connected || Boolean(recordAccess?.canRead && quoteCreateAccess.data?.allowedCommands.includes("quote.create"))) && isQuoteEnabled && effectiveAccess.canPerform("quotes", "create");
   const canUpdateQuote = effectiveAccess.canPerform("quotes", "update");
-  // Connected MarkWon validates evidence shape only in the current Backend. Do not
-  // promote a displayed Accepted status into verified cross-owner commitment.
-  const canConfirmWon = !connected && canCloseWon && Boolean(acceptedQuote);
+  // These are candidates; the Backend verifies the binding while holding source locks.
+  const canConfirmWon = canCloseWon && (connected ? linkedOrders.some(order => order.state === "CONFIRMED" && Boolean(order.confirmedAt)) : Boolean(acceptedQuote));
   const handleChangeStage = async (target = selectedStage) => {
     if (!canChangeStage || !stageChoices.some(stage => stage.code === target) || pendingMutation.current) return;
     setStageError("");
@@ -385,23 +389,15 @@ export function useDealDetailController({
   const handleConfirmWon = async () => {
     if (!canConfirmWon || interactionPending || pendingMutation.current) return;
     const now = new Date().toISOString();
-    const quoteEvidence = relatedQuotes
-      .filter((quote) => quote.status === QuoteStatus.ACCEPTED)
-      .sort((a, b) => (b.acceptedAt || b.updatedAt || b.createdAt).localeCompare(a.acceptedAt || a.updatedAt || a.createdAt))[0];
-    const orderEvidence = linkedOrders.find((item) => item.state === "CONFIRMED" || item.state === "COMPLETED");
-
-    const evidence = quoteEvidence
-      ? { type: "QUOTE_ACCEPTED" as const, sourceId: quoteEvidence.id, occurredAt: quoteEvidence.acceptedAt || now }
-      : orderEvidence
-        ? { type: "ORDER_CONFIRMED" as const, sourceId: orderEvidence.id, occurredAt: orderEvidence.confirmedAt || orderEvidence.updatedAt || now }
-        : undefined;
-
+    const candidate = dealWinCandidate(connected, linkedOrders, relatedQuotes, now);
+    const evidence = wonEvidenceIntent.current?.intent === intentId ? wonEvidenceIntent.current.evidence : candidate;
     if (!evidence) {
       triggerToast("error", locale === "vi"
         ? "Không thể đánh dấu WON: cần Quote Accepted hoặc Order Confirmed."
         : "Cannot mark WON: Quote Accepted or Order Confirmed evidence is required.");
       return;
     }
+    wonEvidenceIntent.current = { intent: intentId, evidence };
 
     const saved = await runBoundMutation(() => closeDealWonCommand(deal.id, evidence, {
       id: createDurableId("deal_activity_won"),
@@ -414,6 +410,7 @@ export function useDealDetailController({
     }, { idempotencyKey: `${intentId}:won`, ...(deal.resourceVersion === undefined ? {} : { expectedVersion: deal.resourceVersion }) }));
 
     if (!saved) return;
+    orderQuery.reload(); quoteQuery.reload();
     triggerToast("success", t("orders.toast.dealWon"));
     setIsWonModalOpen(false);
   };
@@ -563,6 +560,7 @@ export function useDealDetailController({
     hasAcceptedQuote,
     acceptedQuote,
     linkedOrders,
+    orderQuery,
     hasLinkedOrder,
     latestLinkedOrder,
     getOpportunityQuoteState,

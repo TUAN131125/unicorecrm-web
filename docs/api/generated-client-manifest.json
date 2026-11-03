@@ -4,7 +4,7 @@
   "openapiVersion": "3.1.0",
   "contractVersion": "0.24.0-contract.0",
   "specPath": "docs/api/openapi.json",
-  "specSha256": "51e022d901c059cf6bcb8139b350f133b65bdb03e28157d7fdc0f6da9c180574",
+  "specSha256": "8cd588a9a894fef169a7eec9925d1ec6c4437d38e8d9b4866ffdfc41f1a2f2fd",
   "ownershipPath": "scripts/api/openapi/client-ownership.json",
   "coverageLedgerPath": "docs/api/operation-coverage-ledger.json",
   "breakingBaselinePath": "docs/api/openapi-breaking-baseline.json",
@@ -107,7 +107,7 @@
       "output": "src/platform/api/generated/commercialApi.ts",
       "className": "CommercialApiClient",
       "requestOptionsName": "CommercialRequestOptions",
-      "operationCount": 201
+      "operationCount": 203
     },
     {
       "id": "workspace-configuration",
@@ -950,6 +950,20 @@
       "requiredCapability": "access.configure"
     },
     {
+      "operationId": "checkCustomerPhone",
+      "method": "POST",
+      "path": "/customers/phone-check",
+      "boundedContext": "Customers",
+      "ownerModule": "customers",
+      "generatedClientId": "commercial",
+      "generatedMethod": "checkCustomerPhone",
+      "idempotencyPolicy": "NOT_REQUIRED",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "customers.create_direct"
+    },
+    {
       "operationId": "claimConversation",
       "method": "POST",
       "path": "/communications/conversations/{id}/claim",
@@ -1312,6 +1326,20 @@
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "deals.create"
+    },
+    {
+      "operationId": "createDirectCustomer",
+      "method": "POST",
+      "path": "/customers/direct",
+      "boundedContext": "Customers",
+      "ownerModule": "customers",
+      "generatedClientId": "commercial",
+      "generatedMethod": "createDirectCustomer",
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "BACKEND_SERIALIZED",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "customers.create_direct"
     },
     {
       "operationId": "createIntegrationConnection",

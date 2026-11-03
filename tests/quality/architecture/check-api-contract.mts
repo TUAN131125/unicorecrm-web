@@ -94,9 +94,10 @@ assert.equal(OPENAPI_CONTRACT_VERSION, packageJson.version);
 assert.equal(OPENAPI_SPEC_SHA256, artifacts.sha256);
 assert.equal(manifest.specSha256, artifacts.sha256);
 assert.equal(manifest.contractVersion, packageJson.version);
-// Ordinary sales acceptance adds five explicit operations; the 26 blocked lifecycle operations remain blocked.
-assert.equal(coverage.summary.operations, 365);
-assert.equal(coverage.summary.productionReadyOperations, 339);
+// Direct Customer creation and its read-only phone review add two owner-approved operations.
+// The 26 blocked lifecycle operations remain blocked.
+assert.equal(coverage.summary.operations, 367);
+assert.equal(coverage.summary.productionReadyOperations, 341);
 assert.equal(coverage.summary.blockedOperations, 26);
 
 for (const [relativePath, expected] of [
@@ -110,8 +111,14 @@ for (const [relativePath, expected] of [
 ] as const) assert.equal(read(relativePath), expected, `${relativePath} drifted from OpenAPI generation.`);
 
 const operations = collectOperations(spec);
-assert.equal(operations.length, 365);
-assert.equal(new Set(operations.map((operation) => operation.operationId)).size, 365);
+assert.equal(operations.length, 367);
+assert.equal(new Set(operations.map((operation) => operation.operationId)).size, 367);
+for (const operationId of ["createDirectCustomer", "checkCustomerPhone"]) {
+  const operation = operations.find(item => item.operationId === operationId);
+  assert.ok(operation, `${operationId} must have an explicit transport contract.`);
+  assert.equal(operation.operation["x-workspace-required"], true);
+  assert.equal(operation.operation["x-actor-required"], true);
+}
 assert.equal(operations.filter(operation => operation.route.startsWith("/communications/")).length, 24);
 assert.deepEqual(manifest.operations.map((operation) => operation.operationId).sort(), operations.map((operation) => operation.operationId).sort());
 assert.deepEqual(coverage.operations.map((operation) => operation.operationId).sort(), operations.map((operation) => operation.operationId).sort());
@@ -255,6 +262,7 @@ interface OperationShape {
   "x-audit-requirement"?: string;
   "x-transaction-boundary"?: string;
   "x-workspace-required"?: boolean;
+  "x-actor-required"?: boolean;
 }
 interface OpenApiDocument { openapi: string; security?: Array<{ bearerAuth?: string[] }>; info: { version: string }; paths: Record<string, Record<string, OperationShape>>; components: { schemas: Record<string, OpenApiSchema> }; "x-contract-authority": string }
 interface OperationRecord { route: string; method: string; operationId: string; operation: OperationShape }

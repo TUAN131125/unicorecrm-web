@@ -1,4 +1,4 @@
-import type { AuthoritativePage, ModuleListQuery } from "@/shared/application";
+import type { AuthoritativePage, ModuleListQuery, MutationOutcome } from "@/shared/application";
 import type { RelationshipRef } from "@/platform/identity";
 import type { Customer, CustomerHealthAssessment, CustomerServiceLevel, CustomerTier } from "../../domain/model/customer.types";
 
@@ -8,6 +8,15 @@ export interface CreateCustomerRequest {
   tags?: string[];
   tier?: CustomerTier;
   serviceLevel?: CustomerServiceLevel;
+}
+
+export interface CreateDirectCustomerInput {
+  type: "B2C" | "B2B"; name: string; phone?: string; email?: string; legalName?: string; taxCode?: string;
+  address?: string; notes?: string; segment?: string; tags?: string[]; tier?: CustomerTier; serviceLevel?: CustomerServiceLevel;
+  differentCustomerConfirmed?: boolean; reviewedSources?: RelationshipRef[];
+}
+export interface CustomerPhoneCandidate {
+  relationshipRef: RelationshipRef; displayName: string; archived: boolean; customerId?: string; customerStatus?: string;
 }
 
 export interface UpdateCustomerRequest {
@@ -52,6 +61,7 @@ export interface Customer360Projection {
 }
 
 export interface CustomerQueryPort {
+  checkPhone?(phone: string, signal?: AbortSignal): Promise<CustomerPhoneCandidate[]>;
   list(query?: ModuleListQuery, signal?: AbortSignal): Promise<AuthoritativePage<CustomerListItem>>;
   get(customerId: string, signal?: AbortSignal): Promise<Customer>;
   get360(customerId: string, signal?: AbortSignal): Promise<Customer360Projection>;
@@ -69,6 +79,7 @@ export interface CustomerCommandOptions {
 }
 
 export interface CustomerCommandPort {
+  createDirect?(input: CreateDirectCustomerInput, options: CustomerCommandOptions): Promise<MutationOutcome<Customer>>;
   create(input: CreateCustomerRequest, options: CustomerCommandOptions): Promise<Customer>;
   update(customerId: string, input: UpdateCustomerRequest, options: CustomerCommandOptions): Promise<Customer>;
   archive(customerId: string, options: CustomerCommandOptions): Promise<Customer>;

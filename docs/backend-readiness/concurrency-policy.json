@@ -277,6 +277,11 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "checkCustomerPhone",
+      "policy": "NOT_APPLICABLE",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "claimConversation",
       "policy": "ATOMIC_NULL_TO_SELF",
       "status": "PRODUCTION_CONTRACT_READY",
@@ -405,6 +410,11 @@
     },
     {
       "operationId": "createDealCommand",
+      "policy": "BACKEND_SERIALIZED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "createDirectCustomer",
       "policy": "BACKEND_SERIALIZED",
       "status": "PRODUCTION_CONTRACT_READY"
     },

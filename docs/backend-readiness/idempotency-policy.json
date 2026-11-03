@@ -280,6 +280,11 @@
       "status": "PRODUCTION_CONTRACT_READY"
     },
     {
+      "operationId": "checkCustomerPhone",
+      "policy": "NOT_REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
       "operationId": "claimConversation",
       "policy": "NOT_APPLICABLE",
       "status": "PRODUCTION_CONTRACT_READY"
@@ -407,6 +412,11 @@
     },
     {
       "operationId": "createDealCommand",
+      "policy": "REQUIRED",
+      "status": "PRODUCTION_CONTRACT_READY"
+    },
+    {
+      "operationId": "createDirectCustomer",
       "policy": "REQUIRED",
       "status": "PRODUCTION_CONTRACT_READY"
     },

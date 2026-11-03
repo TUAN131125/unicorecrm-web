@@ -6284,6 +6284,95 @@ export const API_OPERATION_CATALOG = {
       "quality.write-boundary-authorization"
     ]
   },
+  "checkCustomerPhone": {
+    "operationId": "checkCustomerPhone",
+    "moduleId": "customers",
+    "boundedContext": "Customers",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/customers/phone-check",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "checkCustomerPhone"
+    },
+    "adapter": {
+      "file": "src/modules/customers/infrastructure/http/CustomerHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "CheckCustomerPhoneRequest",
+      "parameters": [
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "CustomerPhoneCheckResponse",
+      "successStatus": "200"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "customers.create_direct",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "NOT_REQUIRED",
+      "concurrency": "NOT_APPLICABLE",
+      "audit": "OWNER_AUTHORIZED_READ",
+      "transactionBoundary": "READ_ONLY_LOCAL_SQL_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
   "claimConversation": {
     "operationId": "claimConversation",
     "moduleId": "communications",
@@ -9111,6 +9200,106 @@ export const API_OPERATION_CATALOG = {
       "concurrency": "BACKEND_SERIALIZED",
       "audit": "IMMUTABLE_COMMAND_AUDIT",
       "transactionBoundary": "SINGLE_DEAL_AGGREGATE_TRANSACTION"
+    },
+    "testGateIds": [
+      "quality.api-contract",
+      "quality.application-composition",
+      "quality.commercial-authoritative-queries",
+      "quality.deal-api-boundary",
+      "quality.lead-qualification-api-boundary",
+      "quality.order-to-cash-api-contracts",
+      "quality.product-order-api-boundary",
+      "quality.quote-api-boundary",
+      "quality.relationship-domain-api-boundary",
+      "quality.shipping-returns-api-boundary",
+      "quality.support-api-boundary",
+      "quality.task-activity-api-boundary"
+    ]
+  },
+  "createDirectCustomer": {
+    "operationId": "createDirectCustomer",
+    "moduleId": "customers",
+    "boundedContext": "Customers",
+    "kind": "COMMAND",
+    "method": "POST",
+    "path": "/customers/direct",
+    "contractStatus": "PRODUCTION_CONTRACT_READY",
+    "blockingDecisionId": null,
+    "generatedClient": {
+      "id": "commercial",
+      "file": "src/platform/api/generated/commercialApi.ts",
+      "className": "CommercialApiClient",
+      "method": "createDirectCustomer"
+    },
+    "adapter": {
+      "file": "src/modules/customers/infrastructure/http/CustomerHttpApiAdapter.ts",
+      "status": "CONNECTED_BOUNDARY_DECLARED"
+    },
+    "request": {
+      "schema": "CreateDirectCustomerRequest",
+      "parameters": [
+        {
+          "name": "Idempotency-Key",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "IdempotencyKey",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Correlation-Id",
+          "in": "header",
+          "required": false,
+          "schema": {
+            "ref": "CorrelationId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Request-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "RequestId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        },
+        {
+          "name": "X-Workspace-Id",
+          "in": "header",
+          "required": true,
+          "schema": {
+            "ref": "WorkspaceId",
+            "type": null,
+            "format": null,
+            "pattern": null
+          }
+        }
+      ]
+    },
+    "response": {
+      "schema": "CustomerMutationResponse",
+      "successStatus": "201"
+    },
+    "authorization": {
+      "auth": "REQUIRED",
+      "workspace": "REQUIRED",
+      "capability": "customers.create_direct",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE"
+    },
+    "delivery": {
+      "idempotency": "REQUIRED",
+      "concurrency": "BACKEND_SERIALIZED",
+      "audit": "IMMUTABLE_COMMAND_AUDIT",
+      "transactionBoundary": "CUSTOMER_AND_SOURCE_LOCAL_SQL_TRANSACTION"
     },
     "testGateIds": [
       "quality.api-contract",

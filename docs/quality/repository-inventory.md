@@ -17,19 +17,19 @@ Do not delete a dead, compatibility, deprecated or duplicate candidate based on 
 
 | Metric | Count |
 |---|---:|
-| Repository files | 2511 |
-| Source files | 1607 |
-| Source lines | 233030 |
+| Repository files | 2535 |
+| Source files | 1628 |
+| Source lines | 234061 |
 | Registered modules | 16 |
 | Route keys | 87 |
 | Loadable route modules | 70 |
-| Capabilities | 146 |
+| Capabilities | 147 |
 | Workspace module flags | 13 |
 | Cross-module workflows | 23 |
-| Public boundary files | 117 |
-| Persistence entries | 3579 |
+| Public boundary files | 119 |
+| Persistence entries | 3604 |
 | Repository/store/adapter files | 152 |
-| Compatibility candidates | 59 |
+| Compatibility candidates | 61 |
 | Dead-code candidates | 0 |
 | Large source files (â‰¥ 500 lines) | 44 |
 | Circular dependency groups | 0 |
@@ -37,7 +37,7 @@ Do not delete a dead, compatibility, deprecated or duplicate candidate based on 
 | Quality groups | 11 |
 | Verify gates | 348 |
 
-Inventory fingerprint: `48742abf5909d6f5f58b73144a4c40192b82586bab74839cf5c2aba12f78bfe8`
+Inventory fingerprint: `0a6d1dc25711359edf5e91bb3a3dafd0051b384b3d0ef2b79c66abdc8d72d90b`
 
 
 ## Quality pipeline
@@ -60,10 +60,10 @@ Inventory fingerprint: `48742abf5909d6f5f58b73144a4c40192b82586bab74839cf5c2aba1
 
 | Classification | Count |
 |---|---:|
-| `active-runtime` | 1513 |
+| `active-runtime` | 1530 |
 | `active-script` | 115 |
-| `active-test` | 591 |
-| `compatibility` | 56 |
+| `active-test` | 596 |
+| `compatibility` | 58 |
 | `documentation` | 231 |
 | `fixture` | 3 |
 | `generated` | 2 |
@@ -147,10 +147,10 @@ The journey table locks source evidence and executable command names. Actual com
 | `invoices` | 6 |
 | `leads` | 9 |
 | `orders` | 4 |
-| `organizations` | 3 |
+| `organizations` | 4 |
 | `payments` | 7 |
 | `platform:access-control` | 46 |
-| `platform:api` | 3368 |
+| `platform:api` | 3392 |
 | `platform:audit` | 4 |
 | `platform:configuration-runtime` | 3 |
 | `platform:developer-configuration` | 3 |
@@ -177,35 +177,35 @@ The JSON manifest includes each detected key pattern, operation, path, line and 
 
 | File | Lines | Owner |
 |---|---:|---|
-| `src/platform/api/catalog/generatedApiOperationCatalog.ts` | 40081 | `platform:api` |
-| `src/platform/api/generated/commercialApi.ts` | 7460 | `platform:api` |
+| `src/platform/api/catalog/generatedApiOperationCatalog.ts` | 40270 | `platform:api` |
+| `src/platform/api/generated/commercialApi.ts` | 7537 | `platform:api` |
 | `src/i18n/translations/en.ts` | 4991 | `shared:i18n` |
 | `src/i18n/translations/vi.ts` | 4991 | `shared:i18n` |
 | `src/i18n/types.ts` | 2037 | `shared:i18n` |
 | `src/platform/api/generated/financialApi.ts` | 1757 | `platform:api` |
-| `src/modules/leads/presentation/pages/LeadListPage.tsx` | 1360 | `leads` |
+| `src/modules/leads/presentation/pages/LeadListPage.tsx` | 1361 | `leads` |
 | `src/modules/contacts/presentation/hooks/useContactListController.tsx` | 1195 | `contacts` |
-| `src/modules/quotes/presentation/views/QuoteBuilderView.tsx` | 1148 | `quotes` |
-| `src/modules/quotes/presentation/pages/QuoteListPage.tsx` | 1129 | `quotes` |
+| `src/modules/quotes/presentation/views/QuoteBuilderView.tsx` | 1094 | `quotes` |
 | `src/modules/leads/presentation/views/LeadDetailView.tsx` | 1086 | `leads` |
 | `src/modules/deals/presentation/pages/DealPipelinePage.tsx` | 1076 | `deals` |
-| `src/modules/quotes/presentation/hooks/useQuoteBuilderController.tsx` | 997 | `quotes` |
+| `src/modules/quotes/presentation/pages/QuoteListPage.tsx` | 1074 | `quotes` |
+| `src/modules/quotes/presentation/hooks/useQuoteBuilderController.tsx` | 967 | `quotes` |
 | `src/modules/contacts/presentation/hooks/useContactDetailController.tsx` | 960 | `contacts` |
 | `src/modules/orders/presentation/hooks/useOrderFormController.tsx` | 943 | `orders` |
 | `src/modules/leads/presentation/components/LeadFormView.tsx` | 924 | `leads` |
 | `src/modules/deals/presentation/hooks/useDealPipelineController.ts` | 902 | `deals` |
 | `src/i18n/legacyUiCopy.ts` | 831 | `shared:i18n` |
-| `src/modules/orders/presentation/views/OrderListView.tsx` | 817 | `orders` |
-| `src/guidance/content/crm/extendedScreens.ts` | 816 | `shared:guidance` |
+| `src/modules/orders/presentation/views/OrderListView.tsx` | 818 | `orders` |
+| `src/guidance/content/crm/extendedScreens.ts` | 817 | `shared:guidance` |
 | `src/modules/orders/presentation/pages/OrderDetailPage.tsx` | 761 | `orders` |
 | `src/modules/organizations/presentation/pages/OrganizationAccountDetailPage.tsx` | 748 | `organizations` |
 | `src/modules/products/presentation/components/ProductFormModal.tsx` | 742 | `products` |
-| `src/modules/quotes/presentation/pages/QuoteDetailPage.tsx` | 730 | `quotes` |
 | `src/modules/payments/presentation/pages/PaymentOperationsPage.tsx` | 700 | `payments` |
 | `src/modules/products/presentation/pages/ProductDetailPage.tsx` | 696 | `products` |
 | `src/modules/leads/presentation/hooks/useLeadDetailController.tsx` | 694 | `leads` |
 | `src/modules/leads/infrastructure/http/LeadHttpCommandAdapter.ts` | 692 | `leads` |
 | `src/modules/leads/presentation/hooks/useLeadFormController.tsx` | 675 | `leads` |
+| `src/modules/quotes/presentation/pages/QuoteDetailPage.tsx` | 641 | `quotes` |
 | `src/modules/customers/presentation/detail/CustomerOverviewTab.tsx` | 640 | `customers` |
 
 ## Circular dependency groups
@@ -249,12 +249,14 @@ The JSON manifest includes each detected key pattern, operation, path, line and 
 - `src/modules/orders/domain/rules/orderLifecycle.ts`
 - `src/modules/orders/infrastructure/InMemoryOrderRepository.ts`
 - `src/modules/organizations/infrastructure/organizationAccount.seed.ts`
+- `src/modules/organizations/public/BuyerOrganizationCreateModal.ts`
 - `src/modules/payments/infrastructure/payment.seed.ts`
 - `src/modules/payments/presentation/pages/PaymentDetailPage.tsx`
 - `src/modules/products/domain/model/product.types.ts`
 - `src/modules/products/infrastructure/productConfiguration.store.ts`
 - `src/modules/quotes/domain/model/quote.types.ts`
 - `src/modules/quotes/domain/rules/quoteCalculations.ts`
+- `src/modules/quotes/presentation/model/quoteActionPolicy.ts`
 - `src/modules/shipping/infrastructure/shippingBookingSnapshot.ts`
 - `src/modules/support/domain/model/supportCase.types.ts`
 - `src/modules/tasks/presentation/pages/TaskDetailPage.tsx`

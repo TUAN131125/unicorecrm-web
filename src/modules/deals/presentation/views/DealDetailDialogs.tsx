@@ -144,8 +144,8 @@ export function DealDetailDialogs({
               {/* Canonical commitment evidence explainer */}
               <div className="bg-emerald-50/50 border border-emerald-100 p-2.5 rounded text-emerald-800 font-bold leading-snug">
                 {locale === "vi"
-                  ? controller.canConfirmWon ? "Xác nhận đóng thắng với chứng từ thương mại đã được chấp nhận." : "Chưa thể xác minh chứng từ thương mại để đóng thắng. Hãy kiểm tra báo giá hoặc đơn hàng liên quan; cơ hội chưa được thay đổi."
-                  : controller.canConfirmWon ? "Confirm this win with accepted commercial evidence." : "Commercial evidence cannot be verified for closing this win yet. Review the related quote or order; this opportunity has not been changed."}
+                  ? controller.canConfirmWon ? "Yêu cầu chốt thắng bằng Order đã xác nhận. Máy chủ sẽ xác minh bằng chứng trước khi lưu." : "Chưa có Order đã xác nhận được phép đọc để yêu cầu chốt thắng. Cơ hội chưa được thay đổi."
+                  : controller.canConfirmWon ? "Request a win using a confirmed Order. The server verifies the evidence before saving." : "No accessible confirmed Order is available to request a win. This opportunity has not changed."}
               </div>
 
               <div className="flex justify-end gap-2 pt-1 border-t border-slate-100 mt-4">

@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "generatorVersion": 11,
   "contractVersion": "0.24.0-contract.0",
-  "specSha256": "51e022d901c059cf6bcb8139b350f133b65bdb03e28157d7fdc0f6da9c180574",
+  "specSha256": "8cd588a9a894fef169a7eec9925d1ec6c4437d38e8d9b4866ffdfc41f1a2f2fd",
   "generatedAt": "DETERMINISTIC",
   "coveragePolicy": {
     "ownerModule": "REQUIRED",
@@ -13,12 +13,12 @@
     "concurrency": "DERIVED_FROM_IF_MATCH_HEADER"
   },
   "summary": {
-    "operations": 365,
-    "ownedOperations": 365,
-    "generatedClientMappings": 365,
-    "productionReadyOperations": 339,
+    "operations": 367,
+    "ownedOperations": 367,
+    "generatedClientMappings": 367,
+    "productionReadyOperations": 341,
     "blockedOperations": 26,
-    "declaredConnectedBoundaries": 339,
+    "declaredConnectedBoundaries": 341,
     "blockedByContract": 26,
     "pendingConnectedAdapters": 0
   },
@@ -1965,6 +1965,44 @@
       "dataScope": "SELECTED_WORKSPACE"
     },
     {
+      "operationId": "checkCustomerPhone",
+      "method": "POST",
+      "path": "/customers/phone-check",
+      "boundedContext": "Customers",
+      "ownerModule": "customers",
+      "generatedClient": {
+        "file": "src/platform/api/generated/commercialApi.ts",
+        "className": "CommercialApiClient",
+        "method": "checkCustomerPhone"
+      },
+      "httpAdapter": "src/modules/customers/infrastructure/http/CustomerHttpApiAdapter.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.application-composition",
+        "quality.commercial-authoritative-queries",
+        "quality.deal-api-boundary",
+        "quality.lead-qualification-api-boundary",
+        "quality.order-to-cash-api-contracts",
+        "quality.product-order-api-boundary",
+        "quality.quote-api-boundary",
+        "quality.relationship-domain-api-boundary",
+        "quality.shipping-returns-api-boundary",
+        "quality.support-api-boundary",
+        "quality.task-activity-api-boundary"
+      ],
+      "idempotencyPolicy": "NOT_REQUIRED",
+      "concurrencyPolicy": "NOT_APPLICABLE",
+      "requestBodySchema": "CheckCustomerPhoneRequest",
+      "responseSchema": "CustomerPhoneCheckResponse",
+      "successStatus": "200",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "customers.create_direct",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE"
+    },
+    {
       "operationId": "claimConversation",
       "method": "POST",
       "path": "/communications/conversations/{id}/claim",
@@ -2884,6 +2922,44 @@
       "contractStatus": "PRODUCTION_CONTRACT_READY",
       "blockingDecisionId": null,
       "requiredCapability": "deals.create",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE"
+    },
+    {
+      "operationId": "createDirectCustomer",
+      "method": "POST",
+      "path": "/customers/direct",
+      "boundedContext": "Customers",
+      "ownerModule": "customers",
+      "generatedClient": {
+        "file": "src/platform/api/generated/commercialApi.ts",
+        "className": "CommercialApiClient",
+        "method": "createDirectCustomer"
+      },
+      "httpAdapter": "src/modules/customers/infrastructure/http/CustomerHttpApiAdapter.ts",
+      "adapterStatus": "CONNECTED_BOUNDARY_DECLARED",
+      "testGateIds": [
+        "quality.api-contract",
+        "quality.application-composition",
+        "quality.commercial-authoritative-queries",
+        "quality.deal-api-boundary",
+        "quality.lead-qualification-api-boundary",
+        "quality.order-to-cash-api-contracts",
+        "quality.product-order-api-boundary",
+        "quality.quote-api-boundary",
+        "quality.relationship-domain-api-boundary",
+        "quality.shipping-returns-api-boundary",
+        "quality.support-api-boundary",
+        "quality.task-activity-api-boundary"
+      ],
+      "idempotencyPolicy": "REQUIRED",
+      "concurrencyPolicy": "BACKEND_SERIALIZED",
+      "requestBodySchema": "CreateDirectCustomerRequest",
+      "responseSchema": "CustomerMutationResponse",
+      "successStatus": "201",
+      "contractStatus": "PRODUCTION_CONTRACT_READY",
+      "blockingDecisionId": null,
+      "requiredCapability": "customers.create_direct",
       "resourceScope": "WORKSPACE",
       "dataScope": "WORKSPACE"
     },

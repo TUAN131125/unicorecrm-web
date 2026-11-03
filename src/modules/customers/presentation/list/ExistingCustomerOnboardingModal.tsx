@@ -79,7 +79,7 @@ export function ExistingCustomerOnboardingModal({ isOpen, onClose, isVi, onCompl
 
   return (
     <>
-    <Modal variant="form" isOpen={isOpen} onClose={lifecycle.requestClose} size="md" title={isVi ? "Tạo Customer" : "Create Customer"}>
+    <Modal variant="form" isOpen={isOpen} onClose={lifecycle.requestClose} size="md" title={isVi ? "Thêm hồ sơ hiện có thành Customer" : "Onboard existing profile"}>
       <form onSubmit={event => { event.preventDefault(); void save(); }} className="crm-form-surface space-y-5">
         <fieldset className="contents" disabled={lifecycle.pending}>
         <div className="rounded-2xl border border-violet-100 bg-violet-50/70 p-4 text-xs leading-5 text-violet-900">

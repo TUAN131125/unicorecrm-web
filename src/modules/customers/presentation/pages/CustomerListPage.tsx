@@ -22,6 +22,8 @@ import { CustomerStatisticsPanel, type CustomerStatisticsSummary } from "../list
 import { CustomerTable } from "../list/CustomerTable";
 import { CustomerTopActionMenu } from "../list/CustomerTopActionMenu";
 import { ExistingCustomerOnboardingModal } from "../list/ExistingCustomerOnboardingModal";
+import { DirectCustomerCreateModal } from "../list/DirectCustomerCreateModal";
+import { isDirectCustomerCreationAvailable } from "../../public/api";
 import { CustomerDataQualityPanel } from "../list/CustomerDataQualityPanel";
 import { customerSourceIdentityPath } from "../list/customerList.helpers";
 import type { CustomerListPresentationSnapshot, CustomerListRow } from "../list/customerList.types";
@@ -44,6 +46,8 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
   const session = getAuthSessionSnapshot();
   const access = useEffectiveAccess();
   const canOnboardExistingCustomer = access.can(CAPABILITIES.CUSTOMERS_ONBOARD_EXISTING);
+  const canCreateDirect = access.can(CAPABILITIES.CUSTOMERS_CREATE_DIRECT) && isDirectCustomerCreationAvailable();
+  const [directCreateOpen, setDirectCreateOpen] = useState(false);
   const actorId = session?.principal.memberId ?? session?.principal.email ?? "system";
   const actorName = session?.principal.displayName ?? session?.principal.email ?? "CRM User";
 
@@ -346,11 +350,13 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
               },
               ...(canOnboardExistingCustomer ? [{
                 id: "onboard-existing-customer",
-                label: isVi ? "Tạo Customer" : "Create Customer",
+                label: isVi ? "Thêm hồ sơ hiện có thành Customer" : "Onboard existing profile",
                 icon: <Plus size={14} />,
                 onClick: () => setOnboardingOpen(true),
-                variant: "primary" as const,
+                variant: "secondary" as const,
               }] : []),
+              ...(canCreateDirect ? [{ id: "create-direct-customer", label: isVi ? "Tạo Customer" : "Create Customer", icon: <Plus size={14} />,
+                onClick: () => setDirectCreateOpen(true), variant: "primary" as const }] : []),
             ]}
             moreActions={(
               <CustomerTopActionMenu
@@ -586,6 +592,7 @@ export const CustomerListPage: React.FC<CustomerListPageProps> = ({ customers: p
           navigate(`/customers/${createdCustomer.id}`);
         }}
       />
+      <DirectCustomerCreateModal open={directCreateOpen} onClose={() => setDirectCreateOpen(false)} vi={isVi} onCreated={id => { showToast(isVi ? "Đã lưu Customer." : "Customer saved."); navigate(`/customers/${id}`); }}/>
 
       <AnimatePresence>
         {toastMessage && (

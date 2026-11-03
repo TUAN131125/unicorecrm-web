@@ -705,6 +705,19 @@
       "backendEnforcement": "REQUIRED"
     },
     {
+      "operationId": "checkCustomerPhone",
+      "method": "POST",
+      "path": "/customers/phone-check",
+      "moduleOwner": "customers",
+      "capability": "customers.create_direct",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
       "operationId": "claimConversation",
       "method": "POST",
       "path": "/communications/conversations/{id}/claim",
@@ -1035,6 +1048,19 @@
       "path": "/deals",
       "moduleOwner": "deals",
       "capability": "deals.create",
+      "resourceScope": "WORKSPACE",
+      "dataScope": "WORKSPACE",
+      "status": "PRODUCTION_CONTRACT_READY",
+      "workspaceRequired": true,
+      "actorRequired": true,
+      "backendEnforcement": "REQUIRED"
+    },
+    {
+      "operationId": "createDirectCustomer",
+      "method": "POST",
+      "path": "/customers/direct",
+      "moduleOwner": "customers",
+      "capability": "customers.create_direct",
       "resourceScope": "WORKSPACE",
       "dataScope": "WORKSPACE",
       "status": "PRODUCTION_CONTRACT_READY",

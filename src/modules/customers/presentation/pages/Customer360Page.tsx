@@ -2,6 +2,7 @@ import { backendUnavailableMessage, formatApplicationError, formatOperationUnava
 import { getWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import { getDirtyUnsavedWork } from "@/platform/unsaved-work";
 import React, { useMemo, useState } from "react";
+import { OrganizationActivationNotice } from "@/modules/organizations";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { useNavigate } from "react-router-dom";
 import { Sparkles } from "lucide-react";
@@ -354,6 +355,7 @@ export const Customer360Page: React.FC<Customer360PageProps> = ({
         canArchive={!authoritativeProjection || authoritativeProjection.allowedActions.includes("archiveCustomer")}
       />
 
+      {customer.relationshipRef?.type === "ORGANIZATION_ACCOUNT" && <OrganizationActivationNotice organizationId={customer.relationshipRef.id} vi={isVi}/>}
       <div className="relative min-w-0 xl:min-h-[calc(100vh-170px)]">
         <div className="flex min-w-0 flex-col gap-3 xl:min-h-[calc(100vh-170px)] xl:flex-row xl:items-start">
           <main className="w-full min-w-0 xl:flex-1">

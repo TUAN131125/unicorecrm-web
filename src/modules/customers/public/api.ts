@@ -1,5 +1,8 @@
 import type { RelationshipRef } from "@/platform/identity";
-import type { CreateCustomerRequest, UpdateCustomerRequest } from "../application/ports/CustomerApiRuntime";
+import type { CreateCustomerRequest, UpdateCustomerRequest, CreateDirectCustomerInput, CustomerPhoneCandidate } from "../application/ports/CustomerApiRuntime";
+import { ApplicationError } from "@/shared/domain";
+import { invalidateModuleQueries } from "@/shared/application";
+export type { CreateDirectCustomerInput, CustomerPhoneCandidate } from "../application/ports/CustomerApiRuntime";
 import { assertMutationCommandSupported, createMutationMetadata, executeMutationCommand, isMutationCommandUnavailable, runBackendProjection, type MutationCommandMetadata, type MutationOutcome } from "@/shared/application";
 import { getWorkspaceContextSnapshot } from "@/platform/workspace-context";
 import { anonymizeCustomer, applyCalculatedCustomerHealth, archiveCustomer, archiveCustomerRecord, completeCustomerOnboarding, saveCustomerCareCard, updateCustomerLifecycle } from "../application/commands/customerCommands";
@@ -83,7 +86,26 @@ export async function createCustomerCommand(
   metadata: CustomerRetentionMutationMetadata = {},
 ): Promise<Customer> {
   const customer = await getCustomerApiRuntime().commands.create(input, customerCommandOptions(`customer.create:${input.relationshipRef.type}:${input.relationshipRef.id}`, metadata));
-  return projectAuthoritativeCustomer(customer);
+  const projected = projectAuthoritativeCustomer(customer);
+  await invalidateModuleQueries({ moduleKeys: ["customers"], commandType: "customer.create", aggregateId: customer.id, occurredAt: customer.updatedAt });
+  return projected;
+}
+
+export function isDirectCustomerCreationAvailable(): boolean {
+  return getCustomerApiRuntime().mode === "connected" && Boolean(getCustomerApiRuntime().commands.createDirect);
+}
+export async function checkDirectCustomerPhone(phone: string, signal?: AbortSignal): Promise<CustomerPhoneCandidate[]> {
+  const queries = getCustomerApiRuntime().queries;
+  if (!queries.checkPhone) throw new ApplicationError({ code: "CUSTOMER_DIRECT_CREATE_UNAVAILABLE", category: "INFRASTRUCTURE", message: "Direct Customer phone check is unavailable" });
+  return queries.checkPhone(phone, signal);
+}
+export async function createDirectCustomerCommand(input: CreateDirectCustomerInput, metadata: CustomerRetentionMutationMetadata): Promise<MutationOutcome<Customer>> {
+  const commands = getCustomerApiRuntime().commands;
+  if (!commands.createDirect) throw new ApplicationError({ code: "CUSTOMER_DIRECT_CREATE_UNAVAILABLE", category: "INFRASTRUCTURE", message: "Direct Customer creation is unavailable" });
+  const result = await commands.createDirect(input, customerCommandOptions("customer.create-direct", metadata));
+  projectAuthoritativeCustomer(result.data);
+  await invalidateModuleQueries({ moduleKeys: ["customers", "contacts", "organizations"], commandType: result.commandType, aggregateId: result.aggregateId, occurredAt: result.occurredAt });
+  return result;
 }
 
 export async function updateCustomerCommand(

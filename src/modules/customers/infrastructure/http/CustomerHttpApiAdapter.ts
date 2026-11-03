@@ -6,21 +6,39 @@ import type {
   CustomerList,
   CustomerMutationResponse,
   ListCustomersQuery,
+  CreateDirectCustomerRequest as ApiCreateDirectCustomerRequest,
+  CustomerPhoneCheckResponse,
   UpdateCustomerRequest,
 } from "@/platform/api/generated/commercialApi";
-import type { AuthoritativePage, ModuleListQuery } from "@/shared/application";
+import type { AuthoritativePage, ModuleListQuery, MutationOutcome } from "@/shared/application";
 import type {
   Customer360Projection,
   CustomerCommandOptions,
   CustomerCommandPort,
   CustomerQueryPort,
   CustomerListItem,
+  CreateDirectCustomerInput,
+  CustomerPhoneCandidate,
 } from "../../application/ports/CustomerApiRuntime";
 import type { Customer } from "../../domain/model/customer.types";
 import { mapCustomer360ReadModel, mapCustomerDocument } from "./CustomerApiMapper";
 
 export class CustomerHttpApiAdapter implements CustomerQueryPort, CustomerCommandPort {
   constructor(private readonly client: CommercialApiClient) {}
+
+  async checkPhone(phone: string, signal?: AbortSignal): Promise<CustomerPhoneCandidate[]> {
+    const result = await this.client.checkCustomerPhone<CustomerPhoneCheckResponse>({ phone }, { signal });
+    return result.candidates;
+  }
+
+  async createDirect(input: CreateDirectCustomerInput, options: CustomerCommandOptions): Promise<MutationOutcome<Customer>> {
+    const result = await this.client.createDirectCustomer<CustomerMutationResponse, ApiCreateDirectCustomerRequest>(input, options);
+    return { data: mapCustomerDocument(result.result), commandId: result.commandId, commandType: "customer.create-direct",
+      aggregateType: result.aggregateType, aggregateId: result.aggregateId, idempotencyKey: options.idempotencyKey,
+      correlationId: result.correlationId, occurredAt: result.occurredAt, version: result.version, outcome: result.outcome,
+      warnings: result.warnings ?? [], emittedEvents: result.emittedEventIds ?? [],
+      audit: { authority: "backend", evidenceIds: result.auditEvidenceIds ?? [] } };
+  }
 
   async list(query: ModuleListQuery = {}, signal?: AbortSignal): Promise<AuthoritativePage<CustomerListItem>> {
     const filters = query.filters ?? {};
